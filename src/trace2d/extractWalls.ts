@@ -15,6 +15,7 @@ export interface ExtractParams {
   hatchMaxNeighbors: number; // reject if this many+ parallel faces overlap the strip (stairs/hatching)
   paneGapMax: number; // lines cramped within this (a 3+ stack = window) → inner ones are panes, not wall faces
   minWallSepPx: number; // reject parallel walls closer than this (stairs/hatch); 0 = off (needs scale)
+  pruneIsolated: boolean; // drop walls that join nothing (dimension lines, stray marks)
   extendMax: number; // extend/trim a centerline end up to this far to meet a neighbor (close corners)
   thicknessTargets: number[]; // calibrated wall thicknesses (px); empty = use thinMin..thickMax
   thicknessTol: number; // accept a pair if within this of a calibrated target
@@ -42,6 +43,7 @@ export const DEFAULT_PARAMS: ExtractParams = {
   hatchMaxNeighbors: 8,
   paneGapMax: 12,
   minWallSepPx: 0,
+  pruneIsolated: true,
   extendMax: 26,
   thicknessTargets: [],
   thicknessTol: 4,
@@ -489,6 +491,42 @@ export function extractWalls(
       // 3+ similar-length close parallels = a stair/hatch stack → keep none
     }
     kept = centerlines.filter((_, i) => keepIdx.has(i));
+  }
+
+  // Drop isolated lines (dimension lines, stray marks): a genuine wall joins the
+  // wall network at a corner/T/cross, while a dimension line floats free next to
+  // — but not touching — the building.
+  if (params.pruneIsolated && kept.length > 2) {
+    const tol = params.weldTol + 2;
+    const ptSeg = (px: number, py: number, q: Centerline) => {
+      const abx = q.x1 - q.x0;
+      const aby = q.y1 - q.y0;
+      const len2 = abx * abx + aby * aby;
+      if (len2 < 1e-9) return Math.hypot(px - q.x0, py - q.y0);
+      let t = ((px - q.x0) * abx + (py - q.y0) * aby) / len2;
+      t = Math.min(1, Math.max(0, t));
+      return Math.hypot(px - (q.x0 + abx * t), py - (q.y0 + aby * t));
+    };
+    const cross = (a: Centerline, b: Centerline) => {
+      const rx = a.x1 - a.x0;
+      const ry = a.y1 - a.y0;
+      const sx = b.x1 - b.x0;
+      const sy = b.y1 - b.y0;
+      const den = rx * sy - ry * sx;
+      if (Math.abs(den) < 1e-9) return false;
+      const qpx = b.x0 - a.x0;
+      const qpy = b.y0 - a.y0;
+      const t = (qpx * sy - qpy * sx) / den;
+      const u = (qpx * ry - qpy * rx) / den;
+      return t >= -0.02 && t <= 1.02 && u >= -0.02 && u <= 1.02;
+    };
+    const touches = (a: Centerline, b: Centerline) =>
+      ptSeg(a.x0, a.y0, b) <= tol ||
+      ptSeg(a.x1, a.y1, b) <= tol ||
+      ptSeg(b.x0, b.y0, a) <= tol ||
+      ptSeg(b.x1, b.y1, a) <= tol ||
+      cross(a, b);
+    kept = kept.filter((c, i) => kept.some((d, j) => j !== i && touches(c, d)));
   }
 
   const graph = buildPlanarGraph(kept, params.weldTol);
