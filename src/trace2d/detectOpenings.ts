@@ -35,6 +35,7 @@ export interface DetectParams {
   minArcChordPx: number; // smaller arcs are rounded corners / text, not door swings
   maxArcChordPx: number; // sanity cap on swing size
   arcMaxWallDist: number; // a swing arc must be within this of a wall to place a door
+  windowPerimeterMargin: number; // windows must sit within this of the building perimeter
 }
 
 export const DEFAULT_DETECT: DetectParams = {
@@ -53,6 +54,7 @@ export const DEFAULT_DETECT: DetectParams = {
   minArcChordPx: 30,
   maxArcChordPx: 500,
   arcMaxWallDist: 60,
+  windowPerimeterMargin: 40,
 };
 
 export interface SuggestedOpening {
@@ -409,16 +411,50 @@ export function detectOpenings(
     });
   }
 
-  // Merge: prefer arc doors; drop gap-doors that duplicate an arc door.
-  const near = (a: SuggestedOpening, b: SuggestedOpening) =>
-    Math.hypot((a.x0 + a.x1) / 2 - (b.x0 + b.x1) / 2, (a.y0 + a.y1) / 2 - (b.y0 + b.y1) / 2) <
-    Math.max(a.width, b.width) * 0.6;
-  const merged = openings.filter(
-    (o) => o.type !== "door" || !arcDoors.some((a) => near(o, a)),
-  );
+  // Merge: prefer arc doors; drop gap-doors that duplicate an arc door — either
+  // overlapping, or collinear on the same wall within ~a door-width (the same
+  // doorway picked up twice).
+  const dupOfArc = (g: SuggestedOpening) =>
+    arcDoors.some((a) => {
+      const gmx = (g.x0 + g.x1) / 2;
+      const gmy = (g.y0 + g.y1) / 2;
+      const amx = (a.x0 + a.x1) / 2;
+      const amy = (a.y0 + a.y1) / 2;
+      if (Math.hypot(gmx - amx, gmy - amy) < Math.max(a.width, g.width) * 0.6) return true;
+      const aL = Math.hypot(a.x1 - a.x0, a.y1 - a.y0) || 1;
+      const ux = (a.x1 - a.x0) / aL;
+      const uy = (a.y1 - a.y0) / aL;
+      const perp = Math.abs((gmx - amx) * -uy + (gmy - amy) * ux);
+      const along = Math.abs((gmx - amx) * ux + (gmy - amy) * uy);
+      return perp < 12 && along < (a.width + g.width) * 0.9;
+    });
+  const merged = openings.filter((o) => o.type !== "door" || !dupOfArc(o));
   merged.push(...arcDoors);
 
-  return { openings: merged, walls };
+  // Windows sit on the building perimeter (exterior walls). Drop interior false
+  // windows — door frames / fixtures whose 3 cramped lines mimic a window.
+  let result = merged;
+  if (centerlines.length) {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const c of centerlines) {
+      minX = Math.min(minX, c.x0, c.x1);
+      maxX = Math.max(maxX, c.x0, c.x1);
+      minY = Math.min(minY, c.y0, c.y1);
+      maxY = Math.max(maxY, c.y0, c.y1);
+    }
+    const m = params.windowPerimeterMargin;
+    result = merged.filter((o) => {
+      if (o.type !== "window") return true;
+      const mx = (o.x0 + o.x1) / 2;
+      const my = (o.y0 + o.y1) / 2;
+      return Math.min(mx - minX, maxX - mx, my - minY, maxY - my) <= m;
+    });
+  }
+
+  return { openings: result, walls };
 }
 
 /**
