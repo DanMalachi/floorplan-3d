@@ -1,10 +1,21 @@
-import type { ImportSegment } from "@/store/useSceneStore";
+import type { ImportSegment, ImportArc } from "@/store/useSceneStore";
 
 interface RawSeg {
   x0: number;
   y0: number;
   x1: number;
   y1: number;
+  color: [number, number, number] | null;
+  width: number;
+  layer: string;
+}
+
+interface RawArc {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  chord: number;
   color: [number, number, number] | null;
   width: number;
   layer: string;
@@ -17,6 +28,7 @@ interface RawExtract {
   page: { widthPt: number; heightPt: number; index: number; pageCount: number };
   render: { dataUrl: string; zoom: number; widthPx: number; heightPx: number };
   segments: RawSeg[];
+  arcs: RawArc[];
   stats: { drawings: number; images: number; segments: number; arcs: number };
 }
 
@@ -25,6 +37,7 @@ export interface ImportResult {
   pageCount: number;
   image: { src: string; width: number; height: number };
   segments: ImportSegment[];
+  arcs: ImportArc[];
   stats: RawExtract["stats"];
 }
 
@@ -51,12 +64,23 @@ export async function importPdf(file: File, page = 0): Promise<ImportResult> {
     width: s.width ?? 0,
     layer: s.layer ?? "0",
   }));
+  const arcs: ImportArc[] = (j.arcs ?? []).map((a) => ({
+    x0: a.x0 * z,
+    y0: a.y0 * z,
+    x1: a.x1 * z,
+    y1: a.y1 * z,
+    chord: a.chord * z,
+    color: a.color ?? null,
+    width: a.width ?? 0,
+    layer: a.layer ?? "0",
+  }));
 
   return {
     isVector: j.isVector,
     pageCount: j.page.pageCount,
     image: { src: j.render.dataUrl, width: j.render.widthPx, height: j.render.heightPx },
     segments,
+    arcs,
     stats: j.stats,
   };
 }

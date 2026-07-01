@@ -3,6 +3,12 @@ import type { Scene } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import { DEFAULT_DOOR, DEFAULT_WINDOW } from "@/schema/constants";
 import { buildPlanarGraph, extractWalls, DEFAULT_PARAMS } from "@/trace2d/extractWalls";
+import {
+  detectOpenings,
+  traceToCenterlines,
+  mapOpeningToSegment,
+  type SuggestedOpening,
+} from "@/trace2d/detectOpenings";
 
 // ---------------------------------------------------------------------------
 // Tracing (editor) types. These are EPHEMERAL — they never live inside Scene.
@@ -55,6 +61,19 @@ export interface ImportSegment {
   color: [number, number, number] | null; // stroke color 0..1, or null
   width: number; // pt
   layer: string; // CAD layer name (e.g. "0", "KIROT", "RIHUT", "PETACH")
+}
+
+// A curved path (cubic) parsed from the PDF, in background-image px. Door-swing
+// arcs (big chords) are used to confirm/locate doors.
+export interface ImportArc {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  chord: number; // straight-line distance between endpoints (px)
+  color: [number, number, number] | null;
+  width: number;
+  layer: string;
 }
 
 // A suggested wall centerline (M2), in background-image px. The user reviews and
@@ -122,8 +141,10 @@ interface StoreState {
 
   // --- imported PDF raw overlay (Phase 2 / M1) ---
   importedSegments: ImportSegment[];
+  importedArcs: ImportArc[];
   showImport: boolean;
   setImportedSegments: (segs: ImportSegment[]) => void;
+  setImportedArcs: (arcs: ImportArc[]) => void;
   setShowImport: (v: boolean) => void;
 
   // --- suggested walls (Phase 2 / M2) ---
@@ -141,6 +162,14 @@ interface StoreState {
   runWallExtraction: () => void;
   addThicknessTarget: (t: number) => void;
   clearThicknessTargets: () => void;
+
+  // --- suggested openings (Phase 2 / doors + windows from wall geometry) ---
+  suggestedOpenings: SuggestedOpening[];
+  rejectedOpeningIds: string[];
+  detectOpeningsOnTrace: () => void; // clean pass over traced/accepted walls
+  toggleRejectOpening: (id: string) => void;
+  clearOpenings: () => void;
+  acceptOpenings: () => void; // map kept openings onto trace segments
 
   // --- trace draft ---
   points: TracePoint[];
@@ -210,8 +239,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setImageOpacity: (imageOpacity) => set({ imageOpacity }),
 
     importedSegments: [],
+    importedArcs: [],
     showImport: true,
     setImportedSegments: (importedSegments) => set({ importedSegments }),
+    setImportedArcs: (importedArcs) => set({ importedArcs }),
     setShowImport: (showImport) => set({ showImport }),
 
     suggestedWalls: [],
@@ -224,14 +255,20 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setPickThickness: (pickThickness) => set({ pickThickness }),
     setWallSnap: (wallSnap) => set({ wallSnap }),
     runWallExtraction: () => {
-      const { importedSegments, extractionTargets } = get();
+      const { importedSegments, importedArcs, extractionTargets, metersPerPixel } = get();
       const r = extractWalls(importedSegments, {
         ...DEFAULT_PARAMS,
         thicknessTargets: extractionTargets,
+        // Reject parallel walls closer than 0.3 m (stairs/hatch) once scaled.
+        minWallSepPx: metersPerPixel ? 0.3 / metersPerPixel : 0,
       });
+      // Bundled rough opening pass over the freshly extracted centerlines.
+      const det = detectOpenings(importedSegments, r.centerlines, importedArcs, metersPerPixel);
       set({
         suggestedWalls: r.centerlines.map((c, i) => ({ id: `w${i}`, ...c })),
         rejectedSuggestionIds: [],
+        suggestedOpenings: det.openings,
+        rejectedOpeningIds: [],
       });
     },
     addThicknessTarget: (t) => {
@@ -243,6 +280,47 @@ export const useSceneStore = create<StoreState>((set, get) => {
     clearThicknessTargets: () => {
       set({ extractionTargets: [] });
       get().runWallExtraction();
+    },
+
+    suggestedOpenings: [],
+    rejectedOpeningIds: [],
+    detectOpeningsOnTrace: () => {
+      const { points, segments, importedSegments, importedArcs, metersPerPixel } = get();
+      const cls = traceToCenterlines(points, segments, importedSegments);
+      const det = detectOpenings(importedSegments, cls, importedArcs, metersPerPixel);
+      set({ suggestedOpenings: det.openings, rejectedOpeningIds: [] });
+    },
+    toggleRejectOpening: (id) =>
+      set((st) => ({
+        rejectedOpeningIds: st.rejectedOpeningIds.includes(id)
+          ? st.rejectedOpeningIds.filter((x) => x !== id)
+          : [...st.rejectedOpeningIds, id],
+      })),
+    clearOpenings: () => set({ suggestedOpenings: [], rejectedOpeningIds: [] }),
+    acceptOpenings: () => {
+      const { suggestedOpenings, rejectedOpeningIds, points, segments } = get();
+      const rejected = new Set(rejectedOpeningIds);
+      const kept = suggestedOpenings.filter((o) => !rejected.has(o.id));
+      if (kept.length === 0) return;
+      pushHistory();
+      const d = { door: DEFAULT_DOOR, window: DEFAULT_WINDOW };
+      set((st) => {
+        const openings = [...st.openings];
+        for (const op of kept) {
+          const m = mapOpeningToSegment(op, points, segments);
+          if (!m) continue; // its host wall isn't traced/accepted (yet)
+          openings.push({
+            id: newId("o"),
+            type: op.type,
+            segmentId: m.segmentId,
+            t0: m.t0,
+            t1: m.t1,
+            height: d[op.type].height,
+            sill: d[op.type].sill,
+          });
+        }
+        return { openings, suggestedOpenings: [], rejectedOpeningIds: [] };
+      });
     },
     toggleRejectSuggestion: (id) =>
       set((st) => ({

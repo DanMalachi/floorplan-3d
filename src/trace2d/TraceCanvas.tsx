@@ -140,6 +140,9 @@ export default function TraceCanvas() {
   const suggestedWalls = useSceneStore((s) => s.suggestedWalls);
   const rejectedSuggestionIds = useSceneStore((s) => s.rejectedSuggestionIds);
   const toggleRejectSuggestion = useSceneStore((s) => s.toggleRejectSuggestion);
+  const suggestedOpenings = useSceneStore((s) => s.suggestedOpenings);
+  const rejectedOpeningIds = useSceneStore((s) => s.rejectedOpeningIds);
+  const toggleRejectOpening = useSceneStore((s) => s.toggleRejectOpening);
   const pickThickness = useSceneStore((s) => s.pickThickness);
   const addThicknessTarget = useSceneStore((s) => s.addThicknessTarget);
   const extractionTargets = useSceneStore((s) => s.extractionTargets);
@@ -153,6 +156,7 @@ export default function TraceCanvas() {
   const mode = useSceneStore((s) => s.mode);
   const ortho = useSceneStore((s) => s.ortho);
   const calibrationPts = useSceneStore((s) => s.calibrationPts);
+  const metersPerPixel = useSceneStore((s) => s.metersPerPixel);
 
   const addPoint = useSceneStore((s) => s.addPoint);
   const connectToNode = useSceneStore((s) => s.connectToNode);
@@ -197,6 +201,7 @@ export default function TraceCanvas() {
   const analysis = useMemo(() => analyzeLoops(points, segments), [points, segments]);
   const importGroups = useMemo(() => groupByColor(importedSegments), [importedSegments]);
   const rejectedSet = useMemo(() => new Set(rejectedSuggestionIds), [rejectedSuggestionIds]);
+  const rejectedOpeningSet = useMemo(() => new Set(rejectedOpeningIds), [rejectedOpeningIds]);
 
   useEffect(() => {
     if (mode !== "door" && mode !== "window") setOpeningStart(null);
@@ -281,6 +286,9 @@ export default function TraceCanvas() {
     if (!group) return;
     const pos = group.getRelativePointerPosition();
     if (!pos) return;
+
+    // Scale-first gate: until a scale is set, only scale calibration is allowed.
+    if (metersPerPixel == null && mode !== "calibrate") return;
 
     // Calibrate wall thickness: click a wall to learn its face-to-face gap.
     if (pickThickness) {
@@ -465,6 +473,29 @@ export default function TraceCanvas() {
                   onClick={(e) => {
                     e.cancelBubble = true;
                     toggleRejectSuggestion(w.id);
+                  }}
+                />
+              );
+            })}
+
+            {/* Suggested openings — amber doors / cyan windows, bar sized to the
+                wall thickness; click to reject */}
+            {suggestedOpenings.map((o) => {
+              const rejected = rejectedOpeningSet.has(o.id);
+              const base = o.type === "door" ? "#ffb020" : "#22d3ee";
+              return (
+                <Line
+                  key={o.id}
+                  points={[o.x0, o.y0, o.x1, o.y1]}
+                  stroke={rejected ? "#666" : base}
+                  strokeWidth={rejected ? 2 / scale : Math.max(o.thickness, 3 / scale)}
+                  opacity={rejected ? 0.4 : 0.5}
+                  dash={o.type === "window" ? [6 / scale, 3 / scale] : undefined}
+                  lineCap="butt"
+                  hitStrokeWidth={Math.max(o.thickness, 14 / scale)}
+                  onClick={(e) => {
+                    e.cancelBubble = true;
+                    toggleRejectOpening(o.id);
                   }}
                 />
               );

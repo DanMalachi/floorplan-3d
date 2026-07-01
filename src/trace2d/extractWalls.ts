@@ -13,6 +13,8 @@ export interface ExtractParams {
   offsetTol: number; // collinear if perpendicular offsets within this
   weldTol: number; // merge centerline endpoints within this into one node
   hatchMaxNeighbors: number; // reject if this many+ parallel faces overlap the strip (stairs/hatching)
+  paneGapMax: number; // lines cramped within this (a 3+ stack = window) → inner ones are panes, not wall faces
+  minWallSepPx: number; // reject parallel walls closer than this (stairs/hatch); 0 = off (needs scale)
   extendMax: number; // extend/trim a centerline end up to this far to meet a neighbor (close corners)
   thicknessTargets: number[]; // calibrated wall thicknesses (px); empty = use thinMin..thickMax
   thicknessTol: number; // accept a pair if within this of a calibrated target
@@ -38,6 +40,8 @@ export const DEFAULT_PARAMS: ExtractParams = {
   offsetTol: 2.5,
   weldTol: 14,
   hatchMaxNeighbors: 8,
+  paneGapMax: 12,
+  minWallSepPx: 0,
   extendMax: 26,
   thicknessTargets: [],
   thicknessTol: 4,
@@ -247,12 +251,38 @@ export function extractWalls(
     o0: number;
     o1: number;
   }
+  // Mark "pane" edges: a WINDOW is drawn as short glass/frame lines cramped
+  // between the two (longer) wall faces. Such an inner line has a clearly LONGER
+  // parallel face both above and below it (within paneGapMax·3, overlapping in
+  // s). Pairing must skip these, else a window becomes 2–3 stacked walls. The
+  // length test spares two genuine close walls (their faces are equal length).
+  const paneEdges = new Set<Edge>();
+  const paneSpread = params.paneGapMax * 3;
+  for (const arr of edgeBucket.values()) {
+    for (const e of arr) {
+      const eLen = e.s1 - e.s0;
+      let longerBelow = false;
+      let longerAbove = false;
+      for (const f of arr) {
+        if (f === e) continue;
+        const doff = f.offset - e.offset;
+        if (Math.abs(doff) < 0.5 || Math.abs(doff) > paneSpread) continue;
+        if (Math.min(e.s1, f.s1) - Math.max(e.s0, f.s0) < params.minOverlap) continue;
+        if (f.s1 - f.s0 < eLen * 1.2) continue; // f must be a clearly longer face
+        if (doff < 0) longerBelow = true;
+        else longerAbove = true;
+      }
+      if (longerBelow && longerAbove) paneEdges.add(e);
+    }
+  }
+
   const cands: Cand[] = [];
   for (const arr of edgeBucket.values()) {
     for (let i = 0; i < arr.length; i++) {
       for (let k = i + 1; k < arr.length; k++) {
         const e1 = arr[i];
         const e2 = arr[k];
+        if (paneEdges.has(e1) || paneEdges.has(e2)) continue; // skip window panes
         const d = Math.abs(e1.offset - e2.offset);
         if (!thicknessAccept(d, params)) continue;
         const o0 = Math.max(e1.s0, e2.s0);
@@ -405,8 +435,37 @@ export function extractWalls(
     }
   }
 
-  const graph = buildPlanarGraph(centerlines, params.weldTol);
-  return { centerlines, nodes: graph.nodes, segments: graph.segments };
+  // Reject close parallel walls (stairs, tread hatching, double-detections): a
+  // genuine wall has no parallel neighbor closer than minWallSepPx overlapping
+  // it along its length. Stairs are exactly a stack of such close parallels.
+  let kept = centerlines;
+  if (params.minWallSepPx > 0) {
+    const info = centerlines.map((c) => {
+      const th = foldAngle(Math.atan2(c.y1 - c.y0, c.x1 - c.x0));
+      const ux = Math.cos(th);
+      const uy = Math.sin(th);
+      const off = c.x0 * -uy + c.y0 * ux;
+      const sa = c.x0 * ux + c.y0 * uy;
+      const sb = c.x1 * ux + c.y1 * uy;
+      return { th, off, s0: Math.min(sa, sb), s1: Math.max(sa, sb) };
+    });
+    kept = centerlines.filter((_, i) => {
+      for (let j = 0; j < centerlines.length; j++) {
+        if (j === i) continue;
+        let da = Math.abs(info[i].th - info[j].th);
+        da = Math.min(da, Math.PI - da);
+        if (da > angleTol) continue;
+        const perp = Math.abs(info[i].off - info[j].off);
+        if (perp < 0.5 || perp >= params.minWallSepPx) continue;
+        const ov = Math.min(info[i].s1, info[j].s1) - Math.max(info[i].s0, info[j].s0);
+        if (ov >= params.minOverlap) return false; // has a close parallel neighbor
+      }
+      return true;
+    });
+  }
+
+  const graph = buildPlanarGraph(kept, params.weldTol);
+  return { centerlines: kept, nodes: graph.nodes, segments: graph.segments };
 }
 
 /**
