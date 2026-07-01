@@ -1,0 +1,78 @@
+import type { Node, Opening, Wall } from "@/schema/scene";
+import { DEFAULT_THICKNESS, WALL_HEIGHT } from "@/schema/constants";
+
+// A single solid box making up part of a wall. Openings become real gaps by
+// emitting fewer/shorter boxes — NO boolean/CSG ops (Risk #1, segment-split first).
+export interface WallPiece {
+  position: [number, number, number]; // world center (x, y, z)
+  size: [number, number, number]; // [length-along-wall, height, thickness]
+  rotationY: number; // rotation about world Y to align length with wall direction
+}
+
+/**
+ * Split one wall into solid sub-boxes, cutting real gaps for each opening.
+ *
+ * Works in wall-local length space [0, L] then transforms back to world, so it
+ * is correct at ANY wall angle. For each opening we emit:
+ *   - full-height solid spans in the gaps between openings,
+ *   - a sill box below a window (sill > 0),
+ *   - a lintel box above any opening whose top is below the wall height.
+ */
+export function buildWallSegments(
+  wall: Wall,
+  openings: Opening[],
+  nodes: Map<string, Node>,
+): WallPiece[] {
+  const a = nodes.get(wall.a);
+  const b = nodes.get(wall.b);
+  if (!a || !b) return [];
+
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const L = Math.hypot(dx, dy);
+  if (L < 1e-6) return [];
+
+  const ux = dx / L;
+  const uy = dy / L;
+  const wallH = wall.height ?? WALL_HEIGHT;
+  const t = wall.thickness ?? DEFAULT_THICKNESS;
+  // plan (x, y) -> world (x, z); rotate box's local +X onto the wall direction.
+  const rotationY = -Math.atan2(uy, ux);
+
+  const piece = (s: number, e: number, yb: number, yt: number): WallPiece | null => {
+    const spanLen = e - s;
+    const h = yt - yb;
+    if (spanLen <= 1e-6 || h <= 1e-6) return null;
+    const cx = (s + e) / 2; // center distance along wall from node a
+    return {
+      position: [a.x + ux * cx, (yb + yt) / 2, a.y + uy * cx],
+      size: [spanLen, h, t],
+      rotationY,
+    };
+  };
+
+  const ops = openings
+    .map((o) => {
+      const half = o.width / 2;
+      return {
+        start: Math.max(0, o.offset - half),
+        end: Math.min(L, o.offset + half),
+        sill: Math.max(0, o.sill),
+        top: Math.min(wallH, o.sill + o.height),
+      };
+    })
+    .filter((o) => o.end > o.start)
+    .sort((p, q) => p.start - q.start);
+
+  const pieces: (WallPiece | null)[] = [];
+  let cursor = 0;
+  for (const o of ops) {
+    if (o.start > cursor) pieces.push(piece(cursor, o.start, 0, wallH)); // solid between openings
+    if (o.sill > 0) pieces.push(piece(o.start, o.end, 0, o.sill)); // window sill below
+    if (o.top < wallH) pieces.push(piece(o.start, o.end, o.top, wallH)); // lintel above
+    cursor = Math.max(cursor, o.end);
+  }
+  if (cursor < L) pieces.push(piece(cursor, L, 0, wallH)); // trailing solid
+
+  return pieces.filter((p): p is WallPiece => p !== null);
+}

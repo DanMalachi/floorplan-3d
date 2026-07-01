@@ -1,0 +1,513 @@
+import { create } from "zustand";
+import type { Scene } from "@/schema/scene";
+import { sampleScene } from "@/schema/sampleScene";
+import { DEFAULT_DOOR, DEFAULT_WINDOW } from "@/schema/constants";
+import { buildPlanarGraph, extractWalls, DEFAULT_PARAMS } from "@/trace2d/extractWalls";
+
+// ---------------------------------------------------------------------------
+// Tracing (editor) types. These are EPHEMERAL — they never live inside Scene.
+// Trace coordinates are in "image-local pixels" (the background image's natural
+// pixel space, or raw stage pixels when no image is loaded). Conversion to
+// meters happens in M4 using metersPerPixel from scale calibration.
+// ---------------------------------------------------------------------------
+
+export type TraceMode = "wall" | "door" | "window" | "calibrate";
+
+export interface TracePoint {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface TraceSegment {
+  id: string;
+  a: string; // point id
+  b: string; // point id
+}
+
+// An opening is traced as a line ALONG its host wall: t0..t1 are the normalized
+// endpoints of that line on the segment (0 = point a, 1 = point b). Width is
+// derived from |t1 - t0| * wallLength at generate time, so it's scale-independent
+// and any length. height/sill stay in METERS (vertical extent isn't traced).
+export interface TraceOpening {
+  id: string;
+  type: "door" | "window";
+  segmentId: string;
+  t0: number;
+  t1: number;
+  height: number;
+  sill: number;
+}
+
+export interface TraceImage {
+  src: string; // data URL
+  width: number; // natural px
+  height: number; // natural px
+}
+
+// Raw segment parsed from an imported vector PDF, already converted to the
+// background-image pixel space. Rendered as the M1 "what was parsed" overlay.
+export interface ImportSegment {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  color: [number, number, number] | null; // stroke color 0..1, or null
+  width: number; // pt
+  layer: string; // CAD layer name (e.g. "0", "KIROT", "RIHUT", "PETACH")
+}
+
+// A suggested wall centerline (M2), in background-image px. The user reviews and
+// accepts/rejects these; accepted ones weld into the real trace.
+export interface SuggestedWall {
+  id: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  thickness: number; // px
+}
+
+interface TraceSnapshot {
+  points: TracePoint[];
+  segments: TraceSegment[];
+  openings: TraceOpening[];
+  activeLastPointId: string | null;
+}
+
+let _id = 0;
+const newId = (prefix: string) => `${prefix}${_id++}`;
+
+// When a wall is split at parameter ts, move an opening onto the sub-wall that
+// contains its center and renormalize its span into that sub-wall's [0,1].
+function remapOpening(
+  o: TraceOpening,
+  ts: number,
+  firstId: string,
+  secondId: string,
+): TraceOpening[] {
+  if (ts <= 1e-6) return [{ ...o, segmentId: secondId }];
+  if (ts >= 1 - 1e-6) return [{ ...o, segmentId: firstId }];
+  const center = (o.t0 + o.t1) / 2;
+  if (center <= ts) {
+    return [
+      {
+        ...o,
+        segmentId: firstId,
+        t0: Math.min(o.t0, ts) / ts,
+        t1: Math.min(o.t1, ts) / ts,
+      },
+    ];
+  }
+  return [
+    {
+      ...o,
+      segmentId: secondId,
+      t0: (Math.max(o.t0, ts) - ts) / (1 - ts),
+      t1: (Math.max(o.t1, ts) - ts) / (1 - ts),
+    },
+  ];
+}
+
+interface StoreState {
+  // --- 3D model (single source of truth) ---
+  scene: Scene;
+  setScene: (s: Scene) => void;
+
+  // --- background image ---
+  image: TraceImage | null;
+  imageOpacity: number;
+  setImage: (img: TraceImage | null) => void;
+  setImageOpacity: (o: number) => void;
+
+  // --- imported PDF raw overlay (Phase 2 / M1) ---
+  importedSegments: ImportSegment[];
+  showImport: boolean;
+  setImportedSegments: (segs: ImportSegment[]) => void;
+  setShowImport: (v: boolean) => void;
+
+  // --- suggested walls (Phase 2 / M2) ---
+  suggestedWalls: SuggestedWall[];
+  rejectedSuggestionIds: string[];
+  extractionTargets: number[]; // calibrated wall thicknesses (px)
+  pickThickness: boolean; // click-a-wall-to-learn-thickness mode
+  wallSnap: boolean; // snap traced points to imported-PDF wall centerlines/corners
+  setSuggestedWalls: (w: SuggestedWall[]) => void;
+  toggleRejectSuggestion: (id: string) => void;
+  clearSuggestions: () => void;
+  acceptSuggestions: () => void; // weld kept suggestions into the real trace
+  setPickThickness: (v: boolean) => void;
+  setWallSnap: (v: boolean) => void;
+  runWallExtraction: () => void;
+  addThicknessTarget: (t: number) => void;
+  clearThicknessTargets: () => void;
+
+  // --- trace draft ---
+  points: TracePoint[];
+  segments: TraceSegment[];
+  openings: TraceOpening[];
+  activeLastPointId: string | null; // chain endpoint new clicks connect to
+  selectedPointId: string | null;
+  selectedOpeningId: string | null;
+
+  // --- scale calibration ---
+  metersPerPixel: number | null;
+  calibrationPts: { x: number; y: number }[];
+
+  // --- interaction ---
+  mode: TraceMode;
+  ortho: boolean; // constrain new wall segments to 90° (Shift inverts per-click)
+
+  // --- undo history (trace only) ---
+  history: TraceSnapshot[];
+
+  // --- actions ---
+  setMode: (m: TraceMode) => void;
+  setOrtho: (v: boolean) => void;
+  addPoint: (x: number, y: number) => void;
+  connectToNode: (nodeId: string) => void; // start from / connect to an existing point
+  attachToSegment: (segmentId: string, x: number, y: number) => void; // magnet onto a wall (splits it)
+  beginDrag: () => void;
+  movePoint: (id: string, x: number, y: number) => void;
+  selectPoint: (id: string | null) => void;
+  selectOpening: (id: string | null) => void;
+  addOpeningSpan: (
+    type: "door" | "window",
+    segmentId: string,
+    t0: number,
+    t1: number,
+  ) => void;
+  deleteSelected: () => void;
+  finishChain: () => void;
+  undo: () => void;
+  clearTrace: () => void;
+
+  addCalibrationPoint: (x: number, y: number) => void;
+  applyCalibration: (realMeters: number) => void;
+  cancelCalibration: () => void;
+}
+
+export const useSceneStore = create<StoreState>((set, get) => {
+  const snapshot = (): TraceSnapshot => {
+    const { points, segments, openings, activeLastPointId } = get();
+    return {
+      points: points.map((p) => ({ ...p })),
+      segments: segments.map((s) => ({ ...s })),
+      openings: openings.map((o) => ({ ...o })),
+      activeLastPointId,
+    };
+  };
+  const pushHistory = () =>
+    set((st) => ({ history: [...st.history, snapshot()].slice(-100) }));
+
+  return {
+    scene: sampleScene,
+    setScene: (scene) => set({ scene }),
+
+    image: null,
+    imageOpacity: 0.6,
+    setImage: (image) => set({ image }),
+    setImageOpacity: (imageOpacity) => set({ imageOpacity }),
+
+    importedSegments: [],
+    showImport: true,
+    setImportedSegments: (importedSegments) => set({ importedSegments }),
+    setShowImport: (showImport) => set({ showImport }),
+
+    suggestedWalls: [],
+    rejectedSuggestionIds: [],
+    extractionTargets: [],
+    pickThickness: false,
+    wallSnap: true,
+    setSuggestedWalls: (suggestedWalls) =>
+      set({ suggestedWalls, rejectedSuggestionIds: [] }),
+    setPickThickness: (pickThickness) => set({ pickThickness }),
+    setWallSnap: (wallSnap) => set({ wallSnap }),
+    runWallExtraction: () => {
+      const { importedSegments, extractionTargets } = get();
+      const r = extractWalls(importedSegments, {
+        ...DEFAULT_PARAMS,
+        thicknessTargets: extractionTargets,
+      });
+      set({
+        suggestedWalls: r.centerlines.map((c, i) => ({ id: `w${i}`, ...c })),
+        rejectedSuggestionIds: [],
+      });
+    },
+    addThicknessTarget: (t) => {
+      const cur = get().extractionTargets;
+      if (cur.some((x) => Math.abs(x - t) <= 3)) return; // de-dupe similar bands
+      set({ extractionTargets: [...cur, Math.round(t)] });
+      get().runWallExtraction();
+    },
+    clearThicknessTargets: () => {
+      set({ extractionTargets: [] });
+      get().runWallExtraction();
+    },
+    toggleRejectSuggestion: (id) =>
+      set((st) => ({
+        rejectedSuggestionIds: st.rejectedSuggestionIds.includes(id)
+          ? st.rejectedSuggestionIds.filter((x) => x !== id)
+          : [...st.rejectedSuggestionIds, id],
+      })),
+    clearSuggestions: () => set({ suggestedWalls: [], rejectedSuggestionIds: [] }),
+    acceptSuggestions: () => {
+      const { suggestedWalls, rejectedSuggestionIds } = get();
+      const rejected = new Set(rejectedSuggestionIds);
+      const kept = suggestedWalls.filter((w) => !rejected.has(w.id));
+      if (kept.length === 0) return;
+      pushHistory();
+      // Node the kept centerlines into a planar graph (splits T/cross junctions
+      // so rooms can close), then weld it into any existing manual trace.
+      const graph = buildPlanarGraph(kept, 14);
+      set((st) => {
+        const WELD = 14;
+        const points = st.points.map((p) => ({ ...p }));
+        const findOrAdd = (x: number, y: number) => {
+          for (const p of points) {
+            if (Math.hypot(p.x - x, p.y - y) <= WELD) return p.id;
+          }
+          const p: TracePoint = { id: newId("p"), x, y };
+          points.push(p);
+          return p.id;
+        };
+        const map = new Map<string, string>();
+        for (const n of graph.nodes) map.set(n.id, findOrAdd(n.x, n.y));
+        const segments = st.segments.map((s) => ({ ...s }));
+        for (const g of graph.segments) {
+          const a = map.get(g.a);
+          const b = map.get(g.b);
+          if (!a || !b || a === b) continue;
+          if (segments.some((s) => (s.a === a && s.b === b) || (s.a === b && s.b === a))) continue;
+          segments.push({ id: newId("s"), a, b });
+        }
+        return {
+          points,
+          segments,
+          suggestedWalls: [],
+          rejectedSuggestionIds: [],
+          activeLastPointId: null,
+        };
+      });
+    },
+
+    points: [],
+    segments: [],
+    openings: [],
+    activeLastPointId: null,
+    selectedPointId: null,
+    selectedOpeningId: null,
+
+    metersPerPixel: null,
+    calibrationPts: [],
+
+    mode: "wall",
+    ortho: true,
+
+    history: [],
+
+    setMode: (mode) =>
+      set({
+        mode,
+        calibrationPts: mode === "calibrate" ? [] : get().calibrationPts,
+      }),
+
+    setOrtho: (ortho) => set({ ortho }),
+
+    addPoint: (x, y) => {
+      pushHistory();
+      set((st) => {
+        const p: TracePoint = { id: newId("p"), x, y };
+        const segments = st.activeLastPointId
+          ? [...st.segments, { id: newId("s"), a: st.activeLastPointId, b: p.id }]
+          : st.segments;
+        return {
+          points: [...st.points, p],
+          segments,
+          activeLastPointId: p.id,
+          selectedPointId: p.id,
+          selectedOpeningId: null,
+        };
+      });
+    },
+
+    connectToNode: (nodeId) => {
+      const { activeLastPointId } = get();
+      // Idle: start a fresh run FROM this existing point (also select it).
+      if (activeLastPointId == null) {
+        set({ activeLastPointId: nodeId, selectedPointId: nodeId, selectedOpeningId: null });
+        return;
+      }
+      if (activeLastPointId === nodeId) return;
+      pushHistory();
+      set((st) => {
+        const exists = st.segments.some(
+          (s) =>
+            (s.a === activeLastPointId && s.b === nodeId) ||
+            (s.a === nodeId && s.b === activeLastPointId),
+        );
+        const segments = exists
+          ? st.segments
+          : [...st.segments, { id: newId("s"), a: activeLastPointId, b: nodeId }];
+        // Joining an existing vertex ends the run (loop closed / network joined).
+        return { segments, activeLastPointId: null, selectedPointId: null };
+      });
+    },
+
+    attachToSegment: (segmentId, x, y) => {
+      pushHistory();
+      set((st) => {
+        const seg = st.segments.find((s) => s.id === segmentId);
+        if (!seg) return {};
+        const a = st.points.find((p) => p.id === seg.a);
+        const b = st.points.find((p) => p.id === seg.b);
+        if (!a || !b) return {};
+
+        const P: TracePoint = { id: newId("p"), x, y };
+        const abx = b.x - a.x;
+        const aby = b.y - a.y;
+        const len2 = abx * abx + aby * aby || 1;
+        const ts = Math.min(1, Math.max(0, ((x - a.x) * abx + (y - a.y) * aby) / len2));
+
+        const s1 = { id: newId("s"), a: seg.a, b: P.id };
+        const s2 = { id: newId("s"), a: P.id, b: seg.b };
+        let segments = st.segments.filter((s) => s.id !== segmentId).concat([s1, s2]);
+
+        // Re-home openings that lived on the split wall onto the correct sub-wall.
+        const openings = st.openings.flatMap((o) =>
+          o.segmentId === segmentId ? remapOpening(o, ts, s1.id, s2.id) : [o],
+        );
+
+        // If a run is active, connect it into the new junction and finish.
+        let activeLastPointId: string | null = P.id;
+        let selectedPointId: string | null = P.id;
+        if (st.activeLastPointId != null && st.activeLastPointId !== P.id) {
+          segments = [...segments, { id: newId("s"), a: st.activeLastPointId, b: P.id }];
+          activeLastPointId = null;
+          selectedPointId = null;
+        }
+
+        return {
+          points: [...st.points, P],
+          segments,
+          openings,
+          activeLastPointId,
+          selectedPointId,
+          selectedOpeningId: null,
+        };
+      });
+    },
+
+    beginDrag: () => pushHistory(),
+
+    movePoint: (id, x, y) =>
+      set((st) => ({
+        points: st.points.map((p) => (p.id === id ? { ...p, x, y } : p)),
+      })),
+
+    selectPoint: (selectedPointId) =>
+      set({ selectedPointId, selectedOpeningId: null }),
+
+    selectOpening: (selectedOpeningId) =>
+      set({ selectedOpeningId, selectedPointId: null }),
+
+    addOpeningSpan: (type, segmentId, t0, t1) => {
+      const lo = Math.min(1, Math.max(0, Math.min(t0, t1)));
+      const hi = Math.min(1, Math.max(0, Math.max(t0, t1)));
+      if (hi - lo < 1e-4) return; // ignore zero-length drags
+      pushHistory();
+      const d = type === "door" ? DEFAULT_DOOR : DEFAULT_WINDOW;
+      set((st) => {
+        const o: TraceOpening = {
+          id: newId("o"),
+          type,
+          segmentId,
+          t0: lo,
+          t1: hi,
+          height: d.height,
+          sill: d.sill,
+        };
+        return { openings: [...st.openings, o], selectedOpeningId: o.id, selectedPointId: null };
+      });
+    },
+
+    deleteSelected: () => {
+      const { selectedOpeningId, selectedPointId } = get();
+      if (selectedOpeningId) {
+        pushHistory();
+        set((st) => ({
+          openings: st.openings.filter((o) => o.id !== selectedOpeningId),
+          selectedOpeningId: null,
+        }));
+        return;
+      }
+      if (!selectedPointId) return;
+      pushHistory();
+      set((st) => {
+        const id = selectedPointId;
+        const touching = st.segments.filter((s) => s.a === id || s.b === id);
+        const removedSegIds = new Set(touching.map((s) => s.id));
+        const neighbors = touching.map((s) => (s.a === id ? s.b : s.a));
+        let segments = st.segments.filter((s) => !removedSegIds.has(s.id));
+        // Rejoin a mid-chain point's two neighbors so the line stays continuous.
+        if (neighbors.length === 2 && neighbors[0] !== neighbors[1]) {
+          segments = [...segments, { id: newId("s"), a: neighbors[0], b: neighbors[1] }];
+        }
+        return {
+          points: st.points.filter((p) => p.id !== id),
+          segments,
+          openings: st.openings.filter((o) => !removedSegIds.has(o.segmentId)),
+          selectedPointId: null,
+          activeLastPointId:
+            st.activeLastPointId === id ? null : st.activeLastPointId,
+        };
+      });
+    },
+
+    finishChain: () =>
+      set({ activeLastPointId: null, selectedPointId: null, selectedOpeningId: null }),
+
+    undo: () => {
+      const hist = get().history;
+      if (hist.length === 0) return;
+      const prev = hist[hist.length - 1];
+      set({
+        points: prev.points,
+        segments: prev.segments,
+        openings: prev.openings,
+        activeLastPointId: prev.activeLastPointId,
+        history: hist.slice(0, -1),
+        selectedPointId: null,
+        selectedOpeningId: null,
+      });
+    },
+
+    clearTrace: () => {
+      pushHistory();
+      set({
+        points: [],
+        segments: [],
+        openings: [],
+        activeLastPointId: null,
+        selectedPointId: null,
+        selectedOpeningId: null,
+      });
+    },
+
+    addCalibrationPoint: (x, y) =>
+      set((st) => {
+        if (st.calibrationPts.length >= 2) return { calibrationPts: [{ x, y }] };
+        return { calibrationPts: [...st.calibrationPts, { x, y }] };
+      }),
+
+    applyCalibration: (realMeters) => {
+      const pts = get().calibrationPts;
+      if (pts.length < 2 || realMeters <= 0) return;
+      const px = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      if (px < 1e-6) return;
+      set({ metersPerPixel: realMeters / px, calibrationPts: [], mode: "wall" });
+    },
+
+    cancelCalibration: () => set({ calibrationPts: [], mode: "wall" }),
+  };
+});
