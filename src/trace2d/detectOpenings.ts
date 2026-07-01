@@ -52,7 +52,7 @@ export const DEFAULT_DETECT: DetectParams = {
   maxWindowMeters: 2.0,
   minArcChordPx: 30,
   maxArcChordPx: 500,
-  arcMaxWallDist: 45,
+  arcMaxWallDist: 60,
 };
 
 export interface SuggestedOpening {
@@ -329,59 +329,74 @@ export function detectOpenings(
     flushWall();
   }
 
-  // --- arc-driven doors: each big swing arc confirms a door on the nearest wall ---
-  // A 90° swing is centered on the hinge (radius R = leaf length); its two
-  // endpoints are the closed-leaf tip and the open-leaf tip. The hinge and the
-  // closed tip both lie ON the wall a door-width apart; the open tip sticks out
-  // perpendicular. So of {p0, p1, centerA, centerB}, the two closest to the wall
-  // line are the door jambs — project them to get the span.
+  // --- arc + door-leaf → doors ---
+  // A door is drawn as a swing ARC plus the door LEAF (2 parallel lines = the
+  // panel). The leaf runs from the hinge (its base, = the arc's center) to the
+  // closed-leaf tip (= one arc endpoint). The opening sits IN FRONT OF the arc,
+  // along the wall, at a RIGHT ANGLE to the leaf: from the hinge, perpendicular
+  // to the leaf, a door-width toward the open swing. We anchor on the hinge so
+  // placement is reliable even when the arc midpoint is far from the wall.
   const arcDoors: SuggestedOpening[] = [];
   for (const arc of arcs) {
     if (arc.chord < params.minArcChordPx || arc.chord > params.maxArcChordPx) continue;
-    const mx = (arc.x0 + arc.x1) / 2;
-    const my = (arc.y0 + arc.y1) / 2;
-    const cdx = arc.x1 - arc.x0;
-    const cdy = arc.y1 - arc.y0;
-    const cl = Math.hypot(cdx, cdy) || 1;
-    const nx = -cdy / cl;
-    const ny = cdx / cl;
-    const half = arc.chord / 2; // hinge candidates sit ±chord/2 along the normal
-    const cand = [
-      { x: arc.x0, y: arc.y0 },
-      { x: arc.x1, y: arc.y1 },
-      { x: mx + half * nx, y: my + half * ny },
-      { x: mx - half * nx, y: my - half * ny },
-    ];
+    const R = arc.chord / Math.SQRT2; // door width (90° swing)
+    const A = { x: arc.x0, y: arc.y0 };
+    const B = { x: arc.x1, y: arc.y1 };
 
-    // nearest wall centerline to the arc
+    // Build hinge candidates: the leaf base (most reliable) plus the two
+    // arc-center candidates as fallback. The correct hinge sits ON a wall.
+    const mx = (A.x + B.x) / 2;
+    const my = (A.y + B.y) / 2;
+    const cl = Math.hypot(B.x - A.x, B.y - A.y) || 1;
+    const nx = -(B.y - A.y) / cl;
+    const ny = (B.x - A.x) / cl;
+    const h = arc.chord / 2;
+    const openByWall = nearestWallDist(A, centerlines) <= nearestWallDist(B, centerlines) ? A : B;
+    const hingeCands: { hinge: { x: number; y: number }; openTip: { x: number; y: number } }[] = [
+      { hinge: { x: mx + h * nx, y: my + h * ny }, openTip: openByWall },
+      { hinge: { x: mx - h * nx, y: my - h * ny }, openTip: openByWall },
+    ];
+    const leaf = findDoorLeaf(segs, arc, R);
+    if (leaf) {
+      // the leaf end coinciding with an arc endpoint is the closed tip; the
+      // other leaf end is the hinge; the far arc endpoint is the open tip.
+      const d1 = Math.min(dist(leaf.e1, A), dist(leaf.e1, B));
+      const d2 = Math.min(dist(leaf.e2, A), dist(leaf.e2, B));
+      const leafHinge = d1 <= d2 ? leaf.e2 : leaf.e1;
+      const closer = d1 <= d2 ? leaf.e1 : leaf.e2;
+      const openTip = dist(closer, A) <= dist(closer, B) ? B : A;
+      hingeCands.unshift({ hinge: leafHinge, openTip }); // prefer the leaf hinge
+    }
+
+    // Pick the hinge candidate closest to a wall; place the opening there.
     let best: Centerline | null = null;
     let bestd = Infinity;
-    for (const c of centerlines) {
-      const d = pointCenterlineDist(mx, my, c);
-      if (d < bestd) {
-        bestd = d;
-        best = c;
+    let hinge = hingeCands[0].hinge;
+    let openTip = hingeCands[0].openTip;
+    for (const cand of hingeCands) {
+      for (const c of centerlines) {
+        const d = pointCenterlineDist(cand.hinge.x, cand.hinge.y, c);
+        if (d < bestd) {
+          bestd = d;
+          best = c;
+          hinge = cand.hinge;
+          openTip = cand.openTip;
+        }
       }
+      if (bestd <= params.arcMaxWallDist) break; // good enough from a preferred hinge
     }
     if (!best || bestd > params.arcMaxWallDist) continue;
 
-    const dx = best.x1 - best.x0;
-    const dy = best.y1 - best.y0;
-    const L = Math.hypot(dx, dy) || 1;
-    const ux = dx / L;
-    const uy = dy / L;
-    // (t along wall, perpendicular distance) for each candidate
-    const proj = cand
-      .map((p) => {
-        const t = (p.x - best!.x0) * ux + (p.y - best!.y0) * uy;
-        const projx = best!.x0 + ux * t;
-        const projy = best!.y0 + uy * t;
-        return { t, perp: Math.hypot(p.x - projx, p.y - projy) };
-      })
-      .sort((a, b) => a.perp - b.perp);
-    const t0 = Math.min(proj[0].t, proj[1].t);
-    const t1 = Math.max(proj[0].t, proj[1].t);
-    if (t1 - t0 < params.minDoorPx || t1 - t0 > doorCap * 1.3) continue;
+    const L = Math.hypot(best.x1 - best.x0, best.y1 - best.y0) || 1;
+    const ux = (best.x1 - best.x0) / L;
+    const uy = (best.y1 - best.y0) / L;
+    const tH = (hinge.x - best.x0) * ux + (hinge.y - best.y0) * uy; // hinge on wall
+    const dirToOpen = (openTip.x - hinge.x) * ux + (openTip.y - hinge.y) * uy;
+    const width = Math.min(R, doorCap * 1.3);
+    const tFar = tH + Math.sign(dirToOpen || 1) * width;
+    const t0 = Math.min(tH, tFar);
+    const t1 = Math.max(tH, tFar);
+    if (t1 - t0 < params.minDoorPx) continue;
     arcDoors.push({
       id: `opa${arcDoors.length}`,
       type: "door",
@@ -468,6 +483,76 @@ function isStairRegion(
     if (j > i) i = j - 1;
   }
   return false;
+}
+
+const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  Math.hypot(a.x - b.x, a.y - b.y);
+
+function nearestWallDist(p: { x: number; y: number }, cls: Centerline[]): number {
+  let d = Infinity;
+  for (const c of cls) d = Math.min(d, pointCenterlineDist(p.x, p.y, c));
+  return d;
+}
+
+/**
+ * Find the door leaf near a swing arc: the 2 parallel lines (the panel), roughly
+ * the door width (R) long and a few px apart, close to the arc. Returns the
+ * midline endpoints, or null. Used to orient the opening perpendicular to the
+ * leaf and anchor it at the hinge (the leaf's base).
+ */
+function findDoorLeaf(
+  segs: ImportSegment[],
+  arc: ImportArc,
+  R: number,
+): { e1: { x: number; y: number }; e2: { x: number; y: number } } | null {
+  const mx = (arc.x0 + arc.x1) / 2;
+  const my = (arc.y0 + arc.y1) / 2;
+  interface C {
+    th: number;
+    ux: number;
+    uy: number;
+    vx: number;
+    vy: number;
+    off: number;
+    s0: number;
+    s1: number;
+  }
+  const cand: C[] = [];
+  for (const s of segs) {
+    if (!isArch(s)) continue;
+    const len = Math.hypot(s.x1 - s.x0, s.y1 - s.y0);
+    if (len < R * 0.5 || len > R * 1.6) continue;
+    if (Math.hypot((s.x0 + s.x1) / 2 - mx, (s.y0 + s.y1) / 2 - my) > R * 1.3) continue;
+    const th = fold(Math.atan2(s.y1 - s.y0, s.x1 - s.x0));
+    const ux = Math.cos(th);
+    const uy = Math.sin(th);
+    const vx = -uy;
+    const vy = ux;
+    const off = s.x0 * vx + s.y0 * vy;
+    const a = s.x0 * ux + s.y0 * uy;
+    const b = s.x1 * ux + s.y1 * uy;
+    cand.push({ th, ux, uy, vx, vy, off, s0: Math.min(a, b), s1: Math.max(a, b) });
+  }
+  for (let i = 0; i < cand.length; i++) {
+    for (let j = i + 1; j < cand.length; j++) {
+      let da = Math.abs(cand[i].th - cand[j].th);
+      da = Math.min(da, Math.PI - da);
+      if (da > 0.09) continue;
+      const gap = Math.abs(cand[i].off - cand[j].off);
+      if (gap < 1.5 || gap > 12) continue; // thin panel
+      const ov = Math.min(cand[i].s1, cand[j].s1) - Math.max(cand[i].s0, cand[j].s0);
+      if (ov < R * 0.4) continue;
+      const { ux, uy, vx, vy } = cand[i];
+      const off = (cand[i].off + cand[j].off) / 2;
+      const s0 = Math.min(cand[i].s0, cand[j].s0);
+      const s1 = Math.max(cand[i].s1, cand[j].s1);
+      return {
+        e1: { x: ux * s0 + vx * off, y: uy * s0 + vy * off },
+        e2: { x: ux * s1 + vx * off, y: uy * s1 + vy * off },
+      };
+    }
+  }
+  return null;
 }
 
 // Distance from a point to a centerline segment.

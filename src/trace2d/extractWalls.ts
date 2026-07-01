@@ -437,9 +437,14 @@ export function extractWalls(
 
   // Reject close parallel walls (stairs, tread hatching, double-detections): a
   // genuine wall has no parallel neighbor closer than minWallSepPx overlapping
-  // it along its length. Stairs are exactly a stack of such close parallels.
+  // it. Group such close parallels into connected components:
+  //   * a group of 3+ = a stair/hatch stack → reject the whole group,
+  //   * a group of 2 = a wall + a spurious pane/duplicate → keep only the LONGER
+  //     one (so a real wall isn't deleted just because a stray line sits beside
+  //     it, which was hiding some windows).
   let kept = centerlines;
   if (params.minWallSepPx > 0) {
+    const n = centerlines.length;
     const info = centerlines.map((c) => {
       const th = foldAngle(Math.atan2(c.y1 - c.y0, c.x1 - c.x0));
       const ux = Math.cos(th);
@@ -447,21 +452,43 @@ export function extractWalls(
       const off = c.x0 * -uy + c.y0 * ux;
       const sa = c.x0 * ux + c.y0 * uy;
       const sb = c.x1 * ux + c.y1 * uy;
-      return { th, off, s0: Math.min(sa, sb), s1: Math.max(sa, sb) };
+      return { th, off, s0: Math.min(sa, sb), s1: Math.max(sa, sb), len: Math.abs(sb - sa) };
     });
-    kept = centerlines.filter((_, i) => {
-      for (let j = 0; j < centerlines.length; j++) {
-        if (j === i) continue;
+    const parent = Array.from({ length: n }, (_, i) => i);
+    const find = (x: number): number => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
         let da = Math.abs(info[i].th - info[j].th);
         da = Math.min(da, Math.PI - da);
         if (da > angleTol) continue;
         const perp = Math.abs(info[i].off - info[j].off);
         if (perp < 0.5 || perp >= params.minWallSepPx) continue;
         const ov = Math.min(info[i].s1, info[j].s1) - Math.max(info[i].s0, info[j].s0);
-        if (ov >= params.minOverlap) return false; // has a close parallel neighbor
+        if (ov >= params.minOverlap) parent[find(i)] = find(j);
       }
-      return true;
-    });
+    }
+    const groups = new Map<number, number[]>();
+    for (let i = 0; i < n; i++) {
+      const r = find(i);
+      (groups.get(r) ?? groups.set(r, []).get(r)!).push(i);
+    }
+    const keepIdx = new Set<number>();
+    for (const idx of groups.values()) {
+      if (idx.length === 1) {
+        keepIdx.add(idx[0]);
+        continue;
+      }
+      const sorted = [...idx].sort((a, b) => info[b].len - info[a].len);
+      if (info[sorted[0]].len >= info[sorted[1]].len * 1.4) {
+        // one clearly-longest member = a real wall flanked by short spurious
+        // lines (piers/panes/frames) → keep the wall, drop the rest.
+        keepIdx.add(sorted[0]);
+      } else if (idx.length === 2) {
+        keepIdx.add(sorted[0]); // two similar close lines = a duplicate → keep one
+      }
+      // 3+ similar-length close parallels = a stair/hatch stack → keep none
+    }
+    kept = centerlines.filter((_, i) => keepIdx.has(i));
   }
 
   const graph = buildPlanarGraph(kept, params.weldTol);
