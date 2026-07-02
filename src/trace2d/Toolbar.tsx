@@ -5,6 +5,7 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { analyzeLoops } from "@/lib/loops";
 import { traceToScene } from "./traceToScene";
 import { importPdf } from "./importPdf";
+import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 
 const btn = (active = false): React.CSSProperties => ({
   padding: "6px 10px",
@@ -115,16 +116,25 @@ export function Toolbar() {
   const openings = useSceneStore((s) => s.openings);
   const activeLastPointId = useSceneStore((s) => s.activeLastPointId);
   const setScene = useSceneStore((s) => s.setScene);
+  const sourcePdfName = useSceneStore((s) => s.sourcePdfName);
+  const setSourcePdfName = useSceneStore((s) => s.setSourcePdfName);
+
+  const vlmModel = useSceneStore((s) => s.vlmModel);
+  const setVlmModel = useSceneStore((s) => s.setVlmModel);
+  const vlmBusy = useSceneStore((s) => s.vlmBusy);
+  const aiClassify = useSceneStore((s) => s.aiClassify);
 
   const [distance, setDistance] = useState("");
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [aiMsg, setAiMsg] = useState<string | null>(null);
 
   const analysis = useMemo(() => analyzeLoops(points, segments), [points, segments]);
 
   const onImportPdf = async (file: File) => {
     setImporting(true);
     setImportMsg(null);
+    setSourcePdfName(file.name);
     try {
       const r = await importPdf(file);
       setImage(r.image);
@@ -176,6 +186,7 @@ export function Toolbar() {
   const hasPdf = importedSegments.length > 0;
 
   const onUpload = (file: File) => {
+    setSourcePdfName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       const src = reader.result as string;
@@ -288,6 +299,39 @@ export function Toolbar() {
             >
               🧱 Extract
             </button>
+            <button
+              style={{
+                ...btn(),
+                background: vlmBusy ? "#26262b" : "#2f5a7a",
+                borderColor: "#3f7aa0",
+                color: "#fff",
+              }}
+              disabled={vlmBusy}
+              onClick={async () => {
+                setAiMsg("🤖 Asking the model — this can take a minute or two…");
+                setAiMsg(await aiClassify());
+              }}
+              title="Generate high-recall candidates and let a vision model classify them (wall/door/window vs dimension/stairs/noise)."
+            >
+              {vlmBusy ? "🤖 Classifying…" : "🤖 AI classify"}
+            </button>
+            <select
+              value={vlmModel}
+              onChange={(e) => setVlmModel(e.target.value)}
+              title="Claude model used for AI classification"
+              style={{
+                padding: "5px 4px",
+                fontSize: 12,
+                borderRadius: 6,
+                border: "1px solid #3a3a40",
+                background: "#26262b",
+                color: "#e6e6e6",
+              }}
+            >
+              <option value="claude-opus-4-8">Opus 4.8</option>
+              <option value="claude-sonnet-5">Sonnet 5</option>
+              <option value="claude-haiku-4-5">Haiku 4.5</option>
+            </select>
             <button
               style={btn(pickThickness)}
               onClick={() => setPickThickness(!pickThickness)}
@@ -415,6 +459,25 @@ export function Toolbar() {
             : "no room yet"}
           {analysis.hasOpenChain && " · ⌁ open"}
         </span>
+        <button
+          style={btn()}
+          disabled={segments.length === 0}
+          onClick={() =>
+            downloadGroundTruth(
+              buildGroundTruth({
+                sourcePdf: sourcePdfName,
+                metersPerPixel,
+                imageSize: image ? { width: image.width, height: image.height } : null,
+                points,
+                segments,
+                openings,
+              }),
+            )
+          }
+          title="Download the traced plan (walls + openings, image-px space) as ground-truth JSON for the eval harness."
+        >
+          ⬇ Ground truth
+        </button>
       </Section>
 
       {/* ══ status + hint rows (full width) ══════════════════════════ */}
@@ -435,6 +498,19 @@ export function Toolbar() {
         >
           ① Set the scale first. Everything else stays locked until then. Click{" "}
           <b>📏 Set scale</b>, click two points a known distance apart, then type the real distance.
+        </span>
+      )}
+
+      {/* AI classify status */}
+      {aiMsg && (
+        <span
+          style={{
+            flexBasis: "100%",
+            fontSize: 12,
+            color: aiMsg.startsWith("✓") ? "#9fe0a0" : "#e0b85a",
+          }}
+        >
+          {aiMsg}
         </span>
       )}
 

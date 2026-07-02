@@ -9,6 +9,9 @@ import {
   mapOpeningToSegment,
   type SuggestedOpening,
 } from "@/trace2d/detectOpenings";
+import { generateCandidates } from "@/trace2d/candidates";
+import { buildOverlayImage } from "@/trace2d/buildOverlay";
+import type { VlmLabel, VlmMissed } from "@/lib/vlmClassify";
 
 // ---------------------------------------------------------------------------
 // Tracing (editor) types. These are EPHEMERAL — they never live inside Scene.
@@ -139,6 +142,10 @@ interface StoreState {
   setImage: (img: TraceImage | null) => void;
   setImageOpacity: (o: number) => void;
 
+  // --- source plan identity (ties ground-truth exports to their PDF) ---
+  sourcePdfName: string | null;
+  setSourcePdfName: (name: string | null) => void;
+
   // --- imported PDF raw overlay (Phase 2 / M1) ---
   importedSegments: ImportSegment[];
   importedArcs: ImportArc[];
@@ -162,6 +169,13 @@ interface StoreState {
   runWallExtraction: () => void;
   addThicknessTarget: (t: number) => void;
   clearThicknessTargets: () => void;
+
+  // --- VLM classification (Phase 2.5 / M3) ---
+  vlmModel: string; // Claude model id used by /api/classify (on-the-fly override)
+  vlmBusy: boolean;
+  vlmMissed: VlmMissed[]; // advisory "check this area" hints from the VLM
+  setVlmModel: (m: string) => void;
+  aiClassify: () => Promise<string>; // returns a status message for the toolbar
 
   // --- suggested openings (Phase 2 / doors + windows from wall geometry) ---
   suggestedOpenings: SuggestedOpening[];
@@ -238,6 +252,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setImage: (image) => set({ image }),
     setImageOpacity: (imageOpacity) => set({ imageOpacity }),
 
+    sourcePdfName: null,
+    setSourcePdfName: (sourcePdfName) => set({ sourcePdfName }),
+
     importedSegments: [],
     importedArcs: [],
     showImport: true,
@@ -280,6 +297,82 @@ export const useSceneStore = create<StoreState>((set, get) => {
     clearThicknessTargets: () => {
       set({ extractionTargets: [] });
       get().runWallExtraction();
+    },
+
+    vlmModel: "claude-opus-4-8",
+    vlmBusy: false,
+    vlmMissed: [],
+    setVlmModel: (vlmModel) => set({ vlmModel }),
+    aiClassify: async () => {
+      const { importedSegments, importedArcs, metersPerPixel, extractionTargets, image, vlmModel } =
+        get();
+      if (!image || importedSegments.length === 0) return "Import a vector PDF first.";
+      set({ vlmBusy: true });
+      try {
+        const gen = generateCandidates(importedSegments, importedArcs, metersPerPixel, {
+          extractionTargets,
+        });
+        if (gen.candidates.length === 0) return "No candidates found in this plan.";
+        const overlay = await buildOverlayImage(image.src, gen.candidates);
+        const res = await fetch("/api/classify", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            image: overlay,
+            candidates: gen.candidates,
+            metersPerPixel,
+            model: vlmModel,
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok || j.error) throw new Error(j.error ?? `HTTP ${res.status}`);
+
+        const byId = new Map<number, VlmLabel>(
+          (j.labels as VlmLabel[]).map((l) => [l.id, l]),
+        );
+        const walls: SuggestedWall[] = [];
+        const opens: SuggestedOpening[] = [];
+        for (const c of gen.candidates) {
+          const l = byId.get(c.id);
+          if (!l) continue;
+          if (l.label === "wall" && c.kind === "wall") {
+            walls.push({
+              id: `w${walls.length}`,
+              x0: c.px[0],
+              y0: c.px[1],
+              x1: c.px[2],
+              y1: c.px[3],
+              thickness: c.thicknessPx,
+            });
+          } else if (l.label === "door" || l.label === "window") {
+            opens.push({
+              id: `vo${opens.length}`,
+              type: l.label,
+              x0: c.px[0],
+              y0: c.px[1],
+              x1: c.px[2],
+              y1: c.px[3],
+              width: c.lengthPx,
+              thickness: c.thicknessPx,
+              flags: [`vlm-${l.confidence}`],
+            });
+          }
+        }
+        const missed = (j.missed ?? []) as VlmMissed[];
+        set({
+          suggestedWalls: walls,
+          rejectedSuggestionIds: [],
+          suggestedOpenings: opens,
+          rejectedOpeningIds: [],
+          vlmMissed: missed,
+        });
+        const doors = opens.filter((o) => o.type === "door").length;
+        return `✓ AI (${j.model}): ${walls.length} walls, ${doors} doors, ${opens.length - doors} windows${missed.length ? ` · ${missed.length} area(s) flagged as possibly missed` : ""}`;
+      } catch (e) {
+        return "AI classify failed: " + ((e as Error).message ?? String(e));
+      } finally {
+        set({ vlmBusy: false });
+      }
     },
 
     suggestedOpenings: [],

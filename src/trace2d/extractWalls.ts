@@ -19,7 +19,16 @@ export interface ExtractParams {
   extendMax: number; // extend/trim a centerline end up to this far to meet a neighbor (close corners)
   thicknessTargets: number[]; // calibrated wall thicknesses (px); empty = use thinMin..thickMax
   thicknessTol: number; // accept a pair if within this of a calibrated target
+  // "strict" (default) filters as always. "candidates" (Phase 2.5) keeps what the
+  // filters would reject and annotates each centerline with WHY via `meta` —
+  // the high-recall candidate stream the VLM classifies.
+  mode?: "strict" | "candidates";
 }
+
+// Candidate-mode admission band: any face pair this far apart is worth showing
+// the VLM, even when the strict thickness band would reject it.
+const CAND_THICK_MIN = 3;
+const CAND_THICK_MAX = 90;
 
 // Accept a face-pair gap: if the user has calibrated wall thickness(es), only
 // pairs near one of those; otherwise the wide default band.
@@ -49,12 +58,26 @@ export const DEFAULT_PARAMS: ExtractParams = {
   thicknessTol: 4,
 };
 
+// Why a candidate centerline was kept/rejected by the strict heuristics
+// (candidate mode only — strict mode leaves `meta` undefined).
+export interface CenterlineMeta {
+  cleanPair: boolean; // passed all pair-level filters (thickness, pane, hatch)
+  pane: boolean; // built from window-glass "pane" edges
+  hatchNeighbors: number; // parallel faces overlapping the strip (stairs/hatching)
+  thicknessOk: boolean; // gap within the strict/calibrated thickness band
+  groupSize: number; // close-parallel group size (1 = alone; 0 = sep filter off)
+  longestInGroup: boolean;
+  isolated: boolean; // touches no other kept wall (dimension-line signature)
+  kept: boolean; // the strict pipeline would output this centerline
+}
+
 export interface Centerline {
   x0: number;
   y0: number;
   x1: number;
   y1: number;
   thickness: number;
+  meta?: CenterlineMeta;
 }
 
 export interface ExtractResult {
@@ -246,12 +269,17 @@ export function extractWalls(
     arr.push(e);
   }
 
+  const candidateMode = params.mode === "candidates";
+
   interface Cand {
     e1: Edge;
     e2: Edge;
     overlap: number;
     o0: number;
     o1: number;
+    pane: boolean;
+    thicknessOk: boolean;
+    neighbors: number;
   }
   // Mark "pane" edges: a WINDOW is drawn as short glass/frame lines cramped
   // between the two (longer) wall faces. Such an inner line has a clearly LONGER
@@ -284,9 +312,11 @@ export function extractWalls(
       for (let k = i + 1; k < arr.length; k++) {
         const e1 = arr[i];
         const e2 = arr[k];
-        if (paneEdges.has(e1) || paneEdges.has(e2)) continue; // skip window panes
+        const pane = paneEdges.has(e1) || paneEdges.has(e2); // window-glass pair
+        if (!candidateMode && pane) continue;
         const d = Math.abs(e1.offset - e2.offset);
-        if (!thicknessAccept(d, params)) continue;
+        const thicknessOk = thicknessAccept(d, params);
+        if (candidateMode ? d < CAND_THICK_MIN || d > CAND_THICK_MAX : !thicknessOk) continue;
         const o0 = Math.max(e1.s0, e2.s0);
         const o1 = Math.min(e1.s1, e2.s1);
         const overlap = o1 - o0;
@@ -300,8 +330,8 @@ export function extractWalls(
           if (Math.abs(e.offset - center) > params.thickMax) continue;
           if (Math.min(e.s1, o1) - Math.max(e.s0, o0) >= params.minOverlap) neighbors++;
         }
-        if (neighbors >= params.hatchMaxNeighbors) continue;
-        cands.push({ e1, e2, overlap, o0, o1 });
+        if (!candidateMode && neighbors >= params.hatchMaxNeighbors) continue;
+        cands.push({ e1, e2, overlap, o0, o1, pane, thicknessOk, neighbors });
       }
     }
   }
@@ -314,15 +344,24 @@ export function extractWalls(
     s0: number;
     s1: number;
     th: number;
+    clean: boolean; // passed all pair-level filters
+    pane: boolean;
+    thicknessOk: boolean;
+    neighbors: number;
   }
   const pieces: Piece[] = [];
   for (const c of cands) {
+    const clean = c.thicknessOk && !c.pane && c.neighbors < params.hatchMaxNeighbors;
     pieces.push({
       theta: (c.e1.theta + c.e2.theta) / 2,
       offset: (c.e1.offset + c.e2.offset) / 2,
       s0: c.o0,
       s1: c.o1,
       th: Math.abs(c.e1.offset - c.e2.offset),
+      clean,
+      pane: c.pane,
+      thicknessOk: c.thicknessOk,
+      neighbors: c.neighbors,
     });
   }
   const mk = (
@@ -334,17 +373,22 @@ export function extractWalls(
     s1: number,
     off: number,
     th: number,
+    meta?: CenterlineMeta,
   ): Centerline => ({
     x0: ux * s0 + vx * off,
     y0: uy * s0 + vy * off,
     x1: ux * s1 + vx * off,
     y1: uy * s1 + vy * off,
     thickness: th,
+    ...(meta ? { meta } : {}),
   });
 
-  const pieceBucket = new Map<number, Piece[]>();
+  // Bucket by angle AND clean/rejected pool: rejected pairs (panes, hatch,
+  // off-band thickness) must never merge into a clean wall centerline, or a
+  // window's glass pair would drag a real wall's thickness around.
+  const pieceBucket = new Map<string, Piece[]>();
   for (const p of pieces) {
-    const key = Math.round(p.theta / angleTol);
+    const key = `${Math.round(p.theta / angleTol)}:${p.clean ? 1 : 0}`;
     let arr = pieceBucket.get(key);
     if (!arr) {
       arr = [];
@@ -370,6 +414,18 @@ export function extractWalls(
       }
       const offset = mem.reduce((s, m) => s + m.offset, 0) / mem.length;
       const th = mem.reduce((s, m) => s + m.th, 0) / mem.length;
+      const meta = candidateMode
+        ? {
+            cleanPair: mem[0].clean,
+            pane: mem.some((m) => m.pane),
+            hatchNeighbors: Math.max(...mem.map((m) => m.neighbors)),
+            thicknessOk: mem.some((m) => m.thicknessOk),
+            groupSize: params.minWallSepPx > 0 ? 1 : 0,
+            longestInGroup: true,
+            isolated: false,
+            kept: mem[0].clean,
+          }
+        : undefined;
       mem.sort((a, b) => a.s0 - b.s0);
       let cs = mem[0].s0;
       let ce = mem[0].s1;
@@ -377,12 +433,12 @@ export function extractWalls(
         if (mem[k].s0 <= ce + params.mergeGap) {
           ce = Math.max(ce, mem[k].s1);
         } else {
-          centerlines.push(mk(ux, uy, vx, vy, cs, ce, offset, th));
+          centerlines.push(mk(ux, uy, vx, vy, cs, ce, offset, th, meta && { ...meta }));
           cs = mem[k].s0;
           ce = mem[k].s1;
         }
       }
-      centerlines.push(mk(ux, uy, vx, vy, cs, ce, offset, th));
+      centerlines.push(mk(ux, uy, vx, vy, cs, ce, offset, th, meta && { ...meta }));
       i = j;
     }
   }
@@ -409,14 +465,18 @@ export function extractWalls(
     const sJ = (x - lj.ax) * lj.ux + (y - lj.ay) * lj.uy;
     return { x, y, sJ };
   };
+  // In candidate mode only clean pairs take part in corner closing — matching
+  // what the strict pipeline would have done to them.
+  const extendEligible = (i: number) => !candidateMode || centerlines[i].meta!.cleanPair;
   for (let i = 0; i < centerlines.length; i++) {
+    if (!extendEligible(i)) continue;
     for (const end of [0, 1] as const) {
       const ex = end === 0 ? centerlines[i].x0 : centerlines[i].x1;
       const ey = end === 0 ? centerlines[i].y0 : centerlines[i].y1;
       let bestX: { x: number; y: number } | null = null;
       let bestd = params.extendMax;
       for (let j = 0; j < centerlines.length; j++) {
-        if (j === i) continue;
+        if (j === i || !extendEligible(j)) continue;
         const X = lineIntersect(i, j);
         if (!X) continue;
         const d = Math.hypot(X.x - ex, X.y - ey);
@@ -446,8 +506,14 @@ export function extractWalls(
   //     it, which was hiding some windows).
   let kept = centerlines;
   if (params.minWallSepPx > 0) {
-    const n = centerlines.length;
-    const info = centerlines.map((c) => {
+    // Operate over the clean pool only (in strict mode that's everything).
+    const idxs: number[] = [];
+    for (let i = 0; i < centerlines.length; i++) {
+      if (!candidateMode || centerlines[i].meta!.cleanPair) idxs.push(i);
+    }
+    const n = idxs.length;
+    const info = idxs.map((gi) => {
+      const c = centerlines[gi];
       const th = foldAngle(Math.atan2(c.y1 - c.y0, c.x1 - c.x0));
       const ux = Math.cos(th);
       const uy = Math.sin(th);
@@ -474,29 +540,42 @@ export function extractWalls(
       const r = find(i);
       (groups.get(r) ?? groups.set(r, []).get(r)!).push(i);
     }
-    const keepIdx = new Set<number>();
+    const keepIdx = new Set<number>(); // local (pool) indices
     for (const idx of groups.values()) {
       if (idx.length === 1) {
         keepIdx.add(idx[0]);
-        continue;
+      } else {
+        const sorted = [...idx].sort((a, b) => info[b].len - info[a].len);
+        if (info[sorted[0]].len >= info[sorted[1]].len * 1.4) {
+          // one clearly-longest member = a real wall flanked by short spurious
+          // lines (piers/panes/frames) → keep the wall, drop the rest.
+          keepIdx.add(sorted[0]);
+        } else if (idx.length === 2) {
+          keepIdx.add(sorted[0]); // two similar close lines = a duplicate → keep one
+        }
+        // 3+ similar-length close parallels = a stair/hatch stack → keep none
       }
-      const sorted = [...idx].sort((a, b) => info[b].len - info[a].len);
-      if (info[sorted[0]].len >= info[sorted[1]].len * 1.4) {
-        // one clearly-longest member = a real wall flanked by short spurious
-        // lines (piers/panes/frames) → keep the wall, drop the rest.
-        keepIdx.add(sorted[0]);
-      } else if (idx.length === 2) {
-        keepIdx.add(sorted[0]); // two similar close lines = a duplicate → keep one
+      if (candidateMode) {
+        const longest = [...idx].sort((a, b) => info[b].len - info[a].len)[0];
+        for (const li of idx) {
+          const m = centerlines[idxs[li]].meta!;
+          m.groupSize = idx.length;
+          m.longestInGroup = li === longest;
+          if (!keepIdx.has(li)) m.kept = false;
+        }
       }
-      // 3+ similar-length close parallels = a stair/hatch stack → keep none
     }
-    kept = centerlines.filter((_, i) => keepIdx.has(i));
+    if (!candidateMode) {
+      const keepGlobal = new Set([...keepIdx].map((li) => idxs[li]));
+      kept = centerlines.filter((_, i) => keepGlobal.has(i));
+    }
   }
 
   // Drop isolated lines (dimension lines, stray marks): a genuine wall joins the
   // wall network at a corner/T/cross, while a dimension line floats free next to
   // — but not touching — the building.
-  if (params.pruneIsolated && kept.length > 2) {
+  const prunePool = candidateMode ? centerlines.filter((c) => c.meta!.kept) : kept;
+  if (params.pruneIsolated && prunePool.length > 2) {
     const tol = params.weldTol + 2;
     const ptSeg = (px: number, py: number, q: Centerline) => {
       const abx = q.x1 - q.x0;
@@ -526,11 +605,25 @@ export function extractWalls(
       ptSeg(b.x0, b.y0, a) <= tol ||
       ptSeg(b.x1, b.y1, a) <= tol ||
       cross(a, b);
-    kept = kept.filter((c, i) => kept.some((d, j) => j !== i && touches(c, d)));
+    if (candidateMode) {
+      for (const c of prunePool) {
+        if (!prunePool.some((d) => d !== c && touches(c, d))) {
+          c.meta!.isolated = true;
+          c.meta!.kept = false;
+        }
+      }
+    } else {
+      kept = kept.filter((c, i) => kept.some((d, j) => j !== i && touches(c, d)));
+    }
   }
 
-  const graph = buildPlanarGraph(kept, params.weldTol);
-  return { centerlines: kept, nodes: graph.nodes, segments: graph.segments };
+  const graphSrc = candidateMode ? centerlines.filter((c) => c.meta!.kept) : kept;
+  const graph = buildPlanarGraph(graphSrc, params.weldTol);
+  return {
+    centerlines: candidateMode ? centerlines : kept,
+    nodes: graph.nodes,
+    segments: graph.segments,
+  };
 }
 
 /**

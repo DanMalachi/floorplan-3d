@@ -36,6 +36,9 @@ export interface DetectParams {
   maxArcChordPx: number; // sanity cap on swing size
   arcMaxWallDist: number; // a swing arc must be within this of a wall to place a door
   windowPerimeterMargin: number; // windows must sit within this of the building perimeter
+  // Phase 2.5 candidate mode: keep openings the filters would drop, tagged with
+  // WHY in `flags`, so the VLM can make the final call.
+  keepRejected?: boolean;
 }
 
 export const DEFAULT_DETECT: DetectParams = {
@@ -66,6 +69,9 @@ export interface SuggestedOpening {
   y1: number;
   width: number; // px along the wall
   thickness: number; // host wall thickness (px)
+  // Candidate-mode provenance: "arc" (swing-arc door), "gap" (coverage-gap door),
+  // "inStairRegion", "interior" (window off the perimeter), "dupOfArc".
+  flags?: string[];
 }
 
 export interface OpeningDetection {
@@ -189,7 +195,9 @@ export function detectOpenings(
     // Stairs: 4+ parallel lines in a REGULAR series (uniform spacing) across a
     // wide strip. Reject the whole region — it's neither wall nor window. The
     // regularity test spares adjacent walls (whose spacings are uneven).
-    if (isStairRegion(segs, g.theta, g.offset, runStart, runEnd, angleTol)) continue;
+    const stairRun = isStairRegion(segs, g.theta, g.offset, runStart, runEnd, angleTol);
+    if (stairRun && !params.keepRejected) continue;
+    const runFlags = stairRun ? ["inStairRegion"] : [];
 
     // --- gather band-parallel raw segments, cluster by offset into face lines ---
     interface Frag {
@@ -296,6 +304,7 @@ export function detectOpenings(
             y1: p1.y,
             width: w,
             thickness,
+            ...(runFlags.length ? { flags: [...runFlags] } : {}),
           });
         }
         continue;
@@ -316,6 +325,7 @@ export function detectOpenings(
             y1: p1.y,
             width: w,
             thickness,
+            flags: ["gap", ...runFlags],
           });
         } else {
           // real separation (or trailing/leading empty) → end this wall
@@ -408,6 +418,7 @@ export function detectOpenings(
       y1: best.y0 + uy * t1,
       width: t1 - t0,
       thickness: best.thickness,
+      flags: ["arc"],
     });
   }
 
@@ -428,7 +439,13 @@ export function detectOpenings(
       const along = Math.abs((gmx - amx) * ux + (gmy - amy) * uy);
       return perp < 12 && along < (a.width + g.width) * 0.9;
     });
-  const merged = openings.filter((o) => o.type !== "door" || !dupOfArc(o));
+  const merged = openings.flatMap((o) => {
+    if (o.type === "door" && dupOfArc(o)) {
+      if (!params.keepRejected) return [];
+      return [{ ...o, flags: [...(o.flags ?? []), "dupOfArc"] }];
+    }
+    return [o];
+  });
   merged.push(...arcDoors);
 
   // Windows sit on the building perimeter (exterior walls). Drop interior false
@@ -446,11 +463,14 @@ export function detectOpenings(
       maxY = Math.max(maxY, c.y0, c.y1);
     }
     const m = params.windowPerimeterMargin;
-    result = merged.filter((o) => {
-      if (o.type !== "window") return true;
+    result = merged.flatMap((o) => {
+      if (o.type !== "window") return [o];
       const mx = (o.x0 + o.x1) / 2;
       const my = (o.y0 + o.y1) / 2;
-      return Math.min(mx - minX, maxX - mx, my - minY, maxY - my) <= m;
+      const onPerimeter = Math.min(mx - minX, maxX - mx, my - minY, maxY - my) <= m;
+      if (onPerimeter) return [o];
+      if (!params.keepRejected) return [];
+      return [{ ...o, flags: [...(o.flags ?? []), "interior"] }];
     });
   }
 
