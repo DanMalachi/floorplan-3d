@@ -82,7 +82,7 @@ You receive:
 
 Classify EVERY candidate id into exactly one class:
 - wall: a real architectural wall (load-bearing or partition). Walls bound rooms, connect to other walls at corners/T-junctions, and have consistent thickness. Interior walls are typically 7-15 cm, exterior 15-40 cm when a scale is given.
-- door: a doorway opening in a wall. Strong cues: a quarter-circle swing arc with a straight leaf line, or a clean gap in a wall between two rooms.
+- door: an actual door in a wall, evidenced by a DOOR SYMBOL: a quarter-circle swing arc and/or a straight leaf line at the opening. A plain gap in a wall WITHOUT a door symbol is an open passage — label it reject, not door. The short wall stubs (jambs) beside a doorway are wall, not door. Stair-area gaps are not doors.
 - window: a window in a wall. Strong cues: 3-4 closely-spaced parallel lines embedded in a wall run, usually on the building's exterior perimeter.
 - dimension: measurement annotation — long thin lines OUTSIDE or alongside the building, with arrowheads, ticks, or numbers/text nearby; extension lines from the building edge.
 - furniture: fixtures/furniture drawn as outlines inside rooms (cabinets, counters, sanitary ware).

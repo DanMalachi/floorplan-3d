@@ -380,54 +380,49 @@ export function detectOpenings(
       hingeCands.unshift({ hinge: leafHinge, openTip }); // prefer the leaf hinge
     }
 
-    // Pick the hinge candidate closest to a wall; place the opening there.
-    // The doorway runs at a RIGHT ANGLE to the leaf, so when we know the leaf,
-    // prefer walls roughly perpendicular to it — the nearest wall at a corner
-    // is often the one the leaf lies AGAINST, which is the wrong wall.
-    const leafAngle = leaf
-      ? fold(Math.atan2(leaf.e2.y - leaf.e1.y, leaf.e2.x - leaf.e1.x))
-      : null;
-    const wallPerpToLeaf = (c: Centerline) => {
-      if (leafAngle == null) return true;
-      let da = Math.abs(fold(Math.atan2(c.y1 - c.y0, c.x1 - c.x0)) - leafAngle);
-      da = Math.min(da, Math.PI - da);
-      return da >= Math.PI / 3; // ≥60° from the leaf ≈ perpendicular enough
-    };
+    // Doorway model: the door swings from CLOSED (leaf lying IN the wall line,
+    // its tip = one arc endpoint) to OPEN (leaf tip = the other endpoint). So
+    // the doorway wall is the wall that contains BOTH the hinge and one arc
+    // endpoint, and the doorway span runs hinge → that endpoint. Scoring walls
+    // by dist(hinge) + dist(nearest arc endpoint) picks it regardless of the
+    // drawn leaf angle (45°-open leaves defeated the old nearest-to-hinge rule).
     let best: Centerline | null = null;
-    let bestd = Infinity;
+    let bestScore = Infinity;
     let hinge = hingeCands[0].hinge;
-    let openTip = hingeCands[0].openTip;
-    for (const restrict of [true, false]) {
+    let closedTip = A;
+    for (const c of centerlines) {
+      const dA = pointCenterlineDist(A.x, A.y, c);
+      const dB = pointCenterlineDist(B.x, B.y, c);
+      const tip = dA <= dB ? A : B;
+      const dTip = Math.min(dA, dB);
       for (const cand of hingeCands) {
-        for (const c of centerlines) {
-          if (restrict && !wallPerpToLeaf(c)) continue;
-          const d = pointCenterlineDist(cand.hinge.x, cand.hinge.y, c);
-          if (d < bestd) {
-            bestd = d;
-            best = c;
-            hinge = cand.hinge;
-            openTip = cand.openTip;
-          }
+        const dH = pointCenterlineDist(cand.hinge.x, cand.hinge.y, c);
+        const score = dH + dTip;
+        if (score < bestScore) {
+          bestScore = score;
+          best = c;
+          hinge = cand.hinge;
+          closedTip = tip;
         }
-        if (bestd <= params.arcMaxWallDist) break; // good enough from a preferred hinge
       }
-      if (best && bestd <= params.arcMaxWallDist) break; // perpendicular pass succeeded
-      if (!restrict) break;
-      // else: relax the perpendicularity requirement and retry
-      best = null;
-      bestd = Infinity;
     }
-    if (!best || bestd > params.arcMaxWallDist) continue;
+    // Both anchors must sit near the wall (average within the usual gate).
+    if (!best || bestScore > params.arcMaxWallDist * 2) continue;
 
     const L = Math.hypot(best.x1 - best.x0, best.y1 - best.y0) || 1;
     const ux = (best.x1 - best.x0) / L;
     const uy = (best.y1 - best.y0) / L;
-    const tH = (hinge.x - best.x0) * ux + (hinge.y - best.y0) * uy; // hinge on wall
-    const dirToOpen = (openTip.x - hinge.x) * ux + (openTip.y - hinge.y) * uy;
-    const width = Math.min(R, doorCap * 1.3);
-    const tFar = tH + Math.sign(dirToOpen || 1) * width;
-    const t0 = Math.min(tH, tFar);
-    const t1 = Math.max(tH, tFar);
+    const tH = (hinge.x - best.x0) * ux + (hinge.y - best.y0) * uy;
+    const tC = (closedTip.x - best.x0) * ux + (closedTip.y - best.y0) * uy;
+    let t0 = Math.min(tH, tC);
+    let t1 = Math.max(tH, tC);
+    // Sanity: the span should be about the door width R; fall back to R from
+    // the hinge when the projection degenerates (e.g. skewed arc endpoints).
+    if (t1 - t0 < R * 0.4 || t1 - t0 > R * 1.6) {
+      const dir = Math.sign(tC - tH || 1);
+      t0 = Math.min(tH, tH + dir * Math.min(R, doorCap * 1.3));
+      t1 = Math.max(tH, tH + dir * Math.min(R, doorCap * 1.3));
+    }
     if (t1 - t0 < params.minDoorPx) continue;
     arcDoors.push({
       id: `opa${arcDoors.length}`,
