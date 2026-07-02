@@ -381,21 +381,41 @@ export function detectOpenings(
     }
 
     // Pick the hinge candidate closest to a wall; place the opening there.
+    // The doorway runs at a RIGHT ANGLE to the leaf, so when we know the leaf,
+    // prefer walls roughly perpendicular to it — the nearest wall at a corner
+    // is often the one the leaf lies AGAINST, which is the wrong wall.
+    const leafAngle = leaf
+      ? fold(Math.atan2(leaf.e2.y - leaf.e1.y, leaf.e2.x - leaf.e1.x))
+      : null;
+    const wallPerpToLeaf = (c: Centerline) => {
+      if (leafAngle == null) return true;
+      let da = Math.abs(fold(Math.atan2(c.y1 - c.y0, c.x1 - c.x0)) - leafAngle);
+      da = Math.min(da, Math.PI - da);
+      return da >= Math.PI / 3; // ≥60° from the leaf ≈ perpendicular enough
+    };
     let best: Centerline | null = null;
     let bestd = Infinity;
     let hinge = hingeCands[0].hinge;
     let openTip = hingeCands[0].openTip;
-    for (const cand of hingeCands) {
-      for (const c of centerlines) {
-        const d = pointCenterlineDist(cand.hinge.x, cand.hinge.y, c);
-        if (d < bestd) {
-          bestd = d;
-          best = c;
-          hinge = cand.hinge;
-          openTip = cand.openTip;
+    for (const restrict of [true, false]) {
+      for (const cand of hingeCands) {
+        for (const c of centerlines) {
+          if (restrict && !wallPerpToLeaf(c)) continue;
+          const d = pointCenterlineDist(cand.hinge.x, cand.hinge.y, c);
+          if (d < bestd) {
+            bestd = d;
+            best = c;
+            hinge = cand.hinge;
+            openTip = cand.openTip;
+          }
         }
+        if (bestd <= params.arcMaxWallDist) break; // good enough from a preferred hinge
       }
-      if (bestd <= params.arcMaxWallDist) break; // good enough from a preferred hinge
+      if (best && bestd <= params.arcMaxWallDist) break; // perpendicular pass succeeded
+      if (!restrict) break;
+      // else: relax the perpendicularity requirement and retry
+      best = null;
+      bestd = Infinity;
     }
     if (!best || bestd > params.arcMaxWallDist) continue;
 

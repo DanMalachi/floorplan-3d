@@ -81,10 +81,13 @@ export function generateCandidates(
 
   // Openings detected along the walls the strict pipeline would keep (running
   // them along stair/dim candidates would only produce junk), with rejected
-  // openings kept + flagged.
+  // openings kept + flagged. Door width cap is lifted to recall territory —
+  // wide entrances (garages, 3m parking doors) must at least become candidates.
   const keptWalls = r.centerlines.filter((c) => c.meta?.kept);
   const det = detectOpenings(segs, keptWalls, arcs, metersPerPixel, {
     ...DEFAULT_DETECT,
+    maxDoorMeters: 3.5,
+    maxDoorPx: 400,
     ...opts?.detect,
     keepRejected: true,
   });
@@ -152,7 +155,10 @@ export function generateCandidates(
     });
   }
 
-  const compacted = compactCandidates(candidates, opts?.maxCandidates ?? 600);
+  // Degenerate slivers (corner-trim can collapse a centerline to ~a point)
+  // carry no classifiable signal and false-match openings in the scorer.
+  const usable = candidates.filter((c) => c.lengthPx >= 8);
+  const compacted = compactCandidates(usable, opts?.maxCandidates ?? 600);
 
   const byGuess: Record<string, number> = {};
   for (const c of compacted) byGuess[c.guess] = (byGuess[c.guess] ?? 0) + 1;
@@ -181,38 +187,61 @@ const angleDiff = (a: number, b: number) => {
   return Math.min(d, 180 - d);
 };
 
-function compactCandidates(candidates: Candidate[], maxCandidates: number): Candidate[] {
-  // 1. Collapse clusters among non-kept wall-kind candidates of the same guess.
-  const collapsible = candidates.filter((c) => c.kind === "wall" && !c.keptByHeuristic);
-  const rest = candidates.filter((c) => !(c.kind === "wall" && !c.keptByHeuristic));
+const mid = (c: Candidate) => [(c.px[0] + c.px[2]) / 2, (c.px[1] + c.px[3]) / 2] as const;
 
-  const n = collapsible.length;
+/** Union-find collapse of same-guess, near-parallel, nearby candidates. */
+function collapseClusters(
+  items: Candidate[],
+  radius: number,
+  pickRep: (group: Candidate[]) => Candidate,
+): Candidate[] {
+  const n = items.length;
   const parent = Array.from({ length: n }, (_, i) => i);
   const find = (x: number): number => (parent[x] === x ? x : (parent[x] = find(parent[x])));
-  const mid = (c: Candidate) => [(c.px[0] + c.px[2]) / 2, (c.px[1] + c.px[3]) / 2] as const;
-  const RADIUS = 35; // midpoints closer than this may merge (a stack, not neighbors)
   for (let i = 0; i < n; i++) {
-    const [mxi, myi] = mid(collapsible[i]);
+    const [mxi, myi] = mid(items[i]);
     for (let j = i + 1; j < n; j++) {
-      if (collapsible[i].guess !== collapsible[j].guess) continue;
-      if (angleDiff(collapsible[i].angleDeg, collapsible[j].angleDeg) > 8) continue;
-      const [mxj, myj] = mid(collapsible[j]);
-      if (Math.hypot(mxi - mxj, myi - myj) > RADIUS) continue;
+      if (items[i].guess !== items[j].guess) continue;
+      if (angleDiff(items[i].angleDeg, items[j].angleDeg) > 8) continue;
+      const [mxj, myj] = mid(items[j]);
+      if (Math.hypot(mxi - mxj, myi - myj) > radius) continue;
       parent[find(i)] = find(j);
     }
   }
   const groups = new Map<number, Candidate[]>();
   for (let i = 0; i < n; i++) {
     const r = find(i);
-    (groups.get(r) ?? groups.set(r, []).get(r)!).push(collapsible[i]);
+    (groups.get(r) ?? groups.set(r, []).get(r)!).push(items[i]);
   }
-  const collapsed: Candidate[] = [];
+  const out: Candidate[] = [];
   for (const g of groups.values()) {
-    const rep = g.reduce((a, b) => (b.lengthPx > a.lengthPx ? b : a));
-    collapsed.push(g.length > 1 ? { ...rep, groupCount: g.length } : rep);
+    const rep = pickRep(g);
+    out.push(g.length > 1 ? { ...rep, groupCount: g.length } : rep);
   }
+  return out;
+}
 
-  let out = [...rest, ...collapsed];
+function compactCandidates(candidates: Candidate[], maxCandidates: number): Candidate[] {
+  // 1. Collapse clusters among non-kept wall-kind candidates of the same guess
+  //    (hatching, tread stacks, pane stacks).
+  const looseWalls = candidates.filter((c) => c.kind === "wall" && !c.keptByHeuristic);
+  const keptWalls = candidates.filter((c) => c.kind === "wall" && c.keptByHeuristic);
+  const collapsedWalls = collapseClusters(looseWalls, 35, (g) =>
+    g.reduce((a, b) => (b.lengthPx > a.lengthPx ? b : a)),
+  );
+
+  // 2. Collapse stacked duplicate openings — the same doorway proposed by the
+  //    gap pass AND the arc pass (and their fragments) becomes ONE candidate,
+  //    or every duplicate scores as its own false positive. Prefer a rep the
+  //    strict pipeline kept (arc doors are the most reliably placed).
+  const openings = candidates.filter((c) => c.kind === "opening");
+  const collapsedOpenings = collapseClusters(openings, 30, (g) => {
+    const kept = g.filter((c) => c.keptByHeuristic);
+    const pool = kept.length ? kept : g;
+    return pool.reduce((a, b) => (b.lengthPx > a.lengthPx ? b : a));
+  });
+
+  let out = [...keptWalls, ...collapsedWalls, ...collapsedOpenings];
 
   // 2. Hard cap: drop the shortest droppable candidates until under budget.
   if (out.length > maxCandidates) {
