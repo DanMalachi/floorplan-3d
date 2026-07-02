@@ -25,10 +25,32 @@ export interface ExtractParams {
   mode?: "strict" | "candidates";
 }
 
-// Candidate-mode admission band: any face pair this far apart is worth showing
-// the VLM, even when the strict thickness band would reject it.
-const CAND_THICK_MIN = 3;
-const CAND_THICK_MAX = 90;
+// The px defaults above were tuned on renders at ~this scale (20x45-Model:
+// zoom 1.9, ≈0.0104 m/px). A px threshold means a REAL size — 16px minFaceLen
+// is ~15cm there but ~50cm on a zoom-0.55 Matterport render, which silently
+// discards real geometry. When the scale is known, rescale the size-semantic
+// params so they keep meaning the same real-world distances.
+export const REF_MPP = 0.0104;
+
+export function scaleExtractParams(p: ExtractParams, mpp: number | null): ExtractParams {
+  if (!mpp || mpp <= 0) return p;
+  const k = REF_MPP / mpp;
+  if (Math.abs(k - 1) < 0.15) return p; // close enough to the reference tuning
+  const s = (v: number, floor: number) => Math.max(floor, v * k);
+  return {
+    ...p,
+    noiseMin: s(p.noiseMin, 1),
+    thinMin: s(p.thinMin, 2.5),
+    thickMax: s(p.thickMax, 10),
+    minFaceLen: s(p.minFaceLen, 6),
+    minOverlap: s(p.minOverlap, 5),
+    mergeGap: s(p.mergeGap, 3),
+    offsetTol: s(p.offsetTol, 1.5),
+    weldTol: s(p.weldTol, 5),
+    paneGapMax: s(p.paneGapMax, 4),
+    extendMax: s(p.extendMax, 8),
+  };
+}
 
 // Accept a face-pair gap: if the user has calibrated wall thickness(es), only
 // pairs near one of those; otherwise the wide default band.
@@ -270,6 +292,12 @@ export function extractWalls(
   }
 
   const candidateMode = params.mode === "candidates";
+  // Candidate-mode admission band: any face pair this far apart is worth
+  // showing the VLM, even when the strict thickness band would reject it.
+  // Derived from the (possibly scale-normalized) strict band — equals the old
+  // fixed 3..90px at the reference scale.
+  const candThickMin = Math.max(2, params.thinMin * 0.6);
+  const candThickMax = params.thickMax * 1.5;
 
   interface Cand {
     e1: Edge;
@@ -316,7 +344,7 @@ export function extractWalls(
         if (!candidateMode && pane) continue;
         const d = Math.abs(e1.offset - e2.offset);
         const thicknessOk = thicknessAccept(d, params);
-        if (candidateMode ? d < CAND_THICK_MIN || d > CAND_THICK_MAX : !thicknessOk) continue;
+        if (candidateMode ? d < candThickMin || d > candThickMax : !thicknessOk) continue;
         const o0 = Math.max(e1.s0, e2.s0);
         const o1 = Math.min(e1.s1, e2.s1);
         const overlap = o1 - o0;

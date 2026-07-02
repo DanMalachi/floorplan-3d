@@ -1,6 +1,6 @@
 import type { ImportSegment, ImportArc, TracePoint, TraceSegment } from "@/store/useSceneStore";
 import type { Centerline } from "./extractWalls";
-import { NOISE_LAYERS, measureThicknessAt } from "./extractWalls";
+import { NOISE_LAYERS, measureThicknessAt, REF_MPP } from "./extractWalls";
 
 // ---------------------------------------------------------------------------
 // Opening detection (Phase 2, hybrid). Doors and windows are read from the wall
@@ -39,6 +39,30 @@ export interface DetectParams {
   // Phase 2.5 candidate mode: keep openings the filters would drop, tagged with
   // WHY in `flags`, so the VLM can make the final call.
   keepRejected?: boolean;
+}
+
+// Rescale the px-semantic detection params to keep meaning the same real-world
+// sizes on renders at a different scale than the reference tuning (see
+// scaleExtractParams in extractWalls.ts).
+export function scaleDetectParams(p: DetectParams, mpp: number | null): DetectParams {
+  if (!mpp || mpp <= 0) return p;
+  const k = REF_MPP / mpp;
+  if (Math.abs(k - 1) < 0.15) return p;
+  const s = (v: number, floor: number) => Math.max(floor, v * k);
+  return {
+    ...p,
+    bandMargin: s(p.bandMargin, 1.5),
+    offsetTol: s(p.offsetTol, 1.5),
+    mergeGap: s(p.mergeGap, 3),
+    groupOffsetTol: s(p.groupOffsetTol, 3),
+    minDoorPx: s(p.minDoorPx, 8),
+    minMaterialPx: s(p.minMaterialPx, 4),
+    minWindowPx: s(p.minWindowPx, 10),
+    minArcChordPx: s(p.minArcChordPx, 12),
+    maxArcChordPx: s(p.maxArcChordPx, 100),
+    arcMaxWallDist: s(p.arcMaxWallDist, 15),
+    windowPerimeterMargin: s(p.windowPerimeterMargin, 15),
+  };
 }
 
 export const DEFAULT_DETECT: DetectParams = {
@@ -311,20 +335,20 @@ export function detectOpenings(
       }
 
       if (r.count === 0) {
-        // A doorway is a gap in a REAL wall — it needs substantial solid wall
-        // on BOTH sides. Collinear furniture edges also form gap patterns, but
-        // their flanking fragments are short; requiring ~a third of the door
-        // width of material each side kills those phantom doors.
+        // A doorway is a gap in a REAL wall — it needs proper wall on BOTH
+        // sides. Real wall reads as coverage count >= 2 (two faces / a filled
+        // outline); collinear furniture edges form pseudo-runs of single lines
+        // (count 1), which is what phantom cross-room doors are made of. Length
+        // stays permissive (jamb stubs between corridor doors are ~15-20px).
         const prev = profile[i - 1];
         const next = profile[i + 1];
-        const flank = Math.min(Math.max(params.minMaterialPx, w * 0.35), 60);
         const flanked =
           prev != null &&
           next != null &&
-          prev.count >= 1 &&
-          next.count >= 1 &&
-          prev.b - prev.a >= flank &&
-          next.b - next.a >= flank;
+          prev.count >= 2 &&
+          next.count >= 2 &&
+          prev.b - prev.a >= params.minMaterialPx &&
+          next.b - next.a >= params.minMaterialPx;
         if (!isEnd && flanked && w >= params.minDoorPx && w <= doorCap && matStart != null) {
           // door: bridge the gap, carve an opening
           matEnd = r.b;
@@ -394,61 +418,110 @@ export function detectOpenings(
       hingeCands.unshift({ hinge: leafHinge, openTip }); // prefer the leaf hinge
     }
 
-    // Doorway model: the door swings from CLOSED (leaf lying IN the wall line,
-    // its tip = one arc endpoint) to OPEN (leaf tip = the other endpoint). So
-    // the doorway wall is the wall that contains BOTH the hinge and one arc
-    // endpoint, and the doorway span runs hinge → that endpoint. Scoring walls
-    // by dist(hinge) + dist(nearest arc endpoint) picks it regardless of the
-    // drawn leaf angle (45°-open leaves defeated the old nearest-to-hinge rule).
-    let best: Centerline | null = null;
-    let bestScore = Infinity;
-    let hinge = hingeCands[0].hinge;
-    let closedTip = A;
+    // Doorway model: the door swings 90° from CLOSED (leaf lying IN the wall
+    // line, its tip = one arc endpoint) to OPEN (the drawn leaf, tip = the
+    // other endpoint). So the doorway wall contains BOTH the hinge and the
+    // CLOSED tip, and the doorway spans hinge → closed tip. When the leaf is
+    // drawn, the closed tip is identifiable wall-free: hinge→closedTip runs
+    // roughly PERPENDICULAR to the leaf (90° swing) — without this, a corner
+    // door's side wall (hinge sits on it too, open tip nearby) can win and the
+    // span lands 90° off the true doorway.
+    let leafClosedTip: { x: number; y: number } | null = null;
+    if (leaf) {
+      const ll = Math.hypot(leaf.e2.x - leaf.e1.x, leaf.e2.y - leaf.e1.y) || 1;
+      const ldx = (leaf.e2.x - leaf.e1.x) / ll;
+      const ldy = (leaf.e2.y - leaf.e1.y) / ll;
+      const hingeRef = hingeCands[0].hinge; // leaf hinge (unshifted preference)
+      const perpness = (t: { x: number; y: number }) => {
+        const vl = Math.hypot(t.x - hingeRef.x, t.y - hingeRef.y) || 1;
+        return Math.abs(((t.x - hingeRef.x) * ldx + (t.y - hingeRef.y) * ldy) / vl); // 0 = ⊥ leaf
+      };
+      const pA = perpness(A);
+      const pB = perpness(B);
+      const cand = pA <= pB ? A : B;
+      if (Math.min(pA, pB) < 0.5) leafClosedTip = cand; // within ~60° of ⊥
+    }
+
+    // Score every wall by dist(hinge) + dist(closed tip). In strict mode place
+    // the door on the best wall only; in candidate (keepRejected) mode emit the
+    // top TWO distinct placements — at corners the geometry is genuinely
+    // ambiguous, and the VLM sees where the actual gap is. Recall first.
+    interface WallPick {
+      c: Centerline;
+      score: number;
+      hinge: { x: number; y: number };
+      tip: { x: number; y: number };
+    }
+    const picks: WallPick[] = [];
     for (const c of centerlines) {
-      const dA = pointCenterlineDist(A.x, A.y, c);
-      const dB = pointCenterlineDist(B.x, B.y, c);
-      const tip = dA <= dB ? A : B;
-      const dTip = Math.min(dA, dB);
+      let tip: { x: number; y: number };
+      let dTip: number;
+      if (leafClosedTip) {
+        tip = leafClosedTip;
+        dTip = pointCenterlineDist(tip.x, tip.y, c);
+      } else {
+        const dA = pointCenterlineDist(A.x, A.y, c);
+        const dB = pointCenterlineDist(B.x, B.y, c);
+        tip = dA <= dB ? A : B;
+        dTip = Math.min(dA, dB);
+      }
+      let hinge = hingeCands[0].hinge;
+      let scoreBest = Infinity;
       for (const cand of hingeCands) {
         const dH = pointCenterlineDist(cand.hinge.x, cand.hinge.y, c);
-        const score = dH + dTip;
-        if (score < bestScore) {
-          bestScore = score;
-          best = c;
+        if (dH + dTip < scoreBest) {
+          scoreBest = dH + dTip;
           hinge = cand.hinge;
-          closedTip = tip;
         }
       }
+      if (scoreBest <= params.arcMaxWallDist * 2) {
+        picks.push({ c, score: scoreBest, hinge, tip });
+      }
     }
-    // Both anchors must sit near the wall (average within the usual gate).
-    if (!best || bestScore > params.arcMaxWallDist * 2) continue;
-
-    const L = Math.hypot(best.x1 - best.x0, best.y1 - best.y0) || 1;
-    const ux = (best.x1 - best.x0) / L;
-    const uy = (best.y1 - best.y0) / L;
-    const tH = (hinge.x - best.x0) * ux + (hinge.y - best.y0) * uy;
-    const tC = (closedTip.x - best.x0) * ux + (closedTip.y - best.y0) * uy;
-    let t0 = Math.min(tH, tC);
-    let t1 = Math.max(tH, tC);
-    // Sanity: the span should be about the door width R; fall back to R from
-    // the hinge when the projection degenerates (e.g. skewed arc endpoints).
-    if (t1 - t0 < R * 0.4 || t1 - t0 > R * 1.6) {
-      const dir = Math.sign(tC - tH || 1);
-      t0 = Math.min(tH, tH + dir * Math.min(R, doorCap * 1.3));
-      t1 = Math.max(tH, tH + dir * Math.min(R, doorCap * 1.3));
+    picks.sort((p, q) => p.score - q.score);
+    // Distinct placements only: skip a second pick collinear with the first.
+    const chosen: WallPick[] = [];
+    for (const p of picks) {
+      if (chosen.length >= (params.keepRejected ? 2 : 1)) break;
+      const dup = chosen.some((q) => {
+        let da = Math.abs(
+          fold(Math.atan2(q.c.y1 - q.c.y0, q.c.x1 - q.c.x0)) -
+            fold(Math.atan2(p.c.y1 - p.c.y0, p.c.x1 - p.c.x0)),
+        );
+        da = Math.min(da, Math.PI - da);
+        return da < 0.2;
+      });
+      if (!dup) chosen.push(p);
     }
-    if (t1 - t0 < params.minDoorPx) continue;
-    arcDoors.push({
-      id: `opa${arcDoors.length}`,
-      type: "door",
-      x0: best.x0 + ux * t0,
-      y0: best.y0 + uy * t0,
-      x1: best.x0 + ux * t1,
-      y1: best.y0 + uy * t1,
-      width: t1 - t0,
-      thickness: best.thickness,
-      flags: ["arc"],
-    });
+    for (let pi = 0; pi < chosen.length; pi++) {
+      const { c: bw, hinge, tip } = chosen[pi];
+      const L = Math.hypot(bw.x1 - bw.x0, bw.y1 - bw.y0) || 1;
+      const ux = (bw.x1 - bw.x0) / L;
+      const uy = (bw.y1 - bw.y0) / L;
+      const tH = (hinge.x - bw.x0) * ux + (hinge.y - bw.y0) * uy;
+      const tC = (tip.x - bw.x0) * ux + (tip.y - bw.y0) * uy;
+      let t0 = Math.min(tH, tC);
+      let t1 = Math.max(tH, tC);
+      // Sanity: the span should be about the door width R; fall back to R from
+      // the hinge when the projection degenerates (e.g. skewed arc endpoints).
+      if (t1 - t0 < R * 0.4 || t1 - t0 > R * 1.6) {
+        const dir = Math.sign(tC - tH || 1);
+        t0 = Math.min(tH, tH + dir * Math.min(R, doorCap * 1.3));
+        t1 = Math.max(tH, tH + dir * Math.min(R, doorCap * 1.3));
+      }
+      if (t1 - t0 < params.minDoorPx) continue;
+      arcDoors.push({
+        id: `opa${arcDoors.length}`,
+        type: "door",
+        x0: bw.x0 + ux * t0,
+        y0: bw.y0 + uy * t0,
+        x1: bw.x0 + ux * t1,
+        y1: bw.y0 + uy * t1,
+        width: t1 - t0,
+        thickness: bw.thickness,
+        flags: pi === 0 ? ["arc"] : ["arc", "altWall"],
+      });
+    }
   }
 
   // Merge: prefer arc doors; drop gap-doors that duplicate an arc door — either

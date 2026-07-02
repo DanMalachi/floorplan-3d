@@ -2,11 +2,18 @@ import { create } from "zustand";
 import type { Scene } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import { DEFAULT_DOOR, DEFAULT_WINDOW } from "@/schema/constants";
-import { buildPlanarGraph, extractWalls, DEFAULT_PARAMS } from "@/trace2d/extractWalls";
+import {
+  buildPlanarGraph,
+  extractWalls,
+  scaleExtractParams,
+  DEFAULT_PARAMS,
+} from "@/trace2d/extractWalls";
 import {
   detectOpenings,
+  scaleDetectParams,
   traceToCenterlines,
   mapOpeningToSegment,
+  DEFAULT_DETECT,
   type SuggestedOpening,
 } from "@/trace2d/detectOpenings";
 import { generateCandidates } from "@/trace2d/candidates";
@@ -274,13 +281,19 @@ export const useSceneStore = create<StoreState>((set, get) => {
     runWallExtraction: () => {
       const { importedSegments, importedArcs, extractionTargets, metersPerPixel } = get();
       const r = extractWalls(importedSegments, {
-        ...DEFAULT_PARAMS,
+        ...scaleExtractParams(DEFAULT_PARAMS, metersPerPixel),
         thicknessTargets: extractionTargets,
         // Reject parallel walls closer than 0.3 m (stairs/hatch) once scaled.
         minWallSepPx: metersPerPixel ? 0.3 / metersPerPixel : 0,
       });
       // Bundled rough opening pass over the freshly extracted centerlines.
-      const det = detectOpenings(importedSegments, r.centerlines, importedArcs, metersPerPixel);
+      const det = detectOpenings(
+        importedSegments,
+        r.centerlines,
+        importedArcs,
+        metersPerPixel,
+        scaleDetectParams(DEFAULT_DETECT, metersPerPixel),
+      );
       set({
         suggestedWalls: r.centerlines.map((c, i) => ({ id: `w${i}`, ...c })),
         rejectedSuggestionIds: [],
@@ -380,7 +393,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
     detectOpeningsOnTrace: () => {
       const { points, segments, importedSegments, importedArcs, metersPerPixel } = get();
       const cls = traceToCenterlines(points, segments, importedSegments);
-      const det = detectOpenings(importedSegments, cls, importedArcs, metersPerPixel);
+      const det = detectOpenings(
+        importedSegments,
+        cls,
+        importedArcs,
+        metersPerPixel,
+        scaleDetectParams(DEFAULT_DETECT, metersPerPixel),
+      );
       set({ suggestedOpenings: det.openings, rejectedOpeningIds: [] });
     },
     toggleRejectOpening: (id) =>

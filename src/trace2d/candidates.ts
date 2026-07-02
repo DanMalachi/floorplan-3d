@@ -1,6 +1,17 @@
 import type { ImportSegment, ImportArc } from "@/store/useSceneStore";
-import { extractWalls, DEFAULT_PARAMS, type ExtractParams, type Centerline } from "./extractWalls";
-import { detectOpenings, DEFAULT_DETECT, type DetectParams } from "./detectOpenings";
+import {
+  extractWalls,
+  scaleExtractParams,
+  DEFAULT_PARAMS,
+  type ExtractParams,
+  type Centerline,
+} from "./extractWalls";
+import {
+  detectOpenings,
+  scaleDetectParams,
+  DEFAULT_DETECT,
+  type DetectParams,
+} from "./detectOpenings";
 
 // ---------------------------------------------------------------------------
 // Phase 2.5 candidate generation. The existing heuristics run in high-recall
@@ -71,7 +82,7 @@ export function generateCandidates(
   },
 ): CandidateSet {
   const extractParams: ExtractParams = {
-    ...DEFAULT_PARAMS,
+    ...scaleExtractParams(DEFAULT_PARAMS, metersPerPixel),
     thicknessTargets: opts?.extractionTargets ?? [],
     minWallSepPx: metersPerPixel ? 0.3 / metersPerPixel : 0,
     ...opts?.extract,
@@ -85,7 +96,7 @@ export function generateCandidates(
   // wide entrances (garages, 3m parking doors) must at least become candidates.
   const keptWalls = r.centerlines.filter((c) => c.meta?.kept);
   const det = detectOpenings(segs, keptWalls, arcs, metersPerPixel, {
-    ...DEFAULT_DETECT,
+    ...scaleDetectParams(DEFAULT_DETECT, metersPerPixel),
     maxDoorMeters: 3.5,
     maxDoorPx: 400,
     ...opts?.detect,
