@@ -311,7 +311,21 @@ export function detectOpenings(
       }
 
       if (r.count === 0) {
-        if (!isEnd && w >= params.minDoorPx && w <= doorCap && matStart != null) {
+        // A doorway is a gap in a REAL wall — it needs substantial solid wall
+        // on BOTH sides. Collinear furniture edges also form gap patterns, but
+        // their flanking fragments are short; requiring ~a third of the door
+        // width of material each side kills those phantom doors.
+        const prev = profile[i - 1];
+        const next = profile[i + 1];
+        const flank = Math.min(Math.max(params.minMaterialPx, w * 0.35), 60);
+        const flanked =
+          prev != null &&
+          next != null &&
+          prev.count >= 1 &&
+          next.count >= 1 &&
+          prev.b - prev.a >= flank &&
+          next.b - next.a >= flank;
+        if (!isEnd && flanked && w >= params.minDoorPx && w <= doorCap && matStart != null) {
           // door: bridge the gap, carve an opening
           matEnd = r.b;
           const p0 = toXY(r.a, g.offset);
