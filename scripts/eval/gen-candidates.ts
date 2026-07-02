@@ -83,7 +83,9 @@ writeFileSync(join(outDir, "candidates.json"), JSON.stringify(out, null, 2));
 // 5. Report.
 console.log(`plan: ${basename(pdf)}  (${raw.stats.segments} segs, ${raw.stats.arcs} arcs, zoom ${z})`);
 console.log(`scale: ${mpp ? `${mpp} m/px` : "NOT SET (pass --mpp; sep/size filters annotate less without it)"}`);
-console.log(`candidates: ${set.stats.total}  (kept by strict heuristics: ${set.stats.keptByHeuristic})`);
+console.log(
+  `candidates: ${set.stats.total}${set.stats.rawTotal !== set.stats.total ? ` (compressed from ${set.stats.rawTotal})` : ""}  (kept by strict heuristics: ${set.stats.keptByHeuristic})`,
+);
 for (const [g, n] of Object.entries(set.stats.byGuess).sort((a, b) => b[1] - a[1])) {
   console.log(`  ${g.padEnd(10)} ${n}`);
 }

@@ -91,6 +91,8 @@ Classify EVERY candidate id into exactly one class:
 
 Use gestalt context, not just per-line features: walls form closed room perimeters; a "wall" floating outside the building outline is likely a dimension line; evenly repeated parallels are treads or hatching; candidates over text/numbers are annotation. The room-name text in the image tells you where the building interior is.
 
+Some candidates carry "group": N — that candidate stands in for N near-identical parallel lines collapsed into one (a stack of treads, hatching, or window panes). Your label applies to the whole stack.
+
 Also report REAL walls/doors/windows clearly visible in the image that NO candidate covers, in "missed" (approximate pixel box + one-line note). Only include elements you are confident about; leave "missed" empty if coverage is complete.
 
 Return JSON matching the required schema: one entry in "labels" for every candidate id you were given, plus "missed".`;
@@ -116,15 +118,18 @@ export async function classifyCandidates(args: {
     ang: c.angleDeg,
     ...(c.meters ? { m: c.meters } : {}),
     ...(c.flags.length ? { flags: c.flags } : {}),
+    ...(c.groupCount ? { group: c.groupCount } : {}),
   }));
 
   const scaleNote = args.metersPerPixel
     ? `Scale: 1 px = ${args.metersPerPixel.toFixed(5)} m ("m" on candidates = real meters).`
     : "No scale calibration available — reason from pixel sizes and context.";
 
-  const response = await client.messages.create({
+  // Streamed: labels for hundreds of candidates can exceed what a non-streaming
+  // request may return before HTTP timeouts kick in.
+  const stream = client.messages.stream({
     model,
-    max_tokens: 16000,
+    max_tokens: 64000,
     system: SYSTEM_PROMPT,
     output_config: { format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
     messages: [
@@ -143,6 +148,7 @@ export async function classifyCandidates(args: {
       },
     ],
   });
+  const response = await stream.finalMessage();
 
   if (response.stop_reason === "refusal") {
     throw new Error("Model declined the request (stop_reason=refusal).");
