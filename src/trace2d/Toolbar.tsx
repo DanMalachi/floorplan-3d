@@ -135,6 +135,8 @@ export function Toolbar() {
   const extractMsg = useSceneStore((s) => s.extractMsg);
   const vlmModel = useSceneStore((s) => s.vlmModel);
   const setVlmModel = useSceneStore((s) => s.setVlmModel);
+  const planHint = useSceneStore((s) => s.planHint);
+  const setPlanHint = useSceneStore((s) => s.setPlanHint);
   const vlmBusy = useSceneStore((s) => s.vlmBusy);
   const aiClassify = useSceneStore((s) => s.aiClassify);
 
@@ -365,6 +367,22 @@ export function Toolbar() {
               <option value="claude-sonnet-5">Sonnet 5</option>
               <option value="claude-haiku-4-5">Haiku 4.5</option>
             </select>
+            <input
+              type="text"
+              value={planHint}
+              onChange={(e) => setPlanHint(e.target.value)}
+              placeholder="Describe the plan (optional) — e.g. 3 bed 2 bath, deck with sliding doors"
+              title="One line about the plan (rooms, floors, decks, door types). Sent to the AI as context — helps it tell walls from railings, spot sliding doors, expect the right number of rooms."
+              style={{
+                width: 230,
+                padding: "5px 8px",
+                fontSize: 12,
+                borderRadius: 6,
+                border: "1px solid #3a3a40",
+                background: "#26262b",
+                color: "#e6e6e6",
+              }}
+            />
             {hasPdf && (
               <>
                 <button

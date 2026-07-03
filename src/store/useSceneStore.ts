@@ -188,7 +188,9 @@ interface StoreState {
   vlmModel: string; // Claude model id used by /api/classify (on-the-fly override)
   vlmBusy: boolean;
   vlmMissed: VlmMissed[]; // advisory "check this area" hints from the VLM
+  planHint: string; // user's one-line plan description, sent as advisory context
   setVlmModel: (m: string) => void;
+  setPlanHint: (h: string) => void;
   aiClassify: () => Promise<string>; // returns a status message for the toolbar
 
   // --- suggested openings (Phase 2 / doors + windows from wall geometry) ---
@@ -393,9 +395,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
     vlmModel: "claude-opus-4-8",
     vlmBusy: false,
     vlmMissed: [],
+    planHint: "",
     setVlmModel: (vlmModel) => set({ vlmModel }),
+    setPlanHint: (planHint) => set({ planHint }),
     aiClassify: async () => {
-      const { importedSegments, importedArcs, metersPerPixel, extractionTargets, image, vlmModel } =
+      const { importedSegments, importedArcs, metersPerPixel, extractionTargets, image, vlmModel, planHint } =
         get();
       if (!image) return "Load a plan first (upload an image or import a PDF).";
       set({ vlmBusy: true });
@@ -417,6 +421,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             image: overlay,
             candidates: gen.candidates,
             metersPerPixel,
+            planHint: planHint.trim() || null,
             model: vlmModel,
           }),
         });

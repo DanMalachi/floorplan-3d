@@ -101,6 +101,7 @@ export async function classifyCandidates(args: {
   imageBase64: string; // composite render+overlay PNG, base64 (no data: prefix)
   candidates: Candidate[];
   metersPerPixel: number | null;
+  planHint?: string | null; // user's one-line description of the plan (advisory)
   model?: string;
   apiKey?: string;
 }): Promise<VlmResult> {
@@ -125,6 +126,16 @@ export async function classifyCandidates(args: {
     ? `Scale: 1 px = ${args.metersPerPixel.toFixed(5)} m ("m" on candidates = real meters).`
     : "No scale calibration available — reason from pixel sizes and context.";
 
+  // The user's own description of the plan is strong gestalt context: room
+  // counts imply door/window/stair expectations, mentioned decks imply railing
+  // lines that are not walls, mentioned door types say which symbols to expect.
+  // Advisory only — it must never override what is visible.
+  const hint = args.planHint?.trim();
+  const hintNote = hint
+    ? `THE USER DESCRIBES THIS PLAN (advisory context): "${hint}"\n` +
+      `Use it to resolve ambiguity: rooms/floors mentioned imply roughly how many interior doors and staircases to expect (be suspicious if your labels wildly exceed that); decks/balconies/porches mentioned imply thin railing/edge lines outside the building envelope that are NOT walls (label reject); door types mentioned (sliding, folding, garage) tell you which door symbols to expect and where. IMPORTANT: the description is PARTIAL — users rarely enumerate everything, and almost never mention windows. An element type being absent from the description is NOT evidence it is absent from the plan: keep labeling windows, doors, stairs and furniture on visual evidence exactly as you would without a description. NEVER force a label to satisfy the description; only label what is actually visible in the image.`
+    : "";
+
   // Streamed: labels for hundreds of candidates can exceed what a non-streaming
   // request may return before HTTP timeouts kick in.
   const stream = client.messages.stream({
@@ -142,7 +153,7 @@ export async function classifyCandidates(args: {
           },
           {
             type: "text",
-            text: `${scaleNote}\n\nCandidates (${lean.length}):\n${JSON.stringify(lean)}`,
+            text: `${scaleNote}${hintNote ? `\n\n${hintNote}` : ""}\n\nCandidates (${lean.length}):\n${JSON.stringify(lean)}`,
           },
         ],
       },

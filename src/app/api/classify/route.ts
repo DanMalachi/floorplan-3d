@@ -8,6 +8,7 @@ interface ClassifyRequest {
   image: string; // data URL or bare base64 of the composite overlay PNG
   candidates: Candidate[];
   metersPerPixel: number | null;
+  planHint?: string | null; // user's one-line plan description (advisory context)
   model?: string; // on-the-fly override; defaults to claude-opus-4-8
 }
 
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
       imageBase64,
       candidates: body.candidates,
       metersPerPixel: body.metersPerPixel ?? null,
+      planHint: body.planHint ?? null,
       model: body.model,
     });
     return Response.json(result);

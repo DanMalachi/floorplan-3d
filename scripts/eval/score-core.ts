@@ -60,6 +60,46 @@ export function overlapAlong(g: Line, c: Line): { overlap: number; perp: number 
   return { overlap, perp };
 }
 
+/**
+ * Length of `target` covered by the union of `covers` projected onto it
+ * (same angle/perp tolerances as wall matching). Granularity-independent:
+ * one long line covering three short ones (or vice versa) scores the same.
+ */
+export function coveredLength(target: Line, covers: Line[]): number {
+  const tl = len(target);
+  if (tl < 1) return 0;
+  const ux = (target.x1 - target.x0) / tl;
+  const uy = (target.y1 - target.y0) / tl;
+  const ivs: [number, number][] = [];
+  for (const c of covers) {
+    if (angleDiff(angleDeg(target), angleDeg(c)) > ANGLE_TOL_DEG) continue;
+    const perp =
+      (Math.abs((c.x0 - target.x0) * -uy + (c.y0 - target.y0) * ux) +
+        Math.abs((c.x1 - target.x0) * -uy + (c.y1 - target.y0) * ux)) /
+      2;
+    if (perp > WALL_PERP_TOL) continue;
+    let a = (c.x0 - target.x0) * ux + (c.y0 - target.y0) * uy;
+    let b = (c.x1 - target.x0) * ux + (c.y1 - target.y0) * uy;
+    if (a > b) [a, b] = [b, a];
+    a = Math.max(0, a);
+    b = Math.min(tl, b);
+    if (b > a) ivs.push([a, b]);
+  }
+  ivs.sort((p, q) => p[0] - q[0]);
+  let covered = 0;
+  let end = -1;
+  for (const [a, b] of ivs) {
+    if (a > end) {
+      covered += b - a;
+      end = b;
+    } else if (b > end) {
+      covered += b - end;
+      end = b;
+    }
+  }
+  return covered;
+}
+
 export interface MatchResult {
   truth: TruthClass;
   gtIndex: number; // index into gt.walls or gt.resolvedOpenings; -1 for reject
@@ -118,6 +158,11 @@ export interface PlanScore {
     { tp: number; fp: number; fn: number; precision: number; recall: number; f1: number }
   >;
   wallCoverage: number; // fraction of total GT wall LENGTH covered by predicted walls
+  // Length-based wall P/R/F1 — the honest wall metric. The element-based
+  // perClass.wall under-reports raster candidates: one long unbroken skeleton
+  // centerline legitimately covers several short GT wall pieces but fails the
+  // candidate-centric overlap rule (counted FP + the pieces counted FN).
+  wallLength: { precision: number; recall: number; f1: number };
   gtCounts: { walls: number; doors: number; windows: number };
   missedCredit?: { flagged: number; total: number }; // unmatched GT elements the VLM pointed at
 }
@@ -149,47 +194,28 @@ export function scorePlan(
   });
 
   // GT-side recall. Walls by covered LENGTH (several candidates may each cover
-  // a piece); openings binary.
+  // a piece); openings binary. Precision mirrors it: how much predicted-wall
+  // length actually lies on GT wall lines.
+  const predWallLines: Line[] = candidates
+    .filter((c) => (predicted.get(c.id) ?? "reject") === "wall")
+    .map((c) => ({ x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3] }));
+  const gtWallLines: Line[] = gt.walls.map((w) => ({ x0: w.x0, y0: w.y0, x1: w.x1, y1: w.y1 }));
+
   let gtWallLen = 0;
   let coveredLen = 0;
-  gt.walls.forEach((wl) => {
-    const L = len(wl);
-    gtWallLen += L;
-    // union of projected intervals of predicted-wall candidates on this wall
-    const ivs: [number, number][] = [];
-    candidates.forEach((c) => {
-      if ((predicted.get(c.id) ?? "reject") !== "wall") return;
-      const cl: Line = { x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3] };
-      if (angleDiff(angleDeg(cl), angleDeg(wl)) > ANGLE_TOL_DEG) return;
-      const gl = L || 1;
-      const ux = (wl.x1 - wl.x0) / gl;
-      const uy = (wl.y1 - wl.y0) / gl;
-      const perp =
-        (Math.abs((cl.x0 - wl.x0) * -uy + (cl.y0 - wl.y0) * ux) +
-          Math.abs((cl.x1 - wl.x0) * -uy + (cl.y1 - wl.y0) * ux)) /
-        2;
-      if (perp > WALL_PERP_TOL) return;
-      let a = (cl.x0 - wl.x0) * ux + (cl.y0 - wl.y0) * uy;
-      let b = (cl.x1 - wl.x0) * ux + (cl.y1 - wl.y0) * uy;
-      if (a > b) [a, b] = [b, a];
-      a = Math.max(0, a);
-      b = Math.min(L, b);
-      if (b > a) ivs.push([a, b]);
-    });
-    ivs.sort((p, q) => p[0] - q[0]);
-    let covered = 0;
-    let end = -1;
-    for (const [a, b] of ivs) {
-      if (a > end) {
-        covered += b - a;
-        end = b;
-      } else if (b > end) {
-        covered += b - end;
-        end = b;
-      }
-    }
-    coveredLen += covered;
-  });
+  for (const wl of gtWallLines) {
+    gtWallLen += len(wl);
+    coveredLen += coveredLength(wl, predWallLines);
+  }
+  let predWallLen = 0;
+  let predOnGtLen = 0;
+  for (const pl of predWallLines) {
+    predWallLen += len(pl);
+    predOnGtLen += coveredLength(pl, gtWallLines);
+  }
+  const wallLenP = predWallLen > 0 ? predOnGtLen / predWallLen : 0;
+  const wallLenR = gtWallLen > 0 ? coveredLen / gtWallLen : 1;
+  const wallLenF1 = wallLenP + wallLenR > 0 ? (2 * wallLenP * wallLenR) / (wallLenP + wallLenR) : 0;
 
   // Per-class precision/recall.
   const perClass: PlanScore["perClass"] = {};
@@ -249,7 +275,8 @@ export function scorePlan(
   return {
     matrix,
     perClass,
-    wallCoverage: gtWallLen > 0 ? coveredLen / gtWallLen : 1,
+    wallCoverage: wallLenR,
+    wallLength: { precision: wallLenP, recall: wallLenR, f1: wallLenF1 },
     gtCounts: {
       walls: gt.walls.length,
       doors: truthTotals.door,
@@ -295,7 +322,10 @@ export function formatScore(title: string, s: PlanScore): string {
       `${cls.padEnd(7)} P=${(pc.precision * 100).toFixed(0).padStart(3)}%  R=${(pc.recall * 100).toFixed(0).padStart(3)}%  F1=${(pc.f1 * 100).toFixed(0).padStart(3)}%`,
     );
   }
-  lines.push(`wall length coverage: ${(s.wallCoverage * 100).toFixed(1)}%`);
+  const wlen = s.wallLength;
+  lines.push(
+    `wall by LENGTH: P=${(wlen.precision * 100).toFixed(0).padStart(3)}%  R=${(wlen.recall * 100).toFixed(0).padStart(3)}%  F1=${(wlen.f1 * 100).toFixed(0).padStart(3)}%  (honest wall metric; element rows above under-report long centerlines)`,
+  );
   if (s.missedCredit && s.missedCredit.total > 0) {
     lines.push(
       `VLM flagged ${s.missedCredit.flagged}/${s.missedCredit.total} elements no candidate matched`,

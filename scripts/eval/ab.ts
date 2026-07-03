@@ -35,15 +35,17 @@ if (plans.length === 0 || plans.some((p) => !p.dir || !p.gt)) {
 interface Agg {
   f1: Record<string, number[]>;
   coverage: number[];
+  wallLenF1: number[];
 }
 const agg: Record<"heuristic" | "vlm", Agg> = {
-  heuristic: { f1: { wall: [], door: [], window: [] }, coverage: [] },
-  vlm: { f1: { wall: [], door: [], window: [] }, coverage: [] },
+  heuristic: { f1: { wall: [], door: [], window: [] }, coverage: [], wallLenF1: [] },
+  vlm: { f1: { wall: [], door: [], window: [] }, coverage: [], wallLenF1: [] },
 };
 
 const collect = (side: "heuristic" | "vlm", s: PlanScore) => {
   for (const cls of ["wall", "door", "window"]) agg[side].f1[cls].push(s.perClass[cls].f1);
   agg[side].coverage.push(s.wallCoverage);
+  agg[side].wallLenF1.push(s.wallLength.f1);
 };
 
 for (const { dir, gt: gtPath } of plans) {
@@ -79,6 +81,11 @@ for (const cls of ["wall", "door", "window"]) {
     `${(cls + " F1").padEnd(11)} ${(h * 100).toFixed(0).padStart(6)}%   ${isNaN(v) ? "   n/a" : (v * 100).toFixed(0).padStart(6) + "%"}`,
   );
 }
+const hl = mean(agg.heuristic.wallLenF1);
+const vl = mean(agg.vlm.wallLenF1);
+console.log(
+  `${"wallLEN F1".padEnd(11)} ${(hl * 100).toFixed(0).padStart(6)}%   ${isNaN(vl) ? "   n/a" : (vl * 100).toFixed(0).padStart(6) + "%"}   <- honest wall metric`,
+);
 const hc = mean(agg.heuristic.coverage);
 const vc = mean(agg.vlm.coverage);
 console.log(

@@ -6,7 +6,7 @@
  * and a re-colored overlay of the VLM's verdicts.
  *
  * Usage:
- *   npx tsx scripts/eval/classify.ts eval-out/20x45-Model [--model claude-opus-4-8]
+ *   npx tsx scripts/eval/classify.ts eval-out/20x45-Model [--model claude-opus-4-8] [--hint "3 bed 2 bath..."] [--out vlm-labels.json]
  *
  * Auth: ANTHROPIC_API_KEY env var (or .env.local — loaded manually below).
  */
@@ -51,11 +51,14 @@ async function main() {
     imageBase64: overlay,
     candidates: candFile.candidates,
     metersPerPixel: candFile.metersPerPixel,
+    planHint: arg("--hint") ?? null,
     model: arg("--model"),
   });
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
 
-  writeFileSync(join(dir, "vlm-labels.json"), JSON.stringify(result, null, 2));
+  // --out lets an A/B keep both hinted and unhinted labels side by side.
+  const outName = arg("--out") ?? "vlm-labels.json";
+  writeFileSync(join(dir, outName), JSON.stringify(result, null, 2));
 
   // Report.
   const byLabel: Record<string, number> = {};
@@ -80,7 +83,7 @@ async function main() {
     join(dir, "vlm-labeled.json"),
     join(dir, "overlay-vlm.png"),
   ]);
-  console.log(`wrote ${join(dir, "vlm-labels.json")} + overlay-vlm.png`);
+  console.log(`wrote ${join(dir, outName)} + overlay-vlm.png`);
 }
 
 main().catch((e) => {
