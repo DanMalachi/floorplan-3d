@@ -28,9 +28,20 @@ export interface RasterQuality {
   notes: string[];
 }
 
+// A small thick-cored blob the proposer's letter filter dropped: not a letter
+// (letters are thin-stroked) but a short wall stub — typically the pier
+// between two adjacent doorways. Used to split oversized door gaps.
+export interface RasterIsland {
+  x: number;
+  y: number;
+  thicknessPx: number;
+  longPx: number; // long side of the blob's bbox
+}
+
 export interface RasterProposal {
   quality: RasterQuality;
   centerlines: RasterCenterline[];
+  islands?: RasterIsland[];
 }
 
 export interface RasterParams {
@@ -55,9 +66,9 @@ export const DEFAULT_RASTER: RasterParams = {
   minWallMeters: 0.35,
   minWallPx: 25,
   doorMinMeters: 0.45,
-  doorMaxMeters: 2.5,
+  doorMaxMeters: 3.5, // wide sliders/garage doors; matches vector candidate mode
   doorMinPx: 18,
-  doorMaxPx: 160,
+  doorMaxPx: 220,
   maxCandidates: 600,
 };
 
@@ -181,15 +192,59 @@ function mergeCollinear(lines: Line[], p: RasterParams, gapPx: number): Line[] {
   return out;
 }
 
+interface GapCandidate {
+  line: Line;
+  flags: string[];
+}
+
+interface GapResult {
+  doors: GapCandidate[];
+  // Wall runs continue THROUGH a doorway (the opening is carved from the
+  // wall), but the skeleton stops at each jamb. These candidates span each
+  // detected gap so the accepted wall graph is continuous across its doors —
+  // mirroring the vector pipeline, which bridges door gaps into one wall.
+  bridges: Line[];
+}
+
 /**
- * Gap-door candidates: two collinear wall runs separated by a door-width gap.
+ * Gap-door candidates: wall runs separated by a door-width gap. Three cases:
+ * - collinear runs (classic doorway in a straight wall);
+ * - collinear runs with wall-stub ISLANDS between them (two adjacent
+ *   doorways share flanks — split the oversized gap at each island);
+ * - a run end facing a PERPENDICULAR wall (corner doorway — the far jamb is
+ *   the crossing wall itself, so no collinear partner ever exists).
+ * Skeleton endpoints retract ~thickness/2 from the true ink end, so gap
+ * bounds are trimmed by th/2 on each side to land on the real jamb faces.
  * Emitted with guess "door"; the VLM may relabel window or reject.
  */
-function gapOpenings(lines: Line[], p: RasterParams, mpp: number | null): Line[] {
+function gapOpenings(
+  lines: Line[],
+  islands: RasterIsland[],
+  p: RasterParams,
+  mpp: number | null,
+): GapResult {
   const doorMin = mpp ? p.doorMinMeters / mpp : p.doorMinPx;
   const doorMax = mpp ? p.doorMaxMeters / mpp : p.doorMaxPx;
-  const out: Line[] = [];
+  const out: GapCandidate[] = [];
+  const bridges: Line[] = [];
+  // Run ends already explained by a collinear gap — the corner pass skips
+  // them so one doorway doesn't get both a collinear and a corner candidate.
+  const usedEnds = new Set<string>();
 
+  const emit = (a: Line, dx: number, dy: number, g0: number, g1: number, th: number, flags: string[]) => {
+    out.push({
+      line: {
+        x0: a.x0 + dx * g0, y0: a.y0 + dy * g0,
+        x1: a.x0 + dx * g1, y1: a.y0 + dy * g1,
+        th,
+        len: g1 - g0,
+        angle: a.angle,
+      },
+      flags,
+    });
+  };
+
+  // -- collinear pass (with island splitting) ------------------------------
   for (let i = 0; i < lines.length; i++) {
     const a = lines[i];
     const dx = (a.x1 - a.x0) / a.len;
@@ -203,22 +258,134 @@ function gapOpenings(lines: Line[], p: RasterParams, mpp: number | null): Line[]
       if (perp > Math.max(4, Math.max(a.th, b.th) * 0.5)) continue;
       const sa = [(a.x0 - a.x0) * dx + (a.y0 - a.y0) * dy, (a.x1 - a.x0) * dx + (a.y1 - a.y0) * dy].sort((u, v) => u - v);
       const sb = [(b.x0 - a.x0) * dx + (b.y0 - a.y0) * dy, (b.x1 - a.x0) * dx + (b.y1 - a.y0) * dy].sort((u, v) => u - v);
-      const gap = Math.max(sa[0], sb[0]) - Math.min(sa[1], sb[1]);
-      if (gap < doorMin || gap > doorMax) continue;
+      const rawGap = Math.max(sa[0], sb[0]) - Math.min(sa[1], sb[1]);
+      // Up to ~2 doorways + a stub can share one flank pair.
+      if (rawGap < doorMin || rawGap > doorMax * 2.5) continue;
       // Both flanks must be substantial — noise stubs don't frame doorways.
-      if (a.len < gap * 0.5 || b.len < gap * 0.5) continue;
-      const g0 = Math.min(sa[1], sb[1]);
-      const g1 = Math.max(sa[0], sb[0]);
-      out.push({
-        x0: a.x0 + dx * g0, y0: a.y0 + dy * g0,
-        x1: a.x0 + dx * g1, y1: a.y0 + dy * g1,
-        th: (a.th + b.th) / 2,
-        len: gap,
+      if (a.len < Math.min(rawGap, doorMax) * 0.5 || b.len < Math.min(rawGap, doorMax) * 0.5) continue;
+
+      const aFirst = sa[1] <= sb[1]; // a's run ends where the gap starts
+      const thLo = aFirst ? a.th : b.th;
+      const thHi = aFirst ? b.th : a.th;
+      const g0 = Math.min(sa[1], sb[1]) + thLo / 2; // jamb-face trim
+      const g1 = Math.max(sa[0], sb[0]) - thHi / 2;
+      if (g1 <= g0) continue;
+
+      // Two kinds of pier split a shared gap into separate doorways:
+      // isolated wall-stub islands, and PERPENDICULAR walls whose end meets
+      // the door line inside the gap (a T-ing room divider — its last stub
+      // is fused into that wall's component, so it never becomes an island).
+      const thAvg = (a.th + b.th) / 2;
+      const cuts = islands
+        .map((isl) => ({
+          s: (isl.x - a.x0) * dx + (isl.y - a.y0) * dy,
+          perp: Math.abs((isl.x - a.x0) * -dy + (isl.y - a.y0) * dx),
+          half: Math.max(isl.longPx, isl.thicknessPx) / 2,
+        }))
+        .filter((c) => c.perp <= Math.max(4, thAvg * 0.6) && c.s > g0 + 1 && c.s < g1 - 1);
+      for (let k = 0; k < lines.length; k++) {
+        if (k === i || k === j) continue;
+        const c = lines[k];
+        if (angleDiff(Math.abs(a.angle - c.angle), 90) > 15) continue;
+        const cdx = (c.x1 - c.x0) / c.len;
+        const cdy = (c.y1 - c.y0) / c.len;
+        const denom = dx * cdy - dy * cdx;
+        if (Math.abs(denom) < 1e-6) continue;
+        // Intersection of c's line with a's line: a.x0 + s·(dx,dy) = c.x0 + t·(cdx,cdy).
+        const wx = c.x0 - a.x0;
+        const wy = c.y0 - a.y0;
+        const s = (wx * cdy - wy * cdx) / denom;
+        const t = (wx * dy - wy * dx) / denom;
+        if (s <= g0 + 1 || s >= g1 - 1) continue;
+        if (t < -(c.th / 2 + 2) || t > c.len + c.th / 2 + 2) continue; // doesn't reach the door line
+        cuts.push({ s, perp: 0, half: c.th / 2 });
+      }
+      cuts.sort((u, v) => u.s - v.s);
+
+      const bounds: [number, number][] = [];
+      let prev = g0;
+      for (const c of cuts) {
+        bounds.push([prev, c.s - c.half]);
+        prev = c.s + c.half;
+      }
+      bounds.push([prev, g1]);
+
+      let emitted = false;
+      for (const [s0, s1] of bounds) {
+        const w = s1 - s0;
+        if (w < doorMin || w > doorMax) continue;
+        emit(a, dx, dy, s0, s1, thAvg, cuts.length ? ["gap", "split"] : ["gap"]);
+        emitted = true;
+      }
+      if (emitted) {
+        usedEnds.add(`${i}:${aFirst ? "+" : "-"}`);
+        usedEnds.add(`${j}:${aFirst ? "-" : "+"}`);
+        const r0 = Math.min(sa[1], sb[1]); // raw skeleton ends — bridge meets both flanks
+        const r1 = Math.max(sa[0], sb[0]);
+        bridges.push({
+          x0: a.x0 + dx * r0, y0: a.y0 + dy * r0,
+          x1: a.x0 + dx * r1, y1: a.y0 + dy * r1,
+          th: thAvg,
+          len: r1 - r0,
+          angle: a.angle,
+        });
+      }
+    }
+  }
+
+  // -- corner pass ----------------------------------------------------------
+  for (let i = 0; i < lines.length; i++) {
+    const a = lines[i];
+    const dx = (a.x1 - a.x0) / a.len;
+    const dy = (a.y1 - a.y0) / a.len;
+    for (const sign of [1, -1] as const) {
+      if (usedEnds.has(`${i}:${sign > 0 ? "+" : "-"}`)) continue;
+      const ex = sign > 0 ? a.x1 : a.x0;
+      const ey = sign > 0 ? a.y1 : a.y0;
+      const ux = dx * sign; // outward direction past this run end
+      const uy = dy * sign;
+
+      // Nearest perpendicular wall crossing the extended run = the far jamb.
+      let best: { d: number; th: number } | null = null;
+      for (let j = 0; j < lines.length; j++) {
+        if (j === i) continue;
+        const b = lines[j];
+        if (angleDiff(Math.abs(a.angle - b.angle), 90) > 15) continue;
+        const bdx = (b.x1 - b.x0) / b.len;
+        const bdy = (b.y1 - b.y0) / b.len;
+        const denom = ux * bdy - uy * bdx;
+        if (Math.abs(denom) < 1e-6) continue;
+        // Solve E + d·u = b0 + t·bdir for (d, t).
+        const wx = b.x0 - ex;
+        const wy = b.y0 - ey;
+        const d = (wx * bdy - wy * bdx) / denom;
+        const t = (wx * uy - wy * ux) / denom;
+        if (d <= 0) continue;
+        if (t < -(b.th / 2 + 2) || t > b.len + b.th / 2 + 2) continue; // misses b's body
+        if (!best || d < best.d) best = { d, th: b.th };
+      }
+      if (!best) continue;
+      const g0 = a.th / 2; // from the true jamb face of a's end…
+      const g1 = best.d - best.th / 2; // …to the near face of the crossing wall
+      const w = g1 - g0;
+      if (w < doorMin || w > doorMax) continue;
+      if (a.len < w * 0.5) continue; // flank must be substantial
+      const s0 = (sign > 0 ? a.len : 0) + g0 * sign;
+      const s1 = (sign > 0 ? a.len : 0) + g1 * sign;
+      emit(a, dx, dy, Math.min(s0, s1), Math.max(s0, s1), a.th, ["gap", "corner"]);
+      const sEnd = sign > 0 ? a.len : 0; // bridge: run end → crossing wall's line
+      const sCross = sEnd + best.d * sign;
+      bridges.push({
+        x0: a.x0 + dx * Math.min(sEnd, sCross), y0: a.y0 + dy * Math.min(sEnd, sCross),
+        x1: a.x0 + dx * Math.max(sEnd, sCross), y1: a.y0 + dy * Math.max(sEnd, sCross),
+        th: a.th,
+        len: best.d,
         angle: a.angle,
       });
     }
   }
-  return out;
+
+  return { doors: out, bridges };
 }
 
 export function rasterToCandidates(
@@ -233,7 +400,7 @@ export function rasterToCandidates(
     .filter((c) => Math.hypot(c.x1 - c.x0, c.y1 - c.y0) >= 2)
     .map((c) => orthoSnap(c, p.orthoSnapDeg));
   const merged = mergeCollinear(snapped, p, p.mergeGapPx);
-  const doors = gapOpenings(merged, p, metersPerPixel);
+  const { doors, bridges } = gapOpenings(merged, proposal.islands ?? [], p, metersPerPixel);
 
   const minWall = metersPerPixel ? p.minWallMeters / metersPerPixel : p.minWallPx;
   const mk = (l: Line, kind: "wall" | "opening", guess: Candidate["guess"], kept: boolean, flags: string[]): Candidate => ({
@@ -256,7 +423,8 @@ export function rasterToCandidates(
       const kept = l.len >= minWall && l.th >= 3;
       return mk(l, "wall", kept ? "wall" : "reject", kept, ["raster"]);
     }),
-    ...doors.map((l) => mk(l, "opening", "door", true, ["raster", "gap"])),
+    ...bridges.map((l) => mk(l, "wall", "wall", true, ["raster", "bridge"])),
+    ...doors.map((d) => mk(d.line, "opening", "door", true, ["raster", ...d.flags])),
   ];
 
   // Cap for VLM cost: shortest non-kept wall candidates go first.

@@ -145,11 +145,36 @@ def main():
         notes.append("thin-stroke plan: wall mask = all ink (noisier candidates)")
 
     # Drop letter/symbol blobs: components much smaller than a wall span.
-    n, lab, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    n, lab, stats, cent = cv2.connectedComponentsWithStats(mask, 8)
     min_side = wall_est * 2.2
     bbox_long = np.maximum(stats[:, cv2.CC_STAT_WIDTH], stats[:, cv2.CC_STAT_HEIGHT])
     keep = bbox_long >= min_side
     keep[0] = False
+
+    # Islands: dropped blobs with a wall-grade THICK core are not letters —
+    # they're short wall stubs (e.g. the pier between two adjacent doorways).
+    # Letters are thin-stroked, so 2×max(distance transform) separates them
+    # cleanly. Emitted as a side channel (never into the mask/skeleton): the
+    # TS gap-door pass uses them to split an oversized gap into real doorways.
+    islands = []
+    if branch == "filled":
+        dist_pre = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
+        inv = 1.0 / scale
+        for i in range(1, n):
+            if keep[i]:
+                continue
+            if bbox_long[i] < wall_est * 0.6:
+                continue  # speck
+            core = 2.0 * float(dist_pre[lab == i].max())
+            if core < wall_est * 0.7:
+                continue  # thin-stroked = letter/symbol
+            islands.append({
+                "x": round(float(cent[i][0]) * inv, 1),
+                "y": round(float(cent[i][1]) * inv, 1),
+                "thicknessPx": round(core * inv, 1),
+                "longPx": round(float(bbox_long[i]) * inv, 1),
+            })
+
     mask = np.where(keep[lab], 255, 0).astype(np.uint8)
 
     dist_m = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
@@ -240,6 +265,7 @@ def main():
             "maskBranch": branch, "verdict": verdict, "notes": notes,
         },
         "centerlines": centerlines,
+        "islands": islands,
     }))
 
 
