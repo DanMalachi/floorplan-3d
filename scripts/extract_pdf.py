@@ -107,6 +107,14 @@ def main():
 
     # Render the page as a background reference (display only, not for extraction).
     zoom = min(1600 / rect.width, 1600 / rect.height)
+    if not is_vector:
+        # Image-only PDF: the render IS the plan the raster proposer consumes,
+        # so match the embedded image's native resolution instead of a fixed
+        # 1600px (capped — payload; never upscaled past native).
+        native = max((max(im[2], im[3]) for im in images), default=0)
+        if native > 0:
+            target = min(native, 3000)
+            zoom = max(zoom, min(target / rect.width, target / rect.height))
     pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
     png_b64 = base64.b64encode(pix.tobytes("png")).decode("ascii")
 

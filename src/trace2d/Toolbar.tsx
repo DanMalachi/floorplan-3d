@@ -7,6 +7,18 @@ import { traceToScene } from "./traceToScene";
 import { importPdf } from "./importPdf";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 
+// Raster plans below this can't support detection or precise tracing at all.
+const MIN_IMAGE_PX = 600;
+// Below this, detection quality degrades noticeably — load, but say so.
+const WARN_IMAGE_PX = 1000;
+
+function rasterQualityMsg(w: number, h: number, what: string): string {
+  const long = Math.max(w, h);
+  if (long < WARN_IMAGE_PX)
+    return `⚠ ${what} (${w}×${h}px) — this is low resolution, so wall suggestions may be poor. A version ≥${WARN_IMAGE_PX}px on the long edge works much better.`;
+  return `✓ ${what} (${w}×${h}px). Set the scale, then 🧱 Extract to propose walls from the image — or trace by hand.`;
+}
+
 const btn = (active = false): React.CSSProperties => ({
   padding: "6px 10px",
   fontSize: 13,
@@ -119,6 +131,8 @@ export function Toolbar() {
   const sourcePdfName = useSceneStore((s) => s.sourcePdfName);
   const setSourcePdfName = useSceneStore((s) => s.setSourcePdfName);
 
+  const extractBusy = useSceneStore((s) => s.extractBusy);
+  const extractMsg = useSceneStore((s) => s.extractMsg);
   const vlmModel = useSceneStore((s) => s.vlmModel);
   const setVlmModel = useSceneStore((s) => s.setVlmModel);
   const vlmBusy = useSceneStore((s) => s.vlmBusy);
@@ -142,9 +156,7 @@ export function Toolbar() {
         setImportedSegments([]);
         setImportedArcs([]);
         setImageOpacity(0.8);
-        setImportMsg(
-          "⚠ This PDF looks rasterized/scanned — vector extraction is out of scope. The page is loaded as a background so you can trace it manually.",
-        );
+        setImportMsg(rasterQualityMsg(r.image.width, r.image.height, "Raster plan loaded"));
       } else {
         setImageOpacity(0.45);
         setImportedSegments(r.segments);
@@ -184,6 +196,9 @@ export function Toolbar() {
   const openDoors = suggestedOpenings.filter((o) => o.type === "door").length;
   const openWindows = suggestedOpenings.length - openDoors;
   const hasPdf = importedSegments.length > 0;
+  // A plan with no vector geometry (uploaded image / raster PDF render) goes
+  // through the Phase 3 CV proposer instead of the vector pipeline.
+  const isRaster = !!image && !hasPdf;
 
   const onUpload = (file: File) => {
     setSourcePdfName(file.name);
@@ -192,7 +207,15 @@ export function Toolbar() {
       const src = reader.result as string;
       const img = new window.Image();
       img.onload = () => {
+        const long = Math.max(img.naturalWidth, img.naturalHeight);
+        if (long < MIN_IMAGE_PX) {
+          setImportMsg(
+            `✗ Image is too small (${img.naturalWidth}×${img.naturalHeight}px). Plans need at least ${MIN_IMAGE_PX}px on the long edge — try a larger export or screenshot.`,
+          );
+          return;
+        }
         setImage({ src, width: img.naturalWidth, height: img.naturalHeight });
+        setImportMsg(rasterQualityMsg(img.naturalWidth, img.naturalHeight, "Image loaded"));
         if (metersPerPixel == null) setMode("calibrate");
       };
       img.src = src;
@@ -288,16 +311,26 @@ export function Toolbar() {
 
       <Sep />
 
-      {/* ── Walls (from PDF) ─────────────────────────────────────── */}
-      {hasPdf && (
+      {/* ── Walls (from PDF vectors or from image pixels) ────────── */}
+      {(hasPdf || isRaster) && (
         <>
-          <Section label="Walls (PDF)" disabled={!scaleSet}>
+          <Section label={hasPdf ? "Walls (PDF)" : "Walls (image)"} disabled={!scaleSet}>
             <button
-              style={{ ...btn(), background: "#5a3f7a", borderColor: "#7a5aa0", color: "#fff" }}
+              style={{
+                ...btn(),
+                background: extractBusy ? "#26262b" : "#5a3f7a",
+                borderColor: "#7a5aa0",
+                color: "#fff",
+              }}
+              disabled={extractBusy}
               onClick={runWallExtraction}
-              title="Detect walls from the imported PDF (double-line → centerline)"
+              title={
+                hasPdf
+                  ? "Detect walls from the imported PDF (double-line → centerline)"
+                  : "Propose walls from the image pixels (classical CV) — review, reject bad ones, accept the rest."
+              }
             >
-              🧱 Extract
+              {extractBusy ? "🧱 Proposing…" : "🧱 Extract"}
             </button>
             <button
               style={{
@@ -332,20 +365,24 @@ export function Toolbar() {
               <option value="claude-sonnet-5">Sonnet 5</option>
               <option value="claude-haiku-4-5">Haiku 4.5</option>
             </select>
-            <button
-              style={btn(pickThickness)}
-              onClick={() => setPickThickness(!pickThickness)}
-              title="Click a real wall in the plan to learn its thickness; extraction then keeps only walls of calibrated thicknesses."
-            >
-              🎯 Calibrate {pickThickness ? "(click a wall)" : ""}
-            </button>
-            <button
-              style={btn(wallSnap)}
-              onClick={() => setWallSnap(!wallSnap)}
-              title="In Wall mode, snap clicks to the wall centerline/corner computed from the imported PDF."
-            >
-              🧲 Snap {wallSnap ? "on" : "off"}
-            </button>
+            {hasPdf && (
+              <>
+                <button
+                  style={btn(pickThickness)}
+                  onClick={() => setPickThickness(!pickThickness)}
+                  title="Click a real wall in the plan to learn its thickness; extraction then keeps only walls of calibrated thicknesses."
+                >
+                  🎯 Calibrate {pickThickness ? "(click a wall)" : ""}
+                </button>
+                <button
+                  style={btn(wallSnap)}
+                  onClick={() => setWallSnap(!wallSnap)}
+                  title="In Wall mode, snap clicks to the wall centerline/corner computed from the imported PDF."
+                >
+                  🧲 Snap {wallSnap ? "on" : "off"}
+                </button>
+              </>
+            )}
             {extractionTargets.length > 0 && (
               <span style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, color: "#bcd" }}>
                 ≈ {extractionTargets.map((t) => `${t}px`).join(", ")}
@@ -371,15 +408,18 @@ export function Toolbar() {
           <Sep />
 
           {/* ── Openings (doors + windows) ─────────────────────────── */}
+          {(hasPdf || suggestedOpenings.length > 0) && (
           <Section label="Openings" disabled={!scaleSet}>
-            <button
-              style={{ ...btn(), background: "#7a5a2f", borderColor: "#a07a3a", color: "#fff" }}
-              onClick={detectOpeningsOnTrace}
-              disabled={segments.length === 0}
-              title="Scan the imported PDF along your traced/accepted walls for doors (breaks) and windows (cramped triple-lines)."
-            >
-              🚪 Detect
-            </button>
+            {hasPdf && (
+              <button
+                style={{ ...btn(), background: "#7a5a2f", borderColor: "#a07a3a", color: "#fff" }}
+                onClick={detectOpeningsOnTrace}
+                disabled={segments.length === 0}
+                title="Scan the imported PDF along your traced/accepted walls for doors (breaks) and windows (cramped triple-lines)."
+              >
+                🚪 Detect
+              </button>
+            )}
             {suggestedOpenings.length > 0 && (
               <>
                 <button
@@ -393,6 +433,7 @@ export function Toolbar() {
               </>
             )}
           </Section>
+          )}
 
           <Sep />
         </>
@@ -511,6 +552,19 @@ export function Toolbar() {
           }}
         >
           {aiMsg}
+        </span>
+      )}
+
+      {/* Raster wall-proposal status */}
+      {extractMsg && (
+        <span
+          style={{
+            flexBasis: "100%",
+            fontSize: 12,
+            color: extractMsg.startsWith("✓") ? "#9fe0a0" : "#e0b85a",
+          }}
+        >
+          {extractMsg}
         </span>
       )}
 

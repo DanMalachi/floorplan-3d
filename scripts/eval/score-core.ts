@@ -46,7 +46,7 @@ function angleDiff(a: number, b: number): number {
 }
 
 /** Overlap of candidate `c` projected onto GT line `g`, in px. */
-function overlapAlong(g: Line, c: Line): { overlap: number; perp: number } {
+export function overlapAlong(g: Line, c: Line): { overlap: number; perp: number } {
   const gl = len(g) || 1;
   const ux = (g.x1 - g.x0) / gl;
   const uy = (g.y1 - g.y0) / gl;

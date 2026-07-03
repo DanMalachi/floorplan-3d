@@ -16,7 +16,9 @@ import {
   DEFAULT_DETECT,
   type SuggestedOpening,
 } from "@/trace2d/detectOpenings";
-import { generateCandidates } from "@/trace2d/candidates";
+import { generateCandidates, type Candidate } from "@/trace2d/candidates";
+import { rasterToCandidates, type RasterProposal } from "@/trace2d/rasterCandidates";
+import { proposeRaster } from "@/trace2d/proposeRaster";
 import { buildOverlayImage } from "@/trace2d/buildOverlay";
 import type { VlmLabel, VlmMissed } from "@/lib/vlmClassify";
 
@@ -173,9 +175,14 @@ interface StoreState {
   acceptSuggestions: () => void; // weld kept suggestions into the real trace
   setPickThickness: (v: boolean) => void;
   setWallSnap: (v: boolean) => void;
-  runWallExtraction: () => void;
+  runWallExtraction: () => Promise<void>;
   addThicknessTarget: (t: number) => void;
   clearThicknessTargets: () => void;
+
+  // --- raster plans (Phase 3 / M3): CV proposer over the loaded image ---
+  rasterProposal: RasterProposal | null; // cached — deterministic per image
+  extractBusy: boolean; // raster proposal runs server-side python (~seconds)
+  extractMsg: string | null; // quality/result note shown under the toolbar
 
   // --- VLM classification (Phase 2.5 / M3) ---
   vlmModel: string; // Claude model id used by /api/classify (on-the-fly override)
@@ -250,13 +257,53 @@ export const useSceneStore = create<StoreState>((set, get) => {
   const pushHistory = () =>
     set((st) => ({ history: [...st.history, snapshot()].slice(-100) }));
 
+  // Run (or reuse) the server-side CV proposal for the loaded raster plan.
+  const ensureProposal = async (): Promise<RasterProposal> => {
+    const cached = get().rasterProposal;
+    if (cached) return cached;
+    const image = get().image;
+    if (!image) throw new Error("no plan image loaded");
+    const proposal = await proposeRaster(image.src);
+    set({ rasterProposal: proposal });
+    return proposal;
+  };
+
+  // Map raster-pipeline candidates into the reviewable suggestion layers.
+  // Only heuristic-kept walls surface (rejects are hundreds of text/noise
+  // stubs on thin-stroke plans); gap-openings all surface — they're few and
+  // one click rejects a bad one.
+  const candidatesToSuggestions = (cands: Candidate[]) => {
+    const walls: SuggestedWall[] = [];
+    const opens: SuggestedOpening[] = [];
+    for (const c of cands) {
+      if (c.kind === "wall" && c.keptByHeuristic) {
+        walls.push({
+          id: `w${walls.length}`,
+          x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3],
+          thickness: c.thicknessPx,
+        });
+      } else if (c.kind === "opening") {
+        opens.push({
+          id: `ro${opens.length}`,
+          type: "door",
+          x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3],
+          width: c.lengthPx,
+          thickness: c.thicknessPx,
+          flags: c.flags,
+        });
+      }
+    }
+    return { walls, opens };
+  };
+
   return {
     scene: sampleScene,
     setScene: (scene) => set({ scene }),
 
     image: null,
     imageOpacity: 0.6,
-    setImage: (image) => set({ image }),
+    // A new image invalidates the cached CV proposal (it's per-image).
+    setImage: (image) => set({ image, rasterProposal: null, extractMsg: null }),
     setImageOpacity: (imageOpacity) => set({ imageOpacity }),
 
     sourcePdfName: null,
@@ -278,8 +325,39 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({ suggestedWalls, rejectedSuggestionIds: [] }),
     setPickThickness: (pickThickness) => set({ pickThickness }),
     setWallSnap: (wallSnap) => set({ wallSnap }),
-    runWallExtraction: () => {
-      const { importedSegments, importedArcs, extractionTargets, metersPerPixel } = get();
+    rasterProposal: null,
+    extractBusy: false,
+    extractMsg: null,
+    runWallExtraction: async () => {
+      const { importedSegments, importedArcs, extractionTargets, metersPerPixel, image } = get();
+
+      // Raster branch (Phase 3): no vector geometry — propose from pixels.
+      if (importedSegments.length === 0) {
+        if (!image) return;
+        set({ extractBusy: true, extractMsg: null });
+        try {
+          const proposal = await ensureProposal();
+          const gen = rasterToCandidates(proposal, metersPerPixel);
+          const { walls, opens } = candidatesToSuggestions(gen.candidates);
+          const q = proposal.quality;
+          set({
+            suggestedWalls: walls,
+            rejectedSuggestionIds: [],
+            suggestedOpenings: opens,
+            rejectedOpeningIds: [],
+            extractMsg:
+              `✓ Proposed ${walls.length} walls + ${opens.length} possible doors from the image` +
+              `${q.verdict !== "good" ? ` — quality ${q.verdict}` : ""}` +
+              `${q.notes.length ? ` (${q.notes.join("; ")})` : ""}. Review below: click a suggestion to reject it.`,
+          });
+        } catch (e) {
+          set({ extractMsg: "✗ Wall proposal failed: " + ((e as Error).message ?? String(e)) });
+        } finally {
+          set({ extractBusy: false });
+        }
+        return;
+      }
+
       const r = extractWalls(importedSegments, {
         ...scaleExtractParams(DEFAULT_PARAMS, metersPerPixel),
         thicknessTargets: extractionTargets,
@@ -319,12 +397,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
     aiClassify: async () => {
       const { importedSegments, importedArcs, metersPerPixel, extractionTargets, image, vlmModel } =
         get();
-      if (!image || importedSegments.length === 0) return "Import a vector PDF first.";
+      if (!image) return "Load a plan first (upload an image or import a PDF).";
       set({ vlmBusy: true });
       try {
-        const gen = generateCandidates(importedSegments, importedArcs, metersPerPixel, {
-          extractionTargets,
-        });
+        // Vector plans: candidates from parsed geometry. Raster plans: from the
+        // CV proposer over the image (same Candidate contract downstream).
+        const gen =
+          importedSegments.length > 0
+            ? generateCandidates(importedSegments, importedArcs, metersPerPixel, {
+                extractionTargets,
+              })
+            : rasterToCandidates(await ensureProposal(), metersPerPixel);
         if (gen.candidates.length === 0) return "No candidates found in this plan.";
         const overlay = await buildOverlayImage(image.src, gen.candidates);
         const res = await fetch("/api/classify", {
