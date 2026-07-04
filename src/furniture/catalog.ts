@@ -78,3 +78,61 @@ export const CATEGORIES: FurnitureCategory[] = [
   "Bathroom",
   "Decor",
 ];
+
+/** IKEA-style browsing: rooms, not furniture taxonomies. Items may appear in
+ *  several rooms — people shop by "what goes in the bedroom". */
+export interface RoomSection {
+  id: string;
+  label: string;
+  icon: string; // emoji tab glyph
+  assetIds: string[];
+}
+
+export const ROOMS: RoomSection[] = [
+  {
+    id: "living",
+    label: "Living",
+    icon: "🛋",
+    assetIds: [
+      "loungeSofa", "loungeChair", "tableCoffee", "cabinetTelevision",
+      "bookcaseOpen", "bookcaseClosedWide", "rugRectangle", "lampRoundFloor",
+      "pottedPlant", "benchCushion",
+    ],
+  },
+  {
+    id: "bedroom",
+    label: "Bedroom",
+    icon: "🛏",
+    assetIds: [
+      "bedDouble", "bedSingle", "sideTable", "bookcaseClosedWide",
+      "coatRackStanding", "lampRoundFloor", "rugRectangle",
+    ],
+  },
+  {
+    id: "kitchen",
+    label: "Kitchen",
+    icon: "🍳",
+    assetIds: [
+      "kitchenFridge", "kitchenStove", "kitchenCabinet", "kitchenSink",
+      "kitchenBar", "stoolBar",
+    ],
+  },
+  {
+    id: "dining",
+    label: "Dining",
+    icon: "🍽",
+    assetIds: ["table", "tableRound", "chairCushion", "benchCushion", "pottedPlant"],
+  },
+  {
+    id: "bathroom",
+    label: "Bath",
+    icon: "🛁",
+    assetIds: ["toilet", "bathtub", "shower", "bathroomSink", "washer"],
+  },
+  {
+    id: "office",
+    label: "Office",
+    icon: "💻",
+    assetIds: ["desk", "chairCushion", "bookcaseOpen", "lampRoundFloor", "pottedPlant"],
+  },
+];

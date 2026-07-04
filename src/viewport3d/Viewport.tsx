@@ -12,7 +12,8 @@ import {
   DEFAULT_WINDOW,
 } from "@/schema/constants";
 import type { OpeningType } from "@/schema/scene";
-import { CATALOG, CATALOG_BY_ID, CATEGORIES } from "@/furniture/catalog";
+import { CATALOG_BY_ID, ROOMS } from "@/furniture/catalog";
+import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors } from "./FloorMesh";
@@ -251,9 +252,84 @@ function MiniInspector() {
   return null;
 }
 
-/** Furniture catalog — the left rail of Furnish mode. */
+/** One catalog tile: a rendered 3D thumbnail with a caption, IKEA-style. */
+function CatalogTile({ assetId }: { assetId: string }) {
+  const spec = CATALOG_BY_ID.get(assetId);
+  const placing = useSceneStore((s) => s.placing);
+  const thumb = useThumbnail(assetId);
+  const [hover, setHover] = useState(false);
+  const active = placing?.assetId === assetId;
+  if (!spec) return null;
+  return (
+    <button
+      title={`${spec.name} · ${spec.footprint.w} × ${spec.footprint.d} m`}
+      onClick={() => useSceneStore.getState().setPlacing(active ? null : assetId)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 3,
+        padding: "6px 3px 5px",
+        borderRadius: T.radiusS + 2,
+        border: `1.5px solid ${active ? T.accent : "transparent"}`,
+        background: active ? T.accentSoft : hover ? "rgba(255,255,255,0.07)" : "transparent",
+        cursor: "pointer",
+        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}`,
+        transform: hover && !active ? "translateY(-1px)" : "none",
+      }}
+    >
+      <div
+        style={{
+          width: 58,
+          height: 58,
+          borderRadius: T.radiusS,
+          background: "rgba(255,255,255,0.05)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
+      >
+        {thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumb}
+            alt={spec.name}
+            width={56}
+            height={56}
+            style={{ objectFit: "contain" }}
+            draggable={false}
+          />
+        ) : (
+          <span style={{ color: T.textFaint, fontSize: 10 }}>…</span>
+        )}
+      </div>
+      <span
+        style={{
+          fontSize: 10,
+          lineHeight: 1.15,
+          color: active ? T.text : T.textDim,
+          textAlign: "center",
+          maxWidth: 62,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {spec.name}
+      </span>
+    </button>
+  );
+}
+
+/** Furniture catalog — the left rail of Furnish mode. Browse by room, pick
+ *  by picture: a mini IKEA catalog. */
 function CatalogPanel() {
   const placing = useSceneStore((s) => s.placing);
+  const [roomId, setRoomId] = useState(ROOMS[0].id);
+  const room = ROOMS.find((r) => r.id === roomId) ?? ROOMS[0];
   return (
     <div
       style={{
@@ -261,38 +337,66 @@ function CatalogPanel() {
         left: 14,
         top: 64,
         bottom: 14,
-        width: 216,
+        width: 246,
         display: "flex",
         flexDirection: "column",
         ...glass(),
       }}
     >
-      <div style={{ padding: "12px 14px 6px", fontWeight: 600, fontSize: 13 }}>Catalog</div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "4px 12px 12px" }}>
-        {CATEGORIES.map((cat) => (
-          <div key={cat} style={{ marginBottom: 10 }}>
-            <div style={{ ...microLabel(), margin: "8px 0 5px" }}>{cat}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {CATALOG.filter((a) => a.category === cat).map((a) => {
-                const active = placing?.assetId === a.assetId;
-                return (
-                  <button
-                    key={a.assetId}
-                    style={chip(active, { fontSize: 11.5, padding: "4px 9px" })}
-                    onClick={() =>
-                      useSceneStore.getState().setPlacing(active ? null : a.assetId)
-                    }
-                  >
-                    {a.name}
-                  </button>
-                );
+      <div style={{ padding: "12px 14px 8px", fontWeight: 600, fontSize: 13 }}>Catalog</div>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 3,
+          padding: "0 10px 10px",
+          borderBottom: `1px solid ${T.panelBorder}`,
+        }}
+      >
+        {ROOMS.map((r) => {
+          const active = r.id === roomId;
+          return (
+            <button
+              key={r.id}
+              onClick={() => setRoomId(r.id)}
+              style={chip(active, {
+                fontSize: 11,
+                padding: "4px 8px",
+                borderRadius: 999,
+                border: "none",
+                background: active ? T.accent : "transparent",
+                color: active ? "#fff" : T.textDim,
               })}
-            </div>
-          </div>
+            >
+              {r.icon} {r.label}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: 10,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 4,
+          alignContent: "start",
+        }}
+      >
+        {room.assetIds.map((id) => (
+          <CatalogTile key={id} assetId={id} />
         ))}
       </div>
       {placing && (
-        <div style={{ padding: "8px 14px 12px", color: T.textFaint, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
+        <div
+          style={{
+            padding: "8px 14px 12px",
+            color: T.textFaint,
+            fontSize: 11.5,
+            borderTop: `1px solid ${T.panelBorder}`,
+          }}
+        >
           click to place · R rotates · Esc done
         </div>
       )}
