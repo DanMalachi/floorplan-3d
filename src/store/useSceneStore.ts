@@ -148,6 +148,13 @@ export interface PickRef {
   id: string;
 }
 
+/** The app's top-level modes (Phase 4 M5): what the main stage shows and
+ *  which family of objects responds to the pointer. */
+export type AppMode = "trace" | "build" | "furnish" | "view";
+
+/** How walls render in 3D: solid, camera-facing faded, or Sims top-down stubs. */
+export type WallViewMode = "full" | "cutaway" | "top";
+
 /** One undo step: the scene as it was before the command ran. */
 interface HistoryEntry {
   label: string;
@@ -224,6 +231,12 @@ interface StoreState {
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
+
+  // --- app shell (Phase 4 M5) ---
+  appMode: AppMode;
+  wallMode: WallViewMode;
+  setAppMode: (m: AppMode) => void;
+  setWallMode: (m: WallViewMode) => void;
 
   // --- background image ---
   image: TraceImage | null;
@@ -455,6 +468,16 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!gestureBase) return;
       set({ scene: gestureBase, gestureBase: null, dragViz: null });
     },
+
+    appMode: "trace",
+    wallMode: "full",
+    setAppMode: (appMode) => {
+      const s = get();
+      if (s.gestureBase) s.cancelGesture();
+      // Leaving a mode drops its transient interaction state.
+      set({ appMode, placing: null, sel3d: null, hover3d: null });
+    },
+    setWallMode: (wallMode) => set({ wallMode }),
 
     placing: null,
     setPlacing: (assetId) =>

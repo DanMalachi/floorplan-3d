@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
 import { analyzeLoops } from "@/lib/loops";
+import { T, microLabel } from "@/ui/tokens";
 import { traceToScene } from "./traceToScene";
 import { importPdf } from "./importPdf";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
@@ -20,13 +21,15 @@ function rasterQualityMsg(w: number, h: number, what: string): string {
 }
 
 const btn = (active = false): React.CSSProperties => ({
-  padding: "6px 10px",
-  fontSize: 13,
-  borderRadius: 6,
-  border: "1px solid #3a3a40",
-  background: active ? "#2f6f8f" : "#26262b",
-  color: "#e6e6e6",
+  padding: "6px 11px",
+  fontSize: 12.5,
+  fontFamily: T.font,
+  borderRadius: T.radiusS,
+  border: `1px solid ${active ? "transparent" : T.panelBorder}`,
+  background: active ? T.accent : T.inputBg,
+  color: active ? "#fff" : T.text,
   cursor: "pointer",
+  transition: `background ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
 });
 
 // A labeled cluster of controls. `disabled` hard-gates the whole group
@@ -54,11 +57,7 @@ function Section({
     >
       <span
         style={{
-          fontSize: 9,
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
-          fontWeight: 700,
-          color: highlight ? "#ffcc33" : "#70707a",
+          ...microLabel(highlight ? T.warn : T.textFaint),
           paddingLeft: 2,
         }}
       >
@@ -81,7 +80,7 @@ function Section({
   );
 }
 
-const Sep = () => <span style={{ width: 1, alignSelf: "stretch", background: "#2f2f35" }} />;
+const Sep = () => <span style={{ width: 1, alignSelf: "stretch", background: T.panelBorder }} />;
 
 export function Toolbar() {
   const image = useSceneStore((s) => s.image);
@@ -247,9 +246,10 @@ export function Toolbar() {
         flexWrap: "wrap",
         gap: 10,
         alignItems: "flex-start",
-        padding: "8px 10px",
-        borderBottom: "1px solid #2a2a2e",
-        background: "#1a1a1d",
+        padding: "54px 14px 10px", // clears the floating mode switcher
+        borderBottom: `1px solid ${T.panelBorder}`,
+        background: T.panelBgSolid,
+        fontFamily: T.font,
       }}
     >
       {/* ── Plan ────────────────────────────────────────────────── */}

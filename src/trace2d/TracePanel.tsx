@@ -15,7 +15,7 @@ const TraceCanvas = dynamic(() => import("./TraceCanvas"), {
 
 export function TracePanel() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0, background: "#101012" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minWidth: 0, background: "#131316" }}>
       <Toolbar />
       <div style={{ flex: 1, minHeight: 0 }}>
         <TraceCanvas />

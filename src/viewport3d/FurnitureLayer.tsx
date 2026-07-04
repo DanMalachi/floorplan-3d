@@ -108,7 +108,7 @@ function FurnitureItemView({ item, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.placing) return; // placement clicks belong to the ground plane
+    if (s.appMode !== "furnish" || s.placing) return; // furniture edits in Furnish only
     e.stopPropagation();
     s.setSel3d({ kind: "furniture", id: item.id });
     const p = rayToPlan(e, offset);
@@ -168,9 +168,10 @@ function FurnitureItemView({ item, offset }: {
       rotation={[0, yawOf(item.rotation), 0]}
       userData={{ pick: { kind: "furniture", id: item.id } }}
       onPointerOver={(e) => {
-        if (useSceneStore.getState().placing) return;
+        const s = useSceneStore.getState();
+        if (s.appMode !== "furnish" || s.placing) return;
         e.stopPropagation();
-        useSceneStore.getState().setHover3d({ kind: "furniture", id: item.id });
+        s.setHover3d({ kind: "furniture", id: item.id });
       }}
       onPointerOut={(e) => {
         e.stopPropagation();

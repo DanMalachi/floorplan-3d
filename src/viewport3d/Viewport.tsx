@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Grid, Html, Line, OrbitControls } from "@react-three/drei";
+import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import * as THREE from "three";
-import { useSceneStore } from "@/store/useSceneStore";
+import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
 import {
   WALL_HEIGHT,
   DEFAULT_THICKNESS,
@@ -13,6 +13,7 @@ import {
 } from "@/schema/constants";
 import type { OpeningType } from "@/schema/scene";
 import { CATALOG, CATALOG_BY_ID, CATEGORIES } from "@/furniture/catalog";
+import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors } from "./FloorMesh";
 import { FurnitureLayer } from "./FurnitureLayer";
@@ -44,19 +45,17 @@ function useSceneBounds() {
 
 function FitCamera({ span }: { span: number }) {
   const camera = useThree((s) => s.camera);
-  const controls = useThree((s) => s.controls) as
-    | { target: THREE.Vector3; update: () => void }
-    | null;
+  const controls = useThree((s) => s.controls) as CameraControls | null;
   useEffect(() => {
     const dist = Math.max(span * 1.6, 5) + 3;
-    const dir = new THREE.Vector3(0.7, 0.7, 1).normalize();
-    camera.position.copy(dir.multiplyScalar(dist));
+    const dir = new THREE.Vector3(0.7, 0.7, 1).normalize().multiplyScalar(dist);
     camera.near = 0.05;
     camera.far = dist * 20;
     camera.updateProjectionMatrix();
-    if (controls) {
-      controls.target.set(0, 0, 0);
-      controls.update();
+    if (controls && "setLookAt" in controls) {
+      controls.setLookAt(dir.x, dir.y, dir.z, 0, 0, 0, true);
+    } else {
+      camera.position.copy(dir);
     }
   }, [span, camera, controls]);
   return null;
@@ -75,7 +74,7 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
           <Line
             key={i}
             points={[[g.value, 0.02, cz - ext], [g.value, 0.02, cz + ext]]}
-            color="#0a84ff"
+            color={T.accent}
             transparent
             opacity={0.65}
             lineWidth={1.5}
@@ -84,7 +83,7 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
           <Line
             key={i}
             points={[[cx - ext, 0.02, g.value], [cx + ext, 0.02, g.value]]}
-            color="#0a84ff"
+            color={T.accent}
             transparent
             opacity={0.65}
             lineWidth={1.5}
@@ -102,28 +101,17 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
 
 const inspectorPanel: React.CSSProperties = {
   position: "absolute",
-  right: 12,
-  top: 12,
-  padding: "10px 12px",
-  borderRadius: 10,
-  background: "rgba(20,20,24,0.78)",
-  backdropFilter: "blur(10px)",
-  color: "#ddd",
-  fontSize: 12,
+  right: 14,
+  top: 64,
+  padding: "12px 14px",
+  fontSize: 12.5,
   display: "flex",
   flexDirection: "column",
-  gap: 8,
+  gap: 9,
+  minWidth: 170,
+  ...glass(),
 };
-const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6 };
-const inspectorInput: React.CSSProperties = {
-  width: 58,
-  background: "#26262b",
-  border: "1px solid #3a3a40",
-  borderRadius: 6,
-  color: "#eee",
-  padding: "3px 6px",
-  fontSize: 12,
-};
+const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" };
 
 /** Numeric field that commits on Enter/blur and never leaks keys to the pane. */
 function NumField({ label, value, onCommit, disabled }: {
@@ -141,24 +129,26 @@ function NumField({ label, value, onCommit, disabled }: {
   };
   return (
     <label style={inspectorRow}>
-      {label}
-      <input
-        style={{ ...inspectorInput, opacity: disabled ? 0.4 : 1 }}
-        value={raw}
-        disabled={disabled}
-        onChange={(e) => setRaw(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          e.stopPropagation();
-        }}
-      />
-      m
+      <span style={{ color: T.textDim }}>{label}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <input
+          style={field({ width: 58, opacity: disabled ? 0.4 : 1 })}
+          value={raw}
+          disabled={disabled}
+          onChange={(e) => setRaw(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            e.stopPropagation();
+          }}
+        />
+        <span style={{ color: T.textFaint }}>m</span>
+      </span>
     </label>
   );
 }
 
-/** Temporary numeric inspector for the selection (real one lands in M5). */
+/** Contextual inspector, docked top-right when something is selected. */
 function MiniInspector() {
   const sel3d = useSceneStore((s) => s.sel3d);
   const scene = useSceneStore((s) => s.scene);
@@ -178,7 +168,7 @@ function MiniInspector() {
     };
     return (
       <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600, color: "#7db8ff" }}>Wall · {len.toFixed(2)} m</div>
+        <div style={{ fontWeight: 600 }}>Wall <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span></div>
         <NumField
           label="Height"
           value={wall.height ?? WALL_HEIGHT}
@@ -200,12 +190,12 @@ function MiniInspector() {
     const deg = ((item.rotation * 180) / Math.PI) % 360;
     return (
       <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600, color: "#7db8ff" }}>{spec?.name ?? item.assetId}</div>
-        <div style={{ opacity: 0.75 }}>
-          {spec ? `${spec.footprint.w} × ${spec.footprint.d} m` : ""}
+        <div style={{ fontWeight: 600 }}>{spec?.name ?? item.assetId}</div>
+        <div style={{ color: T.textDim }}>
+          {spec ? `${spec.footprint.w} × ${spec.footprint.d} m · ` : ""}
+          {Math.round(deg)}°
         </div>
-        <div style={{ opacity: 0.75 }}>rotation {Math.round(deg)}°</div>
-        <div style={{ opacity: 0.6 }}>drag to move · R rotates · Delete removes</div>
+        <div style={{ color: T.textFaint }}>drag to move · R rotates · Delete removes</div>
       </div>
     );
   }
@@ -227,23 +217,12 @@ function MiniInspector() {
       const d = type === "door" ? DEFAULT_DOOR : DEFAULT_WINDOW;
       patch(`Convert to ${type}`, { type, sill: d.sill, height: d.height });
     };
-    const segBtn = (type: OpeningType): React.CSSProperties => ({
-      padding: "3px 10px",
-      borderRadius: 6,
-      border: "1px solid #3a3a40",
-      background: op.type === type ? "#0a84ff" : "#26262b",
-      color: op.type === type ? "#fff" : "#bbb",
-      cursor: "pointer",
-      fontSize: 12,
-    });
     return (
       <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600, color: "#7db8ff", textTransform: "capitalize" }}>
-          {op.type}
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button style={segBtn("door")} onClick={() => swapTo("door")}>Door</button>
-          <button style={segBtn("window")} onClick={() => swapTo("window")}>Window</button>
+        <div style={{ fontWeight: 600, textTransform: "capitalize" }}>{op.type}</div>
+        <div style={{ display: "flex", gap: 5 }}>
+          <button style={chip(op.type === "door")} onClick={() => swapTo("door")}>Door</button>
+          <button style={chip(op.type === "window")} onClick={() => swapTo("window")}>Window</button>
         </div>
         <NumField
           label="Width"
@@ -272,80 +251,91 @@ function MiniInspector() {
   return null;
 }
 
-/** Furniture catalog (functional now, restyled in M5). Click an item to pick
- *  it up; click in the scene to place; Esc puts it down. */
+/** Furniture catalog — the left rail of Furnish mode. */
 function CatalogPanel() {
   const placing = useSceneStore((s) => s.placing);
-  const [open, setOpen] = useState(false);
-  const btn: React.CSSProperties = {
-    padding: "5px 10px",
-    borderRadius: 8,
-    border: "1px solid #3a3a40",
-    background: "rgba(20,20,24,0.78)",
-    backdropFilter: "blur(10px)",
-    color: "#ddd",
-    fontSize: 12,
-    cursor: "pointer",
-  };
   return (
-    <div style={{ position: "absolute", left: 12, top: 12, maxHeight: "calc(100% - 70px)", display: "flex", flexDirection: "column", gap: 6 }}>
-      <button style={{ ...btn, alignSelf: "flex-start", background: open ? "#0a84ff" : btn.background, color: open ? "#fff" : "#ddd" }} onClick={() => setOpen(!open)}>
-        🛋 Furnish
-      </button>
-      {open && (
-        <div
-          style={{
-            width: 210,
-            overflowY: "auto",
-            padding: 10,
-            borderRadius: 10,
-            background: "rgba(20,20,24,0.82)",
-            backdropFilter: "blur(10px)",
-            color: "#ddd",
-            fontSize: 12,
-          }}
-        >
-          {CATEGORIES.map((cat) => (
-            <div key={cat} style={{ marginBottom: 8 }}>
-              <div style={{ fontWeight: 600, opacity: 0.65, margin: "6px 0 4px" }}>{cat}</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {CATALOG.filter((a) => a.category === cat).map((a) => {
-                  const active = placing?.assetId === a.assetId;
-                  return (
-                    <button
-                      key={a.assetId}
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: 6,
-                        border: "1px solid #3a3a40",
-                        background: active ? "#0a84ff" : "#26262b",
-                        color: active ? "#fff" : "#ccc",
-                        cursor: "pointer",
-                        fontSize: 11,
-                      }}
-                      onClick={() =>
-                        useSceneStore.getState().setPlacing(active ? null : a.assetId)
-                      }
-                    >
-                      {a.name}
-                    </button>
-                  );
-                })}
-              </div>
+    <div
+      style={{
+        position: "absolute",
+        left: 14,
+        top: 64,
+        bottom: 14,
+        width: 216,
+        display: "flex",
+        flexDirection: "column",
+        ...glass(),
+      }}
+    >
+      <div style={{ padding: "12px 14px 6px", fontWeight: 600, fontSize: 13 }}>Catalog</div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "4px 12px 12px" }}>
+        {CATEGORIES.map((cat) => (
+          <div key={cat} style={{ marginBottom: 10 }}>
+            <div style={{ ...microLabel(), margin: "8px 0 5px" }}>{cat}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {CATALOG.filter((a) => a.category === cat).map((a) => {
+                const active = placing?.assetId === a.assetId;
+                return (
+                  <button
+                    key={a.assetId}
+                    style={chip(active, { fontSize: 11.5, padding: "4px 9px" })}
+                    onClick={() =>
+                      useSceneStore.getState().setPlacing(active ? null : a.assetId)
+                    }
+                  >
+                    {a.name}
+                  </button>
+                );
+              })}
             </div>
-          ))}
-          {placing && (
-            <div style={{ opacity: 0.6, marginTop: 4 }}>
-              click to place · R rotates · Esc done
-            </div>
-          )}
+          </div>
+        ))}
+      </div>
+      {placing && (
+        <div style={{ padding: "8px 14px 12px", color: T.textFaint, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
+          click to place · R rotates · Esc done
         </div>
       )}
     </div>
   );
 }
 
-/** Selection + undo status while the real inspector waits for M5. */
+const WALL_MODES: { id: WallViewMode; label: string }[] = [
+  { id: "full", label: "Full" },
+  { id: "cutaway", label: "Cutaway" },
+  { id: "top", label: "Top" },
+];
+
+/** Sims wall-view control: Full / Cutaway / Top. */
+function WallModeToggle() {
+  const wallMode = useSceneStore((s) => s.wallMode);
+  const setWallMode = useSceneStore((s) => s.setWallMode);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        right: 14,
+        bottom: 14,
+        display: "flex",
+        gap: 3,
+        padding: 4,
+        ...glass({ borderRadius: 999 }),
+      }}
+    >
+      {WALL_MODES.map((m) => (
+        <button
+          key={m.id}
+          style={chip(wallMode === m.id, { borderRadius: 999, border: "none", fontSize: 11.5 })}
+          onClick={() => setWallMode(m.id)}
+        >
+          {m.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Selection + undo status pill. */
 function StatusOverlay() {
   const sel3d = useSceneStore((s) => s.sel3d);
   const past = useSceneStore((s) => s.scenePast.length);
@@ -355,27 +345,24 @@ function StatusOverlay() {
     <div
       style={{
         position: "absolute",
-        left: 12,
-        bottom: 12,
-        padding: "6px 10px",
-        borderRadius: 8,
-        background: "rgba(20,20,24,0.72)",
-        backdropFilter: "blur(8px)",
-        color: "#ddd",
+        left: 14,
+        bottom: 14,
+        padding: "7px 12px",
         fontSize: 12,
         pointerEvents: "none",
         display: "flex",
         gap: 12,
+        ...glass({ borderRadius: 999 }),
       }}
     >
       {sel3d ? (
-        <span style={{ color: "#7db8ff" }}>
+        <span style={{ color: T.accent }}>
           {sel3d.kind} selected — drag to move, Delete removes, Esc deselects
         </span>
       ) : (
-        <span>nothing selected</span>
+        <span style={{ color: T.textDim }}>nothing selected</span>
       )}
-      <span style={{ opacity: 0.7 }}>
+      <span style={{ color: T.textFaint }}>
         ⌘Z undo ({past}) · ⇧⌘Z redo ({future})
       </span>
     </div>
@@ -388,6 +375,7 @@ export function Viewport() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
   const dragging = useSceneStore((s) => s.gestureBase !== null);
+  const appMode = useSceneStore((s) => s.appMode);
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -438,7 +426,7 @@ export function Viewport() {
         camera={{ position: [9, 8, 11], fov: 50 }}
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
-        <color attach="background" args={["#1e1e22"]} />
+        <color attach="background" args={[T.bgCanvas]} />
         <ambientLight intensity={0.6} />
         <directionalLight
           position={[span, span * 1.5, span * 0.8]}
@@ -458,19 +446,22 @@ export function Viewport() {
         <Grid
           args={[200, 200]}
           cellSize={1}
-          cellThickness={0.6}
+          cellThickness={0.5}
+          cellColor="#26262d"
           sectionSize={5}
           sectionThickness={1}
+          sectionColor="#33333c"
           infiniteGrid
           fadeDistance={Math.max(span * 4, 40)}
           position={[0, -0.01, 0]}
         />
-        <OrbitControls makeDefault enabled={!dragging} />
+        <CameraControls makeDefault enabled={!dragging} smoothTime={0.18} draggingSmoothTime={0.06} />
         <FitCamera span={span} />
       </Canvas>
-      <StatusOverlay />
-      <MiniInspector />
-      <CatalogPanel />
+      {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
+      {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
+      {appMode === "furnish" && <CatalogPanel />}
+      <WallModeToggle />
     </div>
   );
 }

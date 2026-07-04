@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
@@ -86,37 +87,78 @@ function WallGroup({ wall, a, b, ops, offset }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<DragState | null>(null);
 
   const { pieces, volumes, mid, len, normal, frame } = useMemo(() => {
     const nodes = new Map<string, Node>([[a.id, a], [b.id, b]]);
+    // Sims top-down view: walls drop to knee-high stubs.
+    const eff = wallMode === "top" ? { ...wall, height: 0.32 } : wall;
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const L = Math.hypot(dx, dy) || 1;
     const ux = dx / L;
     const uy = dy / L;
     return {
-      pieces: buildWallSegments(wall, ops, nodes),
-      volumes: buildOpeningVolumes(wall, ops, nodes),
+      pieces: buildWallSegments(eff, ops, nodes),
+      volumes: buildOpeningVolumes(eff, ops, nodes),
       mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       len: Math.hypot(dx, dy),
       normal: { x: -uy, y: ux },
       frame: {
         ax: a.x, ay: a.y, ux, uy,
         L: Math.hypot(dx, dy),
-        wallH: wall.height ?? WALL_HEIGHT,
+        wallH: eff.height ?? WALL_HEIGHT,
         th: wall.thickness ?? DEFAULT_THICKNESS,
         rotationY: -Math.atan2(uy, ux),
       } satisfies WallFrame,
     };
-  }, [wall, ops, a, b]);
+  }, [wall, ops, a, b, wallMode]);
 
   const glow = selected ? 0.5 : hovered ? 0.22 : 0;
+
+  // One material per wall, shared by all its pieces: selection glow and the
+  // cutaway fade mutate it directly instead of re-rendering geometry.
+  const mat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({
+      color: WALL_COLOR,
+      emissive: new THREE.Color(ACCENT),
+      emissiveIntensity: 0,
+      transparent: true,
+      opacity: 1,
+    });
+    return m;
+  }, []);
+  useEffect(() => () => mat.dispose(), [mat]);
+  useEffect(() => {
+    mat.emissiveIntensity = glow;
+  }, [mat, glow]);
+
+  // Cutaway: fade walls on the camera's side of the model so the interior
+  // reads. Smoothly damped per frame; no React re-renders involved.
+  useFrame((state, dt) => {
+    let target = 1;
+    if (wallMode === "cutaway") {
+      const camX = state.camera.position.x;
+      const camZ = state.camera.position.z;
+      const wx = mid.x - offset.cx;
+      const wz = mid.y - offset.cz;
+      const wl = Math.hypot(wx, wz);
+      const cl = Math.hypot(camX, camZ);
+      if (wl > 1e-3 && cl > 1e-3 && (wx * camX + wz * camZ) / (wl * cl) > 0.25) {
+        target = 0.13;
+      }
+    }
+    if (Math.abs(mat.opacity - target) > 1e-3) {
+      mat.opacity = THREE.MathUtils.damp(mat.opacity, target, 10, dt);
+      mat.depthWrite = mat.opacity > 0.55;
+    }
+  });
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.placing) return; // placement clicks fall through to the ground plane
+    if (s.appMode !== "build" || s.placing) return; // walls edit in Build only
     e.stopPropagation();
     s.setSel3d({ kind: "wall", id: wall.id });
     const start = rayToPlan(e, offset);
@@ -162,9 +204,10 @@ function WallGroup({ wall, a, b, ops, offset }: {
 
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
-      if (useSceneStore.getState().placing) return;
+      const s = useSceneStore.getState();
+      if (s.appMode !== "build" || s.placing) return;
       e.stopPropagation();
-      useSceneStore.getState().setHover3d({ kind: "wall", id: wall.id });
+      s.setHover3d({ kind: "wall", id: wall.id });
     },
     onPointerOut: (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation();
@@ -183,17 +226,13 @@ function WallGroup({ wall, a, b, ops, offset }: {
           castShadow
           receiveShadow
           userData={{ pick: { kind: "wall", id: wall.id } }}
+          material={mat}
           {...hoverHandlers}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         >
           <boxGeometry args={p.size} />
-          <meshStandardMaterial
-            color={WALL_COLOR}
-            emissive={ACCENT}
-            emissiveIntensity={glow}
-          />
         </mesh>
       ))}
       {volumes.map((v) => {
@@ -337,7 +376,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.placing) return; // placement clicks fall through to the ground plane
+    if (s.appMode !== "build" || s.placing) return; // openings edit in Build only
     e.stopPropagation();
     s.setSel3d({ kind: "opening", id: opening.id });
     const start = rayToPlan(e, offset);
@@ -391,9 +430,10 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         rotation={[0, vol.rotationY, 0]}
         userData={{ pick: { kind: "opening", id: opening.id } }}
         onPointerOver={(e) => {
-          if (useSceneStore.getState().placing) return;
+          const s = useSceneStore.getState();
+          if (s.appMode !== "build" || s.placing) return;
           e.stopPropagation();
-          useSceneStore.getState().setHover3d({ kind: "opening", id: opening.id });
+          s.setHover3d({ kind: "opening", id: opening.id });
         }}
         onPointerOut={(e) => {
           e.stopPropagation();
