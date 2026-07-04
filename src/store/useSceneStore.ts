@@ -238,6 +238,15 @@ interface StoreState {
   setAppMode: (m: AppMode) => void;
   setWallMode: (m: WallViewMode) => void;
 
+  // --- guided trace flow (Phase 5 T1) ---
+  /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
+  traceStep: number;
+  importBusy: boolean;
+  importMsg: string | null;
+  setTraceStep: (n: number) => void;
+  /** One import path for images AND PDFs — routed by file type. */
+  importPlanFile: (file: File) => Promise<void>;
+
   // --- background image ---
   image: TraceImage | null;
   imageOpacity: number;
@@ -478,6 +487,66 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({ appMode, placing: null, sel3d: null, hover3d: null });
     },
     setWallMode: (wallMode) => set({ wallMode }),
+
+    traceStep: 1,
+    importBusy: false,
+    importMsg: null,
+    setTraceStep: (traceStep) => set({ traceStep }),
+    importPlanFile: async (file) => {
+      const { isPdfFile, isImageFile, loadImageFile, rasterQualityMsg, MIN_IMAGE_PX } =
+        await import("@/trace2d/planImport");
+      set({ importBusy: true, importMsg: null });
+      get().setSourcePdfName(file.name);
+      try {
+        if (isPdfFile(file)) {
+          const { importPdf } = await import("@/trace2d/importPdf");
+          const r = await importPdf(file);
+          get().setImage(r.image);
+          if (!r.isVector) {
+            set({
+              importedSegments: [],
+              importedArcs: [],
+              imageOpacity: 0.8,
+              importMsg: rasterQualityMsg(r.image.width, r.image.height, "Scanned plan loaded"),
+            });
+          } else {
+            set({
+              imageOpacity: 0.45,
+              importedSegments: r.segments,
+              importedArcs: r.arcs,
+              showImport: true,
+              importMsg: `✓ Vector PDF — ${r.stats.segments} segments${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
+            });
+          }
+        } else if (isImageFile(file)) {
+          const img = await loadImageFile(file);
+          if (Math.max(img.width, img.height) < MIN_IMAGE_PX) {
+            set({
+              importBusy: false,
+              importMsg: `✗ Image too small (${img.width}×${img.height}px) — plans need ≥${MIN_IMAGE_PX}px on the long edge.`,
+            });
+            return;
+          }
+          get().setImage(img);
+          set({
+            importedSegments: [],
+            importedArcs: [],
+            imageOpacity: 0.8,
+            importMsg: rasterQualityMsg(img.width, img.height, "Image loaded"),
+          });
+        } else {
+          set({ importBusy: false, importMsg: "✗ Unsupported file — use an image (PNG/JPG/WebP) or a PDF." });
+          return;
+        }
+        // A fresh plan needs a scale before anything else can happen.
+        if (get().metersPerPixel == null) get().setMode("calibrate");
+        set({ traceStep: 2 });
+      } catch (e) {
+        set({ importMsg: "✗ Import failed: " + (e as Error).message });
+      } finally {
+        set({ importBusy: false });
+      }
+    },
 
     placing: null,
     setPlacing: (assetId) =>
