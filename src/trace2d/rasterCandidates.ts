@@ -55,6 +55,10 @@ export interface RasterParams {
   doorMaxMeters: number;
   doorMinPx: number;
   doorMaxPx: number;
+  arcThinMaxPx: number; // leaf/arc strokes are drawing-weight, not wall-weight
+  arcJoinPx: number; // endpoint gap that still chains leaf/arc pieces
+  arcTurnMinDeg: number; // total sweep of an arc chain (quarter swing ≈ 60–90°)
+  arcTurnMaxDeg: number;
   maxCandidates: number; // cap — drop shortest rejects first
 }
 
@@ -69,6 +73,10 @@ export const DEFAULT_RASTER: RasterParams = {
   doorMaxMeters: 3.5, // wide sliders/garage doors; matches vector candidate mode
   doorMinPx: 18,
   doorMaxPx: 220,
+  arcThinMaxPx: 5.5,
+  arcJoinPx: 7,
+  arcTurnMinDeg: 45,
+  arcTurnMaxDeg: 120,
   maxCandidates: 600,
 };
 
@@ -388,6 +396,236 @@ function gapOpenings(
   return { doors: out, bridges };
 }
 
+/**
+ * Leaf+arc doors. On drawn plans a doorway carries a door LEAF (straight
+ * thin stroke ~door-width long, anchored at the hinge jamb) plus a SWING ARC
+ * curving ~90° from the leaf's free tip to the opposite jamb. The skeleton
+ * keeps both as thin polyline chains, so hinge and far jamb fall out of
+ * connectivity alone — no dependence on a gap in the wall run. This is the
+ * only signal for doorways whose gap is bridged by thin header ink
+ * (thin-stroke plans) or whose flanking wall stubs are junction-eaten.
+ *
+ * The ARC CHAIN is detected first (≥3 short segments turning 4–55° per joint
+ * with one sign, total sweep in the turn band): headers that close the
+ * leaf+arc circuit into a loop and furniture clutter fused onto the hinge
+ * don't matter, because only the chain itself plus one leaf segment are
+ * needed. Checks that pin it down as a door swing: leaf length ≈ jamb
+ * distance (both are the radius) and chord/jamb-distance ≈ √2 (quarter arc).
+ * Runs on RAW centerlines: ortho snap would flatten arc pieces.
+ */
+function arcPathDoors(
+  raw: RasterCenterline[],
+  p: RasterParams,
+  mpp: number | null,
+): GapResult {
+  const doorMin = mpp ? p.doorMinMeters / mpp : p.doorMinPx;
+  const doorMax = mpp ? p.doorMaxMeters / mpp : p.doorMaxPx;
+
+  // Thin, shortish strokes only — wall-grade centerlines can't be leaf/arc ink.
+  const segs = raw.filter((c) => {
+    if (c.thicknessPx > p.arcThinMaxPx) return false;
+    const len = Math.hypot(c.x1 - c.x0, c.y1 - c.y0);
+    return len >= 2 && len <= doorMax * 1.2;
+  });
+  const n = segs.length;
+
+  // Cluster endpoints within arcJoinPx into graph nodes (junction centroids
+  // re-attach branches only approximately, so exact-match keying is not
+  // enough). Grid buckets keep the pairing near-linear.
+  const px = new Float64Array(2 * n);
+  const py = new Float64Array(2 * n);
+  for (let i = 0; i < n; i++) {
+    px[2 * i] = segs[i].x0; py[2 * i] = segs[i].y0;
+    px[2 * i + 1] = segs[i].x1; py[2 * i + 1] = segs[i].y1;
+  }
+  const eParent = Array.from({ length: 2 * n }, (_, i) => i);
+  const eFind = (i: number): number => (eParent[i] === i ? i : (eParent[i] = eFind(eParent[i])));
+  const cell = Math.max(1, p.arcJoinPx);
+  const buckets = new Map<string, number[]>();
+  for (let i = 0; i < 2 * n; i++) {
+    const k = `${Math.floor(px[i] / cell)}:${Math.floor(py[i] / cell)}`;
+    (buckets.get(k) ?? buckets.set(k, []).get(k)!).push(i);
+  }
+  for (let i = 0; i < 2 * n; i++) {
+    const cx = Math.floor(px[i] / cell);
+    const cy = Math.floor(py[i] / cell);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (const j of buckets.get(`${cx + dx}:${cy + dy}`) ?? []) {
+          if (j <= i) continue;
+          if (Math.hypot(px[i] - px[j], py[i] - py[j]) <= p.arcJoinPx && eFind(i) !== eFind(j)) {
+            eParent[eFind(i)] = eFind(j);
+          }
+        }
+      }
+    }
+  }
+  const nodeOf = (endIdx: number) => eFind(endIdx);
+  // adjacency: node -> incident (segment, its two node ids)
+  const adj = new Map<number, { seg: number; a: number; b: number }[]>();
+  for (let i = 0; i < n; i++) {
+    const a = nodeOf(2 * i);
+    const b = nodeOf(2 * i + 1);
+    if (a === b) continue; // degenerate/looped tiny piece
+    const e = { seg: i, a, b };
+    (adj.get(a) ?? adj.set(a, []).get(a)!).push(e);
+    (adj.get(b) ?? adj.set(b, []).get(b)!).push(e);
+  }
+  const nodePt = (node: number): [number, number] => {
+    // representative coordinate: any member endpoint (cluster radius ≤ joinPx)
+    return [px[node], py[node]];
+  };
+  const segLen = (i: number) => Math.hypot(segs[i].x1 - segs[i].x0, segs[i].y1 - segs[i].y0);
+
+  const turnAt = (
+    from: [number, number],
+    mid: [number, number],
+    to: [number, number],
+  ): { deg: number; sign: number } => {
+    const ux = mid[0] - from[0];
+    const uy = mid[1] - from[1];
+    const vx = to[0] - mid[0];
+    const vy = to[1] - mid[1];
+    const cross = ux * vy - uy * vx;
+    const dot = ux * vx + uy * vy;
+    return { deg: (Math.atan2(Math.abs(cross), dot) * 180) / Math.PI, sign: Math.sign(cross) };
+  };
+
+  interface Chain {
+    nodes: number[]; // ordered node ids
+  }
+
+  // Grow an arc chain from a seed edge: extend while the next edge turns
+  // 4–55° with the majority sign. Greedy smallest-turn choice at each node.
+  const growChain = (seed: { seg: number; a: number; b: number }, startAt: number): Chain => {
+    const nodes = [startAt, seed.a === startAt ? seed.b : seed.a];
+    const usedSegs = new Set<number>([seed.seg]);
+    let sign = 0;
+    for (;;) {
+      const cur = nodes[nodes.length - 1];
+      const prev = nodes[nodes.length - 2];
+      let best: { edge: { seg: number; a: number; b: number }; next: number; deg: number; sign: number } | null = null;
+      for (const e of adj.get(cur) ?? []) {
+        if (usedSegs.has(e.seg)) continue;
+        const next = e.a === cur ? e.b : e.a;
+        if (next === prev) continue;
+        const t = turnAt(nodePt(prev), nodePt(cur), nodePt(next));
+        if (t.deg < 4 || t.deg > 55) continue;
+        if (sign !== 0 && t.sign !== 0 && t.sign !== sign) continue;
+        if (!best || t.deg < best.deg) best = { edge: e, next, deg: t.deg, sign: t.sign };
+      }
+      if (!best) return { nodes };
+      if (sign === 0) sign = best.sign;
+      usedSegs.add(best.edge.seg);
+      nodes.push(best.next);
+    }
+  };
+
+  // A straight leaf hanging off a chain end: one thin segment (optionally
+  // extended through near-collinear continuations) whose far end is the hinge.
+  // The leaf is a swing RADIUS, so it must depart the arc at a real angle —
+  // a smooth straight continuation of the curve is not a leaf.
+  const findLeaf = (
+    endNode: number,
+    intoChainNode: number,
+    avoid: Set<number>,
+  ): { hinge: [number, number]; len: number } | null => {
+    let best: { hinge: [number, number]; len: number } | null = null;
+    for (const e of adj.get(endNode) ?? []) {
+      if (avoid.has(e.seg)) continue;
+      if (segLen(e.seg) < doorMin * 0.4) continue; // leaf is door-scale, not a stub
+      const first = e.a === endNode ? e.b : e.a;
+      if (turnAt(nodePt(intoChainNode), nodePt(endNode), nodePt(first)).deg < 30) continue;
+      let prev = endNode;
+      let cur = e.a === endNode ? e.b : e.a;
+      let len = segLen(e.seg);
+      const seen = new Set<number>([e.seg]);
+      for (let hops = 0; hops < 2; hops++) {
+        let ext: { next: number; seg: number } | null = null;
+        for (const f of adj.get(cur) ?? []) {
+          if (seen.has(f.seg) || avoid.has(f.seg)) continue;
+          const next = f.a === cur ? f.b : f.a;
+          if (next === prev) continue;
+          if (turnAt(nodePt(prev), nodePt(cur), nodePt(next)).deg > 18) continue;
+          ext = { next, seg: f.seg };
+          break;
+        }
+        if (!ext) break;
+        seen.add(ext.seg);
+        len += segLen(ext.seg);
+        prev = cur;
+        cur = ext.next;
+      }
+      if (!best || len > best.len) best = { hinge: nodePt(cur), len };
+    }
+    return best;
+  };
+
+  const doors: GapCandidate[] = [];
+  const bridges: Line[] = [];
+  for (const [node, edges] of adj) {
+    for (const seed of edges) {
+      if (seed.a !== node) continue; // visit each edge once, grow both ways
+      for (const startAt of [seed.a, seed.b]) {
+        const chain = growChain(seed, startAt);
+        if (chain.nodes.length < 4) continue; // ≥3 segments = a real curve
+        // Total sweep between first and last segment directions.
+        let sweep = 0;
+        for (let i = 0; i + 2 < chain.nodes.length; i++) {
+          sweep += turnAt(nodePt(chain.nodes[i]), nodePt(chain.nodes[i + 1]), nodePt(chain.nodes[i + 2])).deg;
+        }
+        if (sweep < p.arcTurnMinDeg || sweep > p.arcTurnMaxDeg) continue;
+        const tip = nodePt(chain.nodes[0]);
+        const far = nodePt(chain.nodes[chain.nodes.length - 1]);
+        const chord = Math.hypot(far[0] - tip[0], far[1] - tip[1]);
+        if (chord < doorMin || chord > doorMax * 1.5) continue;
+
+        // Collect the chain's own segments so the leaf search skips them.
+        const avoid = new Set<number>();
+        for (let i = 0; i + 1 < chain.nodes.length; i++) {
+          for (const e of adj.get(chain.nodes[i]) ?? []) {
+            const o = e.a === chain.nodes[i] ? e.b : e.a;
+            if (o === chain.nodes[i + 1]) avoid.add(e.seg);
+          }
+        }
+        // The leaf hangs off the OPEN TIP (chain start); hinge = its far end.
+        const leaf = findLeaf(chain.nodes[0], chain.nodes[1], avoid);
+        if (!leaf) continue;
+        const span = Math.hypot(far[0] - leaf.hinge[0], far[1] - leaf.hinge[1]);
+        if (span < doorMin || span > doorMax) continue;
+        // Leaf and jamb distance are both the swing radius; chord ≈ R√2.
+        if (Math.abs(span - leaf.len) > 0.35 * Math.max(span, leaf.len)) continue;
+        const chordRatio = chord / span;
+        if (chordRatio < 1.05 || chordRatio > 1.9) continue;
+
+        // Hinge/jamb come from endpoint clusters (±joinPx noise), which can
+        // tilt a square doorway several degrees — snap near-ortho spans flat.
+        // Genuinely diagonal doors (45° corner pantries) stay untouched.
+        const line = orthoSnap(
+          {
+            x0: leaf.hinge[0], y0: leaf.hinge[1], x1: far[0], y1: far[1],
+            thicknessPx: segs[seed.seg].thicknessPx,
+          },
+          12,
+        );
+        // Dedupe repeats of the same swing found from different seeds.
+        const mx = (line.x0 + line.x1) / 2;
+        const my = (line.y0 + line.y1) / 2;
+        const dup = doors.some((d) => {
+          const dmx = (d.line.x0 + d.line.x1) / 2;
+          const dmy = (d.line.y0 + d.line.y1) / 2;
+          return Math.hypot(dmx - mx, dmy - my) < (d.line.len + line.len) * 0.375;
+        });
+        if (dup) continue;
+        doors.push({ line, flags: ["arcpath"] });
+        // Host-wall continuity across the doorway, as with gap doors.
+        bridges.push({ ...line });
+      }
+    }
+  }
+  return { doors, bridges };
+}
+
 export function rasterToCandidates(
   proposal: RasterProposal,
   metersPerPixel: number | null,
@@ -400,7 +638,23 @@ export function rasterToCandidates(
     .filter((c) => Math.hypot(c.x1 - c.x0, c.y1 - c.y0) >= 2)
     .map((c) => orthoSnap(c, p.orthoSnapDeg));
   const merged = mergeCollinear(snapped, p, p.mergeGapPx);
-  const { doors, bridges } = gapOpenings(merged, proposal.islands ?? [], p, metersPerPixel);
+  const gap = gapOpenings(merged, proposal.islands ?? [], p, metersPerPixel);
+  const arc = arcPathDoors(proposal.centerlines, p, metersPerPixel);
+
+  // A doorway with a swing symbol may also read as a gap/corner door; the
+  // arc-path span is jamb-exact, so it wins and the gap duplicate is dropped.
+  const dupOfArc = (g: GapCandidate) => {
+    const gmx = (g.line.x0 + g.line.x1) / 2;
+    const gmy = (g.line.y0 + g.line.y1) / 2;
+    return arc.doors.some((a) => {
+      if (angleDiff(a.line.angle, g.line.angle) > 25) return false;
+      const amx = (a.line.x0 + a.line.x1) / 2;
+      const amy = (a.line.y0 + a.line.y1) / 2;
+      return Math.hypot(amx - gmx, amy - gmy) < (a.line.len + g.line.len) * 0.375;
+    });
+  };
+  const doors = [...arc.doors, ...gap.doors.filter((g) => !dupOfArc(g))];
+  const bridges = [...gap.bridges, ...arc.bridges];
 
   const minWall = metersPerPixel ? p.minWallMeters / metersPerPixel : p.minWallPx;
   const mk = (l: Line, kind: "wall" | "opening", guess: Candidate["guess"], kept: boolean, flags: string[]): Candidate => ({
