@@ -138,9 +138,15 @@ export async function classifyCandidates(args: {
 
   // Streamed: labels for hundreds of candidates can exceed what a non-streaming
   // request may return before HTTP timeouts kick in.
+  // Sonnet 5 runs ADAPTIVE THINKING when `thinking` is omitted (Opus 4.8 does
+  // not) — on this workload that meant ~38k output tokens of thinking, ~6-7min
+  // and ~2.5x the expected cost for no measured label gain. Disable it there;
+  // Opus/Haiku already run thinking-off by default and reject/ignore the field
+  // inconsistently, so only Sonnet gets the explicit flag.
   const stream = client.messages.stream({
     model,
     max_tokens: 64000,
+    ...(model.includes("sonnet-5") ? { thinking: { type: "disabled" as const } } : {}),
     system: SYSTEM_PROMPT,
     output_config: { format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
     messages: [

@@ -217,6 +217,11 @@ export function Toolbar() {
           return;
         }
         setImage({ src, width: img.naturalWidth, height: img.naturalHeight });
+        // A picture replaces whatever plan was loaded before — stale vector
+        // segments from an earlier PDF would keep the app in PDF mode.
+        setImportedSegments([]);
+        setImportedArcs([]);
+        setImageOpacity(0.8);
         setImportMsg(rasterQualityMsg(img.naturalWidth, img.naturalHeight, "Image loaded"));
         if (metersPerPixel == null) setMode("calibrate");
       };
@@ -249,11 +254,14 @@ export function Toolbar() {
     >
       {/* ── Plan ────────────────────────────────────────────────── */}
       <Section label="Plan">
-        <label style={btn()}>
-          Upload
+        <label
+          style={{ ...btn(), background: "#3a4d6b", borderColor: "#4a6088" }}
+          title="Floor-plan photo, scan, or screenshot — JPG, PNG, or WebP. Walls can then be auto-extracted from the pixels."
+        >
+          🖼 Import image
           <input
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
             style={{ display: "none" }}
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -262,7 +270,10 @@ export function Toolbar() {
             }}
           />
         </label>
-        <label style={{ ...btn(), background: importing ? "#26262b" : "#3a4d6b", borderColor: "#4a6088" }}>
+        <label
+          style={{ ...btn(), background: importing ? "#26262b" : "#3a4d6b", borderColor: "#4a6088" }}
+          title="Vector CAD PDF — geometry is imported directly. Scanned/raster PDFs fall back to the image pipeline."
+        >
           {importing ? "Importing…" : "⤓ Import PDF"}
           <input
             type="file"
