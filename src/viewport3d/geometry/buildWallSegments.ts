@@ -76,3 +76,53 @@ export function buildWallSegments(
 
   return pieces.filter((p): p is WallPiece => p !== null);
 }
+
+/** An opening's gap volume — the raycast/selection target for doors & windows. */
+export interface OpeningVolume {
+  openingId: string;
+  type: Opening["type"];
+  position: [number, number, number];
+  size: [number, number, number];
+  rotationY: number;
+}
+
+/**
+ * The box each opening occupies inside its wall, in world space. Slightly
+ * thicker than the wall so a highlight reads through both faces.
+ */
+export function buildOpeningVolumes(
+  wall: Wall,
+  openings: Opening[],
+  nodes: Map<string, Node>,
+): OpeningVolume[] {
+  const a = nodes.get(wall.a);
+  const b = nodes.get(wall.b);
+  if (!a || !b) return [];
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const L = Math.hypot(dx, dy);
+  if (L < 1e-6) return [];
+  const ux = dx / L;
+  const uy = dy / L;
+  const wallH = wall.height ?? WALL_HEIGHT;
+  const t = wall.thickness ?? DEFAULT_THICKNESS;
+  const rotationY = -Math.atan2(uy, ux);
+
+  const out: OpeningVolume[] = [];
+  for (const o of openings) {
+    const start = Math.max(0, o.offset - o.width / 2);
+    const end = Math.min(L, o.offset + o.width / 2);
+    const sill = Math.max(0, o.sill);
+    const top = Math.min(wallH, o.sill + o.height);
+    if (end <= start || top <= sill) continue;
+    const c = (start + end) / 2;
+    out.push({
+      openingId: o.id,
+      type: o.type,
+      position: [a.x + ux * c, (sill + top) / 2, a.y + uy * c],
+      size: [end - start, top - sill, t * 1.08],
+      rotationY,
+    });
+  }
+  return out;
+}

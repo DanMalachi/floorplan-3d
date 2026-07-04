@@ -140,10 +140,49 @@ function remapOpening(
   ];
 }
 
+// --- Phase 4: 3D editing ---------------------------------------------------
+
+/** What a 3D pointer event resolved to (raycast pick contract). */
+export interface PickRef {
+  kind: "wall" | "opening" | "room";
+  id: string;
+}
+
+/** One undo step: the scene as it was before the command ran. */
+interface HistoryEntry {
+  label: string;
+  scene: Scene;
+}
+
+const HISTORY_CAP = 200;
+
+/** Does this pick target still exist in the scene? (undo/redo can remove it) */
+function pickExists(scene: Scene, pick: PickRef | null): boolean {
+  if (!pick) return false;
+  switch (pick.kind) {
+    case "wall": return scene.walls.some((w) => w.id === pick.id);
+    case "opening": return scene.openings.some((o) => o.id === pick.id);
+    case "room": return scene.rooms.some((r) => r.id === pick.id);
+  }
+}
+
 interface StoreState {
   // --- 3D model (single source of truth) ---
   scene: Scene;
   setScene: (s: Scene) => void;
+
+  // --- 3D editing: selection + command stack (Phase 4 M1) ---
+  hover3d: PickRef | null;
+  sel3d: PickRef | null;
+  scenePast: HistoryEntry[];
+  sceneFuture: HistoryEntry[];
+  setHover3d: (p: PickRef | null) => void;
+  setSel3d: (p: PickRef | null) => void;
+  /** Replace the scene as one undoable command. All 3D edits go through here. */
+  commitScene: (label: string, next: Scene) => void;
+  undoScene: () => void;
+  redoScene: () => void;
+  deleteSelected3d: () => void;
 
   // --- background image ---
   image: TraceImage | null;
@@ -300,7 +339,68 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
   return {
     scene: sampleScene,
-    setScene: (scene) => set({ scene }),
+    // Loading/generating a whole scene is itself an undoable command.
+    setScene: (scene) => get().commitScene("Replace scene", scene),
+
+    hover3d: null,
+    sel3d: null,
+    scenePast: [],
+    sceneFuture: [],
+    setHover3d: (hover3d) => set({ hover3d }),
+    setSel3d: (sel3d) => set({ sel3d }),
+    commitScene: (label, next) =>
+      set((s) => ({
+        scene: next,
+        scenePast: [...s.scenePast.slice(-(HISTORY_CAP - 1)), { label, scene: s.scene }],
+        sceneFuture: [],
+        sel3d: pickExists(next, s.sel3d) ? s.sel3d : null,
+        hover3d: pickExists(next, s.hover3d) ? s.hover3d : null,
+      })),
+    undoScene: () =>
+      set((s) => {
+        const entry = s.scenePast[s.scenePast.length - 1];
+        if (!entry) return s;
+        return {
+          scene: entry.scene,
+          scenePast: s.scenePast.slice(0, -1),
+          sceneFuture: [...s.sceneFuture, { label: entry.label, scene: s.scene }],
+          sel3d: pickExists(entry.scene, s.sel3d) ? s.sel3d : null,
+          hover3d: null,
+        };
+      }),
+    redoScene: () =>
+      set((s) => {
+        const entry = s.sceneFuture[s.sceneFuture.length - 1];
+        if (!entry) return s;
+        return {
+          scene: entry.scene,
+          scenePast: [...s.scenePast, { label: entry.label, scene: s.scene }],
+          sceneFuture: s.sceneFuture.slice(0, -1),
+          sel3d: pickExists(entry.scene, s.sel3d) ? s.sel3d : null,
+          hover3d: null,
+        };
+      }),
+    deleteSelected3d: () => {
+      const { sel3d, scene, commitScene } = get();
+      if (!sel3d) return;
+      if (sel3d.kind === "wall") {
+        commitScene("Delete wall", {
+          ...scene,
+          walls: scene.walls.filter((w) => w.id !== sel3d.id),
+          openings: scene.openings.filter((o) => o.wallId !== sel3d.id),
+        });
+      } else if (sel3d.kind === "opening") {
+        commitScene("Delete opening", {
+          ...scene,
+          openings: scene.openings.filter((o) => o.id !== sel3d.id),
+        });
+      } else {
+        commitScene("Delete floor", {
+          ...scene,
+          rooms: scene.rooms.filter((r) => r.id !== sel3d.id),
+        });
+      }
+    },
 
     image: null,
     imageOpacity: 0.6,

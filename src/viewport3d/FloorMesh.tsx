@@ -2,8 +2,54 @@
 
 import { useMemo } from "react";
 import { DoubleSide } from "three";
+import type { ThreeEvent } from "@react-three/fiber";
+import type { BufferGeometry } from "three";
 import type { Scene } from "@/schema/scene";
+import { useSceneStore } from "@/store/useSceneStore";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
+import { ACCENT } from "./WallMesh";
+
+const FLOOR_COLOR = "#8a94a6";
+
+function Floor({ roomId, geometry }: { roomId: string; geometry: BufferGeometry }) {
+  const hovered = useSceneStore(
+    (s) => s.hover3d?.kind === "room" && s.hover3d.id === roomId,
+  );
+  const selected = useSceneStore(
+    (s) => s.sel3d?.kind === "room" && s.sel3d.id === roomId,
+  );
+  const setHover3d = useSceneStore((s) => s.setHover3d);
+  const setSel3d = useSceneStore((s) => s.setSel3d);
+  const glow = selected ? 0.4 : hovered ? 0.18 : 0;
+
+  return (
+    <mesh
+      geometry={geometry}
+      receiveShadow
+      userData={{ pick: { kind: "room", id: roomId } }}
+      onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        setHover3d({ kind: "room", id: roomId });
+      }}
+      onPointerOut={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        const cur = useSceneStore.getState().hover3d;
+        if (cur?.kind === "room" && cur.id === roomId) setHover3d(null);
+      }}
+      onClick={(e: ThreeEvent<MouseEvent>) => {
+        e.stopPropagation();
+        setSel3d({ kind: "room", id: roomId });
+      }}
+    >
+      <meshStandardMaterial
+        color={FLOOR_COLOR}
+        side={DoubleSide}
+        emissive={ACCENT}
+        emissiveIntensity={glow}
+      />
+    </mesh>
+  );
+}
 
 export function Floors({ scene }: { scene: Scene }) {
   const floors = useMemo(() => {
@@ -19,9 +65,7 @@ export function Floors({ scene }: { scene: Scene }) {
   return (
     <group>
       {floors.map((f) => (
-        <mesh key={f.id} geometry={f.geometry} receiveShadow>
-          <meshStandardMaterial color="#8a94a6" side={DoubleSide} />
-        </mesh>
+        <Floor key={f.id} roomId={f.id} geometry={f.geometry} />
       ))}
     </group>
   );
