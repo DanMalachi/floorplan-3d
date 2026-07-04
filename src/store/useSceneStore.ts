@@ -154,6 +154,23 @@ interface HistoryEntry {
   scene: Scene;
 }
 
+/** A snap guide line in plan space: axis "x" means the vertical line x=value. */
+export interface SnapGuide {
+  axis: "x" | "y";
+  value: number;
+}
+
+/** A floating dimension label in world space. */
+export interface DimLabel {
+  world: [number, number, number];
+  text: string;
+}
+
+export interface DragViz {
+  guides: SnapGuide[];
+  labels: DimLabel[];
+}
+
 const HISTORY_CAP = 200;
 
 /** Does this pick target still exist in the scene? (undo/redo can remove it) */
@@ -183,6 +200,21 @@ interface StoreState {
   undoScene: () => void;
   redoScene: () => void;
   deleteSelected3d: () => void;
+
+  // --- 3D editing: drag gestures (Phase 4 M2) ---
+  /** Scene at gesture start; non-null while a drag is in flight. */
+  gestureBase: Scene | null;
+  /** Snap guides + dimension labels the viewport draws during a drag. */
+  dragViz: DragViz | null;
+  /** Bumped only on whole-scene replaces — the viewport recenters on this,
+   *  never mid-edit, so the model can't slide under the cursor. */
+  frameToken: number;
+  beginGesture: () => void;
+  /** Live-update the scene mid-drag WITHOUT touching history. */
+  updateGesture: (next: Scene, viz?: DragViz | null) => void;
+  /** Fold the whole gesture into one undo step (no-op if nothing changed). */
+  endGesture: (label: string) => void;
+  cancelGesture: () => void;
 
   // --- background image ---
   image: TraceImage | null;
@@ -339,8 +371,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
   return {
     scene: sampleScene,
-    // Loading/generating a whole scene is itself an undoable command.
-    setScene: (scene) => get().commitScene("Replace scene", scene),
+    // Loading/generating a whole scene is itself an undoable command; it is
+    // also the only thing that reframes the 3D camera (frameToken).
+    setScene: (scene) => {
+      get().commitScene("Replace scene", scene);
+      set((s) => ({ frameToken: s.frameToken + 1 }));
+    },
 
     hover3d: null,
     sel3d: null,
@@ -380,6 +416,37 @@ export const useSceneStore = create<StoreState>((set, get) => {
           hover3d: null,
         };
       }),
+    gestureBase: null,
+    dragViz: null,
+    frameToken: 0,
+    beginGesture: () => {
+      const s = get();
+      if (!s.gestureBase) set({ gestureBase: s.scene });
+    },
+    updateGesture: (next, viz = null) => {
+      if (!get().gestureBase) return; // no gesture in flight
+      set({ scene: next, dragViz: viz });
+    },
+    endGesture: (label) => {
+      const { gestureBase, scene } = get();
+      if (!gestureBase) return;
+      if (gestureBase === scene) {
+        set({ gestureBase: null, dragViz: null }); // click, not a drag
+        return;
+      }
+      set((s) => ({
+        gestureBase: null,
+        dragViz: null,
+        scenePast: [...s.scenePast.slice(-(HISTORY_CAP - 1)), { label, scene: gestureBase }],
+        sceneFuture: [],
+      }));
+    },
+    cancelGesture: () => {
+      const { gestureBase } = get();
+      if (!gestureBase) return;
+      set({ scene: gestureBase, gestureBase: null, dragViz: null });
+    },
+
     deleteSelected3d: () => {
       const { sel3d, scene, commitScene } = get();
       if (!sel3d) return;

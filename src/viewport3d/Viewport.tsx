@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Grid, OrbitControls } from "@react-three/drei";
+import { Grid, Html, Line, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useSceneStore } from "@/store/useSceneStore";
-import { Walls } from "./WallMesh";
+import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
+import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors } from "./FloorMesh";
 
-// Compute model center (plan x,y) and span so we can recenter + frame any scene.
+// Model center (plan x,y) and span for framing. Keyed on frameToken — only a
+// whole-scene replace reframes; edits never shift the model under the cursor.
 function useSceneBounds() {
-  const scene = useSceneStore((s) => s.scene);
+  const frameToken = useSceneStore((s) => s.frameToken);
   return useMemo(() => {
+    const scene = useSceneStore.getState().scene;
     if (scene.nodes.length === 0) {
       return { cx: 0, cz: 0, span: 6 };
     }
@@ -27,7 +30,8 @@ function useSceneBounds() {
       cz: (minY + maxY) / 2, // plan y -> world z
       span: Math.max(maxX - minX, maxY - minY, 1),
     };
-  }, [scene]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frameToken]);
 }
 
 function FitCamera({ span }: { span: number }) {
@@ -48,6 +52,145 @@ function FitCamera({ span }: { span: number }) {
     }
   }, [span, camera, controls]);
   return null;
+}
+
+/** Snap guides + live dimension labels during a drag (plan coords — rendered
+ *  inside the recentered group). */
+function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }) {
+  const viz = useSceneStore((s) => s.dragViz);
+  if (!viz) return null;
+  const ext = span * 1.2;
+  return (
+    <>
+      {viz.guides.map((g, i) =>
+        g.axis === "x" ? (
+          <Line
+            key={i}
+            points={[[g.value, 0.02, cz - ext], [g.value, 0.02, cz + ext]]}
+            color="#0a84ff"
+            transparent
+            opacity={0.65}
+            lineWidth={1.5}
+          />
+        ) : (
+          <Line
+            key={i}
+            points={[[cx - ext, 0.02, g.value], [cx + ext, 0.02, g.value]]}
+            color="#0a84ff"
+            transparent
+            opacity={0.65}
+            lineWidth={1.5}
+          />
+        ),
+      )}
+      {viz.labels.map((l, i) => (
+        <Html key={`l${i}`} position={l.world} center style={{ pointerEvents: "none" }}>
+          <div style={dimLabelStyle}>{l.text}</div>
+        </Html>
+      ))}
+    </>
+  );
+}
+
+/** Temporary numeric inspector for the selected wall (real one lands in M5). */
+function MiniInspector() {
+  const sel3d = useSceneStore((s) => s.sel3d);
+  const scene = useSceneStore((s) => s.scene);
+  const wall = sel3d?.kind === "wall" ? scene.walls.find((w) => w.id === sel3d.id) : undefined;
+  const [height, setHeight] = useState("");
+  const [thickness, setThickness] = useState("");
+
+  useEffect(() => {
+    if (!wall) return;
+    setHeight(String(wall.height ?? WALL_HEIGHT));
+    setThickness(String(wall.thickness ?? DEFAULT_THICKNESS));
+  }, [wall]);
+
+  if (!wall) return null;
+  const a = scene.nodes.find((n) => n.id === wall.a);
+  const b = scene.nodes.find((n) => n.id === wall.b);
+  const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
+
+  const commit = (field: "height" | "thickness", raw: string) => {
+    const v = Number(raw);
+    if (!Number.isFinite(v)) return;
+    const s = useSceneStore.getState();
+    if (field === "height") {
+      const h = Math.min(6, Math.max(0.5, v));
+      if (h === (wall.height ?? WALL_HEIGHT)) return;
+      s.commitScene("Wall height", {
+        ...s.scene,
+        walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, height: h } : w)),
+      });
+    } else {
+      const t = Math.min(1, Math.max(0.05, v));
+      if (t === wall.thickness) return;
+      s.commitScene("Wall thickness", {
+        ...s.scene,
+        walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, thickness: t } : w)),
+      });
+    }
+  };
+
+  const row: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6 };
+  const input: React.CSSProperties = {
+    width: 58,
+    background: "#26262b",
+    border: "1px solid #3a3a40",
+    borderRadius: 6,
+    color: "#eee",
+    padding: "3px 6px",
+    fontSize: 12,
+  };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        right: 12,
+        top: 12,
+        padding: "10px 12px",
+        borderRadius: 10,
+        background: "rgba(20,20,24,0.78)",
+        backdropFilter: "blur(10px)",
+        color: "#ddd",
+        fontSize: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      <div style={{ fontWeight: 600, color: "#7db8ff" }}>Wall · {len.toFixed(2)} m</div>
+      <label style={row}>
+        Height
+        <input
+          style={input}
+          value={height}
+          onChange={(e) => setHeight(e.target.value)}
+          onBlur={() => commit("height", height)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit("height", height);
+            e.stopPropagation();
+          }}
+        />
+        m
+      </label>
+      <label style={row}>
+        Thickness
+        <input
+          style={input}
+          value={thickness}
+          onChange={(e) => setThickness(e.target.value)}
+          onBlur={() => commit("thickness", thickness)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit("thickness", thickness);
+            e.stopPropagation();
+          }}
+        />
+        m
+      </label>
+    </div>
+  );
 }
 
 /** Selection + undo status while the real inspector waits for M5. */
@@ -75,7 +218,7 @@ function StatusOverlay() {
     >
       {sel3d ? (
         <span style={{ color: "#7db8ff" }}>
-          {sel3d.kind} selected — Delete removes, Esc deselects
+          {sel3d.kind} selected — drag to move, Delete removes, Esc deselects
         </span>
       ) : (
         <span>nothing selected</span>
@@ -92,6 +235,8 @@ export function Viewport() {
   const { cx, cz, span } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
+  const dragging = useSceneStore((s) => s.gestureBase !== null);
+  const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const t = e.target as HTMLElement;
@@ -106,7 +251,8 @@ export function Viewport() {
     } else if (e.key === "Delete" || e.key === "Backspace") {
       s.deleteSelected3d();
     } else if (e.key === "Escape") {
-      s.setSel3d(null);
+      if (s.gestureBase) s.cancelGesture();
+      else s.setSel3d(null);
     } else {
       return; // not ours — let it bubble (2D editor listens on window)
     }
@@ -126,7 +272,7 @@ export function Viewport() {
         width: "100%",
         height: "100%",
         outline: "none",
-        cursor: hovering ? "pointer" : "auto",
+        cursor: dragging ? "grabbing" : hovering ? "pointer" : "auto",
       }}
     >
       <Canvas
@@ -143,10 +289,11 @@ export function Viewport() {
           shadow-mapSize={[2048, 2048]}
         />
 
-        {/* Recenter the model over the origin. */}
+        {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
           <Floors scene={scene} />
-          <Walls scene={scene} />
+          <Walls scene={scene} offset={offset} />
+          <DragVizLayer cx={cx} cz={cz} span={span} />
         </group>
 
         <Grid
@@ -159,10 +306,11 @@ export function Viewport() {
           fadeDistance={Math.max(span * 4, 40)}
           position={[0, -0.01, 0]}
         />
-        <OrbitControls makeDefault />
+        <OrbitControls makeDefault enabled={!dragging} />
         <FitCamera span={span} />
       </Canvas>
       <StatusOverlay />
+      <MiniInspector />
     </div>
   );
 }
