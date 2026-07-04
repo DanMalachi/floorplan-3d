@@ -144,7 +144,7 @@ function remapOpening(
 
 /** What a 3D pointer event resolved to (raycast pick contract). */
 export interface PickRef {
-  kind: "wall" | "opening" | "room";
+  kind: "wall" | "opening" | "room" | "furniture";
   id: string;
 }
 
@@ -180,6 +180,7 @@ function pickExists(scene: Scene, pick: PickRef | null): boolean {
     case "wall": return scene.walls.some((w) => w.id === pick.id);
     case "opening": return scene.openings.some((o) => o.id === pick.id);
     case "room": return scene.rooms.some((r) => r.id === pick.id);
+    case "furniture": return scene.furniture.some((f) => f.id === pick.id);
   }
 }
 
@@ -215,6 +216,14 @@ interface StoreState {
   /** Fold the whole gesture into one undo step (no-op if nothing changed). */
   endGesture: (label: string) => void;
   cancelGesture: () => void;
+
+  // --- furniture (Phase 4 M4) ---
+  /** Catalog item being placed: ghost follows the cursor until click/Esc. */
+  placing: { assetId: string; rotation: number } | null;
+  setPlacing: (assetId: string | null) => void;
+  rotatePlacing: (deltaRad: number) => void;
+  placeFurniture: (x: number, y: number, rotation: number) => void;
+  rotateSelectedFurniture: (deltaRad: number) => void;
 
   // --- background image ---
   image: TraceImage | null;
@@ -447,10 +456,45 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({ scene: gestureBase, gestureBase: null, dragViz: null });
     },
 
+    placing: null,
+    setPlacing: (assetId) =>
+      set({ placing: assetId ? { assetId, rotation: 0 } : null, sel3d: null }),
+    rotatePlacing: (deltaRad) =>
+      set((s) =>
+        s.placing
+          ? { placing: { ...s.placing, rotation: s.placing.rotation + deltaRad } }
+          : s,
+      ),
+    placeFurniture: (x, y, rotation) => {
+      const { placing, scene, commitScene } = get();
+      if (!placing) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      commitScene("Place furniture", {
+        ...scene,
+        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation }],
+      });
+      // Stay in placing mode - Sims-style repeat placement; Esc exits.
+    },
+    rotateSelectedFurniture: (deltaRad) => {
+      const { sel3d, scene, commitScene } = get();
+      if (sel3d?.kind !== "furniture") return;
+      commitScene("Rotate furniture", {
+        ...scene,
+        furniture: scene.furniture.map((f) =>
+          f.id === sel3d.id ? { ...f, rotation: f.rotation + deltaRad } : f,
+        ),
+      });
+    },
+
     deleteSelected3d: () => {
       const { sel3d, scene, commitScene } = get();
       if (!sel3d) return;
-      if (sel3d.kind === "wall") {
+      if (sel3d.kind === "furniture") {
+        commitScene("Delete furniture", {
+          ...scene,
+          furniture: scene.furniture.filter((f) => f.id !== sel3d.id),
+        });
+      } else if (sel3d.kind === "wall") {
         commitScene("Delete wall", {
           ...scene,
           walls: scene.walls.filter((w) => w.id !== sel3d.id),

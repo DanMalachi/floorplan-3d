@@ -20,7 +20,7 @@ import { WALL_HEIGHT, DEFAULT_THICKNESS } from "./constants";
 const t = DEFAULT_THICKNESS;
 
 export const sampleScene: Scene = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   units: "meters",
   nodes: [
     { id: "n0", x: 0, y: 0 },
@@ -64,6 +64,11 @@ export const sampleScene: Scene = {
       name: "L-room",
       loop: ["n0", "n1", "n2", "n3", "n4", "n5"],
     },
+  ],
+  // A couple of pieces so the furniture pipeline is visible out of the box.
+  furniture: [
+    { id: "f0", assetId: "loungeSofa", x: 1.1, y: 4.2, rotation: Math.PI },
+    { id: "f1", assetId: "tableCoffee", x: 1.1, y: 3.0, rotation: 0 },
   ],
 };
 

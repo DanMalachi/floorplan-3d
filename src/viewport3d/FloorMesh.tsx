@@ -28,6 +28,7 @@ function Floor({ roomId, geometry }: { roomId: string; geometry: BufferGeometry 
       receiveShadow
       userData={{ pick: { kind: "room", id: roomId } }}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+        if (useSceneStore.getState().placing) return;
         e.stopPropagation();
         setHover3d({ kind: "room", id: roomId });
       }}
@@ -37,6 +38,7 @@ function Floor({ roomId, geometry }: { roomId: string; geometry: BufferGeometry 
         if (cur?.kind === "room" && cur.id === roomId) setHover3d(null);
       }}
       onClick={(e: ThreeEvent<MouseEvent>) => {
+        if (useSceneStore.getState().placing) return; // let the ground plane place
         e.stopPropagation();
         setSel3d({ kind: "room", id: roomId });
       }}

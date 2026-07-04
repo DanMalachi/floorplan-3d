@@ -40,11 +40,23 @@ export interface Room {
   loop: Id[]; // ordered node ids; closure is implied (last connects to first)
 }
 
+/** A placed furniture piece. Geometry lives in the catalog asset; the scene
+ *  stores only placement. Front faces local +Z; back (wall side) is -Z. */
+export interface FurnitureItem {
+  id: Id;
+  assetId: string; // catalog key, e.g. "loungeSofa"
+  x: number; // plan meters (center)
+  y: number;
+  rotation: number; // radians about world up
+  elevation?: number; // meters above floor (default 0)
+}
+
 export interface Scene {
-  schemaVersion: 1;
+  schemaVersion: 2;
   units: "meters";
   nodes: Node[];
   walls: Wall[];
   openings: Opening[];
   rooms: Room[];
+  furniture: FurnitureItem[];
 }

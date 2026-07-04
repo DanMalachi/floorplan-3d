@@ -63,11 +63,12 @@ export function traceToScene(input: TraceToSceneInput): Scene {
   }));
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     units: "meters",
     nodes,
     walls,
     openings: sceneOpenings,
     rooms,
+    furniture: [],
   };
 }

@@ -12,8 +12,10 @@ import {
   DEFAULT_WINDOW,
 } from "@/schema/constants";
 import type { OpeningType } from "@/schema/scene";
+import { CATALOG, CATALOG_BY_ID, CATEGORIES } from "@/furniture/catalog";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors } from "./FloorMesh";
+import { FurnitureLayer } from "./FurnitureLayer";
 
 // Model center (plan x,y) and span for framing. Keyed on frameToken — only a
 // whole-scene replace reframes; edits never shift the model under the cursor.
@@ -191,6 +193,23 @@ function MiniInspector() {
     );
   }
 
+  if (sel3d?.kind === "furniture") {
+    const item = scene.furniture.find((f) => f.id === sel3d.id);
+    if (!item) return null;
+    const spec = CATALOG_BY_ID.get(item.assetId);
+    const deg = ((item.rotation * 180) / Math.PI) % 360;
+    return (
+      <div style={inspectorPanel}>
+        <div style={{ fontWeight: 600, color: "#7db8ff" }}>{spec?.name ?? item.assetId}</div>
+        <div style={{ opacity: 0.75 }}>
+          {spec ? `${spec.footprint.w} × ${spec.footprint.d} m` : ""}
+        </div>
+        <div style={{ opacity: 0.75 }}>rotation {Math.round(deg)}°</div>
+        <div style={{ opacity: 0.6 }}>drag to move · R rotates · Delete removes</div>
+      </div>
+    );
+  }
+
   if (sel3d?.kind === "opening") {
     const op = scene.openings.find((o) => o.id === sel3d.id);
     if (!op) return null;
@@ -253,6 +272,79 @@ function MiniInspector() {
   return null;
 }
 
+/** Furniture catalog (functional now, restyled in M5). Click an item to pick
+ *  it up; click in the scene to place; Esc puts it down. */
+function CatalogPanel() {
+  const placing = useSceneStore((s) => s.placing);
+  const [open, setOpen] = useState(false);
+  const btn: React.CSSProperties = {
+    padding: "5px 10px",
+    borderRadius: 8,
+    border: "1px solid #3a3a40",
+    background: "rgba(20,20,24,0.78)",
+    backdropFilter: "blur(10px)",
+    color: "#ddd",
+    fontSize: 12,
+    cursor: "pointer",
+  };
+  return (
+    <div style={{ position: "absolute", left: 12, top: 12, maxHeight: "calc(100% - 70px)", display: "flex", flexDirection: "column", gap: 6 }}>
+      <button style={{ ...btn, alignSelf: "flex-start", background: open ? "#0a84ff" : btn.background, color: open ? "#fff" : "#ddd" }} onClick={() => setOpen(!open)}>
+        🛋 Furnish
+      </button>
+      {open && (
+        <div
+          style={{
+            width: 210,
+            overflowY: "auto",
+            padding: 10,
+            borderRadius: 10,
+            background: "rgba(20,20,24,0.82)",
+            backdropFilter: "blur(10px)",
+            color: "#ddd",
+            fontSize: 12,
+          }}
+        >
+          {CATEGORIES.map((cat) => (
+            <div key={cat} style={{ marginBottom: 8 }}>
+              <div style={{ fontWeight: 600, opacity: 0.65, margin: "6px 0 4px" }}>{cat}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {CATALOG.filter((a) => a.category === cat).map((a) => {
+                  const active = placing?.assetId === a.assetId;
+                  return (
+                    <button
+                      key={a.assetId}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        border: "1px solid #3a3a40",
+                        background: active ? "#0a84ff" : "#26262b",
+                        color: active ? "#fff" : "#ccc",
+                        cursor: "pointer",
+                        fontSize: 11,
+                      }}
+                      onClick={() =>
+                        useSceneStore.getState().setPlacing(active ? null : a.assetId)
+                      }
+                    >
+                      {a.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {placing && (
+            <div style={{ opacity: 0.6, marginTop: 4 }}>
+              click to place · R rotates · Esc done
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Selection + undo status while the real inspector waits for M5. */
 function StatusOverlay() {
   const sel3d = useSceneStore((s) => s.sel3d);
@@ -310,8 +402,14 @@ export function Viewport() {
       s.redoScene();
     } else if (e.key === "Delete" || e.key === "Backspace") {
       s.deleteSelected3d();
+    } else if (e.key.toLowerCase() === "r" && !mod) {
+      const step = (Math.PI / 12) * (e.shiftKey ? -1 : 1); // 15° per tap
+      if (s.placing) s.rotatePlacing(step);
+      else if (s.sel3d?.kind === "furniture") s.rotateSelectedFurniture(step);
+      else return;
     } else if (e.key === "Escape") {
-      if (s.gestureBase) s.cancelGesture();
+      if (s.placing) s.setPlacing(null);
+      else if (s.gestureBase) s.cancelGesture();
       else s.setSel3d(null);
     } else {
       return; // not ours — let it bubble (2D editor listens on window)
@@ -353,6 +451,7 @@ export function Viewport() {
         <group position={[-cx, 0, -cz]}>
           <Floors scene={scene} />
           <Walls scene={scene} offset={offset} />
+          <FurnitureLayer scene={scene} offset={offset} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
         </group>
 
@@ -371,6 +470,7 @@ export function Viewport() {
       </Canvas>
       <StatusOverlay />
       <MiniInspector />
+      <CatalogPanel />
     </div>
   );
 }

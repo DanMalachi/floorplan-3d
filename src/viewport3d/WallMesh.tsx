@@ -115,8 +115,9 @@ function WallGroup({ wall, a, b, ops, offset }: {
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
-    e.stopPropagation();
     const s = useSceneStore.getState();
+    if (s.placing) return; // placement clicks fall through to the ground plane
+    e.stopPropagation();
     s.setSel3d({ kind: "wall", id: wall.id });
     const start = rayToPlan(e, offset);
     if (!start) return;
@@ -161,6 +162,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
 
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+      if (useSceneStore.getState().placing) return;
       e.stopPropagation();
       useSceneStore.getState().setHover3d({ kind: "wall", id: wall.id });
     },
@@ -334,8 +336,9 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
-    e.stopPropagation();
     const s = useSceneStore.getState();
+    if (s.placing) return; // placement clicks fall through to the ground plane
+    e.stopPropagation();
     s.setSel3d({ kind: "opening", id: opening.id });
     const start = rayToPlan(e, offset);
     if (!start) return;
@@ -388,6 +391,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         rotation={[0, vol.rotationY, 0]}
         userData={{ pick: { kind: "opening", id: opening.id } }}
         onPointerOver={(e) => {
+          if (useSceneStore.getState().placing) return;
           e.stopPropagation();
           useSceneStore.getState().setHover3d({ kind: "opening", id: opening.id });
         }}
