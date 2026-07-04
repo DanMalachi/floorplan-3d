@@ -5,7 +5,13 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Grid, Html, Line, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useSceneStore } from "@/store/useSceneStore";
-import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
+import {
+  WALL_HEIGHT,
+  DEFAULT_THICKNESS,
+  DEFAULT_DOOR,
+  DEFAULT_WINDOW,
+} from "@/schema/constants";
+import type { OpeningType } from "@/schema/scene";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors } from "./FloorMesh";
 
@@ -92,105 +98,159 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
   );
 }
 
-/** Temporary numeric inspector for the selected wall (real one lands in M5). */
+const inspectorPanel: React.CSSProperties = {
+  position: "absolute",
+  right: 12,
+  top: 12,
+  padding: "10px 12px",
+  borderRadius: 10,
+  background: "rgba(20,20,24,0.78)",
+  backdropFilter: "blur(10px)",
+  color: "#ddd",
+  fontSize: 12,
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+};
+const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6 };
+const inspectorInput: React.CSSProperties = {
+  width: 58,
+  background: "#26262b",
+  border: "1px solid #3a3a40",
+  borderRadius: 6,
+  color: "#eee",
+  padding: "3px 6px",
+  fontSize: 12,
+};
+
+/** Numeric field that commits on Enter/blur and never leaks keys to the pane. */
+function NumField({ label, value, onCommit, disabled }: {
+  label: string;
+  value: number;
+  onCommit: (v: number) => void;
+  disabled?: boolean;
+}) {
+  const [raw, setRaw] = useState(String(value));
+  useEffect(() => setRaw(String(value)), [value]);
+  const commit = () => {
+    const v = Number(raw);
+    if (Number.isFinite(v)) onCommit(v);
+    else setRaw(String(value));
+  };
+  return (
+    <label style={inspectorRow}>
+      {label}
+      <input
+        style={{ ...inspectorInput, opacity: disabled ? 0.4 : 1 }}
+        value={raw}
+        disabled={disabled}
+        onChange={(e) => setRaw(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          e.stopPropagation();
+        }}
+      />
+      m
+    </label>
+  );
+}
+
+/** Temporary numeric inspector for the selection (real one lands in M5). */
 function MiniInspector() {
   const sel3d = useSceneStore((s) => s.sel3d);
   const scene = useSceneStore((s) => s.scene);
-  const wall = sel3d?.kind === "wall" ? scene.walls.find((w) => w.id === sel3d.id) : undefined;
-  const [height, setHeight] = useState("");
-  const [thickness, setThickness] = useState("");
 
-  useEffect(() => {
-    if (!wall) return;
-    setHeight(String(wall.height ?? WALL_HEIGHT));
-    setThickness(String(wall.thickness ?? DEFAULT_THICKNESS));
-  }, [wall]);
-
-  if (!wall) return null;
-  const a = scene.nodes.find((n) => n.id === wall.a);
-  const b = scene.nodes.find((n) => n.id === wall.b);
-  const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
-
-  const commit = (field: "height" | "thickness", raw: string) => {
-    const v = Number(raw);
-    if (!Number.isFinite(v)) return;
-    const s = useSceneStore.getState();
-    if (field === "height") {
-      const h = Math.min(6, Math.max(0.5, v));
-      if (h === (wall.height ?? WALL_HEIGHT)) return;
-      s.commitScene("Wall height", {
+  if (sel3d?.kind === "wall") {
+    const wall = scene.walls.find((w) => w.id === sel3d.id);
+    if (!wall) return null;
+    const a = scene.nodes.find((n) => n.id === wall.a);
+    const b = scene.nodes.find((n) => n.id === wall.b);
+    const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
+    const patch = (label: string, p: Partial<typeof wall>) => {
+      const s = useSceneStore.getState();
+      s.commitScene(label, {
         ...s.scene,
-        walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, height: h } : w)),
+        walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, ...p } : w)),
       });
-    } else {
-      const t = Math.min(1, Math.max(0.05, v));
-      if (t === wall.thickness) return;
-      s.commitScene("Wall thickness", {
+    };
+    return (
+      <div style={inspectorPanel}>
+        <div style={{ fontWeight: 600, color: "#7db8ff" }}>Wall · {len.toFixed(2)} m</div>
+        <NumField
+          label="Height"
+          value={wall.height ?? WALL_HEIGHT}
+          onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
+        />
+        <NumField
+          label="Thickness"
+          value={wall.thickness ?? DEFAULT_THICKNESS}
+          onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
+        />
+      </div>
+    );
+  }
+
+  if (sel3d?.kind === "opening") {
+    const op = scene.openings.find((o) => o.id === sel3d.id);
+    if (!op) return null;
+    const wall = scene.walls.find((w) => w.id === op.wallId);
+    const wallH = wall?.height ?? WALL_HEIGHT;
+    const patch = (label: string, p: Partial<typeof op>) => {
+      const s = useSceneStore.getState();
+      s.commitScene(label, {
         ...s.scene,
-        walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, thickness: t } : w)),
+        openings: s.scene.openings.map((o) => (o.id === op.id ? { ...o, ...p } : o)),
       });
-    }
-  };
-
-  const row: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6 };
-  const input: React.CSSProperties = {
-    width: 58,
-    background: "#26262b",
-    border: "1px solid #3a3a40",
-    borderRadius: 6,
-    color: "#eee",
-    padding: "3px 6px",
-    fontSize: 12,
-  };
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        right: 12,
-        top: 12,
-        padding: "10px 12px",
-        borderRadius: 10,
-        background: "rgba(20,20,24,0.78)",
-        backdropFilter: "blur(10px)",
-        color: "#ddd",
-        fontSize: 12,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-      }}
-    >
-      <div style={{ fontWeight: 600, color: "#7db8ff" }}>Wall · {len.toFixed(2)} m</div>
-      <label style={row}>
-        Height
-        <input
-          style={input}
-          value={height}
-          onChange={(e) => setHeight(e.target.value)}
-          onBlur={() => commit("height", height)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit("height", height);
-            e.stopPropagation();
-          }}
+    };
+    const swapTo = (type: OpeningType) => {
+      if (type === op.type) return;
+      const d = type === "door" ? DEFAULT_DOOR : DEFAULT_WINDOW;
+      patch(`Convert to ${type}`, { type, sill: d.sill, height: d.height });
+    };
+    const segBtn = (type: OpeningType): React.CSSProperties => ({
+      padding: "3px 10px",
+      borderRadius: 6,
+      border: "1px solid #3a3a40",
+      background: op.type === type ? "#0a84ff" : "#26262b",
+      color: op.type === type ? "#fff" : "#bbb",
+      cursor: "pointer",
+      fontSize: 12,
+    });
+    return (
+      <div style={inspectorPanel}>
+        <div style={{ fontWeight: 600, color: "#7db8ff", textTransform: "capitalize" }}>
+          {op.type}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button style={segBtn("door")} onClick={() => swapTo("door")}>Door</button>
+          <button style={segBtn("window")} onClick={() => swapTo("window")}>Window</button>
+        </div>
+        <NumField
+          label="Width"
+          value={op.width}
+          onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })}
         />
-        m
-      </label>
-      <label style={row}>
-        Thickness
-        <input
-          style={input}
-          value={thickness}
-          onChange={(e) => setThickness(e.target.value)}
-          onBlur={() => commit("thickness", thickness)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit("thickness", thickness);
-            e.stopPropagation();
-          }}
+        <NumField
+          label="Height"
+          value={op.height}
+          onCommit={(v) =>
+            patch("Opening height", { height: Math.min(wallH - op.sill, Math.max(0.3, v)) })
+          }
         />
-        m
-      </label>
-    </div>
-  );
+        <NumField
+          label="Sill"
+          value={op.sill}
+          disabled={op.type === "door"}
+          onCommit={(v) =>
+            patch("Opening sill", { sill: Math.min(wallH - op.height, Math.max(0, v)) })
+          }
+        />
+      </div>
+    );
+  }
+
+  return null;
 }
 
 /** Selection + undo status while the real inspector waits for M5. */

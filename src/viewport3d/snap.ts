@@ -47,3 +47,26 @@ export function snapPlanPoint(
 export function snapDelta(d: number): number {
   return roundTo(d, GRID);
 }
+
+/**
+ * The interval an opening's edges may occupy on its wall: the wall extent
+ * [0, L] shrunk by neighboring openings. Neighbors are classified by which
+ * side of this opening they sit on, so a clamped drag can never pass through
+ * or overlap another door/window.
+ */
+export function openingEdgeBounds(
+  opening: { id: string; offset: number; width: number },
+  siblings: readonly { id: string; offset: number; width: number }[],
+  L: number,
+): { lo: number; hi: number } {
+  let lo = 0;
+  let hi = L;
+  for (const o of siblings) {
+    if (o.id === opening.id) continue;
+    const oStart = o.offset - o.width / 2;
+    const oEnd = o.offset + o.width / 2;
+    if (oEnd <= opening.offset - opening.width / 2 + 1e-9) lo = Math.max(lo, oEnd);
+    else if (oStart >= opening.offset + opening.width / 2 - 1e-9) hi = Math.min(hi, oStart);
+  }
+  return { lo, hi };
+}
