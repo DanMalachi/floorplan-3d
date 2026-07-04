@@ -126,6 +126,9 @@ function WallGroup({ wall, a, b, ops, offset }: {
       emissiveIntensity: 0,
       transparent: true,
       opacity: 1,
+      roughness: 0.85, // matte painted plaster
+      metalness: 0,
+      envMapIntensity: 0.45,
     });
     return m;
   }, []);
@@ -370,7 +373,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   const selected = useSceneStore((s) => isPick(s.sel3d, "opening", opening.id));
   const drag = useRef<OpeningDrag | null>(null);
 
-  const idle = opening.type === "window" ? 0.12 : 0.035;
+  const idle = opening.type === "window" ? 0.16 : 0.035;
   const opacity = selected ? 0.45 : hovered ? 0.25 : idle;
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -450,6 +453,9 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
           transparent
           opacity={opacity}
           depthWrite={false}
+          roughness={0.12}
+          metalness={0}
+          envMapIntensity={1.2}
         />
       </mesh>
       {selected && (

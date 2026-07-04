@@ -33,11 +33,14 @@ export interface Opening {
   sill: number; // meters above floor (doors typically 0)
 }
 
+export type FloorStyle = "wood" | "tile" | "concrete";
+
 /** A closed room loop -> floor polygon. */
 export interface Room {
   id: Id;
   name?: string;
   loop: Id[]; // ordered node ids; closure is implied (last connects to first)
+  floor?: FloorStyle; // defaults to "wood"
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene

@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -105,6 +106,20 @@ function FurnitureItemView({ item, offset }: {
   const spec = CATALOG_BY_ID.get(item.assetId);
   const ringR = spec ? Math.max(spec.footprint.w, spec.footprint.d) / 2 + 0.12 : 0.5;
 
+  // Placement pop: newly mounted furniture springs from 78% to full size.
+  const popRef = useRef<THREE.Group>(null);
+  const popDone = useRef(false);
+  useFrame((_, dt) => {
+    const g = popRef.current;
+    if (!g || popDone.current) return;
+    const s = THREE.MathUtils.damp(g.scale.x, 1, 11, dt);
+    g.scale.setScalar(s);
+    if (Math.abs(1 - s) < 1e-3) {
+      g.scale.setScalar(1);
+      popDone.current = true;
+    }
+  });
+
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
@@ -183,9 +198,11 @@ function FurnitureItemView({ item, offset }: {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <Suspense fallback={null}>
-        <AssetModel assetId={item.assetId} tint={colliding ? "red" : null} />
-      </Suspense>
+      <group ref={popRef} scale={0.78}>
+        <Suspense fallback={null}>
+          <AssetModel assetId={item.assetId} tint={colliding ? "red" : null} />
+        </Suspense>
+      </group>
       {(selected || hovered) && <SelectionRing radius={ringR} dim={!selected} />}
     </group>
   );

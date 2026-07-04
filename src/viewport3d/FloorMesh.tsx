@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
-import { DoubleSide } from "three";
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
-import type { BufferGeometry } from "three";
-import type { Scene } from "@/schema/scene";
+import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
+import { floorTexture, FLOOR_ROUGHNESS } from "./textures";
 import { ACCENT } from "./WallMesh";
 
-const FLOOR_COLOR = "#8a94a6";
-
-function Floor({ roomId, geometry }: { roomId: string; geometry: BufferGeometry }) {
+function Floor({ roomId, style, geometry }: {
+  roomId: string;
+  style: FloorStyle;
+  geometry: THREE.BufferGeometry;
+}) {
   const hovered = useSceneStore(
     (s) => s.hover3d?.kind === "room" && s.hover3d.id === roomId,
   );
@@ -20,11 +22,29 @@ function Floor({ roomId, geometry }: { roomId: string; geometry: BufferGeometry 
   );
   const setHover3d = useSceneStore((s) => s.setHover3d);
   const setSel3d = useSceneStore((s) => s.setSel3d);
-  const glow = selected ? 0.4 : hovered ? 0.18 : 0;
+
+  // Per-room material (textures are shared) so the highlight stays per-room.
+  const mat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        map: floorTexture(style),
+        roughness: FLOOR_ROUGHNESS[style],
+        metalness: 0,
+        emissive: new THREE.Color(ACCENT),
+        emissiveIntensity: 0,
+        side: THREE.DoubleSide,
+      }),
+    [style],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
+  useEffect(() => {
+    mat.emissiveIntensity = selected ? 0.25 : hovered ? 0.1 : 0;
+  }, [mat, hovered, selected]);
 
   return (
     <mesh
       geometry={geometry}
+      material={mat}
       receiveShadow
       userData={{ pick: { kind: "room", id: roomId } }}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
@@ -44,14 +64,7 @@ function Floor({ roomId, geometry }: { roomId: string; geometry: BufferGeometry 
         e.stopPropagation();
         setSel3d({ kind: "room", id: roomId });
       }}
-    >
-      <meshStandardMaterial
-        color={FLOOR_COLOR}
-        side={DoubleSide}
-        emissive={ACCENT}
-        emissiveIntensity={glow}
-      />
-    </mesh>
+    />
   );
 }
 
@@ -62,14 +75,18 @@ export function Floors({ scene }: { scene: Scene }) {
       const loop = room.loop
         .map((id) => nodes.get(id))
         .filter((n): n is NonNullable<typeof n> => n != null);
-      return { id: room.id, geometry: buildFloorGeometry(loop) };
+      return {
+        id: room.id,
+        style: room.floor ?? ("wood" as FloorStyle),
+        geometry: buildFloorGeometry(loop),
+      };
     });
   }, [scene]);
 
   return (
     <group>
       {floors.map((f) => (
-        <Floor key={f.id} roomId={f.id} geometry={f.geometry} />
+        <Floor key={f.id} roomId={f.id} style={f.style} geometry={f.geometry} />
       ))}
     </group>
   );
