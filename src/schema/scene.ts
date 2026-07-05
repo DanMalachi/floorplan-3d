@@ -35,12 +35,81 @@ export interface Opening {
 
 export type FloorStyle = "wood" | "tile" | "concrete";
 
+// ---------------------------------------------------------------------------
+// Building Knowledge Layer — semantics sit ON TOP of geometry, never inside it.
+// "Deterministic code owns geometry; the model owns meaning." Every field below
+// is additive/optional and carries its provenance, so the whole layer can be
+// recomputed, cached and versioned without ever touching walls/openings/rooms.
+// ---------------------------------------------------------------------------
+
+/** Where a semantic fact came from — enables recompute, debug, and comparing
+ *  rule-based vs AI-based inferences. */
+export type FactSource = "geometry" | "rule" | "ocr" | "vlm";
+
+/** One reason behind a classification, with provenance and contribution. */
+export interface Evidence {
+  feature: string; // e.g. "hasCloset", "adjacentBathroom", "ocrLabel"
+  value?: string | number | boolean; // the observed value, when meaningful
+  weight: number; // 0..1 contribution to the decision
+  source: FactSource;
+}
+
+/** Room type is an OPEN vocabulary (plain string) so "nursery", "mud room",
+ *  "tatami room" never require a release. KNOWN_ROOM_TYPES (src/lib/roomTaxonomy)
+ *  is a hint list the rule classifier and UI use, not a constraint. */
+export type RoomType = string;
+
+/** Deterministic, geometry-derived description of a room. All free to compute. */
+export interface RoomFeatures {
+  areaM2: number;
+  doorCount: number;
+  windowCount: number;
+  exteriorWallCount: number; // boundary walls bordering only this room
+  longestWallM: number;
+  perimeterM: number;
+  aspectRatio: number; // bbox long / short
+  hasCloset: boolean; // a small windowless single-door room opens off this one
+  hasPlumbing?: boolean; // fixture-derived — populated once fixture detection exists
+  contains?: string[]; // fixture/furniture ids in the room — future
+}
+
+/** Extensible room-to-room relationships. Only the two deterministic ones are
+ *  populated in v1; the rest are left open for later layers. */
+export interface RoomRelationships {
+  sharesWallWith: Id[]; // room ids sharing >= 1 wall
+  connectedVia: { room: Id; opening: Id }[]; // rooms reachable through a door/window
+  // future: opensInto, receivesLightFrom, accessibleFrom, parentZone
+}
+
+/** The semantic verdict for one room. Recomputable and provenance-tracked. */
+export interface RoomSemantics {
+  type: RoomType; // best label (open vocab)
+  alternatives: string[]; // ranked runner-up labels
+  function?: string; // "sleeping" | "hygiene" | "circulation" | ... (open vocab)
+  confidence: number; // 0..1
+  evidence: Evidence[]; // structured reasons + provenance
+  features: RoomFeatures;
+  relationships: RoomRelationships;
+  source: FactSource; // what decided `type`: "rule" | "vlm"
+}
+
+/** House-level understanding above the rooms. Global consistency lives here
+ *  (≈ one kitchen, one entry; infer the leftover room from the whole set). */
+export interface BuildingSemantics {
+  archetype?: string; // e.g. "3-bedroom single-family" (open vocab)
+  roomCounts: Record<string, number>; // type -> count
+  confidence: number;
+  evidence: Evidence[];
+  source: FactSource;
+}
+
 /** A closed room loop -> floor polygon. */
 export interface Room {
   id: Id;
   name?: string;
   loop: Id[]; // ordered node ids; closure is implied (last connects to first)
   floor?: FloorStyle; // defaults to "wood"
+  semantics?: RoomSemantics; // Building Knowledge Layer — additive, recomputable
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene
@@ -62,4 +131,5 @@ export interface Scene {
   openings: Opening[];
   rooms: Room[];
   furniture: FurnitureItem[];
+  building?: BuildingSemantics; // Building Knowledge Layer — house-level verdict
 }

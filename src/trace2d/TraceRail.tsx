@@ -213,7 +213,8 @@ export function TraceRail() {
 
   const generate = () => {
     if (metersPerPixel == null) return;
-    setScene(traceToScene({ points, segments, openings, metersPerPixel }));
+    const texts = useSceneStore.getState().importedTexts;
+    setScene(traceToScene({ points, segments, openings, metersPerPixel, texts }));
     setAppMode("build");
   };
 

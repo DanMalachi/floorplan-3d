@@ -14,6 +14,8 @@ import {
 } from "@/schema/constants";
 import type { OpeningType } from "@/schema/scene";
 import { CATALOG_BY_ID, ROOMS } from "@/furniture/catalog";
+import { roomArea, nodeMap } from "@/lib/roomArea";
+import { displayRoomType } from "@/lib/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { Walls, dimLabelStyle } from "./WallMesh";
@@ -150,6 +152,29 @@ function NumField({ label, value, onCommit, disabled }: {
   );
 }
 
+/** Building Knowledge Layer trigger — escalates undecided rooms to the VLM.
+ *  Free rule verdicts are already on the scene; this button spends API budget,
+ *  so it is an explicit user action (mirrors "AI classify" in the trace rail). */
+function UnderstandRoomsButton() {
+  const busy = useSceneStore((s) => s.understandBusy);
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <button
+        style={chip(false, { opacity: busy ? 0.6 : 1 })}
+        disabled={busy}
+        onClick={async () => {
+          setMsg(null);
+          setMsg(await useSceneStore.getState().understandRooms());
+        }}
+      >
+        {busy ? "🧠 Understanding…" : "🧠 Understand rooms (AI)"}
+      </button>
+      {msg && <div style={{ color: T.textFaint, fontSize: 10.5 }}>{msg}</div>}
+    </div>
+  );
+}
+
 /** Contextual inspector, docked top-right when something is selected. */
 function MiniInspector() {
   const sel3d = useSceneStore((s) => s.sel3d);
@@ -205,15 +230,8 @@ function MiniInspector() {
   if (sel3d?.kind === "room") {
     const room = scene.rooms.find((r) => r.id === sel3d.id);
     if (!room) return null;
-    const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-    const loop = room.loop.map((id) => nodes.get(id)).filter((n) => n != null);
-    let area = 0;
-    for (let i = 0; i < loop.length; i++) {
-      const p = loop[i]!;
-      const q = loop[(i + 1) % loop.length]!;
-      area += p.x * q.y - q.x * p.y;
-    }
-    area = Math.abs(area) / 2;
+    const area = roomArea(room.loop, nodeMap(scene.nodes));
+    const sem = room.semantics;
     const style: FloorStyle = room.floor ?? "wood";
     const setFloor = (f: FloorStyle) => {
       if (f === style) return;
@@ -229,6 +247,38 @@ function MiniInspector() {
           {room.name ?? "Room"}{" "}
           <span style={{ color: T.textDim, fontWeight: 400 }}>· {area.toFixed(1)} m²</span>
         </div>
+        {sem && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={chip(true, { textTransform: "capitalize" })}>
+                {displayRoomType(sem.type)}
+              </span>
+              <span style={{ color: T.textDim, fontSize: 11 }}>
+                {Math.round(sem.confidence * 100)}% · {sem.source}
+                {sem.function ? ` · ${sem.function.replace(/_/g, " ")}` : ""}
+              </span>
+            </div>
+            {sem.evidence.length > 0 && (
+              <div style={{ color: T.textFaint, fontSize: 11, lineHeight: 1.5 }}>
+                {sem.evidence.slice(0, 4).map((e, i) => (
+                  <div key={i}>
+                    · {e.feature}
+                    {e.value !== undefined && e.value !== true ? `: ${e.value}` : ""}
+                    <span style={{ opacity: 0.6 }}> ({e.source})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ color: T.textFaint, fontSize: 11 }}>
+              {sem.features.doorCount} door{sem.features.doorCount === 1 ? "" : "s"} ·{" "}
+              {sem.features.windowCount} window{sem.features.windowCount === 1 ? "" : "s"} ·{" "}
+              {sem.features.exteriorWallCount} ext wall
+              {sem.features.exteriorWallCount === 1 ? "" : "s"}
+              {sem.features.hasCloset ? " · closet" : ""}
+            </div>
+          </>
+        )}
+        <UnderstandRoomsButton />
         <div style={{ ...microLabel(), marginTop: 2 }}>Floor</div>
         <div style={{ display: "flex", gap: 5 }}>
           {(["wood", "tile", "concrete"] as FloorStyle[]).map((f) => (

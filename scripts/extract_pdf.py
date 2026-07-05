@@ -105,6 +105,23 @@ def main():
                     "layer": layer,
                 })
 
+    # Text spans (words) with their centers — room labels ("BEDROOM", "WC")
+    # feed the Building Knowledge Layer's free OCR cue. Vector PDFs only carry
+    # real text; scans return nothing here (the VLM reads labels off crops).
+    texts = []
+    try:
+        for w in page.get_text("words"):
+            word = (w[4] or "").strip()
+            if len(word) < 2:
+                continue
+            texts.append({
+                "x": round((w[0] + w[2]) / 2, 2),
+                "y": round((w[1] + w[3]) / 2, 2),
+                "text": word,
+            })
+    except Exception:
+        pass
+
     # Render the page as a background reference (display only, not for extraction).
     zoom = min(1600 / rect.width, 1600 / rect.height)
     if not is_vector:
@@ -129,6 +146,7 @@ def main():
         },
         "segments": segments,
         "arcs": arcs,
+        "texts": texts,
         "stats": {"drawings": len(drawings), "images": len(images), "segments": len(segments), "arcs": len(arcs)},
     }
     doc.close()

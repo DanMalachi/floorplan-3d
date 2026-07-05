@@ -21,6 +21,7 @@ import { rasterToCandidates, type RasterProposal } from "@/trace2d/rasterCandida
 import { proposeRaster } from "@/trace2d/proposeRaster";
 import { buildOverlayImage } from "@/trace2d/buildOverlay";
 import type { VlmLabel, VlmMissed } from "@/lib/vlmClassify";
+import type { ImportText } from "@/trace2d/importPdf";
 
 // ---------------------------------------------------------------------------
 // Tracing (editor) types. These are EPHEMERAL — they never live inside Scene.
@@ -260,6 +261,7 @@ interface StoreState {
   // --- imported PDF raw overlay (Phase 2 / M1) ---
   importedSegments: ImportSegment[];
   importedArcs: ImportArc[];
+  importedTexts: ImportText[]; // PDF text words (knowledge-layer OCR cue)
   showImport: boolean;
   setImportedSegments: (segs: ImportSegment[]) => void;
   setImportedArcs: (arcs: ImportArc[]) => void;
@@ -294,6 +296,10 @@ interface StoreState {
   setVlmModel: (m: string) => void;
   setPlanHint: (h: string) => void;
   aiClassify: () => Promise<string>; // returns a status message for the toolbar
+
+  // --- Building Knowledge Layer (room semantics) ---
+  understandBusy: boolean;
+  understandRooms: () => Promise<string>; // VLM escalation for undecided rooms
 
   // --- suggested openings (Phase 2 / doors + windows from wall geometry) ---
   suggestedOpenings: SuggestedOpening[];
@@ -506,6 +512,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             set({
               importedSegments: [],
               importedArcs: [],
+              importedTexts: [],
               imageOpacity: 0.8,
               importMsg: rasterQualityMsg(r.image.width, r.image.height, "Scanned plan loaded"),
             });
@@ -514,6 +521,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
               imageOpacity: 0.45,
               importedSegments: r.segments,
               importedArcs: r.arcs,
+              importedTexts: r.texts,
               showImport: true,
               importMsg: `✓ Vector PDF — ${r.stats.segments} segments${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
             });
@@ -531,6 +539,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
           set({
             importedSegments: [],
             importedArcs: [],
+            importedTexts: [],
             imageOpacity: 0.8,
             importMsg: rasterQualityMsg(img.width, img.height, "Image loaded"),
           });
@@ -616,6 +625,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     importedSegments: [],
     importedArcs: [],
+    importedTexts: [],
     showImport: true,
     setImportedSegments: (importedSegments) => set({ importedSegments }),
     setImportedArcs: (importedArcs) => set({ importedArcs }),
@@ -776,6 +786,144 @@ export const useSceneStore = create<StoreState>((set, get) => {
         return "AI classify failed: " + ((e as Error).message ?? String(e));
       } finally {
         set({ vlmBusy: false });
+      }
+    },
+
+    // --- Building Knowledge Layer — VLM escalation for undecided rooms ---
+    understandBusy: false,
+    understandRooms: async () => {
+      const { scene, vlmModel, image, metersPerPixel } = get();
+      if (scene.rooms.length === 0) return "No rooms yet — generate a 3D model first.";
+      set({ understandBusy: true });
+      try {
+        const [{ buildRoomGraph }, { classifyRoomsByRules, RULE_CONFIDENCE_GATE }, { functionForType, displayRoomType }] =
+          await Promise.all([
+            import("@/lib/semanticGraph"),
+            import("@/lib/roomClassifier"),
+            import("@/lib/roomTaxonomy"),
+          ]);
+
+        // Ensure the free layer exists (scenes generated before this feature,
+        // or the sample scene, arrive without semantics).
+        let cur = scene;
+        if (cur.rooms.some((r) => !r.semantics)) {
+          const { rooms: sem, building } = classifyRoomsByRules(buildRoomGraph(cur));
+          cur = {
+            ...cur,
+            rooms: cur.rooms.map((r) => ({ ...r, semantics: r.semantics ?? sem.get(r.id) })),
+            building: cur.building ?? building,
+          };
+        }
+
+        const doorSet = new Set(
+          cur.openings.filter((o) => o.type === "door").map((o) => o.id),
+        );
+        const briefs = cur.rooms.map((r) => {
+          const s = r.semantics!;
+          const status =
+            s.type !== "unknown" && s.confidence >= RULE_CONFIDENCE_GATE
+              ? ("confident" as const)
+              : ("undecided" as const);
+          return {
+            id: r.id,
+            status,
+            provisionalType: s.type,
+            alternatives: s.alternatives,
+            confidence: Math.round(s.confidence * 100) / 100,
+            ocr: s.evidence
+              .filter((e) => e.source === "ocr")
+              .map((e) => String(e.value ?? "")),
+            features: {
+              areaM2: Math.round(s.features.areaM2 * 10) / 10,
+              doorCount: s.features.doorCount,
+              windowCount: s.features.windowCount,
+              exteriorWallCount: s.features.exteriorWallCount,
+              aspectRatio: Math.round(s.features.aspectRatio * 10) / 10,
+              hasCloset: s.features.hasCloset,
+            },
+            adjacentRooms: s.relationships.sharesWallWith,
+            doorConnections: s.relationships.connectedVia
+              .filter((l) => doorSet.has(l.opening))
+              .map((l) => l.room),
+          };
+        });
+
+        const undecided = cur.rooms.filter(
+          (r, i) => briefs[i].status === "undecided",
+        );
+        if (undecided.length === 0) {
+          if (cur !== scene) get().commitScene("Understand rooms", cur);
+          return "✓ All rooms already confidently classified by rules — no AI needed.";
+        }
+
+        // Image evidence: whole-plan overview + native-res crops of the
+        // undecided rooms (fixture symbols + printed labels live there).
+        let overview: string | null = null;
+        let crops: { roomId: string; image: string }[] = [];
+        if (image && metersPerPixel) {
+          const { buildRoomCrops } = await import("@/trace2d/roomCrops");
+          const built = await buildRoomCrops(image.src, cur, undecided, metersPerPixel);
+          overview = built.overview;
+          crops = built.crops;
+        }
+
+        const res = await fetch("/api/classify-rooms", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ rooms: briefs, overview, crops, model: vlmModel }),
+        });
+        const j = await res.json();
+        if (!res.ok || j.error) throw new Error(j.error ?? `HTTP ${res.status}`);
+
+        const byId = new Map<string, (typeof j.rooms)[number]>(
+          (j.rooms as { id: string }[]).map((v) => [v.id, v]),
+        );
+        const next: Scene = {
+          ...cur,
+          rooms: cur.rooms.map((r) => {
+            const v = byId.get(r.id);
+            if (!v || !r.semantics) return r;
+            const evidence = [
+              ...r.semantics.evidence.filter((e) => e.source !== "vlm"),
+              ...(v.evidence as { feature: string; weight: number }[]).map((e) => ({
+                feature: e.feature,
+                weight: e.weight,
+                source: "vlm" as const,
+              })),
+            ];
+            const confidence = Math.max(0, Math.min(1, v.confidence));
+            const name =
+              v.type !== "unknown" && confidence >= 0.5
+                ? displayRoomType(v.type)
+                : r.name;
+            return {
+              ...r,
+              name,
+              semantics: {
+                ...r.semantics,
+                type: v.type,
+                alternatives: v.alternatives ?? [],
+                function: v.function || functionForType(v.type),
+                confidence,
+                evidence,
+                source: "vlm" as const,
+              },
+            };
+          }),
+          building: cur.building
+            ? {
+                ...cur.building,
+                archetype: j.archetype || cur.building.archetype,
+                source: "vlm" as const,
+              }
+            : cur.building,
+        };
+        get().commitScene("Understand rooms", next);
+        return `✓ AI (${j.model}): ${j.rooms.length} room(s) classified · ${j.usage.inputTokens} in / ${j.usage.outputTokens} out tokens`;
+      } catch (e) {
+        return "Understand rooms failed: " + ((e as Error).message ?? String(e));
+      } finally {
+        set({ understandBusy: false });
       }
     },
 

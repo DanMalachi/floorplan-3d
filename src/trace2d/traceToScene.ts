@@ -2,12 +2,24 @@ import type { Node, Opening, Room, Scene, Wall } from "@/schema/scene";
 import type { TraceOpening, TracePoint, TraceSegment } from "@/store/useSceneStore";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { analyzeLoops } from "@/lib/loops";
+import { pointInPolygon } from "@/lib/roomArea";
+import { buildRoomGraph } from "@/lib/semanticGraph";
+import { classifyRoomsByRules, RULE_CONFIDENCE_GATE } from "@/lib/roomClassifier";
+import { displayRoomType } from "@/lib/roomTaxonomy";
+
+/** A text span from the plan (vector-PDF OCR), in image-pixel space. */
+export interface PlanText {
+  x: number; // px (span center)
+  y: number;
+  text: string;
+}
 
 export interface TraceToSceneInput {
   points: TracePoint[];
   segments: TraceSegment[];
   openings: TraceOpening[];
   metersPerPixel: number;
+  texts?: PlanText[]; // optional room-label tokens for the knowledge layer
 }
 
 /**
@@ -62,7 +74,7 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     loop: loop.points,
   }));
 
-  return {
+  const scene: Scene = {
     schemaVersion: 2,
     units: "meters",
     nodes,
@@ -71,4 +83,49 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     rooms,
     furniture: [],
   };
+
+  // Building Knowledge Layer — free pass. Deterministic features + rule labels
+  // are computed for every generated scene; the paid VLM escalation is a
+  // separate explicit action (store.understandRooms).
+  const graph = buildRoomGraph(scene);
+  const ocr = input.texts?.length
+    ? assignTextsToRooms(input.texts, rooms, pointMap)
+    : undefined;
+  const { rooms: semantics, building } = classifyRoomsByRules(graph, ocr);
+  scene.rooms = rooms.map((r) => {
+    const sem = semantics.get(r.id);
+    if (!sem) return r;
+    // Confident types also become the display name ("Room 3" -> "Bedroom").
+    const name =
+      sem.type !== "unknown" && sem.confidence >= RULE_CONFIDENCE_GATE
+        ? displayRoomType(sem.type)
+        : r.name;
+    return { ...r, name, semantics: sem };
+  });
+  scene.building = building;
+
+  return scene;
+}
+
+/** Assign plan text spans to the room whose loop (in px space) contains them. */
+function assignTextsToRooms(
+  texts: PlanText[],
+  rooms: Room[],
+  pointMap: Map<string, TracePoint>,
+): Map<string, string[]> {
+  const polys = rooms.map((r) => ({
+    id: r.id,
+    poly: r.loop
+      .map((id) => pointMap.get(id))
+      .filter((p): p is TracePoint => p != null),
+  }));
+  const out = new Map<string, string[]>();
+  for (const t of texts) {
+    const hit = polys.find((r) => r.poly.length >= 3 && pointInPolygon(t.x, t.y, r.poly));
+    if (!hit) continue;
+    const arr = out.get(hit.id);
+    if (arr) arr.push(t.text);
+    else out.set(hit.id, [t.text]);
+  }
+  return out;
 }

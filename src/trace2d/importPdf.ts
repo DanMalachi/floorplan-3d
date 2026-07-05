@@ -21,6 +21,12 @@ interface RawArc {
   layer: string;
 }
 
+interface RawText {
+  x: number;
+  y: number;
+  text: string;
+}
+
 interface RawExtract {
   error?: string;
   detail?: string;
@@ -29,7 +35,15 @@ interface RawExtract {
   render: { dataUrl: string; zoom: number; widthPx: number; heightPx: number };
   segments: RawSeg[];
   arcs: RawArc[];
+  texts?: RawText[];
   stats: { drawings: number; images: number; segments: number; arcs: number };
+}
+
+/** A text word from the PDF, converted to image-pixel space. */
+export interface ImportText {
+  x: number;
+  y: number;
+  text: string;
 }
 
 export interface ImportResult {
@@ -38,6 +52,7 @@ export interface ImportResult {
   image: { src: string; width: number; height: number };
   segments: ImportSegment[];
   arcs: ImportArc[];
+  texts: ImportText[];
   stats: RawExtract["stats"];
 }
 
@@ -75,12 +90,19 @@ export async function importPdf(file: File, page = 0): Promise<ImportResult> {
     layer: a.layer ?? "0",
   }));
 
+  const texts: ImportText[] = (j.texts ?? []).map((t) => ({
+    x: t.x * z,
+    y: t.y * z,
+    text: t.text,
+  }));
+
   return {
     isVector: j.isVector,
     pageCount: j.page.pageCount,
     image: { src: j.render.dataUrl, width: j.render.widthPx, height: j.render.heightPx },
     segments,
     arcs,
+    texts,
     stats: j.stats,
   };
 }
