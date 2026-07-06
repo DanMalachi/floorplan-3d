@@ -300,6 +300,84 @@ export function vlmPredictions(result: Pick<VlmResult, "labels">): Map<number, C
   return new Map(result.labels.map((l) => [l.id, l.label]));
 }
 
+export const mean = (xs: number[]): number =>
+  xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN;
+
+export interface CoverageMiss {
+  type: "wall" | "door" | "window";
+  x: number; // midpoint
+  y: number;
+  len: number;
+}
+
+export interface CoveragePlan {
+  walls: { hit: number; total: number };
+  doors: { hit: number; total: number };
+  windows: { hit: number; total: number };
+  missed: CoverageMiss[];
+}
+
+/**
+ * Free generator-coverage of one plan (no VLM): for each GT element, does ANY
+ * candidate cover it, regardless of what the heuristic guessed? This is the
+ * recall CEILING of the whole pipeline — classification can never recover an
+ * element no candidate covers. Walls are matched GT-centric (candidates on a
+ * GT wall's line must cover ≥50% of ITS length — one long raster centerline
+ * legitimately spans several short GT pieces); openings via matchCandidate.
+ *
+ * This is the shared core behind `coverage.ts` and `bench.ts` so the two never
+ * drift. It mirrors the tolerances in `coveredLength` / `matchCandidate`.
+ */
+export function coveragePlan(candidates: Candidate[], gt: GroundTruth): CoveragePlan {
+  const missed: CoverageMiss[] = [];
+  const mid = (l: { x0: number; y0: number; x1: number; y1: number }) => ({
+    x: Math.round((l.x0 + l.x1) / 2),
+    y: Math.round((l.y0 + l.y1) / 2),
+    len: Math.round(len(l)),
+  });
+
+  // Openings: any candidate that matchCandidate resolves to this GT opening.
+  const openHit = new Set<number>();
+  for (const c of candidates) {
+    const m = matchCandidate(c, gt);
+    if (m.gtIndex >= 0 && m.truth !== "wall") openHit.add(m.gtIndex);
+  }
+  let doors = 0;
+  let windows = 0;
+  let doorHit = 0;
+  let windowHit = 0;
+  gt.resolvedOpenings.forEach((o, i) => {
+    const isDoor = o.type === "door";
+    if (isDoor) doors++;
+    else windows++;
+    if (openHit.has(i)) {
+      if (isDoor) doorHit++;
+      else windowHit++;
+    } else {
+      missed.push({ type: o.type, ...mid(o) });
+    }
+  });
+
+  // Walls: GT-centric length-union coverage ≥50% by wall-kind candidates.
+  const wallLines: Line[] = candidates
+    .filter((c) => c.kind === "wall")
+    .map((c) => ({ x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3] }));
+  let wallHit = 0;
+  for (const w of gt.walls) {
+    const wl = len(w);
+    if (wl < 1) continue; // degenerate — counts against total, can't be hit
+    if (coveredLength(w, wallLines) / wl >= 0.5) wallHit++;
+    else missed.push({ type: "wall", ...mid(w) });
+  }
+
+  return {
+    walls: { hit: wallHit, total: gt.walls.length },
+    doors: { hit: doorHit, total: doors },
+    windows: { hit: windowHit, total: windows },
+    missed,
+  };
+}
+
 export function formatScore(title: string, s: PlanScore): string {
   const lines: string[] = [];
   lines.push(`── ${title} ──`);

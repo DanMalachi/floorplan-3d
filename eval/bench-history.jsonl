@@ -1,0 +1,1 @@
+{"ts":"2026-07-06T20:00:07.311Z","git":"da8fdf3","split":"all","plans":["20x45-cad","15x30-cad","30x50-cad","matterport-scan","1350-scan","732-graypoche"],"overall":{"wallRecall":0.9036697247706422,"doorRecall":0.847457627118644,"windowRecall":0.6388888888888888,"wallLenF1H":0.7445536818875751}}
