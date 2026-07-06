@@ -37,15 +37,16 @@ const cov = coveragePlan(candidates, gt);
 
 console.log(`coverage vs ${gtPath} (${candidates.length} candidates)`);
 console.log(`  walls    ${cov.walls.hit}/${cov.walls.total}`);
+if (cov.rails.total) console.log(`  rails    ${cov.rails.hit}/${cov.rails.total}`);
 console.log(`  doors    ${cov.doors.hit}/${cov.doors.total}`);
 console.log(`  windows  ${cov.windows.hit}/${cov.windows.total}`);
 
-const missedWalls = cov.missed.filter((m) => m.type === "wall");
-if (missedWalls.length) {
-  console.log(`  missed walls (midpoint, length px):`);
-  for (const m of missedWalls) console.log(`    (${m.x},${m.y})  ${m.len}px`);
+const missedLinear = cov.missed.filter((m) => m.type === "wall" || m.type === "rail");
+if (missedLinear.length) {
+  console.log(`  missed walls/rails (midpoint, length px):`);
+  for (const m of missedLinear) console.log(`    ${m.type} (${m.x},${m.y})  ${m.len}px`);
 }
-const missedOpen = cov.missed.filter((m) => m.type !== "wall");
+const missedOpen = cov.missed.filter((m) => m.type === "door" || m.type === "window");
 if (missedOpen.length) {
   console.log(`  missed openings:`);
   for (const m of missedOpen) console.log(`    ${m.type} (${m.x},${m.y})  ${m.len}px`);

@@ -501,17 +501,19 @@ export default function TraceCanvas() {
               );
             })}
 
-            {/* Wall segments */}
+            {/* Wall segments (rails drawn teal + dashed = low, see-through) */}
             {segments.map((seg) => {
               const a = pointMap.get(seg.a);
               const b = pointMap.get(seg.b);
               if (!a || !b) return null;
+              const isRail = seg.type === "rail";
               return (
                 <Line
                   key={seg.id}
                   points={[a.x, a.y, b.x, b.y]}
-                  stroke="#37c2ff"
-                  strokeWidth={stroke}
+                  stroke={isRail ? "#2fe0c0" : "#37c2ff"}
+                  strokeWidth={isRail ? Math.max(1, stroke * 0.7) : stroke}
+                  dash={isRail ? [stroke * 1.5, stroke * 1.2] : undefined}
                   lineCap="round"
                   listening={false}
                 />

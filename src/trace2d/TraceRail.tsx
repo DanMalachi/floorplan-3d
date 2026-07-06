@@ -61,19 +61,46 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   const setMode = useSceneStore((s) => s.setMode);
   const ortho = useSceneStore((s) => s.ortho);
   const setOrtho = useSceneStore((s) => s.setOrtho);
+  const drawRail = useSceneStore((s) => s.drawRail);
+  const setDrawRail = useSceneStore((s) => s.setDrawRail);
   const undo = useSceneStore((s) => s.undo);
   const finishChain = useSceneStore((s) => s.finishChain);
   const deleteSelected = useSceneStore((s) => s.deleteSelected);
   const selectedPointId = useSceneStore((s) => s.selectedPointId);
   const selectedOpeningId = useSceneStore((s) => s.selectedOpeningId);
-  const icons = { wall: "✏️ Wall", door: "🚪 Door", window: "🪟 Window" } as const;
+  const icons = { door: "🚪 Door", window: "🪟 Window" } as const;
+  const pickWall = (rail: boolean) => {
+    setMode("wall");
+    setDrawRail(rail);
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={microLabel()}>Draw by hand</div>
       <div style={{ display: "flex", gap: 4 }}>
-        {tools.map((t) => (
-          <button key={t} style={chip(mode === t, { flex: 1, textAlign: "center" })} onClick={() => setMode(t)}>
-            {icons[t]}
+        {tools.includes("wall") && (
+          <>
+            <button style={chip(mode === "wall" && !drawRail, { flex: 1, textAlign: "center" })} onClick={() => pickWall(false)}>
+              ✏️ Wall
+            </button>
+            <button
+              style={chip(mode === "wall" && drawRail, { flex: 1, textAlign: "center" })}
+              onClick={() => pickWall(true)}
+              title="Balcony/terrace railing — low, see-through barrier that bounds an outdoor space"
+            >
+              ▭ Rail
+            </button>
+          </>
+        )}
+        {tools.filter((t) => t !== "wall").map((t) => (
+          <button
+            key={t}
+            style={chip(mode === t, { flex: 1, textAlign: "center" })}
+            onClick={() => {
+              setMode(t);
+              setDrawRail(false);
+            }}
+          >
+            {icons[t as "door" | "window"]}
           </button>
         ))}
       </div>

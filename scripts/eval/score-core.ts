@@ -304,7 +304,7 @@ export const mean = (xs: number[]): number =>
   xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN;
 
 export interface CoverageMiss {
-  type: "wall" | "door" | "window";
+  type: "wall" | "rail" | "door" | "window";
   x: number; // midpoint
   y: number;
   len: number;
@@ -312,6 +312,7 @@ export interface CoverageMiss {
 
 export interface CoveragePlan {
   walls: { hit: number; total: number };
+  rails: { hit: number; total: number };
   doors: { hit: number; total: number };
   windows: { hit: number; total: number };
   missed: CoverageMiss[];
@@ -358,20 +359,33 @@ export function coveragePlan(candidates: Candidate[], gt: GroundTruth): Coverage
     }
   });
 
-  // Walls: GT-centric length-union coverage ≥50% by wall-kind candidates.
+  // Walls and rails: GT-centric length-union coverage ≥50% by wall-kind
+  // candidates. The eyes currently propose a rail as a thin wall, so both
+  // truth kinds are covered by the same candidate pool — but counted apart so
+  // the benchmark shows rail recall on its own.
   const wallLines: Line[] = candidates
     .filter((c) => c.kind === "wall")
     .map((c) => ({ x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3] }));
-  let wallHit = 0;
-  for (const w of gt.walls) {
-    const wl = len(w);
-    if (wl < 1) continue; // degenerate — counts against total, can't be hit
-    if (coveredLength(w, wallLines) / wl >= 0.5) wallHit++;
-    else missed.push({ type: "wall", ...mid(w) });
-  }
+  const coverLines = (
+    targets: { x0: number; y0: number; x1: number; y1: number }[],
+    kind: "wall" | "rail",
+  ) => {
+    let hit = 0;
+    for (const t of targets) {
+      const tl = len(t);
+      if (tl < 1) continue; // degenerate — counts against total, can't be hit
+      if (coveredLength(t, wallLines) / tl >= 0.5) hit++;
+      else missed.push({ type: kind, ...mid(t) });
+    }
+    return hit;
+  };
+  const wallHit = coverLines(gt.walls, "wall");
+  const rails = gt.rails ?? [];
+  const railHit = coverLines(rails, "rail");
 
   return {
     walls: { hit: wallHit, total: gt.walls.length },
+    rails: { hit: railHit, total: rails.length },
     doors: { hit: doorHit, total: doors },
     windows: { hit: windowHit, total: windows },
     missed,

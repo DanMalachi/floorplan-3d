@@ -42,6 +42,11 @@ export interface TraceSegment {
   id: string;
   a: string; // point id
   b: string; // point id
+  // A traced edge is a full-height WALL unless tagged a RAIL — a low,
+  // see-through space divider (balcony/terrace railing, glass balustrade,
+  // low parapet). Rails bound rooms exactly like walls in the graph, but are
+  // a distinct element for 3D height/opacity and semantics. Absent = wall.
+  type?: "wall" | "rail";
 }
 
 // An opening is traced as a line ALONG its host wall: t0..t1 are the normalized
@@ -324,6 +329,7 @@ interface StoreState {
   // --- interaction ---
   mode: TraceMode;
   ortho: boolean; // constrain new wall segments to 90° (Shift inverts per-click)
+  drawRail: boolean; // in wall mode, draw edges as rails (balcony) instead of walls
 
   // --- undo history (trace only) ---
   history: TraceSnapshot[];
@@ -331,6 +337,7 @@ interface StoreState {
   // --- actions ---
   setMode: (m: TraceMode) => void;
   setOrtho: (v: boolean) => void;
+  setDrawRail: (v: boolean) => void;
   addPoint: (x: number, y: number) => void;
   connectToNode: (nodeId: string) => void; // start from / connect to an existing point
   attachToSegment: (segmentId: string, x: number, y: number) => void; // magnet onto a wall (splits it)
@@ -1032,6 +1039,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     mode: "wall",
     ortho: true,
+    drawRail: false,
 
     history: [],
 
@@ -1042,13 +1050,15 @@ export const useSceneStore = create<StoreState>((set, get) => {
       }),
 
     setOrtho: (ortho) => set({ ortho }),
+    setDrawRail: (drawRail) => set({ drawRail }),
 
     addPoint: (x, y) => {
       pushHistory();
       set((st) => {
         const p: TracePoint = { id: newId("p"), x, y };
+        const kind: "wall" | "rail" = st.drawRail ? "rail" : "wall";
         const segments = st.activeLastPointId
-          ? [...st.segments, { id: newId("s"), a: st.activeLastPointId, b: p.id }]
+          ? [...st.segments, { id: newId("s"), a: st.activeLastPointId, b: p.id, type: kind }]
           : st.segments;
         return {
           points: [...st.points, p],
@@ -1075,9 +1085,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
             (s.a === activeLastPointId && s.b === nodeId) ||
             (s.a === nodeId && s.b === activeLastPointId),
         );
+        const kind: "wall" | "rail" = st.drawRail ? "rail" : "wall";
         const segments = exists
           ? st.segments
-          : [...st.segments, { id: newId("s"), a: activeLastPointId, b: nodeId }];
+          : [...st.segments, { id: newId("s"), a: activeLastPointId, b: nodeId, type: kind }];
         // Joining an existing vertex ends the run (loop closed / network joined).
         return { segments, activeLastPointId: null, selectedPointId: null };
       });
@@ -1098,8 +1109,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
         const len2 = abx * abx + aby * aby || 1;
         const ts = Math.min(1, Math.max(0, ((x - a.x) * abx + (y - a.y) * aby) / len2));
 
-        const s1 = { id: newId("s"), a: seg.a, b: P.id };
-        const s2 = { id: newId("s"), a: P.id, b: seg.b };
+        // Split pieces inherit the split wall's own type; the new run's
+        // connecting segment (below) takes the current draw kind.
+        const s1 = { id: newId("s"), a: seg.a, b: P.id, type: seg.type };
+        const s2 = { id: newId("s"), a: P.id, b: seg.b, type: seg.type };
         let segments = st.segments.filter((s) => s.id !== segmentId).concat([s1, s2]);
 
         // Re-home openings that lived on the split wall onto the correct sub-wall.
@@ -1111,7 +1124,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
         let activeLastPointId: string | null = P.id;
         let selectedPointId: string | null = P.id;
         if (st.activeLastPointId != null && st.activeLastPointId !== P.id) {
-          segments = [...segments, { id: newId("s"), a: st.activeLastPointId, b: P.id }];
+          const kind: "wall" | "rail" = st.drawRail ? "rail" : "wall";
+          segments = [...segments, { id: newId("s"), a: st.activeLastPointId, b: P.id, type: kind }];
           activeLastPointId = null;
           selectedPointId = null;
         }

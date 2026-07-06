@@ -48,6 +48,15 @@ permission here before adding.
 | Architect (YOLOv8 weights) | CC BY-NC 4.0 | do not ship |
 | zimhe/pseudo-floor-plan-12k | unverified | do not use until license confirmed |
 
+## Tracing conventions
+
+- **Balcony / terrace railings → trace as `rail`** (the Rail tool in the Walls step),
+  not as walls or openings. A rail is a low, see-through barrier that bounds an OUTDOOR
+  space. Trace the exposed balcony edges as rails; the wall SHARED with the apartment
+  stays a `wall`, with its sliding glass door traced as a normal door/window opening on
+  it. Rails bound rooms exactly like walls, so this closes the balcony as a room.
+  (Matches ResPlan's `balcony` element class → schema-compatible with our training data.)
+
 ## Adding a rights-owned real plan to the benchmark
 1. Obtain and record explicit permission (owner, date, scope) in this file.
 2. Trace its GT in-app (TraceRail → Ground truth) → `floorplan-gt/<name>.gt.json`.

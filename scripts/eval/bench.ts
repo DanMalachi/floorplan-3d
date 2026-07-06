@@ -162,14 +162,15 @@ for (const p of plans) {
     };
   }
   rows.push(row);
+  const railStr = cov.rails.total ? `  rails ${cov.rails.hit}/${cov.rails.total}` : "";
   console.log(
-    `· ${p.id.padEnd(16)} walls ${cov.walls.hit}/${cov.walls.total}  doors ${cov.doors.hit}/${cov.doors.total}  windows ${cov.windows.hit}/${cov.windows.total}`,
+    `· ${p.id.padEnd(16)} walls ${cov.walls.hit}/${cov.walls.total}${railStr}  doors ${cov.doors.hit}/${cov.doors.total}  windows ${cov.windows.hit}/${cov.windows.total}`,
   );
 }
 
 // ---- aggregate -----------------------------------------------------------
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(0)}%` : "—");
-const pool = (rs: Row[], k: "walls" | "doors" | "windows") => {
+const pool = (rs: Row[], k: "walls" | "rails" | "doors" | "windows") => {
   const hit = rs.reduce((s, r) => s + r.cov[k].hit, 0);
   const total = rs.reduce((s, r) => s + r.cov[k].total, 0);
   return { hit, total };
@@ -177,10 +178,12 @@ const pool = (rs: Row[], k: "walls" | "doors" | "windows") => {
 
 function block(title: string, rs: Row[]): string {
   const w = pool(rs, "walls");
+  const rail = pool(rs, "rails");
   const d = pool(rs, "doors");
   const win = pool(rs, "windows");
   const wlen = mean(rs.map((r) => r.wallLenF1H));
-  let line = `${title.padEnd(18)} walls ${`${w.hit}/${w.total}`.padEnd(9)} ${pct(w.hit, w.total).padStart(4)}   doors ${`${d.hit}/${d.total}`.padEnd(7)} ${pct(d.hit, d.total).padStart(4)}   windows ${`${win.hit}/${win.total}`.padEnd(7)} ${pct(win.hit, win.total).padStart(4)}   wallLenF1(H) ${(wlen * 100).toFixed(0)}%`;
+  const railCol = rail.total ? `   rails ${`${rail.hit}/${rail.total}`.padEnd(7)} ${pct(rail.hit, rail.total).padStart(4)}` : "";
+  let line = `${title.padEnd(18)} walls ${`${w.hit}/${w.total}`.padEnd(9)} ${pct(w.hit, w.total).padStart(4)}${railCol}   doors ${`${d.hit}/${d.total}`.padEnd(7)} ${pct(d.hit, d.total).padStart(4)}   windows ${`${win.hit}/${win.total}`.padEnd(7)} ${pct(win.hit, win.total).padStart(4)}   wallLenF1(H) ${(wlen * 100).toFixed(0)}%`;
   if (rs.some((r) => r.vlm)) {
     const vr = rs.filter((r) => r.vlm);
     line += `\n${" ".repeat(18)} VLM: wallLenF1 ${(mean(vr.map((r) => r.vlm!.wallLenF1)) * 100).toFixed(0)}%  doorF1 ${(mean(vr.map((r) => r.vlm!.doorF1)) * 100).toFixed(0)}%  windowF1 ${(mean(vr.map((r) => r.vlm!.windowF1)) * 100).toFixed(0)}%`;
@@ -206,6 +209,7 @@ if (styles.length > 1) {
 // ---- history + gate ------------------------------------------------------
 const overall = {
   wallRecall: pool(rows, "walls").hit / Math.max(1, pool(rows, "walls").total),
+  railRecall: pool(rows, "rails").hit / Math.max(1, pool(rows, "rails").total),
   doorRecall: pool(rows, "doors").hit / Math.max(1, pool(rows, "doors").total),
   windowRecall: pool(rows, "windows").hit / Math.max(1, pool(rows, "windows").total),
   wallLenF1H: mean(rows.map((r) => r.wallLenF1H)),
@@ -241,7 +245,7 @@ if (has("--gate")) {
   } else {
     const EPS = 0.005;
     const drops: string[] = [];
-    for (const k of ["wallRecall", "doorRecall", "windowRecall"] as const) {
+    for (const k of ["wallRecall", "railRecall", "doorRecall", "windowRecall"] as const) {
       if (overall[k] < prev[k] - EPS) {
         drops.push(`${k} ${(prev[k] * 100).toFixed(0)}% → ${(overall[k] * 100).toFixed(0)}%`);
       }

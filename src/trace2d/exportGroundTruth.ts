@@ -16,6 +16,11 @@ export interface GtWall {
   y1: number;
 }
 
+// A rail (balcony/terrace railing, glass balustrade, low parapet): same
+// geometry as a wall but a distinct element — low, see-through, and it bounds
+// an OUTDOOR space rather than dividing two indoor rooms.
+export type GtRail = GtWall;
+
 export interface GtOpening {
   id: string;
   type: "door" | "window";
@@ -39,6 +44,7 @@ export interface GroundTruth {
   openings: TraceOpening[];
   // Resolved to image-px endpoints — what the scoring harness consumes.
   walls: GtWall[];
+  rails: GtRail[];
   resolvedOpenings: GtOpening[];
 }
 
@@ -52,13 +58,15 @@ export function buildGroundTruth(args: {
 }): GroundTruth {
   const byId = new Map(args.points.map((p) => [p.id, p]));
   const walls: GtWall[] = [];
+  const rails: GtRail[] = [];
   const segById = new Map<string, { a: TracePoint; b: TracePoint }>();
   for (const s of args.segments) {
     const a = byId.get(s.a);
     const b = byId.get(s.b);
     if (!a || !b) continue;
     segById.set(s.id, { a, b });
-    walls.push({ segmentId: s.id, x0: a.x, y0: a.y, x1: b.x, y1: b.y });
+    const resolved = { segmentId: s.id, x0: a.x, y0: a.y, x1: b.x, y1: b.y };
+    (s.type === "rail" ? rails : walls).push(resolved);
   }
   const resolvedOpenings: GtOpening[] = [];
   for (const o of args.openings) {
@@ -86,6 +94,7 @@ export function buildGroundTruth(args: {
     segments: args.segments,
     openings: args.openings,
     walls,
+    rails,
     resolvedOpenings,
   };
 }
