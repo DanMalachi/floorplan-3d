@@ -55,6 +55,8 @@ export interface RasterParams {
   doorMaxMeters: number;
   doorMinPx: number;
   doorMaxPx: number;
+  openingMaxMeters: number; // widest bridgeable fill gap (sliders/window strips)
+  openingMaxPx: number;
   arcThinMaxPx: number; // leaf/arc strokes are drawing-weight, not wall-weight
   arcJoinPx: number; // endpoint gap that still chains leaf/arc pieces
   arcTurnMinDeg: number; // total sweep of an arc chain (quarter swing ≈ 60–90°)
@@ -70,9 +72,11 @@ export const DEFAULT_RASTER: RasterParams = {
   minWallMeters: 0.35,
   minWallPx: 25,
   doorMinMeters: 0.45,
-  doorMaxMeters: 3.5, // wide sliders/garage doors; matches vector candidate mode
+  doorMaxMeters: 3.5, // above this a gap opening is flagged "wide"
   doorMinPx: 18,
   doorMaxPx: 220,
+  openingMaxMeters: 5.0,
+  openingMaxPx: 330,
   arcThinMaxPx: 5.5,
   arcJoinPx: 7,
   arcTurnMinDeg: 45,
@@ -215,15 +219,23 @@ interface GapResult {
 }
 
 /**
- * Gap-door candidates: wall runs separated by a door-width gap. Three cases:
- * - collinear runs (classic doorway in a straight wall);
+ * Universal gap-bridging: ANY collinear break in a wall run gets a bridge
+ * wall candidate (the run continues through it), and opening-scale breaks
+ * additionally get an opening candidate. Door vs window is decided later by
+ * the VLM/user — exactly the iron rule; windows are breaks in the fill just
+ * like doors, so bridging only door-sized gaps left every window an open
+ * loop end. Cases:
+ * - collinear runs (doorway/window/slider in a straight wall);
+ * - sub-door-width breaks (fill fragmentation where annotation crosses the
+ *   wall) — bridge only, no opening;
  * - collinear runs with wall-stub ISLANDS between them (two adjacent
  *   doorways share flanks — split the oversized gap at each island);
  * - a run end facing a PERPENDICULAR wall (corner doorway — the far jamb is
  *   the crossing wall itself, so no collinear partner ever exists).
  * Skeleton endpoints retract ~thickness/2 from the true ink end, so gap
  * bounds are trimmed by th/2 on each side to land on the real jamb faces.
- * Emitted with guess "door"; the VLM may relabel window or reject.
+ * Openings emitted with guess "door" ("wide" flag past doorMax); the VLM
+ * may relabel window or reject.
  */
 function gapOpenings(
   lines: Line[],
@@ -233,6 +245,8 @@ function gapOpenings(
 ): GapResult {
   const doorMin = mpp ? p.doorMinMeters / mpp : p.doorMinPx;
   const doorMax = mpp ? p.doorMaxMeters / mpp : p.doorMaxPx;
+  const openMax = mpp ? p.openingMaxMeters / mpp : p.openingMaxPx;
+  const minWall = mpp ? p.minWallMeters / mpp : p.minWallPx;
   const out: GapCandidate[] = [];
   const bridges: Line[] = [];
   // Run ends already explained by a collinear gap — the corner pass skips
@@ -263,27 +277,75 @@ function gapOpenings(
       const bmx = (b.x0 + b.x1) / 2;
       const bmy = (b.y0 + b.y1) / 2;
       const perp = Math.abs((bmx - a.x0) * -dy + (bmy - a.y0) * dx);
-      if (perp > Math.max(4, Math.max(a.th, b.th) * 0.5)) continue;
+      // Eroded fill shifts a fragment's centerline by up to ~th/2, so allow
+      // 0.8×th — still well under the 0.3m parallel-wall separation floor.
+      if (perp > Math.max(4, Math.max(a.th, b.th) * 0.8)) continue;
       const sa = [(a.x0 - a.x0) * dx + (a.y0 - a.y0) * dy, (a.x1 - a.x0) * dx + (a.y1 - a.y0) * dy].sort((u, v) => u - v);
       const sb = [(b.x0 - a.x0) * dx + (b.y0 - a.y0) * dy, (b.x1 - a.x0) * dx + (b.y1 - a.y0) * dy].sort((u, v) => u - v);
       const rawGap = Math.max(sa[0], sb[0]) - Math.min(sa[1], sb[1]);
-      // Up to ~2 doorways + a stub can share one flank pair.
-      if (rawGap < doorMin || rawGap > doorMax * 2.5) continue;
-      // Both flanks must be substantial — noise stubs don't frame doorways.
-      if (a.len < Math.min(rawGap, doorMax) * 0.5 || b.len < Math.min(rawGap, doorMax) * 0.5) continue;
+      // Up to ~2 openings + a stub can share one flank pair.
+      if (rawGap <= p.mergeGapPx || rawGap > openMax * 2.5) continue;
+      const thAvg = (a.th + b.th) / 2;
+
+      // The gap must be EMPTY of collinear material: if a third run sits
+      // inside it, that run's own adjacent pairs describe the real breaks —
+      // spanning over it would fabricate an opening across solid wall.
+      const gapLo = Math.min(sa[1], sb[1]);
+      const gapHi = Math.max(sa[0], sb[0]);
+      let occupied = false;
+      for (let k = 0; k < lines.length && !occupied; k++) {
+        if (k === i || k === j) continue;
+        const c = lines[k];
+        if (angleDiff(a.angle, c.angle) > 3) continue;
+        const cmx = (c.x0 + c.x1) / 2;
+        const cmy = (c.y0 + c.y1) / 2;
+        const cperp = Math.abs((cmx - a.x0) * -dy + (cmy - a.y0) * dx);
+        if (cperp > Math.max(4, Math.max(a.th, c.th) * 0.8)) continue;
+        const sc = [(c.x0 - a.x0) * dx + (c.y0 - a.y0) * dy, (c.x1 - a.x0) * dx + (c.y1 - a.y0) * dy].sort((u, v) => u - v);
+        if (Math.min(sc[1], gapHi) - Math.max(sc[0], gapLo) > Math.max(3, thAvg * 0.5)) occupied = true;
+      }
+      if (occupied) continue;
+
+      // Flanks must be substantial — noise stubs don't frame doorways, and
+      // dotted noise chains must not weld into phantom walls. Sum-based for
+      // opening gaps: interrupted fill leaves SHORT fragments on both sides
+      // of a real window, so requiring each flank ≥ half the gap missed them.
+      if (rawGap >= doorMin) {
+        const cap = Math.min(rawGap, doorMax);
+        if (a.len + b.len < cap * 0.8 || Math.min(a.len, b.len) < cap * 0.25) continue;
+      } else if (Math.min(a.len, b.len) < Math.max(rawGap * 0.75, minWall)) {
+        // Fragmentation welds only join kept-grade wall runs: a bridge
+        // between two reject fragments would be a floating kept wall, and on
+        // thin-stroke scans it would weld text dashes into phantom walls.
+        continue;
+      }
 
       const aFirst = sa[1] <= sb[1]; // a's run ends where the gap starts
       const thLo = aFirst ? a.th : b.th;
       const thHi = aFirst ? b.th : a.th;
-      const g0 = Math.min(sa[1], sb[1]) + thLo / 2; // jamb-face trim
-      const g1 = Math.max(sa[0], sb[0]) - thHi / 2;
-      if (g1 <= g0) continue;
+      const g0 = gapLo + thLo / 2; // jamb-face trim
+      const g1 = gapHi - thHi / 2;
+      const markBridged = () => {
+        usedEnds.add(`${i}:${aFirst ? "+" : "-"}`);
+        usedEnds.add(`${j}:${aFirst ? "-" : "+"}`);
+        bridges.push({
+          x0: a.x0 + dx * gapLo, y0: a.y0 + dy * gapLo, // raw skeleton ends — bridge meets both flanks
+          x1: a.x0 + dx * gapHi, y1: a.y0 + dy * gapHi,
+          th: thAvg,
+          len: gapHi - gapLo,
+          angle: a.angle,
+        });
+      };
+      if (g1 <= g0) {
+        // Jamb trim ate the whole break — pure fill fragmentation, weld it.
+        markBridged();
+        continue;
+      }
 
       // Two kinds of pier split a shared gap into separate doorways:
       // isolated wall-stub islands, and PERPENDICULAR walls whose end meets
       // the door line inside the gap (a T-ing room divider — its last stub
       // is fused into that wall's component, so it never becomes an island).
-      const thAvg = (a.th + b.th) / 2;
       const cuts = islands
         .map((isl) => ({
           s: (isl.x - a.x0) * dx + (isl.y - a.y0) * dy,
@@ -318,26 +380,22 @@ function gapOpenings(
       }
       bounds.push([prev, g1]);
 
-      let emitted = false;
+      let unexplained = false;
       for (const [s0, s1] of bounds) {
         const w = s1 - s0;
-        if (w < doorMin || w > doorMax) continue;
-        emit(a, dx, dy, s0, s1, thAvg, cuts.length ? ["gap", "split"] : ["gap"]);
-        emitted = true;
+        if (w > openMax) {
+          unexplained = true; // wider than any opening — runs likely unrelated
+          continue;
+        }
+        if (w < doorMin) continue; // fragmentation sliver — welded by the bridge, not an opening
+        const flags = ["gap"];
+        if (cuts.length) flags.push("split");
+        if (w > doorMax) flags.push("wide");
+        emit(a, dx, dy, s0, s1, thAvg, flags);
       }
-      if (emitted) {
-        usedEnds.add(`${i}:${aFirst ? "+" : "-"}`);
-        usedEnds.add(`${j}:${aFirst ? "-" : "+"}`);
-        const r0 = Math.min(sa[1], sb[1]); // raw skeleton ends — bridge meets both flanks
-        const r1 = Math.max(sa[0], sb[0]);
-        bridges.push({
-          x0: a.x0 + dx * r0, y0: a.y0 + dy * r0,
-          x1: a.x0 + dx * r1, y1: a.y0 + dy * r1,
-          th: thAvg,
-          len: r1 - r0,
-          angle: a.angle,
-        });
-      }
+      // Bridge whenever every part of the break is explained (opening-scale
+      // or fragmentation) — the wall run continues through it either way.
+      if (!unexplained) markBridged();
     }
   }
 

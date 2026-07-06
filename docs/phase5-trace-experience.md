@@ -113,3 +113,19 @@ can't outvote walls; (c) bridge *any* fill gap between collinear wall runs
 (windows and sliders included — classification decides door vs window
 later, which is exactly the iron rule); (d) honest quality verdict when
 thin-strokes explodes; (e) close-kernel sized from wall_est, not fixed.
+
+**Status 2026-07-06:** (a) built as the style router + gray-poché extractor
+(Steps 1–4, committed). (c) built: universal gap-bridging in
+`rasterCandidates.ts` — any collinear break ≤ `openingMaxMeters` (5.0m,
+new param) gets a bridge wall; opening-scale breaks (≥ doorMin) also emit
+an opening candidate ("wide" flag past doorMax); sub-door breaks weld only
+kept-grade runs (floating-bridge/text-dash guard); a new occupancy check
+skips pairs whose gap contains a third collinear run. Pair perp tolerance
+0.5→0.8×th (eroded fill shifts fragment centerlines); flank rule is now
+sum-based (Σ ≥ 0.8×cap, each ≥ 0.25×cap). 732 vs GT: walls 31→33/42,
+windows 3→4/5, doors hold 7/7, loose ends 15→12. Baselines hold (Matterport
++1 wall; 1350 windows 9→8 — a 12px noise reject that luckily overlapped a
+16px GT window fell to cap crowding; that top wall's windows are paneled
+ink, structurally VLM work). Remaining 732 loose ends are PROPOSER-level:
+whole fill runs never emitted (bottom-middle bath region) → next milestone
+is mask healing in `propose_raster.py` ((b)/(e) above), not candidate work.
