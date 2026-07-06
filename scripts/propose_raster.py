@@ -106,7 +106,14 @@ def _reject_periodic_texture(bars, long_edge):
       real walls never see 2 uniform neighbors inside the window;
     - stack size >=3 (self + 2 neighbors): the vector hatch rule verbatim;
     - spacing uniformity max/min <= 2.2: periodic texture is regular
-      (vector stair rule used 2.0; slightly looser for raster wobble).
+      (vector stair rule used 2.0; slightly looser for raster wobble);
+    - partners must be COMPARABLE-LENGTH: stripe fields are made of
+      similar-length members (boards, tiles), so a partner counts only if
+      it overlaps >=40% of the CANDIDATE's own length. Short skeleton
+      stubs beside a long wall (junction artifacts, fixture leftovers)
+      must never vote a real wall into a stripe field — that exact failure
+      erased two bath walls on the 732 plan (the raster twin of the vector
+      pipeline's hatchMaxNeighbors bug).
 
     Returns (cleaned mask, rejected-area share, texture line count).
     """
@@ -152,7 +159,7 @@ def _reject_periodic_texture(bars, long_edge):
                 (b["p1"][0] - a["p0"][0]) * a["u"][0] + (b["p1"][1] - a["p0"][1]) * a["u"][1],
             ])
             overlap = min(a["len"], sb[1]) - max(0.0, sb[0])
-            if overlap < 0.4 * min(a["len"], b["len"]):
+            if overlap < 0.4 * a["len"]:
                 continue
             gaps.append(perp)
         if len(gaps) >= 2:
