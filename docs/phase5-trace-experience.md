@@ -60,3 +60,56 @@ disagreement-driven zoom, interactive one-click correction loops ("fix this
 wall" retrains thickness bands live), segmentation-model spike (licensing
 permitting), and synthetic-plan self-training. Success metric stays the
 Phase 3 one: correction effort to reach a clean model.
+
+### Act 2 Step 0 — failure taxonomy: the user's plan (2026-07-06)
+
+Diagnosed the in-app failure on `floorplan_for_training/732845872_*.jpg`
+(Israeli apartment plan, JPEG, 1319×1213). Verdict: **systemic generator
+failure — the raster proposer took the wrong branch.** Classification was
+never reached in any meaningful sense. Artifacts: `eval-out/user-plan-732/`
+(current pipeline: 2,880 centerlines of noise, overlay.png) and
+`eval-out/user-plan-732-gray/` (what-if fix: overlay.png, room-test.ts).
+
+**Chain of failure (current pipeline):**
+
+1. **Branch misroute.** Stroke-width mode voting estimated walls at 4px and
+   fell into the thin-strokes branch (mask = all ink). Real walls are 12px
+   (interior) / 26px (exterior) gray fills. The ~4px stroke population
+   (window symbols, door leaves, JPEG-blurred lines, adaptive-threshold
+   halos) dwarfs the wall modes by total skeleton length — mode-by-count
+   structurally loses on densely annotated plans.
+2. **Everything downstream drowned.** 2,880 centerlines → 600 capped
+   candidates (340 "walls", 239 "doors") drawn over text, dimension lines,
+   fixtures and the balcony tile grid.
+3. **Quality verdict lied.** Report said `good` while producing garbage —
+   verdict never checks whether the thin-strokes branch exploded.
+
+**The plan class has a stronger signal than any of our estimators:** walls
+are solid **mid-gray fills (~152)**; all annotation is near-black. This is
+standard Israeli "gray poché" CAD output — likely the app's core target
+domain. A mid-band intensity mask (100–175 + open k5 + close k7) yields a
+near-perfect wall mask: 81 centerlines, wall_est 14px, zero
+text/dim/fixture/hatch false positives (validated end-to-end via
+`rasterToCandidates`: 100 candidates — 54 wall, 17 door — vs 600 noise).
+
+**Remaining failures even with the perfect wall mask** (room-closure test,
+mirroring accept-all → `buildPlanarGraph` → `analyzeLoops`): only 5 loops
+close, 17 loose ends. Causes, in order of impact:
+
+- **Window gaps don't bridge.** Windows are breaks in the gray fill; only
+  door-sized gaps get bridge candidates, so every window opens the loop.
+- **Wide sliders exceed the bridge cap.** Living-room balcony slider is
+  3.87m > `doorMaxMeters` 3.5 → no gap candidate, no bridge.
+- **Fill fragmentation at annotation crossings.** Black lines crossing the
+  gray fill erode it; close k7 heals some, leaving thin (6–8px) fragments
+  and sub-weld-tolerance gaps (weld 14px vs 20–80px breaks).
+- Corner-stamp noise (top-left logo) produces 1–2 junk candidates.
+
+**Fix shape implied (not yet built, pending direction choice):** (a) a
+gray-poché branch in `propose_raster.py` — detect a distinct mid-band ink
+population with bar-like morphology, use it as the wall mask; (b) harden
+the thickness estimator (thickness/area-weighted voting) so annotation
+can't outvote walls; (c) bridge *any* fill gap between collinear wall runs
+(windows and sliders included — classification decides door vs window
+later, which is exactly the iron rule); (d) honest quality verdict when
+thin-strokes explodes; (e) close-kernel sized from wall_est, not fixed.
