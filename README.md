@@ -1,3 +1,18 @@
+# floorplan-3d
+
+**Goal: automatically understand architectural floorplans with near-human
+accuracy — generalizing across drawing styles, countries, languages, and scan
+quality, with no plan-specific tuning.** Detect elements, understand their
+relationships, reconstruct the building, and produce reliable downstream outputs
+(3D, BIM, measurements) — asking for human input only when confidence is
+genuinely low.
+
+📖 **See [`docs/VISION.md`](docs/VISION.md) for the full project vision and how
+today's trace-to-3D work maps to it.** That document is the north star; every
+architectural decision is justified against it.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
