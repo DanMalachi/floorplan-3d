@@ -1,15 +1,18 @@
 # floorplan-3d
 
-**Goal: automatically understand architectural floorplans with near-human
-accuracy — generalizing across drawing styles, countries, languages, and scan
-quality, with no plan-specific tuning.** Detect elements, understand their
-relationships, reconstruct the building, and produce reliable downstream outputs
-(3D, BIM, measurements) — asking for human input only when confidence is
-genuinely low.
+**Goal: the best editable 3D home design experience — one a user can trust.**
+Upload a floorplan and, moments later, walk around your own home in 3D and start
+designing it. The enabling technology — and where our effort goes right now — is
+**automatically and faithfully understanding the uploaded floorplan**:
+generalizing across drawing styles, countries, languages, and scan quality with
+no plan-specific tuning, so the user can trust the generated home without
+verifying every wall, door, and window. Perception is the current bottleneck to a
+magical product, not the product itself; the technology stays invisible.
 
-📖 **See [`docs/VISION.md`](docs/VISION.md) for the full project vision and how
-today's trace-to-3D work maps to it.** That document is the north star; every
-architectural decision is justified against it.
+📖 **See [`docs/VISION.md`](docs/VISION.md) for the full project vision — why the
+design experience is the destination and automatic understanding is the current
+bottleneck.** That document is the north star; every architectural decision is
+justified against it.
 
 ---
 
