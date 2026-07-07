@@ -1,10 +1,12 @@
 # Phase 4 — The Build Mode Engine
 
-> **Vision:** How would the Sims architectural engine feel if it shipped in 2026 and
-> was designed by Apple? Direct manipulation of everything — every wall, corner,
-> door, window and piece of furniture is grabbable and reshapes the house live —
-> wrapped in a calm, glassy, precise UI. Zero modal friction; experimentation is
-> always safe because undo is instant and universal.
+> **Vision:** This is the project's destination — the editable 3D home design
+> experience itself (see [`VISION.md`](VISION.md)). How would the Sims
+> architectural engine feel if it shipped in 2026 and was designed by Apple?
+> Direct manipulation of everything — every wall, corner, door, window and piece
+> of furniture is grabbable and reshapes the house live — wrapped in a calm,
+> glassy, precise UI. Zero modal friction; experimentation is always safe because
+> undo is instant and universal.
 
 Approved decisions (2026-07-04): furniture from curated **CC0 packs**; **editing
 mechanics before UI skin**; the 2D trace editor gets **re-skinned to match** as part
