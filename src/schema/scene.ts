@@ -18,6 +18,10 @@ export interface Wall {
   b: Id; // end node id
   thickness: number; // meters
   height?: number; // meters; falls back to WALL_HEIGHT when undefined
+  // "rail" = a low, see-through barrier (balcony railing / balustrade / low
+  // parapet) rather than a solid wall. Bounds rooms like a wall in the graph,
+  // but renders low and transparent. Absent = wall. Mirrors TraceSegment.type.
+  kind?: "wall" | "rail";
 }
 
 export type OpeningType = "door" | "window";
@@ -65,6 +69,7 @@ export interface RoomFeatures {
   doorCount: number;
   windowCount: number;
   exteriorWallCount: number; // boundary walls bordering only this room
+  railWallCount: number; // boundary edges that are rails — strong outdoor (balcony/deck) signal
   longestWallM: number;
   perimeterM: number;
   aspectRatio: number; // bbox long / short

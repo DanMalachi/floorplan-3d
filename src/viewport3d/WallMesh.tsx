@@ -6,7 +6,7 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
-import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
+import { WALL_HEIGHT, DEFAULT_THICKNESS, RAIL_HEIGHT } from "@/schema/constants";
 import {
   useSceneStore,
   type DimLabel,
@@ -578,6 +578,165 @@ export const dimLabelStyle: React.CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+// --- Rails ------------------------------------------------------------------
+
+const RAIL_GLASS = "#bfe9e4"; // faint teal so the barrier reads without blocking
+const RAIL_CAP = "#6b7078"; // handrail
+const RAIL_CAP_H = 0.06;
+const RAIL_CAP_THK = 0.09;
+const RAIL_PANEL_THK = 0.035;
+
+/** A rail: a low, see-through barrier (balcony railing / balustrade). Renders as
+ *  a glass panel with a solid handrail cap. Stored in scene.walls with
+ *  kind="rail", so it selects, moves, and reshapes exactly like a wall. */
+function RailGroup({ wall, a, b, offset }: {
+  wall: Wall;
+  a: Node;
+  b: Node;
+  offset: { cx: number; cz: number };
+}) {
+  const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
+  const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const wallMode = useSceneStore((s) => s.wallMode);
+  const drag = useRef<DragState | null>(null);
+
+  const { mid, normal, rotationY, len, height } = useMemo(() => {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L;
+    const uy = dy / L;
+    return {
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      normal: { x: -uy, y: ux },
+      rotationY: -Math.atan2(uy, ux),
+      len: Math.hypot(dx, dy),
+      // Rails drop to knee-high stubs in the Sims top-down view, like walls.
+      height: wallMode === "top" ? 0.32 : RAIL_HEIGHT,
+    };
+  }, [a, b, wallMode]);
+
+  const glow = selected ? 0.5 : hovered ? 0.22 : 0;
+  const panelH = Math.max(0.01, height - RAIL_CAP_H);
+
+  const [glass, cap] = useMemo(() => {
+    const g = new THREE.MeshStandardMaterial({
+      color: RAIL_GLASS,
+      emissive: new THREE.Color(ACCENT),
+      emissiveIntensity: 0,
+      transparent: true,
+      opacity: 0.22,
+      roughness: 0.08,
+      metalness: 0,
+      envMapIntensity: 1.2,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const c = new THREE.MeshStandardMaterial({
+      color: RAIL_CAP,
+      emissive: new THREE.Color(ACCENT),
+      emissiveIntensity: 0,
+      roughness: 0.4,
+      metalness: 0.3,
+    });
+    return [g, c] as const;
+  }, []);
+  useEffect(() => () => { glass.dispose(); cap.dispose(); }, [glass, cap]);
+  useEffect(() => {
+    glass.emissiveIntensity = glow;
+    cap.emissiveIntensity = glow;
+  }, [glass, cap, glow]);
+
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return;
+    const s = useSceneStore.getState();
+    if (s.appMode !== "build" || s.placing) return;
+    e.stopPropagation();
+    s.setSel3d({ kind: "wall", id: wall.id });
+    const start = rayToPlan(e, offset);
+    if (!start) return;
+    (e.target as Element).setPointerCapture(e.pointerId);
+    drag.current = { pointerId: e.pointerId, start, base: s.scene };
+    s.beginGesture();
+  };
+
+  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.stopPropagation();
+    const cur = rayToPlan(e, offset);
+    if (!cur) return;
+    let dist = (cur.x - d.start.x) * normal.x + (cur.y - d.start.y) * normal.y;
+    if (!e.shiftKey) dist = snapDelta(dist);
+    const moved = new Set([wall.a, wall.b]);
+    const nodes = d.base.nodes.map((n) =>
+      moved.has(n.id) ? { ...n, x: n.x + normal.x * dist, y: n.y + normal.y * dist } : n,
+    );
+    const next: Scene = { ...d.base, nodes };
+    const labels = wallLengthLabels(next, moved);
+    labels.push({
+      world: [mid.x + normal.x * dist, height + 0.5, mid.y + normal.y * dist],
+      text: `Δ ${fmt(Math.abs(dist))}`,
+    });
+    useSceneStore.getState().updateGesture(next, { guides: [], labels });
+  };
+
+  const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.stopPropagation();
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    drag.current = null;
+    useSceneStore.getState().endGesture("Move rail");
+  };
+
+  const hoverHandlers = {
+    onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+      const s = useSceneStore.getState();
+      if (s.appMode !== "build" || s.placing) return;
+      e.stopPropagation();
+      s.setHover3d({ kind: "wall", id: wall.id });
+    },
+    onPointerOut: (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      const cur = useSceneStore.getState().hover3d;
+      if (isPick(cur, "wall", wall.id)) useSceneStore.getState().setHover3d(null);
+    },
+  };
+
+  const meshProps = {
+    position: [mid.x, 0, mid.y] as [number, number, number],
+    rotation: [0, rotationY, 0] as [number, number, number],
+    userData: { pick: { kind: "wall", id: wall.id } },
+    ...hoverHandlers,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+  };
+
+  return (
+    <group>
+      {/* glass balustrade panel — no shadow (Three casts opaque shadows for glass) */}
+      <mesh {...meshProps} position={[mid.x, panelH / 2, mid.y]} material={glass}>
+        <boxGeometry args={[len, panelH, RAIL_PANEL_THK]} />
+      </mesh>
+      {/* handrail cap */}
+      <mesh {...meshProps} position={[mid.x, height - RAIL_CAP_H / 2, mid.y]} material={cap} castShadow>
+        <boxGeometry args={[len, RAIL_CAP_H, RAIL_CAP_THK]} />
+      </mesh>
+      {selected && (
+        <>
+          <CornerHandle nodeId={wall.a} x={a.x} y={a.y} offset={offset} />
+          <CornerHandle nodeId={wall.b} x={b.x} y={b.y} offset={offset} />
+          <Html position={[mid.x, height + 0.2, mid.y]} center style={{ pointerEvents: "none" }}>
+            <div style={dimLabelStyle}>rail · {fmt(len)}</div>
+          </Html>
+        </>
+      )}
+    </group>
+  );
+}
+
 export function Walls({ scene, offset }: {
   scene: Scene;
   offset: { cx: number; cz: number };
@@ -616,6 +775,9 @@ export function Walls({ scene, offset }: {
         const a = nodes.get(wall.a);
         const b = nodes.get(wall.b);
         if (!a || !b) return null;
+        if (wall.kind === "rail") {
+          return <RailGroup key={wall.id} wall={wall} a={a} b={b} offset={offset} />;
+        }
         return (
           <WallGroup
             key={wall.id}

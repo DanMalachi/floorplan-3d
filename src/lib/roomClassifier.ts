@@ -57,6 +57,18 @@ function scoreRoom(e: RoomGraphEntry, ocrTokens: string[]): Scored[] {
     });
   }
 
+  // balcony / deck / terrace — bounded by a rail (a low, see-through barrier).
+  // A rail is near-definitional for an outdoor space, so it carries strong
+  // weight on its own; more rails and no windows reinforce it. (OCR/VLM can
+  // still override — an interior mezzanine void is the rare false positive.)
+  {
+    const p: Evidence[] = [];
+    if (f.railWallCount >= 1) p.push(geo("railWallCount", f.railWallCount, 0.6));
+    if (f.railWallCount >= 2) p.push(geo("railWallCount", f.railWallCount, 0.1));
+    if (f.windowCount === 0) p.push(geo("windowCount", 0, 0.1));
+    if (f.railWallCount >= 1) add("balcony", p);
+  }
+
   // closet — tiny, windowless, one door.
   {
     const p: Evidence[] = [];

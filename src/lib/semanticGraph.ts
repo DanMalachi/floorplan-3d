@@ -30,6 +30,7 @@ const pairKey = (a: Id, b: Id) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 /** Build the full deterministic room graph for a scene. */
 export function buildRoomGraph(scene: Scene): RoomGraph {
   const nodes = nodeMap(scene.nodes);
+  const wallById = new Map(scene.walls.map((w) => [w.id, w]));
 
   // Node-pair -> wall ids. Loops come from the same segments walls do, so every
   // loop edge resolves to a real wall (traceToScene guarantees 1:1).
@@ -103,6 +104,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
     let doorCount = 0;
     let windowCount = 0;
     let exteriorWallCount = 0;
+    let railWallCount = 0;
     let exteriorDoorCount = 0;
     let maxDoorWidthM = 0;
     const connectedVia: { room: Id; opening: Id }[] = [];
@@ -113,6 +115,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
       const rooms = wallRooms.get(wallId) ?? [];
       const isExterior = rooms.length === 1;
       if (isExterior) exteriorWallCount++;
+      if (wallById.get(wallId)?.kind === "rail") railWallCount++;
       const other = rooms.find((r) => r !== room.id);
       if (other) sharesWall.add(other);
 
@@ -137,6 +140,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
       doorCount,
       windowCount,
       exteriorWallCount,
+      railWallCount,
       longestWallM,
       perimeterM,
       aspectRatio,
