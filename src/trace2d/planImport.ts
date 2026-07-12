@@ -20,6 +20,11 @@ export const isPdfFile = (f: File) =>
 export const isImageFile = (f: File) =>
   /^image\//.test(f.type) || /\.(png|jpe?g|webp)$/i.test(f.name);
 
+// CAD vector plans. DXF is parsed directly in-browser; DWG (proprietary binary)
+// is first converted to DXF server-side via the ODA File Converter.
+export const isDxfFile = (f: File) => /\.dxf$/i.test(f.name);
+export const isDwgFile = (f: File) => /\.dwg$/i.test(f.name);
+
 /** Read an image file into a data URL + natural size. */
 export function loadImageFile(
   file: File,

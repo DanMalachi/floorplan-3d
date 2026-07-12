@@ -152,6 +152,9 @@ function remapOpening(
 export interface PickRef {
   kind: "wall" | "opening" | "room" | "furniture";
   id: string;
+  // For wall picks: which face the pointer landed on / is targeted for paint.
+  // "a" = wall-local +Z face, "b" = -Z face. Absent for non-wall picks.
+  side?: "a" | "b";
 }
 
 /** The app's top-level modes (Phase 4 M5): what the main stage shows and
@@ -197,7 +200,7 @@ function pickExists(scene: Scene, pick: PickRef | null): boolean {
   }
 }
 
-interface StoreState {
+export interface StoreState {
   // --- 3D model (single source of truth) ---
   scene: Scene;
   setScene: (s: Scene) => void;
@@ -249,6 +252,11 @@ interface StoreState {
   traceStep: number;
   importBusy: boolean;
   importMsg: string | null;
+  // Project persistence status (autosaved to IndexedDB; see projectPersistence.ts).
+  projectRestored: boolean; // this session's state was rehydrated from disk
+  projectSavedAt: number | null; // epoch ms of last successful autosave
+  currentProjectId: string | null; // id of the open project in the multi-project store
+  projectName: string; // display name of the open project
   setTraceStep: (n: number) => void;
   /** One import path for images AND PDFs — routed by file type. */
   importPlanFile: (file: File) => Promise<void>;
@@ -504,11 +512,37 @@ export const useSceneStore = create<StoreState>((set, get) => {
     traceStep: 1,
     importBusy: false,
     importMsg: null,
+    projectRestored: false,
+    projectSavedAt: null,
+    currentProjectId: null,
+    projectName: "Untitled plan",
     setTraceStep: (traceStep) => set({ traceStep }),
     importPlanFile: async (file) => {
-      const { isPdfFile, isImageFile, loadImageFile, rasterQualityMsg, MIN_IMAGE_PX } =
+      const { isPdfFile, isImageFile, isDxfFile, isDwgFile, loadImageFile, rasterQualityMsg, MIN_IMAGE_PX } =
         await import("@/trace2d/planImport");
-      set({ importBusy: true, importMsg: null });
+      // A new plan is a CLEAN SLATE. Clear any prior plan's trace, built scene,
+      // scale, suggestions, selections and undo history — otherwise they linger
+      // on top of the new plan (especially now that projects are restored from
+      // disk on load, so "prior plan" can be from a previous session).
+      set({
+        importBusy: true,
+        importMsg: null,
+        points: [],
+        segments: [],
+        openings: [],
+        scene: { schemaVersion: 2, units: "meters", nodes: [], walls: [], openings: [], rooms: [], furniture: [] },
+        history: [],
+        suggestedWalls: [],
+        rejectedSuggestionIds: [],
+        suggestedOpenings: [],
+        rejectedOpeningIds: [],
+        extractionTargets: [],
+        calibrationPts: [],
+        metersPerPixel: null,
+        rasterProposal: null,
+        sel3d: null,
+        placing: null,
+      });
       get().setSourcePdfName(file.name);
       try {
         if (isPdfFile(file)) {
@@ -533,6 +567,35 @@ export const useSceneStore = create<StoreState>((set, get) => {
               importMsg: `✓ Vector PDF — ${r.stats.segments} segments${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
             });
           }
+        } else if (isDxfFile(file) || isDwgFile(file)) {
+          const { importDxf, dxfTextToResult } = await import("@/trace2d/importDxf");
+          let r;
+          if (isDwgFile(file)) {
+            // DWG is proprietary binary — convert to DXF server-side, then parse
+            // the returned DXF text exactly like a native .dxf upload.
+            const form = new FormData();
+            form.append("file", file);
+            const res = await fetch("/api/dwg2dxf", { method: "POST", body: form });
+            const j = await res.json();
+            if (!res.ok || j.error) {
+              throw new Error(j.error ? `${j.error}${j.detail ? `: ${j.detail}` : ""}` : `HTTP ${res.status}`);
+            }
+            r = dxfTextToResult(j.dxf);
+            r.summary = r.summary.replace("✓ DXF", "✓ DWG→DXF");
+          } else {
+            r = await importDxf(file);
+          }
+          get().setImage(r.image);
+          set({
+            imageOpacity: 0.45,
+            importedSegments: r.segments,
+            importedArcs: r.arcs,
+            importedTexts: r.texts,
+            showImport: true,
+            importMsg: r.summary,
+          });
+          // A DXF with known units gives us real scale for free — no calibration.
+          if (r.metersPerPixel != null) set({ metersPerPixel: r.metersPerPixel });
         } else if (isImageFile(file)) {
           const img = await loadImageFile(file);
           if (Math.max(img.width, img.height) < MIN_IMAGE_PX) {
@@ -551,7 +614,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             importMsg: rasterQualityMsg(img.width, img.height, "Image loaded"),
           });
         } else {
-          set({ importBusy: false, importMsg: "✗ Unsupported file — use an image (PNG/JPG/WebP) or a PDF." });
+          set({ importBusy: false, importMsg: "✗ Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG)." });
           return;
         }
         // A fresh plan needs a scale before anything else can happen.

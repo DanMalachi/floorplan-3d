@@ -1,6 +1,7 @@
 import type { ImportSegment, ImportArc, TracePoint, TraceSegment } from "@/store/useSceneStore";
 import type { Centerline } from "./extractWalls";
-import { NOISE_LAYERS, measureThicknessAt, REF_MPP } from "./extractWalls";
+import { measureThicknessAt, REF_MPP } from "./extractWalls";
+import { isClutterLayer } from "./dxf/layerClass";
 
 // ---------------------------------------------------------------------------
 // Opening detection (Phase 2, hybrid). Doors and windows are read from the wall
@@ -103,12 +104,15 @@ export interface OpeningDetection {
   walls: Centerline[]; // opening-aware walls: door gaps bridged, wide gaps split
 }
 
+// Architectural line for OPENING detection: black stroke, not clutter. Unlike
+// wall detection this KEEPS door/window/glazing (`opening`-role) geometry — it is
+// the primary evidence for openings, not noise.
 const isArch = (s: ImportSegment) =>
   s.color != null &&
   s.color[0] < 0.22 &&
   s.color[1] < 0.22 &&
   s.color[2] < 0.22 &&
-  !NOISE_LAYERS.has(s.layer);
+  !isClutterLayer(s.layer);
 
 const fold = (a: number) => {
   let t = a % Math.PI;
@@ -550,31 +554,21 @@ export function detectOpenings(
   });
   merged.push(...arcDoors);
 
-  // Windows sit on the building perimeter (exterior walls). Drop interior false
-  // windows — door frames / fixtures whose 3 cramped lines mimic a window.
-  let result = merged;
-  if (centerlines.length) {
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
-    for (const c of centerlines) {
-      minX = Math.min(minX, c.x0, c.x1);
-      maxX = Math.max(maxX, c.x0, c.x1);
-      minY = Math.min(minY, c.y0, c.y1);
-      maxY = Math.max(maxY, c.y0, c.y1);
-    }
-    const m = params.windowPerimeterMargin;
-    result = merged.flatMap((o) => {
-      if (o.type !== "window") return [o];
-      const mx = (o.x0 + o.x1) / 2;
-      const my = (o.y0 + o.y1) / 2;
-      const onPerimeter = Math.min(mx - minX, maxX - mx, my - minY, maxY - my) <= m;
-      if (onPerimeter) return [o];
-      if (!params.keepRejected) return [];
-      return [{ ...o, flags: [...(o.flags ?? []), "interior"] }];
-    });
-  }
+  // A WINDOW is glazing in an EXTERIOR wall — a wall with the building's OUTSIDE
+  // on one side. We read it the way a person does: shoot rays straight out from
+  // each face of the window; the side that reaches the drawing edge crossing
+  // ~no other building lines is the outside. This keeps real windows on ANY
+  // exterior wall (irregular envelopes, courtyards, insets — not just a bounding
+  // box) and rejects the ≥3-parallel-line false positives that live DEEP inside
+  // the plan (stair treads, counters, tiling) where both sides cross many lines.
+  const archSegs = segs.filter(isArch);
+  const bboxDiag = diagOf(centerlines);
+  const result = merged.flatMap((o) => {
+    if (o.type !== "window") return [o];
+    if (windowIsExterior(o, archSegs, bboxDiag)) return [o];
+    if (!params.keepRejected) return [];
+    return [{ ...o, flags: [...(o.flags ?? []), "interior"] }];
+  });
 
   return { openings: result, walls };
 }
@@ -645,6 +639,72 @@ function isStairRegion(
 
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
+
+// A window face counts as "open to outside" if a ray straight out from it reaches
+// the drawing edge crossing at most this many other building lines (0 = clear
+// outside; 1 tolerates a balcony rail / a single grazed line).
+const EXTERIOR_MAX_CROSSINGS = 1;
+
+const diagOf = (cls: Centerline[]): number => {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const c of cls) {
+    minX = Math.min(minX, c.x0, c.x1);
+    minY = Math.min(minY, c.y0, c.y1);
+    maxX = Math.max(maxX, c.x0, c.x1);
+    maxY = Math.max(maxY, c.y0, c.y1);
+  }
+  return Number.isFinite(minX) ? Math.hypot(maxX - minX, maxY - minY) : 1e5;
+};
+
+// Ray (px,py)+t·(dx,dy), t>0, vs segment A→B: return the ray parameter t at the
+// crossing, or null. Used to count how much building a ray passes through.
+function crossRaySeg(
+  px: number, py: number, dx: number, dy: number,
+  ax: number, ay: number, bx: number, by: number,
+): number | null {
+  const ex = bx - ax;
+  const ey = by - ay;
+  const det = ex * dy - dx * ey;
+  if (Math.abs(det) < 1e-9) return null; // parallel
+  const t = (-(ax - px) * ey + ex * (ay - py)) / det; // along ray
+  const u = (dx * (ay - py) - dy * (ax - px)) / det; // along segment
+  return t > 1e-6 && u >= 0 && u <= 1 ? t : null;
+}
+
+function rayCrossings(
+  px: number, py: number, dx: number, dy: number, maxT: number, segs: ImportSegment[],
+): number {
+  let n = 0;
+  for (const s of segs) {
+    const t = crossRaySeg(px, py, dx, dy, s.x0, s.y0, s.x1, s.y1);
+    if (t != null && t <= maxT) n++;
+  }
+  return n;
+}
+
+// True when the window sits in an exterior wall — one of its two faces opens to
+// the outside. We fan a few rays out of each face (offset along the wall so one
+// stray line can't veto a whole side) and take the clearest.
+function windowIsExterior(o: SuggestedOpening, archSegs: ImportSegment[], maxT: number): boolean {
+  const L = Math.hypot(o.x1 - o.x0, o.y1 - o.y0) || 1;
+  const ux = (o.x1 - o.x0) / L;
+  const uy = (o.y1 - o.y0) / L;
+  const nx = -uy; // wall normal
+  const ny = ux;
+  const mx = (o.x0 + o.x1) / 2;
+  const my = (o.y0 + o.y1) / 2;
+  const off = o.thickness / 2 + 4; // start just past the wall face
+  const sideClearest = (sign: number): number => {
+    let best = Infinity;
+    for (const a of [-0.3, 0, 0.3]) {
+      const sx = mx + ux * a * L + sign * nx * off;
+      const sy = my + uy * a * L + sign * ny * off;
+      best = Math.min(best, rayCrossings(sx, sy, sign * nx, sign * ny, maxT, archSegs));
+    }
+    return best;
+  };
+  return Math.min(sideClearest(1), sideClearest(-1)) <= EXTERIOR_MAX_CROSSINGS;
+}
 
 function nearestWallDist(p: { x: number; y: number }, cls: Centerline[]): number {
   let d = Infinity;

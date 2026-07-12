@@ -22,6 +22,11 @@ export interface Wall {
   // parapet) rather than a solid wall. Bounds rooms like a wall in the graph,
   // but renders low and transparent. Absent = wall. Mirrors TraceSegment.type.
   kind?: "wall" | "rail";
+  // Per-face paint. A wall has two long faces (one per adjacent room). Side "a"
+  // is the wall-local +Z face, side "b" the -Z face. A hex string paints that
+  // face; undefined leaves it default plaster. Painted independently.
+  paintA?: string;
+  paintB?: string;
 }
 
 export type OpeningType = "door" | "window";

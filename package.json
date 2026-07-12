@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "scrape:tambour": "node scripts/scrape.mjs",
+    "normalize:tambour": "node scripts/normalize.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",
@@ -21,6 +23,8 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "culori": "^4.0.1",
+    "playwright": "^1.49.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.0",

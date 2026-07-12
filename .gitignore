@@ -42,3 +42,11 @@ next-env.d.ts
 
 # phase 2.5 eval harness outputs
 /eval-out/
+
+# python bytecode (scrapers / eval scripts)
+__pycache__/
+*.pyc
+
+# CAD import fixtures — large .dwg binaries + generated .dxf conversions; keep
+# these local only, out of git history
+floorplan_for_training/dxf_dwg/

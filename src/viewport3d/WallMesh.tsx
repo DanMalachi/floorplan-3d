@@ -87,6 +87,9 @@ function WallGroup({ wall, a, b, ops, offset }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const selSide = useSceneStore((s) =>
+    isPick(s.sel3d, "wall", wall.id) ? s.sel3d!.side ?? "a" : null,
+  );
   const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<DragState | null>(null);
 
@@ -115,27 +118,53 @@ function WallGroup({ wall, a, b, ops, offset }: {
     };
   }, [wall, ops, a, b, wallMode]);
 
-  const glow = selected ? 0.5 : hovered ? 0.22 : 0;
-
-  // One material per wall, shared by all its pieces: selection glow and the
-  // cutaway fade mutate it directly instead of re-rendering geometry.
-  const mat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({
-      color: WALL_COLOR,
-      emissive: new THREE.Color(ACCENT),
-      emissiveIntensity: 0,
-      transparent: true,
-      opacity: 1,
-      roughness: 0.85, // matte painted plaster
-      metalness: 0,
-      envMapIntensity: 0.45,
-    });
-    return m;
+  // Three materials per wall, indexed onto the box faces so each long face can
+  // take its own Tambour colour: `neutral` covers the ends/top/bottom, `matA`
+  // the wall-local +Z face (side A), `matB` the -Z face (side B). Selection
+  // glow, cutaway fade and paint mutate these directly instead of re-rendering.
+  const [neutral, matA, matB] = useMemo(() => {
+    const mk = () =>
+      new THREE.MeshStandardMaterial({
+        color: WALL_COLOR,
+        emissive: new THREE.Color(ACCENT),
+        emissiveIntensity: 0,
+        transparent: true,
+        opacity: 1,
+        roughness: 0.85, // matte painted plaster
+        metalness: 0,
+        envMapIntensity: 0.45,
+      });
+    return [mk(), mk(), mk()] as const;
   }, []);
-  useEffect(() => () => mat.dispose(), [mat]);
+  useEffect(
+    () => () => {
+      neutral.dispose();
+      matA.dispose();
+      matB.dispose();
+    },
+    [neutral, matA, matB],
+  );
+  // BoxGeometry face→material order is [+X,-X,+Y,-Y,+Z,-Z]; side A = +Z, B = -Z.
+  const mats = useMemo(
+    () => [neutral, neutral, neutral, neutral, matA, matB],
+    [neutral, matA, matB],
+  );
   useEffect(() => {
-    mat.emissiveIntensity = glow;
-  }, [mat, glow]);
+    matA.color.set(wall.paintA ?? WALL_COLOR);
+  }, [matA, wall.paintA]);
+  useEffect(() => {
+    matB.color.set(wall.paintB ?? WALL_COLOR);
+  }, [matB, wall.paintB]);
+  // Selection feedback stays light on the painted faces so their true Tambour
+  // colour reads: the neutral edges carry most of the accent, the targeted face
+  // gets only a gentle lift, and untargeted painted faces stay near-accurate.
+  useEffect(() => {
+    neutral.emissiveIntensity = selected ? 0.12 : hovered ? 0.1 : 0;
+    const face = (isTarget: boolean) =>
+      selected ? (isTarget ? 0.14 : 0.03) : hovered ? 0.06 : 0;
+    matA.emissiveIntensity = face(selSide === "a");
+    matB.emissiveIntensity = face(selSide === "b");
+  }, [neutral, matA, matB, selected, hovered, selSide]);
 
   // Cutaway: fade walls on the camera's side of the model so the interior
   // reads. Smoothly damped per frame; no React re-renders involved.
@@ -152,9 +181,13 @@ function WallGroup({ wall, a, b, ops, offset }: {
         target = 0.13;
       }
     }
-    if (Math.abs(mat.opacity - target) > 1e-3) {
-      mat.opacity = THREE.MathUtils.damp(mat.opacity, target, 10, dt);
-      mat.depthWrite = mat.opacity > 0.55;
+    if (Math.abs(neutral.opacity - target) > 1e-3) {
+      const o = THREE.MathUtils.damp(neutral.opacity, target, 10, dt);
+      const dw = o > 0.55;
+      for (const m of [neutral, matA, matB]) {
+        m.opacity = o;
+        m.depthWrite = dw;
+      }
     }
   });
 
@@ -163,7 +196,14 @@ function WallGroup({ wall, a, b, ops, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "build" || s.placing) return; // walls edit in Build only
     e.stopPropagation();
-    s.setSel3d({ kind: "wall", id: wall.id });
+    // Which face did the pointer land on? The long faces carry a local ±Z
+    // normal; end caps / top pick up (or keep) side A. This is what makes
+    // "click the face you want to paint" work.
+    const n = e.face?.normal;
+    let side: "a" | "b" | undefined;
+    if (n && Math.abs(n.z) > 0.5) side = n.z > 0 ? "a" : "b";
+    else if (s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
+    s.setSel3d({ kind: "wall", id: wall.id, side: side ?? "a" });
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -229,7 +269,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
           castShadow
           receiveShadow
           userData={{ pick: { kind: "wall", id: wall.id } }}
-          material={mat}
+          material={mats}
           {...hoverHandlers}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

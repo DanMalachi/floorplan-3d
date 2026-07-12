@@ -1,5 +1,5 @@
 import type { ImportSegment } from "@/store/useSceneStore";
-import { NOISE_LAYERS } from "./extractWalls";
+import { isWallNoiseLayer } from "./dxf/layerClass";
 
 // Architectural line = black stroke and not on a furniture/landscape/plumbing layer.
 const isArch = (s: ImportSegment) =>
@@ -7,7 +7,7 @@ const isArch = (s: ImportSegment) =>
   s.color[0] < 0.22 &&
   s.color[1] < 0.22 &&
   s.color[2] < 0.22 &&
-  !NOISE_LAYERS.has(s.layer);
+  !isWallNoiseLayer(s.layer);
 
 const fold = (a: number) => {
   let t = a % Math.PI;

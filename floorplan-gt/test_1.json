@@ -1,0 +1,225 @@
+{
+    "metadata": {
+        "coordinate_system": {
+            "origin": "bottom_left",
+            "units": "ft",
+            "building_size": {
+                "width": 40.0,
+                "height": 30.0
+            }
+        }
+    },
+
+    "walls": [
+
+        {
+            "id": "W1",
+            "type": "exterior",
+            "start": [ 0, 0 ],
+            "end": [ 40, 0 ]
+        },
+        {
+            "id": "W2",
+            "type": "exterior",
+            "start": [ 40, 0 ],
+            "end": [ 40, 30 ]
+        },
+        {
+            "id": "W3",
+            "type": "exterior",
+            "start": [ 40, 30 ],
+            "end": [ 0, 30 ]
+        },
+        {
+            "id": "W4",
+            "type": "exterior",
+            "start": [ 0, 30 ],
+            "end": [ 0, 0 ]
+        },
+
+        {
+            "id": "W5",
+            "type": "interior",
+            "start": [ 0, 12 ],
+            "end": [ 11, 12 ]
+        },
+
+        {
+            "id": "W6",
+            "type": "interior",
+            "start": [ 11, 12 ],
+            "end": [ 11, 30 ]
+        },
+
+        {
+            "id": "W7",
+            "type": "interior",
+            "start": [ 17, 12 ],
+            "end": [ 17, 30 ]
+        },
+
+        {
+            "id": "W8",
+            "type": "interior",
+            "start": [ 22, 12 ],
+            "end": [ 22, 30 ]
+        },
+
+        {
+            "id": "W9",
+            "type": "interior",
+            "start": [ 27, 12 ],
+            "end": [ 27, 30 ]
+        },
+
+        {
+            "id": "W10",
+            "type": "interior",
+            "start": [ 34, 12 ],
+            "end": [ 34, 30 ]
+        },
+
+        {
+            "id": "W11",
+            "type": "interior",
+            "start": [ 34, 12 ],
+            "end": [ 40, 12 ]
+        },
+
+        {
+            "id": "W12",
+            "type": "interior",
+            "start": [ 34, 0 ],
+            "end": [ 34, 12 ]
+        },
+
+        {
+            "id": "W13",
+            "type": "interior",
+            "start": [ 40, 6 ],
+            "end": [ 34, 6 ]
+        },
+
+        {
+            "id": "W14",
+            "type": "interior",
+            "start": [ 31, 6 ],
+            "end": [ 31, 12 ]
+        },
+
+        {
+            "id": "W15",
+            "type": "interior",
+            "start": [ 14, 12 ],
+            "end": [ 14, 24 ]
+        }
+
+    ],
+
+    "doors": [
+
+        {
+            "id": "D1",
+            "wall": "W5",
+            "center": [ 6.5, 12 ],
+            "width": 3.0,
+            "swing": "inward"
+        },
+
+        {
+            "id": "D2",
+            "wall": "W7",
+            "center": [ 17, 14.5 ],
+            "width": 3.0
+        },
+
+        {
+            "id": "D3",
+            "wall": "W9",
+            "center": [ 27, 14.5 ],
+            "width": 3.0
+        },
+
+        {
+            "id": "D4",
+            "wall": "W11",
+            "center": [ 36.5, 12 ],
+            "width": 3.0
+        },
+
+        {
+            "id": "D5",
+            "wall": "W13",
+            "center": [ 37, 6 ],
+            "width": 3.0
+        },
+
+        {
+            "id": "D6",
+            "wall": "W13",
+            "center": [ 34.8, 6 ],
+            "width": 2.6
+        }
+
+    ],
+
+    "windows": [
+
+        {
+            "id": "WIN1",
+            "wall": "W3",
+            "start": [ 2, 30 ],
+            "end": [ 5.5, 30 ]
+        },
+
+        {
+            "id": "WIN2",
+            "wall": "W3",
+            "start": [ 17.5, 30 ],
+            "end": [ 21, 30 ]
+        },
+
+        {
+            "id": "WIN3",
+            "wall": "W3",
+            "start": [ 31, 30 ],
+            "end": [ 35, 30 ]
+        },
+
+        {
+            "id": "WIN4",
+            "wall": "W4",
+            "start": [ 0, 15 ],
+            "end": [ 0, 20 ]
+        },
+
+        {
+            "id": "WIN5",
+            "wall": "W4",
+            "start": [ 0, 2 ],
+            "end": [ 0, 8 ]
+        },
+
+        {
+            "id": "WIN6",
+            "wall": "W2",
+            "start": [ 40, 20 ],
+            "end": [ 40, 25 ]
+        },
+
+        {
+            "id": "WIN7",
+            "wall": "W1",
+            "start": [ 14, 0 ],
+            "end": [ 18, 0 ]
+        },
+
+        {
+            "id": "WIN8",
+            "wall": "W1",
+            "start": [ 27, 0 ],
+            "end": [ 30, 0 ]
+        }
+
+    ]
+}

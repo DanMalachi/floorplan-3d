@@ -49,7 +49,7 @@ function DropZone() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,application/pdf,.pdf"
+        accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,application/pdf,.pdf,.dxf,.dwg"
         style={{ display: "none" }}
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -79,7 +79,7 @@ function DropZone() {
           {importBusy ? "Importing…" : "Drop a floor plan"}
         </span>
         <span style={{ fontSize: 12, color: T.textDim }}>
-          image or PDF — or click to browse
+          image, PDF, or CAD (DXF/DWG) — or click to browse
         </span>
         {importMsg && !importMsg.startsWith("✓") && (
           <span style={{ fontSize: 12, color: T.warn, maxWidth: 360 }}>{importMsg}</span>

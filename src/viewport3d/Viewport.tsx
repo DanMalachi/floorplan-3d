@@ -5,7 +5,8 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { CameraControls, Environment, Grid, Html, Lightformer, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
-import type { FloorStyle } from "@/schema/scene";
+import type { FloorStyle, Wall } from "@/schema/scene";
+import { TambourPicker } from "@/ui/TambourPicker";
 import {
   WALL_HEIGHT,
   DEFAULT_THICKNESS,
@@ -21,6 +22,7 @@ import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors } from "./FloorMesh";
 import { FurnitureLayer } from "./FurnitureLayer";
+import { registerViewportCanvas } from "./viewportCapture";
 
 // Model center (plan x,y) and span for framing. Keyed on frameToken — only a
 // whole-scene replace reframes; edits never shift the model under the cursor.
@@ -175,27 +177,123 @@ function UnderstandRoomsButton() {
   );
 }
 
-/** Contextual inspector, docked top-right when something is selected. */
-function MiniInspector() {
-  const sel3d = useSceneStore((s) => s.sel3d);
-  const scene = useSceneStore((s) => s.scene);
+// Default plaster shown on any unpainted face (mirrors WallMesh's WALL_COLOR).
+const PLASTER = "#d8d2c4";
 
-  if (sel3d?.kind === "wall") {
-    const wall = scene.walls.find((w) => w.id === sel3d.id);
-    if (!wall) return null;
-    const a = scene.nodes.find((n) => n.id === wall.a);
-    const b = scene.nodes.find((n) => n.id === wall.b);
-    const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
-    const patch = (label: string, p: Partial<typeof wall>) => {
-      const s = useSceneStore.getState();
-      s.commitScene(label, {
-        ...s.scene,
-        walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, ...p } : w)),
-      });
-    };
-    return (
+/** Wall inspector: dimensions + per-face Tambour paint. A wall has two long
+ *  faces (Side A / Side B); clicking a face in 3D targets it, and each side
+ *  keeps its own colour. Its own component so it can hold the picker's open
+ *  state without violating the rules of hooks inside MiniInspector's branches. */
+function WallInspector({ wall }: { wall: Wall }) {
+  const scene = useSceneStore((s) => s.scene);
+  const selSide = useSceneStore((s) =>
+    s.sel3d?.kind === "wall" && s.sel3d.id === wall.id ? s.sel3d.side ?? "a" : "a",
+  );
+  // Which paint target the picker is bound to (null = closed). Single-side
+  // targets follow the face you click in 3D; "both" paints A and B together.
+  const [pickerTarget, setPickerTarget] = useState<"a" | "b" | "both" | null>(null);
+  useEffect(() => {
+    setPickerTarget((t) => (t === "a" || t === "b" ? selSide : t));
+  }, [selSide]);
+
+  const a = scene.nodes.find((n) => n.id === wall.a);
+  const b = scene.nodes.find((n) => n.id === wall.b);
+  const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
+  const isRail = wall.kind === "rail";
+
+  const patch = (label: string, p: Partial<Wall>) => {
+    const s = useSceneStore.getState();
+    s.commitScene(label, {
+      ...s.scene,
+      walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, ...p } : w)),
+    });
+  };
+  const openTarget = (t: "a" | "b" | "both") => {
+    if (t === "a" || t === "b") useSceneStore.getState().setSel3d({ kind: "wall", id: wall.id, side: t });
+    setPickerTarget(t);
+  };
+  const paint = (t: "a" | "b" | "both", hex: string | null) => {
+    const verb = hex ? "Paint" : "Clear";
+    if (t === "both") patch(`${verb} both sides`, { paintA: hex ?? undefined, paintB: hex ?? undefined });
+    else patch(`${verb} Side ${t.toUpperCase()}`, t === "a" ? { paintA: hex ?? undefined } : { paintB: hex ?? undefined });
+  };
+
+  const sideHex = (side: "a" | "b") => (side === "a" ? wall.paintA : wall.paintB) ?? null;
+  const pickerValue =
+    pickerTarget === "both"
+      ? wall.paintA === wall.paintB
+        ? wall.paintA ?? null
+        : null
+      : pickerTarget
+        ? sideHex(pickerTarget)
+        : null;
+  const chipStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    padding: "5px 8px",
+    borderRadius: T.radiusS,
+    cursor: "pointer",
+    fontFamily: T.font,
+    fontSize: 12,
+    color: T.text,
+    background: active ? T.accentSoft : T.inputBg,
+    border: `1.5px solid ${active ? T.accent : T.panelBorder}`,
+  });
+  const dot = (bg: string): React.CSSProperties => ({
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    flexShrink: 0,
+    background: bg,
+    border: "1px solid rgba(0,0,0,0.25)",
+  });
+
+  return (
+    <>
       <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600 }}>Wall <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span></div>
+        <div style={{ fontWeight: 600 }}>
+          {isRail ? "Rail" : "Wall"}{" "}
+          <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span>
+        </div>
+        {!isRail && (
+          <>
+            <div style={{ ...microLabel(), marginTop: 2 }}>Paint</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["a", "b"] as const).map((side) => {
+                const active = pickerTarget ? pickerTarget === side : selSide === side;
+                return (
+                  <button
+                    key={side}
+                    onClick={() => openTarget(side)}
+                    title={`Paint Side ${side.toUpperCase()}`}
+                    style={chipStyle(active)}
+                  >
+                    <span style={dot(sideHex(side) ?? PLASTER)} />
+                    Side {side.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => openTarget("both")}
+              title="Paint both sides the same colour"
+              style={chipStyle(pickerTarget === "both")}
+            >
+              <span
+                style={dot(
+                  `linear-gradient(90deg, ${sideHex("a") ?? PLASTER} 0 50%, ${sideHex("b") ?? PLASTER} 50% 100%)`,
+                )}
+              />
+              Both sides
+            </button>
+            <div style={{ fontSize: 10.5, color: T.textFaint }}>
+              Click a wall face in 3D to target its side.
+            </div>
+          </>
+        )}
         <NumField
           label="Height"
           value={wall.height ?? WALL_HEIGHT}
@@ -207,7 +305,27 @@ function MiniInspector() {
           onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
         />
       </div>
-    );
+      {pickerTarget && !isRail && (
+        <TambourPicker
+          label={pickerTarget === "both" ? "Both sides" : `Side ${pickerTarget.toUpperCase()}`}
+          value={pickerValue}
+          onPick={(hex) => paint(pickerTarget, hex)}
+          onClose={() => setPickerTarget(null)}
+        />
+      )}
+    </>
+  );
+}
+
+/** Contextual inspector, docked top-right when something is selected. */
+function MiniInspector() {
+  const sel3d = useSceneStore((s) => s.sel3d);
+  const scene = useSceneStore((s) => s.scene);
+
+  if (sel3d?.kind === "wall") {
+    const wall = scene.walls.find((w) => w.id === sel3d.id);
+    if (!wall) return null;
+    return <WallInspector wall={wall} />;
   }
 
   if (sel3d?.kind === "furniture") {
@@ -618,6 +736,9 @@ export function Viewport() {
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
         camera={{ position: [9, 8, 11], fov: 50 }}
+        // preserveDrawingBuffer lets us snapshot the frame for project thumbnails.
+        gl={{ preserveDrawingBuffer: true }}
+        onCreated={({ gl }) => registerViewportCanvas(gl.domElement)}
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
         <color attach="background" args={[T.bgCanvas]} />

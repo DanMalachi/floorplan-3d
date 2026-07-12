@@ -1,4 +1,5 @@
 import type { ImportSegment } from "@/store/useSceneStore";
+import { isWallNoiseLayer } from "./dxf/layerClass";
 
 // Tunables (in background-image px). Defaults sized for the M0 sample plan
 // (~1.9 px/pt), where wall double-lines sit ~15–44 px apart.
@@ -218,7 +219,7 @@ export function extractWalls(
   const raws: Raw[] = [];
   for (const sg of segs) {
     if (!isBlack(sg.color)) continue;
-    if (sg.layer && NOISE_LAYERS.has(sg.layer)) continue; // drop furniture/plumbing/etc.
+    if (isWallNoiseLayer(sg.layer)) continue; // drop furniture/plumbing/dims/text/etc.
     const dx = sg.x1 - sg.x0;
     const dy = sg.y1 - sg.y0;
     const len = Math.hypot(dx, dy);
