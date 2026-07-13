@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { CameraControls, Environment, Grid, Html, Lightformer, Line } from "@react-three/drei";
+import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postprocessing";
+import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
 import type { FloorStyle, Wall } from "@/schema/scene";
@@ -778,6 +780,7 @@ export function Viewport() {
   const hovering = useSceneStore((s) => s.hover3d !== null);
   const dragging = useSceneStore((s) => s.gestureBase !== null);
   const appMode = useSceneStore((s) => s.appMode);
+  const wallMode = useSceneStore((s) => s.wallMode);
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -826,6 +829,9 @@ export function Viewport() {
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
         camera={{ position: [9, 8, 11], fov: 50 }}
+        // `flat` disables the renderer's own tonemapping so the ToneMapping
+        // effect in the composer owns ACES (avoids double tonemapping).
+        flat
         // preserveDrawingBuffer lets us snapshot the frame for project thumbnails.
         gl={{ preserveDrawingBuffer: true }}
         onCreated={({ gl }) => registerViewportCanvas(gl.domElement)}
@@ -886,6 +892,19 @@ export function Viewport() {
         />
         <CameraControls makeDefault enabled={!dragging} smoothTime={0.18} draggingSmoothTime={0.06} />
         <FitCamera span={span} />
+
+        {/* Photographic pass: ambient occlusion grounds furniture and darkens
+            corners, ACES tonemapping, SMAA. AO is the cost centre — dropped
+            while dragging and in Top view. */}
+        <EffectComposer multisampling={0} enableNormalPass={false}>
+          {!dragging && wallMode !== "top" ? (
+            <N8AO aoRadius={0.7} intensity={2.4} distanceFalloff={1} halfRes />
+          ) : (
+            <></>
+          )}
+          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          <SMAA />
+        </EffectComposer>
       </Canvas>
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
       {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
