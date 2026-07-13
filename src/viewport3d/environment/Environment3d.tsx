@@ -6,6 +6,7 @@ import { Sky, Environment, Lightformer } from "@react-three/drei";
 import { useSceneStore } from "@/store/useSceneStore";
 import { Suburb } from "./Suburb";
 import { City } from "./City";
+import { Rain } from "./Rain";
 
 // The world around the model: a time-of-day sun/sky/fog rig plus procedural IBL
 // for material reflections. Outdoor presets (suburb/city) show a physical sky
@@ -43,8 +44,33 @@ function computeSky(t: number) {
 export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: number; halfZ: number }) {
   const preset = useSceneStore((s) => s.envPreset);
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
+  const weather = useSceneStore((s) => s.weather);
   const outdoor = preset !== "none";
-  const s = useMemo(() => computeSky(timeOfDay), [timeOfDay]);
+  const base = useMemo(() => computeSky(timeOfDay), [timeOfDay]);
+
+  // Weather layers on top of the time-of-day rig: cloud cover greys the sky,
+  // dims + cools the sun, thickens the haze; rain does the same, a touch darker,
+  // plus a falling particle layer. Only meaningful outdoors.
+  const s = useMemo(() => {
+    const w = outdoor ? weather : "clear";
+    const overcast = w === "clear" ? 0 : w === "cloudy" ? 0.8 : 1;
+    const rain = w === "rain" ? 1 : 0;
+    if (overcast === 0) return base;
+    const day = Math.max(0, base.dir.y);
+    const grey = col("#c4c9ce").multiplyScalar(0.18 + 0.72 * day); // stays dark at night
+    const darken = 1 - 0.22 * rain;
+    return {
+      dir: base.dir,
+      sunColor: base.sunColor.clone().lerp(grey, 0.5 * overcast),
+      sunIntensity: base.sunIntensity * (1 - 0.62 * overcast),
+      sky: base.sky.clone().lerp(grey, 0.55 * overcast).multiplyScalar(darken),
+      hemiSky: base.hemiSky.clone().lerp(grey, 0.5 * overcast),
+      hemiGround: base.hemiGround.clone().lerp(grey, 0.35 * overcast),
+      hemiIntensity: base.hemiIntensity * (1 + 0.15 * overcast),
+    };
+  }, [base, weather, outdoor]);
+
+  const overcast = outdoor ? (weather === "clear" ? 0 : weather === "cloudy" ? 0.8 : 1) : 0;
 
   const sunPos = useMemo(
     () => s.dir.clone().multiplyScalar(Math.max(span * 1.2, 8)),
@@ -53,22 +79,24 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
   const skyDir: [number, number, number] = [s.dir.x, s.dir.y, s.dir.z];
   const shadow = span * 0.9 + 4;
   const studioBg = useMemo(() => col("#101014"), []);
+  const fogFar = span * (outdoor ? 16 : 11) * (1 - 0.42 * overcast); // haze thickens
 
   return (
     <>
       <color attach="background" args={[outdoor ? s.sky : studioBg]} />
-      <fog attach="fog" args={[outdoor ? s.sky : studioBg, span * 3.5, span * (outdoor ? 16 : 11)]} />
+      <fog attach="fog" args={[outdoor ? s.sky : studioBg, span * 3.5, fogFar]} />
 
       {outdoor ? (
         <>
           <Sky
             sunPosition={skyDir}
-            turbidity={6}
-            rayleigh={2}
-            mieCoefficient={0.006}
+            turbidity={6 + 14 * overcast}
+            rayleigh={2 - 1.4 * overcast}
+            mieCoefficient={0.006 + 0.02 * overcast}
             mieDirectionalG={0.8}
             distance={45000}
           />
+          {weather === "rain" && <Rain span={span} />}
           <hemisphereLight color={s.hemiSky} groundColor={s.hemiGround} intensity={s.hemiIntensity} />
           <directionalLight
             color={s.sunColor}

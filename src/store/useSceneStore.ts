@@ -173,6 +173,9 @@ export type Brush =
 /** Presentation environment around the model. Persisted per project. */
 export type EnvPreset = "none" | "suburb" | "city";
 
+/** Sky/atmosphere state, layered on top of the time-of-day rig. */
+export type Weather = "clear" | "cloudy" | "rain";
+
 /** One undo step: the scene as it was before the command ran. */
 interface HistoryEntry {
   label: string;
@@ -261,11 +264,13 @@ export interface StoreState {
   showCeilings: boolean;
   envPreset: EnvPreset;
   timeOfDay: number; // hour 0..24, drives the sun
+  weather: Weather;
   setAppMode: (m: AppMode) => void;
   setWallMode: (m: WallViewMode) => void;
   setShowCeilings: (v: boolean) => void;
   setEnvPreset: (p: EnvPreset) => void;
   setTimeOfDay: (t: number) => void;
+  setWeather: (w: Weather) => void;
 
   // --- guided trace flow (Phase 5 T1) ---
   /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
@@ -532,8 +537,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setShowCeilings: (showCeilings) => set({ showCeilings }),
     envPreset: "none",
     timeOfDay: 13,
+    weather: "clear",
     setEnvPreset: (envPreset) => set({ envPreset }),
     setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
+    setWeather: (weather) => set({ weather }),
 
     traceStep: 1,
     importBusy: false,

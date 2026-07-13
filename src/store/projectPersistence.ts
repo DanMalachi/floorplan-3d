@@ -35,6 +35,7 @@ const DURABLE_KEYS = [
   "mode",
   "envPreset",
   "timeOfDay",
+  "weather",
   "image",
   "imageOpacity",
   "sourcePdfName",

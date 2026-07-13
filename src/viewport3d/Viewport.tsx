@@ -6,7 +6,7 @@ import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
-import { useSceneStore, type WallViewMode, type EnvPreset } from "@/store/useSceneStore";
+import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import type { FloorStyle, Wall } from "@/schema/scene";
 import {
   WALL_HEIGHT,
@@ -744,6 +744,12 @@ const ENV_PRESETS: { id: EnvPreset; label: string }[] = [
   { id: "city", label: "City" },
 ];
 
+const WEATHERS: { id: Weather; label: string }[] = [
+  { id: "clear", label: "☀ Clear" },
+  { id: "cloudy", label: "☁ Cloudy" },
+  { id: "rain", label: "🌧 Rain" },
+];
+
 /** 13.5 → "1:30 PM" for the time slider readout. */
 function fmtHour(t: number): string {
   const h24 = Math.floor(t) % 24;
@@ -759,6 +765,8 @@ function ScenePanel() {
   const setEnvPreset = useSceneStore((s) => s.setEnvPreset);
   const time = useSceneStore((s) => s.timeOfDay);
   const setTimeOfDay = useSceneStore((s) => s.setTimeOfDay);
+  const weather = useSceneStore((s) => s.weather);
+  const setWeather = useSceneStore((s) => s.setWeather);
   const icon = time >= 6 && time < 19 ? "☀️" : "🌙";
   return (
     <div style={{ position: "absolute", left: 14, top: 64, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
@@ -793,6 +801,23 @@ function ScenePanel() {
       <div style={{ fontSize: 11, color: T.textFaint, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
         {fmtHour(time)}
       </div>
+      {preset !== "none" && (
+        <div style={{ display: "flex", gap: 4 }}>
+          {WEATHERS.map((w) => (
+            <button
+              key={w.id}
+              onClick={() => setWeather(w.id)}
+              style={chip(weather === w.id, {
+                flex: 1, fontSize: 11, borderRadius: 999, border: "none",
+                background: weather === w.id ? T.accent : T.inputBg,
+                color: weather === w.id ? "#fff" : T.textDim,
+              })}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
