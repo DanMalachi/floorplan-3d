@@ -62,15 +62,15 @@ function makeField(seed: number, baseFreq: number, octaves: number): (x: number,
     return v / norm; // ~[-1, 1]
   };
 }
-const terrainField = makeField(91, 0.02, 4);
-const lawnField = makeField(53, 0.02, 3); // big soft lawn patches
-const lawnField2 = makeField(29, 0.11, 2); // finer mottle
-const LAWN_DARK = lin("#415c29");
-const LAWN_LITE = lin("#6f9247");
+const terrainField = makeField(91, 0.05, 4);
+const lawnField = makeField(53, 0.045, 3); // lawn patches (metre-scale, visible)
+const lawnField2 = makeField(29, 0.22, 2); // finer mottle
+const LAWN_DARK = lin("#3c5622");
+const LAWN_LITE = lin("#7ba049");
 
-/** Flat under the lot, gently rolling beyond it. */
+/** Flat under the lot, rolling just beyond it. */
 function terrainHeight(x: number, z: number, flatR: number) {
-  return terrainField(x, z) * 1.1 * smoothstep(flatR, flatR * 2.6, Math.hypot(x, z));
+  return terrainField(x, z) * 1.6 * smoothstep(flatR, flatR * 2.4, Math.hypot(x, z));
 }
 
 /** A big undulating ground plane with macro colour variation (breaks the grass
@@ -85,10 +85,9 @@ function groundGeometry(R: number, flatR: number): THREE.BufferGeometry {
     const x = pos.getX(i), z = pos.getZ(i);
     pos.setY(i, terrainHeight(x, z, flatR));
     // Two irregular seamless fields (big patches + finer mottle) lerp two greens:
-    // no repeating texture, so no tile grid, yet not flat.
-    const t = 0.5 + 0.5 * lawnField(x, z);
-    const f = 0.5 + 0.5 * lawnField2(x, z);
-    const mix = Math.min(1, Math.max(0, 0.55 * t + 0.45 * f));
+    // no repeating texture, so no tile grid. Gain-expanded so patches read.
+    const v = 0.6 * lawnField(x, z) + 0.4 * lawnField2(x, z);
+    const mix = Math.min(1, Math.max(0, 0.5 + 1.5 * v));
     colors[i * 3] = LAWN_DARK[0] + (LAWN_LITE[0] - LAWN_DARK[0]) * mix;
     colors[i * 3 + 1] = LAWN_DARK[1] + (LAWN_LITE[1] - LAWN_DARK[1]) * mix;
     colors[i * 3 + 2] = LAWN_DARK[2] + (LAWN_LITE[2] - LAWN_DARK[2]) * mix;
@@ -267,9 +266,9 @@ function makeTreeMaterial(): THREE.MeshStandardMaterial {
           float wph = 0.0;
         #endif
         float wh = max(transformed.y, 0.0);
-        float wsw = sin(uTime * 1.1 + wph) * 0.022 + sin(uTime * 2.3 + wph * 1.7) * 0.01;
+        float wsw = sin(uTime * 1.4 + wph) * 0.06 + sin(uTime * 2.7 + wph * 1.7) * 0.03;
         transformed.x += wsw * wh;
-        transformed.z += cos(uTime * 0.85 + wph) * 0.016 * wh;`,
+        transformed.z += cos(uTime * 1.1 + wph) * 0.045 * wh;`,
       );
   };
   m.customProgramCacheKey = () => "suburb-wind";
@@ -287,7 +286,7 @@ interface Veg { x: number; z: number; ty: number; scale: number; rotY: number; }
 function buildNeighborhood(span: number) {
   const clearR = Math.max(span * 2.6, 34); // model sits well clear of neighbours
   const reach = Math.max(span * 7, 120);
-  const flatR = clearR * 0.9;
+  const flatR = Math.max(span * 0.85, 7); // small flat pad; terrain rolls just past it
   const step = 30; // sparse — few houses
   const rnd = mulberry32(101);
 
