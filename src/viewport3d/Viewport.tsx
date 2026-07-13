@@ -154,6 +154,35 @@ function NumField({ label, value, onCommit, disabled }: {
   );
 }
 
+/** Small integer +/- stepper for the inspector (mullion grid). */
+function Stepper({ label, value, min = 1, max = 6, onSet }: {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  onSet: (v: number) => void;
+}) {
+  const clamp = (v: number) => Math.min(max, Math.max(min, v));
+  const btn: React.CSSProperties = {
+    ...chip(false),
+    padding: "1px 9px",
+    fontSize: 14,
+    lineHeight: 1.2,
+  };
+  return (
+    <label style={inspectorRow}>
+      <span style={{ color: T.textDim }}>{label}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button style={btn} onClick={() => onSet(clamp(value - 1))}>–</button>
+        <span style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
+          {value}
+        </span>
+        <button style={btn} onClick={() => onSet(clamp(value + 1))}>+</button>
+      </span>
+    </label>
+  );
+}
+
 /** Building Knowledge Layer trigger — escalates undecided rooms to the VLM.
  *  Free rule verdicts are already on the scene; this button spends API budget,
  *  so it is an explicit user action (mirrors "AI classify" in the trace rail). */
@@ -453,6 +482,52 @@ function MiniInspector() {
             patch("Opening sill", { sill: Math.min(wallH - op.height, Math.max(0, v)) })
           }
         />
+        {op.type === "door" ? (
+          <>
+            <div style={{ ...microLabel(), marginTop: 2 }}>Door</div>
+            <label style={inspectorRow}>
+              <span style={{ color: T.textDim }}>Open</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="range"
+                  min={0}
+                  max={110}
+                  step={5}
+                  value={op.swingDeg ?? 0}
+                  onChange={(e) => patch("Door swing", { swingDeg: Number(e.target.value) })}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  style={{ width: 90 }}
+                />
+                <span style={{ color: T.textFaint, minWidth: 30 }}>{op.swingDeg ?? 0}°</span>
+              </span>
+            </label>
+            <div style={{ display: "flex", gap: 5 }}>
+              <button
+                style={chip((op.hinge ?? "start") === "start")}
+                onClick={() => patch("Hinge left", { hinge: "start" })}
+              >
+                Hinge ◄
+              </button>
+              <button style={chip(op.hinge === "end")} onClick={() => patch("Hinge right", { hinge: "end" })}>
+                Hinge ►
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ ...microLabel(), marginTop: 2 }}>Glazing bars</div>
+            <Stepper
+              label="Columns"
+              value={op.mullions?.cols ?? 2}
+              onSet={(n) => patch("Mullion columns", { mullions: { cols: n, rows: op.mullions?.rows ?? 1 } })}
+            />
+            <Stepper
+              label="Rows"
+              value={op.mullions?.rows ?? 1}
+              onSet={(n) => patch("Mullion rows", { mullions: { cols: op.mullions?.cols ?? 2, rows: n } })}
+            />
+          </>
+        )}
       </div>
     );
   }

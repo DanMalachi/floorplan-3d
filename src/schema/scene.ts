@@ -40,6 +40,10 @@ export interface Opening {
   width: number; // meters
   height: number; // meters
   sill: number; // meters above floor (doors typically 0)
+  // --- Joinery (all optional, additive; doors/windows render real geometry) ---
+  swingDeg?: number; // door leaf open angle, 0 = closed (default). Doors only.
+  hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Doors only.
+  mullions?: { cols: number; rows: number }; // window glazing-bar grid (default {cols:2,rows:1})
 }
 
 export type FloorStyle = "wood" | "tile" | "concrete";

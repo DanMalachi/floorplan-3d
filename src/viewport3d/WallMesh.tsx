@@ -17,6 +17,7 @@ import {
   buildOpeningVolumes,
   type OpeningVolume,
 } from "./geometry/buildWallSegments";
+import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
 
 // Apple-blue accent shared by all 3D selection feedback.
@@ -411,10 +412,86 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "opening", opening.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "opening", opening.id));
+  const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<OpeningDrag | null>(null);
 
-  const idle = opening.type === "window" ? 0.16 : 0.035;
-  const opacity = selected ? 0.45 : hovered ? 0.25 : idle;
+  // The gap now holds real joinery, so the pick box is invisible; hover/select
+  // give it only a faint accent so the highlight reads over the glass/leaf.
+  const opacity = selected ? 0.18 : hovered ? 0.12 : 0;
+
+  // Real door/window geometry filling the gap.
+  const pieces = useMemo(() => buildJoinery(opening, frame), [opening, frame]);
+
+  // One material per joinery role, shared across this opening's pieces. Mutated
+  // (emissive glow, cutaway fade) in place — never re-created on interaction.
+  const { mats, baseOpacity } = useMemo(() => {
+    const mk = (color: string, extra: THREE.MeshStandardMaterialParameters = {}) =>
+      new THREE.MeshStandardMaterial({
+        color,
+        emissive: new THREE.Color(ACCENT),
+        emissiveIntensity: 0,
+        metalness: 0,
+        ...extra,
+      });
+    const mats: Record<JoineryRole, THREE.MeshStandardMaterial> = {
+      frame: mk("#d9cfbb", { roughness: 0.7 }),
+      leaf: mk("#e6e0d4", { roughness: 0.78 }),
+      mullion: mk("#c9bfa8", { roughness: 0.7 }),
+      handle: mk("#b8b8be", { metalness: 0.85, roughness: 0.35 }),
+      threshold: mk("#b7ad98", { roughness: 0.82 }),
+      glass: mk("#cfe6ee", {
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.22,
+        depthWrite: false,
+        envMapIntensity: 1.4,
+        side: THREE.DoubleSide,
+      }),
+    };
+    const baseOpacity: Record<JoineryRole, number> = {
+      frame: 1, leaf: 1, mullion: 1, handle: 1, threshold: 1, glass: 0.22,
+    };
+    return { mats, baseOpacity };
+  }, []);
+  useEffect(
+    () => () => Object.values(mats).forEach((m) => m.dispose()),
+    [mats],
+  );
+  // Selection/hover glow on the real geometry (the frame + leaf carry it).
+  useEffect(() => {
+    const g = selected ? 0.16 : hovered ? 0.07 : 0;
+    mats.frame.emissiveIntensity = g;
+    mats.leaf.emissiveIntensity = g;
+    mats.mullion.emissiveIntensity = g;
+  }, [mats, selected, hovered]);
+
+  // Cutaway: fade joinery on the camera's side, mirroring WallGroup. Damped per
+  // frame, no re-renders. Top mode hides joinery entirely (walls drop to stubs).
+  const fade = useRef(1);
+  useFrame((state, dt) => {
+    let target = 1;
+    if (wallMode === "cutaway") {
+      const wx = frame.ax + frame.ux * opening.offset - offset.cx;
+      const wz = frame.ay + frame.uy * opening.offset - offset.cz;
+      const camX = state.camera.position.x;
+      const camZ = state.camera.position.z;
+      const wl = Math.hypot(wx, wz);
+      const cl = Math.hypot(camX, camZ);
+      if (wl > 1e-3 && cl > 1e-3 && (wx * camX + wz * camZ) / (wl * cl) > 0.25) {
+        target = 0.13;
+      }
+    }
+    if (Math.abs(fade.current - target) > 1e-3) {
+      const o = THREE.MathUtils.damp(fade.current, target, 10, dt);
+      fade.current = o;
+      for (const role of Object.keys(mats) as JoineryRole[]) {
+        const m = mats[role];
+        m.opacity = baseOpacity[role] * o;
+        m.transparent = true;
+        m.depthWrite = role === "glass" ? false : o > 0.55;
+      }
+    }
+  });
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
@@ -498,6 +575,20 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
           envMapIntensity={1.2}
         />
       </mesh>
+      {wallMode !== "top" &&
+        pieces.map((p) => (
+          <mesh
+            key={p.key}
+            position={p.position}
+            rotation={[0, p.rotationY, 0]}
+            material={mats[p.role]}
+            raycast={() => null} // visual only — the pick box above handles input
+            castShadow={p.role !== "glass"}
+            receiveShadow={p.role !== "glass"}
+          >
+            <boxGeometry args={p.size} />
+          </mesh>
+        ))}
       {selected && (
         <>
           <EdgeHandle edge="start" opening={opening} siblings={siblings} frame={frame} offset={offset} />
