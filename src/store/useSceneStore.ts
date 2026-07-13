@@ -244,8 +244,10 @@ export interface StoreState {
   // --- app shell (Phase 4 M5) ---
   appMode: AppMode;
   wallMode: WallViewMode;
+  showCeilings: boolean;
   setAppMode: (m: AppMode) => void;
   setWallMode: (m: WallViewMode) => void;
+  setShowCeilings: (v: boolean) => void;
 
   // --- guided trace flow (Phase 5 T1) ---
   /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
@@ -501,6 +503,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     appMode: "trace",
     wallMode: "full",
+    showCeilings: true,
     setAppMode: (appMode) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
@@ -508,6 +511,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({ appMode, placing: null, sel3d: null, hover3d: null });
     },
     setWallMode: (wallMode) => set({ wallMode }),
+    setShowCeilings: (showCeilings) => set({ showCeilings }),
 
     traceStep: 1,
     importBusy: false,

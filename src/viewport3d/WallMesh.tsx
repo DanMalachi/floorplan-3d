@@ -15,6 +15,7 @@ import {
 import {
   buildWallSegments,
   buildOpeningVolumes,
+  buildBaseboards,
   type OpeningVolume,
 } from "./geometry/buildWallSegments";
 import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
@@ -94,7 +95,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
   const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<DragState | null>(null);
 
-  const { pieces, volumes, mid, len, normal, frame } = useMemo(() => {
+  const { pieces, volumes, baseboards, mid, len, normal, frame } = useMemo(() => {
     const nodes = new Map<string, Node>([[a.id, a], [b.id, b]]);
     // Sims top-down view: walls drop to knee-high stubs.
     const eff = wallMode === "top" ? { ...wall, height: 0.32 } : wall;
@@ -106,6 +107,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
     return {
       pieces: buildWallSegments(eff, ops, nodes),
       volumes: buildOpeningVolumes(eff, ops, nodes),
+      baseboards: buildBaseboards(wall, ops, nodes),
       mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       len: Math.hypot(dx, dy),
       normal: { x: -uy, y: ux },
@@ -145,6 +147,19 @@ function WallGroup({ wall, a, b, ops, offset }: {
     },
     [neutral, matA, matB],
   );
+  // Baseboard: light semi-gloss trim at the wall's floor line.
+  const baseboardMat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#efe9dc",
+        roughness: 0.55,
+        metalness: 0,
+        transparent: true,
+        opacity: 1,
+      }),
+    [],
+  );
+  useEffect(() => () => baseboardMat.dispose(), [baseboardMat]);
   // BoxGeometry face→material order is [+X,-X,+Y,-Y,+Z,-Z]; side A = +Z, B = -Z.
   const mats = useMemo(
     () => [neutral, neutral, neutral, neutral, matA, matB],
@@ -185,7 +200,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
     if (Math.abs(neutral.opacity - target) > 1e-3) {
       const o = THREE.MathUtils.damp(neutral.opacity, target, 10, dt);
       const dw = o > 0.55;
-      for (const m of [neutral, matA, matB]) {
+      for (const m of [neutral, matA, matB, baseboardMat]) {
         m.opacity = o;
         m.depthWrite = dw;
       }
@@ -275,6 +290,19 @@ function WallGroup({ wall, a, b, ops, offset }: {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
+        >
+          <boxGeometry args={p.size} />
+        </mesh>
+      ))}
+      {baseboards.map((p, i) => (
+        <mesh
+          key={`bb${i}`}
+          position={p.position}
+          rotation={[0, p.rotationY, 0]}
+          material={baseboardMat}
+          raycast={() => null} // visual trim — clicks fall through to the wall body
+          castShadow
+          receiveShadow
         >
           <boxGeometry args={p.size} />
         </mesh>

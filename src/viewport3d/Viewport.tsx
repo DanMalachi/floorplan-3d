@@ -20,7 +20,7 @@ import { displayRoomType } from "@/lib/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { Walls, dimLabelStyle } from "./WallMesh";
-import { Floors } from "./FloorMesh";
+import { Floors, Ceilings } from "./FloorMesh";
 import { FurnitureLayer } from "./FurnitureLayer";
 import { registerViewportCanvas } from "./viewportCapture";
 
@@ -693,10 +693,12 @@ const WALL_MODES: { id: WallViewMode; label: string }[] = [
   { id: "top", label: "Top" },
 ];
 
-/** Sims wall-view control: Full / Cutaway / Top. */
+/** Sims wall-view control: Full / Cutaway / Top, plus a Ceilings toggle. */
 function WallModeToggle() {
   const wallMode = useSceneStore((s) => s.wallMode);
   const setWallMode = useSceneStore((s) => s.setWallMode);
+  const showCeilings = useSceneStore((s) => s.showCeilings);
+  const setShowCeilings = useSceneStore((s) => s.setShowCeilings);
   return (
     <div
       style={{
@@ -718,6 +720,19 @@ function WallModeToggle() {
           {m.label}
         </button>
       ))}
+      <span style={{ width: 1, alignSelf: "stretch", margin: "3px 2px", background: T.panelBorder }} />
+      <button
+        title="Show ceilings (Full view only)"
+        style={chip(showCeilings, {
+          borderRadius: 999,
+          border: "none",
+          fontSize: 11.5,
+          opacity: wallMode === "full" ? 1 : 0.5,
+        })}
+        onClick={() => setShowCeilings(!showCeilings)}
+      >
+        Ceiling
+      </button>
     </div>
   );
 }
@@ -851,6 +866,7 @@ export function Viewport() {
         {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
           <Floors scene={scene} />
+          <Ceilings scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
           <DragVizLayer cx={cx} cz={cz} span={span} />

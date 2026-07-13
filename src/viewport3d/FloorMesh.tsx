@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
+import { WALL_HEIGHT } from "@/schema/constants";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
 import { floorTexture, FLOOR_ROUGHNESS } from "./textures";
 import { ACCENT } from "./WallMesh";
@@ -87,6 +88,59 @@ export function Floors({ scene }: { scene: Scene }) {
     <group>
       {floors.map((f) => (
         <Floor key={f.id} roomId={f.id} style={f.style} geometry={f.geometry} />
+      ))}
+    </group>
+  );
+}
+
+/** Per-room ceiling planes at wall height. Reuses the floor triangulation, lifted
+ *  to WALL_HEIGHT. Shown only in Full wall-mode (and via the Ceilings toggle) so
+ *  Cutaway/Top can always see in. Rooms bounded by any rail (balconies) are open
+ *  to the sky and get no ceiling. */
+export function Ceilings({ scene }: { scene: Scene }) {
+  const wallMode = useSceneStore((s) => s.wallMode);
+  const show = useSceneStore((s) => s.showCeilings);
+
+  const ceilings = useMemo(() => {
+    const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
+    const railEdges = new Set(
+      scene.walls
+        .filter((w) => w.kind === "rail")
+        .map((w) => [w.a, w.b].sort().join("|")),
+    );
+    const out: { id: string; geometry: THREE.BufferGeometry }[] = [];
+    for (const room of scene.rooms) {
+      const loop = room.loop
+        .map((id) => nodes.get(id))
+        .filter((n): n is NonNullable<typeof n> => n != null);
+      if (loop.length < 3) continue;
+      const open = room.loop.some((id, i) =>
+        railEdges.has([id, room.loop[(i + 1) % room.loop.length]].sort().join("|")),
+      );
+      if (open) continue; // balcony / open-air room — no ceiling
+      out.push({ id: room.id, geometry: buildFloorGeometry(loop) });
+    }
+    return out;
+  }, [scene]);
+
+  const mat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#ededed",
+        roughness: 0.95,
+        metalness: 0,
+        side: THREE.DoubleSide,
+      }),
+    [],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
+  useEffect(() => () => ceilings.forEach((c) => c.geometry.dispose()), [ceilings]);
+
+  if (!show || wallMode !== "full") return null;
+  return (
+    <group position={[0, WALL_HEIGHT, 0]}>
+      {ceilings.map((c) => (
+        <mesh key={c.id} geometry={c.geometry} material={mat} receiveShadow />
       ))}
     </group>
   );
