@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { CameraControls, Environment, Grid, Html, Lightformer, Line } from "@react-three/drei";
+import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
-import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
+import { useSceneStore, type WallViewMode, type EnvPreset } from "@/store/useSceneStore";
 import type { FloorStyle, Wall } from "@/schema/scene";
 import {
   WALL_HEIGHT,
@@ -28,6 +28,7 @@ import {
 } from "@/lib/tambourColors";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
+import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
 import { registerViewportCanvas } from "./viewportCapture";
 
@@ -735,6 +736,65 @@ const WALL_MODES: { id: WallViewMode; label: string }[] = [
   { id: "top", label: "Top" },
 ];
 
+const ENV_PRESETS: { id: EnvPreset; label: string }[] = [
+  { id: "none", label: "Studio" },
+  { id: "suburb", label: "Suburb" },
+  { id: "city", label: "City" },
+];
+
+/** 13.5 → "1:30 PM" for the time slider readout. */
+function fmtHour(t: number): string {
+  const h24 = Math.floor(t) % 24;
+  const m = Math.round((t - Math.floor(t)) * 60) % 60;
+  const ampm = h24 < 12 ? "AM" : "PM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
+/** Scene panel (View mode): environment preset + a fun time-of-day slider. */
+function ScenePanel() {
+  const preset = useSceneStore((s) => s.envPreset);
+  const setEnvPreset = useSceneStore((s) => s.setEnvPreset);
+  const time = useSceneStore((s) => s.timeOfDay);
+  const setTimeOfDay = useSceneStore((s) => s.setTimeOfDay);
+  const icon = time >= 6 && time < 19 ? "☀️" : "🌙";
+  return (
+    <div style={{ position: "absolute", left: 14, top: 64, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
+      <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {ENV_PRESETS.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setEnvPreset(p.id)}
+            style={chip(preset === p.id, {
+              flex: 1, fontSize: 11.5, borderRadius: 999, border: "none",
+              background: preset === p.id ? T.accent : T.inputBg,
+              color: preset === p.id ? "#fff" : T.textDim,
+            })}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+        <input
+          type="range"
+          min={0}
+          max={24}
+          step={0.25}
+          value={time}
+          onChange={(e) => setTimeOfDay(Number(e.target.value))}
+          style={{ flex: 1, accentColor: T.accent }}
+        />
+      </div>
+      <div style={{ fontSize: 11, color: T.textFaint, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
+        {fmtHour(time)}
+      </div>
+    </div>
+  );
+}
+
 /** Sims wall-view control: Full / Cutaway / Top, plus a Ceilings toggle. */
 function WallModeToggle() {
   const wallMode = useSceneStore((s) => s.wallMode);
@@ -885,37 +945,8 @@ export function Viewport() {
         onCreated={({ gl }) => registerViewportCanvas(gl.domElement)}
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
-        <color attach="background" args={[T.bgCanvas]} />
-        <fog attach="fog" args={[T.bgCanvas, span * 3.5, span * 11]} />
-
-        {/* Warm sun with a shadow frustum sized to the model. */}
-        <hemisphereLight args={["#dfe9ff", "#4a4438", 0.55]} />
-        <directionalLight
-          color="#fff1dd"
-          position={[span * 0.8, span * 1.1, span * 0.55]}
-          intensity={2.1}
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-bias={-0.0002}
-          shadow-normalBias={0.02}
-        >
-          <orthographicCamera
-            attach="shadow-camera"
-            args={[-(span * 0.9 + 4), span * 0.9 + 4, span * 0.9 + 4, -(span * 0.9 + 4), 0.5, span * 6]}
-          />
-        </directionalLight>
-        {/* Procedural IBL — soft sky + two fills; fully offline, no HDRI fetch. */}
-        <Environment resolution={128}>
-          <Lightformer form="rect" intensity={1.6} position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[14, 14, 1]} color="#eef3ff" />
-          <Lightformer form="rect" intensity={0.7} position={[-9, 3, -6]} scale={[8, 5, 1]} color="#cfe0ff" />
-          <Lightformer form="rect" intensity={0.55} position={[9, 3, 6]} scale={[8, 5, 1]} color="#ffe6c8" />
-        </Environment>
-
-        {/* Ground: shadow catcher under the grid seats the model in the world. */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-          <circleGeometry args={[Math.max(span * 3, 30), 64]} />
-          <meshStandardMaterial color="#1d1d22" roughness={0.95} metalness={0} />
-        </mesh>
+        {/* Sky, sun, fog, IBL and ground — driven by the Scene preset + time. */}
+        <Environment3d span={span} />
 
         {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
@@ -957,6 +988,7 @@ export function Viewport() {
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
       {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
       {appMode === "furnish" && <CatalogPanel />}
+      {appMode === "view" && <ScenePanel />}
       <WallModeToggle />
     </div>
   );

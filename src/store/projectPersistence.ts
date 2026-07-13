@@ -33,6 +33,8 @@ const DURABLE_KEYS = [
   "appMode",
   "traceStep",
   "mode",
+  "envPreset",
+  "timeOfDay",
   "image",
   "imageOpacity",
   "sourcePdfName",

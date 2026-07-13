@@ -170,6 +170,9 @@ export type Brush =
   | { kind: "paint"; hex: string | null }
   | { kind: "floor"; style: FloorStyle };
 
+/** Presentation environment around the model. Persisted per project. */
+export type EnvPreset = "none" | "suburb" | "city";
+
 /** One undo step: the scene as it was before the command ran. */
 interface HistoryEntry {
   label: string;
@@ -256,9 +259,13 @@ export interface StoreState {
   appMode: AppMode;
   wallMode: WallViewMode;
   showCeilings: boolean;
+  envPreset: EnvPreset;
+  timeOfDay: number; // hour 0..24, drives the sun
   setAppMode: (m: AppMode) => void;
   setWallMode: (m: WallViewMode) => void;
   setShowCeilings: (v: boolean) => void;
+  setEnvPreset: (p: EnvPreset) => void;
+  setTimeOfDay: (t: number) => void;
 
   // --- guided trace flow (Phase 5 T1) ---
   /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
@@ -523,6 +530,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
+    envPreset: "none",
+    timeOfDay: 13,
+    setEnvPreset: (envPreset) => set({ envPreset }),
+    setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
 
     traceStep: 1,
     importBusy: false,
