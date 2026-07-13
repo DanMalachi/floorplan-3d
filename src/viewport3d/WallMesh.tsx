@@ -290,6 +290,8 @@ function WallGroup({ wall, a, b, ops, offset }: {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
+          // Swallow the click so the floor behind can't steal the selection.
+          onClick={(e) => e.stopPropagation()}
         >
           <boxGeometry args={p.size} />
         </mesh>
@@ -591,6 +593,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onClick={(e) => e.stopPropagation()} // keep floor behind from stealing it
       >
         <boxGeometry args={vol.size} />
         <meshStandardMaterial
@@ -871,6 +874,7 @@ function RailGroup({ wall, a, b, offset }: {
     onPointerDown,
     onPointerMove,
     onPointerUp,
+    onClick: (e: ThreeEvent<MouseEvent>) => e.stopPropagation(),
   };
 
   return (
