@@ -66,6 +66,7 @@ function makeField(seed: number, baseFreq: number, octaves: number): (x: number,
 const terrainField = makeField(91, 0.05, 4);
 const lawnField = makeField(53, 0.045, 3); // lawn patches (metre-scale, visible)
 const lawnField2 = makeField(29, 0.22, 2); // finer mottle
+const clearField = makeField(211, 0.4, 2); // wobble of the mown edge around the house
 const LAWN_DARK = lin("#3c5622");
 const LAWN_LITE = lin("#7ba049");
 const GRASS_LO = lin("#5f9134"); // blade tint (brighter/lusher than the ground)
@@ -317,7 +318,7 @@ interface House { x: number; z: number; ty: number; w: number; d: number; h: num
 interface Veg { x: number; z: number; ty: number; scale: number; rotY: number; }
 interface Blade { x: number; z: number; ty: number; rotY: number; tilt: number; scale: number; }
 
-function buildNeighborhood(span: number) {
+function buildNeighborhood(span: number, halfX: number, halfZ: number) {
   const clearR = Math.max(span * 2.6, 34); // model sits well clear of neighbours
   const reach = Math.max(span * 7, 120);
   const flatR = Math.max(span * 0.85, 7); // small flat pad; terrain rolls just past it
@@ -369,23 +370,38 @@ function buildNeighborhood(span: number) {
   }
 
   // Near-field 3D grass — what actually reads as a lawn (a flat surface never
-  // will). Denser toward the house (pow bias); ring clears the model footprint.
+  // will). The mown clearing hugs the house FOOTPRINT (not an obvious circle),
+  // with an organically wobbled, feathered edge, and fades out again at the far
+  // edge — so no hard boundary reads. Even (area-uniform) density between.
   const grnd = mulberry32(303);
-  const gInner = Math.max(span * 0.7, 5);
   const gOuter = Math.max(span * 4, 30);
+  const clearMargin = 0.6; // grass creeps to ~0.6m from the walls at closest
+  const clearWobble = 2.4; // how much the mown edge wiggles in/out
+  const clearFeather = 3.2; // soft ramp width (no hard line)
   const blades: Blade[] = [];
-  for (let i = 0; i < GRASS_CAP; i++) {
-    const rad = gInner + (gOuter - gInner) * Math.pow(grnd(), 1.7);
+  let tries = 0;
+  while (blades.length < GRASS_CAP && tries < GRASS_CAP * 4) {
+    tries++;
+    const rad = Math.sqrt(grnd()) * gOuter; // area-uniform across the disc
     const ang = grnd() * Math.PI * 2;
     const x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
+    // Distance OUTSIDE the footprint rectangle (0 inside): grass hugs the house
+    // shape instead of a circle.
+    const ox = Math.max(0, Math.abs(x) - halfX);
+    const oz = Math.max(0, Math.abs(z) - halfZ);
+    const dHouse = Math.hypot(ox, oz);
+    const margin = clearMargin + clearWobble * (0.5 + 0.5 * clearField(x, z));
+    const inner = smoothstep(0, clearFeather, dHouse - margin); // 0 at house → 1 out
+    const outer = 1 - smoothstep(gOuter * 0.72, gOuter, rad); // fade at the far edge
+    if (grnd() > inner * outer) continue; // thins organically at both edges
     blades.push({ x, z, ty: terrainHeight(x, z, flatR), rotY: grnd() * Math.PI * 2, tilt: (grnd() * 2 - 1) * 0.14, scale: 0.6 + grnd() * 0.8 });
   }
 
   return { houses, veg, blades, groundR: Math.max(span * 18, 250), flatR };
 }
 
-export function Suburb({ span }: { span: number }) {
-  const { houses, veg, blades, groundR, flatR } = useMemo(() => buildNeighborhood(span), [span]);
+export function Suburb({ span, halfX, halfZ }: { span: number; halfX: number; halfZ: number }) {
+  const { houses, veg, blades, groundR, flatR } = useMemo(() => buildNeighborhood(span, halfX, halfZ), [span, halfX, halfZ]);
 
   // Ground, geometries + materials (owned here; r3f disposes on unmount). The
   // lawn is pure vertex colour — no repeating texture, so no tile grid.

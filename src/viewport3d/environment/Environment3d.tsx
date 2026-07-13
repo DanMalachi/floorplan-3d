@@ -39,7 +39,7 @@ function computeSky(t: number) {
   return { dir, sunColor, sunIntensity, sky, hemiSky, hemiGround, hemiIntensity };
 }
 
-export function Environment3d({ span }: { span: number }) {
+export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: number; halfZ: number }) {
   const preset = useSceneStore((s) => s.envPreset);
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
   const outdoor = preset !== "none";
@@ -108,7 +108,7 @@ export function Environment3d({ span }: { span: number }) {
       {/* Ground. Suburb brings its own lawn + neighbourhood; studio ("none") and
           the city placeholder (until F5.3) use a plain shadow-catcher disc. */}
       {preset === "suburb" ? (
-        <Suburb span={span} />
+        <Suburb span={span} halfX={halfX} halfZ={halfZ} />
       ) : (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
           <circleGeometry args={[Math.max(span * 3, 30), 64]} />

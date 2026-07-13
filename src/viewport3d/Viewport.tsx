@@ -39,7 +39,7 @@ function useSceneBounds() {
   return useMemo(() => {
     const scene = useSceneStore.getState().scene;
     if (scene.nodes.length === 0) {
-      return { cx: 0, cz: 0, span: 6 };
+      return { cx: 0, cz: 0, span: 6, halfX: 3, halfZ: 3 };
     }
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const n of scene.nodes) {
@@ -52,6 +52,8 @@ function useSceneBounds() {
       cx: (minX + maxX) / 2,
       cz: (minY + maxY) / 2, // plan y -> world z
       span: Math.max(maxX - minX, maxY - minY, 1),
+      halfX: (maxX - minX) / 2, // footprint half-extents (world x / z)
+      halfZ: (maxY - minY) / 2,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frameToken]);
@@ -881,7 +883,7 @@ const BRUSH_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
 
 export function Viewport() {
   const scene = useSceneStore((s) => s.scene);
-  const { cx, cz, span } = useSceneBounds();
+  const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
   const dragging = useSceneStore((s) => s.gestureBase !== null);
@@ -949,7 +951,7 @@ export function Viewport() {
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
         {/* Sky, sun, fog, IBL and ground — driven by the Scene preset + time. */}
-        <Environment3d span={span} />
+        <Environment3d span={span} halfX={halfX} halfZ={halfZ} />
 
         {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
