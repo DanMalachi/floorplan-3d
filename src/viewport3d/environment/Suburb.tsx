@@ -14,6 +14,7 @@ import { useFrame } from "@react-three/fiber";
 const HOUSE_CAP = 160; // per facade variant
 const ROOF_CAP = 480;
 const VEG_CAP = 256; // per tree style
+const GRASS_CAP = 26000; // near-field grass blades
 
 const _m = new THREE.Matrix4();
 const _p = new THREE.Vector3();
@@ -67,6 +68,8 @@ const lawnField = makeField(53, 0.045, 3); // lawn patches (metre-scale, visible
 const lawnField2 = makeField(29, 0.22, 2); // finer mottle
 const LAWN_DARK = lin("#3c5622");
 const LAWN_LITE = lin("#7ba049");
+const GRASS_LO = lin("#5f9134"); // blade tint (brighter/lusher than the ground)
+const GRASS_HI = lin("#93c05c");
 
 /** Flat under the lot, rolling just beyond it. */
 function terrainHeight(x: number, z: number, flatR: number) {
@@ -249,10 +252,12 @@ function buildBirch(): THREE.BufferGeometry {
   return merged;
 }
 
-// Shared breeze clock: one uniform, advanced once per frame, read by every tree.
+// Shared breeze clock: one uniform, advanced once per frame, read by trees + grass.
 const windUniforms = { uTime: { value: 0 } };
-function makeTreeMaterial(): THREE.MeshStandardMaterial {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0, flatShading: true });
+/** MeshStandardMaterial that bends geometry by a height-scaled breeze in the
+ *  vertex shader. `key` keeps each variant on its own compiled program. */
+function makeWindMaterial(key: string, extra: THREE.MeshStandardMaterialParameters = {}): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0, ...extra });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = windUniforms.uTime;
     shader.vertexShader = shader.vertexShader
@@ -271,8 +276,36 @@ function makeTreeMaterial(): THREE.MeshStandardMaterial {
         transformed.z += cos(uTime * 1.1 + wph) * 0.045 * wh;`,
       );
   };
-  m.customProgramCacheKey = () => "suburb-wind";
+  m.customProgramCacheKey = () => "suburb-wind-" + key;
   return m;
+}
+
+/** A single grass blade: a tapered upright quad, built DOUBLE-FACED in geometry
+ *  (both windings) with an up-facing normal on every vertex, rendered FrontSide.
+ *  That way each side has its own front triangle so the blade is lit like the
+ *  lawn from any angle — DoubleSide would flip the up-normal down (black grass).
+ *  Vertex colour is a greyscale base→tip gradient; hue is per-instance. */
+function bladeGeometry(): THREE.BufferGeometry {
+  const w = 0.045, h = 0.19, g0 = 0.72, g1 = 1.12;
+  const BL = [-w / 2, 0, 0], BR = [w / 2, 0, 0], TR = [w / 6, h, 0], TL = [-w / 6, h, 0];
+  const b: [number[], number] = [BL, g0], r: [number[], number] = [BR, g0];
+  const tr: [number[], number] = [TR, g1], tl: [number[], number] = [TL, g1];
+  const verts: [number[], number][] = [
+    b, r, tr, b, tr, tl, // front
+    b, tr, r, b, tl, tr, // back (reversed winding, same up-normal)
+  ];
+  const n = verts.length;
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), nor = new Float32Array(n * 3);
+  verts.forEach(([p, g], i) => {
+    pos.set(p, i * 3);
+    col.set([g, g, g], i * 3);
+    nor.set([0, 1, 0], i * 3);
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+  return geo;
 }
 
 const WALL_COLORS = ["#d9c9a6", "#c9b899", "#bcc4cb", "#d3b6a0", "#cfc9bd", "#aab19f", "#c6b7a6"];
@@ -282,6 +315,7 @@ type Style = (typeof STYLES)[number];
 
 interface House { x: number; z: number; ty: number; w: number; d: number; h: number; roofH: number; rot: number; variant: number; wall: string; roof: string; }
 interface Veg { x: number; z: number; ty: number; scale: number; rotY: number; }
+interface Blade { x: number; z: number; ty: number; rotY: number; tilt: number; scale: number; }
 
 function buildNeighborhood(span: number) {
   const clearR = Math.max(span * 2.6, 34); // model sits well clear of neighbours
@@ -334,11 +368,24 @@ function buildNeighborhood(span: number) {
     });
   }
 
-  return { houses, veg, groundR: Math.max(span * 18, 250), flatR };
+  // Near-field 3D grass — what actually reads as a lawn (a flat surface never
+  // will). Denser toward the house (pow bias); ring clears the model footprint.
+  const grnd = mulberry32(303);
+  const gInner = Math.max(span * 0.7, 5);
+  const gOuter = Math.max(span * 4, 30);
+  const blades: Blade[] = [];
+  for (let i = 0; i < GRASS_CAP; i++) {
+    const rad = gInner + (gOuter - gInner) * Math.pow(grnd(), 1.7);
+    const ang = grnd() * Math.PI * 2;
+    const x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
+    blades.push({ x, z, ty: terrainHeight(x, z, flatR), rotY: grnd() * Math.PI * 2, tilt: (grnd() * 2 - 1) * 0.14, scale: 0.6 + grnd() * 0.8 });
+  }
+
+  return { houses, veg, blades, groundR: Math.max(span * 18, 250), flatR };
 }
 
 export function Suburb({ span }: { span: number }) {
-  const { houses, veg, groundR, flatR } = useMemo(() => buildNeighborhood(span), [span]);
+  const { houses, veg, blades, groundR, flatR } = useMemo(() => buildNeighborhood(span), [span]);
 
   // Ground, geometries + materials (owned here; r3f disposes on unmount). The
   // lawn is pure vertex colour — no repeating texture, so no tile grid.
@@ -356,10 +403,13 @@ export function Suburb({ span }: { span: number }) {
     () => ({ round: buildRoundTree(), conifer: buildConifer(), bush: buildBush(), birch: buildBirch() }),
     [],
   );
-  const treeMat = useMemo(() => makeTreeMaterial(), []);
+  const treeMat = useMemo(() => makeWindMaterial("tree", { flatShading: true }), []);
+  const bladeGeo = useMemo(() => bladeGeometry(), []);
+  const grassMat = useMemo(() => makeWindMaterial("grass"), []); // FrontSide; blade is double-faced in geometry
 
   const bodyRefs = [useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null)];
   const roofRef = useRef<THREE.InstancedMesh>(null);
+  const grassRef = useRef<THREE.InstancedMesh>(null);
   const vegRefs = {
     round: useRef<THREE.InstancedMesh>(null),
     conifer: useRef<THREE.InstancedMesh>(null),
@@ -413,6 +463,31 @@ export function Suburb({ span }: { span: number }) {
     });
   }, [veg]);
 
+  useLayoutEffect(() => {
+    const mesh = grassRef.current;
+    if (!mesh) return;
+    blades.forEach((bl, i) => {
+      _e.set(bl.tilt, bl.rotY, bl.tilt * 0.6);
+      _q.setFromEuler(_e);
+      _p.set(bl.x, bl.ty, bl.z);
+      _sc.setScalar(bl.scale);
+      mesh.setMatrixAt(i, _m.compose(_p, _q, _sc));
+      // Follow the same lawn field as the ground (so grass matches its patch),
+      // but with brighter, lusher blade greens.
+      const v = 0.6 * lawnField(bl.x, bl.z) + 0.4 * lawnField2(bl.x, bl.z);
+      const mix = Math.min(1, Math.max(0, 0.5 + 1.5 * v));
+      _col.setRGB(
+        GRASS_LO[0] + (GRASS_HI[0] - GRASS_LO[0]) * mix,
+        GRASS_LO[1] + (GRASS_HI[1] - GRASS_LO[1]) * mix,
+        GRASS_LO[2] + (GRASS_HI[2] - GRASS_LO[2]) * mix,
+      );
+      mesh.setColorAt(i, _col);
+    });
+    mesh.count = blades.length;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [blades]);
+
   useFrame((_, dt) => {
     windUniforms.uTime.value += Math.min(dt, 0.05);
   });
@@ -421,6 +496,9 @@ export function Suburb({ span }: { span: number }) {
     <>
       {/* Rolling lawn — also the model's shadow catcher (flat under the lot). */}
       <mesh geometry={ground} material={groundMat} position={[0, -0.02, 0]} receiveShadow />
+
+      {/* Near-field 3D grass blades — the actual lawn (wind-swept). */}
+      <instancedMesh ref={grassRef} args={[bladeGeo, grassMat, GRASS_CAP]} frustumCulled={false} />
 
       {/* Houses: window facades + gable roofs, split by variant. */}
       {VARIANTS.map((_, v) => (
