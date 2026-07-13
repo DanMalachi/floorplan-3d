@@ -108,10 +108,13 @@ const TINTS = ["#c7d0da", "#bcc1c8", "#d0d6dd", "#b3bbc4", "#ccc6ba", "#bfc8d2"]
 interface Tower { x: number; z: number; w: number; d: number; base: number; top: number; rot: number; variant: number; tint: string; }
 
 function buildSkyline(span: number, halfX: number, halfZ: number) {
-  // Host tower footprint hugs the model, with a small overhang so the plan reads
-  // as its top floor.
-  const bhx = halfX + 0.6, bhz = halfZ + 0.6;
-  const hostTop = -0.05; // just under the model floor (which hides the seam)
+  // Host tower footprint hugs the model TIGHTLY (just past the exterior wall
+  // faces, ~wall thickness), and its roof meets the model floor at y=0 — so the
+  // dark facade rises straight into the apartment as its top floor, with no
+  // perched-box gap. No parapet: the apartment's own glass balustrade is the
+  // rooftop-terrace read.
+  const bhx = halfX + 0.15, bhz = halfZ + 0.15;
+  const hostTop = -0.04; // box top just under the model floor; the deck caps it
   const hostH = Math.max(span * 4, 60);
   const hostDiag = Math.hypot(bhx, bhz);
 
@@ -156,9 +159,11 @@ export function City({ span, halfX, halfZ }: { span: number; halfX: number; half
   );
 
   const boxGeo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const roofMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#3c3f45", roughness: 0.94, metalness: 0 }), []);
+  const roofMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#3c3f45", roughness: 0.94, metalness: 0 }), []); // neighbour tops
   const undersideMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#181a1e", roughness: 1, metalness: 0 }), []);
-  const parapetMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#9a9ca0", roughness: 0.9, metalness: 0 }), []);
+  // Host roof deck — a light concrete so the exposed L-notch reads as a surface
+  // the apartment sits on, not a dark void.
+  const deckMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#6a6d72", roughness: 0.95, metalness: 0 }), []);
   const hazeMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#2a2f38", fog: true }), []);
 
   // One facade material per variant; the flat list is what the night-glow effect
@@ -206,35 +211,21 @@ export function City({ span, halfX, halfZ }: { span: number; halfX: number; half
     facadeMats.forEach((m) => { m.emissiveIntensity = g; });
   }, [timeOfDay, facadeMats]);
 
-  // Host tower under the model: a plain box with the facade on every side,
-  // capped by a flat roof quad so the top shows no windows (covering the whole
-  // bbox, incl. an L-plan's notch). The model floor hides the roof/wall seam.
+  // Host tower under the model: a plain box with the facade on every side, its
+  // top flush with the model floor (y=0), capped by a flat deck quad just below
+  // so the roof shows no windows (and an L-plan's notch reads as roof). The dark
+  // facade rises straight into the apartment — the apartment IS its top floor.
   const hostCY = hostTop - hostH / 2;
-
-  // Slim parapet around the host roof edge — the penthouse detail you look over.
-  const paH = 0.7, paT = 0.2;
-  const rails: { pos: [number, number, number]; scale: [number, number, number] }[] = [
-    { pos: [0, hostTop + paH / 2, bhz], scale: [bhx * 2 + paT, paH, paT] },
-    { pos: [0, hostTop + paH / 2, -bhz], scale: [bhx * 2 + paT, paH, paT] },
-    { pos: [bhx, hostTop + paH / 2, 0], scale: [paT, paH, bhz * 2 + paT] },
-    { pos: [-bhx, hostTop + paH / 2, 0], scale: [paT, paH, bhz * 2 + paT] },
-  ];
 
   return (
     <>
       {/* Host tower: the apartment building whose top floor is the model. */}
       <mesh geometry={boxGeo} material={facadeMats[0]} position={[0, hostCY, 0]} scale={[bhx * 2, hostH, bhz * 2]} receiveShadow />
-      {/* Flat roof cap (hides the box top's windows, incl. any L-notch). */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, hostTop + 0.01, 0]} material={roofMat}>
+      {/* Flat roof deck capping the box top (just above it, still under the
+          model floor) so the windowed top face never shows. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, hostTop + 0.02, 0]} material={deckMat} receiveShadow>
         <planeGeometry args={[bhx * 2, bhz * 2]} />
       </mesh>
-
-      {/* Parapet edge you look over the city from. */}
-      {rails.map((r, i) => (
-        <mesh key={i} position={r.pos} scale={r.scale} material={parapetMat} castShadow receiveShadow>
-          <boxGeometry args={[1, 1, 1]} />
-        </mesh>
-      ))}
 
       {/* Skyline towers, split by variant. Context — no shadow casting. */}
       {TVARIANTS.map((_, v) => (
