@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Sky, Environment, Lightformer } from "@react-three/drei";
 import { useSceneStore } from "@/store/useSceneStore";
 import { Suburb } from "./Suburb";
+import { City } from "./City";
 
 // The world around the model: a time-of-day sun/sky/fog rig plus procedural IBL
 // for material reflections. Outdoor presets (suburb/city) show a physical sky
@@ -105,14 +106,16 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
         <Lightformer form="rect" intensity={0.55} position={[9, 3, 6]} scale={[8, 5, 1]} color="#ffe6c8" />
       </Environment>
 
-      {/* Ground. Suburb brings its own lawn + neighbourhood; studio ("none") and
-          the city placeholder (until F5.3) use a plain shadow-catcher disc. */}
+      {/* Ground. Suburb brings its own lawn + neighbourhood; City brings a rooftop
+          terrace + skyline; studio ("none") uses a plain shadow-catcher disc. */}
       {preset === "suburb" ? (
         <Suburb span={span} halfX={halfX} halfZ={halfZ} />
+      ) : preset === "city" ? (
+        <City span={span} halfX={halfX} halfZ={halfZ} />
       ) : (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
           <circleGeometry args={[Math.max(span * 3, 30), 64]} />
-          <meshStandardMaterial color={outdoor ? "#5f6b4a" : "#1d1d22"} roughness={0.95} metalness={0} />
+          <meshStandardMaterial color="#1d1d22" roughness={0.95} metalness={0} />
         </mesh>
       )}
     </>
