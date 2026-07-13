@@ -64,7 +64,7 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
 const MODES: { id: AppMode; label: string; key: string }[] = [
   { id: "trace", label: "Trace", key: "1" },
   { id: "build", label: "Build", key: "2" },
-  { id: "furnish", label: "Furnish", key: "3" },
+  { id: "furnish", label: "Decorate", key: "3" },
   { id: "view", label: "View", key: "4" },
 ];
 

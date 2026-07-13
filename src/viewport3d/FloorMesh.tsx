@@ -51,7 +51,8 @@ function Floor({ roomId, style, geometry }: {
       userData={{ pick: { kind: "room", id: roomId } }}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         const s = useSceneStore.getState();
-        if (s.appMode !== "build" || s.placing) return;
+        const paintable = s.appMode === "furnish" && s.brush?.kind === "floor";
+        if (!((s.appMode === "build" && !s.placing) || paintable)) return;
         e.stopPropagation();
         setHover3d({ kind: "room", id: roomId });
       }}
@@ -62,6 +63,18 @@ function Floor({ roomId, style, geometry }: {
       }}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         const s = useSceneStore.getState();
+        // Floor brush (Decorate mode): click sets this room's floor material.
+        if (s.appMode === "furnish" && s.brush?.kind === "floor") {
+          e.stopPropagation();
+          const next = s.brush.style;
+          if (style !== next) {
+            s.commitScene("Floor material", {
+              ...s.scene,
+              rooms: s.scene.rooms.map((r) => (r.id === roomId ? { ...r, floor: next } : r)),
+            });
+          }
+          return;
+        }
         if (s.appMode !== "build" || s.placing) return; // let the ground plane place
         e.stopPropagation();
         setSel3d({ kind: "room", id: roomId });

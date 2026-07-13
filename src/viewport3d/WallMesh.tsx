@@ -261,12 +261,43 @@ function WallGroup({ wall, a, b, ops, offset }: {
     useSceneStore.getState().endGesture("Move wall");
   };
 
+  // Paint brush (Decorate mode): a click applies the active colour to the face
+  // it landed on — side A is the wall-local +Z face, B the -Z. Keeps the brush
+  // active for the next click; no selection, no drag.
+  const paintFace = (e: ThreeEvent<MouseEvent>) => {
+    const s = useSceneStore.getState();
+    if (s.appMode !== "furnish" || s.brush?.kind !== "paint") return;
+    const n = e.face?.normal;
+    const side: "a" | "b" = n && Math.abs(n.z) > 0.5 ? (n.z > 0 ? "a" : "b") : "a";
+    const hex = s.brush.hex ?? undefined;
+    s.commitScene(`${hex ? "Paint" : "Clear"} Side ${side.toUpperCase()}`, {
+      ...s.scene,
+      walls: s.scene.walls.map((w) =>
+        w.id === wall.id ? { ...w, [side === "a" ? "paintA" : "paintB"]: hex } : w,
+      ),
+    });
+  };
+  const onClickWall = (e: ThreeEvent<MouseEvent>) => {
+    const s = useSceneStore.getState();
+    if (s.appMode === "furnish" && s.brush?.kind === "paint") {
+      e.stopPropagation();
+      paintFace(e);
+    } else if (s.appMode === "build" && !s.placing) {
+      e.stopPropagation(); // keep floor behind from stealing the selection
+    }
+    // else (e.g. placing furniture): fall through to the plane/floor behind
+  };
+
+  /** Wall reacts to the pointer when editable (Build) or paintable (Decorate). */
+  const wallInteractive = (s = useSceneStore.getState()) =>
+    (s.appMode === "build" && !s.placing) ||
+    (s.appMode === "furnish" && s.brush?.kind === "paint");
+
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
-      const s = useSceneStore.getState();
-      if (s.appMode !== "build" || s.placing) return;
+      if (!wallInteractive()) return;
       e.stopPropagation();
-      s.setHover3d({ kind: "wall", id: wall.id });
+      useSceneStore.getState().setHover3d({ kind: "wall", id: wall.id });
     },
     onPointerOut: (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation();
@@ -290,8 +321,9 @@ function WallGroup({ wall, a, b, ops, offset }: {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          // Swallow the click so the floor behind can't steal the selection.
-          onClick={(e) => e.stopPropagation()}
+          // Swallow the click (keeps floor from stealing it) and paint the face
+          // when a paint brush is active.
+          onClick={onClickWall}
         >
           <boxGeometry args={p.size} />
         </mesh>

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene } from "@/schema/scene";
+import type { Scene, FloorStyle } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import { DEFAULT_DOOR, DEFAULT_WINDOW } from "@/schema/constants";
 import {
@@ -164,6 +164,12 @@ export type AppMode = "trace" | "build" | "furnish" | "view";
 /** How walls render in 3D: solid, camera-facing faded, or Sims top-down stubs. */
 export type WallViewMode = "full" | "cutaway" | "top";
 
+/** Active materials applicator in Decorate mode. Paint carries a hex (null =
+ *  reset to plaster); floor carries a floor style. Click surfaces to apply. */
+export type Brush =
+  | { kind: "paint"; hex: string | null }
+  | { kind: "floor"; style: FloorStyle };
+
 /** One undo step: the scene as it was before the command ran. */
 interface HistoryEntry {
   label: string;
@@ -240,6 +246,11 @@ export interface StoreState {
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
+
+  // --- materials brush (Decorate mode) ---
+  /** Active paint/floor applicator: click surfaces to apply, Esc to stop. */
+  brush: Brush | null;
+  setBrush: (b: Brush | null) => void;
 
   // --- app shell (Phase 4 M5) ---
   appMode: AppMode;
@@ -508,7 +519,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, sel3d: null, hover3d: null });
+      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -633,7 +644,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     placing: null,
     setPlacing: (assetId) =>
-      set({ placing: assetId ? { assetId, rotation: 0 } : null, sel3d: null }),
+      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null }),
+    brush: null,
+    setBrush: (brush) => set({ brush, placing: null, sel3d: null }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing

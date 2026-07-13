@@ -8,7 +8,6 @@ import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
 import type { FloorStyle, Wall } from "@/schema/scene";
-import { TambourPicker } from "@/ui/TambourPicker";
 import {
   WALL_HEIGHT,
   DEFAULT_THICKNESS,
@@ -21,6 +20,12 @@ import { roomArea, nodeMap } from "@/lib/roomArea";
 import { displayRoomType } from "@/lib/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
+import {
+  loadTambourColors,
+  groupByFamily,
+  type TambourColor,
+  type TambourFamily,
+} from "@/lib/tambourColors";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { FurnitureLayer } from "./FurnitureLayer";
@@ -208,25 +213,10 @@ function UnderstandRoomsButton() {
   );
 }
 
-// Default plaster shown on any unpainted face (mirrors WallMesh's WALL_COLOR).
-const PLASTER = "#d8d2c4";
-
-/** Wall inspector: dimensions + per-face Tambour paint. A wall has two long
- *  faces (Side A / Side B); clicking a face in 3D targets it, and each side
- *  keeps its own colour. Its own component so it can hold the picker's open
- *  state without violating the rules of hooks inside MiniInspector's branches. */
+/** Wall inspector: dimensions only. Paint lives in the Decorate catalog brush
+ *  (pick a colour, click faces), so structure and finishes stay separate. */
 function WallInspector({ wall }: { wall: Wall }) {
   const scene = useSceneStore((s) => s.scene);
-  const selSide = useSceneStore((s) =>
-    s.sel3d?.kind === "wall" && s.sel3d.id === wall.id ? s.sel3d.side ?? "a" : "a",
-  );
-  // Which paint target the picker is bound to (null = closed). Single-side
-  // targets follow the face you click in 3D; "both" paints A and B together.
-  const [pickerTarget, setPickerTarget] = useState<"a" | "b" | "both" | null>(null);
-  useEffect(() => {
-    setPickerTarget((t) => (t === "a" || t === "b" ? selSide : t));
-  }, [selSide]);
-
   const a = scene.nodes.find((n) => n.id === wall.a);
   const b = scene.nodes.find((n) => n.id === wall.b);
   const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
@@ -239,112 +229,29 @@ function WallInspector({ wall }: { wall: Wall }) {
       walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, ...p } : w)),
     });
   };
-  const openTarget = (t: "a" | "b" | "both") => {
-    if (t === "a" || t === "b") useSceneStore.getState().setSel3d({ kind: "wall", id: wall.id, side: t });
-    setPickerTarget(t);
-  };
-  const paint = (t: "a" | "b" | "both", hex: string | null) => {
-    const verb = hex ? "Paint" : "Clear";
-    if (t === "both") patch(`${verb} both sides`, { paintA: hex ?? undefined, paintB: hex ?? undefined });
-    else patch(`${verb} Side ${t.toUpperCase()}`, t === "a" ? { paintA: hex ?? undefined } : { paintB: hex ?? undefined });
-  };
-
-  const sideHex = (side: "a" | "b") => (side === "a" ? wall.paintA : wall.paintB) ?? null;
-  const pickerValue =
-    pickerTarget === "both"
-      ? wall.paintA === wall.paintB
-        ? wall.paintA ?? null
-        : null
-      : pickerTarget
-        ? sideHex(pickerTarget)
-        : null;
-  const chipStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-    padding: "5px 8px",
-    borderRadius: T.radiusS,
-    cursor: "pointer",
-    fontFamily: T.font,
-    fontSize: 12,
-    color: T.text,
-    background: active ? T.accentSoft : T.inputBg,
-    border: `1.5px solid ${active ? T.accent : T.panelBorder}`,
-  });
-  const dot = (bg: string): React.CSSProperties => ({
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    flexShrink: 0,
-    background: bg,
-    border: "1px solid rgba(0,0,0,0.25)",
-  });
 
   return (
-    <>
-      <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600 }}>
-          {isRail ? "Rail" : "Wall"}{" "}
-          <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span>
-        </div>
-        {!isRail && (
-          <>
-            <div style={{ ...microLabel(), marginTop: 2 }}>Paint</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {(["a", "b"] as const).map((side) => {
-                const active = pickerTarget ? pickerTarget === side : selSide === side;
-                return (
-                  <button
-                    key={side}
-                    onClick={() => openTarget(side)}
-                    title={`Paint Side ${side.toUpperCase()}`}
-                    style={chipStyle(active)}
-                  >
-                    <span style={dot(sideHex(side) ?? PLASTER)} />
-                    Side {side.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => openTarget("both")}
-              title="Paint both sides the same colour"
-              style={chipStyle(pickerTarget === "both")}
-            >
-              <span
-                style={dot(
-                  `linear-gradient(90deg, ${sideHex("a") ?? PLASTER} 0 50%, ${sideHex("b") ?? PLASTER} 50% 100%)`,
-                )}
-              />
-              Both sides
-            </button>
-            <div style={{ fontSize: 10.5, color: T.textFaint }}>
-              Click a wall face in 3D to target its side.
-            </div>
-          </>
-        )}
-        <NumField
-          label="Height"
-          value={wall.height ?? WALL_HEIGHT}
-          onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
-        />
-        <NumField
-          label="Thickness"
-          value={wall.thickness ?? DEFAULT_THICKNESS}
-          onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
-        />
+    <div style={inspectorPanel}>
+      <div style={{ fontWeight: 600 }}>
+        {isRail ? "Rail" : "Wall"}{" "}
+        <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span>
       </div>
-      {pickerTarget && !isRail && (
-        <TambourPicker
-          label={pickerTarget === "both" ? "Both sides" : `Side ${pickerTarget.toUpperCase()}`}
-          value={pickerValue}
-          onPick={(hex) => paint(pickerTarget, hex)}
-          onClose={() => setPickerTarget(null)}
-        />
+      <NumField
+        label="Height"
+        value={wall.height ?? WALL_HEIGHT}
+        onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
+      />
+      <NumField
+        label="Thickness"
+        value={wall.thickness ?? DEFAULT_THICKNESS}
+        onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
+      />
+      {!isRail && (
+        <div style={{ fontSize: 10.5, color: T.textFaint }}>
+          Paint in <b style={{ color: T.textDim, fontWeight: 600 }}>Decorate</b>: pick a colour, click faces.
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -381,15 +288,6 @@ function MiniInspector() {
     if (!room) return null;
     const area = roomArea(room.loop, nodeMap(scene.nodes));
     const sem = room.semantics;
-    const style: FloorStyle = room.floor ?? "wood";
-    const setFloor = (f: FloorStyle) => {
-      if (f === style) return;
-      const s = useSceneStore.getState();
-      s.commitScene("Floor material", {
-        ...s.scene,
-        rooms: s.scene.rooms.map((r) => (r.id === room.id ? { ...r, floor: f } : r)),
-      });
-    };
     return (
       <div style={inspectorPanel}>
         <div style={{ fontWeight: 600 }}>
@@ -428,13 +326,8 @@ function MiniInspector() {
           </>
         )}
         <UnderstandRoomsButton />
-        <div style={{ ...microLabel(), marginTop: 2 }}>Floor</div>
-        <div style={{ display: "flex", gap: 5 }}>
-          {(["wood", "tile", "concrete"] as FloorStyle[]).map((f) => (
-            <button key={f} style={chip(style === f, { textTransform: "capitalize" })} onClick={() => setFloor(f)}>
-              {f}
-            </button>
-          ))}
+        <div style={{ fontSize: 10.5, color: T.textFaint }}>
+          Change the floor in <b style={{ color: T.textDim, fontWeight: 600 }}>Decorate</b>: pick a material, click the floor.
         </div>
       </div>
     );
@@ -609,26 +502,13 @@ function CatalogTile({ assetId }: { assetId: string }) {
   );
 }
 
-/** Furniture catalog — the left rail of Furnish mode. Browse by room, pick
- *  by picture: a mini IKEA catalog. */
-function CatalogPanel() {
+/** Furniture sub-catalog — browse by room, pick by picture. */
+function FurnitureCatalog() {
   const placing = useSceneStore((s) => s.placing);
   const [roomId, setRoomId] = useState(ROOMS[0].id);
   const room = ROOMS.find((r) => r.id === roomId) ?? ROOMS[0];
   return (
-    <div
-      style={{
-        position: "absolute",
-        left: 14,
-        top: 64,
-        bottom: 14,
-        width: 246,
-        display: "flex",
-        flexDirection: "column",
-        ...glass(),
-      }}
-    >
-      <div style={{ padding: "12px 14px 8px", fontWeight: 600, fontSize: 13 }}>Catalog</div>
+    <>
       <div
         style={{
           display: "flex",
@@ -674,15 +554,175 @@ function CatalogPanel() {
         ))}
       </div>
       {placing && (
-        <div
+        <div style={{ padding: "8px 14px 12px", color: T.textFaint, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
+          click to place · R rotates · Esc done
+        </div>
+      )}
+    </>
+  );
+}
+
+const PAINT_FAMILIES: { slug: TambourFamily; label: string }[] = [
+  { slug: "white", label: "White" },
+  { slug: "neutral", label: "Neutral" },
+  { slug: "red", label: "Red" },
+  { slug: "orange", label: "Orange" },
+  { slug: "yellow", label: "Yellow" },
+  { slug: "green", label: "Green" },
+  { slug: "blue", label: "Blue" },
+  { slug: "purple", label: "Purple" },
+];
+
+/** Paint sub-catalog — the Tambour fan deck; pick a colour to load the brush. */
+function PaintCatalog() {
+  const brush = useSceneStore((s) => s.brush);
+  const activeHex = brush?.kind === "paint" ? brush.hex : undefined;
+  const [colors, setColors] = useState<TambourColor[] | null>(null);
+  const [query, setQuery] = useState("");
+  useEffect(() => {
+    let alive = true;
+    loadTambourColors().then((c) => alive && setColors(c));
+    return () => { alive = false; };
+  }, []);
+  const filtered = useMemo(() => {
+    if (!colors) return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return colors;
+    return colors.filter((c) => c.code.toLowerCase().includes(q) || c.nameEn.toLowerCase().includes(q));
+  }, [colors, query]);
+  const grouped = useMemo(() => groupByFamily(filtered), [filtered]);
+  const pick = (hex: string | null) => useSceneStore.getState().setBrush({ kind: "paint", hex });
+  const plasterActive = brush?.kind === "paint" && activeHex === null;
+  return (
+    <>
+      <div style={{ padding: "0 10px 8px" }}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search shade…"
+          style={field({ width: "100%", boxSizing: "border-box" })}
+        />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 10px 12px" }}>
+        <button
+          onClick={() => pick(null)}
+          title="Reset to default plaster"
           style={{
-            padding: "8px 14px 12px",
-            color: T.textFaint,
-            fontSize: 11.5,
-            borderTop: `1px solid ${T.panelBorder}`,
+            display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 8px",
+            borderRadius: T.radiusS, cursor: "pointer", fontFamily: T.font, fontSize: 12, color: T.text,
+            background: plasterActive ? T.accentSoft : T.inputBg,
+            border: `1.5px solid ${plasterActive ? T.accent : T.panelBorder}`,
           }}
         >
-          click to place · R rotates · Esc done
+          <span style={{ width: 16, height: 16, borderRadius: 4, background: "#d8d2c4", border: "1px solid rgba(0,0,0,0.25)" }} />
+          Plaster (default)
+        </button>
+        {!colors && <p style={{ fontSize: 12, color: T.textFaint, marginTop: 8 }}>Loading fan deck…</p>}
+        {PAINT_FAMILIES.map(({ slug, label }) => {
+          const items = grouped[slug];
+          if (!items || items.length === 0) return null;
+          return (
+            <section key={slug} style={{ marginTop: 10 }}>
+              <div style={microLabel(T.textDim)}>{label} · {items.length}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(22px, 1fr))", gap: 5, marginTop: 5 }}>
+                {items.map((c) => {
+                  const active = activeHex === c.hex;
+                  return (
+                    <button
+                      key={c.code}
+                      title={`${c.code} · ${c.nameEn}`}
+                      onClick={() => pick(c.hex)}
+                      style={{
+                        aspectRatio: "1 / 1", borderRadius: 5, background: c.hex, cursor: "pointer", padding: 0,
+                        border: active ? `2px solid ${T.accent}` : "1px solid rgba(0,0,0,0.18)",
+                        boxShadow: active ? `0 0 0 2px ${T.accentSoft}` : "none",
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+const FLOOR_SWATCH: Record<FloorStyle, string> = { wood: "#a67c52", tile: "#d6d5ce", concrete: "#9aa0a8" };
+
+/** Floor sub-catalog — pick a material to load the floor brush. */
+function FloorCatalog() {
+  const brush = useSceneStore((s) => s.brush);
+  const active = brush?.kind === "floor" ? brush.style : undefined;
+  const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
+  return (
+    <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, alignContent: "start" }}>
+      {(["wood", "tile", "concrete"] as FloorStyle[]).map((style) => {
+        const on = active === style;
+        return (
+          <button
+            key={style}
+            onClick={() => pick(style)}
+            style={{
+              display: "flex", flexDirection: "column", gap: 6, padding: 6, borderRadius: T.radiusS + 2, cursor: "pointer",
+              background: on ? T.accentSoft : "transparent", border: `1.5px solid ${on ? T.accent : "transparent"}`,
+            }}
+          >
+            <span style={{ width: "100%", height: 46, borderRadius: 6, background: FLOOR_SWATCH[style], border: "1px solid rgba(0,0,0,0.2)" }} />
+            <span style={{ fontSize: 11, color: on ? T.text : T.textDim, textTransform: "capitalize" }}>{style}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+type CatTab = "furniture" | "paint" | "floors";
+const CAT_TABS: { id: CatTab; label: string }[] = [
+  { id: "furniture", label: "Furniture" },
+  { id: "paint", label: "Paint" },
+  { id: "floors", label: "Floors" },
+];
+
+/** Decorate left rail: Furniture · Paint · Floors, IKEA-catalog style. */
+function CatalogPanel() {
+  const [tab, setTab] = useState<CatTab>("furniture");
+  const brush = useSceneStore((s) => s.brush);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: 14,
+        top: 64,
+        bottom: 14,
+        width: 250,
+        display: "flex",
+        flexDirection: "column",
+        ...glass(),
+      }}
+    >
+      <div style={{ display: "flex", gap: 3, padding: 4, margin: "10px 12px 8px", borderRadius: 999, background: T.inputBg }}>
+        {CAT_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={chip(tab === t.id, {
+              flex: 1, borderRadius: 999, border: "none", fontSize: 11.5,
+              background: tab === t.id ? T.accent : "transparent",
+              color: tab === t.id ? "#fff" : T.textDim,
+            })}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "furniture" && <FurnitureCatalog />}
+      {tab === "paint" && <PaintCatalog />}
+      {tab === "floors" && <FloorCatalog />}
+      {brush && (
+        <div style={{ padding: "8px 14px 12px", color: T.accent, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
+          {brush.kind === "paint" ? "Painting" : "Flooring"} — click surfaces · Esc to stop
         </div>
       )}
     </div>
@@ -773,6 +813,12 @@ function StatusOverlay() {
   );
 }
 
+// Paint-brush cursor shown while a Decorate brush is active. Inline SVG data
+// URI (no asset fetch); hotspot at the bristle tip.
+const BRUSH_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g transform="rotate(45 14 14)"><rect x="11" y="3" width="6" height="11" rx="1.5" fill="#3a3a3a" stroke="#ffffff" stroke-width="1.3"/><rect x="10.5" y="13" width="7" height="4" fill="#ffffff" stroke="#3a3a3a" stroke-width="0.9"/><path d="M11 17 h6 l-1.2 6 h-3.6 z" fill="#0a84ff" stroke="#ffffff" stroke-width="0.9"/></g></svg>',
+)}") 14 25, crosshair`;
+
 export function Viewport() {
   const scene = useSceneStore((s) => s.scene);
   const { cx, cz, span } = useSceneBounds();
@@ -781,6 +827,7 @@ export function Viewport() {
   const dragging = useSceneStore((s) => s.gestureBase !== null);
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
+  const brush = useSceneStore((s) => s.brush);
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -801,7 +848,8 @@ export function Viewport() {
       else if (s.sel3d?.kind === "furniture") s.rotateSelectedFurniture(step);
       else return;
     } else if (e.key === "Escape") {
-      if (s.placing) s.setPlacing(null);
+      if (s.brush) s.setBrush(null);
+      else if (s.placing) s.setPlacing(null);
       else if (s.gestureBase) s.cancelGesture();
       else s.setSel3d(null);
     } else {
@@ -823,7 +871,7 @@ export function Viewport() {
         width: "100%",
         height: "100%",
         outline: "none",
-        cursor: dragging ? "grabbing" : hovering ? "pointer" : "auto",
+        cursor: brush ? BRUSH_CURSOR : dragging ? "grabbing" : hovering ? "pointer" : "auto",
       }}
     >
       <Canvas
