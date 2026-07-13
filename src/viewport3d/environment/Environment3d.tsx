@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { Sky, Environment, Lightformer } from "@react-three/drei";
 import { useSceneStore } from "@/store/useSceneStore";
+import { Suburb } from "./Suburb";
 
 // The world around the model: a time-of-day sun/sky/fog rig plus procedural IBL
 // for material reflections. Outdoor presets (suburb/city) show a physical sky
@@ -51,7 +52,6 @@ export function Environment3d({ span }: { span: number }) {
   const skyDir: [number, number, number] = [s.dir.x, s.dir.y, s.dir.z];
   const shadow = span * 0.9 + 4;
   const studioBg = useMemo(() => col("#101014"), []);
-  const groundColor = outdoor ? "#5f6b4a" : "#1d1d22"; // grass hint; F5.2 replaces it
 
   return (
     <>
@@ -105,11 +105,16 @@ export function Environment3d({ span }: { span: number }) {
         <Lightformer form="rect" intensity={0.55} position={[9, 3, 6]} scale={[8, 5, 1]} color="#ffe6c8" />
       </Environment>
 
-      {/* Ground: shadow catcher (grass / rooftop slab arrive in F5.2 / F5.3). */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <circleGeometry args={[Math.max(span * 3, 30), 64]} />
-        <meshStandardMaterial color={groundColor} roughness={0.95} metalness={0} />
-      </mesh>
+      {/* Ground. Suburb brings its own lawn + neighbourhood; studio ("none") and
+          the city placeholder (until F5.3) use a plain shadow-catcher disc. */}
+      {preset === "suburb" ? (
+        <Suburb span={span} />
+      ) : (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+          <circleGeometry args={[Math.max(span * 3, 30), 64]} />
+          <meshStandardMaterial color={outdoor ? "#5f6b4a" : "#1d1d22"} roughness={0.95} metalness={0} />
+        </mesh>
+      )}
     </>
   );
 }

@@ -887,7 +887,10 @@ export function Viewport() {
   const dragging = useSceneStore((s) => s.gestureBase !== null);
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
+  const envPreset = useSceneStore((s) => s.envPreset);
   const brush = useSceneStore((s) => s.brush);
+  // The CAD grid is an editing aid; hide it in the immersive View presets.
+  const showGrid = envPreset === "none" || appMode !== "view";
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -957,18 +960,20 @@ export function Viewport() {
           <DragVizLayer cx={cx} cz={cz} span={span} />
         </group>
 
-        <Grid
-          args={[200, 200]}
-          cellSize={1}
-          cellThickness={0.5}
-          cellColor="#26262d"
-          sectionSize={5}
-          sectionThickness={1}
-          sectionColor="#33333c"
-          infiniteGrid
-          fadeDistance={Math.max(span * 4, 40)}
-          position={[0, -0.01, 0]}
-        />
+        {showGrid && (
+          <Grid
+            args={[200, 200]}
+            cellSize={1}
+            cellThickness={0.5}
+            cellColor="#26262d"
+            sectionSize={5}
+            sectionThickness={1}
+            sectionColor="#33333c"
+            infiniteGrid
+            fadeDistance={Math.max(span * 4, 40)}
+            position={[0, -0.01, 0]}
+          />
+        )}
         <CameraControls makeDefault enabled={!dragging} smoothTime={0.18} draggingSmoothTime={0.06} />
         <FitCamera span={span} />
 

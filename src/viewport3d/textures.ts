@@ -169,6 +169,65 @@ export function floorTexture(style: FloorStyle): FloorTex {
   return tex;
 }
 
+// --- Suburb lawn (F5.2) ------------------------------------------------------
+// One procedural grass canvas + derived normal map, sized in meters like the
+// floor textures. It has a single consumer (the suburb lawn), which sets
+// `repeat` from its own ground size.
+
+/** A lawn texture tile spans this many meters. */
+export const GRASS_COVER = 3;
+
+function grassCanvas(): HTMLCanvasElement {
+  const S = 256;
+  const [c, ctx] = makeCanvas(S);
+  const rnd = mulberry32(23);
+  ctx.fillStyle = "#5c7a40"; // base lawn green
+  ctx.fillRect(0, 0, S, S);
+  // Broad, low-contrast tonal patches so the repeat doesn't read as a grid.
+  for (let i = 0; i < 44; i++) {
+    ctx.fillStyle =
+      rnd() < 0.5
+        ? `rgba(150, 178, 96, ${0.05 + rnd() * 0.06})`
+        : `rgba(40, 62, 28, ${0.05 + rnd() * 0.06})`;
+    ctx.beginPath();
+    ctx.arc(rnd() * S, rnd() * S, 18 + rnd() * 54, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Fine blades: short near-vertical strokes, half dark half light.
+  for (let i = 0; i < 1600; i++) {
+    const x = rnd() * S;
+    const y = rnd() * S;
+    const len = 2 + rnd() * 3;
+    ctx.strokeStyle = rnd() < 0.5 ? "rgba(38, 60, 26, 0.30)" : "rgba(156, 190, 100, 0.30)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + (rnd() * 2 - 1), y - len);
+    ctx.stroke();
+  }
+  return c;
+}
+
+let grassCache: FloorTex | null = null;
+
+/** Shared procedural lawn colour + normal map. Leaves `repeat` to the caller
+ *  (set it from ground size ÷ GRASS_COVER). */
+export function grassTexture(): FloorTex {
+  if (!grassCache) {
+    const canvas = grassCanvas();
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.anisotropy = 8;
+    const normalMap = new THREE.CanvasTexture(heightToNormal(canvas, 1.4));
+    normalMap.colorSpace = THREE.NoColorSpace;
+    normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+    normalMap.anisotropy = 8;
+    grassCache = { map, normalMap };
+  }
+  return grassCache;
+}
+
 /** Surface response per style — tile is glossier than wood or concrete. */
 export const FLOOR_ROUGHNESS: Record<FloorStyle, number> = {
   wood: 0.75,
