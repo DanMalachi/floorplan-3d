@@ -25,18 +25,19 @@ function Floor({ roomId, style, geometry }: {
   const setSel3d = useSceneStore((s) => s.setSel3d);
 
   // Per-room material (textures are shared) so the highlight stays per-room.
-  const mat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        map: floorTexture(style),
-        roughness: FLOOR_ROUGHNESS[style],
-        metalness: 0,
-        emissive: new THREE.Color(ACCENT),
-        emissiveIntensity: 0,
-        side: THREE.DoubleSide,
-      }),
-    [style],
-  );
+  const mat = useMemo(() => {
+    const tex = floorTexture(style);
+    return new THREE.MeshStandardMaterial({
+      map: tex.map,
+      normalMap: tex.normalMap,
+      normalScale: new THREE.Vector2(0.6, 0.6),
+      roughness: FLOOR_ROUGHNESS[style],
+      metalness: 0,
+      emissive: new THREE.Color(ACCENT),
+      emissiveIntensity: 0,
+      side: THREE.DoubleSide,
+    });
+  }, [style]);
   useEffect(() => () => mat.dispose(), [mat]);
   useEffect(() => {
     mat.emissiveIntensity = selected ? 0.25 : hovered ? 0.1 : 0;

@@ -1,13 +1,24 @@
 "use client";
 
 // Procedural floor textures: stylized wood, tile and concrete drawn once to a
-// canvas — no image assets, no network, and they stay crisp because floors
-// carry meter-scale UVs (texture.repeat is set so a tile = real meters).
+// canvas, plus a derived normal map so grain, grout and micro-relief catch the
+// light. No image assets, no network, deterministic across sessions. Floors
+// carry meter-scale UVs, so texture.repeat is set from the physical cover size.
 
 import * as THREE from "three";
 import type { FloorStyle } from "@/schema/scene";
 
-const cache = new Map<FloorStyle, THREE.CanvasTexture>();
+interface FloorTex {
+  map: THREE.CanvasTexture;
+  normalMap: THREE.CanvasTexture;
+}
+const cache = new Map<FloorStyle, FloorTex>();
+
+/** A drawn colour canvas plus the real-world size (meters) it spans. */
+interface Drawn {
+  canvas: HTMLCanvasElement;
+  cover: number;
+}
 
 function makeCanvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const c = document.createElement("canvas");
@@ -28,7 +39,7 @@ function mulberry32(seed: number) {
   };
 }
 
-function woodTexture(): THREE.CanvasTexture {
+function woodCanvas(): Drawn {
   const S = 256;
   const [c, ctx] = makeCanvas(S);
   const rnd = mulberry32(7);
@@ -55,12 +66,10 @@ function woodTexture(): THREE.CanvasTexture {
     const y0 = Math.floor(rnd() * 4) * (S / 4);
     ctx.fillRect(i * pw, y0, pw, 2);
   }
-  const tex = new THREE.CanvasTexture(c);
-  finish(tex, 2.4); // texture covers 2.4m x 2.4m
-  return tex;
+  return { canvas: c, cover: 2.4 };
 }
 
-function tileTexture(): THREE.CanvasTexture {
+function tileCanvas(): Drawn {
   const S = 256;
   const [c, ctx] = makeCanvas(S);
   const rnd = mulberry32(3);
@@ -79,12 +88,10 @@ function tileTexture(): THREE.CanvasTexture {
     ctx.beginPath(); ctx.moveTo(i * tw, 0); ctx.lineTo(i * tw, S); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, i * tw); ctx.lineTo(S, i * tw); ctx.stroke();
   }
-  const tex = new THREE.CanvasTexture(c);
-  finish(tex, 1.2);
-  return tex;
+  return { canvas: c, cover: 1.2 };
 }
 
-function concreteTexture(): THREE.CanvasTexture {
+function concreteCanvas(): Drawn {
   const S = 128;
   const [c, ctx] = makeCanvas(S);
   const rnd = mulberry32(11);
@@ -95,24 +102,68 @@ function concreteTexture(): THREE.CanvasTexture {
     ctx.fillStyle = `rgba(${v}, ${v + 4}, ${v + 8}, 0.16)`;
     ctx.fillRect(rnd() * S, rnd() * S, 1 + rnd() * 2, 1 + rnd() * 2);
   }
-  const tex = new THREE.CanvasTexture(c);
-  finish(tex, 1.6);
-  return tex;
+  return { canvas: c, cover: 1.6 };
 }
 
-function finish(tex: THREE.CanvasTexture, coverMeters: number) {
+/**
+ * Derive a tiling normal map from a colour canvas: darker pixels read as lower,
+ * so plank seams, grout lines and speckle become grooves. Central-difference
+ * gradient, edge-wrapped so the result tiles seamlessly like the colour map.
+ */
+function heightToNormal(src: HTMLCanvasElement, strength: number): HTMLCanvasElement {
+  const S = src.width;
+  const data = src.getContext("2d")!.getImageData(0, 0, S, S).data;
+  const h = (x: number, y: number) => {
+    const xx = ((x % S) + S) % S;
+    const yy = ((y % S) + S) % S;
+    const i = (yy * S + xx) * 4;
+    return (data[i] + data[i + 1] + data[i + 2]) / 765; // 0..1 luminance
+  };
+  const [out, octx] = makeCanvas(S);
+  const img = octx.createImageData(S, S);
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = (h(x + 1, y) - h(x - 1, y)) * strength;
+      const dy = (h(x, y + 1) - h(x, y - 1)) * strength;
+      const len = Math.hypot(dx, dy, 1);
+      const i = (y * S + x) * 4;
+      img.data[i] = (-dx / len) * 0.5 * 255 + 127.5;
+      img.data[i + 1] = (-dy / len) * 0.5 * 255 + 127.5;
+      img.data[i + 2] = (1 / len) * 0.5 * 255 + 127.5;
+      img.data[i + 3] = 255;
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  return out;
+}
+
+/** Shared tiling: meter-scale repeat (1 repeat spans `cover` meters). */
+function applyTiling(tex: THREE.CanvasTexture, cover: number) {
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  // Floor UVs are in meters: one repeat should span coverMeters.
-  tex.repeat.set(1 / coverMeters, 1 / coverMeters);
+  tex.repeat.set(1 / cover, 1 / cover);
 }
 
-export function floorTexture(style: FloorStyle): THREE.CanvasTexture {
+/** How pronounced each style's relief is (grout crisper than wood grain). */
+const NORMAL_STRENGTH: Record<FloorStyle, number> = {
+  wood: 2.2,
+  tile: 3.5,
+  concrete: 1.2,
+};
+
+export function floorTexture(style: FloorStyle): FloorTex {
   let tex = cache.get(style);
   if (!tex) {
-    tex = style === "wood" ? woodTexture() : style === "tile" ? tileTexture() : concreteTexture();
+    const { canvas, cover } =
+      style === "wood" ? woodCanvas() : style === "tile" ? tileCanvas() : concreteCanvas();
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    applyTiling(map, cover);
+    const normalMap = new THREE.CanvasTexture(heightToNormal(canvas, NORMAL_STRENGTH[style]));
+    normalMap.colorSpace = THREE.NoColorSpace; // normal data is linear, never sRGB
+    applyTiling(normalMap, cover);
+    tex = { map, normalMap };
     cache.set(style, tex);
   }
   return tex;
