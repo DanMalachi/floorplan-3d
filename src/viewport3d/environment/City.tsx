@@ -206,9 +206,9 @@ export function City({ span, halfX, halfZ }: { span: number; halfX: number; half
     facadeMats.forEach((m) => { m.emissiveIntensity = g; });
   }, [timeOfDay, facadeMats]);
 
-  // Host tower under the model. A plain box with a single facade material (a
-  // material array on a non-instanced mesh silently fails to apply the map here),
-  // capped by a flat roof quad so the top shows no windows.
+  // Host tower under the model: a plain box with the facade on every side,
+  // capped by a flat roof quad so the top shows no windows (covering the whole
+  // bbox, incl. an L-plan's notch). The model floor hides the roof/wall seam.
   const hostCY = hostTop - hostH / 2;
 
   // Slim parapet around the host roof edge — the penthouse detail you look over.
