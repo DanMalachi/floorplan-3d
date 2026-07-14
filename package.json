@@ -12,6 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",
     "@liveblocks/client": "^3.22.0",
+    "@liveblocks/node": "^3.22.0",
     "@liveblocks/react": "^3.22.0",
     "@liveblocks/yjs": "^3.22.0",
     "@react-three/drei": "^10.7.7",

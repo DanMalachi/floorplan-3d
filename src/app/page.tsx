@@ -7,7 +7,8 @@ import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
 import { GtLab } from "@/dev/GtLab";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
 import { initProjectPersistence } from "@/store/projectPersistence";
-import { T, glass } from "@/ui/tokens";
+import { mintGrant, lbRoom } from "@/collab/share";
+import { T, glass, chip } from "@/ui/tokens";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
  *  button into the Projects gallery. State is persisted to IndexedDB, so a
@@ -59,6 +60,33 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
         {status}
       </span>
     </div>
+  );
+}
+
+/** Top-right "Go live": open a live room seeded from the current project, then
+ *  share role links from inside the room. Navigating there in this tab keeps the
+ *  loaded scene, so the room seeds with THIS project (not the sample). */
+function GoLiveButton() {
+  const [busy, setBusy] = useState(false);
+  const goLive = async () => {
+    setBusy(true);
+    try {
+      const id = crypto.randomUUID().slice(0, 8);
+      const grant = await mintGrant(lbRoom(id), "build");
+      window.location.href = `/v/${id}?g=${grant}`;
+    } catch {
+      setBusy(false);
+    }
+  };
+  return (
+    <button
+      onClick={goLive}
+      disabled={busy}
+      title="Start a live, shareable session of this plan"
+      style={{ position: "absolute", top: 14, right: 14, zIndex: 30, ...chip(true, { padding: "8px 16px", fontSize: 13, opacity: busy ? 0.6 : 1 }) }}
+    >
+      {busy ? "Starting…" : "◈ Go live"}
+    </button>
   );
 }
 
@@ -173,6 +201,7 @@ export default function Home() {
     >
       <ModeSwitcher />
       <ProjectBar onOpenProjects={() => setProjectsOpen(true)} />
+      {!showTrace && <GoLiveButton />}
       {/* Trace keeps its own pane; the three 3D modes share one live viewport
           so the camera never resets between Build / Furnish / View. */}
       <div style={{ position: "absolute", inset: 0, display: showTrace ? "block" : "none" }}>

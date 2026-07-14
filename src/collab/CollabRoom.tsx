@@ -1,11 +1,12 @@
 "use client";
 
-// S2 — live collaborative editing. Joins a Liveblocks room, binds a Yjs doc as
-// the shared scene, and installs a collab sink into the store so every edit
-// (commitScene / drag / undo) flows through the doc with granular merges and
-// per-user undo. Others' selections show as coloured markers.
+// S2/S3 — live collaborative editing room with per-link roles. Joins a Liveblocks
+// room (access token minted by /api/liveblocks-auth from the link's signed grant),
+// binds a Yjs doc as the shared scene, installs a collab sink into the store, and
+// gates the mode tabs to the link's role. A view link is READ-only (Liveblocks
+// rejects writes); Share mints role links; "Save a copy" forks into local projects.
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LiveblocksProvider,
   RoomProvider,
@@ -19,11 +20,13 @@ import { Html } from "@react-three/drei";
 import * as Y from "yjs";
 import { Viewport } from "@/viewport3d/Viewport";
 import { useSceneStore, pickExists, type AppMode } from "@/store/useSceneStore";
+import { importProject } from "@/store/projectPersistence";
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
-import { T, glass, chip } from "@/ui/tokens";
+import { T, glass, chip, field } from "@/ui/tokens";
 import { randomIdentity, initials, type Identity } from "./identity";
 import type { RemoteSelection } from "./liveblocks";
+import { ROLE_MODES, ROLE_LABEL, roleFromGrant, mintGrant, lbRoom, type ShareRole } from "./share";
 import {
   isSceneEmpty,
   observeSceneDoc,
@@ -51,24 +54,19 @@ function useRoomBinding() {
   useEffect(() => {
     const provider = getYjsProviderForRoom(room);
     const doc = provider.getYDoc();
-    const LOCAL = { local: true }; // origin tag: only this client's edits are undoable by it
+    const LOCAL = { local: true };
     const undo = new Y.UndoManager(sceneRoot(doc), { trackedOrigins: new Set([LOCAL]) });
 
     const project = () => {
-      // Never clobber an in-flight local drag; it commits to the doc on release.
       if (useSceneStore.getState().gestureBase) return;
       const scene = readScene(doc);
-      // Doc not seeded yet — don't overwrite the local scene with an empty one
-      // (that empty would then get captured as the seed).
-      if (scene.nodes.length === 0 && scene.walls.length === 0) return;
+      if (scene.nodes.length === 0 && scene.walls.length === 0) return; // not seeded yet
       const first = !framed.current && scene.nodes.length > 0;
       useSceneStore.setState((s) => ({
         scene,
         sel3d: s.sel3d && pickExists(scene, s.sel3d) ? s.sel3d : null,
         hover3d: s.hover3d && pickExists(scene, s.hover3d) ? s.hover3d : null,
-        ...(first
-          ? { appMode: "view" as AppMode, frameToken: s.frameToken + 1, ...readPresentation(doc) }
-          : {}),
+        ...(first ? { appMode: "view" as AppMode, frameToken: s.frameToken + 1, ...readPresentation(doc) } : {}),
       }));
       if (first) framed.current = true;
     };
@@ -90,9 +88,6 @@ function useRoomBinding() {
     };
 
     const unobserve = observeSceneDoc(doc, project);
-    project();
-
-    // Install the collab sink: edits go to the doc, undo/redo to the UndoManager.
     useSceneStore.getState().setCollab({
       commit: (prev: Scene, next: Scene) => applySceneDiff(doc, prev, next, LOCAL),
       undo: () => undo.undo(),
@@ -115,8 +110,6 @@ function useRoomBinding() {
 }
 
 // -- others' selection markers (rendered INSIDE the R3F canvas) ---------------
-// Liveblocks hooks can't run inside <Canvas> (React context doesn't cross the
-// R3F reconciler), so the remote selections are passed in as a plain prop.
 
 type RemotePick = { name: string; color: string; selection: RemoteSelection };
 
@@ -183,12 +176,21 @@ const ROOM_MODES: { id: AppMode; label: string }[] = [
   { id: "view", label: "View" },
 ];
 
-function ModeSwitcher() {
+function ModeSwitcher({ role }: { role: ShareRole }) {
   const appMode = useSceneStore((s) => s.appMode);
   const setAppMode = useSceneStore((s) => s.setAppMode);
+  const allowed = ROLE_MODES[role];
+  const modes = ROOM_MODES.filter((m) => allowed.includes(m.id));
+
+  // Keep the current mode within the role's allowance.
+  useEffect(() => {
+    if (!allowed.includes(appMode)) setAppMode("view");
+  }, [allowed, appMode, setAppMode]);
+
+  if (modes.length <= 1) return null; // view-only: no switcher
   return (
     <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...glass({ borderRadius: 999 }) }}>
-      {ROOM_MODES.map((m) => (
+      {modes.map((m) => (
         <button
           key={m.id}
           onClick={() => setAppMode(m.id)}
@@ -201,6 +203,69 @@ function ModeSwitcher() {
   );
 }
 
+const SHARE_ROLES: ShareRole[] = ["view", "decorate", "build"];
+
+/** Share popover + "Save a copy". Anyone in the room can mint links / fork. */
+function ShareControls({ roomId }: { roomId: string }) {
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<ShareRole>("view");
+  const [link, setLink] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const makeLink = useCallback(async (r: ShareRole) => {
+    setRole(r);
+    setCopied(false);
+    const grant = await mintGrant(lbRoom(roomId), r);
+    setLink(`${window.location.origin}/v/${roomId}?g=${grant}`);
+  }, [roomId]);
+
+  useEffect(() => {
+    if (open && !link) void makeLink("view");
+  }, [open, link, makeLink]);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(link).catch(() => {});
+    setCopied(true);
+  };
+
+  const saveCopy = async () => {
+    await importProject("Copy of shared plan", { scene: useSceneStore.getState().scene, appMode: "view" });
+    setSaved(true);
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        <button onClick={saveCopy} style={chip(false)} title="Fork this plan into your own projects">
+          {saved ? "Saved ✓" : "Save a copy"}
+        </button>
+        <button onClick={() => setOpen((o) => !o)} style={chip(true)}>Share</button>
+      </div>
+      {open && (
+        <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...glass({ borderRadius: T.radiusM }) }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Share this plan</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {SHARE_ROLES.map((r) => (
+              <button
+                key={r}
+                onClick={() => makeLink(r)}
+                style={{ textAlign: "left", padding: "7px 10px", borderRadius: T.radiusS, cursor: "pointer", fontFamily: T.font, fontSize: 12.5, color: T.text, border: `1px solid ${role === r ? T.accent : T.panelBorder}`, background: role === r ? T.accentSoft : T.inputBg }}
+              >
+                {role === r ? "● " : ""}Anyone with the link — <b>{ROLE_LABEL[r]}</b>
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input readOnly value={link} style={field({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
+            <button onClick={copy} style={chip(true)}>{copied ? "Copied" : "Copy"}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Avatar({ name, color }: Identity) {
   return (
     <div title={name} style={{ width: 28, height: 28, borderRadius: "50%", background: color, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.25)", marginLeft: -6, fontFamily: T.font }}>
@@ -209,29 +274,32 @@ function Avatar({ name, color }: Identity) {
   );
 }
 
-function PresenceBar() {
+function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   const others = useOthers();
   const me = useSelf();
   const count = others.length + (me ? 1 : 0);
   return (
-    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", fontFamily: T.font, ...glass({ borderRadius: 999 }) }}>
-      <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ color: T.ok, fontSize: 10 }}>●</span> Live · {count} here
-      </span>
-      <div style={{ display: "flex", paddingLeft: 6 }}>
-        {me && <Avatar name={me.presence.name} color={me.presence.color} />}
-        {others.map(({ connectionId, presence }) => (
-          <Avatar key={connectionId} name={presence.name} color={presence.color} />
-        ))}
+    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...glass({ borderRadius: 999 }) }}>
+        <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: T.ok, fontSize: 10 }}>●</span> {count} here
+          {role === "view" && <span style={{ color: T.textFaint }}>· view only</span>}
+        </span>
+        <div style={{ display: "flex", paddingLeft: 6 }}>
+          {me && <Avatar name={me.presence.name} color={me.presence.color} />}
+          {others.map(({ connectionId, presence }) => (
+            <Avatar key={connectionId} name={presence.name} color={presence.color} />
+          ))}
+        </div>
       </div>
+      <ShareControls roomId={roomId} />
     </div>
   );
 }
 
-function RoomStage() {
+function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
   useRoomBinding();
 
-  // Broadcast my selection so collaborators can see what I'm editing.
   const updateMyPresence = useUpdateMyPresence();
   const sel3d = useSceneStore((s) => s.sel3d);
   useEffect(() => {
@@ -247,28 +315,42 @@ function RoomStage() {
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", background: T.bg, overflow: "hidden" }}>
       <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
-      <ModeSwitcher />
-      <PresenceBar />
+      <ModeSwitcher role={role} />
+      <TopBar roomId={roomId} role={role} />
     </div>
   );
 }
 
 export function CollabRoom({ roomId }: { roomId: string }) {
-  const identity = useMemo(() => randomIdentity(), []);
-  const publicApiKey = process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY;
+  // Client-only: the room reads the grant from the URL and drives a WebGL canvas,
+  // so render nothing on the server to avoid a hydration mismatch (which would
+  // remount the Liveblocks provider and break auth).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  if (!publicApiKey) {
-    return (
-      <div style={{ display: "grid", placeItems: "center", height: "100vh", color: T.text, fontFamily: T.font, background: T.bg }}>
-        <p>Live sharing isn’t configured (missing Liveblocks key).</p>
-      </div>
-    );
-  }
+  const identity = useMemo(() => randomIdentity(), []);
+  const role = useMemo<ShareRole>(
+    () => (mounted ? roleFromGrant(new URLSearchParams(window.location.search).get("g")) : "view"),
+    [mounted],
+  );
+
+  const authEndpoint = useCallback(async (room?: string) => {
+    const grant = new URLSearchParams(window.location.search).get("g");
+    const res = await fetch("/api/liveblocks-auth", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ room, grant }),
+    });
+    if (!res.ok) throw new Error("auth failed");
+    return res.json();
+  }, []);
+
+  if (!mounted) return <div style={{ height: "100vh", background: T.bg }} />;
 
   return (
-    <LiveblocksProvider publicApiKey={publicApiKey} throttle={16}>
-      <RoomProvider id={`floorplan-${roomId}`} initialPresence={{ ...identity, selection: null }}>
-        <RoomStage />
+    <LiveblocksProvider authEndpoint={authEndpoint} throttle={16}>
+      <RoomProvider id={lbRoom(roomId)} initialPresence={{ ...identity, selection: null }}>
+        <RoomStage roomId={roomId} role={role} />
       </RoomProvider>
     </LiveblocksProvider>
   );
