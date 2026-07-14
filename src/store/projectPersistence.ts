@@ -269,6 +269,35 @@ async function flushPending(): Promise<void> {
   await flushSave(useSceneStore.getState());
 }
 
+// ---- direct import (used by the dev GT Lab) ---------------------------------
+
+/**
+ * Create a fully-formed saved project from a given durable state (e.g. a dropped
+ * ground-truth model) and add it to the gallery — WITHOUT opening it or touching
+ * the currently-open project. The GT lands as its own persistent project, so it
+ * survives close/reopen. Only durable keys from `overrides` are kept; the rest of
+ * the project starts from pristine defaults. Returns the new project's card.
+ */
+export async function importProject(name: string, overrides: Partial<StoreState>): Promise<ProjectMeta> {
+  const base = defaults ?? snapshot(useSceneStore.getState());
+  const state = { ...base } as ProjectState;
+  for (const k of DURABLE_KEYS) {
+    if (overrides[k] !== undefined) (state as Record<string, unknown>)[k] = overrides[k];
+  }
+  const id = uid();
+  const now = Date.now();
+  const meta: ProjectMeta = { id, name: name.trim() || nextUntitledName(), createdAt: now, updatedAt: now, thumb: null };
+  manifest.unshift(meta);
+  await persistManifest();
+  await idbSet(docKey(id), {
+    schemaVersion: SCHEMA_VERSION,
+    savedAt: now,
+    state,
+    worldModel: null,
+  } satisfies ProjectDocument);
+  return meta;
+}
+
 // ---- public API (used by the Projects gallery) ------------------------------
 
 /** All projects, newest-edited first. Returns a copy. */

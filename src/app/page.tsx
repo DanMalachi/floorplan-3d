@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Viewport } from "@/viewport3d/Viewport";
 import { TracePanel } from "@/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
+import { GtLab } from "@/dev/GtLab";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
 import { initProjectPersistence } from "@/store/projectPersistence";
 import { T, glass } from "@/ui/tokens";
@@ -181,6 +182,8 @@ export default function Home() {
         <Viewport />
       </div>
       {projectsOpen && <ProjectsOverlay onClose={() => setProjectsOpen(false)} />}
+      {/* Secret dev tool: Shift+G to drop GT files and save each as a project. */}
+      <GtLab />
     </main>
   );
 }
