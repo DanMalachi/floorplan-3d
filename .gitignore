@@ -50,3 +50,5 @@ __pycache__/
 # CAD import fixtures — large .dwg binaries + generated .dxf conversions; keep
 # these local only, out of git history
 floorplan_for_training/dxf_dwg/
+
+.vercel

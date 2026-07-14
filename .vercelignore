@@ -1,0 +1,10 @@
+# Dev-only data / corpora not needed to build or run the app in production.
+# (data/ is intentionally NOT ignored — data/tambour-colors.json is imported at build.)
+floorplan-gt/
+floorplan_for_training/
+eval/
+eval-out/
+out/
+docs/
+scripts/
+*.tsbuildinfo
