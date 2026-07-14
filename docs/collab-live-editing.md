@@ -3,7 +3,10 @@
 **Status:** approved 2026-07-14. **S1 + S2 + S3 shipped** — live doc + presence, collaborative
 editing (diff-bridge, per-user undo, selection presence), and per-link roles (View read-only /
 Decorate / Build) via signed grants + `/api/liveblocks-auth`, "Go live" seeds the real project,
-in-room Share popover + Save-a-copy. Next: S4 (production public, OG preview image, revoke, ship).
+in-room Share popover + Save-a-copy. **S4 shipped** (bar 1 manual gate): Liveblocks env on
+Vercel, OG link-preview card, grant expiry (30-day stateless revoke), deployed to production.
+REMAINING: flip Vercel Deployment Protection → public so guest links open (dashboard/API, needs
+the owner or a token). Future: real model thumbnail in the OG; instant per-link revoke (needs a store).
 **Decisions locked (2026-07-14):** realtime host = **Liveblocks**; CRDT = **Yjs**;
 identity = **anonymous + editable name/color** (no login for the alpha); sharing =
 **server-backed `/v/<id>` links with per-link roles**, edits are **live and shared**
