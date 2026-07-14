@@ -161,24 +161,30 @@ const metaOf = (id: string | null) => manifest.find((m) => m.id === id) ?? null;
 async function loadIntoStore(id: string): Promise<void> {
   const doc = await idbGet<ProjectDocument>(docKey(id));
   const meta = metaOf(id);
+  // Bump frameToken so the 3D view reframes/recenters onto THIS project's model.
+  // Loading a project replaces `scene` directly (not via setScene), so without
+  // this the viewport keeps the previous project's bounds and the model renders
+  // off-origin — floating away from the origin-centred environment.
   if (doc?.state && doc.schemaVersion === SCHEMA_VERSION) {
     lastSaved = JSON.stringify(doc.state);
-    useSceneStore.setState({
+    useSceneStore.setState((s) => ({
       ...doc.state,
       currentProjectId: id,
       projectName: meta?.name ?? "Untitled plan",
       projectRestored: true,
       projectSavedAt: doc.savedAt,
-    } as Partial<StoreState>);
+      frameToken: s.frameToken + 1,
+    } as Partial<StoreState>));
   } else {
     lastSaved = "";
-    useSceneStore.setState({
+    useSceneStore.setState((s) => ({
       ...(defaults as ProjectState),
       currentProjectId: id,
       projectName: meta?.name ?? "Untitled plan",
       projectRestored: false,
       projectSavedAt: null,
-    } as Partial<StoreState>);
+      frameToken: s.frameToken + 1,
+    } as Partial<StoreState>));
   }
 }
 
