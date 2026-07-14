@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Component, Suspense, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
@@ -25,51 +25,111 @@ function rayToPlan(
 
 const snap = (v: number) => Math.round(v / GRID) * GRID;
 
-/** Load + normalize a catalog GLB: plan bbox scaled to the catalog footprint,
- *  floored at y=0, centered. Materials are always cloned per instance so
- *  tinting never leaks into drei's shared GLTF cache. */
-function AssetModel({ assetId, tint, opacity }: {
+interface ModelProps {
   assetId: string;
   tint?: "red" | null;
   opacity?: number;
-}) {
-  const gltf = useGLTF(`/furniture/${assetId}.glb`);
-  const obj = useMemo(() => {
-    const spec = CATALOG_BY_ID.get(assetId);
-    const clone = gltf.scene.clone(true);
-    const box = new THREE.Box3().setFromObject(clone);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    const target = spec ? Math.max(spec.footprint.w, spec.footprint.d) : 1;
-    const k = target / (Math.max(size.x, size.z) || 1);
-    clone.position.set(-center.x, -box.min.y, -center.z);
-    const wrapper = new THREE.Group();
-    wrapper.add(clone);
-    wrapper.scale.setScalar(k);
-    clone.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) return;
-      o.castShadow = true;
-      o.receiveShadow = true;
-      const mats = Array.isArray(o.material) ? o.material : [o.material];
-      o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
-        | THREE.Material
-        | THREE.Material[];
-      const applied = Array.isArray(o.material) ? o.material : [o.material];
-      for (const m of applied) {
-        if (opacity !== undefined) {
-          m.transparent = true;
-          m.opacity = opacity;
-          m.depthWrite = false;
-        }
-        if (tint === "red" && m instanceof THREE.MeshStandardMaterial) {
-          m.emissive = new THREE.Color("#ff3b30");
-          m.emissiveIntensity = 0.55;
-        }
+}
+
+/** Clone a loaded GLTF scene and normalize it: plan bbox scaled to the catalog
+ *  footprint, floored at y=0, centered. Materials are always cloned per instance
+ *  so tinting/opacity never leak into drei's shared GLTF cache. */
+function normalize(
+  gltfScene: THREE.Object3D,
+  footprint: { w: number; d: number } | undefined,
+  tint?: "red" | null,
+  opacity?: number,
+): THREE.Group {
+  const clone = gltfScene.clone(true);
+  const box = new THREE.Box3().setFromObject(clone);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const target = footprint ? Math.max(footprint.w, footprint.d) : 1;
+  const k = target / (Math.max(size.x, size.z) || 1);
+  clone.position.set(-center.x, -box.min.y, -center.z);
+  const wrapper = new THREE.Group();
+  wrapper.add(clone);
+  wrapper.scale.setScalar(k);
+  clone.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    o.castShadow = true;
+    o.receiveShadow = true;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
+      | THREE.Material
+      | THREE.Material[];
+    const applied = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of applied) {
+      if (opacity !== undefined) {
+        m.transparent = true;
+        m.opacity = opacity;
+        m.depthWrite = false;
       }
-    });
-    return wrapper;
-  }, [gltf.scene, assetId, tint, opacity]);
+      if (tint === "red" && m instanceof THREE.MeshStandardMaterial) {
+        m.emissive = new THREE.Color("#ff3b30");
+        m.emissiveIntensity = 0.55;
+      }
+    }
+  });
+  return wrapper;
+}
+
+/** Render a specific GLB url, normalized to the asset's footprint. `draco` points
+ *  useGLTF at the local decoder for Draco-compressed (IKEA) models. */
+function GlbModel({ url, footprint, draco, tint, opacity }: {
+  url: string;
+  footprint: { w: number; d: number } | undefined;
+  draco?: boolean;
+  tint?: "red" | null;
+  opacity?: number;
+}) {
+  const gltf = useGLTF(url, draco ? "/draco/" : false);
+  const obj = useMemo(
+    () => normalize(gltf.scene, footprint, tint, opacity),
+    [gltf.scene, footprint, tint, opacity],
+  );
   return <primitive object={obj} />;
+}
+
+/** Swap to a fallback subtree if a child throws (e.g. a real model fails to load).
+ *  Resets when `resetKey` changes so a different asset re-attempts its real model. */
+class ModelBoundary extends Component<
+  { fallback: ReactNode; resetKey: string; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidUpdate(prev: { resetKey: string }) {
+    if (prev.resetKey !== this.props.resetKey && this.state.failed)
+      this.setState({ failed: false });
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+/** A catalog item's 3D body. Prefers the real branded GLB (`realModel`) with a
+ *  proxy (`model`/`assetId`) fallback on load failure; both keep the real footprint. */
+function AssetModel({ assetId, tint, opacity }: ModelProps) {
+  const spec = CATALOG_BY_ID.get(assetId);
+  const proxyUrl = `/furniture/${spec?.model ?? assetId}.glb`;
+  const proxy = (
+    <GlbModel url={proxyUrl} footprint={spec?.footprint} tint={tint} opacity={opacity} />
+  );
+  if (!spec?.realModel) return proxy;
+  return (
+    <ModelBoundary resetKey={spec.realModel} fallback={proxy}>
+      <GlbModel
+        url={spec.realModel}
+        footprint={spec.footprint}
+        draco
+        tint={tint}
+        opacity={opacity}
+      />
+    </ModelBoundary>
+  );
 }
 
 /** Plan rotation θ → three.js yaw (plan y is world z, so the sense flips). */

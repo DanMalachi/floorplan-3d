@@ -51,4 +51,9 @@ __pycache__/
 # these local only, out of git history
 floorplan_for_training/dxf_dwg/
 
+# IKEA pipeline raw cache — regenerable intermediate (raw API responses + HTTP
+# cache). The committed static assets are data/furniture-ikea*.json and the
+# downloaded models/thumbnails under public/furniture/ikea/.
+/data/raw/
+
 .vercel

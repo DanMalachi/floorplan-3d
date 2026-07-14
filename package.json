@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "scrape:tambour": "node scripts/scrape.mjs",
-    "normalize:tambour": "node scripts/normalize.mjs"
+    "normalize:tambour": "node scripts/normalize.mjs",
+    "ikea:poc": "tsx scripts/ikea/poc.ts",
+    "ikea:extract": "tsx scripts/ikea/extract.ts",
+    "ikea:normalize": "tsx scripts/ikea/normalize.ts",
+    "ikea:preview": "tsx scripts/ikea/preview.ts",
+    "ikea:models": "tsx scripts/ikea/fetch-models.ts",
+    "ikea:thumbnails": "tsx scripts/ikea/fetch-thumbnails.ts",
+    "ikea:catalog": "tsx scripts/ikea/build-catalog.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",

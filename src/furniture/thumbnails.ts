@@ -87,8 +87,9 @@ export function getThumbnail(assetId: string): Promise<string> {
 
 /** Data URL for an asset's thumbnail; null while rendering. */
 export function useThumbnail(assetId: string): string | null {
-  const [url, setUrl] = useState<string | null>(cache.get(assetId) ?? null);
+  const [url, setUrl] = useState<string | null>(assetId ? cache.get(assetId) ?? null : null);
   useEffect(() => {
+    if (!assetId) return; // branded items use a real photo — nothing to render
     let alive = true;
     getThumbnail(assetId)
       .then((u) => {

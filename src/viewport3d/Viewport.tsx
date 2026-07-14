@@ -437,13 +437,16 @@ function MiniInspector() {
 function CatalogTile({ assetId }: { assetId: string }) {
   const spec = CATALOG_BY_ID.get(assetId);
   const placing = useSceneStore((s) => s.placing);
-  const thumb = useThumbnail(assetId);
+  // Branded items ship a real photo; only render a GLB thumbnail when they don't.
+  const rendered = useThumbnail(spec?.thumbnail ? "" : spec?.model ?? assetId);
+  const thumb = spec?.thumbnail ?? rendered;
   const [hover, setHover] = useState(false);
   const active = placing?.assetId === assetId;
   if (!spec) return null;
+  const priceStr = spec.price?.value != null ? ` · ₪${spec.price.value.toLocaleString()}` : "";
   return (
     <button
-      title={`${spec.name} · ${spec.footprint.w} × ${spec.footprint.d} m`}
+      title={`${spec.name}${spec.subtitle ? ` · ${spec.subtitle}` : ""} · ${spec.footprint.w}×${spec.footprint.d} m${priceStr}`}
       onClick={() => useSceneStore.getState().setPlacing(active ? null : assetId)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
