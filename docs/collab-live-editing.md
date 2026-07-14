@@ -1,6 +1,7 @@
 # Design: Live collaborative editing ("Google-Docs for the 3D home")
 
-**Status:** approved 2026-07-14. **S1 shipped** (live doc + presence, read-only). Next: S2.
+**Status:** approved 2026-07-14. **S1 + S2 shipped** (live doc + presence + collaborative
+editing via the diff-bridge, per-user undo, selection presence). Next: S3 (roles + Share dialog).
 **Decisions locked (2026-07-14):** realtime host = **Liveblocks**; CRDT = **Yjs**;
 identity = **anonymous + editable name/color** (no login for the alpha); sharing =
 **server-backed `/v/<id>` links with per-link roles**, edits are **live and shared**

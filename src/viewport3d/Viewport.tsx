@@ -906,7 +906,7 @@ const BRUSH_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g transform="rotate(45 14 14)"><rect x="11" y="3" width="6" height="11" rx="1.5" fill="#3a3a3a" stroke="#ffffff" stroke-width="1.3"/><rect x="10.5" y="13" width="7" height="4" fill="#ffffff" stroke="#3a3a3a" stroke-width="0.9"/><path d="M11 17 h6 l-1.2 6 h-3.6 z" fill="#0a84ff" stroke="#ffffff" stroke-width="0.9"/></g></svg>',
 )}") 14 25, crosshair`;
 
-export function Viewport() {
+export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } = {}) {
   const scene = useSceneStore((s) => s.scene);
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -985,6 +985,8 @@ export function Viewport() {
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
+          {/* Collaborators' selection markers (plan coords, inside the group). */}
+          {collabOverlay}
         </group>
 
         {showGrid && (

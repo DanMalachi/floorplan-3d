@@ -5,11 +5,14 @@
 
 import "@liveblocks/client";
 
+export type RemoteSelection = { kind: "wall" | "opening" | "room" | "furniture"; id: string } | null;
+
 declare global {
   interface Liveblocks {
     Presence: {
       name: string;
       color: string; // hex
+      selection: RemoteSelection; // what this user has selected (S2 presence)
     };
   }
 }

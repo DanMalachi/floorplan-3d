@@ -202,7 +202,7 @@ export interface DragViz {
 const HISTORY_CAP = 200;
 
 /** Does this pick target still exist in the scene? (undo/redo can remove it) */
-function pickExists(scene: Scene, pick: PickRef | null): boolean {
+export function pickExists(scene: Scene, pick: PickRef | null): boolean {
   if (!pick) return false;
   switch (pick.kind) {
     case "wall": return scene.walls.some((w) => w.id === pick.id);
@@ -212,10 +212,23 @@ function pickExists(scene: Scene, pick: PickRef | null): boolean {
   }
 }
 
+/** Live-collaboration sink. When a room is active, scene commands are pushed
+ *  into the shared Yjs doc instead of the local history stack; undo/redo run on
+ *  the Yjs UndoManager (per-user). Installed by CollabRoom; null when solo. */
+export interface SceneCollab {
+  commit: (prev: Scene, next: Scene) => void;
+  undo: () => void;
+  redo: () => void;
+}
+
 export interface StoreState {
   // --- 3D model (single source of truth) ---
   scene: Scene;
   setScene: (s: Scene) => void;
+
+  // --- live collaboration (null = solo/offline) ---
+  collab: SceneCollab | null;
+  setCollab: (c: SceneCollab | null) => void;
 
   // --- 3D editing: selection + command stack (Phase 4 M1) ---
   hover3d: PickRef | null;
@@ -461,38 +474,59 @@ export const useSceneStore = create<StoreState>((set, get) => {
     sceneFuture: [],
     setHover3d: (hover3d) => set({ hover3d }),
     setSel3d: (sel3d) => set({ sel3d }),
-    commitScene: (label, next) =>
-      set((s) => ({
+    collab: null,
+    setCollab: (collab) => set({ collab }),
+    commitScene: (label, next) => {
+      const s = get();
+      if (s.collab) {
+        // Collaborative: push the change into the shared doc; the Yjs observer
+        // projects it back. No local history stack (Yjs UndoManager owns undo).
+        s.collab.commit(s.scene, next);
+        set({
+          scene: next, // optimistic — makes the edit feel instant
+          sel3d: pickExists(next, s.sel3d) ? s.sel3d : null,
+          hover3d: pickExists(next, s.hover3d) ? s.hover3d : null,
+        });
+        return;
+      }
+      set((st) => ({
         scene: next,
-        scenePast: [...s.scenePast.slice(-(HISTORY_CAP - 1)), { label, scene: s.scene }],
+        scenePast: [...st.scenePast.slice(-(HISTORY_CAP - 1)), { label, scene: st.scene }],
         sceneFuture: [],
-        sel3d: pickExists(next, s.sel3d) ? s.sel3d : null,
-        hover3d: pickExists(next, s.hover3d) ? s.hover3d : null,
-      })),
-    undoScene: () =>
-      set((s) => {
-        const entry = s.scenePast[s.scenePast.length - 1];
-        if (!entry) return s;
+        sel3d: pickExists(next, st.sel3d) ? st.sel3d : null,
+        hover3d: pickExists(next, st.hover3d) ? st.hover3d : null,
+      }));
+    },
+    undoScene: () => {
+      const s = get();
+      if (s.collab) return void s.collab.undo();
+      set((st) => {
+        const entry = st.scenePast[st.scenePast.length - 1];
+        if (!entry) return st;
         return {
           scene: entry.scene,
-          scenePast: s.scenePast.slice(0, -1),
-          sceneFuture: [...s.sceneFuture, { label: entry.label, scene: s.scene }],
-          sel3d: pickExists(entry.scene, s.sel3d) ? s.sel3d : null,
+          scenePast: st.scenePast.slice(0, -1),
+          sceneFuture: [...st.sceneFuture, { label: entry.label, scene: st.scene }],
+          sel3d: pickExists(entry.scene, st.sel3d) ? st.sel3d : null,
           hover3d: null,
         };
-      }),
-    redoScene: () =>
-      set((s) => {
-        const entry = s.sceneFuture[s.sceneFuture.length - 1];
-        if (!entry) return s;
+      });
+    },
+    redoScene: () => {
+      const s = get();
+      if (s.collab) return void s.collab.redo();
+      set((st) => {
+        const entry = st.sceneFuture[st.sceneFuture.length - 1];
+        if (!entry) return st;
         return {
           scene: entry.scene,
-          scenePast: [...s.scenePast, { label: entry.label, scene: s.scene }],
-          sceneFuture: s.sceneFuture.slice(0, -1),
-          sel3d: pickExists(entry.scene, s.sel3d) ? s.sel3d : null,
+          scenePast: [...st.scenePast, { label: entry.label, scene: st.scene }],
+          sceneFuture: st.sceneFuture.slice(0, -1),
+          sel3d: pickExists(entry.scene, st.sel3d) ? st.sel3d : null,
           hover3d: null,
         };
-      }),
+      });
+    },
     gestureBase: null,
     dragViz: null,
     frameToken: 0,
@@ -505,10 +539,16 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({ scene: next, dragViz: viz });
     },
     endGesture: (label) => {
-      const { gestureBase, scene } = get();
+      const { gestureBase, scene, collab } = get();
       if (!gestureBase) return;
       if (gestureBase === scene) {
         set({ gestureBase: null, dragViz: null }); // click, not a drag
+        return;
+      }
+      if (collab) {
+        // One granular commit of the whole drag into the shared doc.
+        collab.commit(gestureBase, scene);
+        set({ gestureBase: null, dragViz: null });
         return;
       }
       set((s) => ({
@@ -1352,3 +1392,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
     cancelCalibration: () => set({ calibrationPts: [], mode: "wall" }),
   };
 });
+
+// Dev-only: expose the store for debugging (and headless collab tests).
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+  (window as unknown as { useSceneStore?: typeof useSceneStore }).useSceneStore = useSceneStore;
+}
