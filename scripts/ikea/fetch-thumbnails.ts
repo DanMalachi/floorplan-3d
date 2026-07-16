@@ -20,7 +20,7 @@ import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { USER_AGENT, COUNTRY, LANGUAGE } from "./lib";
-import type { FurnitureItem } from "../../src/lib/furnitureCatalog";
+import type { FurnitureItem } from "./catalog-schema";
 
 const items: FurnitureItem[] = JSON.parse(
   readFileSync(path.resolve("data/furniture-ikea.json"), "utf8"),

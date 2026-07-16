@@ -9,7 +9,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import type { FurnitureItem } from "../../src/lib/furnitureCatalog";
+import type { FurnitureItem } from "./catalog-schema";
 
 const items: FurnitureItem[] = JSON.parse(
   readFileSync(path.resolve("data/furniture-ikea.json"), "utf8"),

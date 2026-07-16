@@ -1,14 +1,14 @@
 /**
- * Typed, lazy accessor for the furniture catalog.
+ * Furniture catalog SCHEMA for the offline IKEA pipeline (scripts/ikea/*).
  *
- * The dataset is produced offline by scripts/ikea/extract.ts + normalize.ts and
- * committed as data/furniture-ikea.json. Until the extraction has been run it is
- * an empty array, so the app degrades to "no furniture" rather than a build error.
- *
- * Same shape/loading pattern as the Tambour colour deck (src/lib/tambourColors.ts):
- * a flat record array, code-split out of the main bundle and fetched on first use.
+ * The pipeline maps raw IKEA data into these brand-agnostic types (extract.ts +
+ * normalize.ts) and emits the committed static asset data/furniture-ikea.json.
  * The schema is intentionally brand-agnostic (`source`/`brand`) so future brand
  * pipelines can append to the same catalog.
+ *
+ * NOTE: this is NOT the app's runtime catalog — the app ships its own placement
+ * catalog in src/furniture/catalog.ts (consumed from data/furniture-ikea.catalog.json).
+ * This file is types-only and used exclusively by the build-time scripts.
  */
 
 export type FurnitureCategory =
@@ -99,23 +99,4 @@ export interface FurnitureItem {
   sourceItemId: string; // itemNo
   sourceItemType: string; // "ART" | "SPR"
   market: string; // "IL"
-}
-
-let cache: FurnitureItem[] | null = null;
-
-/** Load (and memoize) the full furniture catalog. Safe to call repeatedly. */
-export async function loadFurniture(): Promise<FurnitureItem[]> {
-  if (cache) return cache;
-  const mod = await import("../../data/furniture-ikea.json");
-  cache = mod.default as FurnitureItem[];
-  return cache;
-}
-
-/** Group the catalog by category. */
-export function groupByCategory(
-  items: FurnitureItem[],
-): Record<string, FurnitureItem[]> {
-  const out: Record<string, FurnitureItem[]> = {};
-  for (const it of items) (out[it.category] ??= []).push(it);
-  return out;
 }

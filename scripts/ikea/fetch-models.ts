@@ -17,7 +17,7 @@
 import { mkdirSync, existsSync, writeFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { USER_AGENT, COUNTRY, LANGUAGE } from "./lib";
-import type { FurnitureItem } from "../../src/lib/furnitureCatalog";
+import type { FurnitureItem } from "./catalog-schema";
 import { readFileSync } from "node:fs";
 
 const items: FurnitureItem[] = JSON.parse(

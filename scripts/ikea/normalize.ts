@@ -2,8 +2,8 @@
  * IKEA furniture pipeline — Phase 2 normalization.
  *
  * Reads the raw per-item files (data/raw/ikea/item_*.json) produced by extract.ts
- * and maps each into the brand-agnostic FurnitureItem schema (src/lib/
- * furnitureCatalog.ts), emitting a single committed static asset:
+ * and maps each into the brand-agnostic FurnitureItem schema
+ * (scripts/ikea/catalog-schema.ts), emitting a single committed static asset:
  *   data/furniture-ikea.json   — a bare FurnitureItem[] (mirrors tambour-colors.json)
  *
  * Pure/offline: no network, no caching needed. Deterministic.
@@ -19,7 +19,7 @@ import type {
   FurnitureCategory,
   FurnitureColor,
   FurnitureItem,
-} from "../../src/lib/furnitureCatalog";
+} from "./catalog-schema";
 
 const RAW_DIR = path.resolve("data/raw/ikea");
 const OUT = path.resolve("data/furniture-ikea.json");

@@ -15,7 +15,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
-import type { FurnitureItem, FurnitureDimensions } from "../../src/lib/furnitureCatalog";
+import type { FurnitureItem, FurnitureDimensions } from "./catalog-schema";
 import { geomSize } from "./glb-geom";
 
 // Two dimensions "match" within an absolute OR relative tolerance. The absolute
