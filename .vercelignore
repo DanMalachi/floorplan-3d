@@ -8,3 +8,11 @@ out/
 docs/
 scripts/
 *.tsbuildinfo
+
+# Real IKEA .glb models (~400 MB) are served from Vercel Blob, not bundled — the
+# catalog references them by URL (data/furniture-ikea.blob.json). Keep them out of
+# the deployment upload. Transparent thumbnails under .../thumb/ ARE shipped.
+public/furniture/ikea/*.glb
+
+# Regenerable IKEA raw API cache — never needed at build/runtime.
+data/raw/

@@ -52,8 +52,18 @@ __pycache__/
 floorplan_for_training/dxf_dwg/
 
 # IKEA pipeline raw cache — regenerable intermediate (raw API responses + HTTP
-# cache). The committed static assets are data/furniture-ikea*.json and the
-# downloaded models/thumbnails under public/furniture/ikea/.
+# cache). Committed static asset: the catalog JSON data/furniture-ikea*.json
+# (incl. the .blob.json URL manifest).
 /data/raw/
+
+# Real IKEA .glb models (~400 MB) are hosted on Vercel Blob, not committed — the
+# catalog references them by URL via data/furniture-ikea.blob.json. Regenerate
+# locally with `npm run ikea:models`; upload with `npm run ikea:upload`.
+/public/furniture/ikea/*.glb
+
+# Thumbnails are regenerable (`npm run ikea:thumbnails`) and kept out of git to
+# avoid hundreds of binaries in history; they're still shipped to prod because the
+# CLI deploy uploads them from local disk (see .vercelignore, which keeps them in).
+/public/furniture/ikea/thumb/
 
 .vercel

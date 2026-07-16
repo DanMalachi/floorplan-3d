@@ -14,7 +14,8 @@
     "ikea:preview": "tsx scripts/ikea/preview.ts",
     "ikea:models": "tsx scripts/ikea/fetch-models.ts",
     "ikea:thumbnails": "tsx scripts/ikea/fetch-thumbnails.ts",
-    "ikea:catalog": "tsx scripts/ikea/build-catalog.ts"
+    "ikea:catalog": "tsx scripts/ikea/build-catalog.ts",
+    "ikea:upload": "tsx scripts/ikea/upload-blob.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",
@@ -25,6 +26,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
+    "@vercel/blob": "^2.6.1",
     "konva": "^10.3.0",
     "next": "16.2.9",
     "postprocessing": "^6.39.2",

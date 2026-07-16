@@ -20,7 +20,17 @@ export type FurnitureCategory =
   | "bookcases"
   | "cabinets"
   | "wall-cabinets"
-  | "lighting";
+  | "lighting"
+  | "beds"
+  | "desks"
+  | "chairs"
+  | "wardrobes"
+  | "tv-units"
+  | "sideboards"
+  | "nightstands"
+  | "dressers"
+  | "benches"
+  | "outdoor";
 
 /** All dimensions in centimetres. Fields are optional because not every product
  *  has every axis (a lamp may be height-only; a round table uses `diameter`). */

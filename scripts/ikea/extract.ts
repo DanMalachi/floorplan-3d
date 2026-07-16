@@ -58,9 +58,22 @@ const CATEGORIES: { key: string; query: string }[] = [
   { key: "cabinets", query: "ארון" }, // cabinets / wardrobes
   { key: "wall-cabinets", query: "ארונית קיר" }, // wall-mounted cabinets
   { key: "lighting", query: "מנורה" },
+  { key: "beds", query: "מיטה" }, // beds
+  { key: "desks", query: "שולחן עבודה" }, // desks / work tables
+  { key: "chairs", query: "כיסא" }, // dining/office chairs
+  { key: "wardrobes", query: "ארון בגדים" }, // wardrobes / closets
+  { key: "tv-units", query: "רהיט טלוויזיה" }, // TV benches / media units
+  { key: "sideboards", query: "מזנון" }, // sideboards / buffets
+  { key: "nightstands", query: "שידת לילה" }, // nightstands / bedside tables
+  { key: "dressers", query: "שידת מגירות" }, // chests of drawers
+  { key: "benches", query: "ספסל" }, // benches
+  { key: "outdoor", query: "רהיטי גן" }, // garden / outdoor furniture
 ];
 
-const CAP = Number(process.env.IKEA_CAP ?? 40);
+// Full-catalog pull: take everything the search endpoint returns per category
+// (size=200 below). Only items with a real, loadable 3D model are shipped, so the
+// wide net just maximizes the real-model set — build-catalog.ts does the filtering.
+const CAP = Number(process.env.IKEA_CAP ?? 200);
 const INGKA_BATCH = 20;
 
 // Rotera reports structured mm under English labels — a clean measurement fallback.

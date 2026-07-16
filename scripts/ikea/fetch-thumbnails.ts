@@ -62,9 +62,16 @@ function keyOutBackground(data: Buffer, w: number, h: number): void {
   }
 }
 
+const MODEL_DIR = path.resolve("public/furniture/ikea");
+
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
-  const withImg = items.filter((i) => i.imageMain);
+  // Only thumbnail items we'll actually ship: those with a real .glb already on
+  // disk (fetch-models runs first). Avoids downloading photos for the thousands of
+  // proxy-only items the wide catalog pull surfaces but build-catalog drops.
+  const withImg = items.filter(
+    (i) => i.imageMain && existsSync(path.join(MODEL_DIR, `${i.sourceItemId}.glb`)),
+  );
   let done = 0, skipped = 0, failed = 0;
   const failures: string[] = [];
 
