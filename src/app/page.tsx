@@ -6,8 +6,8 @@ import { TracePanel } from "@/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
 import { GtLab } from "@/dev/GtLab";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
-import { initProjectPersistence } from "@/store/projectPersistence";
-import { mintGrant, lbRoom } from "@/collab/share";
+import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectLiveRole } from "@/store/projectPersistence";
+import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, chip } from "@/ui/tokens";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
@@ -63,29 +63,44 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
   );
 }
 
-/** Top-right "Go live": open a live room seeded from the current project, then
- *  share role links from inside the room. Navigating there in this tab keeps the
- *  loaded scene, so the room seeds with THIS project (not the sample). */
+/** Top-right "Go live" / "Open live". Going live turns the OPEN project into a
+ *  permanent shared document: it gets a stable Liveblocks room (persisted as
+ *  liveRoomId) that it always reopens into, and edits sync continuously. First
+ *  time it seeds the room from this project; afterwards it just rejoins. */
 function GoLiveButton() {
   const [busy, setBusy] = useState(false);
+  const liveRoomId = useSceneStore((s) => s.liveRoomId);
   const goLive = async () => {
     setBusy(true);
     try {
-      const id = crypto.randomUUID().slice(0, 8);
-      const grant = await mintGrant(lbRoom(id), "build");
-      window.location.href = `/v/${id}?g=${grant}`;
+      const s = useSceneStore.getState();
+      const roomId = s.liveRoomId ?? crypto.randomUUID().slice(0, 8);
+      // Mark live + persist (roomId, ownership) durably before the full reload.
+      await goLivePersist(roomId);
+      await enterLiveRoom(roomId, getCurrentProjectId(), {
+        seed: {
+          scene: s.scene,
+          envPreset: s.envPreset,
+          timeOfDay: s.timeOfDay,
+          weather: s.weather,
+          wallMode: s.wallMode,
+          showCeilings: s.showCeilings,
+          title: s.projectName,
+        },
+      });
     } catch {
       setBusy(false);
     }
   };
+  const label = busy ? "Starting…" : liveRoomId ? "◈ Open live" : "◈ Go live";
   return (
     <button
       onClick={goLive}
       disabled={busy}
-      title="Start a live, shareable session of this plan"
+      title={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
       style={{ position: "absolute", top: 14, right: 14, zIndex: 30, ...chip(true, { padding: "8px 16px", fontSize: 13, opacity: busy ? 0.6 : 1 }) }}
     >
-      {busy ? "Starting…" : "◈ Go live"}
+      {label}
     </button>
   );
 }
@@ -155,7 +170,29 @@ export default function Home() {
   useEffect(() => {
     const gt = new URLSearchParams(window.location.search).get("gt");
     if (!gt) {
-      initProjectPersistence();
+      (async () => {
+        await initProjectPersistence();
+        // A live project IS its shared room, so opening it drops straight in —
+        // unless we just left that room (guarded so we land on the gallery, not
+        // bounce back). `?home=1` also forces the gallery (used by the room's Leave).
+        const roomId = useSceneStore.getState().liveRoomId;
+        const home = new URLSearchParams(window.location.search).get("home");
+        const justLeft = sessionStorage.getItem("live:left");
+        if (justLeft) sessionStorage.removeItem("live:left");
+        if (home) window.history.replaceState({}, "", "/"); // don't leave it sticky
+        if (roomId && !home && justLeft !== roomId) {
+          try {
+            const projectId = getCurrentProjectId();
+            await enterLiveRoom(roomId, projectId, { role: getProjectLiveRole(projectId) });
+            return;
+          } catch {
+            /* couldn't reach the room — fall through to the local editor/gallery */
+          }
+        }
+        // Explicit "go to projects" (room's Leave button) always shows the gallery,
+        // even when the restored project isn't itself live (e.g. a link receiver).
+        if (home) setProjectsOpen(true);
+      })();
       return;
     }
     (async () => {

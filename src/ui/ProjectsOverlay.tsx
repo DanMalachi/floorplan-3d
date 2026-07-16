@@ -12,6 +12,7 @@ import {
   type ProjectMeta,
 } from "@/store/projectPersistence";
 import { captureViewportThumb } from "@/viewport3d/viewportCapture";
+import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, microLabel } from "@/ui/tokens";
 
 function ago(ts: number): string {
@@ -63,6 +64,13 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
 
   async function handleOpen(id: string) {
     if (id !== getCurrentProjectId()) await openProject(id);
+    // A live project IS its shared room, so opening it drops straight into the room
+    // (openProject above persists it as current, so leaving returns here).
+    const m = items.find((x) => x.id === id);
+    if (m?.liveRoomId) {
+      await enterLiveRoom(m.liveRoomId, id, { role: m.liveRole ?? "build" });
+      return;
+    }
     onClose();
   }
   async function handleNew() {
@@ -205,24 +213,42 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   ) : (
                     <span style={{ fontSize: 30, color: T.textFaint }}>▱</span>
                   )}
-                  {isCurrent && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        left: 8,
-                        padding: "3px 8px",
-                        borderRadius: 999,
-                        background: T.accent,
-                        color: "#fff",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: 0.4,
-                      }}
-                    >
-                      OPEN
-                    </span>
-                  )}
+                  <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
+                    {isCurrent && (
+                      <span
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: 999,
+                          background: T.accent,
+                          color: "#fff",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        OPEN
+                      </span>
+                    )}
+                    {m.liveRoomId && (
+                      <span
+                        title="Live shared document — opens into its room"
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: 999,
+                          background: T.ok,
+                          color: "#fff",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: 0.4,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        ● LIVE
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

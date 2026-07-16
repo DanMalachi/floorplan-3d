@@ -20,7 +20,13 @@ import { Html } from "@react-three/drei";
 import * as Y from "yjs";
 import { Viewport } from "@/viewport3d/Viewport";
 import { useSceneStore, pickExists, type AppMode } from "@/store/useSceneStore";
-import { importProject } from "@/store/projectPersistence";
+import {
+  importProject,
+  getRoomOwner,
+  getProjectSeed,
+  scheduleProjectMirror,
+  registerSharedProject,
+} from "@/store/projectPersistence";
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
 import { T, glass, chip, field } from "@/ui/tokens";
@@ -32,9 +38,11 @@ import {
   observeSceneDoc,
   readPresentation,
   readScene,
+  readSceneTitle,
   sceneRoot,
   seedSceneDoc,
 } from "./sceneDoc";
+import { consumeGoLiveSeed, type GoLiveSeed } from "./goLiveHandoff";
 import { applySceneDiff } from "./sceneDiff";
 import "./liveblocks";
 
@@ -46,12 +54,21 @@ interface Syncable {
 
 // -- shared-scene binding -----------------------------------------------------
 
-function useRoomBinding() {
+function useRoomBinding(roomId: string, role: ShareRole) {
   const room = useRoom();
   const framed = useRef(false);
   const seedChecked = useRef(false);
+  // The local project this browser mirrors the room into. For the owner it's the
+  // project they went live from; for a link receiver it's a local copy we register
+  // on first sight, so the shared doc shows up in THEIR gallery too (not a fork).
+  const ownerProjectId = useRef<string | null>(null);
+  const registering = useRef(false);
 
   useEffect(() => {
+    // Only adopt a pre-existing mapping; don't clobber an id we register below with a
+    // stale null if this resolves after first-sight registration.
+    getRoomOwner(roomId).then((id) => { if (id) ownerProjectId.current = id; }).catch(() => {});
+
     const provider = getYjsProviderForRoom(room);
     const doc = provider.getYDoc();
     const LOCAL = { local: true };
@@ -69,20 +86,42 @@ function useRoomBinding() {
         ...(first ? { appMode: "view" as AppMode, frameToken: s.frameToken + 1, ...readPresentation(doc) } : {}),
       }));
       if (first) framed.current = true;
+      const p = readPresentation(doc);
+      if (ownerProjectId.current) {
+        // Continuously persist the live scene into the local project (durable keys
+        // only — wallMode/showCeilings are runtime view prefs, not persisted).
+        scheduleProjectMirror(ownerProjectId.current, {
+          scene,
+          envPreset: p.envPreset,
+          timeOfDay: p.timeOfDay,
+          weather: p.weather,
+        });
+      } else if (!registering.current) {
+        // Link receiver, first sight: register a local copy of this shared doc so it
+        // appears in their own gallery (same room, live tag). Idempotent.
+        registering.current = true;
+        registerSharedProject(roomId, { scene, ...p, title: readSceneTitle(doc) }, role)
+          .then((id) => (ownerProjectId.current = id))
+          .catch(() => {})
+          .finally(() => (registering.current = false));
+      }
     };
 
-    const maybeSeed = () => {
+    const maybeSeed = async () => {
       if (seedChecked.current) return;
       seedChecked.current = true;
       if (isSceneEmpty(doc)) {
-        const st = useSceneStore.getState();
-        seedSceneDoc(doc, st.scene, {
-          envPreset: st.envPreset,
-          timeOfDay: st.timeOfDay,
-          weather: st.weather,
-          wallMode: st.wallMode,
-          showCeilings: st.showCeilings,
-        });
+        // Seed from the "Go live" handoff, else the OWNER's persisted project. NEVER
+        // from the store here: on /v the store is the default sample ("L-shaped
+        // room"), and seeding that would mirror it back over the real project.
+        const handoff = consumeGoLiveSeed(roomId);
+        const owner = ownerProjectId.current ?? (await getRoomOwner(roomId).catch(() => null));
+        ownerProjectId.current = owner;
+        const seed: GoLiveSeed | null =
+          handoff ?? (owner ? await getProjectSeed(owner) : null);
+        // Re-check: a peer may have seeded while we awaited. Only seed if still empty
+        // and we actually have a real plan — otherwise leave the room empty.
+        if (seed && isSceneEmpty(doc)) seedSceneDoc(doc, seed.scene, seed, seed.title);
       }
       project();
     };
@@ -106,7 +145,7 @@ function useRoomBinding() {
       undo.destroy();
       useSceneStore.getState().setCollab(null);
     };
-  }, [room]);
+  }, [room, roomId]);
 }
 
 // -- others' selection markers (rendered INSIDE the R3F canvas) ---------------
@@ -278,8 +317,19 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   const others = useOthers();
   const me = useSelf();
   const count = others.length + (me ? 1 : 0);
+  // Leave back to the projects gallery. The `live:left` flag + `?home=1` tell the
+  // home page to show the gallery instead of auto-reopening this room.
+  const leave = () => {
+    try {
+      sessionStorage.setItem("live:left", roomId);
+    } catch {
+      /* ignore */
+    }
+    window.location.href = "/?home=1";
+  };
   return (
     <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
+      <button onClick={leave} style={chip(false)} title="Back to your projects">← Projects</button>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...glass({ borderRadius: 999 }) }}>
         <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: T.ok, fontSize: 10 }}>●</span> {count} here
@@ -298,7 +348,7 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
 }
 
 function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
-  useRoomBinding();
+  useRoomBinding(roomId, role);
 
   const updateMyPresence = useUpdateMyPresence();
   const sel3d = useSceneStore((s) => s.sel3d);

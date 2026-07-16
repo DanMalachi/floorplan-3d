@@ -1,4 +1,6 @@
 import { useSceneStore, type StoreState } from "./useSceneStore";
+import type { GoLiveSeed } from "@/collab/goLiveHandoff";
+import type { ShareRole } from "@/collab/share";
 
 // -----------------------------------------------------------------------------
 // Project persistence — a multi-project store in the browser's IndexedDB. Each
@@ -49,6 +51,7 @@ const DURABLE_KEYS = [
   "segments",
   "openings",
   "metersPerPixel",
+  "liveRoomId",
 ] as const satisfies readonly (keyof StoreState)[];
 
 type DurableKey = (typeof DURABLE_KEYS)[number];
@@ -69,6 +72,8 @@ export interface ProjectMeta {
   createdAt: number;
   updatedAt: number;
   thumb: string | null; // small JPEG data URL of the 3D view, or null
+  liveRoomId?: string | null; // set once the project has gone live (opens into its room)
+  liveRole?: ShareRole; // this browser's role in the shared room (owner = "build")
 }
 
 // ---- IndexedDB key/value (dep-free, browser-only) ---------------------------
@@ -169,6 +174,9 @@ async function loadIntoStore(id: string): Promise<void> {
     lastSaved = JSON.stringify(doc.state);
     useSceneStore.setState((s) => ({
       ...doc.state,
+      // Explicit so switching from a live project to an older doc that predates
+      // this field clears it, rather than carrying the previous project's room.
+      liveRoomId: doc.state.liveRoomId ?? null,
       currentProjectId: id,
       projectName: meta?.name ?? "Untitled plan",
       projectRestored: true,
@@ -377,4 +385,164 @@ export async function setProjectThumb(id: string, thumb: string): Promise<void> 
   if (!meta) return;
   meta.thumb = thumb;
   await persistManifest();
+}
+
+// ---- live projects (continuous, Google-Docs-style sharing) ------------------
+//
+// A project opts into "Go live" once; from then on it is a shared document backed
+// by a Liveblocks room (id = liveRoomId). The room is the editing surface, and the
+// owner's browser continuously MIRRORS the room's scene back into this project's
+// IndexedDB doc, so the local copy (and gallery card) always reflect the latest
+// collaborative state. Membership of a room to a local project is recorded in the
+// owner map below, so only the owner's browser mirrors (share-link visitors don't).
+
+const OWNER_MAP_KEY = "live:ownerRooms"; // { [roomId]: projectId } — this browser's owned rooms
+
+/** Mark the OPEN project as live with `roomId`, persist it durably now (so a full
+ *  reload into the room remembers it), and record this browser as the room owner.
+ *  Idempotent: safe to call every time the user enters the room. */
+export async function goLivePersist(roomId: string): Promise<void> {
+  useSceneStore.setState({ liveRoomId: roomId } as Partial<StoreState>);
+  await flushPending(); // writes the durable slice (now incl. liveRoomId) to `currentId`
+  const meta = metaOf(currentId ?? "");
+  if (meta && (meta.liveRoomId !== roomId || meta.liveRole !== "build")) {
+    meta.liveRoomId = roomId; // so the gallery badges/routes it as live
+    meta.liveRole = "build"; // the owner can always edit
+    await persistManifest();
+  }
+  if (currentId) await setRoomOwner(roomId, currentId);
+}
+
+/** This browser's role in a live project's room (owner = "build"). Used to re-enter
+ *  a shared room from the gallery with the same permissions it was joined with. */
+export function getProjectLiveRole(projectId: string | null): ShareRole {
+  return metaOf(projectId ?? "")?.liveRole ?? "build";
+}
+
+/**
+ * Register a link receiver's LOCAL copy of a shared live doc: a project in their own
+ * gallery backed by the same room id, tagged live, that mirrors continuously — so
+ * both users see the same project (Google-Docs "shared with me"), not a fork.
+ * Idempotent: if this browser already has a project for the room, returns it.
+ */
+export async function registerSharedProject(
+  roomId: string,
+  seed: GoLiveSeed,
+  role: ShareRole,
+): Promise<string> {
+  const existing = await getRoomOwner(roomId);
+  if (existing) return existing;
+  const id = uid();
+  await setRoomOwner(roomId, id); // reserve early so concurrent callers dedupe
+  const now = Date.now();
+  const base = snapshot(useSceneStore.getState()); // complete durable slice (defaults on /v)
+  const state: ProjectState = {
+    ...base,
+    scene: seed.scene,
+    envPreset: seed.envPreset,
+    timeOfDay: seed.timeOfDay,
+    weather: seed.weather,
+    liveRoomId: roomId,
+  };
+  await idbSet(docKey(id), {
+    schemaVersion: SCHEMA_VERSION,
+    savedAt: now,
+    state,
+    worldModel: null,
+  } satisfies ProjectDocument);
+  // Manifest may not be loaded on /v — read/write it directly.
+  const mani = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
+  if (!mani.some((m) => m.id === id)) {
+    mani.unshift({
+      id,
+      name: seed.title?.trim() || "Shared plan",
+      createdAt: now,
+      updatedAt: now,
+      thumb: null,
+      liveRoomId: roomId,
+      liveRole: role,
+    });
+    await idbSet(MANIFEST_KEY, mani);
+  }
+  return id;
+}
+
+/** Record (in IndexedDB) that this browser owns `roomId` on behalf of `projectId`. */
+export async function setRoomOwner(roomId: string, projectId: string): Promise<void> {
+  const map = (await idbGet<Record<string, string>>(OWNER_MAP_KEY)) ?? {};
+  if (map[roomId] === projectId) return;
+  map[roomId] = projectId;
+  await idbSet(OWNER_MAP_KEY, map);
+}
+
+/** The local project this browser owns for `roomId`, or null if it isn't the owner. */
+export async function getRoomOwner(roomId: string): Promise<string | null> {
+  const map = await idbGet<Record<string, string>>(OWNER_MAP_KEY);
+  return map?.[roomId] ?? null;
+}
+
+/** The persisted scene + presentation for a project, for (re)seeding its live room.
+ *  This is the durable source of truth when the go-live handoff is absent (e.g. on
+ *  reopening a live project) — so the room never falls back to the default sample. */
+export async function getProjectSeed(projectId: string): Promise<GoLiveSeed | null> {
+  const doc = await idbGet<ProjectDocument>(docKey(projectId));
+  const st = doc?.state;
+  if (!st?.scene) return null;
+  const mani = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
+  return {
+    scene: st.scene,
+    envPreset: st.envPreset ?? "none",
+    timeOfDay: st.timeOfDay ?? 13,
+    weather: st.weather ?? "clear",
+    wallMode: "full", // runtime view prefs (not persisted per-project) — sensible defaults
+    showCeilings: true,
+    title: mani.find((m) => m.id === projectId)?.name ?? null,
+  };
+}
+
+// Room→project mirror: debounced, self-contained (works on the /v route where
+// initProjectPersistence never ran), and de-duped so an unchanged scene is a no-op.
+const mirrorTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const mirrorLast = new Map<string, string>();
+const MIRROR_DEBOUNCE_MS = 800;
+
+/** Continuously persist a live room's scene/presentation into its owning project. */
+export function scheduleProjectMirror(projectId: string, patch: Partial<ProjectState>): void {
+  const existing = mirrorTimers.get(projectId);
+  if (existing) clearTimeout(existing);
+  mirrorTimers.set(
+    projectId,
+    setTimeout(() => {
+      mirrorTimers.delete(projectId);
+      void writeProjectPatch(projectId, patch);
+    }, MIRROR_DEBOUNCE_MS),
+  );
+}
+
+async function writeProjectPatch(projectId: string, patch: Partial<ProjectState>): Promise<void> {
+  try {
+    const doc = await idbGet<ProjectDocument>(docKey(projectId));
+    if (!doc?.state) return; // no base to merge into — owner's project must exist first
+    const state = { ...doc.state, ...patch } as ProjectState;
+    const serialized = JSON.stringify(state);
+    if (serialized === mirrorLast.get(projectId)) return; // nothing changed
+    const savedAt = Date.now();
+    await idbSet(docKey(projectId), {
+      schemaVersion: SCHEMA_VERSION,
+      savedAt,
+      state,
+      worldModel: null,
+    } satisfies ProjectDocument);
+    mirrorLast.set(projectId, serialized);
+    // Bump the gallery card's freshness (manifest may not be loaded on /v — read it).
+    const mani = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
+    const m = mani.find((x) => x.id === projectId);
+    if (m) {
+      m.updatedAt = savedAt;
+      m.liveRoomId = state.liveRoomId ?? m.liveRoomId;
+      await idbSet(MANIFEST_KEY, mani);
+    }
+  } catch {
+    /* quota / blocked — keep the room running, local mirror just lags */
+  }
 }

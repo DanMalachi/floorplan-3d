@@ -295,6 +295,7 @@ export interface StoreState {
   projectSavedAt: number | null; // epoch ms of last successful autosave
   currentProjectId: string | null; // id of the open project in the multi-project store
   projectName: string; // display name of the open project
+  liveRoomId: string | null; // set once a project opts into "Go live" — its permanent shared room
   setTraceStep: (n: number) => void;
   /** One import path for images AND PDFs — routed by file type. */
   importPlanFile: (file: File) => Promise<void>;
@@ -589,6 +590,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     projectSavedAt: null,
     currentProjectId: null,
     projectName: "Untitled plan",
+    liveRoomId: null,
     setTraceStep: (traceStep) => set({ traceStep }),
     importPlanFile: async (file) => {
       const { isPdfFile, isImageFile, isDxfFile, isDwgFile, loadImageFile, rasterQualityMsg, MIN_IMAGE_PX } =

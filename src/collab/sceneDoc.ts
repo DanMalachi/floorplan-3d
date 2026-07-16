@@ -50,12 +50,15 @@ export function isSceneEmpty(doc: Y.Doc): boolean {
   return sceneRoot(doc).size === 0;
 }
 
-/** Populate an empty doc from a Scene + presentation. Idempotent for fixed ids. */
-export function seedSceneDoc(doc: Y.Doc, scene: Scene, pres: Presentation): void {
+/** Populate an empty doc from a Scene + presentation. Idempotent for fixed ids.
+ *  `title` (the owner's project name) is stored so link receivers can name their
+ *  own local copy of the shared doc the same thing. */
+export function seedSceneDoc(doc: Y.Doc, scene: Scene, pres: Presentation, title?: string | null): void {
   doc.transact(() => {
     const root = sceneRoot(doc);
     root.set("schemaVersion", 2);
     root.set("units", "meters");
+    if (title) root.set("title", title);
     if (scene.building !== undefined) root.set("building", scene.building);
     for (const name of COLLECTIONS) {
       const m = collectionMap(root, name);
@@ -112,6 +115,12 @@ export function readPresentation(doc: Y.Doc): Presentation {
   if (!(p instanceof Y.Map)) return PRESENTATION_DEFAULT;
   const j = p.toJSON() as Partial<Presentation>;
   return { ...PRESENTATION_DEFAULT, ...j };
+}
+
+/** The owner's project name stored at seed time, for naming receivers' local copies. */
+export function readSceneTitle(doc: Y.Doc): string | null {
+  const t = sceneRoot(doc).get("title");
+  return typeof t === "string" ? t : null;
 }
 
 /** Subscribe to any deep change in the shared scene. Returns an unsubscribe. */
