@@ -291,6 +291,13 @@ export interface StoreState {
   setTimeOfDay: (t: number) => void;
   setWeather: (w: Weather) => void;
 
+  // --- first-person walkthrough mode ---
+  /** Only meaningful while appMode === "view"; layered on top rather than a
+   *  new AppMode so the existing view-mode UI (env/time/weather) still
+   *  applies. Toggling this off must fully restore the orbit camera. */
+  walkthroughActive: boolean;
+  setWalkthroughActive: (v: boolean) => void;
+
   // --- guided trace flow (Phase 5 T1) ---
   /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
   traceStep: number;
@@ -588,6 +595,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setEnvPreset: (envPreset) => set({ envPreset }),
     setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
     setWeather: (weather) => set({ weather }),
+
+    walkthroughActive: false,
+    setWalkthroughActive: (walkthroughActive) => set({ walkthroughActive }),
 
     traceStep: 1,
     importBusy: false,

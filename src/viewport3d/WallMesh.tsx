@@ -803,7 +803,7 @@ const RAIL_GLASS = "#bfe9e4"; // faint teal so the barrier reads without blockin
 const RAIL_CAP = "#6b7078"; // handrail
 const RAIL_CAP_H = 0.06;
 const RAIL_CAP_THK = 0.09;
-const RAIL_PANEL_THK = 0.035;
+export const RAIL_PANEL_THK = 0.035;
 
 /** A rail: a low, see-through barrier (balcony railing / balustrade). Renders as
  *  a glass panel with a solid handrail cap. Stored in scene.walls with

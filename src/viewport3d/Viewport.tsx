@@ -31,6 +31,8 @@ import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
 import { registerViewportCanvas } from "./viewportCapture";
+import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
+import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
 
 // Model center (plan x,y) and span for framing. Keyed on frameToken — only a
 // whole-scene replace reframes; edits never shift the model under the cursor.
@@ -1021,10 +1023,18 @@ function ScenePanel() {
   const setTimeOfDay = useSceneStore((s) => s.setTimeOfDay);
   const weather = useSceneStore((s) => s.weather);
   const setWeather = useSceneStore((s) => s.setWeather);
+  const walkthroughActive = useSceneStore((s) => s.walkthroughActive);
+  const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const icon = time >= 6 && time < 19 ? "☀️" : "🌙";
   return (
     <div style={{ position: "absolute", left: 14, top: 64, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
+      <button
+        onClick={() => setWalkthroughActive(!walkthroughActive)}
+        style={chip(walkthroughActive, { borderRadius: 8, border: "none", fontSize: 12, padding: "7px 10px" })}
+      >
+        {walkthroughActive ? "Exit walkthrough (Esc)" : "🚶 Walk through"}
+      </button>
       <div style={{ display: "flex", gap: 4 }}>
         {ENV_PRESETS.map((p) => (
           <button
@@ -1170,6 +1180,10 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const wallMode = useSceneStore((s) => s.wallMode);
   const envPreset = useSceneStore((s) => s.envPreset);
   const brush = useSceneStore((s) => s.brush);
+  const walkthroughActive = useSceneStore((s) => s.walkthroughActive);
+  const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
+  const [walkthroughLocked, setWalkthroughLocked] = useState(false);
+  const [walkthroughFov, setWalkthroughFov] = useState(WALKTHROUGH_CONFIG.fovDeg);
   // The CAD grid is an editing aid; hide it in the immersive View presets.
   const showGrid = envPreset === "none" || appMode !== "view";
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
@@ -1257,8 +1271,22 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
             position={[0, -0.01, 0]}
           />
         )}
-        <CameraControls makeDefault enabled={!dragging} smoothTime={0.18} draggingSmoothTime={0.06} />
+        <CameraControls
+          makeDefault
+          enabled={!dragging && !walkthroughActive}
+          smoothTime={0.18}
+          draggingSmoothTime={0.06}
+        />
         <FitCamera span={span} />
+        {walkthroughActive && (
+          <WalkthroughRig
+            scene={scene}
+            offset={offset}
+            fovDeg={walkthroughFov}
+            onExit={() => setWalkthroughActive(false)}
+            onLockChange={setWalkthroughLocked}
+          />
+        )}
 
         {/* Photographic pass: ambient occlusion grounds furniture and darkens
             corners, ACES tonemapping, SMAA. AO is the cost centre — dropped
@@ -1277,6 +1305,8 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
       {appMode === "furnish" && <CatalogPanel />}
       {appMode === "view" && <ScenePanel />}
+      <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
+      <WalkthroughFovControl active={walkthroughActive} fovDeg={walkthroughFov} onChange={setWalkthroughFov} />
       <WallModeToggle />
     </div>
   );
