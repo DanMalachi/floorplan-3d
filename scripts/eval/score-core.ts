@@ -8,7 +8,7 @@
  */
 import type { Candidate, CandidateClass } from "../../src/trace2d/candidates";
 import type { GroundTruth } from "../../src/trace2d/exportGroundTruth";
-import type { VlmResult, VlmMissed } from "../../src/lib/vlmClassify";
+import type { VlmResult, VlmMissed } from "../../src/lib/rooms/vlmClassify";
 
 export type TruthClass = "wall" | "door" | "window" | "reject";
 export const PRED_CLASSES: CandidateClass[] = [

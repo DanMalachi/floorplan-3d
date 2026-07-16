@@ -33,7 +33,7 @@ import {
 } from "./score-core";
 import type { Candidate } from "../../src/trace2d/candidates";
 import type { GroundTruth } from "../../src/trace2d/exportGroundTruth";
-import type { VlmResult } from "../../src/lib/vlmClassify";
+import type { VlmResult } from "../../src/lib/rooms/vlmClassify";
 
 // ---- manifest ------------------------------------------------------------
 interface CorpusPlan {

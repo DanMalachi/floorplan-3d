@@ -1,4 +1,4 @@
-import type { Id, Node } from "../schema/scene";
+import type { Id, Node } from "../../schema/scene";
 
 /**
  * Signed-magnitude polygon area (m²) of a room loop via the shoelace formula.

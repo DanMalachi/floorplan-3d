@@ -1,4 +1,4 @@
-import { reasonRooms, type RoomBrief } from "@/lib/roomReason";
+import { reasonRooms, type RoomBrief } from "@/lib/rooms/roomReason";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;

@@ -20,7 +20,7 @@ import { generateCandidates, type Candidate } from "@/trace2d/candidates";
 import { rasterToCandidates, type RasterProposal } from "@/trace2d/rasterCandidates";
 import { proposeRaster } from "@/trace2d/proposeRaster";
 import { buildOverlayImage } from "@/trace2d/buildOverlay";
-import type { VlmLabel, VlmMissed } from "@/lib/vlmClassify";
+import type { VlmLabel, VlmMissed } from "@/lib/rooms/vlmClassify";
 import type { ImportText } from "@/trace2d/importPdf";
 
 // ---------------------------------------------------------------------------
@@ -945,9 +945,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
       try {
         const [{ buildRoomGraph }, { classifyRoomsByRules, RULE_CONFIDENCE_GATE }, { functionForType, displayRoomType }] =
           await Promise.all([
-            import("@/lib/semanticGraph"),
-            import("@/lib/roomClassifier"),
-            import("@/lib/roomTaxonomy"),
+            import("@/lib/rooms/semanticGraph"),
+            import("@/lib/rooms/roomClassifier"),
+            import("@/lib/rooms/roomTaxonomy"),
           ]);
 
         // Ensure the free layer exists (scenes generated before this feature,

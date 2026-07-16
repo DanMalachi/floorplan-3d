@@ -6,7 +6,7 @@
 // No heuristics about MEANING live here — that's roomClassifier's job. This
 // split is the layer's core contract: geometry -> features -> classification.
 
-import type { Id, RoomFeatures, RoomRelationships, Scene } from "../schema/scene";
+import type { Id, RoomFeatures, RoomRelationships, Scene } from "../../schema/scene";
 import { nodeMap, roomArea } from "./roomArea";
 
 /** One room's deterministic description. The `features`/`relationships` halves

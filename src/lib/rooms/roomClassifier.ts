@@ -11,7 +11,7 @@
 //   2. reconcile the WHOLE house (one kitchen, one entry, master bedroom via
 //      ensuite, leftover-room elimination)
 
-import type { Evidence, Id, RoomSemantics, BuildingSemantics } from "../schema/scene";
+import type { Evidence, Id, RoomSemantics, BuildingSemantics } from "../../schema/scene";
 import type { RoomGraph, RoomGraphEntry } from "./semanticGraph";
 import { functionForType } from "./roomTaxonomy";
 

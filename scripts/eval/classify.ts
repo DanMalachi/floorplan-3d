@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
-import { classifyCandidates } from "../../src/lib/vlmClassify";
+import { classifyCandidates } from "../../src/lib/rooms/vlmClassify";
 import type { Candidate } from "../../src/trace2d/candidates";
 
 // Pick up .env.local the same way the dev server would.

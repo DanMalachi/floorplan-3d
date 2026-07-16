@@ -12,7 +12,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Candidate, CandidateClass } from "../../src/trace2d/candidates";
 import type { GroundTruth } from "../../src/trace2d/exportGroundTruth";
-import type { VlmResult } from "../../src/lib/vlmClassify";
+import type { VlmResult } from "../../src/lib/rooms/vlmClassify";
 import {
   scorePlan,
   heuristicPredictions,

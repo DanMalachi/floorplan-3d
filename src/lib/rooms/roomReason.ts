@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { DEFAULT_VLM_MODEL } from "@/lib/vlmClassify";
+import { DEFAULT_VLM_MODEL } from "@/lib/rooms/vlmClassify";
 
 // ---------------------------------------------------------------------------
 // Building Knowledge Layer — VLM reasoning pass (the paid escalation).

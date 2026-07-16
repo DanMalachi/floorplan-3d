@@ -16,8 +16,8 @@ import {
 } from "@/schema/constants";
 import type { OpeningType } from "@/schema/scene";
 import { CATALOG_BY_ID, ROOMS } from "@/furniture/catalog";
-import { roomArea, nodeMap } from "@/lib/roomArea";
-import { displayRoomType } from "@/lib/roomTaxonomy";
+import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
+import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import {

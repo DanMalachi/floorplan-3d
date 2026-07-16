@@ -1,4 +1,4 @@
-import { classifyCandidates } from "@/lib/vlmClassify";
+import { classifyCandidates } from "@/lib/rooms/vlmClassify";
 import type { Candidate } from "@/trace2d/candidates";
 
 export const runtime = "nodejs";

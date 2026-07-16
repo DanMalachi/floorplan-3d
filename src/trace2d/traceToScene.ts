@@ -2,10 +2,10 @@ import type { Node, Opening, Room, Scene, Wall } from "@/schema/scene";
 import type { TraceOpening, TracePoint, TraceSegment } from "@/store/useSceneStore";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { analyzeLoops } from "@/lib/loops";
-import { pointInPolygon } from "@/lib/roomArea";
-import { buildRoomGraph } from "@/lib/semanticGraph";
-import { classifyRoomsByRules, RULE_CONFIDENCE_GATE } from "@/lib/roomClassifier";
-import { displayRoomType } from "@/lib/roomTaxonomy";
+import { pointInPolygon } from "@/lib/rooms/roomArea";
+import { buildRoomGraph } from "@/lib/rooms/semanticGraph";
+import { classifyRoomsByRules, RULE_CONFIDENCE_GATE } from "@/lib/rooms/roomClassifier";
+import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
 
 /** A text span from the plan (vector-PDF OCR), in image-pixel space. */
 export interface PlanText {

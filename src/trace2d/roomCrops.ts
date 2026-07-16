@@ -5,7 +5,7 @@
 // printed labels survive), plus one downscaled whole-plan overview for context.
 
 import type { Room, Scene } from "@/schema/scene";
-import { nodeMap } from "@/lib/roomArea";
+import { nodeMap } from "@/lib/rooms/roomArea";
 
 const OVERVIEW_MAX = 1200; // px long edge for the whole-plan context image
 const CROP_MAX = 800; // px long edge per room crop
