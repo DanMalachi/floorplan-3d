@@ -216,14 +216,18 @@ function UnderstandRoomsButton() {
   );
 }
 
-/** Wall inspector: dimensions only. Paint lives in the Decorate catalog brush
- *  (pick a colour, click faces), so structure and finishes stay separate. */
+const KIND_LABEL = { wall: "Wall", rail: "Rail", portal: "Open boundary" } as const;
+
+/** Wall inspector: what KIND of boundary this edge is, plus its dimensions.
+ *  Paint lives in the Decorate catalog brush (pick a colour, click faces), so
+ *  structure and finishes stay separate. */
 function WallInspector({ wall }: { wall: Wall }) {
   const scene = useSceneStore((s) => s.scene);
   const a = scene.nodes.find((n) => n.id === wall.a);
   const b = scene.nodes.find((n) => n.id === wall.b);
   const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
-  const isRail = wall.kind === "rail";
+  const kind = wall.kind ?? "wall";
+  const isPortal = kind === "portal";
 
   const patch = (label: string, p: Partial<Wall>) => {
     const s = useSceneStore.getState();
@@ -232,27 +236,65 @@ function WallInspector({ wall }: { wall: Wall }) {
       walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, ...p } : w)),
     });
   };
+  // Converting DROPS the openings on this edge: a rail or an open boundary has
+  // nothing to cut a hole in, so leaving them would strand doors in mid-air.
+  const setKind = (next: "wall" | "rail" | "portal") => {
+    if (next === kind) return;
+    const s = useSceneStore.getState();
+    s.commitScene(`Make ${KIND_LABEL[next].toLowerCase()}`, {
+      ...s.scene,
+      walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, kind: next } : w)),
+      openings:
+        next === "wall" ? s.scene.openings : s.scene.openings.filter((o) => o.wallId !== wall.id),
+    });
+  };
 
   return (
     <div style={inspectorPanel}>
       <div style={{ fontWeight: 600 }}>
-        {isRail ? "Rail" : "Wall"}{" "}
+        {KIND_LABEL[kind]}{" "}
         <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span>
       </div>
-      <NumField
-        label="Height"
-        value={wall.height ?? WALL_HEIGHT}
-        onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
-      />
-      <NumField
-        label="Thickness"
-        value={wall.thickness ?? DEFAULT_THICKNESS}
-        onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
-      />
-      {!isRail && (
+      <div style={{ display: "flex", gap: 4 }}>
+        {(["wall", "rail", "portal"] as const).map((k) => (
+          <button
+            key={k}
+            style={chip(kind === k, { flex: 1, textAlign: "center" })}
+            onClick={() => setKind(k)}
+            title={
+              k === "portal"
+                ? "No barrier at all — the room still closes, nothing gets built. For a space that simply gives onto the next."
+                : k === "rail"
+                  ? "Low, see-through barrier — balcony or terrace railing."
+                  : "Full-height solid wall."
+            }
+          >
+            {k === "portal" ? "⇿ Open" : k === "rail" ? "▭ Rail" : "▉ Wall"}
+          </button>
+        ))}
+      </div>
+      {isPortal ? (
         <div style={{ fontSize: 10.5, color: T.textFaint }}>
-          Paint in <b style={{ color: T.textDim, fontWeight: 600 }}>Decorate</b>: pick a colour, click faces.
+          Nothing is built here — the rooms on each side stay separate but flow together.
         </div>
+      ) : (
+        <>
+          <NumField
+            label="Height"
+            value={wall.height ?? WALL_HEIGHT}
+            onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
+          />
+          <NumField
+            label="Thickness"
+            value={wall.thickness ?? DEFAULT_THICKNESS}
+            onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
+          />
+          {kind === "wall" && (
+            <div style={{ fontSize: 10.5, color: T.textFaint }}>
+              Paint in <b style={{ color: T.textDim, fontWeight: 600 }}>Decorate</b>: pick a colour, click faces.
+            </div>
+          )}
+        </>
       )}
     </div>
   );

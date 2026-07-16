@@ -33,6 +33,10 @@ export function buildWallSegments(
   nodes: Map<string, Node>,
   ends: WallEnds = SQUARE_ENDS,
 ): WallPiece[] {
+  // Only solid walls have a body. Callers route rails and portals to their own
+  // renderers, but the invariant belongs here — a portal that reached this
+  // function would otherwise get exactly the wall it exists to avoid.
+  if (!isSolidWall(wall)) return [];
   const a = nodes.get(wall.a);
   const b = nodes.get(wall.b);
   if (!a || !b) return [];

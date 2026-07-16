@@ -45,9 +45,11 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     a: s.a,
     b: s.b,
     thickness: DEFAULT_THICKNESS,
-    // A traced rail stays a rail in 3D (low, see-through) instead of becoming a
-    // full-height wall. Rooms still close through it (it lives in scene.walls).
-    ...(s.type === "rail" ? { kind: "rail" as const } : {}),
+    // A traced rail stays a rail in 3D (low, see-through) and a traced portal
+    // builds nothing at all, instead of either becoming a full-height wall.
+    // Rooms still close through both — they live in scene.walls, and closure is
+    // topology, not construction.
+    ...(s.type === "rail" || s.type === "portal" ? { kind: s.type } : {}),
   }));
 
   const sceneOpenings: Opening[] = [];

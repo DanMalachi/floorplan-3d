@@ -501,19 +501,26 @@ export default function TraceCanvas() {
               );
             })}
 
-            {/* Wall segments (rails drawn teal + dashed = low, see-through) */}
+            {/* Wall segments. Rails teal + dashed (low, see-through); portals
+                amber + finely dotted (no barrier — the line is a boundary, not
+                a thing), so what you drew reads at a glance. */}
             {segments.map((seg) => {
               const a = pointMap.get(seg.a);
               const b = pointMap.get(seg.b);
               if (!a || !b) return null;
-              const isRail = seg.type === "rail";
+              const style =
+                seg.type === "rail"
+                  ? { stroke: "#2fe0c0", width: stroke * 0.7, dash: [stroke * 1.5, stroke * 1.2] }
+                  : seg.type === "portal"
+                    ? { stroke: "#ffb038", width: stroke * 0.5, dash: [stroke * 0.5, stroke * 1.1] }
+                    : { stroke: "#37c2ff", width: stroke, dash: undefined };
               return (
                 <Line
                   key={seg.id}
                   points={[a.x, a.y, b.x, b.y]}
-                  stroke={isRail ? "#2fe0c0" : "#37c2ff"}
-                  strokeWidth={isRail ? Math.max(1, stroke * 0.7) : stroke}
-                  dash={isRail ? [stroke * 1.5, stroke * 1.2] : undefined}
+                  stroke={style.stroke}
+                  strokeWidth={Math.max(1, style.width)}
+                  dash={style.dash}
                   lineCap="round"
                   listening={false}
                 />

@@ -38,15 +38,21 @@ export interface TracePoint {
   y: number;
 }
 
+/** What kind of boundary a traced edge is. Mirrors Wall.kind — see the notes
+ *  there. Every kind closes a room the same way; they differ only in what gets
+ *  built on the line. */
+export type SegmentKind = "wall" | "rail" | "portal";
+
 export interface TraceSegment {
   id: string;
   a: string; // point id
   b: string; // point id
-  // A traced edge is a full-height WALL unless tagged a RAIL — a low,
-  // see-through space divider (balcony/terrace railing, glass balustrade,
-  // low parapet). Rails bound rooms exactly like walls in the graph, but are
-  // a distinct element for 3D height/opacity and semantics. Absent = wall.
-  type?: "wall" | "rail";
+  // A traced edge is a full-height WALL unless tagged otherwise. A RAIL is a
+  // low, see-through divider (balcony railing, glass balustrade, low parapet).
+  // A PORTAL is no barrier at all — the line where one space becomes another,
+  // so you can close a room without drawing a wall you'd only have to punch a
+  // fake door through. Both bound rooms exactly like walls. Absent = wall.
+  type?: SegmentKind;
 }
 
 // An opening is traced as a line ALONG its host wall: t0..t1 are the normalized
@@ -376,7 +382,7 @@ export interface StoreState {
   // --- interaction ---
   mode: TraceMode;
   ortho: boolean; // constrain new wall segments to 90° (Shift inverts per-click)
-  drawRail: boolean; // in wall mode, draw edges as rails (balcony) instead of walls
+  drawKind: SegmentKind; // in wall mode, what kind of boundary the pen lays down
 
   // --- undo history (trace only) ---
   history: TraceSnapshot[];
@@ -384,7 +390,7 @@ export interface StoreState {
   // --- actions ---
   setMode: (m: TraceMode) => void;
   setOrtho: (v: boolean) => void;
-  setDrawRail: (v: boolean) => void;
+  setDrawKind: (v: SegmentKind) => void;
   addPoint: (x: number, y: number) => void;
   connectToNode: (nodeId: string) => void; // start from / connect to an existing point
   attachToSegment: (segmentId: string, x: number, y: number) => void; // magnet onto a wall (splits it)
@@ -992,6 +998,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
             doorConnections: s.relationships.connectedVia
               .filter((l) => doorSet.has(l.opening))
               .map((l) => l.room),
+            // Rooms this one flows into with no barrier — the open-plan cue.
+            // Cheap in tokens and near-definitional for living/dining/kitchen.
+            opensInto: s.relationships.opensInto,
           };
         });
 
@@ -1179,7 +1188,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     mode: "wall",
     ortho: true,
-    drawRail: false,
+    drawKind: "wall",
 
     history: [],
 
@@ -1190,13 +1199,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
       }),
 
     setOrtho: (ortho) => set({ ortho }),
-    setDrawRail: (drawRail) => set({ drawRail }),
+    setDrawKind: (drawKind) => set({ drawKind }),
 
     addPoint: (x, y) => {
       pushHistory();
       set((st) => {
         const p: TracePoint = { id: newId("p"), x, y };
-        const kind: "wall" | "rail" = st.drawRail ? "rail" : "wall";
+        const kind = st.drawKind;
         const segments = st.activeLastPointId
           ? [...st.segments, { id: newId("s"), a: st.activeLastPointId, b: p.id, type: kind }]
           : st.segments;
@@ -1225,7 +1234,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             (s.a === activeLastPointId && s.b === nodeId) ||
             (s.a === nodeId && s.b === activeLastPointId),
         );
-        const kind: "wall" | "rail" = st.drawRail ? "rail" : "wall";
+        const kind = st.drawKind;
         const segments = exists
           ? st.segments
           : [...st.segments, { id: newId("s"), a: activeLastPointId, b: nodeId, type: kind }];
@@ -1264,7 +1273,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
         let activeLastPointId: string | null = P.id;
         let selectedPointId: string | null = P.id;
         if (st.activeLastPointId != null && st.activeLastPointId !== P.id) {
-          const kind: "wall" | "rail" = st.drawRail ? "rail" : "wall";
+          const kind = st.drawKind;
           segments = [...segments, { id: newId("s"), a: st.activeLastPointId, b: P.id, type: kind }];
           activeLastPointId = null;
           selectedPointId = null;

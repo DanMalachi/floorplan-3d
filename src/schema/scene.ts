@@ -18,10 +18,17 @@ export interface Wall {
   b: Id; // end node id
   thickness: number; // meters
   height?: number; // meters; falls back to WALL_HEIGHT when undefined
-  // "rail" = a low, see-through barrier (balcony railing / balustrade / low
-  // parapet) rather than a solid wall. Bounds rooms like a wall in the graph,
-  // but renders low and transparent. Absent = wall. Mirrors TraceSegment.type.
-  kind?: "wall" | "rail";
+  // What KIND of boundary this edge is. Every kind bounds rooms identically in
+  // the graph — closure is topology, not construction — but each builds
+  // different geometry. Absent = wall. Mirrors TraceSegment.type.
+  //   "rail"   = a low, see-through barrier (balcony railing / balustrade /
+  //              low parapet). Renders low and transparent.
+  //   "portal" = an OPEN boundary: no barrier at all, just the line where one
+  //              space becomes another (a living room giving onto a corridor).
+  //              Renders nothing. It exists so a room can be closed for area
+  //              and floor purposes WITHOUT inventing a wall that isn't there
+  //              and then punching a fake door through it.
+  kind?: "wall" | "rail" | "portal";
   // Per-face paint. A wall has two long faces (one per adjacent room). Side "a"
   // is the wall-local +Z face, side "b" the -Z face. A hex string paints that
   // face; undefined leaves it default plaster. Painted independently.
@@ -34,10 +41,12 @@ export interface Wall {
  *
  * The single source of truth for "is this a real wall" — wall junctions, wall
  * bodies and baseboards all gate on it, so a new non-solid `kind` only has to
- * be taught here. Rails render as their own thin barrier instead, and never
- * take part in a corner join.
+ * be taught here. Rails render as their own thin barrier and portals render
+ * nothing; neither ever takes part in a corner join, so a wall running into
+ * one gets a square-capped jamb rather than a mitre into thin air.
  */
-export const isSolidWall = (w: Wall): boolean => w.kind !== "rail";
+export const isSolidWall = (w: Wall): boolean =>
+  w.kind !== "rail" && w.kind !== "portal";
 
 export type OpeningType = "door" | "window";
 
@@ -89,6 +98,7 @@ export interface RoomFeatures {
   windowCount: number;
   exteriorWallCount: number; // boundary walls bordering only this room
   railWallCount: number; // boundary edges that are rails — strong outdoor (balcony/deck) signal
+  portalWallCount: number; // boundary edges that are open portals — an open-plan signal
   longestWallM: number;
   perimeterM: number;
   aspectRatio: number; // bbox long / short
@@ -100,9 +110,10 @@ export interface RoomFeatures {
 /** Extensible room-to-room relationships. Only the two deterministic ones are
  *  populated in v1; the rest are left open for later layers. */
 export interface RoomRelationships {
-  sharesWallWith: Id[]; // room ids sharing >= 1 wall
+  sharesWallWith: Id[]; // room ids sharing >= 1 boundary edge of any kind
   connectedVia: { room: Id; opening: Id }[]; // rooms reachable through a door/window
-  // future: opensInto, receivesLightFrom, accessibleFrom, parentZone
+  opensInto: Id[]; // rooms this one flows into with NO barrier between (portals)
+  // future: receivesLightFrom, accessibleFrom, parentZone
 }
 
 /** The semantic verdict for one room. Recomputable and provenance-tracked. */

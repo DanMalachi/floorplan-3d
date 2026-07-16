@@ -19,9 +19,16 @@ export interface RoomGraphEntry {
   // --- internal extras (classifier evidence, not persisted) ---
   boundaryWallIds: Id[];
   doorConnections: { room: Id; opening: Id }[]; // connectedVia filtered to doors
+  portalConnections: { room: Id }[]; // rooms reached with no barrier at all
   exteriorDoorCount: number; // doors in walls that border only this room
   maxDoorWidthM: number;
 }
+
+/** Every way you can walk out of this room — through a door, or through an
+ *  opening in nothing. A corridor open to the living room is as connected as
+ *  one with a door onto it, so circulation rules must count both. */
+export const walkableConnections = (e: RoomGraphEntry): number =>
+  e.doorConnections.length + e.portalConnections.length;
 
 export type RoomGraph = Map<Id, RoomGraphEntry>;
 
@@ -105,19 +112,31 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
     let windowCount = 0;
     let exteriorWallCount = 0;
     let railWallCount = 0;
+    let portalWallCount = 0;
     let exteriorDoorCount = 0;
     let maxDoorWidthM = 0;
     const connectedVia: { room: Id; opening: Id }[] = [];
     const doorConnections: { room: Id; opening: Id }[] = [];
+    const portalConnections: { room: Id }[] = [];
     const sharesWall = new Set<Id>();
+    const opensInto = new Set<Id>();
 
     for (const wallId of walls) {
       const rooms = wallRooms.get(wallId) ?? [];
-      const isExterior = rooms.length === 1;
+      const kind = wallById.get(wallId)?.kind;
+      const isPortal = kind === "portal";
+      // A portal is an absence, not a wall: it can't be an exterior wall, and
+      // it can't carry an opening (there's nothing to cut a hole in).
+      const isExterior = rooms.length === 1 && !isPortal;
       if (isExterior) exteriorWallCount++;
-      if (wallById.get(wallId)?.kind === "rail") railWallCount++;
+      if (kind === "rail") railWallCount++;
+      if (isPortal) portalWallCount++;
       const other = rooms.find((r) => r !== room.id);
-      if (other) sharesWall.add(other);
+      if (other) sharesWall.add(other); // adjacency, whatever the edge is made of
+      if (other && isPortal) {
+        opensInto.add(other);
+        portalConnections.push({ room: other });
+      }
 
       for (const op of openingsByWall.get(wallId) ?? []) {
         if (op.type === "door") {
@@ -141,6 +160,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
       windowCount,
       exteriorWallCount,
       railWallCount,
+      portalWallCount,
       longestWallM,
       perimeterM,
       aspectRatio,
@@ -150,16 +170,22 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
     graph.set(room.id, {
       roomId: room.id,
       features,
-      relationships: { sharesWallWith: [...sharesWall], connectedVia },
+      relationships: {
+        sharesWallWith: [...sharesWall],
+        connectedVia,
+        opensInto: [...opensInto],
+      },
       boundaryWallIds: [...walls],
       doorConnections,
+      portalConnections,
       exteriorDoorCount,
       maxDoorWidthM,
     });
   }
 
   // Second pass: hasCloset — a small windowless single-door room whose only
-  // door connection is this room reads as this room's closet.
+  // door connection is this room reads as this room's closet. A closet is a
+  // DEAD END, so one that also opens into somewhere else is a passage instead.
   for (const entry of graph.values()) {
     for (const link of entry.doorConnections) {
       const c = graph.get(link.room);
@@ -170,6 +196,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
         f.windowCount === 0 &&
         f.doorCount === 1 &&
         c.doorConnections.length === 1 &&
+        c.portalConnections.length === 0 &&
         c.doorConnections[0].room === entry.roomId
       ) {
         entry.features.hasCloset = true;

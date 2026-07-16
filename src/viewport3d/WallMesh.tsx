@@ -974,6 +974,157 @@ function reuseUnchanged(
   return fresh;
 }
 
+// --- Portals ----------------------------------------------------------------
+
+const PORTAL_COLOR = "#ffb038"; // matches the trace canvas's open-boundary amber
+const PORTAL_BAND_H = 0.012; // floor strip: a threshold, not a step
+const PORTAL_BAND_T = 0.06;
+
+/**
+ * A portal: an OPEN boundary. There is no barrier here — the whole point is
+ * that the room closes without anything being built — so it renders nothing but
+ * a floor threshold, and only while you're editing.
+ *
+ * It still has to be grabbable, or you could draw one and never move, delete or
+ * convert it again. So Build mode gets a thin invisible slab to catch the
+ * pointer plus a faint line to show where it is; Decorate and View get nothing
+ * at all, because in the finished room the space simply flows through.
+ */
+function PortalGroup({ wall, a, b, offset }: {
+  wall: Wall;
+  a: Node;
+  b: Node;
+  offset: { cx: number; cz: number };
+}) {
+  const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
+  const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const appMode = useSceneStore((s) => s.appMode);
+  const drag = useRef<DragState | null>(null);
+
+  const { mid, normal, rotationY, len } = useMemo(() => {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const L = Math.hypot(dx, dy) || 1;
+    return {
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      normal: { x: -dy / L, y: dx / L },
+      rotationY: -Math.atan2(dy / L, dx / L),
+      len: Math.hypot(dx, dy),
+    };
+  }, [a, b]);
+
+  const band = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: PORTAL_COLOR,
+        emissive: new THREE.Color(PORTAL_COLOR),
+        emissiveIntensity: 0.25,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0.6,
+        depthWrite: false,
+      }),
+    [],
+  );
+  useEffect(() => () => band.dispose(), [band]);
+  useEffect(() => {
+    band.opacity = selected ? 0.95 : hovered ? 0.75 : 0.42;
+    band.emissiveIntensity = selected ? 0.6 : hovered ? 0.4 : 0.22;
+  }, [band, selected, hovered]);
+
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return;
+    const s = useSceneStore.getState();
+    if (s.appMode !== "build" || s.placing) return;
+    e.stopPropagation();
+    s.setSel3d({ kind: "wall", id: wall.id });
+    const start = rayToPlan(e, offset);
+    if (!start) return;
+    (e.target as Element).setPointerCapture(e.pointerId);
+    drag.current = { pointerId: e.pointerId, start, base: s.scene };
+    s.beginGesture();
+  };
+
+  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.stopPropagation();
+    const cur = rayToPlan(e, offset);
+    if (!cur) return;
+    let dist = (cur.x - d.start.x) * normal.x + (cur.y - d.start.y) * normal.y;
+    if (!e.shiftKey) dist = snapDelta(dist);
+    const moved = new Set([wall.a, wall.b]);
+    const nodes = d.base.nodes.map((n) =>
+      moved.has(n.id) ? { ...n, x: n.x + normal.x * dist, y: n.y + normal.y * dist } : n,
+    );
+    const next: Scene = { ...d.base, nodes };
+    const labels = wallLengthLabels(next, moved);
+    labels.push({
+      world: [mid.x + normal.x * dist, 0.6, mid.y + normal.y * dist],
+      text: `Δ ${fmt(Math.abs(dist))}`,
+    });
+    useSceneStore.getState().updateGesture(next, { guides: [], labels });
+  };
+
+  const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.stopPropagation();
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    drag.current = null;
+    useSceneStore.getState().endGesture("Move opening");
+  };
+
+  if (appMode !== "build") return null; // finished room: the space just flows through
+
+  return (
+    <group>
+      {/* Threshold strip on the floor — where one space becomes the next. */}
+      <mesh
+        position={[mid.x, PORTAL_BAND_H / 2, mid.y]}
+        rotation={[0, rotationY, 0]}
+        material={band}
+        raycast={() => null}
+      >
+        <boxGeometry args={[len, PORTAL_BAND_H, PORTAL_BAND_T]} />
+      </mesh>
+      {/* Invisible catcher so the portal stays selectable and draggable. */}
+      <mesh
+        position={[mid.x, WALL_HEIGHT / 4, mid.y]}
+        rotation={[0, rotationY, 0]}
+        userData={{ pick: { kind: "wall", id: wall.id } }}
+        onPointerOver={(e) => {
+          const s = useSceneStore.getState();
+          if (s.appMode !== "build" || s.placing) return;
+          e.stopPropagation();
+          s.setHover3d({ kind: "wall", id: wall.id });
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          const cur = useSceneStore.getState().hover3d;
+          if (isPick(cur, "wall", wall.id)) useSceneStore.getState().setHover3d(null);
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <boxGeometry args={[len, WALL_HEIGHT / 2, PORTAL_BAND_T]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      {selected && (
+        <>
+          <CornerHandle nodeId={wall.a} x={a.x} y={a.y} offset={offset} />
+          <CornerHandle nodeId={wall.b} x={b.x} y={b.y} offset={offset} />
+          <Html position={[mid.x, 0.5, mid.y]} center style={{ pointerEvents: "none" }}>
+            <div style={dimLabelStyle}>open · {fmt(len)}</div>
+          </Html>
+        </>
+      )}
+    </group>
+  );
+}
+
 export function Walls({ scene, offset }: {
   scene: Scene;
   offset: { cx: number; cz: number };
@@ -1029,6 +1180,9 @@ export function Walls({ scene, offset }: {
         if (!a || !b) return null;
         if (wall.kind === "rail") {
           return <RailGroup key={wall.id} wall={wall} a={a} b={b} offset={offset} />;
+        }
+        if (wall.kind === "portal") {
+          return <PortalGroup key={wall.id} wall={wall} a={a} b={b} offset={offset} />;
         }
         return (
           <WallGroup
