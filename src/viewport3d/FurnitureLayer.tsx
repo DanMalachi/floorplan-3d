@@ -39,8 +39,12 @@ function normalize(
   footprint: { w: number; d: number } | undefined,
   tint?: "red" | null,
   opacity?: number,
+  rotation?: [number, number, number],
 ): THREE.Group {
   const clone = gltfScene.clone(true);
+  // Stand up models authored lying down BEFORE measuring, so the bbox we center,
+  // floor, and scale to the footprint is the corrected (upright) one.
+  if (rotation) clone.rotation.set(rotation[0], rotation[1], rotation[2]);
   const box = new THREE.Box3().setFromObject(clone);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
@@ -76,17 +80,20 @@ function normalize(
 
 /** Render a specific GLB url, normalized to the asset's footprint. `draco` points
  *  useGLTF at the local decoder for Draco-compressed (IKEA) models. */
-function GlbModel({ url, footprint, draco, tint, opacity }: {
+function GlbModel({ url, footprint, draco, tint, opacity, rotation }: {
   url: string;
   footprint: { w: number; d: number } | undefined;
   draco?: boolean;
   tint?: "red" | null;
   opacity?: number;
+  rotation?: [number, number, number];
 }) {
   const gltf = useGLTF(url, draco ? "/draco/" : false);
+  const rotKey = rotation?.join(",");
   const obj = useMemo(
-    () => normalize(gltf.scene, footprint, tint, opacity),
-    [gltf.scene, footprint, tint, opacity],
+    () => normalize(gltf.scene, footprint, tint, opacity, rotation),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [gltf.scene, footprint, tint, opacity, rotKey],
   );
   return <primitive object={obj} />;
 }
@@ -110,26 +117,73 @@ class ModelBoundary extends Component<
   }
 }
 
-/** A catalog item's 3D body. Prefers the real branded GLB (`realModel`) with a
- *  proxy (`model`/`assetId`) fallback on load failure; both keep the real footprint. */
+/** Neutral stand-in for furniture whose model can't be rendered: a missing/404 GLB,
+ *  or an asset dropped from the catalog since the project was saved. Sized to the known
+ *  footprint (or a small default) so layouts stay legible. Never loads or throws, so it
+ *  is always a safe terminal fallback — one bad item can't crash the scene. */
+function PlaceholderBox({ footprint, tint, opacity }: {
+  footprint?: { w: number; d: number };
+  tint?: "red" | null;
+  opacity?: number;
+}) {
+  const w = footprint?.w ?? 0.5;
+  const d = footprint?.d ?? 0.5;
+  const h = Math.min(w, d, 0.5);
+  return (
+    <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+      <boxGeometry args={[w, h, d]} />
+      <meshStandardMaterial
+        color={tint === "red" ? "#ff3b30" : "#c8c8c8"}
+        transparent={opacity !== undefined}
+        opacity={opacity ?? 1}
+        depthWrite={opacity === undefined}
+        roughness={0.9}
+      />
+    </mesh>
+  );
+}
+
+/** A catalog item's 3D body. Renders the best available model and degrades safely:
+ *  real branded GLB → CC0 proxy (non-IKEA only) → neutral placeholder box. Every
+ *  candidate is wrapped in an error boundary that falls through to the next, so a
+ *  missing/404 model — or an assetId no longer in the catalog — can never throw past
+ *  this component and unmount the canvas. */
 function AssetModel({ assetId, tint, opacity }: ModelProps) {
   const spec = CATALOG_BY_ID.get(assetId);
-  const proxyUrl = `/furniture/${spec?.model ?? assetId}.glb`;
-  const proxy = (
-    <GlbModel url={proxyUrl} footprint={spec?.footprint} tint={tint} opacity={opacity} />
+  const placeholder = (
+    <PlaceholderBox footprint={spec?.footprint} tint={tint} opacity={opacity} />
   );
-  if (!spec?.realModel) return proxy;
-  return (
-    <ModelBoundary resetKey={spec.realModel} fallback={proxy}>
-      <GlbModel
-        url={spec.realModel}
-        footprint={spec.footprint}
-        draco
-        tint={tint}
-        opacity={opacity}
-      />
-    </ModelBoundary>
-  );
+  // Unknown/removed asset (e.g. a saved project referencing an item dropped from the
+  // catalog): show the placeholder rather than fetching a guaranteed-404 GLB.
+  if (!spec) return placeholder;
+
+  // Candidate models, most-preferred first. IKEA items ship a real model only — their
+  // CC0 proxies were dropped in the real-model-only migration — so we must NOT fall
+  // back to a /furniture/ikea:*.glb file that no longer exists on the server.
+  const isIkea = assetId.startsWith("ikea:");
+  const candidates: { url: string; draco?: boolean; rotation?: [number, number, number] }[] = [];
+  if (spec.realModel) candidates.push({ url: spec.realModel, draco: true, rotation: spec.modelRotation });
+  if (!isIkea) candidates.push({ url: `/furniture/${spec.model ?? assetId}.glb` });
+
+  // Fold the candidates into a fallback chain terminating in the placeholder.
+  let node: ReactNode = placeholder;
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const c = candidates[i];
+    const fallback = node;
+    node = (
+      <ModelBoundary key={c.url} resetKey={c.url} fallback={fallback}>
+        <GlbModel
+          url={c.url}
+          footprint={spec.footprint}
+          draco={c.draco}
+          tint={tint}
+          opacity={opacity}
+          rotation={c.rotation}
+        />
+      </ModelBoundary>
+    );
+  }
+  return <>{node}</>;
 }
 
 /** Plan rotation θ → three.js yaw (plan y is world z, so the sense flips). */
