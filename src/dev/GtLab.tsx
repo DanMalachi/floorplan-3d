@@ -1,11 +1,15 @@
 "use client";
 
-// Dev-only secret tool — the "GT Lab". Press Shift+G to summon it, then drag in
-// as many ground-truth .json files as you like. Each one is imported as its own
-// SAVED project (named after the file) and added to your gallery, so it survives
-// closing and reopening — not just a throwaway preview. Your currently-open plan
-// is left untouched; opening a GT switches to it like any other project. Gated
-// out of production builds.
+// Secret tool — the "GT Lab". Press Shift+G to summon it, then drag in as many
+// ground-truth .json files as you like. Each one is imported as its own SAVED
+// project (named after the file) and added to your gallery, so it survives closing
+// and reopening — not just a throwaway preview. Your currently-open plan is left
+// untouched; opening a GT switches to it like any other project.
+//
+// This is fully client-side (it reads the files YOU drop — it never touches the
+// repo), so it ships in production too. That's deliberate: it's how you import GT
+// on the deployed app the same way as on localhost. The repo-reading `?gt=` /
+// /api/dev-gt path stays dev-only; only this drag-and-drop importer is enabled.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -23,8 +27,6 @@ interface LoadError {
   message: string;
 }
 
-const isDev = process.env.NODE_ENV !== "production";
-
 export function GtLab() {
   const [open, setOpen] = useState(false);
   const [models, setModels] = useState<Model[]>([]);
@@ -39,7 +41,6 @@ export function GtLab() {
 
   // Secret handshake: Shift+G toggles the Lab (ignored while typing in a field).
   useEffect(() => {
-    if (!isDev) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
@@ -83,7 +84,6 @@ export function GtLab() {
     [openModel],
   );
 
-  if (!isDev) return null;
   if (!open) return null;
 
   return (
