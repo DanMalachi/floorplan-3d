@@ -525,6 +525,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
       mullion: mk("#c9bfa8", { roughness: 0.7 }),
       handle: mk("#b8b8be", { metalness: 0.85, roughness: 0.35 }),
       threshold: mk("#b7ad98", { roughness: 0.82 }),
+      track: mk("#9aa0a6", { metalness: 0.7, roughness: 0.4 }), // sliding head rail
       glass: mk("#cfe6ee", {
         roughness: 0.1,
         transparent: true,
@@ -535,7 +536,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
       }),
     };
     const baseOpacity: Record<JoineryRole, number> = {
-      frame: 1, leaf: 1, mullion: 1, handle: 1, threshold: 1, glass: 0.22,
+      frame: 1, leaf: 1, mullion: 1, handle: 1, threshold: 1, track: 1, glass: 0.22,
     };
     return { mats, baseOpacity };
   }, []);

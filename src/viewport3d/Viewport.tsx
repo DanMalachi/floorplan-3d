@@ -7,7 +7,7 @@ import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postproces
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
-import type { FloorStyle, Wall } from "@/schema/scene";
+import type { FloorStyle, Opening, SlideSpec, Wall } from "@/schema/scene";
 import {
   WALL_HEIGHT,
   DEFAULT_THICKNESS,
@@ -129,12 +129,14 @@ const inspectorPanel: React.CSSProperties = {
 };
 const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" };
 
-/** Numeric field that commits on Enter/blur and never leaks keys to the pane. */
-function NumField({ label, value, onCommit, disabled }: {
+/** Numeric field that commits on Enter/blur and never leaks keys to the pane.
+ *  Most dimensions are metres; `unit` covers the ones that aren't. */
+function NumField({ label, value, onCommit, disabled, unit = "m" }: {
   label: string;
   value: number;
   onCommit: (v: number) => void;
   disabled?: boolean;
+  unit?: string;
 }) {
   const [raw, setRaw] = useState(String(value));
   useEffect(() => setRaw(String(value)), [value]);
@@ -158,7 +160,7 @@ function NumField({ label, value, onCommit, disabled }: {
             e.stopPropagation();
           }}
         />
-        <span style={{ color: T.textFaint }}>m</span>
+        <span style={{ color: T.textFaint }}>{unit}</span>
       </span>
     </label>
   );
@@ -300,6 +302,207 @@ function WallInspector({ wall }: { wall: Wall }) {
   );
 }
 
+// The sliding presets, as the product thinks of them. Each is just a point in
+// the one SlideSpec parameterisation — see buildJoinery.
+const SLIDE_PRESETS: { key: string; label: string; title: string; spec: SlideSpec }[] = [
+  {
+    key: "patio",
+    label: "Patio",
+    title: "Two glazed panels sliding past each other — the balcony door",
+    spec: { style: "bypass", panels: 2, glazed: true, open: 0, side: "end" },
+  },
+  {
+    key: "closet",
+    label: "Closet",
+    title: "Solid panels sliding past each other — wardrobe bypass doors",
+    spec: { style: "bypass", panels: 2, glazed: false, open: 0, side: "end" },
+  },
+  {
+    key: "barn",
+    label: "Barn",
+    title: "One leaf sliding along the face of the wall",
+    spec: { style: "surface", panels: 1, glazed: false, open: 0, side: "end" },
+  },
+];
+
+const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
+  s.style === p.style && s.panels === p.panels && (s.glazed ?? false) === (p.glazed ?? false);
+
+/** Opening inspector: what this hole in the wall IS, and what hangs in it. */
+function OpeningInspector({ opening }: { opening: Opening }) {
+  const patch = (label: string, p: Partial<Opening>) => {
+    const s = useSceneStore.getState();
+    s.commitScene(label, {
+      ...s.scene,
+      openings: s.scene.openings.map((o) => (o.id === opening.id ? { ...o, ...p } : o)),
+    });
+  };
+  // Switching type strips the joinery that no longer applies, so a passage
+  // can't keep a stale swing angle or a window a door's slide gear.
+  const setType = (type: OpeningType) => {
+    if (type === opening.type) return;
+    const base = { type, slide: undefined, swingDeg: undefined, hinge: undefined };
+    patch(
+      type === "passage" ? "Remove door" : `Make ${type}`,
+      type === "window"
+        ? { ...base, sill: opening.sill > 0 ? opening.sill : DEFAULT_WINDOW.sill }
+        : { ...base, sill: 0, mullions: undefined },
+    );
+  };
+  const slide = opening.slide;
+  const isDoor = opening.type === "door";
+
+  return (
+    <div style={inspectorPanel}>
+      <div style={{ fontWeight: 600, textTransform: "capitalize" }}>
+        {opening.type}{" "}
+        <span style={{ color: T.textDim, fontWeight: 400 }}>
+          · {opening.width.toFixed(2)} × {opening.height.toFixed(2)} m
+        </span>
+      </div>
+
+      <div style={{ display: "flex", gap: 4 }}>
+        {(["door", "passage", "window"] as const).map((t) => (
+          <button
+            key={t}
+            style={chip(opening.type === t, { flex: 1, textAlign: "center" })}
+            onClick={() => setType(t)}
+            title={
+              t === "passage"
+                ? "Keep the opening, lose the door — an open way through a wall"
+                : undefined
+            }
+          >
+            {t === "door" ? "🚪 Door" : t === "passage" ? "⌷ Open" : "🪟 Window"}
+          </button>
+        ))}
+      </div>
+
+      {isDoor && (
+        <>
+          <div style={microLabel()}>How it opens</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button
+              style={chip(!slide, { flex: 1, textAlign: "center" })}
+              onClick={() => patch("Swing door", { slide: undefined })}
+            >
+              ↷ Swing
+            </button>
+            {SLIDE_PRESETS.map((p) => (
+              <button
+                key={p.key}
+                style={chip(!!slide && matchesPreset(slide, p.spec), { flex: 1, textAlign: "center" })}
+                onClick={() =>
+                  patch(`${p.label} slider`, {
+                    slide: { ...p.spec, open: slide?.open ?? 0, side: slide?.side ?? "end" },
+                    swingDeg: undefined,
+                    hinge: undefined,
+                  })
+                }
+                title={p.title}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {isDoor && !slide && (
+        <>
+          <NumField
+            label="Swing"
+            unit="°"
+            value={opening.swingDeg ?? 0}
+            onCommit={(v) => patch("Door swing", { swingDeg: Math.min(120, Math.max(0, v)) })}
+          />
+          <div style={{ display: "flex", gap: 4 }}>
+            {(["start", "end"] as const).map((h) => (
+              <button
+                key={h}
+                style={chip((opening.hinge ?? "start") === h, { flex: 1, textAlign: "center" })}
+                onClick={() => patch("Door hinge", { hinge: h })}
+              >
+                Hinge {h}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {isDoor && slide && (
+        <>
+          <NumField
+            label="Open"
+            unit="%"
+            value={Math.round((slide.open ?? 0) * 100)}
+            onCommit={(v) =>
+              patch("Slide open", { slide: { ...slide, open: Math.min(1, Math.max(0, v / 100)) } })
+            }
+          />
+          {slide.style === "bypass" && (
+            <Stepper
+              label="Panels"
+              value={slide.panels}
+              min={2}
+              max={3}
+              onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })}
+            />
+          )}
+          <div style={{ display: "flex", gap: 4 }}>
+            {(["start", "end"] as const).map((sd) => (
+              <button
+                key={sd}
+                style={chip((slide.side ?? "end") === sd, { flex: 1, textAlign: "center" })}
+                onClick={() => patch("Slide side", { slide: { ...slide, side: sd } })}
+                title="Which jamb the panels stack at"
+              >
+                Slides {sd}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {opening.type === "passage" && (
+        <div style={{ display: "flex", gap: 4 }}>
+          {([true, false] as const).map((l) => (
+            <button
+              key={String(l)}
+              style={chip((opening.lining ?? true) === l, { flex: 1, textAlign: "center" })}
+              onClick={() => patch("Passage lining", { lining: l })}
+              title={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
+            >
+              {l ? "Cased" : "Bare"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <NumField
+        label="Width"
+        value={opening.width}
+        onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })}
+      />
+      <NumField
+        label="Height"
+        value={opening.height}
+        onCommit={(v) => patch("Opening height", { height: Math.max(0.4, v) })}
+      />
+      {opening.type === "window" && (
+        <NumField
+          label="Sill"
+          value={opening.sill}
+          onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })}
+        />
+      )}
+      <div style={{ fontSize: 10.5, color: T.textFaint }}>
+        Drag to slide it along the wall · Delete fills the wall back in.
+      </div>
+    </div>
+  );
+}
+
 /** Contextual inspector, docked top-right when something is selected. */
 function MiniInspector() {
   const sel3d = useSceneStore((s) => s.sel3d);
@@ -309,6 +512,12 @@ function MiniInspector() {
     const wall = scene.walls.find((w) => w.id === sel3d.id);
     if (!wall) return null;
     return <WallInspector wall={wall} />;
+  }
+
+  if (sel3d?.kind === "opening") {
+    const opening = scene.openings.find((o) => o.id === sel3d.id);
+    if (!opening) return null;
+    return <OpeningInspector opening={opening} />;
   }
 
   if (sel3d?.kind === "furniture") {

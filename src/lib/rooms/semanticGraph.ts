@@ -20,15 +20,22 @@ export interface RoomGraphEntry {
   boundaryWallIds: Id[];
   doorConnections: { room: Id; opening: Id }[]; // connectedVia filtered to doors
   portalConnections: { room: Id }[]; // rooms reached with no barrier at all
+  passageConnections: { room: Id; opening: Id }[]; // reached through a cased opening
   exteriorDoorCount: number; // doors in walls that border only this room
   maxDoorWidthM: number;
 }
 
-/** Every way you can walk out of this room — through a door, or through an
- *  opening in nothing. A corridor open to the living room is as connected as
- *  one with a door onto it, so circulation rules must count both. */
+/** Ways out of this room that you never have to open: a portal (no wall) or a
+ *  passage (a hole in one). Different construction, same fact — the space is
+ *  continuous through here. */
+export const openConnections = (e: RoomGraphEntry): number =>
+  e.portalConnections.length + e.passageConnections.length;
+
+/** Every way you can walk out of this room. A corridor open to the living room
+ *  is as connected as one with a door onto it, so circulation rules must count
+ *  both — otherwise an open plan reads as a dead end. */
 export const walkableConnections = (e: RoomGraphEntry): number =>
-  e.doorConnections.length + e.portalConnections.length;
+  e.doorConnections.length + openConnections(e);
 
 export type RoomGraph = Map<Id, RoomGraphEntry>;
 
@@ -118,6 +125,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
     const connectedVia: { room: Id; opening: Id }[] = [];
     const doorConnections: { room: Id; opening: Id }[] = [];
     const portalConnections: { room: Id }[] = [];
+    const passageConnections: { room: Id; opening: Id }[] = [];
     const sharesWall = new Set<Id>();
     const opensInto = new Set<Id>();
 
@@ -139,17 +147,24 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
       }
 
       for (const op of openingsByWall.get(wallId) ?? []) {
+        // A passage is neither: it's a hole with no door in it. Counting it as
+        // a window (the old else-branch) would give every open way through a
+        // wall phantom daylight and skew bedroom/bathroom scoring.
         if (op.type === "door") {
           doorCount++;
           if (op.width > maxDoorWidthM) maxDoorWidthM = op.width;
           if (isExterior) exteriorDoorCount++;
-        } else {
+        } else if (op.type === "window") {
           windowCount++;
         }
         if (other) {
           const link = { room: other, opening: op.id };
           connectedVia.push(link);
           if (op.type === "door") doorConnections.push(link);
+          if (op.type === "passage") {
+            opensInto.add(other);
+            passageConnections.push(link);
+          }
         }
       }
     }
@@ -178,6 +193,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
       boundaryWallIds: [...walls],
       doorConnections,
       portalConnections,
+      passageConnections,
       exteriorDoorCount,
       maxDoorWidthM,
     });
@@ -196,7 +212,7 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
         f.windowCount === 0 &&
         f.doorCount === 1 &&
         c.doorConnections.length === 1 &&
-        c.portalConnections.length === 0 &&
+        openConnections(c) === 0 &&
         c.doorConnections[0].room === entry.roomId
       ) {
         entry.features.hasCloset = true;

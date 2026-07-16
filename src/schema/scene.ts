@@ -48,7 +48,29 @@ export interface Wall {
 export const isSolidWall = (w: Wall): boolean =>
   w.kind !== "rail" && w.kind !== "portal";
 
-export type OpeningType = "door" | "window";
+// "passage" = a cased opening: a real hole in the wall with NO door in it, for
+// spaces that connect openly but are still divided by a wall. (Where there is
+// no wall at all, that's a portal — see Wall.kind.)
+export type OpeningType = "door" | "window" | "passage";
+
+/**
+ * How a door's leaves move. Absent = an ordinary hinged swing door.
+ *
+ *  "bypass"  = panels run in tracks INSIDE the wall's depth and slide past one
+ *              another — a 2-panel glazed patio slider, or wardrobe bypass
+ *              doors. The panels stack up at one jamb.
+ *  "surface" = a single leaf hangs on the wall FACE and slides clear of the
+ *              opening along it — a barn door. Wider than the hole it covers.
+ *
+ * There's no pocket door: that would need the wall to model a cavity.
+ */
+export interface SlideSpec {
+  style: "bypass" | "surface";
+  panels: number; // bypass: 2-3. surface: always 1.
+  glazed?: boolean; // true = glazed sash (patio); false/absent = solid leaf
+  open?: number; // 0 = shut, 1 = slid fully open (default 0)
+  side?: "start" | "end"; // the jamb the panels stack at (default "end")
+}
 
 /** An opening cut into a wall, expressed in wall-local space. */
 export interface Opening {
@@ -60,9 +82,11 @@ export interface Opening {
   height: number; // meters
   sill: number; // meters above floor (doors typically 0)
   // --- Joinery (all optional, additive; doors/windows render real geometry) ---
-  swingDeg?: number; // door leaf open angle, 0 = closed (default). Doors only.
-  hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Doors only.
+  swingDeg?: number; // door leaf open angle, 0 = closed (default). Swing doors only.
+  hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Swing doors only.
+  slide?: SlideSpec; // present = a SLIDING door; swingDeg/hinge are then unused
   mullions?: { cols: number; rows: number }; // window glazing-bar grid (default {cols:2,rows:1})
+  lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
 }
 
 export type FloorStyle = "wood" | "tile" | "concrete";
@@ -112,7 +136,9 @@ export interface RoomFeatures {
 export interface RoomRelationships {
   sharesWallWith: Id[]; // room ids sharing >= 1 boundary edge of any kind
   connectedVia: { room: Id; opening: Id }[]; // rooms reachable through a door/window
-  opensInto: Id[]; // rooms this one flows into with NO barrier between (portals)
+  // Rooms this one flows into without opening anything: a portal (no wall at
+  // all) or a passage (a cased hole in one). Different construction, same fact.
+  opensInto: Id[];
   // future: receivesLightFrom, accessibleFrom, parentZone
 }
 
