@@ -16,8 +16,11 @@ import {
   buildWallSegments,
   buildOpeningVolumes,
   buildBaseboards,
+  BASEBOARD_PROUD,
   type OpeningVolume,
 } from "./geometry/buildWallSegments";
+import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./geometry/wallJunctions";
+import { buildWallGeometry } from "./geometry/wallGeometry";
 import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
 
@@ -40,6 +43,21 @@ function rayToPlan(
 
 const isPick = (p: PickRef | null, kind: PickRef["kind"], id: string) =>
   p !== null && p.kind === kind && p.id === id;
+
+/**
+ * Which painted face did the ray land on? Groups 4 and 5 are the wall's two
+ * long faces (see buildWallGeometry, which keeps BoxGeometry's ordering); the
+ * ends, top and bottom carry no paint and return undefined.
+ *
+ * Read from the material group rather than the face normal: a mitred end face
+ * is slanted, and at a 90-degree corner its normal is far enough round to look
+ * like a side face. Those ends are buried inside the joint so it never actually
+ * surfaces, but the group index is exact and free.
+ */
+const faceSide = (e: { face?: THREE.Face | null }): "a" | "b" | undefined => {
+  const mi = e.face?.materialIndex;
+  return mi === 4 ? "a" : mi === 5 ? "b" : undefined;
+};
 
 const fmt = (m: number) => `${m.toFixed(2)} m`;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -80,11 +98,13 @@ interface DragState {
   base: Scene;
 }
 
-function WallGroup({ wall, a, b, ops, offset }: {
+function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   wall: Wall;
   a: Node;
   b: Node;
   ops: Opening[];
+  ends: WallEnds; // how this wall's body meets its neighbours
+  bbEnds: WallEnds; // ditto for the wider baseboard band
   offset: { cx: number; cz: number };
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
@@ -105,9 +125,9 @@ function WallGroup({ wall, a, b, ops, offset }: {
     const ux = dx / L;
     const uy = dy / L;
     return {
-      pieces: buildWallSegments(eff, ops, nodes),
+      pieces: buildWallSegments(eff, ops, nodes, ends),
       volumes: buildOpeningVolumes(eff, ops, nodes),
-      baseboards: buildBaseboards(wall, ops, nodes),
+      baseboards: buildBaseboards(wall, ops, nodes, bbEnds),
       mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       len: Math.hypot(dx, dy),
       normal: { x: -uy, y: ux },
@@ -119,7 +139,17 @@ function WallGroup({ wall, a, b, ops, offset }: {
         rotationY: -Math.atan2(uy, ux),
       } satisfies WallFrame,
     };
-  }, [wall, ops, a, b, wallMode]);
+  }, [wall, ops, a, b, wallMode, ends, bbEnds]);
+
+  // Real meshes for the jointed bodies. Unlike <boxGeometry> these are ours to
+  // free, so they're disposed whenever the wall reshapes.
+  const geoms = useMemo(() => pieces.map((p) => buildWallGeometry(p.size, p.ends)), [pieces]);
+  useEffect(() => () => geoms.forEach((g) => g.dispose()), [geoms]);
+  const bbGeoms = useMemo(
+    () => baseboards.map((p) => buildWallGeometry(p.size, p.ends)),
+    [baseboards],
+  );
+  useEffect(() => () => bbGeoms.forEach((g) => g.dispose()), [bbGeoms]);
 
   // Three materials per wall, indexed onto the box faces so each long face can
   // take its own Tambour colour: `neutral` covers the ends/top/bottom, `matA`
@@ -212,13 +242,10 @@ function WallGroup({ wall, a, b, ops, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "build" || s.placing) return; // walls edit in Build only
     e.stopPropagation();
-    // Which face did the pointer land on? The long faces carry a local ±Z
-    // normal; end caps / top pick up (or keep) side A. This is what makes
-    // "click the face you want to paint" work.
-    const n = e.face?.normal;
-    let side: "a" | "b" | undefined;
-    if (n && Math.abs(n.z) > 0.5) side = n.z > 0 ? "a" : "b";
-    else if (s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
+    // Which face did the pointer land on? End caps / top keep the current side.
+    // This is what makes "click the face you want to paint" work.
+    let side = faceSide(e);
+    if (!side && s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
     s.setSel3d({ kind: "wall", id: wall.id, side: side ?? "a" });
     const start = rayToPlan(e, offset);
     if (!start) return;
@@ -267,8 +294,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
   const paintFace = (e: ThreeEvent<MouseEvent>) => {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.brush?.kind !== "paint") return;
-    const n = e.face?.normal;
-    const side: "a" | "b" = n && Math.abs(n.z) > 0.5 ? (n.z > 0 ? "a" : "b") : "a";
+    const side = faceSide(e) ?? "a";
     const hex = s.brush.hex ?? undefined;
     s.commitScene(`${hex ? "Paint" : "Clear"} Side ${side.toUpperCase()}`, {
       ...s.scene,
@@ -313,6 +339,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
           key={i}
           position={p.position}
           rotation={[0, p.rotationY, 0]}
+          geometry={geoms[i]}
           castShadow
           receiveShadow
           userData={{ pick: { kind: "wall", id: wall.id } }}
@@ -324,22 +351,19 @@ function WallGroup({ wall, a, b, ops, offset }: {
           // Swallow the click (keeps floor from stealing it) and paint the face
           // when a paint brush is active.
           onClick={onClickWall}
-        >
-          <boxGeometry args={p.size} />
-        </mesh>
+        />
       ))}
       {baseboards.map((p, i) => (
         <mesh
           key={`bb${i}`}
           position={p.position}
           rotation={[0, p.rotationY, 0]}
+          geometry={bbGeoms[i]}
           material={baseboardMat}
           raycast={() => null} // visual trim — clicks fall through to the wall body
           castShadow
           receiveShadow
-        >
-          <boxGeometry args={p.size} />
-        </mesh>
+        />
       ))}
       {volumes.map((v) => {
         const op = ops.find((o) => o.id === v.openingId);
@@ -932,6 +956,24 @@ function RailGroup({ wall, a, b, offset }: {
   );
 }
 
+/** Keep the previous WallEnds object for every wall whose corners didn't move,
+ *  so dragging one node only rebuilds the walls it actually touched. Mirrors
+ *  the identity-preserving trick byWall uses for openings. */
+function reuseUnchanged(
+  fresh: Map<string, WallEnds>,
+  cache: { current: Map<string, WallEnds> },
+): Map<string, WallEnds> {
+  const prev = cache.current;
+  for (const [id, e] of fresh) {
+    const old = prev.get(id);
+    if (old && old.x0L === e.x0L && old.x0R === e.x0R && old.x1L === e.x1L && old.x1R === e.x1R) {
+      fresh.set(id, old); // unchanged - keep the old reference
+    }
+  }
+  cache.current = fresh;
+  return fresh;
+}
+
 export function Walls({ scene, offset }: {
   scene: Scene;
   offset: { cx: number; cz: number };
@@ -964,6 +1006,21 @@ export function Walls({ scene, offset }: {
   );
   const EMPTY: Opening[] = useMemo(() => [], []);
 
+  // How every wall meets its neighbours. Solved for the whole scene at once —
+  // a corner is a property of the junction, not of either wall on its own, so
+  // no wall can work it out from the two nodes it can see. The baseboard band
+  // is wider than the wall, so it re-solves at its own half-width.
+  const endsCache = useRef(new Map<string, WallEnds>());
+  const bbCache = useRef(new Map<string, WallEnds>());
+  const junctions = useMemo(
+    () => reuseUnchanged(solveJunctions(scene.walls, nodes), endsCache),
+    [scene.walls, nodes],
+  );
+  const bbJunctions = useMemo(
+    () => reuseUnchanged(solveJunctions(scene.walls, nodes, BASEBOARD_PROUD), bbCache),
+    [scene.walls, nodes],
+  );
+
   return (
     <group>
       {scene.walls.map((wall) => {
@@ -980,6 +1037,8 @@ export function Walls({ scene, offset }: {
             a={a}
             b={b}
             ops={byWall.get(wall.id) ?? EMPTY}
+            ends={junctions.get(wall.id) ?? SQUARE_ENDS}
+            bbEnds={bbJunctions.get(wall.id) ?? SQUARE_ENDS}
             offset={offset}
           />
         );

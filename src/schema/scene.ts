@@ -29,6 +29,16 @@ export interface Wall {
   paintB?: string;
 }
 
+/**
+ * Does this wall contribute a solid, full-thickness body to the 3D model?
+ *
+ * The single source of truth for "is this a real wall" — wall junctions, wall
+ * bodies and baseboards all gate on it, so a new non-solid `kind` only has to
+ * be taught here. Rails render as their own thin barrier instead, and never
+ * take part in a corner join.
+ */
+export const isSolidWall = (w: Wall): boolean => w.kind !== "rail";
+
 export type OpeningType = "door" | "window";
 
 /** An opening cut into a wall, expressed in wall-local space. */
