@@ -13,6 +13,7 @@
 
 import type { Evidence, Id, RoomSemantics, BuildingSemantics } from "../../schema/scene";
 import type { RoomGraph, RoomGraphEntry } from "./semanticGraph";
+import { walkableConnections } from "./semanticGraph";
 import { functionForType } from "./roomTaxonomy";
 
 /** Rooms at or above this confidence skip the VLM escalation. */
@@ -40,7 +41,10 @@ const geo = (feature: string, value: string | number | boolean, weight: number):
  *  0.95 — certainty is reserved for OCR. */
 function scoreRoom(e: RoomGraphEntry, ocrTokens: string[]): Scored[] {
   const f = e.features;
-  const conn = e.doorConnections.length;
+  // Circulation is about where you can WALK, so an open portal counts exactly
+  // like a door here. Counting doors alone would stop an open-plan corridor
+  // reading as a hall purely because its widest connection has no door in it.
+  const conn = walkableConnections(e);
   const out: Scored[] = [];
   const add = (type: string, parts: Evidence[]) => {
     const score = Math.min(0.95, parts.reduce((s, p) => s + p.weight, 0));

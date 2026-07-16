@@ -16,8 +16,11 @@ import {
   buildWallSegments,
   buildOpeningVolumes,
   buildBaseboards,
+  BASEBOARD_PROUD,
   type OpeningVolume,
 } from "./geometry/buildWallSegments";
+import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./geometry/wallJunctions";
+import { buildWallGeometry } from "./geometry/wallGeometry";
 import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
 
@@ -40,6 +43,21 @@ function rayToPlan(
 
 const isPick = (p: PickRef | null, kind: PickRef["kind"], id: string) =>
   p !== null && p.kind === kind && p.id === id;
+
+/**
+ * Which painted face did the ray land on? Groups 4 and 5 are the wall's two
+ * long faces (see buildWallGeometry, which keeps BoxGeometry's ordering); the
+ * ends, top and bottom carry no paint and return undefined.
+ *
+ * Read from the material group rather than the face normal: a mitred end face
+ * is slanted, and at a 90-degree corner its normal is far enough round to look
+ * like a side face. Those ends are buried inside the joint so it never actually
+ * surfaces, but the group index is exact and free.
+ */
+const faceSide = (e: { face?: THREE.Face | null }): "a" | "b" | undefined => {
+  const mi = e.face?.materialIndex;
+  return mi === 4 ? "a" : mi === 5 ? "b" : undefined;
+};
 
 const fmt = (m: number) => `${m.toFixed(2)} m`;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -80,11 +98,13 @@ interface DragState {
   base: Scene;
 }
 
-function WallGroup({ wall, a, b, ops, offset }: {
+function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   wall: Wall;
   a: Node;
   b: Node;
   ops: Opening[];
+  ends: WallEnds; // how this wall's body meets its neighbours
+  bbEnds: WallEnds; // ditto for the wider baseboard band
   offset: { cx: number; cz: number };
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
@@ -105,9 +125,9 @@ function WallGroup({ wall, a, b, ops, offset }: {
     const ux = dx / L;
     const uy = dy / L;
     return {
-      pieces: buildWallSegments(eff, ops, nodes),
+      pieces: buildWallSegments(eff, ops, nodes, ends),
       volumes: buildOpeningVolumes(eff, ops, nodes),
-      baseboards: buildBaseboards(wall, ops, nodes),
+      baseboards: buildBaseboards(wall, ops, nodes, bbEnds),
       mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       len: Math.hypot(dx, dy),
       normal: { x: -uy, y: ux },
@@ -119,7 +139,17 @@ function WallGroup({ wall, a, b, ops, offset }: {
         rotationY: -Math.atan2(uy, ux),
       } satisfies WallFrame,
     };
-  }, [wall, ops, a, b, wallMode]);
+  }, [wall, ops, a, b, wallMode, ends, bbEnds]);
+
+  // Real meshes for the jointed bodies. Unlike <boxGeometry> these are ours to
+  // free, so they're disposed whenever the wall reshapes.
+  const geoms = useMemo(() => pieces.map((p) => buildWallGeometry(p.size, p.ends)), [pieces]);
+  useEffect(() => () => geoms.forEach((g) => g.dispose()), [geoms]);
+  const bbGeoms = useMemo(
+    () => baseboards.map((p) => buildWallGeometry(p.size, p.ends)),
+    [baseboards],
+  );
+  useEffect(() => () => bbGeoms.forEach((g) => g.dispose()), [bbGeoms]);
 
   // Three materials per wall, indexed onto the box faces so each long face can
   // take its own Tambour colour: `neutral` covers the ends/top/bottom, `matA`
@@ -212,13 +242,10 @@ function WallGroup({ wall, a, b, ops, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "build" || s.placing) return; // walls edit in Build only
     e.stopPropagation();
-    // Which face did the pointer land on? The long faces carry a local ±Z
-    // normal; end caps / top pick up (or keep) side A. This is what makes
-    // "click the face you want to paint" work.
-    const n = e.face?.normal;
-    let side: "a" | "b" | undefined;
-    if (n && Math.abs(n.z) > 0.5) side = n.z > 0 ? "a" : "b";
-    else if (s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
+    // Which face did the pointer land on? End caps / top keep the current side.
+    // This is what makes "click the face you want to paint" work.
+    let side = faceSide(e);
+    if (!side && s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
     s.setSel3d({ kind: "wall", id: wall.id, side: side ?? "a" });
     const start = rayToPlan(e, offset);
     if (!start) return;
@@ -267,8 +294,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
   const paintFace = (e: ThreeEvent<MouseEvent>) => {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.brush?.kind !== "paint") return;
-    const n = e.face?.normal;
-    const side: "a" | "b" = n && Math.abs(n.z) > 0.5 ? (n.z > 0 ? "a" : "b") : "a";
+    const side = faceSide(e) ?? "a";
     const hex = s.brush.hex ?? undefined;
     s.commitScene(`${hex ? "Paint" : "Clear"} Side ${side.toUpperCase()}`, {
       ...s.scene,
@@ -313,6 +339,7 @@ function WallGroup({ wall, a, b, ops, offset }: {
           key={i}
           position={p.position}
           rotation={[0, p.rotationY, 0]}
+          geometry={geoms[i]}
           castShadow
           receiveShadow
           userData={{ pick: { kind: "wall", id: wall.id } }}
@@ -324,22 +351,19 @@ function WallGroup({ wall, a, b, ops, offset }: {
           // Swallow the click (keeps floor from stealing it) and paint the face
           // when a paint brush is active.
           onClick={onClickWall}
-        >
-          <boxGeometry args={p.size} />
-        </mesh>
+        />
       ))}
       {baseboards.map((p, i) => (
         <mesh
           key={`bb${i}`}
           position={p.position}
           rotation={[0, p.rotationY, 0]}
+          geometry={bbGeoms[i]}
           material={baseboardMat}
           raycast={() => null} // visual trim — clicks fall through to the wall body
           castShadow
           receiveShadow
-        >
-          <boxGeometry args={p.size} />
-        </mesh>
+        />
       ))}
       {volumes.map((v) => {
         const op = ops.find((o) => o.id === v.openingId);
@@ -501,6 +525,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
       mullion: mk("#c9bfa8", { roughness: 0.7 }),
       handle: mk("#b8b8be", { metalness: 0.85, roughness: 0.35 }),
       threshold: mk("#b7ad98", { roughness: 0.82 }),
+      track: mk("#9aa0a6", { metalness: 0.7, roughness: 0.4 }), // sliding head rail
       glass: mk("#cfe6ee", {
         roughness: 0.1,
         transparent: true,
@@ -511,7 +536,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
       }),
     };
     const baseOpacity: Record<JoineryRole, number> = {
-      frame: 1, leaf: 1, mullion: 1, handle: 1, threshold: 1, glass: 0.22,
+      frame: 1, leaf: 1, mullion: 1, handle: 1, threshold: 1, track: 1, glass: 0.22,
     };
     return { mats, baseOpacity };
   }, []);
@@ -932,6 +957,175 @@ function RailGroup({ wall, a, b, offset }: {
   );
 }
 
+/** Keep the previous WallEnds object for every wall whose corners didn't move,
+ *  so dragging one node only rebuilds the walls it actually touched. Mirrors
+ *  the identity-preserving trick byWall uses for openings. */
+function reuseUnchanged(
+  fresh: Map<string, WallEnds>,
+  cache: { current: Map<string, WallEnds> },
+): Map<string, WallEnds> {
+  const prev = cache.current;
+  for (const [id, e] of fresh) {
+    const old = prev.get(id);
+    if (old && old.x0L === e.x0L && old.x0R === e.x0R && old.x1L === e.x1L && old.x1R === e.x1R) {
+      fresh.set(id, old); // unchanged - keep the old reference
+    }
+  }
+  cache.current = fresh;
+  return fresh;
+}
+
+// --- Portals ----------------------------------------------------------------
+
+const PORTAL_COLOR = "#ffb038"; // matches the trace canvas's open-boundary amber
+const PORTAL_BAND_H = 0.012; // floor strip: a threshold, not a step
+const PORTAL_BAND_T = 0.06;
+
+/**
+ * A portal: an OPEN boundary. There is no barrier here — the whole point is
+ * that the room closes without anything being built — so it renders nothing but
+ * a floor threshold, and only while you're editing.
+ *
+ * It still has to be grabbable, or you could draw one and never move, delete or
+ * convert it again. So Build mode gets a thin invisible slab to catch the
+ * pointer plus a faint line to show where it is; Decorate and View get nothing
+ * at all, because in the finished room the space simply flows through.
+ */
+function PortalGroup({ wall, a, b, offset }: {
+  wall: Wall;
+  a: Node;
+  b: Node;
+  offset: { cx: number; cz: number };
+}) {
+  const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
+  const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const appMode = useSceneStore((s) => s.appMode);
+  const drag = useRef<DragState | null>(null);
+
+  const { mid, normal, rotationY, len } = useMemo(() => {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const L = Math.hypot(dx, dy) || 1;
+    return {
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      normal: { x: -dy / L, y: dx / L },
+      rotationY: -Math.atan2(dy / L, dx / L),
+      len: Math.hypot(dx, dy),
+    };
+  }, [a, b]);
+
+  const band = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: PORTAL_COLOR,
+        emissive: new THREE.Color(PORTAL_COLOR),
+        emissiveIntensity: 0.25,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0.6,
+        depthWrite: false,
+      }),
+    [],
+  );
+  useEffect(() => () => band.dispose(), [band]);
+  useEffect(() => {
+    band.opacity = selected ? 0.95 : hovered ? 0.75 : 0.42;
+    band.emissiveIntensity = selected ? 0.6 : hovered ? 0.4 : 0.22;
+  }, [band, selected, hovered]);
+
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return;
+    const s = useSceneStore.getState();
+    if (s.appMode !== "build" || s.placing) return;
+    e.stopPropagation();
+    s.setSel3d({ kind: "wall", id: wall.id });
+    const start = rayToPlan(e, offset);
+    if (!start) return;
+    (e.target as Element).setPointerCapture(e.pointerId);
+    drag.current = { pointerId: e.pointerId, start, base: s.scene };
+    s.beginGesture();
+  };
+
+  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.stopPropagation();
+    const cur = rayToPlan(e, offset);
+    if (!cur) return;
+    let dist = (cur.x - d.start.x) * normal.x + (cur.y - d.start.y) * normal.y;
+    if (!e.shiftKey) dist = snapDelta(dist);
+    const moved = new Set([wall.a, wall.b]);
+    const nodes = d.base.nodes.map((n) =>
+      moved.has(n.id) ? { ...n, x: n.x + normal.x * dist, y: n.y + normal.y * dist } : n,
+    );
+    const next: Scene = { ...d.base, nodes };
+    const labels = wallLengthLabels(next, moved);
+    labels.push({
+      world: [mid.x + normal.x * dist, 0.6, mid.y + normal.y * dist],
+      text: `Δ ${fmt(Math.abs(dist))}`,
+    });
+    useSceneStore.getState().updateGesture(next, { guides: [], labels });
+  };
+
+  const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.stopPropagation();
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    drag.current = null;
+    useSceneStore.getState().endGesture("Move opening");
+  };
+
+  if (appMode !== "build") return null; // finished room: the space just flows through
+
+  return (
+    <group>
+      {/* Threshold strip on the floor — where one space becomes the next. */}
+      <mesh
+        position={[mid.x, PORTAL_BAND_H / 2, mid.y]}
+        rotation={[0, rotationY, 0]}
+        material={band}
+        raycast={() => null}
+      >
+        <boxGeometry args={[len, PORTAL_BAND_H, PORTAL_BAND_T]} />
+      </mesh>
+      {/* Invisible catcher so the portal stays selectable and draggable. */}
+      <mesh
+        position={[mid.x, WALL_HEIGHT / 4, mid.y]}
+        rotation={[0, rotationY, 0]}
+        userData={{ pick: { kind: "wall", id: wall.id } }}
+        onPointerOver={(e) => {
+          const s = useSceneStore.getState();
+          if (s.appMode !== "build" || s.placing) return;
+          e.stopPropagation();
+          s.setHover3d({ kind: "wall", id: wall.id });
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          const cur = useSceneStore.getState().hover3d;
+          if (isPick(cur, "wall", wall.id)) useSceneStore.getState().setHover3d(null);
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <boxGeometry args={[len, WALL_HEIGHT / 2, PORTAL_BAND_T]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      {selected && (
+        <>
+          <CornerHandle nodeId={wall.a} x={a.x} y={a.y} offset={offset} />
+          <CornerHandle nodeId={wall.b} x={b.x} y={b.y} offset={offset} />
+          <Html position={[mid.x, 0.5, mid.y]} center style={{ pointerEvents: "none" }}>
+            <div style={dimLabelStyle}>open · {fmt(len)}</div>
+          </Html>
+        </>
+      )}
+    </group>
+  );
+}
+
 export function Walls({ scene, offset }: {
   scene: Scene;
   offset: { cx: number; cz: number };
@@ -964,6 +1158,21 @@ export function Walls({ scene, offset }: {
   );
   const EMPTY: Opening[] = useMemo(() => [], []);
 
+  // How every wall meets its neighbours. Solved for the whole scene at once —
+  // a corner is a property of the junction, not of either wall on its own, so
+  // no wall can work it out from the two nodes it can see. The baseboard band
+  // is wider than the wall, so it re-solves at its own half-width.
+  const endsCache = useRef(new Map<string, WallEnds>());
+  const bbCache = useRef(new Map<string, WallEnds>());
+  const junctions = useMemo(
+    () => reuseUnchanged(solveJunctions(scene.walls, nodes), endsCache),
+    [scene.walls, nodes],
+  );
+  const bbJunctions = useMemo(
+    () => reuseUnchanged(solveJunctions(scene.walls, nodes, BASEBOARD_PROUD), bbCache),
+    [scene.walls, nodes],
+  );
+
   return (
     <group>
       {scene.walls.map((wall) => {
@@ -973,6 +1182,9 @@ export function Walls({ scene, offset }: {
         if (wall.kind === "rail") {
           return <RailGroup key={wall.id} wall={wall} a={a} b={b} offset={offset} />;
         }
+        if (wall.kind === "portal") {
+          return <PortalGroup key={wall.id} wall={wall} a={a} b={b} offset={offset} />;
+        }
         return (
           <WallGroup
             key={wall.id}
@@ -980,6 +1192,8 @@ export function Walls({ scene, offset }: {
             a={a}
             b={b}
             ops={byWall.get(wall.id) ?? EMPTY}
+            ends={junctions.get(wall.id) ?? SQUARE_ENDS}
+            bbEnds={bbJunctions.get(wall.id) ?? SQUARE_ENDS}
             offset={offset}
           />
         );

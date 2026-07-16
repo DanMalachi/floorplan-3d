@@ -117,6 +117,9 @@ export function Ceilings({ scene }: { scene: Scene }) {
 
   const ceilings = useMemo(() => {
     const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
+    // RAILS only — deliberately not every non-solid kind. A rail means open to
+    // the SKY, so the room loses its ceiling. A portal means open to the next
+    // ROOM, and the ceiling runs straight over it. Do not merge these.
     const railEdges = new Set(
       scene.walls
         .filter((w) => w.kind === "rail")

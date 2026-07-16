@@ -21,6 +21,13 @@ export interface GtWall {
 // an OUTDOOR space rather than dividing two indoor rooms.
 export type GtRail = GtWall;
 
+// A portal: the line where one space becomes another with NOTHING built on it.
+// Kept out of `walls` deliberately — a portal is an ABSENCE, so no extractor
+// can ever find one, and scoring it as a wall target would only punish the
+// Eyes for missing ink that was never on the plan. It rides along for fidelity
+// (so a trace round-trips) and as a record of the human's read of the space.
+export type GtPortal = GtWall;
+
 export interface GtOpening {
   id: string;
   type: "door" | "window";
@@ -45,6 +52,7 @@ export interface GroundTruth {
   // Resolved to image-px endpoints — what the scoring harness consumes.
   walls: GtWall[];
   rails: GtRail[];
+  portals?: GtPortal[]; // absent in ground truth exported before portals existed
   resolvedOpenings: GtOpening[];
 }
 
@@ -59,14 +67,16 @@ export function buildGroundTruth(args: {
   const byId = new Map(args.points.map((p) => [p.id, p]));
   const walls: GtWall[] = [];
   const rails: GtRail[] = [];
+  const portals: GtPortal[] = [];
   const segById = new Map<string, { a: TracePoint; b: TracePoint }>();
+  const bucket = (t: TraceSegment["type"]) =>
+    t === "rail" ? rails : t === "portal" ? portals : walls;
   for (const s of args.segments) {
     const a = byId.get(s.a);
     const b = byId.get(s.b);
     if (!a || !b) continue;
     segById.set(s.id, { a, b });
-    const resolved = { segmentId: s.id, x0: a.x, y0: a.y, x1: b.x, y1: b.y };
-    (s.type === "rail" ? rails : walls).push(resolved);
+    bucket(s.type).push({ segmentId: s.id, x0: a.x, y0: a.y, x1: b.x, y1: b.y });
   }
   const resolvedOpenings: GtOpening[] = [];
   for (const o of args.openings) {
@@ -95,6 +105,7 @@ export function buildGroundTruth(args: {
     openings: args.openings,
     walls,
     rails,
+    portals,
     resolvedOpenings,
   };
 }

@@ -18,10 +18,17 @@ export interface Wall {
   b: Id; // end node id
   thickness: number; // meters
   height?: number; // meters; falls back to WALL_HEIGHT when undefined
-  // "rail" = a low, see-through barrier (balcony railing / balustrade / low
-  // parapet) rather than a solid wall. Bounds rooms like a wall in the graph,
-  // but renders low and transparent. Absent = wall. Mirrors TraceSegment.type.
-  kind?: "wall" | "rail";
+  // What KIND of boundary this edge is. Every kind bounds rooms identically in
+  // the graph — closure is topology, not construction — but each builds
+  // different geometry. Absent = wall. Mirrors TraceSegment.type.
+  //   "rail"   = a low, see-through barrier (balcony railing / balustrade /
+  //              low parapet). Renders low and transparent.
+  //   "portal" = an OPEN boundary: no barrier at all, just the line where one
+  //              space becomes another (a living room giving onto a corridor).
+  //              Renders nothing. It exists so a room can be closed for area
+  //              and floor purposes WITHOUT inventing a wall that isn't there
+  //              and then punching a fake door through it.
+  kind?: "wall" | "rail" | "portal";
   // Per-face paint. A wall has two long faces (one per adjacent room). Side "a"
   // is the wall-local +Z face, side "b" the -Z face. A hex string paints that
   // face; undefined leaves it default plaster. Painted independently.
@@ -29,7 +36,41 @@ export interface Wall {
   paintB?: string;
 }
 
-export type OpeningType = "door" | "window";
+/**
+ * Does this wall contribute a solid, full-thickness body to the 3D model?
+ *
+ * The single source of truth for "is this a real wall" — wall junctions, wall
+ * bodies and baseboards all gate on it, so a new non-solid `kind` only has to
+ * be taught here. Rails render as their own thin barrier and portals render
+ * nothing; neither ever takes part in a corner join, so a wall running into
+ * one gets a square-capped jamb rather than a mitre into thin air.
+ */
+export const isSolidWall = (w: Wall): boolean =>
+  w.kind !== "rail" && w.kind !== "portal";
+
+// "passage" = a cased opening: a real hole in the wall with NO door in it, for
+// spaces that connect openly but are still divided by a wall. (Where there is
+// no wall at all, that's a portal — see Wall.kind.)
+export type OpeningType = "door" | "window" | "passage";
+
+/**
+ * How a door's leaves move. Absent = an ordinary hinged swing door.
+ *
+ *  "bypass"  = panels run in tracks INSIDE the wall's depth and slide past one
+ *              another — a 2-panel glazed patio slider, or wardrobe bypass
+ *              doors. The panels stack up at one jamb.
+ *  "surface" = a single leaf hangs on the wall FACE and slides clear of the
+ *              opening along it — a barn door. Wider than the hole it covers.
+ *
+ * There's no pocket door: that would need the wall to model a cavity.
+ */
+export interface SlideSpec {
+  style: "bypass" | "surface";
+  panels: number; // bypass: 2-3. surface: always 1.
+  glazed?: boolean; // true = glazed sash (patio); false/absent = solid leaf
+  open?: number; // 0 = shut, 1 = slid fully open (default 0)
+  side?: "start" | "end"; // the jamb the panels stack at (default "end")
+}
 
 /** An opening cut into a wall, expressed in wall-local space. */
 export interface Opening {
@@ -41,9 +82,11 @@ export interface Opening {
   height: number; // meters
   sill: number; // meters above floor (doors typically 0)
   // --- Joinery (all optional, additive; doors/windows render real geometry) ---
-  swingDeg?: number; // door leaf open angle, 0 = closed (default). Doors only.
-  hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Doors only.
+  swingDeg?: number; // door leaf open angle, 0 = closed (default). Swing doors only.
+  hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Swing doors only.
+  slide?: SlideSpec; // present = a SLIDING door; swingDeg/hinge are then unused
   mullions?: { cols: number; rows: number }; // window glazing-bar grid (default {cols:2,rows:1})
+  lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
 }
 
 export type FloorStyle = "wood" | "tile" | "concrete";
@@ -79,6 +122,7 @@ export interface RoomFeatures {
   windowCount: number;
   exteriorWallCount: number; // boundary walls bordering only this room
   railWallCount: number; // boundary edges that are rails — strong outdoor (balcony/deck) signal
+  portalWallCount: number; // boundary edges that are open portals — an open-plan signal
   longestWallM: number;
   perimeterM: number;
   aspectRatio: number; // bbox long / short
@@ -90,9 +134,12 @@ export interface RoomFeatures {
 /** Extensible room-to-room relationships. Only the two deterministic ones are
  *  populated in v1; the rest are left open for later layers. */
 export interface RoomRelationships {
-  sharesWallWith: Id[]; // room ids sharing >= 1 wall
+  sharesWallWith: Id[]; // room ids sharing >= 1 boundary edge of any kind
   connectedVia: { room: Id; opening: Id }[]; // rooms reachable through a door/window
-  // future: opensInto, receivesLightFrom, accessibleFrom, parentZone
+  // Rooms this one flows into without opening anything: a portal (no wall at
+  // all) or a passage (a cased hole in one). Different construction, same fact.
+  opensInto: Id[];
+  // future: receivesLightFrom, accessibleFrom, parentZone
 }
 
 /** The semantic verdict for one room. Recomputable and provenance-tracked. */

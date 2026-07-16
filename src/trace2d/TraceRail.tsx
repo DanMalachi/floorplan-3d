@@ -5,7 +5,7 @@
 // controls visible at a time. Replaces the old all-at-once toolbar.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSceneStore } from "@/store/useSceneStore";
+import { useSceneStore, type SegmentKind } from "@/store/useSceneStore";
 import { analyzeLoops } from "@/lib/loops";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { traceToScene } from "./traceToScene";
@@ -61,17 +61,17 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   const setMode = useSceneStore((s) => s.setMode);
   const ortho = useSceneStore((s) => s.ortho);
   const setOrtho = useSceneStore((s) => s.setOrtho);
-  const drawRail = useSceneStore((s) => s.drawRail);
-  const setDrawRail = useSceneStore((s) => s.setDrawRail);
+  const drawKind = useSceneStore((s) => s.drawKind);
+  const setDrawKind = useSceneStore((s) => s.setDrawKind);
   const undo = useSceneStore((s) => s.undo);
   const finishChain = useSceneStore((s) => s.finishChain);
   const deleteSelected = useSceneStore((s) => s.deleteSelected);
   const selectedPointId = useSceneStore((s) => s.selectedPointId);
   const selectedOpeningId = useSceneStore((s) => s.selectedOpeningId);
   const icons = { door: "🚪 Door", window: "🪟 Window" } as const;
-  const pickWall = (rail: boolean) => {
+  const pickWall = (kind: SegmentKind) => {
     setMode("wall");
-    setDrawRail(rail);
+    setDrawKind(kind);
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -79,15 +79,25 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
       <div style={{ display: "flex", gap: 4 }}>
         {tools.includes("wall") && (
           <>
-            <button style={chip(mode === "wall" && !drawRail, { flex: 1, textAlign: "center" })} onClick={() => pickWall(false)}>
+            <button
+              style={chip(mode === "wall" && drawKind === "wall", { flex: 1, textAlign: "center" })}
+              onClick={() => pickWall("wall")}
+            >
               ✏️ Wall
             </button>
             <button
-              style={chip(mode === "wall" && drawRail, { flex: 1, textAlign: "center" })}
-              onClick={() => pickWall(true)}
+              style={chip(mode === "wall" && drawKind === "rail", { flex: 1, textAlign: "center" })}
+              onClick={() => pickWall("rail")}
               title="Balcony/terrace railing — low, see-through barrier that bounds an outdoor space"
             >
               ▭ Rail
+            </button>
+            <button
+              style={chip(mode === "wall" && drawKind === "portal", { flex: 1, textAlign: "center" })}
+              onClick={() => pickWall("portal")}
+              title="Open boundary — closes the room without building anything. Use where a space simply gives onto the next (living room to corridor); no wall, no door needed."
+            >
+              ⇿ Open
             </button>
           </>
         )}
@@ -97,7 +107,7 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
             style={chip(mode === t, { flex: 1, textAlign: "center" })}
             onClick={() => {
               setMode(t);
-              setDrawRail(false);
+              setDrawKind("wall");
             }}
           >
             {icons[t as "door" | "window"]}
