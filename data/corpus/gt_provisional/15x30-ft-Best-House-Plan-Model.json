@@ -1,0 +1,486 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "file_sha256": "a239b4ffb96359580ec08b8d7f7324ea6a032af89a219f7915e274b5034608af",
+    "filename": "15x30-ft-Best-House-Plan-Model.pdf",
+    "encoding_class": "R",
+    "convention_class": "single_stroke",
+    "scope_class": "single",
+    "router_confidence": 0.0
+  },
+  "units": {
+    "system": "mm",
+    "mm_per_unit": 1.0,
+    "scale_confidence": 1.0,
+    "scale_source": null,
+    "scale_inliers": 0,
+    "scale_outliers": 0
+  },
+  "image_transform": {
+    "type": "similarity",
+    "matrix": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "source_px": [
+      1131,
+      1600
+    ]
+  },
+  "walls": [
+    {
+      "id": "w_s2",
+      "start": [
+        1932.7152334279322,
+        2475.506223035973
+      ],
+      "end": [
+        6362.272798579215,
+        2475.692472846179
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s4",
+      "start": [
+        6362.272798579215,
+        2475.692472846179
+      ],
+      "end": [
+        6344.682470574632,
+        11493.328798591485
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s6",
+      "start": [
+        6344.682470574632,
+        11493.328798591485
+      ],
+      "end": [
+        2003.7010256813564,
+        11493.496187151657
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s7",
+      "start": [
+        2003.7010256813564,
+        11493.496187151657
+      ],
+      "end": [
+        1932.7152334279322,
+        2475.506223035973
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s21",
+      "start": [
+        3238.758807630092,
+        2493.3304937101175
+      ],
+      "end": [
+        3204.1737022327134,
+        4532.509735115218
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s23",
+      "start": [
+        3204.1737022327134,
+        4532.509735115218
+      ],
+      "end": [
+        1932.901647603072,
+        4540.389266854614
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [
+        {
+          "id": "o_o36",
+          "class": "door",
+          "center_offset": 716.2424636928886,
+          "width": 755.7139726869051,
+          "sill_height": 0,
+          "head_height": 2,
+          "swing": null,
+          "confidence": 1.0,
+          "evidence": [
+            "ground_truth"
+          ],
+          "flags": []
+        }
+      ],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s25",
+      "start": [
+        3204.1737022327134,
+        4532.509735115218
+      ],
+      "end": [
+        3203.428635416789,
+        5440.329039908978
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [
+        {
+          "id": "o_o37",
+          "class": "door",
+          "center_offset": 429.7220249728615,
+          "width": 822.0093030885757,
+          "sill_height": 0,
+          "head_height": 2,
+          "swing": null,
+          "confidence": 1.0,
+          "evidence": [
+            "ground_truth"
+          ],
+          "flags": []
+        }
+      ],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s29",
+      "start": [
+        3203.428635416789,
+        5440.329039908978
+      ],
+      "end": [
+        6344.646197130936,
+        5440.396602518288
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s32",
+      "start": [
+        3186.929234145904,
+        7012.093492210903
+      ],
+      "end": [
+        6326.964239268193,
+        7046.230327882926
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    },
+    {
+      "id": "w_s35",
+      "start": [
+        6344.621798602463,
+        9852.102119772022
+      ],
+      "end": [
+        2003.5358922143923,
+        9852.16133528771
+      ],
+      "thickness": 150.0,
+      "curvature": 0.0,
+      "role": "unconfirmed",
+      "openings": [
+        {
+          "id": "o_o38",
+          "class": "door",
+          "center_offset": 3717.5399940427824,
+          "width": 1087.1876286359109,
+          "sill_height": 0,
+          "head_height": 2,
+          "swing": null,
+          "confidence": 1.0,
+          "evidence": [
+            "ground_truth"
+          ],
+          "flags": []
+        }
+      ],
+      "confidence": 1.0,
+      "evidence": [
+        "ground_truth"
+      ],
+      "flags": [
+        "legacy_default_thickness",
+        "legacy_unconfirmed_role"
+      ]
+    }
+  ],
+  "junctions": [
+    {
+      "id": "j_p0",
+      "point": [
+        1932.7152334279322,
+        2475.506223035973
+      ],
+      "type": "L",
+      "walls": [
+        "w_s2",
+        "w_s7"
+      ]
+    },
+    {
+      "id": "j_p1",
+      "point": [
+        6362.272798579215,
+        2475.692472846179
+      ],
+      "type": "L",
+      "walls": [
+        "w_s2",
+        "w_s4"
+      ]
+    },
+    {
+      "id": "j_p3",
+      "point": [
+        6344.682470574632,
+        11493.328798591485
+      ],
+      "type": "L",
+      "walls": [
+        "w_s4",
+        "w_s6"
+      ]
+    },
+    {
+      "id": "j_p5",
+      "point": [
+        2003.7010256813564,
+        11493.496187151657
+      ],
+      "type": "L",
+      "walls": [
+        "w_s6",
+        "w_s7"
+      ]
+    },
+    {
+      "id": "j_p19",
+      "point": [
+        3238.758807630092,
+        2493.3304937101175
+      ],
+      "type": "end",
+      "walls": [
+        "w_s21"
+      ]
+    },
+    {
+      "id": "j_p20",
+      "point": [
+        3204.1737022327134,
+        4532.509735115218
+      ],
+      "type": "T",
+      "walls": [
+        "w_s21",
+        "w_s23",
+        "w_s25"
+      ]
+    },
+    {
+      "id": "j_p22",
+      "point": [
+        1932.901647603072,
+        4540.389266854614
+      ],
+      "type": "end",
+      "walls": [
+        "w_s23"
+      ]
+    },
+    {
+      "id": "j_p24",
+      "point": [
+        3203.428635416789,
+        5440.329039908978
+      ],
+      "type": "L",
+      "walls": [
+        "w_s25",
+        "w_s29"
+      ]
+    },
+    {
+      "id": "j_p28",
+      "point": [
+        6344.646197130936,
+        5440.396602518288
+      ],
+      "type": "end",
+      "walls": [
+        "w_s29"
+      ]
+    },
+    {
+      "id": "j_p30",
+      "point": [
+        3186.929234145904,
+        7012.093492210903
+      ],
+      "type": "end",
+      "walls": [
+        "w_s32"
+      ]
+    },
+    {
+      "id": "j_p31",
+      "point": [
+        6326.964239268193,
+        7046.230327882926
+      ],
+      "type": "end",
+      "walls": [
+        "w_s32"
+      ]
+    },
+    {
+      "id": "j_p33",
+      "point": [
+        6344.621798602463,
+        9852.102119772022
+      ],
+      "type": "end",
+      "walls": [
+        "w_s35"
+      ]
+    },
+    {
+      "id": "j_p34",
+      "point": [
+        2003.5358922143923,
+        9852.16133528771
+      ],
+      "type": "end",
+      "walls": [
+        "w_s35"
+      ]
+    }
+  ],
+  "rooms": [],
+  "diagnostics": {
+    "tier": 4,
+    "unresolved": [],
+    "render_agreement": {
+      "wall_iou": 1.0,
+      "unexplained_ink_ratio": 0.0,
+      "hallucinated_ink_ratio": 0.0
+    },
+    "kill_log_ref": "legacy_gt_conversion",
+    "pipeline_version": "convert_legacy_gt.py",
+    "timings_ms": {},
+    "cost_usd": 0.0
+  }
+}

@@ -33,7 +33,7 @@ OpeningClass = Literal["door", "window", "passage"]
 Swing = Literal["left", "right", "double", "sliding", "folding", "unknown"] | None
 JunctionType = Literal["L", "T", "X", "I", "end"]
 EvidenceSource = Literal[
-    "segmentation", "vector", "topology", "render_check", "detector", "seg_gap", "vlm", "classical"
+    "segmentation", "vector", "topology", "render_check", "detector", "seg_gap", "vlm", "classical", "ground_truth"
 ]
 Tier = Literal[1, 2, 3, 4]
 
