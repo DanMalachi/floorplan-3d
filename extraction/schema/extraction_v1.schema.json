@@ -76,7 +76,7 @@
 
     "evidence_source": {
       "type": "string",
-      "enum": ["segmentation", "vector", "topology", "render_check", "detector", "seg_gap", "vlm", "classical"]
+      "enum": ["segmentation", "vector", "topology", "render_check", "detector", "seg_gap", "vlm", "classical", "ground_truth"]
     },
 
     "wall": {
