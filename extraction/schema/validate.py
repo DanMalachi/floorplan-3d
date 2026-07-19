@@ -109,6 +109,71 @@ def cycles_closed(plan: dict, result: ValidationResult) -> None:
             continue
 
 
+def _room_polygon(walls: list[dict]) -> list[list[float]] | None:
+    """Walk a room's wall_cycle into an ordered polygon of the shared
+    junction points between consecutive walls (centerline-based, matching
+    how the rest of this module treats walls). Returns None if the cycle
+    doesn't actually close — cycles_closed() reports that case on its own,
+    so callers should skip zone checks rather than double-report it."""
+    n = len(walls)
+    if n < 3:
+        return None
+    poly = []
+    for i in range(n):
+        a, b = walls[i], walls[(i + 1) % n]
+        a_ends = (a["start"], a["end"])
+        b_ends = (b["start"], b["end"])
+        best_pt, best_d = None, math.inf
+        for p in a_ends:
+            for q in b_ends:
+                d = _dist(p, q)
+                if d < best_d:
+                    best_d, best_pt = d, p
+        if best_d > EPSILON:
+            return None
+        poly.append(best_pt)
+    return poly
+
+
+def _point_in_polygon(pt: list[float], polygon: list[list[float]]) -> bool:
+    """Standard ray-casting point-in-polygon test."""
+    x, y = pt
+    inside = False
+    n = len(polygon)
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i]
+        xj, yj = polygon[j]
+        if (yi > y) != (yj > y):
+            x_intersect = (xj - xi) * (y - yi) / (yj - yi) + xi
+            if x < x_intersect:
+                inside = not inside
+        j = i
+    return inside
+
+
+def zones_within_room(plan: dict, result: ValidationResult) -> None:
+    walls_by_id = {w["id"]: w for w in plan.get("walls", [])}
+    for r in plan.get("rooms", []):
+        zones = r.get("zones") or []
+        if not zones:
+            continue
+        cycle = r["wall_cycle"]
+        walls = [walls_by_id.get(wid) for wid in cycle]
+        if any(w is None for w in walls):
+            continue  # already reported by ids_resolve
+        polygon = _room_polygon(walls)
+        if polygon is None:
+            continue  # already reported by cycles_closed
+        for z in zones:
+            for pt in z["polygon"]:
+                if not _point_in_polygon(pt, polygon):
+                    result.add(
+                        f"room {r['id']} zone {z['label']}: point {pt} lies outside the room's wall_cycle face"
+                    )
+                    break
+
+
 def no_self_intersections(plan: dict, result: ValidationResult) -> None:
     for w in plan.get("walls", []):
         curvature = w.get("curvature", 0.0)
@@ -133,6 +198,7 @@ def validity(plan: dict) -> ValidationResult:
     openings_in_span(plan, result)
     junctions_consistent(plan, result)
     cycles_closed(plan, result)
+    zones_within_room(plan, result)
     no_self_intersections(plan, result)
     return result
 

@@ -87,12 +87,40 @@ Two genuinely different things share the word "opening":
   docstrings), but it must be resolved before Phase 4 (solver/topology)
   or Phase 5 (openings) can handle open-plan plans correctly, and before
   the schema is treated as fully frozen. See `reports/phase-0-gate.md`
-  for the concrete options and the request for Dan's decision. Related:
-  the "Open-plan zones idea" memory entry (living/dining/kitchen
-  functional-zone tagging) is a different, adjacent problem — zones
-  *within* one already-closed room — and doesn't resolve this gap either.
+  for the concrete options and the request for Dan's decision. **Zones
+  (Section 4 below) do not resolve this** — they tag sub-areas *within*
+  a room whose `wall_cycle` already closes; the portal gap is about rooms
+  that cannot close at all because part of their boundary has no wall
+  element. Don't reach for a zone as a workaround for a missing portal.
 
-## 4. Unit scope
+## 4. Zones — functional sub-areas within one room
+
+`rooms[].zones` (optional; `{label, polygon}[]`) tags a functional
+sub-area — living / dining / kitchen, most commonly — inside a single
+room whose `wall_cycle` **already closes** via real walls (an open-plan
+great room bounded on its perimeter by actual walls, just with no
+internal partition between, say, the kitchen and dining areas). This is
+the "Open-plan zones idea" memory entry, now implemented rather than
+deferred:
+
+- A zone's `polygon` must lie entirely within its parent room's
+  wall_cycle face (validated: `extraction/schema/validate.py
+  zones_within_room`, checked as part of `validity()`). A zone vertex
+  outside the room face is a validator error, same severity as a broken
+  cycle.
+- Zones carry no confidence/evidence/id of their own in v1 — they're a
+  labeling convenience, not a first-class element with its own topology.
+  If per-zone confidence turns out to matter (e.g. a VLM is uncertain
+  where the kitchen/dining boundary falls), that's a schema extension for
+  whichever phase actually produces zones automatically (not committed
+  yet — no extractor stage targets zones in the Phase 0–8 plan as
+  written; this is GT/authoring-side support only for now).
+- Authoring: not yet wired into `extraction/synth/svg_gt.py` (v1 of that
+  tool only authors walls/openings/junctions, per its own docstring).
+  Adding a `zone:<label>` layer convention (closed polygon path per zone)
+  is the natural extension when zone authoring is actually needed.
+
+## 5. Unit scope
 
 - **Single dwelling** (`scope_class: "single"`): the plan shows exactly
   one dwelling unit's interior. Default assumption unless the plan is
@@ -113,7 +141,7 @@ Two genuinely different things share the word "opening":
   separate extraction target; the router's job (Phase 1+) is to segment
   the sheet before extraction runs, not to merge floors into one plan.
 
-## 5. Corpus application (Phase 0)
+## 6. Corpus application (Phase 0)
 
 `eval/registry/registry.csv` applies this spec to the 16 seeded plans —
 see that file for per-plan `encoding_class` / `convention_class` /
