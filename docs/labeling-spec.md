@@ -9,10 +9,14 @@ same as a schema field change.
 ## 1. What counts as a wall
 
 A traced/predicted element is a **wall** (`role` ∈ `external | internal |
-partition_low | glazing | demising | rail | unconfirmed`) iff it is a real
-built barrier with physical thickness that a person's body cannot pass
-through without going around, through an opening, or over/under it. This
-excludes:
+partition_low | glazing | demising | rail | unconfirmed | portal`) iff it
+is a real built barrier with physical thickness that a person's body
+cannot pass through without going around, through an opening, or
+over/under it — **with one deliberate exception: `role: "portal"`** is a
+wall-shaped schema element with zero physical thickness by definition
+(see Section 3), used purely to close a room face where nothing was
+built. Every other role on this list is a real, physical, non-zero-
+thickness object. This excludes:
 
 - **Cabinetry / fitted furniture** (kitchen counters, wardrobe runs) — even
   when wall-thickness and wall-length, these get no wall element at all.
@@ -61,7 +65,7 @@ battle-tested prior art from the same domain, not a new invention:
   outdoor space and is typically open-to-sky above; a low partition
   divides two indoor rooms and typically has ceiling above it.
 
-## 3. Passage vs. gap (and the open portal question)
+## 3. Passage vs. gap (RESOLVED: the portal role)
 
 Two genuinely different things share the word "opening":
 
@@ -74,24 +78,49 @@ Two genuinely different things share the word "opening":
   into living room with no wall or archway at all): the product schema
   represents this with `Wall.kind === "portal"` — a wall-shaped element
   with **no built structure**, existing purely so the room-closure graph
-  has an edge to walk. **The new `extraction_v1` schema (Appendix A) has
-  no equivalent.** `walls[].role` only has `external | internal |
-  partition_low | glazing | demising | rail | unconfirmed`, and
-  `rooms[].wall_cycle` requires every cycle edge to reference a real wall
-  with `thickness > 0` — there is currently no way to close a room across
-  a true open-plan transition without inventing a fake wall.
+  has an edge to walk.
 
-  **This is flagged, not resolved, in Phase 0.** It doesn't block this
-  phase's deliverables (neither the legacy-GT converter nor the SVG
-  authoring converter produce room `wall_cycle`s yet — see their
-  docstrings), but it must be resolved before Phase 4 (solver/topology)
-  or Phase 5 (openings) can handle open-plan plans correctly, and before
-  the schema is treated as fully frozen. See `reports/phase-0-gate.md`
-  for the concrete options and the request for Dan's decision. **Zones
-  (Section 4 below) do not resolve this** — they tag sub-areas *within*
-  a room whose `wall_cycle` already closes; the portal gap is about rooms
-  that cannot close at all because part of their boundary has no wall
-  element. Don't reach for a zone as a workaround for a missing portal.
+  **RESOLVED (pre-freeze amendment #2, 2026-07-20): `extraction_v1` now
+  has `role: "portal"`.** A portal is a wall element with `thickness`
+  constrained to exactly `0` (enforced in `extraction_v1.schema.json` via
+  an `if/then/else` on `role`, independently in `models.py`'s
+  `Wall._portal_thickness_rule`, and independently again in
+  `validate.py`'s `thickness_positive`). Portals participate in
+  `junctions` and `wall_cycle` exactly like any other role — closure is
+  topology, not construction — so a room whose boundary is partly a
+  portal now closes correctly instead of requiring an invented fake wall.
+
+  **Additional rule: no floating portals.** Each portal's `start` and
+  `end` must independently coincide (within the same `EPSILON` used for
+  junction/cycle checks) with a **non-portal** wall's endpoint —
+  `validate.py`'s `portals_terminate_on_real_geometry`. A portal bridges
+  two points that are already anchored to real structure; it cannot float
+  free, and a run of two portals in sequence needs its interior joint to
+  *also* touch a real wall, not just the other portal. This keeps the
+  portal model simple (one portal = one bridge between two real points)
+  at the cost of requiring an annotator/extractor to occasionally split
+  a long open run into a portal-real-portal sequence rather than one
+  continuous portal chain — a deliberate, documented trade-off, not an
+  oversight.
+
+  **Documentation-only constraint (enforcement is a later-phase concern,
+  not Phase 0):** portals carry no image evidence. Nothing was drawn, so
+  there is no ink to match. Render-and-compare (Phase 6 Layer 5) and
+  cross-evidence voting (Layer 3) **must exempt portals from ink-based
+  scoring** when those components are built — an extractor that penalizes
+  a portal for "unexplained ink" or "hallucinated ink" is applying the
+  wrong test. Symmetrically, **an extractor may only emit a portal from
+  an explicit rule** (e.g. "this room's reachability graph requires an
+  edge here and no wall/rail candidate exists at any confidence") —
+  **never** as a fallback for weak or low-confidence wall evidence. A
+  portal is a positive topological claim ("I am confident there is
+  deliberately no wall here"), not a shrug.
+
+  **Zones (Section 4 below) remain a separate mechanism** — they tag
+  sub-areas *within* a room whose `wall_cycle` already closes (using real
+  walls, rails, and/or portals). Don't reach for a zone as a substitute
+  for a portal, or vice versa: zones subdivide a closed face; portals
+  help close the face in the first place.
 
 ## 4. Zones — functional sub-areas within one room
 
