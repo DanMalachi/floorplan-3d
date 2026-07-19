@@ -51,6 +51,20 @@ __pycache__/
 # these local only, out of git history
 floorplan_for_training/dxf_dwg/
 
+# Phase 3a — ResPlan source dataset (fetched by data/resplan/fetch.py, MIT
+# licensed but large/regenerable — never committed) and generated synthetic
+# training data (regenerable from extraction/synth/render.py + manifests).
+/data/resplan/raw/
+/data/resplan/ResPlan.zip
+/data/resplan/converted_smoke*/
+/data/synthetic/
+
+# Phase 3a — throwaway QA outputs (regenerable, per-machine)
+/extraction/synth/reports/*.png
+
+# Python virtualenv (Phase 3a pipeline env; not tied to node_modules)
+.venv/
+
 # IKEA pipeline raw cache — regenerable intermediate (raw API responses + HTTP
 # cache). Committed static asset: the catalog JSON data/furniture-ikea*.json
 # (incl. the .blob.json URL manifest).

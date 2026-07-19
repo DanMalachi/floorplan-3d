@@ -5,6 +5,9 @@ opencv-python-headless
 scikit-image
 pymupdf
 numpy
+Pillow
+python-bidi
+geopandas
 
 # Solver
 ortools
