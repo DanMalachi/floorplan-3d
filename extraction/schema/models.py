@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Point2 = tuple[float, float]
 
@@ -20,14 +20,24 @@ UnitSystem = Literal["mm", "plan_units"]
 ScaleSource = Literal["dimension_text", "scale_bar", "stated_ratio", "door_prior"] | None
 TransformType = Literal["similarity", "homography"]
 
-# 'rail' mirrors the product schema's Wall.kind (see docs/PROTECTED_PATHS.md /
-# src/schema/scene.ts): a low, see-through boundary (balcony railing, glass
-# balustrade, low parapet). Rails participate in junctions and wall_cycles
-# exactly like any other role — closure is topology, not construction. A
-# balcony is a closed cycle of rail walls + the building wall it attaches to,
-# room-labeled "balcony". Never conflate with a portal (no wall element at
-# all) even though both close rooms the same way.
-WallRole = Literal["external", "internal", "partition_low", "glazing", "demising", "unconfirmed", "rail"]
+# 'rail' and 'portal' both mirror the product schema's Wall.kind (see
+# docs/PROTECTED_PATHS.md / src/schema/scene.ts). 'rail': a low, see-through
+# boundary (balcony railing, glass balustrade, low parapet). 'portal': a
+# virtual boundary segment (thickness always exactly 0, enforced by
+# Wall._portal_thickness_rule below and independently by validate.py) that
+# closes a room face where no physical wall exists; portals must terminate,
+# at both endpoints, on a non-portal wall's endpoint (validate.py
+# portals_terminate_on_real_geometry — "no floating portals"). Both
+# participate in junctions and wall_cycles exactly like any other role —
+# closure is topology, not construction. A balcony is a closed cycle of rail
+# walls + the building wall it attaches to, room-labeled "balcony". Portals
+# carry no image evidence: render-and-compare / evidence-voting (Phase 6)
+# must exempt them from ink-based scoring, and extractors may only emit a
+# portal from an explicit room-closure rule, never as a fallback for weak
+# wall evidence — documentation-only as of Phase 0. Rail and portal are
+# geometrically and semantically distinct despite closing rooms identically
+# — never conflate them.
+WallRole = Literal["external", "internal", "partition_low", "glazing", "demising", "unconfirmed", "rail", "portal"]
 
 OpeningClass = Literal["door", "window", "passage"]
 Swing = Literal["left", "right", "double", "sliding", "folding", "unknown"] | None
@@ -85,13 +95,22 @@ class Wall(BaseModel):
     id: str
     start: Point2
     end: Point2
-    thickness: float = Field(gt=0)
+    thickness: float = Field(ge=0)
     curvature: float = 0.0
     role: WallRole
     openings: list[Opening] = Field(default_factory=list)
     confidence: float = Field(ge=0, le=1)
     evidence: list[EvidenceSource] = Field(default_factory=list)
     flags: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _portal_thickness_rule(self) -> "Wall":
+        if self.role == "portal":
+            if self.thickness != 0:
+                raise ValueError(f"portal wall {self.id!r} must have thickness exactly 0, got {self.thickness}")
+        elif self.thickness <= 0:
+            raise ValueError(f"non-portal wall {self.id!r} must have thickness > 0, got {self.thickness}")
+        return self
 
 
 class Junction(BaseModel):

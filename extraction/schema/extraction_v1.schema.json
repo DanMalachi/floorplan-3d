@@ -87,12 +87,12 @@
         "id": { "type": "string" },
         "start": { "$ref": "#/$defs/point2" },
         "end": { "$ref": "#/$defs/point2" },
-        "thickness": { "type": "number", "exclusiveMinimum": 0 },
+        "thickness": { "type": "number", "minimum": 0, "description": "must be exactly 0 for role='portal', strictly > 0 for every other role (enforced by the if/then/else below and independently by extraction/schema/validate.py)" },
         "curvature": { "type": "number", "description": "signed; 0 = straight, else circular arc" },
         "role": {
           "type": "string",
-          "enum": ["external", "internal", "partition_low", "glazing", "demising", "unconfirmed", "rail"],
-          "description": "'rail' is a low, see-through boundary (balcony railing, glass balustrade, low parapet) — mirrors the product schema's Wall.kind. A rail participates in junctions and wall_cycles exactly like any other role: closure is topology, not construction. A balcony is modeled as a closed cycle of rail walls + the building wall it attaches to, with the resulting room labeled 'balcony'. Never merge a rail with a portal (open boundary, no wall element at all) or with a full wall — they are geometrically and semantically distinct despite closing rooms identically."
+          "enum": ["external", "internal", "partition_low", "glazing", "demising", "unconfirmed", "rail", "portal"],
+          "description": "'rail' is a low, see-through boundary (balcony railing, glass balustrade, low parapet) — mirrors the product schema's Wall.kind. 'portal' is a virtual boundary segment (thickness always exactly 0) that closes a room face where no physical wall exists — also mirrors the product schema's Wall.kind=portal. Both rail and portal participate in junctions and wall_cycles exactly like any other role: closure is topology, not construction. A balcony is modeled as a closed cycle of rail walls + the building wall it attaches to, with the resulting room labeled 'balcony'. Portals additionally MUST terminate, at both endpoints, on a non-portal wall's endpoint — no floating portals, no portal-only chains — enforced by extraction/schema/validate.py. Portals carry no image evidence: render-and-compare / evidence-voting (Phase 6) must exempt them from ink-based scoring, and extractors may only emit a portal from an explicit room-closure rule, never as a fallback for weak wall evidence — this is a documentation-only constraint as of Phase 0; runtime enforcement is a later-phase concern. Rail and portal are geometrically and semantically distinct despite closing rooms identically — never merge them."
         },
         "openings": {
           "type": "array",
@@ -101,7 +101,10 @@
         "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
         "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence_source" } },
         "flags": { "type": "array", "items": { "type": "string" } }
-      }
+      },
+      "if": { "properties": { "role": { "const": "portal" } }, "required": ["role"] },
+      "then": { "properties": { "thickness": { "const": 0 } } },
+      "else": { "properties": { "thickness": { "type": "number", "exclusiveMinimum": 0 } } }
     },
 
     "opening": {

@@ -5,7 +5,9 @@ enforces per-field shape (types, ranges) at parse time; this module
 re-derives the topological/semantic rules from the raw dict, so a bug in
 one isn't hidden by the other. Mirrors Appendix C's validity() pseudocode:
 cycles_closed, openings_in_span, junctions_consistent, no_self_intersections,
-thickness_positive, ids_resolve — plus the tier-1 contract check.
+thickness_positive, ids_resolve — plus the tier-1 contract check,
+zones_within_room, and portals_terminate_on_real_geometry (both Phase 0
+pre-freeze amendments, not in the original Appendix C pseudocode).
 """
 
 from __future__ import annotations
@@ -37,9 +39,34 @@ def _wall_length(wall: dict) -> float:
 
 
 def thickness_positive(plan: dict, result: ValidationResult) -> None:
+    """Zero thickness is allowed ONLY for role='portal' (a virtual boundary
+    with no physical structure); every other role must be strictly > 0."""
     for w in plan.get("walls", []):
-        if w["thickness"] <= 0:
+        if w.get("role") == "portal":
+            if w["thickness"] != 0:
+                result.add(f"wall {w['id']}: portal must have thickness exactly 0, got {w['thickness']}")
+        elif w["thickness"] <= 0:
             result.add(f"wall {w['id']}: thickness {w['thickness']} is not > 0")
+
+
+def portals_terminate_on_real_geometry(plan: dict, result: ValidationResult) -> None:
+    """Portals bridge real geometry; each endpoint must coincide with a
+    non-portal wall's endpoint within EPSILON. A portal cannot float free
+    or chain only through other portals — 'no floating portals'. (A run of
+    two portals bridging one real wall to another therefore needs its
+    interior joint to ALSO touch a real wall, not just another portal —
+    deliberately strict: one portal = one bridge between two real points.)"""
+    walls = plan.get("walls", [])
+    real_endpoints = [pt for w in walls if w.get("role") != "portal" for pt in (w["start"], w["end"])]
+    for w in walls:
+        if w.get("role") != "portal":
+            continue
+        for label, pt in (("start", w["start"]), ("end", w["end"])):
+            if not any(_dist(pt, rp) <= EPSILON for rp in real_endpoints):
+                result.add(
+                    f"portal {w['id']}: {label} point {pt} does not terminate on any "
+                    f"non-portal wall's endpoint — floating portal"
+                )
 
 
 def ids_resolve(plan: dict, result: ValidationResult) -> None:
@@ -200,6 +227,7 @@ def validity(plan: dict) -> ValidationResult:
     cycles_closed(plan, result)
     zones_within_room(plan, result)
     no_self_intersections(plan, result)
+    portals_terminate_on_real_geometry(plan, result)
     return result
 
 
