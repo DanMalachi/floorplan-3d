@@ -67,3 +67,4 @@ floorplan_for_training/dxf_dwg/
 /public/furniture/ikea/thumb/
 
 .vercel
+.venv
