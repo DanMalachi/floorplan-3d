@@ -1,4 +1,4 @@
-import type { ImportSegment, ImportArc, TracePoint, TraceSegment } from "@/store/useSceneStore";
+import type { ImportSegment, ImportArc, TracePoint, TraceSegment } from "./types";
 import type { Centerline } from "./extractWalls";
 import { measureThicknessAt, REF_MPP } from "./extractWalls";
 import { isClutterLayer } from "./dxf/layerClass";

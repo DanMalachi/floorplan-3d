@@ -5,8 +5,8 @@ import type { CSSProperties } from "react";
 import type Konva from "konva";
 import { Circle, Group, Image as KImage, Layer, Line, Shape, Stage, Text } from "react-konva";
 import { useSceneStore } from "@/store/useSceneStore";
-import type { ImportSegment } from "@/store/useSceneStore";
-import { analyzeLoops } from "@/lib/loops";
+import type { ImportSegment } from "./types";
+import { analyzeLoops } from "../lib/loops";
 import { measureThicknessAt } from "./extractWalls";
 import { snapWallPoint } from "./snapWall";
 

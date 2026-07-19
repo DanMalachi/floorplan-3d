@@ -1,7 +1,7 @@
 import type { Node, Opening, Room, Scene, Wall } from "@/schema/scene";
-import type { TraceOpening, TracePoint, TraceSegment } from "@/store/useSceneStore";
+import type { TraceOpening, TracePoint, TraceSegment } from "./types";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
-import { analyzeLoops } from "@/lib/loops";
+import { analyzeLoops } from "../lib/loops";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
 import { buildRoomGraph } from "@/lib/rooms/semanticGraph";
 import { classifyRoomsByRules, RULE_CONFIDENCE_GATE } from "@/lib/rooms/roomClassifier";

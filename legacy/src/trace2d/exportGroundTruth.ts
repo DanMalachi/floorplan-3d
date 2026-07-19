@@ -1,4 +1,4 @@
-import type { TracePoint, TraceSegment, TraceOpening } from "@/store/useSceneStore";
+import type { TracePoint, TraceSegment, TraceOpening } from "./types";
 
 // ---------------------------------------------------------------------------
 // Ground-truth export (Phase 2.5 / M1). A hand-traced plan already encodes

@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   }
   const file = name.endsWith(".json") ? name : `${name}.json`;
   try {
-    const text = readFileSync(join(process.cwd(), "floorplan-gt", file), "utf8");
+    const text = readFileSync(join(process.cwd(), "legacy", "data", "floorplan-gt", file), "utf8");
     return new Response(text, { headers: { "content-type": "application/json" } });
   } catch {
     return Response.json({ error: `not found: ${file}` }, { status: 404 });

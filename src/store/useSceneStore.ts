@@ -7,7 +7,7 @@ import {
   extractWalls,
   scaleExtractParams,
   DEFAULT_PARAMS,
-} from "@/trace2d/extractWalls";
+} from "@legacy/trace2d/extractWalls";
 import {
   detectOpenings,
   scaleDetectParams,
@@ -15,89 +15,50 @@ import {
   mapOpeningToSegment,
   DEFAULT_DETECT,
   type SuggestedOpening,
-} from "@/trace2d/detectOpenings";
-import { generateCandidates, type Candidate } from "@/trace2d/candidates";
-import { rasterToCandidates, type RasterProposal } from "@/trace2d/rasterCandidates";
-import { proposeRaster } from "@/trace2d/proposeRaster";
-import { buildOverlayImage } from "@/trace2d/buildOverlay";
-import type { VlmLabel, VlmMissed } from "@/lib/rooms/vlmClassify";
-import type { ImportText } from "@/trace2d/importPdf";
+} from "@legacy/trace2d/detectOpenings";
+import { generateCandidates, type Candidate } from "@legacy/trace2d/candidates";
+import { rasterToCandidates, type RasterProposal } from "@legacy/trace2d/rasterCandidates";
+import { proposeRaster } from "@legacy/trace2d/proposeRaster";
+import { buildOverlayImage } from "@legacy/trace2d/buildOverlay";
+import type { VlmLabel, VlmMissed } from "@legacy/lib/rooms/vlmClassify";
+import type { ImportText } from "@legacy/trace2d/importPdf";
+import type {
+  TracePoint,
+  TraceSegment,
+  SegmentKind,
+  TraceOpening,
+  ImportSegment,
+  ImportArc,
+} from "@legacy/trace2d/types";
+
+export type {
+  TracePoint,
+  TraceSegment,
+  SegmentKind,
+  TraceOpening,
+  ImportSegment,
+  ImportArc,
+};
 
 // ---------------------------------------------------------------------------
 // Tracing (editor) types. These are EPHEMERAL — they never live inside Scene.
 // Trace coordinates are in "image-local pixels" (the background image's natural
 // pixel space, or raw stage pixels when no image is loaded). Conversion to
 // meters happens in M4 using metersPerPixel from scale calibration.
+//
+// TracePoint/TraceSegment/SegmentKind/TraceOpening/ImportSegment/ImportArc
+// moved to @legacy/trace2d/types in Phase 0 (they're also consumed by the
+// legacy trace2d pipeline; that file is the single owner now, this store
+// only imports them). TraceImage/SuggestedWall stay here — nothing outside
+// this store consumes them.
 // ---------------------------------------------------------------------------
 
 export type TraceMode = "wall" | "door" | "window" | "calibrate";
-
-export interface TracePoint {
-  id: string;
-  x: number;
-  y: number;
-}
-
-/** What kind of boundary a traced edge is. Mirrors Wall.kind — see the notes
- *  there. Every kind closes a room the same way; they differ only in what gets
- *  built on the line. */
-export type SegmentKind = "wall" | "rail" | "portal";
-
-export interface TraceSegment {
-  id: string;
-  a: string; // point id
-  b: string; // point id
-  // A traced edge is a full-height WALL unless tagged otherwise. A RAIL is a
-  // low, see-through divider (balcony railing, glass balustrade, low parapet).
-  // A PORTAL is no barrier at all — the line where one space becomes another,
-  // so you can close a room without drawing a wall you'd only have to punch a
-  // fake door through. Both bound rooms exactly like walls. Absent = wall.
-  type?: SegmentKind;
-}
-
-// An opening is traced as a line ALONG its host wall: t0..t1 are the normalized
-// endpoints of that line on the segment (0 = point a, 1 = point b). Width is
-// derived from |t1 - t0| * wallLength at generate time, so it's scale-independent
-// and any length. height/sill stay in METERS (vertical extent isn't traced).
-export interface TraceOpening {
-  id: string;
-  type: "door" | "window";
-  segmentId: string;
-  t0: number;
-  t1: number;
-  height: number;
-  sill: number;
-}
 
 export interface TraceImage {
   src: string; // data URL
   width: number; // natural px
   height: number; // natural px
-}
-
-// Raw segment parsed from an imported vector PDF, already converted to the
-// background-image pixel space. Rendered as the M1 "what was parsed" overlay.
-export interface ImportSegment {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  color: [number, number, number] | null; // stroke color 0..1, or null
-  width: number; // pt
-  layer: string; // CAD layer name (e.g. "0", "KIROT", "RIHUT", "PETACH")
-}
-
-// A curved path (cubic) parsed from the PDF, in background-image px. Door-swing
-// arcs (big chords) are used to confirm/locate doors.
-export interface ImportArc {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  chord: number; // straight-line distance between endpoints (px)
-  color: [number, number, number] | null;
-  width: number;
-  layer: string;
 }
 
 // A suggested wall centerline (M2), in background-image px. The user reviews and
@@ -610,7 +571,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setTraceStep: (traceStep) => set({ traceStep }),
     importPlanFile: async (file) => {
       const { isPdfFile, isImageFile, isDxfFile, isDwgFile, loadImageFile, rasterQualityMsg, MIN_IMAGE_PX } =
-        await import("@/trace2d/planImport");
+        await import("@legacy/trace2d/planImport");
       // A new plan is a CLEAN SLATE. Clear any prior plan's trace, built scene,
       // scale, suggestions, selections and undo history — otherwise they linger
       // on top of the new plan (especially now that projects are restored from
@@ -637,7 +598,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       get().setSourcePdfName(file.name);
       try {
         if (isPdfFile(file)) {
-          const { importPdf } = await import("@/trace2d/importPdf");
+          const { importPdf } = await import("@legacy/trace2d/importPdf");
           const r = await importPdf(file);
           get().setImage(r.image);
           if (!r.isVector) {
@@ -659,7 +620,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             });
           }
         } else if (isDxfFile(file) || isDwgFile(file)) {
-          const { importDxf, dxfTextToResult } = await import("@/trace2d/importDxf");
+          const { importDxf, dxfTextToResult } = await import("@legacy/trace2d/importDxf");
           let r;
           if (isDwgFile(file)) {
             // DWG is proprietary binary — convert to DXF server-side, then parse
@@ -1027,7 +988,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
         let overview: string | null = null;
         let crops: { roomId: string; image: string }[] = [];
         if (image && metersPerPixel) {
-          const { buildRoomCrops } = await import("@/trace2d/roomCrops");
+          const { buildRoomCrops } = await import("@legacy/trace2d/roomCrops");
           const built = await buildRoomCrops(image.src, cur, undecided, metersPerPixel);
           overview = built.overview;
           crops = built.crops;

@@ -10,7 +10,7 @@ import { execFileSync } from "node:child_process";
 import { interpretVector } from "../../src/trace2d/vector/interpret";
 import { coveragePlan, scorePlan, heuristicPredictions } from "./score-core";
 import type { Candidate } from "../../src/trace2d/candidates";
-import type { ImportSegment, ImportArc } from "../../src/store/useSceneStore";
+import type { ImportSegment, ImportArc } from "../../src/trace2d/types";
 import type { GroundTruth } from "../../src/trace2d/exportGroundTruth";
 
 const PY =

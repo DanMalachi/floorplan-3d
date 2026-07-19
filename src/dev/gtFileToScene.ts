@@ -11,7 +11,7 @@
 
 import type { Scene } from "@/schema/scene";
 import type { AppMode, StoreState, TracePoint, TraceSegment, TraceOpening } from "@/store/useSceneStore";
-import { traceToScene } from "@/trace2d/traceToScene";
+import { traceToScene } from "@legacy/trace2d/traceToScene";
 import { gtToScene, type GtFile } from "./gtToScene";
 
 interface GtExport {

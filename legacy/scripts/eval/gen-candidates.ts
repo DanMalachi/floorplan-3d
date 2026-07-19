@@ -16,7 +16,7 @@ import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { generateCandidates, type CandidateSet } from "../../src/trace2d/candidates";
 import { rasterToCandidates, type RasterProposal } from "../../src/trace2d/rasterCandidates";
-import type { ImportSegment, ImportArc } from "../../src/store/useSceneStore";
+import type { ImportSegment, ImportArc } from "../../src/trace2d/types";
 
 const PY =
   process.env.PYTHON_EXE ??

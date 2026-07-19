@@ -5,8 +5,9 @@
 // controls visible at a time. Replaces the old all-at-once toolbar.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSceneStore, type SegmentKind } from "@/store/useSceneStore";
-import { analyzeLoops } from "@/lib/loops";
+import { useSceneStore } from "@/store/useSceneStore";
+import type { SegmentKind } from "./types";
+import { analyzeLoops } from "../lib/loops";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { traceToScene } from "./traceToScene";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";

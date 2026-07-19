@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     await writeFile(tmp, bytes);
 
     const py = await resolvePython();
-    const script = join(process.cwd(), "scripts", "extract_pdf.py");
+    const script = join(process.cwd(), "legacy", "scripts", "extract_pdf.py");
     const { code, stdout, stderr } = await runExtractor(py, script, tmp, page);
 
     if (code !== 0 || !stdout.trim()) {

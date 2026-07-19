@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Viewport } from "@/viewport3d/Viewport";
-import { TracePanel } from "@/trace2d/TracePanel";
+import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
 import { GtLab } from "@/dev/GtLab";
+import { legacyExtractionEnabled } from "@/lib/featureFlags";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
 import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectLiveRole } from "@/store/projectPersistence";
 import { enterLiveRoom } from "@/collab/enterLive";
@@ -105,12 +106,19 @@ function GoLiveButton() {
   );
 }
 
-const MODES: { id: AppMode; label: string; key: string }[] = [
+const ALL_MODES: { id: AppMode; label: string; key: string }[] = [
   { id: "trace", label: "Trace", key: "1" },
   { id: "build", label: "Build", key: "2" },
   { id: "furnish", label: "Decorate", key: "3" },
   { id: "view", label: "View", key: "4" },
 ];
+
+// The Trace mode is the legacy extraction pipeline's UI. Gated so a later
+// phase can cut over to the new pipeline's adapter without touching this
+// switcher again — see src/lib/featureFlags.ts.
+const MODES = legacyExtractionEnabled
+  ? ALL_MODES
+  : ALL_MODES.filter((m) => m.id !== "trace");
 
 /** Top-center segmented mode switcher — the app's primary navigation. */
 function ModeSwitcher() {
@@ -223,7 +231,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const showTrace = appMode === "trace";
+  const showTrace = appMode === "trace" && legacyExtractionEnabled;
 
   return (
     <main
