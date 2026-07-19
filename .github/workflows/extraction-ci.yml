@@ -1,0 +1,19 @@
+name: extraction-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r extraction/requirements.txt
+      - run: pytest tests/
+      - name: eval self-test
+        run: python -m eval.cli selftest

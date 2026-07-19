@@ -1,0 +1,25 @@
+# Core geometry / CV
+shapely
+networkx
+opencv-python-headless
+scikit-image
+pymupdf
+numpy
+
+# Solver
+ortools
+
+# Schema + validation
+pydantic>=2
+jsonschema
+
+# ONNX inference (Phase 3+)
+onnxruntime
+
+# Metric engine (Phase 0.3+)
+scipy
+matplotlib
+
+# Testing
+pytest
+hypothesis
