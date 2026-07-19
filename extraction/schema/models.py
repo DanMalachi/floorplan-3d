@@ -101,6 +101,17 @@ class Junction(BaseModel):
     walls: list[str] = Field(min_length=1)
 
 
+class Zone(BaseModel):
+    """A functional sub-area within one wall-bounded room face (e.g. an
+    open-plan living/dining/kitchen tagged into three zones with no
+    dividing walls). Does not close a room on its own — see
+    docs/labeling-spec.md Section 3 for why this is a different mechanism
+    from the still-open portal/absent-boundary question."""
+
+    label: str
+    polygon: list[Point2] = Field(min_length=3)
+
+
 class Room(BaseModel):
     id: str
     label: str | None = None
@@ -108,6 +119,7 @@ class Room(BaseModel):
     wall_cycle: list[str] = Field(min_length=3)
     area: float = Field(ge=0)
     confidence: float = Field(ge=0, le=1)
+    zones: list[Zone] = Field(default_factory=list)
 
 
 class UnresolvedItem(BaseModel):

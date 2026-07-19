@@ -1,8 +1,9 @@
 """Validator correctness tests (docs/extraction-plan.md Phase 0.2 exit bar):
-a hand-built valid fixture must pass; each of five mutation classes
+a hand-built valid fixture must pass; each of six mutation classes
 (broken cycle, floating opening, dangling junction, negative thickness,
-unresolved ID) must be caught, exercised via hypothesis over which
-element the mutation targets so it's not just five fixed cases.
+unresolved ID, zone outside its room face) must be caught, exercised via
+hypothesis over which element the mutation targets so it's not just six
+fixed cases.
 """
 
 import copy
@@ -52,6 +53,10 @@ def valid_plan() -> dict:
         {
             "id": "r1", "label": "living_room", "label_confidence": 0.9,
             "wall_cycle": ["w1", "w2", "w3", "w4"], "area": 12.0, "confidence": 0.95,
+            "zones": [
+                {"label": "living", "polygon": [[500.0, 500.0], [1500.0, 500.0], [1500.0, 1500.0], [500.0, 1500.0]]},
+                {"label": "dining", "polygon": [[2000.0, 500.0], [3500.0, 500.0], [3500.0, 2500.0], [2000.0, 2500.0]]},
+            ],
         }
     ]
     diagnostics = {
@@ -82,6 +87,15 @@ def test_rail_role_closes_cycle_like_any_wall():
     # closure — confirms rails aren't special-cased out of topology checks.
     plan = valid_plan()
     assert plan["walls"][3]["role"] == "rail"
+    result = validity(plan)
+    assert result.valid, result.errors
+
+
+def test_zones_within_room_face_pass():
+    # r1's two zones (living, dining) are both fully inside the room's
+    # wall_cycle face — an open-plan sub-area tagging must not be rejected.
+    plan = valid_plan()
+    assert len(plan["rooms"][0]["zones"]) == 2
     result = validity(plan)
     assert result.valid, result.errors
 
@@ -122,12 +136,20 @@ def _unresolved_id(plan: dict, room_idx: int) -> dict:
     return plan
 
 
+def _zone_outside_room(plan: dict, zone_idx: int) -> dict:
+    # push one vertex of the targeted zone polygon far outside the room's
+    # wall_cycle face (the fixture room spans roughly x:[0,4000] y:[0,3000])
+    plan["rooms"][0]["zones"][zone_idx]["polygon"][0] = [99999.0, 99999.0]
+    return plan
+
+
 MUTATIONS = {
     "break_cycle": (_break_cycle, 4),
     "float_opening": (_float_opening, 4),
     "dangle_junction": (_dangle_junction, 4),
     "negative_thickness": (_negative_thickness, 4),
     "unresolved_id": (_unresolved_id, 1),
+    "zone_outside_room": (_zone_outside_room, 2),
 }
 
 
