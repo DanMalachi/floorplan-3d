@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://floorplan-3d/extraction/schema/extraction_v1.schema.json",
+  "title": "Floorplan Extraction Schema v1.0",
+  "description": "Canonical output contract for the extraction pipeline. Walls are the primary entities; openings are children of walls; rooms are cycles of wall references. See docs/paper.md Appendix A for field-level rationale.",
+  "type": "object",
+  "required": ["schema_version", "source", "units", "image_transform", "walls", "junctions", "rooms", "diagnostics"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+
+    "source": {
+      "type": "object",
+      "required": ["file_sha256", "filename", "encoding_class", "convention_class", "scope_class", "router_confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "file_sha256": { "type": "string" },
+        "filename": { "type": "string" },
+        "encoding_class": { "type": "string", "enum": ["V", "R", "P", "S"] },
+        "convention_class": { "type": "string", "enum": ["poche", "double_line", "single_stroke", "colored", "hatched", "mixed"] },
+        "scope_class": { "type": "string", "enum": ["single", "unit_in_plate", "plate", "multi_floor"] },
+        "router_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "units": {
+      "type": "object",
+      "required": ["system", "scale_confidence", "scale_source"],
+      "additionalProperties": false,
+      "properties": {
+        "system": { "type": "string", "enum": ["mm", "plan_units"] },
+        "mm_per_unit": { "type": "number", "exclusiveMinimum": 0, "description": "present iff system == 'mm'" },
+        "scale_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scale_source": { "type": ["string", "null"], "enum": ["dimension_text", "scale_bar", "stated_ratio", "door_prior", null] },
+        "scale_inliers": { "type": "integer", "minimum": 0 },
+        "scale_outliers": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "image_transform": {
+      "type": "object",
+      "required": ["type", "matrix", "source_px"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["similarity", "homography"] },
+        "matrix": {
+          "type": "array", "minItems": 3, "maxItems": 3,
+          "items": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number" } }
+        },
+        "source_px": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer", "exclusiveMinimum": 0 } }
+      }
+    },
+
+    "walls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/wall" }
+    },
+
+    "junctions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/junction" }
+    },
+
+    "rooms": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/room" }
+    },
+
+    "diagnostics": { "$ref": "#/$defs/diagnostics" }
+  },
+
+  "$defs": {
+    "point2": {
+      "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" }
+    },
+
+    "evidence_source": {
+      "type": "string",
+      "enum": ["segmentation", "vector", "topology", "render_check", "detector", "seg_gap", "vlm", "classical"]
+    },
+
+    "wall": {
+      "type": "object",
+      "required": ["id", "start", "end", "thickness", "curvature", "role", "openings", "confidence", "evidence", "flags"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "start": { "$ref": "#/$defs/point2" },
+        "end": { "$ref": "#/$defs/point2" },
+        "thickness": { "type": "number", "exclusiveMinimum": 0 },
+        "curvature": { "type": "number", "description": "signed; 0 = straight, else circular arc" },
+        "role": {
+          "type": "string",
+          "enum": ["external", "internal", "partition_low", "glazing", "demising", "unconfirmed", "rail"],
+          "description": "'rail' is a low, see-through boundary (balcony railing, glass balustrade, low parapet) — mirrors the product schema's Wall.kind. A rail participates in junctions and wall_cycles exactly like any other role: closure is topology, not construction. A balcony is modeled as a closed cycle of rail walls + the building wall it attaches to, with the resulting room labeled 'balcony'. Never merge a rail with a portal (open boundary, no wall element at all) or with a full wall — they are geometrically and semantically distinct despite closing rooms identically."
+        },
+        "openings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/opening" }
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence_source" } },
+        "flags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "opening": {
+      "type": "object",
+      "required": ["id", "class", "center_offset", "width", "sill_height", "head_height", "confidence", "evidence", "flags"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "class": { "type": "string", "enum": ["door", "window", "passage"] },
+        "center_offset": { "type": "number", "description": "along centerline from wall start" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "sill_height": { "type": ["number", "null"] },
+        "head_height": { "type": ["number", "null"] },
+        "swing": { "type": ["string", "null"], "enum": ["left", "right", "double", "sliding", "folding", "unknown", null], "description": "doors only, nullable" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence_source" } },
+        "flags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "junction": {
+      "type": "object",
+      "required": ["id", "point", "type", "walls"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "point": { "$ref": "#/$defs/point2" },
+        "type": { "type": "string", "enum": ["L", "T", "X", "I", "end"] },
+        "walls": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+
+    "room": {
+      "type": "object",
+      "required": ["id", "label", "label_confidence", "wall_cycle", "area", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": ["string", "null"], "description": "from E3 text or VLM, nullable; e.g. 'bedroom', 'balcony', 'unknown'" },
+        "label_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "wall_cycle": { "type": "array", "items": { "type": "string" }, "minItems": 3, "description": "ordered, closed; may include walls with role 'rail'" },
+        "area": { "type": "number", "minimum": 0, "description": "derived; units.system^2" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "unresolved_item": {
+      "type": "object",
+      "required": ["element", "question_id", "crop_bbox_px"],
+      "additionalProperties": false,
+      "properties": {
+        "element": { "type": "string" },
+        "question_id": { "type": "string" },
+        "crop_bbox_px": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "number" } }
+      }
+    },
+
+    "diagnostics": {
+      "type": "object",
+      "required": ["tier", "unresolved", "render_agreement", "kill_log_ref", "pipeline_version", "timings_ms", "cost_usd"],
+      "additionalProperties": false,
+      "properties": {
+        "tier": { "type": "integer", "enum": [1, 2, 3, 4] },
+        "unresolved": { "type": "array", "items": { "$ref": "#/$defs/unresolved_item" } },
+        "render_agreement": {
+          "type": "object",
+          "required": ["wall_iou", "unexplained_ink_ratio", "hallucinated_ink_ratio"],
+          "additionalProperties": false,
+          "properties": {
+            "wall_iou": { "type": "number", "minimum": 0, "maximum": 1 },
+            "unexplained_ink_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "hallucinated_ink_ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "kill_log_ref": { "type": "string" },
+        "pipeline_version": { "type": "string" },
+        "timings_ms": { "type": "object", "additionalProperties": { "type": "number" } },
+        "cost_usd": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
