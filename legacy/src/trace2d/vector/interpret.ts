@@ -1,4 +1,4 @@
-import type { ImportSegment, ImportArc } from "@/store/useSceneStore";
+import type { ImportSegment, ImportArc } from "../types";
 import { extractWalls, DEFAULT_PARAMS, scaleExtractParams, type Centerline } from "../extractWalls";
 import type { SuggestedOpening } from "../detectOpenings";
 import { isClutterLayer } from "../dxf/layerClass";

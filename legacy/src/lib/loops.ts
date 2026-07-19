@@ -1,4 +1,4 @@
-import type { TracePoint, TraceSegment } from "@/store/useSceneStore";
+import type { TracePoint, TraceSegment } from "../trace2d/types";
 
 export interface ClosedLoop {
   points: string[]; // ordered point ids; closure implied (last connects to first)

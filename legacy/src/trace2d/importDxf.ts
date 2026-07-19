@@ -1,6 +1,6 @@
-import type { ImportSegment, ImportArc } from "@/store/useSceneStore";
-import type { ImportText } from "@/trace2d/importPdf";
-import { parseDxf, type ParsedDxf } from "@/trace2d/dxf/parseDxf";
+import type { ImportSegment, ImportArc } from "./types";
+import type { ImportText } from "./importPdf";
+import { parseDxf, type ParsedDxf } from "./dxf/parseDxf";
 
 // -----------------------------------------------------------------------------
 // DXF importer (browser). Unlike the PDF path there is no server render — a DXF

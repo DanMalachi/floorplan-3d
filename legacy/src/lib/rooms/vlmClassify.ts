@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Candidate, CandidateClass } from "@/trace2d/candidates";
+import type { Candidate, CandidateClass } from "../../trace2d/candidates";
 
 // ---------------------------------------------------------------------------
 // Phase 2.5 / M3 — VLM-assisted semantic classification. One Claude call per

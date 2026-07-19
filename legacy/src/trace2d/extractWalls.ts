@@ -1,4 +1,4 @@
-import type { ImportSegment } from "@/store/useSceneStore";
+import type { ImportSegment } from "./types";
 import { isWallNoiseLayer } from "./dxf/layerClass";
 
 // Tunables (in background-image px). Defaults sized for the M0 sample plan

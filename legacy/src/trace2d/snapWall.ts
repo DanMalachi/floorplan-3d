@@ -1,4 +1,4 @@
-import type { ImportSegment } from "@/store/useSceneStore";
+import type { ImportSegment } from "./types";
 import { isWallNoiseLayer } from "./dxf/layerClass";
 
 // Architectural line = black stroke and not on a furniture/landscape/plumbing layer.

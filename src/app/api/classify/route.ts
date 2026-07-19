@@ -1,5 +1,5 @@
-import { classifyCandidates } from "@/lib/rooms/vlmClassify";
-import type { Candidate } from "@/trace2d/candidates";
+import { classifyCandidates } from "@legacy/lib/rooms/vlmClassify";
+import type { Candidate } from "@legacy/trace2d/candidates";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // one VLM call over a full plan can take minutes

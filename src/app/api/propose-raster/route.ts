@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     await writeFile(tmp, Buffer.from(m[2], "base64"));
 
     const py = await resolvePython();
-    const script = join(process.cwd(), "scripts", "propose_raster.py");
+    const script = join(process.cwd(), "legacy", "scripts", "propose_raster.py");
     const { code, stdout, stderr } = await runProposer(py, script, tmp);
 
     if (code !== 0 || !stdout.trim()) {

@@ -1,4 +1,4 @@
-import type { ImportSegment, ImportArc } from "@/store/useSceneStore";
+import type { ImportSegment, ImportArc } from "./types";
 
 interface RawSeg {
   x0: number;
