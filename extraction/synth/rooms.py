@@ -2,12 +2,12 @@
 derive a per-wall `role` heuristic (external/internal/rail) since ResPlan's
 wall blob carries no role signal of its own.
 
-Role decision confirmed with Dan on 2026-07-19 (see schema_v1_local.py's
-module banner): a wall segment whose only adjacent room type is `balcony`
-gets role="rail", matching this app's established tracing convention
-(docs/DATA_RIGHTS.md) rather than paper.md Appendix A's enum, which has no
-rail value. `partition_low`/`glazing`/`demising` are never emitted — no
-signal for them exists in ResPlan.
+Role decision confirmed with Dan on 2026-07-19: a wall segment whose only
+adjacent room type is `balcony` gets role="rail", matching this app's
+established tracing convention (docs/DATA_RIGHTS.md) and now part of the
+canonical schema's WallRole enum (extraction/schema/models.py).
+`partition_low`/`glazing`/`demising` are never emitted — no signal for
+them exists in ResPlan.
 """
 from __future__ import annotations
 

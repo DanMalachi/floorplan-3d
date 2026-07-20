@@ -26,21 +26,21 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Optional
 
-from extraction.synth.openings import project_openings
-from extraction.synth.rooms import ROOM_LABEL_MAP, assemble_rooms, wall_roles
-from extraction.synth.schema_v1_local import (
+from extraction.schema.models import (
     Diagnostics,
+    ExtractionResult,
     ImageTransform,
     Junction,
     Opening,
-    PlanV1,
     RenderAgreement,
     Room,
-    SourceInfo,
+    Source,
     Units,
     Wall,
-    validate_plan_v1,
 )
+from extraction.schema.validate import validity
+from extraction.synth.openings import project_openings
+from extraction.synth.rooms import ROOM_LABEL_MAP, assemble_rooms, wall_roles
 from extraction.synth.skeleton import extract_wall_skeleton, fill_openings_into_wall
 from extraction.synth.vendor.resplan_utils import normalize_keys
 
@@ -56,8 +56,8 @@ def _junction_type(n_walls: int) -> str:
     return _JUNCTION_TYPE_BY_DEGREE.get(n_walls, "X")
 
 
-def convert_plan(plan: dict) -> tuple[Optional[PlanV1], dict]:
-    """Converts one ResPlan plan dict to a PlanV1. Returns (plan_v1_or_None,
+def convert_plan(plan: dict) -> tuple[Optional[ExtractionResult], dict]:
+    """Converts one ResPlan plan dict to an ExtractionResult. Returns (plan_v1_or_None,
     stats_dict). Never raises — exceptions are caught and reported in
     stats["exception"] so a batch run never dies on one bad plan."""
     t0 = time.time()
@@ -99,7 +99,7 @@ def convert_plan(plan: dict) -> tuple[Optional[PlanV1], dict]:
                 center_offset=proj.center_offset,
                 width=proj.width,
                 confidence=1.0,
-                evidence=["resplan_gt"],
+                evidence=["ground_truth"],
                 flags=proj.flags,
             )
             openings_by_wall.setdefault(proj.wall_index, []).append(o)
@@ -117,7 +117,7 @@ def convert_plan(plan: dict) -> tuple[Optional[PlanV1], dict]:
                     curvature=0.0,
                     role=roles[i],
                     confidence=1.0,
-                    evidence=["resplan_gt"],
+                    evidence=["ground_truth"],
                     flags=role_flags_per_seg[i],
                     openings=wall_openings,
                 )
@@ -145,8 +145,8 @@ def convert_plan(plan: dict) -> tuple[Optional[PlanV1], dict]:
             for i, r in enumerate(rooms_raw)
         ]
 
-        plan_v1 = PlanV1(
-            source=SourceInfo(
+        plan_v1 = ExtractionResult(
+            source=Source(
                 file_sha256="0" * 64,  # ResPlan plans have no source file hash; recorded as unavailable
                 filename=f"resplan_{plan.get('id')}",
                 encoding_class="V",
@@ -165,13 +165,14 @@ def convert_plan(plan: dict) -> tuple[Optional[PlanV1], dict]:
                 tier=1,
                 unresolved=[],
                 render_agreement=RenderAgreement(wall_iou=1.0, unexplained_ink_ratio=0.0, hallucinated_ink_ratio=0.0),
+                kill_log_ref="resplan_conversion",
                 pipeline_version=PIPELINE_VERSION,
                 timings_ms={"total": (time.time() - t0) * 1000},
                 cost_usd=0.0,
             ),
         )
 
-        validator_problems = validate_plan_v1(plan_v1)
+        validator_problems = validity(plan_v1.model_dump(by_alias=True)).errors
 
         # A room can fail assembly two ways: broken_room_cycle (no per-edge
         # spatial coverage match at all) or cycle_unrepairable (per-edge
