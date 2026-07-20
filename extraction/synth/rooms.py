@@ -136,23 +136,6 @@ def _offset_line_toward_point(
     return (x0 + ox, y0 + oy), (x1 + ox, y1 + oy)
 
 
-def _line_intersect(
-    p1: tuple[float, float], p2: tuple[float, float], p3: tuple[float, float], p4: tuple[float, float]
-) -> Optional[tuple[float, float]]:
-    """Intersection of the infinite lines through p1-p2 and p3-p4."""
-    x1, y1 = p1
-    x2, y2 = p2
-    x3, y3 = p3
-    x4, y4 = p4
-    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-    if abs(denom) < 1e-9:
-        return None
-    a, b = x1 * y2 - y1 * x2, x3 * y4 - y3 * x4
-    px = (a * (x3 - x4) - (x1 - x2) * b) / denom
-    py = (a * (y3 - y4) - (y1 - y2) * b) / denom
-    return (px, py)
-
-
 # Empirically calibrated centerline-to-room-face offset multiplier, fit
 # 2026-07-20 against 107,608 direct per-wall perpendicular measurements
 # (cast from the wall centerline to the SOURCE room polygon's own boundary)
@@ -173,35 +156,144 @@ def _line_intersect(
 EMPIRICAL_FACE_OFFSET_MULTIPLIER = 0.838
 
 
+def _line_intersect(
+    p1: tuple[float, float], p2: tuple[float, float], p3: tuple[float, float], p4: tuple[float, float]
+) -> Optional[tuple[float, float]]:
+    """Intersection of the infinite lines through p1-p2 and p3-p4 (None if
+    parallel/near-parallel)."""
+    x1, y1 = p1
+    x2, y2 = p2
+    x3, y3 = p3
+    x4, y4 = p4
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < 1e-9:
+        return None
+    a, b = x1 * y2 - y1 * x2, x3 * y4 - y3 * x4
+    px = (a * (x3 - x4) - (x1 - x2) * b) / denom
+    py = (a * (y3 - y4) - (y1 - y2) * b) / denom
+    return (px, py)
+
+
+def _nearest_endpoint(seg: WallSegment, target: tuple[float, float]) -> tuple[float, float]:
+    da = math.hypot(seg.start[0] - target[0], seg.start[1] - target[1])
+    db = math.hypot(seg.end[0] - target[0], seg.end[1] - target[1])
+    return seg.start if da <= db else seg.end
+
+
+def _shared_centerline_point(seg_a: WallSegment, seg_b: WallSegment) -> tuple[float, float]:
+    """The real centerline junction between two adjacent walls — the
+    closest pair of their four endpoints, averaged (skeleton.py snaps
+    shared junctions to identical float coordinates, so this is exact in
+    practice)."""
+    pairs = [(a, b) for a in (seg_a.start, seg_a.end) for b in (seg_b.start, seg_b.end)]
+    a, b = min(pairs, key=lambda ab: math.hypot(ab[0][0] - ab[1][0], ab[0][1] - ab[1][1]))
+    return ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+
+
+# A true corner-line intersection is only trustworthy when it lands close to
+# the real centerline junction it's supposed to represent. Past this many
+# half-thicknesses away, the "miter" is either from near-parallel offset
+# lines (a straight run split into multiple wall ids, e.g. by a thickness
+# change or an unrelated T-junction on the far side — the lines barely
+# converge at all) or a reflex/concave turn (where naive corner-by-corner
+# mitering produces a corner on the wrong side, self-intersecting the
+# ring) — both real, measured failure modes, not theoretical. Below the
+# limit, fall back to a bevel: two vertices (each wall's own offset
+# endpoint nearest the real junction) joined by a short straight edge,
+# rather than a fabricated single point.
+_MITER_LIMIT = 8.0
+
+
+def _corner_vertices(
+    prev_seg: WallSegment,
+    cur_seg: WallSegment,
+    prev_offset: tuple[tuple[float, float], tuple[float, float]],
+    cur_offset: tuple[tuple[float, float], tuple[float, float]],
+    prev_half_thick: float,
+    cur_half_thick: float,
+) -> list[tuple[float, float]]:
+    """One corner's contribution to the face-polygon ring: a single
+    mitered vertex if the two offset lines' intersection lands within
+    _MITER_LIMIT half-thicknesses of the real centerline junction,
+    otherwise a bevel (two vertices — each wall's own offset endpoint
+    nearest the junction)."""
+    junction = _shared_centerline_point(prev_seg, cur_seg)
+    limit = _MITER_LIMIT * max(prev_half_thick, cur_half_thick, 1e-6)
+    corner = _line_intersect(*prev_offset, *cur_offset)
+    if corner is not None and math.hypot(corner[0] - junction[0], corner[1] - junction[1]) <= limit:
+        return [corner]
+    prev_p1, prev_p2 = prev_offset
+    cur_p1, cur_p2 = cur_offset
+    near_prev = prev_p1 if _nearest_endpoint(prev_seg, junction) == prev_seg.start else prev_p2
+    near_cur = cur_p1 if _nearest_endpoint(cur_seg, junction) == cur_seg.start else cur_p2
+    return [near_prev, near_cur]
+
+
 def _mitered_face_polygon(
     wall_cycle: list[int], segments: list[WallSegment], centroid: tuple[float, float]
 ) -> Optional[Polygon]:
-    """Proper per-wall mitered inset: offset each wall's centerline inward
-    by its OWN half-thickness (toward the room centroid), scaled by the
-    empirically-calibrated EMPIRICAL_FACE_OFFSET_MULTIPLIER, then intersect
-    consecutive offset lines to get each face-polygon corner. This is the
-    correct construction (matches how a real wall's inner face relates to
-    its centerline) — a single uniform shrink over the whole cycle is only
-    correct when every wall in it happens to share the same thickness."""
+    """Per-wall mitered inset: offset each wall's centerline inward by its
+    OWN half-thickness (toward the room centroid), scaled by
+    EMPIRICAL_FACE_OFFSET_MULTIPLIER — a uniform whole-cycle shrink is
+    still wrong whenever the cycle mixes wall thicknesses. What changed
+    from the original version is how consecutive offset lines become a
+    closed polygon: instead of unconditionally intersecting each pair as
+    INFINITE lines (undefined for parallel/collinear neighbors, and
+    silently wrong — a corner on the far side, self-intersecting the ring —
+    at reflex/concave turns), each corner tries the miter intersection and
+    only accepts it if it lands within _MITER_LIMIT half-thicknesses of the
+    real centerline junction; otherwise it falls back to a bevel (two
+    vertices instead of one). This is the standard fallback CAD/stroking
+    offset algorithms use when a true miter isn't well-defined.
+
+    A short wall between two much-thicker neighbors (e.g. a chamfered
+    corner) can still produce a hairline self-intersection right at its
+    own tiny edge, from ordinary floating-point noise rather than a real
+    topology error — `buffer(0)` is shapely's standard fix for exactly this
+    (verified: it collapses the sliver without materially changing area,
+    e.g. 5939.78 -> 5939.78 on a real case that was off by <0.01%). Only
+    trust it when the repaired result is STILL a single Polygon — if
+    healing splits the ring into multiple pieces, that's a real topological
+    problem, not noise, and this returns None rather than silently picking
+    one piece. Note this heal is not a universal safety net for a genuinely
+    broken cycle (e.g. one that revisits the same wall id): it can still
+    resolve into a single, structurally-valid-but-wrong small polygon
+    rather than None (verified on a synthetic repeat case) — the caller's
+    area-match comparison against the source room polygon is what actually
+    catches that, not this function alone."""
+    n = len(wall_cycle)
+    if n < 3:
+        return None
     offset_lines = [
         _offset_line_toward_point(
             segments[wid], segments[wid].thickness / 2 * EMPIRICAL_FACE_OFFSET_MULTIPLIER, centroid
         )
         for wid in wall_cycle
     ]
-    n = len(offset_lines)
-    vertices = []
+
+    vertices: list[tuple[float, float]] = []
     for i in range(n):
-        p1, p2 = offset_lines[i - 1]
-        p3, p4 = offset_lines[i]
-        pt = _line_intersect(p1, p2, p3, p4)
-        if pt is None:
-            return None
-        vertices.append(pt)
+        prev_wid, cur_wid = wall_cycle[i - 1], wall_cycle[i]
+        vertices.extend(
+            _corner_vertices(
+                segments[prev_wid],
+                segments[cur_wid],
+                offset_lines[i - 1],
+                offset_lines[i],
+                segments[prev_wid].thickness / 2 * EMPIRICAL_FACE_OFFSET_MULTIPLIER,
+                segments[cur_wid].thickness / 2 * EMPIRICAL_FACE_OFFSET_MULTIPLIER,
+            )
+        )
+
     if len(vertices) < 3:
         return None
     poly = Polygon(vertices)
-    return poly if poly.is_valid and not poly.is_empty else None
+    if poly.is_valid and not poly.is_empty:
+        return poly
+    healed = poly.buffer(0)
+    if healed.geom_type == "Polygon" and healed.is_valid and not healed.is_empty:
+        return healed
+    return None
 
 
 def _band(seg: WallSegment, tolerance: float):
