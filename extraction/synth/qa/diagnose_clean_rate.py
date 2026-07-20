@@ -9,9 +9,27 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from extraction.synth.resplan_convert import convert_plan
+from extraction.synth.resplan_convert import CLEAN_REQUIRED_ROOM_TYPES, convert_plan
 
 PKL_PATH = Path(__file__).resolve().parents[3] / "data" / "resplan" / "raw" / "ResPlan.pkl"
+
+# Both prefixes count against resplan_convert.py's actual clean bar (see
+# its `broken_required` computation) — a room can fail assembly two ways:
+# broken_room_cycle (per-edge spatial coverage found no usable wall match
+# at all) or cycle_unrepairable (matches were found, but the sequence
+# failed connectivity/area-match). This function used to check only the
+# second prefix, which silently misclassified every broken_room_cycle-only
+# plan as "uncategorized" (or "other_validator_problem", if it also had a
+# validator problem) instead of a room-assembly failure. Verified on a
+# 15-plan sample of the old "uncategorized" bucket: 15/15 had a
+# broken_room_cycle flag on a required room type and nothing else
+# uncaught — a single, uniform signature, not a mix of causes. Reconciled
+# against the full n=300 sample after fixing this: the bucket renamed
+# below (was cycle_unrepairable_required/open_plan_only) grows from 93 to
+# 156 (52.0% of all plans), "uncategorized" drops from 46 to 0, and
+# "other_validator_problem" drops from 24 to 1 (23 were masked room-
+# assembly failures: 15 required, 8 open-plan-only).
+_ROOM_ASSEMBLY_FAILURE_PREFIXES = ("room:cycle_unrepairable:", "room:broken_room_cycle:")
 
 
 def categorize(stats: dict) -> list[str]:
@@ -28,18 +46,18 @@ def categorize(stats: dict) -> list[str]:
 
     cats = []
     flags = stats.get("flags", [])
-    if any(f.startswith("room:cycle_unrepairable:") for f in flags):
-        # split further: which required room types were unrepairable
+    if any(f.startswith(_ROOM_ASSEMBLY_FAILURE_PREFIXES) for f in flags):
+        # split further: which required room types failed assembly
         required_hit = {
             f.rsplit(":", 1)[1].rsplit("_", 1)[0]
             for f in flags
-            if f.startswith("room:cycle_unrepairable:")
-            and f.rsplit(":", 1)[1].rsplit("_", 1)[0] in {"bathroom", "bedroom", "storage", "stair"}
+            if f.startswith(_ROOM_ASSEMBLY_FAILURE_PREFIXES)
+            and f.rsplit(":", 1)[1].rsplit("_", 1)[0] in CLEAN_REQUIRED_ROOM_TYPES
         }
         if required_hit:
-            cats.append("cycle_unrepairable_required")
+            cats.append("room_assembly_failed_required")
         else:
-            cats.append("cycle_unrepairable_open_plan_only")
+            cats.append("room_assembly_failed_open_plan_only")
     if stats.get("opening_attach_rate", 1.0) < 0.95:
         cats.append("opening_projection_failed")
     if any("sibling_overlap" in f for f in flags):
@@ -48,8 +66,8 @@ def categorize(stats: dict) -> list[str]:
     if not (0.85 <= ratio <= 1.15):
         cats.append("ink_coverage_out_of_range")
     vp = stats.get("validator_problems") or []
-    if vp and not any(c.startswith("cycle_unrepairable") for c in cats):
-        # validator problems not already explained by an unrepairable cycle
+    if vp and not any(c.startswith("room_assembly_failed") for c in cats):
+        # validator problems not already explained by a room-assembly failure
         cats.append("other_validator_problem")
     if not cats and not stats.get("clean"):
         cats.append("uncategorized")
