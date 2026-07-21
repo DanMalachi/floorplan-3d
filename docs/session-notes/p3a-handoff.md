@@ -517,37 +517,92 @@ fix's payoff, for sizing/prioritization only, not a commitment (the
 sample-vs-population gap above, 63.1%→46.1%, shows these sample-based
 projections run a bit optimistic).
 
-## Next-session plan, in order
+## Ratified P0-gate bar (Dan's ruling, 2026-07-21) — replaces the old
+monolithic "90% of all plans" target
 
-1. **P0-gate bar decision — Dan's call, using the 80.2% population number
-   above, not the earlier 96.4% diagnostic estimate.** Current expectation
-   (Dan, 2026-07-21) is the 90% bar stands rather than getting revised
-   down, since 80.2% is itself pre-doorway-notch-fix and the projected
-   payoff of that fix alone (~86.9%) is close to the bar, with issue #4's
-   skeleton fix (below) still to come on top. Nothing else in this list
-   proceeds until this ruling is made.
-2. **Doorway-notch handling** (dominant recoverable class — 46.1% of
-   currently-broken edges at population scale). Converter-detection work:
-   teach the relevant edge check to recognize a required-room edge
-   captured by a door/window/front_door polygon's own footprint as an
-   opening, not a required wall match. `test_doorway_notch_does_not_flag`
-   in `test_measure_clean_at_source.py` is the tripwire — it should flip
-   from xfail to passing when this lands (remove the `xfail` marker at
-   that point, don't just leave it decorating a passing test).
-3. **Skeleton-simplification fix for issue #4's `missing_from_skeleton`
-   mechanism** (81.8% of that bucket) — the `no_angle_valid_candidate`
-   root cause is confirmed on 5 overlays, not just inferred. Re-measure
-   `diagnose_clean_rate.py` and `measure_clean_at_source.py` after.
-4. Lower priority: issue #3 (repeated wall id) — small (2 known cases,
-   0.3% of room-cycles).
-5. Also lower priority, flagged not scheduled: `verify_no_angle_valid_candidate.py`
-   carries the same unclamped-overlap bug `measure_clean_at_source.py` had
-   — not fixed this session (out of the authorized scope), feeds issue
-   #4's diagnosis rather than the clean-at-source ceiling, so it's fine to
-   pick up whenever issue #4 work resumes rather than urgently.
-6. Continue the established discipline: each fix should be a real,
-   specific, measured bug — not a threshold/tuning change. Re-measure
-   after each fix rather than assuming.
+**The 90% bar STANDS, but relocated to the right denominator.** The
+original framing conflated two different things — GT quality and
+converter quality — under one number, which is what made it look
+arithmetically unreachable (67.5%, later 80.2%, corrected-ceiling). Split:
+
+- **Source-cleanliness (`clean_at_source`, `measure_clean_at_source.py`)
+  is a DATA property, not a converter target.** Currently 80.2%
+  (population, post-clamp-fix), heading toward an estimated ~87% once
+  doorway-notch handling lands (population-scale projection, see above).
+  **Keep measuring it — never gate on it.** It's the denominator for the
+  real bar, not the bar itself.
+- **Converter clean rate, CONDITIONED ON clean_at_source, is where the
+  90% bar actually lives.** Currently 61.0% (n=300, direct intersection —
+  see the 2026-07-21 part 3 section above). "90% of convertible plans
+  convert cleanly" is the ratified quality gate. Doorway-notch handling
+  and skeleton-simplification (issue #4) are the two scoped levers toward
+  it — re-measure THIS conditioned rate after each, not the unconditioned
+  `diagnose_clean_rate.py` population rate, since that denominator still
+  includes plans that were never reachable in the first place.
+
+## Converter work — UNPARKED, in priority order, each its own session
+with its own STOP
+
+These are the first converter changes in weeks (`rooms.py`/`skeleton.py`
+have been diagnosis-only since the 2026-07-20 corner-mitre fix) — treat
+each with that same discipline, not as a quick fix: **diagnose first,
+reproduce the mechanism on 2-3 fresh overlays before touching any code,
+keep the change narrowly scoped to the diagnosed mechanism, re-measure the
+clean-at-source-CONDITIONED rate after** (not just clean_at_source, which
+won't move — these are converter fixes, not source-measurement fixes).
+
+1. **Doorway-notch handling first** — dominant recoverable class (34.4%
+   of currently-flagged plans would fully clear at population scale).
+   Converter-detection work: teach the relevant edge check to recognize a
+   required-room edge captured by a door/window/front_door polygon's own
+   footprint as an opening, not a required wall match.
+   `test_doorway_notch_does_not_flag` in `test_measure_clean_at_source.py`
+   is the built-in confirmation signal — it's pinned `xfail(strict=True)`
+   and should flip to passing when this lands (remove the `xfail` marker
+   at that point, don't leave it decorating a passing test).
+2. **Skeleton-simplification fix for issue #4's `missing_from_skeleton`
+   mechanism** second (81.8% of that bucket, confirmed on 5 overlays, not
+   just inferred).
+3. Lower priority, unscheduled: issue #3 (repeated wall id) — small (2
+   known cases, 0.3% of room-cycles).
+
+## Filed, not actioned (per Dan's instruction — record only, no fix this
+session)
+
+- **`verify_no_angle_valid_candidate.py` carries the same unclamped-
+  overlap bug `measure_clean_at_source.py` had** (2026-07-21 part 4's
+  clamp fix touched only `measure_clean_at_source.py`, as authorized).
+  **No number this script emits should be trusted until it's fixed** —
+  its `ink_coverage_ratio` can go negative the same way, which feeds
+  issue #4's `missing_from_skeleton`/`present_outside_band` classification
+  (used by `classify_no_angle_valid_candidate_population.py` too). Pick up
+  alongside skeleton-simplification work above, since that's when its
+  numbers would next be relied on.
+- **Small-room/thick-wall proximity-bleed is a known measurement quirk,
+  not a bug to fix.** Surfaced while building this session's validation
+  suite: `measure_clean_at_source.py`'s coverage check scales its search
+  band to `wall_depth`, so for a room whose full width/depth is smaller
+  than roughly `2 * ink_proximity` (~24 units at `wall_depth=4`), the
+  OPPOSITE wall's parallel inner face can fall inside the search band and
+  spuriously "cover" an edge from clear across the room. Confirmed while
+  building `test_genuinely_missing_wall_must_flag` (had to widen a 10×10
+  test room to 30×10 to reproduce a real flag at all). **First thing to
+  suspect if a future ceiling number looks wrong specifically on plans
+  with tiny required rooms and thick walls** — required rooms
+  (bathroom/storage especially) are frequently small enough in real
+  ResPlan data for this to matter at population scale, not just in
+  synthetic test fixtures.
+
+## Still parked — until the converter clean-subset rate is near bar
+
+17K batch conversion, `render.py` / render engine (deliverable 2), 20K
+image set. No minting a training set off a converter that's still below
+its own bar.
+
+## Continue the established discipline
+
+Each fix should be a real, specific, measured bug — not a
+threshold/tuning change. Re-measure after each fix rather than assuming.
 
 ## For Phase 0
 
