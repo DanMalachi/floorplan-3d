@@ -13,7 +13,7 @@ Full corpus sweep: `extraction/trackv/run_corpus.py`, output `extraction/trackv/
 
 ## Corpus split (descriptive only — does not size the phase)
 
-n=16, 10 of which are JPGs (raster by construction, trivial 0% coverage, no informative signal). **3/16 route to Track V, 13/16 to Track R** on this specific corpus. Per `convention_class`: all 3 `hatched` plans → track_v; all 11 `poche` + 2 `single_stroke` → track_r. This is not a statistically meaningful estimate of Track V's real-world share — the deliverables this milestone are the coverage test itself and the finding below, not this ratio.
+n=16, 10 of which are JPGs (raster by construction, trivial 0% coverage, no informative signal). **The coverage test's raw output measures 3/16 routing to Track V, 13/16 to Track R** on this specific corpus. Per `convention_class`: all 3 `hatched` plans → track_v; all 11 `poche` + 2 `single_stroke` → track_r (this raw count includes Matterport under `poche`/track_r — see below for why that number is superseded). This is not a statistically meaningful estimate of Track V's real-world share — the deliverables this milestone are the coverage test itself and the finding below, not this ratio.
 
 ## Registry `encoding_class` disagreements — flagged for Dan's ruling, `eval/registry/registry.csv` not modified
 
@@ -23,14 +23,18 @@ All 6 PDFs disagree with their registry-guessed `encoding_class`; all 10 JPGs ag
 |---|---|---|---|
 | `1350-Sq-Ft-Modern-House-Plan` | V | 0.0% (0 primitives, 1 embedded image) | raster-in-PDF-container |
 | `5400-Square-Ft-House-Plan-With-Mentioned-Ceiling-Height` | V | 0.0% (0 primitives, 1 embedded image) | raster-in-PDF-container |
-| `Matterport Sample_BW` | V | 93.56% | borderline, see investigation below |
+| `Matterport Sample_BW` | V | 93.56% raw / **96.77% with watermark excluded** | **track_v, pending subpath-flattening fix** — see investigation below |
 | `15x30-ft-Best-House-Plan-Model` | R | 99.83% | genuinely vector |
 | `20x45-Model` | R | 100.0% | genuinely vector |
 | `30x50-Model-landscape` | R | 99.87% | genuinely vector |
 
 **Highest-priority item for the P0 gate (per Dan, not actioned here):** `1350-Sq-Ft-Modern-House-Plan` and `5400-Square-Ft-...` are logged `encoding_class=V` in the registry but are, by direct measurement, raster scans wrapped in a PDF container — zero vector primitives, one embedded raster image each. `5400-Square-Ft-...` is also the corpus's only `gt_status=none` plan. Left uncorrected, both will misclassify as "vector PDFs" in any future encoding-stratified metric (e.g. once Phase 3b runs a Track V vs. Track R comparison), contaminating that stratum with raster content. Registry correction intentionally not applied — `eval/registry/registry.csv` is P0-frozen; this is a proposal for Dan's ruling at the P0 gate, same discipline as the Phase 1 harness proposals (issues #5/#6/#7).
 
-## Matterport Sample_BW investigation — why it misses at 93.56%
+## Matterport Sample_BW — routing verdict: track_v, pending subpath-flattening fix
+
+**Superseding the raw 93.56%/track_r number below: Matterport is a genuine Track V plan, misrouted by an identified P2 bug, not an unparseable plan.** With the watermark region excluded, measured coverage is 96.77%, clearing the 95% bar. The routing is recorded here as track_v-pending-fix rather than left filed as track_r, because that would mean shipping a routing decision known to be wrong on a number a known bug is suppressing. Fixing the bug (below) is the first item for the next Track V milestone; once fixed, re-running `run_corpus.py` should move this plan's *raw* output to match this verdict without needing a manual override.
+
+## Investigation — why the raw run misses at 93.56%
 
 Requested because the plan is 1.44pts under a bar this session's two amendments just moved, making it the corpus's one real calibration signal. Investigated directly (residual-mask connected-component analysis on the actual pixel data, not inferred):
 
@@ -50,12 +54,15 @@ The dilation fix is verified in `test_dilation_recovers_small_registration_offse
 
 Stroke-width clustering, wall-face pairing/centerline recovery, filled-polygon medial-axis, layer/color-based semantic classification, residue classification, any VLM adjudication. `dissect.py` captures layer/color/width as raw fields (free at parse time) but nothing consumes them yet.
 
-## Known gaps / follow-ups for whoever picks up milestone 2
+## FIRST target for milestone 2 — fix before building stroke-width clustering
 
-1. Multi-subpath compound-path flattening bug (above) — affects any plan with vector-drawn text-as-outlines or multi-piece filled icons; only visible on Matterport in this corpus because the other vector-passing plans' ink is dominated by simple single-contour strokes (hatching lines), not compound fills.
-2. Anti-aliasing/double-render noise as a dilation failure mode is untested (above).
-3. `run_corpus.py` scores only page 0 of each plan; all 16 corpus files are single-page today, so this hasn't mattered, but it's not general.
+**Multi-subpath compound-path flattening bug.** `dissect.py`'s `_flatten_items` concatenates every item in a drawing into one point list with no subpath-boundary detection, and `coverage.py`'s `_rasterize_vector_mask` connects them as a single continuous polyline. Any compound filled path — glyphs with counters, multi-piece icons, and (the reason this is milestone-2's first item rather than a general backlog entry) **filled door-swing symbols and wall polygons with inner courtyards/holes** — gets corrupted the same way the Matterport watermark did. It only stayed invisible on the three ~100%-coverage hatched plans because their wall-relevant ink happens to be subpath-simple (line strokes, not compound fills); the same latent bug will bite the moment centerline/medial-axis recovery consumes a compound path, which milestone 2 does directly. Fix: detect subpath boundaries within a drawing's `items` list (a discontinuity where one item's endpoint doesn't match the next item's start marks a new subpath) and preserve them as separate closed loops through both dissection and redraw, before starting stroke-width clustering or parallel-pair centerline+thickness recovery.
+
+## Other known gaps (ordinary backlog, not blocking)
+
+1. Anti-aliasing/double-render noise as a dilation failure mode is untested (above).
+2. `run_corpus.py` scores only page 0 of each plan; all 16 corpus files are single-page today, so this hasn't mattered, but it's not general.
 
 ## Disposition
 
-Durable artifacts from this milestone: this report, `extraction/trackv/{primitives,dissect,coverage,run_corpus}.py` + tests, `extraction/trackv/out/coverage_results.json`, `extraction/trackv/out/matterport_band_crop.png`. Three commits on `phase-2-trackv` (`48becb5`, `16310f6`, `d7581b0`). **Not merged to main — held for Dan's review and merge decision**, same discipline as the Phase 1 gate. No further Track V work started this session (milestone 2 — stroke-width clustering / centerline recovery — explicitly not begun, per instruction).
+Durable artifacts from this milestone: this report, `extraction/trackv/{primitives,dissect,coverage,run_corpus}.py` + tests, `extraction/trackv/out/coverage_results.json`, `extraction/trackv/out/matterport_band_crop.png`. Commits on `phase-2-trackv`: `48becb5`, `16310f6`, `d7581b0`, `fd60927`, plus this report's post-review revision. **Merge approved by Dan** after the Matterport routing correction and the milestone-2 priority note above. No further Track V work started this session (milestone 2 — stroke-width clustering / centerline recovery, now gated on the subpath-flattening fix first — explicitly not begun, per instruction).
