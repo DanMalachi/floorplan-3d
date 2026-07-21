@@ -1,0 +1,245 @@
+{
+  "n_plans": 16,
+  "overall_split": {
+    "track_r": 13,
+    "track_v": 3
+  },
+  "by_registry_encoding_class": {
+    "V": {
+      "track_r": 3
+    },
+    "R": {
+      "track_v": 3,
+      "track_r": 10
+    }
+  },
+  "by_convention_class": {
+    "single_stroke": {
+      "track_r": 2
+    },
+    "hatched": {
+      "track_v": 3
+    },
+    "poche": {
+      "track_r": 11
+    }
+  },
+  "registry_disagreements": [
+    "1350-Sq-Ft-Modern-House-Plan",
+    "15x30-ft-Best-House-Plan-Model",
+    "20x45-Model",
+    "30x50-Model-landscape",
+    "5400-Square-Ft-House-Plan-With-Mentioned-Ceiling-Height",
+    "Matterport Sample_BW"
+  ],
+  "plans": [
+    {
+      "plan_id": "1350-Sq-Ft-Modern-House-Plan",
+      "registry_encoding_class": "V",
+      "convention_class": "single_stroke",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 1,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": true
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "registry_encoding_class": "R",
+      "convention_class": "hatched",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.9983,
+      "text_ink_fraction": 0.0969,
+      "n_primitives": 20741,
+      "n_images": 0,
+      "routes_to": "track_v",
+      "flags": [],
+      "registry_disagreement": true
+    },
+    {
+      "plan_id": "20x45-Model",
+      "registry_encoding_class": "R",
+      "convention_class": "hatched",
+      "gt_status": "provisional_unaudited",
+      "coverage": 1.0,
+      "text_ink_fraction": 0.1575,
+      "n_primitives": 251,
+      "n_images": 0,
+      "routes_to": "track_v",
+      "flags": [],
+      "registry_disagreement": true
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "registry_encoding_class": "R",
+      "convention_class": "hatched",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.9987,
+      "text_ink_fraction": 0.0592,
+      "n_primitives": 33117,
+      "n_images": 0,
+      "routes_to": "track_v",
+      "flags": [],
+      "registry_disagreement": true
+    },
+    {
+      "plan_id": "5400-Square-Ft-House-Plan-With-Mentioned-Ceiling-Height",
+      "registry_encoding_class": "V",
+      "convention_class": "single_stroke",
+      "gt_status": "none",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 1,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": true
+    },
+    {
+      "plan_id": "732584435_10164540552681740_3774695712355569150_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "732845872_1735043657679769_8499671820762087836_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "733062873_122367422252009249_9134195298628305051_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "733514932_27694461730149033_4639019499686110396_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "735222816_27022396910793213_6420268069739655953_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "736931713_27632750593027046_3723686069086016052_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "737383801_1010331745234663_6341320964105658729_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "738206378_28097636139828347_2494214840076570384_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "739609728_1007999268653424_1193610502066779068_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "739790347_2600378480416986_3044280999558553172_n.jpg",
+      "registry_encoding_class": "R",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.0,
+      "text_ink_fraction": 0.0,
+      "n_primitives": 0,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": false
+    },
+    {
+      "plan_id": "Matterport Sample_BW",
+      "registry_encoding_class": "V",
+      "convention_class": "poche",
+      "gt_status": "provisional_unaudited",
+      "coverage": 0.9356,
+      "text_ink_fraction": 0.0773,
+      "n_primitives": 682,
+      "n_images": 0,
+      "routes_to": "track_r",
+      "flags": [],
+      "registry_disagreement": true
+    }
+  ]
+}
