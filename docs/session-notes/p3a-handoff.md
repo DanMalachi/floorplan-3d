@@ -253,13 +253,21 @@ pruned a spur":
   proximity — a room-polygon tracing artifact, not a skeleton or
   room-assembly bug at all.
 
-**Open**: n=3 is a confirmation spot-check, not a population estimate —
-the 55%/57.4% no_angle_valid_candidate split above should NOT be assumed
-to break down 1/3-1/3-1/3 into these three mechanisms without running the
-verification script over a larger sample of the 11 (or all ~63 plans).
-That's the immediate next step before deciding any fix, since the three
-mechanisms imply different fixes (skeleton simplification tuning vs.
-room-polygon/GT convention question vs. no action needed).
+**Open — this is the actual next-session target, read before touching a
+fix**: n=3 bought heterogeneity, not proportions. It disproves "the whole
+bucket is a skeleton bug" (only 3807 is) but doesn't tell you the mix,
+and the mix is the entire decision: if the missing_from_skeleton
+mechanism dominates the 11, a skeleton-simplification fix is worth
+building; if partial_ink_partial_gap / no_ink_at_all dominate, this is
+mostly a labeling-spec/GT-convention question and a skeleton fix would
+barely move the clean rate. **Next session: classify all 11
+no_angle_valid_candidate instances (from the 15-plan sample; extend the
+scan if fewer than 11 turn up) through `verify_no_angle_valid_candidate.py`
+and report the real proportions.** Do not assume the three-way taxonomy
+above is complete — `partial_ink_partial_gap` only emerged mid-pass on
+n=3, so a 4th or 5th mechanism showing up in the full 11 should be named,
+not forced into these three. Diagnostic only, still no fix, until the
+proportions are in.
 
 Also open: **issue #3** — 2 known cases (ResPlan plans 2642/`bathroom_1`,
 3973/`bathroom_0`) where the assembled `wall_cycle` revisits the same
