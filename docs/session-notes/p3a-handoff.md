@@ -186,6 +186,81 @@ issue #4** with three hypotheses (no candidate wall band found / coverage
 ratio below the 0.5 threshold / angle-filter rejecting a real match) —
 not started, next session's target.
 
+### Issue #4 progress (2026-07-21 diagnostic session)
+
+`extraction/synth/qa/diagnose_broken_room_cycle.py` (committed) instruments
+`rooms.py::assemble_rooms`'s stage-1 per-edge coverage loop. Sampled the
+15-plan "exclusively" population (`room_assembly_failed_required`, zero
+`cycle_unrepairable:` flags anywhere in the plan). 20 required-room
+instances, 47 broken edges. A first pass over-attributed 80% of instances
+to the angle filter (`angle_filter_rejected_real_match`), but most
+rejected candidates had `cos_angle` near 0.0 — near-perpendicular walls
+butting into a corner, exactly the case the filter's own comment says the
+0.9 cutoff exists to reject. Rescoping to only count moderate-tilt
+rejections (`cos_angle` in [0.5, 0.9) — plausible diagonal/chamfered
+walls) as genuine near-misses collapsed that category to 20%/10.6% (edges)
+and surfaced a **fourth, dominant category the three named hypotheses
+didn't cover**:
+
+| Category | Instances | Edges |
+|---|---|---|
+| **no_angle_valid_candidate** (new) | 55.0% (11/20) | 57.4% (27/47) |
+| coverage_below_threshold (hyp. 2) | 20.0% (4/20) | 27.7% (13/47) |
+| angle_filter_rejected_real_match (hyp. 3) | 20.0% (4/20) | 10.6% (5/47) |
+| no_candidate_band (hyp. 1) | 5.0% (1/20) | 4.3% (2/47) |
+
+`no_angle_valid_candidate`: a broad-phase STRtree candidate exists near
+the edge, but every one is near-perpendicular and none survives even
+hypothetically — no genuinely-angled wall is ever near the edge. Read
+from absence in the STRtree query, so treated as a lead, not a
+conclusion, pending direct confirmation.
+
+**Positive confirmation** (`extraction/synth/qa/verify_no_angle_valid_candidate.py`,
+committed): checked 3 of the 11 `no_angle_valid_candidate` instances
+directly against raw GT wall ink (pre-skeleton) and the extracted
+skeleton, using a wall-thickness-scaled proximity (not edge-length-scaled
+— an early version scaled by edge length and "found" unrelated parallel
+walls 11-22 units away in an axis-aligned building, misclassifying all
+three) and an ink **coverage ratio** projected onto the edge's own
+parametric range (not a boolean "is there any qualifying ink nearby" —
+that conflated a genuine full-length wall match with a short unrelated
+ledge that happened to be parallel and close: a 3.49-unit ledge "matched"
+a 17.47-unit edge at first pass). Result: the lead splits into three
+distinct, confirmed mechanisms, none of which is a uniform "skeleton
+pruned a spur":
+
+- **plan 3807, bathroom_0, edge 0** (`extraction/synth/reports/no_angle_candidate_3807_bathroom0_e0.png`,
+  gitignored, regenerate via the script) — **missing_from_skeleton**. GT
+  wall ink exactly matches the edge (identical endpoints, `ink_coverage_ratio`
+  well over 1.0 from overlapping ink features), but the skeleton runs one
+  continuous straight vertical wall through that point with no trace of
+  the small lateral jog the raw polygon actually has. Looks like
+  skeleton *simplification* smoothing away a small real offset, not spur
+  pruning — revises the original hypothesis in `diagnose_broken_room_cycle.py`'s
+  docstring.
+- **plan 634, storage_0, edge 2** (`extraction/synth/reports/no_angle_candidate_634_storage0_e2.png`)
+  — **partial_ink_partial_gap** (new sub-category). `ink_coverage_ratio`
+  0.033: only a sliver near one end of a 17.47-unit edge is backed by
+  real wall ink (a short ledge); the other ~17 units run through genuinely
+  open space. The room polygon's edge is not "a wall extraction missed" —
+  most of it isn't a wall at all.
+  Not yet clear whether this is a valid record of a wall-less room
+  boundary or a fixture/other feature; needs the domain check noted below
+  before deciding.
+- **plan 881, bathroom_0, edge 0** (`extraction/synth/reports/no_angle_candidate_881_bathroom0_e0.png`)
+  — **no_ink_at_all**. The room polygon has a small (4.8-unit) notch with
+  zero qualifying wall ink anywhere within a generous, thickness-scaled
+  proximity — a room-polygon tracing artifact, not a skeleton or
+  room-assembly bug at all.
+
+**Open**: n=3 is a confirmation spot-check, not a population estimate —
+the 55%/57.4% no_angle_valid_candidate split above should NOT be assumed
+to break down 1/3-1/3-1/3 into these three mechanisms without running the
+verification script over a larger sample of the 11 (or all ~63 plans).
+That's the immediate next step before deciding any fix, since the three
+mechanisms imply different fixes (skeleton simplification tuning vs.
+room-polygon/GT convention question vs. no action needed).
+
 Also open: **issue #3** — 2 known cases (ResPlan plans 2642/`bathroom_1`,
 3973/`bathroom_0`) where the assembled `wall_cycle` revisits the same
 wall id (a per-edge-coverage bug, not a face-polygon construction one).
