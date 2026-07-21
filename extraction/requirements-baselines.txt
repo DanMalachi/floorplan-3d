@@ -1,0 +1,6 @@
+# Phase 1 baselines only — not part of the frozen core extraction/requirements.txt.
+# Heavy/throwaway deps: CubiCasa5K inference (a) + frontier VLM calls (b).
+torch
+torchvision
+anthropic
+python-dotenv

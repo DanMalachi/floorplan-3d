@@ -51,6 +51,13 @@ __pycache__/
 # these local only, out of git history
 floorplan_for_training/dxf_dwg/
 
+# Phase 1 baselines — CubiCasa5K dataset/weights/vendored repo (5.5GB+
+# zip, not ours to redistribute) and generated baseline predictions/HTML
+# reports (regenerable via extraction/baselines/*.py + summarize.py).
+/data/cubicasa5k/
+/data/baselines_out/
+/reports/phase-1/
+
 # IKEA pipeline raw cache — regenerable intermediate (raw API responses + HTTP
 # cache). Committed static asset: the catalog JSON data/furniture-ikea*.json
 # (incl. the .blob.json URL manifest).
