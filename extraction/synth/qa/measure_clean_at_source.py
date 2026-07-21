@@ -94,7 +94,24 @@ def _wall_boundary_edges(wall_geom) -> list[tuple[tuple[float, float], tuple[flo
 def _edge_covered(a, b, edge_len, wall_edges, tree, ink_proximity) -> float:
     """Coverage ratio of room edge (a,b) by nearby, plausibly-angled wall
     ink — same projection-onto-parametric-range technique as
-    verify_no_angle_valid_candidate.py, generalized to a full room cycle."""
+    verify_no_angle_valid_candidate.py, generalized to a full room cycle.
+
+    Each candidate's contribution is clamped to its actual overlap with the
+    edge's own [0,1] parametric range before summing (fixed 2026-07-21).
+    The previous `min(t1,1.0) - max(t0,0.0)` was unclamped: a candidate
+    whose projected range falls entirely outside [0,1] (t1<0 or t0>1 —
+    genuinely zero overlap, common for short required-room edges sitting
+    near OTHER unrelated wall ink in a dense cluster of small rooms) still
+    contributed a large NEGATIVE number to the sum, capable of swamping a
+    real candidate's positive contribution. Confirmed on plan 3733
+    (bedroom_1, edge 30): a candidate with t-range [-5.12,-3.12] — no
+    overlap with [0,1] at all — contributed -3.12. Visually confirmed on
+    plan 704238 (bedroom_0, edge 16): scored -6.35 by the old formula while
+    sitting in solid, unambiguous wall ink on both sides; the clamped
+    formula correctly scores it 1.0. See
+    docs/session-notes/p3a-handoff.md's 2026-07-21 decomposition session
+    for the full population-impact measurement (this bug alone accounted
+    for 40.4% of a 27-plan sample's flagged edges)."""
     dx, dy = b[0] - a[0], b[1] - a[1]
     edge_line = LineString([a, b])
     candidates = tree.query(edge_line.buffer(ink_proximity))
@@ -109,9 +126,12 @@ def _edge_covered(a, b, edge_len, wall_edges, tree, ink_proximity) -> float:
         if edge_line.distance(LineString([wa, wb])) > ink_proximity:
             continue
         ts = [((px - a[0]) * dx + (py - a[1]) * dy) / (edge_len * edge_len) for px, py in (wa, wb)]
-        overlaps.append((min(ts), max(ts)))
+        t0, t1 = min(ts), max(ts)
+        clipped_t0, clipped_t1 = max(t0, 0.0), min(t1, 1.0)
+        if clipped_t1 > clipped_t0:
+            overlaps.append((clipped_t0, clipped_t1))
     overlaps.sort()
-    covered = sum(min(t1, 1.0) - max(t0, 0.0) for t0, t1 in overlaps if t1 > t0) * edge_len
+    covered = sum(t1 - t0 for t0, t1 in overlaps) * edge_len
     return covered / edge_len if edge_len else 0.0
 
 
