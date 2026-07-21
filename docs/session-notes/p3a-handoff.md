@@ -1,4 +1,4 @@
-# Phase 3a session handoff — updated 2026-07-20
+# Phase 3a session handoff — updated 2026-07-21
 
 Branch: `phase-3a-renderer` (worktree `fp-phase3a`, terminal B per
 `docs/extraction-plan.md`'s two-terminal table). The 2026-07-19 session
@@ -347,25 +347,122 @@ measured against raw wall ink with no skeleton involved at all. A
 skeleton-simplification fix moves the converter closer to 67.5%, not
 closer to 90%.
 
+### room_boundary_no_wall_match decomposition (2026-07-21 diagnostic
+session, part 3) — READ-ONLY, no fix applied, per Dan's explicit request
+before trusting the 67.5% ceiling enough to revise the bar on it
+
+Motivation: the 67.5% ceiling has already been shown to over-count once
+(omitting `fill_openings_into_wall` cost 33 points, 34.5%→67.5%). Before
+taking 67.5% to the P0 gate, Dan asked for the 32.5% `room_boundary_no_wall_match`
+bucket itself decomposed — sampled 27 plans hit by the flag (deterministic
+scan, first 1500 plans, `extraction/synth/qa/classify_room_boundary_no_wall_match.py`,
+committed) and classified every flagged required-room edge.
+
+**Finding 0 (the big one): a second measurement bug, this time in the
+coverage-ratio arithmetic itself, not a missing fill step.**
+`measure_clean_at_source.py`'s `_edge_covered` (and
+`verify_no_angle_valid_candidate.py`'s copy) sums each candidate wall-ink
+edge's projected overlap with the room edge's own `[0,1]` parametric range
+via `min(t1,1.0) - max(t0,0.0)` — but never floors that at 0. When a
+candidate's projected range falls entirely outside `[0,1]` (genuinely zero
+overlap — common for short required-room edges, e.g. bathroom/storage
+edges are frequently 2-5 units, sitting near OTHER unrelated wall ink in a
+dense cluster of small rooms), this still contributes a large negative
+number to the sum, which can swamp a real candidate's positive
+contribution. Confirmed directly on plan 3733 (bedroom_1, edge 30): a
+candidate with t-range `[-5.12,-3.12]` — no overlap with `[0,1]`
+whatsoever — contributes -3.12 to the sum via the unclamped formula.
+Visually confirmed on plan 704238 (bedroom_0, edge 16, overlay committed
+at `extraction/synth/reports/no_wall_match_measurement_bug_704238_bedroom0_e16.png`):
+the edge sits in the middle of solid, unambiguous wall ink on both sides —
+obviously fully covered — yet the buggy formula scored it -6.35 (nonsense;
+flagged as broken) while a properly-clamped recomputation scores it 1.0
+(fully covered, correctly not broken). **Population impact on the 27-plan
+sample: 40.4% of flagged EDGES (44/109) and 29.6% of flagged PLANS (8/27)
+were false positives explained ENTIRELY by this bug** — real coverage was
+fine, the plan should never have been flagged. This bug lives in a QA
+script, not the converter (`rooms.py`/`skeleton.py` use a different,
+correctly-clamped face-offset/mitre code path) — but `measure_clean_at_source.py`
+IS the script that produced the 67.5% ceiling number, so this directly
+inflates it. **Not fixed this session** (read-only instruction) —
+`_edge_covered_clamped` in the new qa script is a local, diagnosis-only
+reimplementation used only to get a trustworthy classification signal.
+
+**Taxonomy of the remaining 65 genuinely-still-broken edges** (i.e. after
+correcting finding 0), against the task's (a)-(f) categories, each
+confirmed with a source-level overlay (`extraction/synth/reports/no_wall_match_*.png`,
+gitignored, regenerate via `generate_overlays()` in the same script):
+
+| Category | Edges (of 65) | Rooms (of 25) | Mechanism, confirmed |
+|---|---|---|---|
+| (e) opening/doorway | 63.1% (41) | 48.0% (12) | **Dominant.** The room polygon itself steps into a small rectangular notch tracing the door's own footprint (confirmed on plans 9206/7607/3807/10171 — notch edge coordinates land exactly on the door polygon's bounding box). Not a missing wall-ink or missing-union problem — the notch edges are near-perpendicular to the real wall line by construction, so no proximity-band widening or extra fill step can ever match them; fixing this needs the room-edge check itself to skip edges captured by a door polygon (fix work, correctly out of scope here). |
+| (d) tracing artifact | 15.4% (10) | 12.0% (3) | Small (≤1.5× wall_depth) interior notch/jog with zero qualifying ink anywhere nearby even at a widened band, no door involved, no traced neighbor found — same mechanism as the already-documented plan-881 `no_ink_at_all` case (re-confirmed with a fresh overlay this session). |
+| (c) exterior/boundary/void | 12.3% (8) | 20.0% (5) | Outward probe from the edge lands genuinely outside the `inner` building envelope — confirmed on plan 1448 (stair_0): the edge sits at the traced footprint's own edge with literal blank space beyond, no site feature, no room. |
+| (a) genuine GT defect | 4.6% (3) | 12.0% (3) | Confirmed real: e.g. plan 3467 storage_0 edge 0 — a storage closet whose room polygon sits entirely embedded inside a solid, uncut mass of wall ink (overlay confirms no gap/doorway was ever cut into the wall layer for this room at all). More precisely a wall/room-layer overlap inconsistency than a literally "absent" wall, but equally unfixable by the converter — a genuine source-data defect. All 3 instances are on `storage` rooms specifically (edges bordering `living`, in all 3 cases) — worth watching as a pattern if more data turns up. |
+| (b) shared/party wall | 4.6% (3) | 8.0% (2) | Outward probe lands inside another traced room, and widening the search band (half- to full-thickness scaled) recovers full coverage — real wall ink exists, just authored asymmetrically toward the neighbor's side beyond the narrow band's reach. Confirmed on plan 9796 (stair_0, edge 0). |
+| (f) new category | 0% | 0% | None needed — the four confirmed mechanisms above (plus the doorway-notch reframing of what was expected to be a simple "(e) doorway" bucket) fully covered the sample. |
+
+**Two requested numbers:**
+
+1. **Revised true ceiling estimate: 67.5% + 32.5% × 0.889 ≈ 96.4%**
+   (recovered fraction = 24/27 sampled plans had every genuinely-broken
+   edge land in class b/c/d/e or the arithmetic-bug bucket; only 3/27 kept
+   a real class-(a) defect). **This is a diagnostic-scale estimate from
+   n=27, not a population-scale measurement** — unlike the 67.5% itself
+   (measured on the full 17,000), this recovered-fraction needs to be
+   re-measured at population scale (after fixing finding 0) before it's
+   trustworthy enough to set a bar. Treat 96.4% as "the ceiling is
+   probably much closer to arithmetically-100%-reachable than 67.5%
+   suggested, once measurement artifacts are corrected" — not as a number
+   to gate on directly.
+2. **Converter clean rate, conditioned on clean_at_source (direct
+   intersection, not the ~45/67.5≈67% approximation): n=300,
+   clean_at_source=65.0% (195/300), converter_clean=45.0% (135/300, matches
+   the existing figure), converter_clean AND clean_at_source=39.7%
+   (119/300) → converter_clean | clean_at_source = 119/195 = 61.0%.**
+   Slightly below the ~67% approximation — the converter is doing somewhat
+   worse against its own reachable ceiling than the two-independent-
+   percentages estimate suggested.
+
+**What this changes about the 67.5% number itself**: it is very likely
+inflated by finding 0 (the arithmetic bug) at a population scale similar
+to what the 27-plan sample shows (~30-40% of the flagged bucket) — the
+true clean-at-source ceiling, once `_edge_covered` is fixed and
+`measure_clean_at_source.py` is re-run on the full 17K, is almost
+certainly well above 67.5%, plausibly in the 85-95%+ range given how
+thoroughly the sample's `room_boundary_no_wall_match` instances turned out
+to be explainable. **Not re-measured at population scale this session**
+(would require editing the QA script, out of scope for a read-only pass).
+
 ## Next-session plan, in order
 
-1. **Take the 67.5% clean-at-source ceiling to Dan / the P0 gate
-   decision before more converter work.** This is the one item that
-   changes what "next session" even means — re-measuring conversion
-   against the clean-at-source subset, and/or revising the 90% bar, are
-   Dan's calls, not something to decide unilaterally by continuing to
-   patch the converter.
-2. **Build the skeleton-simplification fix for issue #4's
+1. **Fix the `_edge_covered` unclamped-overlap bug in
+   `measure_clean_at_source.py` (and `verify_no_angle_valid_candidate.py`'s
+   copy) and re-run `measure_clean_at_source.py` on the full 17K.** This is
+   now a prerequisite to trusting ANY ceiling number enough to act on it —
+   the 67.5% figure is confirmed inflated by this bug on the sample that
+   was checked, just not yet re-measured at population scale. Also worth
+   deciding whether the room-edge check should treat opening-notch edges
+   (this session's dominant (e) finding, 48% of broken rooms) as
+   automatically passing, rather than requiring a converter fix to
+   discover the same thing room-by-room.
+2. **Take the corrected ceiling to Dan / the P0 gate decision before more
+   converter work.** This is the item that changes what "next session"
+   even means — re-measuring conversion against the clean-at-source
+   subset, and/or revising the 90% bar, are Dan's calls, not something to
+   decide unilaterally by continuing to patch the converter. (Was step 1
+   before this session's decomposition — now waits on step 1 above.)
+3. **Build the skeleton-simplification fix for issue #4's
    `missing_from_skeleton` mechanism** (81.8% of the bucket) — the
    `no_angle_valid_candidate` root cause is now attributed and confirmed
    on 5 overlays (3 from the spot-check, 1 more from the full-11 pass,
    plus the original 3807), not just inferred. Re-measure
    `diagnose_clean_rate.py` and `measure_clean_at_source.py` after, since
    the latter is now the more meaningful bar.
-3. Lower priority: issue #3 (repeated wall id) — small (2 known cases,
+4. Lower priority: issue #3 (repeated wall id) — small (2 known cases,
    0.3% of room-cycles), worth a quick sample-and-categorize pass but not
    urgent given its size relative to issue #4.
-4. Continue the established discipline: each fix should be a real,
+5. Continue the established discipline: each fix should be a real,
    specific, measured bug — not a threshold/tuning change. Re-measure
    after each fix rather than assuming.
 
