@@ -274,24 +274,100 @@ Also open: **issue #3** — 2 known cases (ResPlan plans 2642/`bathroom_1`,
 wall id (a per-edge-coverage bug, not a face-polygon construction one).
 Small (0.3% of all room-cycles), not urgent, but tracked.
 
+### Population-scale results (2026-07-21 diagnostic session, part 2)
+
+Two measurements, both READ-ONLY, no fix attempted, run in this order
+because the first changes whether the second even matters:
+
+**1. Clean-at-source ceiling — `extraction/synth/qa/measure_clean_at_source.py`,
+full 17,000-plan population, not a sample.** Runs three checks directly
+against the raw source polygons before any conversion step touches them
+(no skeletonization, no wall_cycle assembly, no offset calibration, no
+mitre solving — the one deliberate exception is `fill_openings_into_wall`,
+a lossless deterministic union documented in the script, without which
+the "ceiling" came out BELOW the real converter's measured clean rate,
+which is incoherent for a true ceiling): wall polygon validity, required-room
+polygon validity, and whether each required room's boundary edges are
+actually backed by real wall ink (same coverage-ratio technique as the
+no_angle_valid_candidate verification below, applied to the raw wall
+polygon instead of the skeleton).
+
+**Result: 67.5% clean_at_source (11,472/17,000).** `wall_invalid` 0.0%,
+`room_geometry_invalid` 0.0% — ResPlan's raw polygons are topologically
+sound at the shapely-validity level, essentially without exception.
+**`room_boundary_no_wall_match` 32.5%** — a third of all plans have at
+least one required-room edge that doesn't correspond to any real wall ink
+at all, even before any of our pipeline's lossy steps run.
+
+**This is the ceiling on the whole phase, and it's below the 90% bar.**
+90% clean conversion is arithmetically impossible against this GT as-is —
+the most any converter could ever achieve is ~67.5%, no matter how good
+`rooms.py`/`skeleton.py` get. Two implications, not yet acted on (Dan's
+call, not made here): (a) conversion progress should be re-measured
+against the clean-at-source subset specifically, not the full 17K, to see
+how close the converter actually is to ITS reachable ceiling; (b) the 90%
+bar itself likely needs revising at the P0 gate, with this number as the
+evidence, rather than continuing to chase converter fixes toward a target
+the data can't reach.
+
+**2. Full-11 classification of `no_angle_valid_candidate` — reusing
+`diagnose_broken_room_cycle.py`'s sampler and
+`verify_no_angle_valid_candidate.py`'s confirmation logic unchanged** (new
+script: `extraction/synth/qa/classify_no_angle_valid_candidate_population.py`).
+The prior session's n=3 spot-check proved the bucket is at least three
+unrelated mechanisms but said nothing about their mix. Classified all 11
+of the 15-plan sample's `no_angle_valid_candidate`-primary rooms (26
+edges; a 12th room, plan 1448 `stair_0`, has one such edge too but a
+higher-priority category wins its room-level label, so it's reported as a
+footnote, not counted in the 11) into attribution buckets:
+
+| Attribution | Room-level (of 11) | Edge-level (of 26) |
+|---|---|---|
+| **converter_bug** (`missing_from_skeleton` / `present_outside_band` / `present_within_band_UNEXPECTED`) | **81.8% (9/11)** | 80.8% (21/26) |
+| gt_error (`no_ink_at_all`) | 9.1% (1/11) | 15.4% (4/26) |
+| convention_mismatch (`partial_ink_partial_gap`) | 9.1% (1/11) | 3.8% (1/26) |
+
+`missing_from_skeleton` alone is 57.7% of edges (15/26) — the dominant
+single mechanism, and a second independently-verified overlay (plan
+13342 `bathroom_1`, beyond the original 3-instance spot-check) shows the
+identical pattern already seen on plan 3807: a real small lateral jog
+present in the raw wall ink, with the skeleton drawing one straight wall
+through the point and no trace of the offset. **Per the decision rule
+from last session's framing: converter_bug dominates, so a
+skeleton-simplification fix for issue #4 is justified — not yet built.**
+The `convention_mismatch` bucket (`partial_ink_partial_gap`) is still
+genuinely ambiguous and small (1/11); doesn't change the decision either
+way.
+
+**Both numbers matter together, not separately**: issue #4 is worth
+fixing (population 2 says so), but fixing it converts converter_bug-typed
+failures toward clean — it can NEVER close the `room_boundary_no_wall_match`
+gap that sets the 67.5% ceiling (population 1), because that gap is
+measured against raw wall ink with no skeleton involved at all. A
+skeleton-simplification fix moves the converter closer to 67.5%, not
+closer to 90%.
+
 ## Next-session plan, in order
 
-1. **Root-cause `broken_room_cycle` on required rooms (issue #4).** Same
-   pattern as this session's `diagnose_cycle_unrepairable.py`: sample
-   ~15 plans, instrument `assemble_rooms`'s per-edge coverage loop
-   (`rooms.py` lines ~330–396) to record, per broken edge, whether any
-   STRtree candidate was found at all, what `covered/edge_len` was, and
-   which candidates the angle filter (`cos_angle < 0.9`) rejected and why.
-   Categorize into the three hypotheses in issue #4 (or a new one if the
-   data doesn't fit) before deciding a fix.
-2. Lower priority: issue #3 (repeated wall id) — small (2 known cases,
+1. **Take the 67.5% clean-at-source ceiling to Dan / the P0 gate
+   decision before more converter work.** This is the one item that
+   changes what "next session" even means — re-measuring conversion
+   against the clean-at-source subset, and/or revising the 90% bar, are
+   Dan's calls, not something to decide unilaterally by continuing to
+   patch the converter.
+2. **Build the skeleton-simplification fix for issue #4's
+   `missing_from_skeleton` mechanism** (81.8% of the bucket) — the
+   `no_angle_valid_candidate` root cause is now attributed and confirmed
+   on 5 overlays (3 from the spot-check, 1 more from the full-11 pass,
+   plus the original 3807), not just inferred. Re-measure
+   `diagnose_clean_rate.py` and `measure_clean_at_source.py` after, since
+   the latter is now the more meaningful bar.
+3. Lower priority: issue #3 (repeated wall id) — small (2 known cases,
    0.3% of room-cycles), worth a quick sample-and-categorize pass but not
    urgent given its size relative to issue #4.
-3. **Only then decide fixes.** Continue the established discipline: each
-   fix this session (and the two before it) was a real, specific,
-   measured bug — not a threshold/tuning change. Keep re-measuring
-   (`measure_area_error.py`, `diagnose_clean_rate.py`) after each fix
-   rather than assuming.
+4. Continue the established discipline: each fix should be a real,
+   specific, measured bug — not a threshold/tuning change. Re-measure
+   after each fix rather than assuming.
 
 ## For Phase 0
 
