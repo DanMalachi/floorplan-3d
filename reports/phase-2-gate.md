@@ -201,3 +201,67 @@ GT wall counts are 10 (15x30) and 19 (30x50) — predicted wall counts (72, 118)
 ### Disposition
 
 Held for Dan's review per the STOP discipline. Durable artifacts: this report section, `extraction/trackv/{select,pair,assemble,run_step3a}.py` + tests, `extraction/trackv/out/step3a_predictions/*.json`, `extraction/trackv/out/step3a_report.json`. Not merged to main. The coordinate-frame finding above blocks a meaningful F1 number regardless of further pairing-precision work, so it is the highest-priority open question before continuing to 3b/3c.
+
+## Step 3a review follow-up — scoring adapter, over-production diagnosis, debt log
+
+3a reviewed; schema-valid output + per-stage attribution accepted as meeting the STOP criterion. Committed to `phase-2-trackv-m2c` (`28bfe56`). This section covers Dan's three follow-up instructions: build a scoring-only coordinate adapter (outside `eval/`), diagnose the over-production/zero-closure finding as one problem or two, and log the axis-selector's Manhattan-bias debt honestly. No pipeline fix is built this round — directional read only, per instruction.
+
+### Scoring adapter (`extraction/trackv/score_align.py`)
+
+One global similarity transform (scale + rotation + translation; no affine/shear/per-wall correction), fit in two stages, applied to a copy of the prediction, then scored by frozen `eval/metrics` unmodified:
+
+1. **Coarse seed** from the single longest pred/GT wall pair — the longest wall in a floor plan is robustly a real, unbroken exterior run, unlike a raw bounding-box ratio, which this step's own ~7x wall over-production directly inflates and corrupts (confirmed: an early bbox-ratio-based estimate would have been off by roughly the over-production factor).
+2. **One refine pass**: apply the coarse transform, find orientation-compatible (within 15°) and length-plausible (within 3x) nearest-centroid matches within a generous radius, then recompute scale (median), rotation (circular median of signed deltas), and translation (median) from that whole coarse-matched population — not the single seed pair.
+
+**Two real bugs found and fixed while building this, same discipline as 3a itself — checked against real data, not assumed correct:**
+
+1. **Pure midpoint-distance coarse matching picked wrong correspondences.** With ~7x more predicted walls than GT walls, a short spurious wall sitting near a real GT wall's midpoint out-competed the correct match. First attempt recovered a 89° rotation on an unrotated plan and a scale spread from 4x to 144x across "matched" pairs — obviously wrong, caught by comparing against select.py's own independently-measured theta (~0.5°) rather than trusted at face value. Fixed by requiring orientation and length-ratio compatibility before a candidate pair is even considered, not distance alone.
+2. **Sign bug in the circular-mean rotation refinement.** `_circular_mean_deg_180` is used on small *signed* deltas (e.g. -2°) but ended with a plain `% 180.0` — Python's `%` always returns a result with the divisor's sign, so a legitimate -2° delta silently became +178°. This alone explained a second-round rotation result of ~179°/178° on both plans (should be ~0°). Fixed to wrap into (-90°, 90°] instead; regression test added (`test_score_align.py::test_small_negative_rotation_delta_does_not_wrap_to_near_180`).
+
+### Directional read (15x30, 30x50)
+
+| plan | recovered scale | scale consistency (rel. stdev / min–max over coarse matches) | recovered rotation | n coarse matches | matched @ τ=2% | wall F1 @ τ=2% | mean endpoint error @ τ=2% | wall-mask IoU |
+|---|---|---|---|---|---|---|---|---|
+| 15x30 | 11.74 | 0.354 / 8.49–22.73 | -0.41° | 10 | 2 of 10 GT | 0.049 | 449 (≈4.5% of GT diagonal) | 0.069 |
+| 30x50 | 8.69 | 0.258 / 6.45–10.94 | -1.65° | 2 | 0 of 19 GT | 0.0 | n/a | 0.020 |
+
+Both recovered rotations land near 0°, consistent with select.py's own independently-measured theta (~0.5° on both plans) — a real cross-check the two bugs above were caught against, not just plausible-looking output. Recovered scale magnitude is the same order on both plans (~9–12), a mild positive signal, but **only 10 and 2 coarse matches respectively fed the refine step** — thin evidence, and 30x50 in particular is only weakly constrained (2 points barely determine 4 similarity parameters). At τ=0.5%/1% neither plan matches anything; only the loosest τ=2% band produces any matches at all, and only on 15x30. This is a directional read, explicitly not a precision metric, exactly as scoped.
+
+**τ confirmation:** `matching.py`'s `tau = tau_frac * plan_diagonal(gt_walls)` is fractional-of-diagonal, matching `docs/paper.md` Appendix C's pseudocode (`def match_walls(pred, gt, tau): # tau in plan-diagonal fraction`) exactly, including the `overlap_ratio > 0.8` co-requirement in `centerline_cost`. **No spec deviation found here** — the coordinate-frame gap is a real gap regardless.
+
+**Phase-0 amendment filed:** [github.com/DanMalachi/floorplan-3d/issues/8](https://github.com/DanMalachi/floorplan-3d/issues/8), same discipline as issues #5/#6/#7 — proposes the harness needs a frame-normalization convention for pre-scale geometry; `score_align.py` is explicitly interim, meant to be superseded in `eval/`, not extended.
+
+### Over-production + zero-closure: one problem, and which branch
+
+**Wall-count over-production is confirmed real** (72 pred vs. 10 GT on 15x30, 118 vs. 19 on 30x50) and **zero room cycles close on either plan** (`n_cycle_basis_found=0`, ~87% of predicted walls carry a dangling end on both). Categorized the spurious population (`extraction/trackv/analyze_step3a_walls.py`, re-derives provenance from the live select/pair objects, not the scaled schema output which loses it):
+
+| plan | near-duplicate remnant | dimension-line-shaped (guard-absorbed) | unclassified (see below) |
+|---|---|---|---|
+| 15x30 (n=72) | 19 (26%) | 13 (18%) | 40 (56%) |
+| 30x50 (n=118) | 20 (17%) | 31 (26%) | 67 (57%) |
+
+- **Near-duplicate remnant** = paired thickness under 3x the pair's own pen width — the stroke-width floor (fixed earlier this step) requires only >1x, so a real, quantified residue sits in the 1–3x band, still spurious.
+- **Dimension-line-shaped, guard-absorbed** = thickness over 3x the plan's own median final-wall thickness. This directly answers Dan's ask: **13/72 (15x30) and 31/118 (30x50) of the spurious walls are exactly the small-n thickness-outlier-absorption failure mode flagged at the end of the main 3a section** — not a separate deferral, a real, sizeable pair-stage contributor (18–26% of over-production on its own).
+- **Unclassified, majority on both plans:** an attempted "hatch cluster membership" category (does the segment's parent primitive sit in a width cluster with low axis-aligned fraction?) turned out **uninformative** — checked directly, not assumed: on this corpus, genuine wall-boundary strokes and hatch share the *literal same pen width* (0.72pt, the milestone-2-step-2 finding this whole step exists to work around), so a segment's width-cluster membership cannot distinguish a real wall edge from a coincidentally axis-aligned hatch remnant; both land in the same cluster by construction. This is itself informative — it rules out a cheap categorization shortcut, not just a null result. Confirmed further: even restricted to the *surviving* (already guard-passed) population, thickness does not sub-cluster into a tight "real wall" group at all — 15x30 splits into two log-space clusters but the larger (69% of walls) still spans a 27x range (7.08–193.4); 30x50 doesn't split at all (100% in one cluster spanning 0.84–257.6). There is no thickness-based signal left to mine further within this population.
+
+**Branch verdict: leans FILTERING, not confirmed at high confidence by matched-pair residual alone (evidence is thin), corroborated by independent evidence.** Reasoning:
+- select.py's axis-alignment step is doing its intended, verified job (candidate axis-aligned fraction drops from 78.5%→20% diagonal on the dominant cluster, matching design) — selection is narrowing correctly, not the source of the explosion.
+- When pairing does land on a real wall-face pair, the underlying geometry is analytically clean by construction (float-precision offset math, no measurement noise) — individually inspected examples earlier in this step (thickness ~78–85, plausible lengths, sane positions) support this directly.
+- The adapter's own matched-pair evidence is consistent with, but does not strongly confirm, "low residual": 15x30 gets 2/10 GT matches only at the loosest τ with ~4.5%-of-diagonal endpoint error (not tight, not catastrophic either); 30x50 gets zero matches at any τ, but off only 2 coarse-matched points feeding a weakly-constrained refine, not a strong negative signal either.
+- Zero cycle closure is a mechanical, expected consequence of ~6–7x too many candidate walls scattered among the real ones — sufficient on its own to explain the closure failure without positing broken centerline/thickness math.
+
+**If hatch dominates the remainder (plausible per the "unclassified" finding, not confirmed further this round): fix direction is a periodicity/texture discriminator, not threshold tuning**, per `docs/paper.md`'s own §5.6 Layer 2 spec: "stroke-texture check (hatching and stair treads are periodic — a 1-D FFT along the candidate flags periodicity)." Proposed only, not built this session: for each candidate segment surviving axis-alignment, sample stroke-population density along its own local neighborhood (perpendicular to its run) and flag periodic spacing consistent with a hatch field, as an additional Layer-2 prior in `pair.py` ahead of (or alongside) the existing thickness-plausibility guard. Left for a future session's own plan + STOP, not built here.
+
+### Debt logged — axis-selector Manhattan-bias regression
+
+The "prefer the local peak closest to 0" fix (main 3a section, item 1's second bug) reintroduces a 0°-Manhattan bias and **regresses the non-Manhattan-safe goal** (`docs/paper.md` §5.4). Confirmed directly, not assumed: at rotation ≤15° combined with dominant hatch, the heuristic still recovers the correct wall axis; at rotation 30°, it locks onto ~74.5° instead of the true ~30° — the hatch peak (rotation+45°, folded mod-90) lands *closer* to 0 than the true wall peak once rotation is large enough, and "closest to zero" picks the wrong one.
+
+Logged honestly rather than left as a silent gap: `extraction/trackv/tests/test_select.py::test_rotated_wall_grid_with_dominant_hatch_is_not_reliably_recovered`, marked `xfail(strict=True)` with the reasoning above written into the test itself — if a future fix accidentally makes this pass, the suite will flag it (strict xfail fails on unexpected success) rather than silently losing the debt marker. Acceptable interim **only** because this corpus is measurably unrotated (theta ≈ 0.5° on all three hatched plans). Principled fix, noted for Phase 7 hardening, not built here: weight the axis vote by parallel-pair support (does a candidate at this orientation actually find a consistent-offset partner?) rather than by raw proximity to zero — real walls pair up; coincidentally-aligned hatch mostly doesn't, which is a stronger and rotation-agnostic signal than orientation proximity alone.
+
+### Explicitly not built this round
+
+Any fix to over-production (periodicity discriminator proposed, not built), any change to `eval/`, any scale-recovery machinery, any forced cycle closure in `assemble.py`, 3b, 3c.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts added: `extraction/trackv/score_align.py` + `tests/test_score_align.py`, `extraction/trackv/run_score_align.py` + `out/step3a_aligned_score.json`, `extraction/trackv/analyze_step3a_walls.py`, the xfail debt test, this section, GitHub issue #8. Not merged to main. Merge decision waits on this read per Dan's instruction.

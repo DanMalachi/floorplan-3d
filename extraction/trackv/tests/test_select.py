@@ -15,6 +15,7 @@ import math
 from pathlib import Path
 
 import fitz
+import pytest
 
 from extraction.trackv.dissect import dissect
 from extraction.trackv.select import select_axis_aligned
@@ -70,6 +71,24 @@ def _draw_rotated_wall_rect(page: fitz.Page, rotation_deg: float) -> None:
     shape.commit()
 
 
+def _draw_rotated_wall_rect_with_dense_hatch(page: fitz.Page, rotation_deg: float) -> None:
+    """Same rotated wall rectangle as `_draw_rotated_wall_rect`, plus dense
+    hatch drawn at the *architecturally correct* offset (wall rotation + 45
+    deg, not a fixed absolute 45) and dominating aggregate length the same
+    way `_draw_wall_rect_with_dense_diagonal_hatch` does. Neither existing
+    rotation test nor the hatch-dominance test exercises this combination."""
+    _draw_rotated_wall_rect(page, rotation_deg)
+    shape = page.new_shape()
+    hatch_theta = math.radians(rotation_deg + 45.0)
+    hct, hst = math.cos(hatch_theta), math.sin(hatch_theta)
+    for i in range(150):
+        x0 = 40 + (i % 30) * 10
+        y0 = 40 + (i // 30) * 10
+        shape.draw_line(fitz.Point(x0, y0), fitz.Point(x0 + 8 * hct, y0 + 8 * hst))
+    shape.finish(color=(0, 0, 0), width=2.0, fill=None)
+    shape.commit()
+
+
 def _draw_wall_with_curved_segment(page: fitz.Page) -> None:
     shape = page.new_shape()
     shape.draw_line(fitz.Point(50, 50), fitz.Point(200, 50))
@@ -100,6 +119,31 @@ def test_rotated_wall_grid_is_still_selected_as_dominant_axis(tmp_path):
     # folded mod-90 domain: a 15deg-rotated grid's walls fold to ~15deg
     assert abs(result.theta_deg - 15.0) <= 3.0, f"expected theta near 15 deg, got {result.theta_deg}"
     assert len(result.candidates) == 4
+
+
+@pytest.mark.xfail(
+    reason=(
+        "KNOWN DEBT (reports/phase-2-gate.md, step 3a): the 'prefer the local peak "
+        "closest to 0' fix for hatch-dominated axis selection reintroduces a 0-deg "
+        "Manhattan bias, regressing the non-Manhattan-safe goal (paper Sec. 5.4). At "
+        "large enough rotation the hatch peak (rotation + 45 deg, folded mod-90) lands "
+        "*closer* to 0 than the true wall peak does, and the heuristic picks the wrong "
+        "one. Confirmed empirically: correct at 0/15 deg rotation, wrong at 30 deg "
+        "(recovers ~74.5 deg instead of ~30). Acceptable interim only because this "
+        "corpus is unrotated (theta ~0.5 deg measured on all three hatched plans) -- "
+        "not fixed here, logged honestly via this expected-failing test rather than "
+        "silently passing on an untested path. Principled fix for Phase-7 hardening: "
+        "weight the axis vote by parallel-pair support (how many candidates actually "
+        "find a consistent-offset partner at that orientation), not by peak proximity "
+        "to zero -- real walls pair up, coincidentally-aligned hatch mostly doesn't."
+    ),
+    strict=True,
+)
+def test_rotated_wall_grid_with_dominant_hatch_is_not_reliably_recovered(tmp_path):
+    pdf = _make_pdf(tmp_path, "rotated_hatch.pdf", lambda p: _draw_rotated_wall_rect_with_dense_hatch(p, 30.0))
+    dissection = dissect(pdf)[0]
+    result = select_axis_aligned(dissection)
+    assert abs(result.theta_deg - 30.0) <= 3.0, f"expected theta near 30 deg, got {result.theta_deg}"
 
 
 def test_curve_segments_in_stroke_population_are_quarantined_not_selected(tmp_path):
