@@ -1,0 +1,275 @@
+{
+  "plans": [
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "total_primitives": 20741,
+      "n_stroked_primitives": 20741,
+      "n_filled_no_stroke_primitives": 0,
+      "filled_no_stroke_fraction_count": 0.0,
+      "filled_no_stroke_fraction_area": 0.0,
+      "n_clusters": 2,
+      "clusters": [
+        {
+          "low": 0.0,
+          "high": 0.0,
+          "mean": 0.0,
+          "count": 4,
+          "fraction_of_stroked": 0.0002,
+          "geometry": {
+            "n_primitives": 4,
+            "n_segments": 12,
+            "kind_counts": {
+              "line": 4
+            },
+            "n_fill_and_stroke": 4,
+            "median_segment_length": 8.029228378404973,
+            "axis_aligned_segment_fraction": 1.0,
+            "diagonal_segment_fraction": 0.0
+          }
+        },
+        {
+          "low": 0.72,
+          "high": 0.72,
+          "mean": 0.72,
+          "count": 20737,
+          "fraction_of_stroked": 0.9998,
+          "geometry": {
+            "n_primitives": 20737,
+            "n_segments": 21320,
+            "kind_counts": {
+              "line": 19970,
+              "curve": 753,
+              "quad": 14
+            },
+            "n_fill_and_stroke": 0,
+            "median_segment_length": 20.194946365177973,
+            "axis_aligned_segment_fraction": 0.2149155722326454,
+            "diagonal_segment_fraction": 0.7850844277673545
+          }
+        }
+      ]
+    },
+    {
+      "plan_id": "20x45-Model",
+      "total_primitives": 251,
+      "n_stroked_primitives": 251,
+      "n_filled_no_stroke_primitives": 0,
+      "filled_no_stroke_fraction_count": 0.0,
+      "filled_no_stroke_fraction_area": 0.0,
+      "n_clusters": 3,
+      "clusters": [
+        {
+          "low": 0.0,
+          "high": 0.0,
+          "mean": 0.0,
+          "count": 43,
+          "fraction_of_stroked": 0.1713,
+          "geometry": {
+            "n_primitives": 43,
+            "n_segments": 246,
+            "kind_counts": {
+              "line": 43
+            },
+            "n_fill_and_stroke": 43,
+            "median_segment_length": 34.079986572265625,
+            "axis_aligned_segment_fraction": 0.967479674796748,
+            "diagonal_segment_fraction": 0.032520325203252036
+          }
+        },
+        {
+          "low": 0.48,
+          "high": 0.48,
+          "mean": 0.48,
+          "count": 26,
+          "fraction_of_stroked": 0.1036,
+          "geometry": {
+            "n_primitives": 26,
+            "n_segments": 46,
+            "kind_counts": {
+              "line": 22,
+              "curve": 4
+            },
+            "n_fill_and_stroke": 0,
+            "median_segment_length": 2.399993896484375,
+            "axis_aligned_segment_fraction": 0.782608695652174,
+            "diagonal_segment_fraction": 0.21739130434782608
+          }
+        },
+        {
+          "low": 0.72,
+          "high": 0.72,
+          "mean": 0.72,
+          "count": 182,
+          "fraction_of_stroked": 0.7251,
+          "geometry": {
+            "n_primitives": 182,
+            "n_segments": 214,
+            "kind_counts": {
+              "line": 174,
+              "curve": 8
+            },
+            "n_fill_and_stroke": 0,
+            "median_segment_length": 24.839996337890625,
+            "axis_aligned_segment_fraction": 0.9065420560747663,
+            "diagonal_segment_fraction": 0.09345794392523364
+          }
+        }
+      ]
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "total_primitives": 33117,
+      "n_stroked_primitives": 33117,
+      "n_filled_no_stroke_primitives": 0,
+      "filled_no_stroke_fraction_count": 0.0,
+      "filled_no_stroke_fraction_area": 0.0,
+      "n_clusters": 2,
+      "clusters": [
+        {
+          "low": 0.0,
+          "high": 0.0,
+          "mean": 0.0,
+          "count": 4227,
+          "fraction_of_stroked": 0.1276,
+          "geometry": {
+            "n_primitives": 4227,
+            "n_segments": 23142,
+            "kind_counts": {
+              "line": 4227
+            },
+            "n_fill_and_stroke": 4227,
+            "median_segment_length": 0.84002685546875,
+            "axis_aligned_segment_fraction": 0.7282430213464697,
+            "diagonal_segment_fraction": 0.2717569786535304
+          }
+        },
+        {
+          "low": 0.72,
+          "high": 0.72,
+          "mean": 0.72,
+          "count": 28890,
+          "fraction_of_stroked": 0.8724,
+          "geometry": {
+            "n_primitives": 28890,
+            "n_segments": 29938,
+            "kind_counts": {
+              "line": 27446,
+              "curve": 1414,
+              "quad": 30
+            },
+            "n_fill_and_stroke": 0,
+            "median_segment_length": 8.740284477921415,
+            "axis_aligned_segment_fraction": 0.2146769991315385,
+            "diagonal_segment_fraction": 0.7853230008684615
+          }
+        }
+      ]
+    },
+    {
+      "plan_id": "Matterport Sample_BW",
+      "total_primitives": 682,
+      "n_stroked_primitives": 526,
+      "n_filled_no_stroke_primitives": 156,
+      "filled_no_stroke_fraction_count": 0.2287,
+      "filled_no_stroke_fraction_area": 0.0288,
+      "n_clusters": 5,
+      "clusters": [
+        {
+          "low": 0.499,
+          "high": 0.5,
+          "mean": 0.4994,
+          "count": 8,
+          "fraction_of_stroked": 0.0152,
+          "geometry": {
+            "n_primitives": 8,
+            "n_segments": 85,
+            "kind_counts": {
+              "line": 6,
+              "rect": 2
+            },
+            "n_fill_and_stroke": 5,
+            "median_segment_length": 166.6409912109375,
+            "axis_aligned_segment_fraction": 1.0,
+            "diagonal_segment_fraction": 0.0
+          }
+        },
+        {
+          "low": 0.58,
+          "high": 0.58,
+          "mean": 0.58,
+          "count": 5,
+          "fraction_of_stroked": 0.0095,
+          "geometry": {
+            "n_primitives": 5,
+            "n_segments": 20,
+            "kind_counts": {
+              "rect": 5
+            },
+            "n_fill_and_stroke": 0,
+            "median_segment_length": 20.80908203125,
+            "axis_aligned_segment_fraction": 1.0,
+            "diagonal_segment_fraction": 0.0
+          }
+        },
+        {
+          "low": 0.628,
+          "high": 0.636,
+          "mean": 0.629,
+          "count": 8,
+          "fraction_of_stroked": 0.0152,
+          "geometry": {
+            "n_primitives": 8,
+            "n_segments": 23,
+            "kind_counts": {
+              "line": 7,
+              "curve": 1
+            },
+            "n_fill_and_stroke": 7,
+            "median_segment_length": 103.875,
+            "axis_aligned_segment_fraction": 0.8260869565217391,
+            "diagonal_segment_fraction": 0.17391304347826086
+          }
+        },
+        {
+          "low": 0.654,
+          "high": 0.758,
+          "mean": 0.7146,
+          "count": 498,
+          "fraction_of_stroked": 0.9468,
+          "geometry": {
+            "n_primitives": 498,
+            "n_segments": 1625,
+            "kind_counts": {
+              "curve": 149,
+              "line": 201,
+              "quad": 35,
+              "rect": 113
+            },
+            "n_fill_and_stroke": 102,
+            "median_segment_length": 19.577152537652154,
+            "axis_aligned_segment_fraction": 0.7076923076923077,
+            "diagonal_segment_fraction": 0.2923076923076923
+          }
+        },
+        {
+          "low": 0.975,
+          "high": 1.022,
+          "mean": 1.0093,
+          "count": 7,
+          "fraction_of_stroked": 0.0133,
+          "geometry": {
+            "n_primitives": 7,
+            "n_segments": 7,
+            "kind_counts": {
+              "line": 7
+            },
+            "n_fill_and_stroke": 0,
+            "median_segment_length": 110.11799621582031,
+            "axis_aligned_segment_fraction": 1.0,
+            "diagonal_segment_fraction": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}
