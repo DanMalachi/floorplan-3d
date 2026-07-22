@@ -566,6 +566,91 @@ won't move — these are converter fixes, not source-measurement fixes).
 3. Lower priority, unscheduled: issue #3 (repeated wall id) — small (2
    known cases, 0.3% of room-cycles).
 
+### Doorway-notch discriminator — validated, ready to build (2026-07-22,
+two diagnostic sessions, still no converter code)
+
+**Widened from the original 4 hand-picked exemplars to 17 room instances /
+26 edges** in the same 27-plan sample (`extraction/synth/qa/diagnose_doorway_notch.py`,
+committed) — every edge showed `cos_to_neighbor=0.0` (perfect
+perpendicularity to its nearest wall-backed ring neighbor, no exceptions),
+`len/wall_depth` in [0.64,1.18], `endpoint_to_opening_bbox_dist` mostly
+0.0–0.6. One clean pattern, not sub-variants, confirmed on fresh overlays
+(`notch_diag_*.png`, gitignored, regenerate via the script).
+
+**Proposed discriminator (spec only, still not built)**: suppress a
+required-room edge when ALL of (1) `opening_coverage >= 0.65`, (2)
+perpendicular to nearest wall-backed ring neighbor (`cos_angle <= 0.15`),
+(3) `edge_len <= 1.2 * wall_depth`. Conjunction, not `opening_coverage`
+alone — perpendicularity by itself is non-discriminating (every corner in
+an axis-aligned building is perpendicular).
+
+**Threshold justification (this is the load-bearing evidence, not the FP
+count below, which is nearly uninformative by construction — `classify()`'s
+own `e_opening_doorway_notch` boundary already IS `opening_coverage>=0.8`,
+so recall against it is tautologically flat at 98.9% across the whole
+0.60–0.80 sweep)**:
+- A 300-plan/929-edge population run (`extraction/synth/qa/measure_notch_discriminator_fp.py`,
+  committed) found 18 edges at threshold 0.65 that `classify()` puts in a
+  different category (16 `d_tracing_artifact_small_notch`, 2
+  `c_exterior_boundary_or_void`/`b_shared_wall_wide_recoverable`). **Every
+  one was visually confirmed via overlay to be the same doorway-notch
+  mechanism**, just mislabeled by `classify()`'s own hardcoded 0.8 cutoff
+  or by its check-order interaction with the exterior/neighbor-widen
+  probes (one case, plan 2455, shows the "wide-band ink recovery" is
+  itself the filled-in door polygon, not an independent wall). None are
+  real defects.
+- Among shape-matching (perpendicular + short) non-e edges there is a
+  **clean empty band at opening_coverage [0.3, 0.5) — zero edges** —
+  separating unrelated noise (93 edges at <0.1) from the confirmed-notch
+  cluster (0.55–0.78+). **0.65 sits in that gap with margin on both
+  sides** — that's why 0.65, not the FP table.
+- Real-world payoff: plan 5664's bedroom_0 has one door producing 3 edges
+  at coverage 0.833/0.714/0.667 — a strict 0.8 cutoff recovers only 1 of
+  3, leaving the room PARTIALLY recovered (worse than not recovering at
+  all, per Dan's read). 0.65 recovers all 3.
+
+**Opening-type coverage gap, checked**: all 26 original edges were
+door-triggered. Extended scan (`extraction/synth/qa/diagnose_notch_opening_types.py`,
+committed, full 17K):
+- **window**: confirmed, identical signature (plan 11942, bedroom_0,
+  `opening_cov=0.948`, `cos_to_neighbor=0.0`, `len/wall_depth=1.17`).
+  Generalizes cleanly.
+- **front_door**: only 1 instance in the entire 17K population (plan
+  5186, `stair_0` — front doors rarely border a
+  CLEAN_REQUIRED_ROOM_TYPES edge at all). Its signature **diverges**: a
+  diagonal chamfer edge (`cos_to_neighbor=0.874`, not perpendicular;
+  `endpoint_to_opening_bbox_dist=2.583`, 5-25x the door/window range),
+  not a rectangular jamb. The perpendicularity condition as specified
+  would NOT suppress this instance — a safe miss (stays flagged), but a
+  real counterexample to assuming the door/window signature generalizes
+  to all three opening types. **Don't design the fix around n=1, but
+  don't lose this either** — file it as a known safe-miss alongside the
+  xfail test, not silently dropped.
+
+**Two design constraints for the suppression build**:
+1. **front_door divergence** (plan 5186, diagonal chamfer) — a known
+   safe-miss, not a target to chase.
+2. **12017 zigzag** — a single door can trace as a multi-step zigzag (4
+   short edges, not the usual clean 2-jamb rectangle), all still
+   door-adjacent and near-perpendicular individually. This is the
+   adversarial case any per-door room-closure check in the fix must
+   handle correctly (per-edge suppression already handles it in this
+   diagnostic; a future per-door/run-based redesign must not regress it).
+
+**Required test guardrail for the build's test suite** (beyond flipping
+`test_doorway_notch_does_not_flag` off xfail): **a positive assertion
+that a genuine-defect edge with incidental opening proximity is NOT
+suppressed.** This is the actual risk the whole diagnostic exists to
+bound — suppressing a real missing-wall edge would mark a broken plan
+clean, inflating the exact clean-rate metric the 90% bar gates on. Test
+that the rule refuses to suppress a defect, not only that it suppresses
+notches.
+
+**Next session (suppression build) starts here, its own STOP**: implement
+the 3-condition conjunction in the real edge-classification path,
+threshold 0.65, flip the xfail, add the defect-non-suppression guardrail
+test, re-measure the clean-at-source-CONDITIONED rate after.
+
 ## Filed, not actioned (per Dan's instruction — record only, no fix this
 session)
 
