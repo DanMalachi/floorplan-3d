@@ -33,6 +33,36 @@ rate, ink-coverage ratio, area-match tolerance are converter-QUALITY
 questions) — it is specifically the GT-INTEGRITY ceiling those checks can
 never exceed, regardless of how good the converter gets.
 
+**Doorway-notch suppression (2026-07-22, build session, validated across
+two prior diagnostic sessions — see docs/session-notes/p3a-handoff.md):**
+a room polygon commonly steps into a small rectangular notch tracing a
+door/window/front_door's own footprint (not a real wall-line edge at
+all). Before flagging a genuinely-uncovered edge as
+`room_boundary_no_wall_match`, `check_plan` now suppresses it when ALL
+THREE hold (conjunction only — no single condition suppresses alone;
+perpendicularity by itself is non-discriminating, since every corner in
+an axis-aligned building is perpendicular):
+  1. `_opening_coverage(...) >= OPENING_COVERAGE_THRESHOLD` (0.65) — a
+     door/window/front_door footprint spans this fraction of the edge's
+     own [0,1] parametric span.
+  2. perpendicular to the nearest wall-backed ring neighbor
+     (`cos_angle <= PERPENDICULARITY_COS_THRESHOLD`, 0.15).
+  3. `edge_len <= NOTCH_LENGTH_MULTIPLE * wall_depth` (1.2x) — a notch
+     jamb is bounded by wall thickness; a real missing wall run is not.
+Threshold (0.65, not the taxonomy's own 0.8) justified by a population
+run: an empty `opening_coverage` band at [0.3, 0.5) cleanly separates
+unrelated noise from the confirmed-notch cluster (0.55-0.78+), and every
+edge in that cluster was visually confirmed via overlay to be the same
+notch mechanism, not a real defect. Suppressions are logged to the
+returned `notch_suppressions` list (same category:detail string
+convention as `flags`, kept SEPARATE from `flags` so an audited
+suppression never itself counts against `clean_at_source` — a
+suppressed edge is never silently dropped, just not double-counted as a
+defect). Known limits, not designed around: a single front_door instance
+found across the full 17K population has a diagonal-chamfer edge
+(cos~0.87, not perpendicular) that this rule will NOT suppress — a safe
+miss, not a false suppression.
+
 One deliberate exception to "no conversion": `fill_openings_into_wall` IS
 called before the room_boundary_no_wall_match check. This restores
 door/window/front_door cutouts into the wall polygon via a deterministic
@@ -72,6 +102,13 @@ TOLERANCE = 2.0  # matches rooms.py::assemble_rooms's default tolerance
 MIN_INK_EDGE_LEN = TOLERANCE  # matches rooms.py's own sub-tolerance-edge skip
 PROXIMITY_MULTIPLIER = 3.0  # matches verify_no_angle_valid_candidate.py
 COVERAGE_THRESHOLD = 0.5  # matches rooms.py::assemble_rooms's default
+
+# Doorway-notch suppression discriminator (validated 2026-07-21/22
+# diagnostic sessions, see this module's docstring above for the
+# population-scale justification of each value).
+OPENING_COVERAGE_THRESHOLD = 0.65
+PERPENDICULARITY_COS_THRESHOLD = 0.15
+NOTCH_LENGTH_MULTIPLE = 1.2
 
 
 def _wall_boundary_edges(wall_geom) -> list[tuple[tuple[float, float], tuple[float, float], float]]:
@@ -135,14 +172,63 @@ def _edge_covered(a, b, edge_len, wall_edges, tree, ink_proximity) -> float:
     return covered / edge_len if edge_len else 0.0
 
 
+def _opening_coverage(a, b, edge_len, dx, dy, p, wall_depth) -> float:
+    """How much of THIS edge's own [0,1] parametric span is spanned by a
+    door/window/front_door footprint, independent of wall-ink geometry.
+    Same projection technique as _edge_covered, applied to opening
+    polygons instead — validated in classify_room_boundary_no_wall_match.py's
+    analyze_edge and diagnose_doorway_notch.py (2026-07-21/22 diagnostic
+    sessions, both unchanged by this build)."""
+    edge_band = LineString([a, b]).buffer(TOLERANCE + wall_depth / 2)
+    best = 0.0
+    for ot in ("door", "window", "front_door"):
+        g = p.get(ot)
+        if g is None:
+            continue
+        for part in get_geometries(g):
+            inter = part.intersection(edge_band)
+            if inter.is_empty or inter.geom_type != "Polygon":
+                continue
+            pts = list(inter.exterior.coords)
+            ts = [((px - a[0]) * dx + (py - a[1]) * dy) / (edge_len * edge_len) for px, py in pts]
+            t0, t1 = max(min(ts), 0.0), min(max(ts), 1.0)
+            if t1 > t0:
+                best = max(best, t1 - t0)
+    return best
+
+
+def _nearest_wall_backed_cos(edge_index, ring_edges, backed_ratio, ux, uy):
+    """Perpendicularity signal for the notch discriminator: cos(angle)
+    between this edge's own unit direction (ux, uy) and the nearest ring
+    neighbor (searching outward from edge_index in both directions) that
+    IS wall-backed (backed_ratio >= COVERAGE_THRESHOLD). Returns None if
+    no wall-backed edge exists anywhere in the ring (degenerate room).
+    Perpendicularity is checked against the nearest REAL wall, not just
+    the immediately-adjacent ring edge, so a chain of several broken
+    edges (e.g. a multi-step notch) doesn't block each other's lookup."""
+    n = len(ring_edges)
+    for offset in range(1, n):
+        for sign in (-1, 1):
+            cand = (edge_index + sign * offset) % n
+            if backed_ratio[cand] is not None and backed_ratio[cand] >= COVERAGE_THRESHOLD:
+                wa, wb, wlen = ring_edges[cand]
+                if wlen:
+                    wdx, wdy = wb[0] - wa[0], wb[1] - wa[1]
+                    return abs(ux * (wdx / wlen) + uy * (wdy / wlen))
+                return None
+    return None
+
+
 def check_plan(raw_plan: dict) -> dict:
     p = normalize_keys(dict(raw_plan))
     flags: list[str] = []
+    notch_suppressions: list[str] = []
     wall_geom = p.get("wall")
 
     if wall_geom is None or wall_geom.is_empty:
         flags.append("wall_invalid:missing_or_empty")
-        return dict(resplan_id=raw_plan.get("id"), flags=flags, clean_at_source=False)
+        return dict(resplan_id=raw_plan.get("id"), flags=flags, clean_at_source=False,
+                    notch_suppressions=notch_suppressions)
     wall_parts = get_geometries(wall_geom)
     if not wall_parts or any(part.geom_type != "Polygon" or not part.is_valid or part.area <= 0 for part in wall_parts):
         flags.append("wall_invalid:degenerate_or_self_intersecting")
@@ -180,22 +266,59 @@ def check_plan(raw_plan: dict) -> dict:
                 flags.append(f"room_boundary_no_wall_match:{rt}_{inst_idx}")
                 continue
             coords = list(poly.exterior.coords)
-            room_broken = False
-            for i in range(len(coords) - 1):
+            n = len(coords) - 1
+
+            # Pass 1: wall-ink coverage ratio for every ring edge, computed
+            # up front (not just for edges that turn out broken) — the
+            # notch discriminator's perpendicularity check (pass 2) needs
+            # to look up ANY other edge's backed status, including ones
+            # later in the ring than the edge currently being evaluated.
+            ring_edges: list[tuple[tuple[float, float], tuple[float, float], float]] = []
+            backed_ratio: list[float | None] = [None] * n
+            for i in range(n):
                 a, b = coords[i], coords[i + 1]
                 dx, dy = b[0] - a[0], b[1] - a[1]
                 edge_len = (dx * dx + dy * dy) ** 0.5
+                ring_edges.append((a, b, edge_len))
                 if edge_len < TOLERANCE:
                     continue
-                ratio = _edge_covered(a, b, edge_len, wall_edges, tree, ink_proximity)
-                if ratio < COVERAGE_THRESHOLD:
-                    room_broken = True
+                backed_ratio[i] = _edge_covered(a, b, edge_len, wall_edges, tree, ink_proximity)
+
+            # Pass 2: any edge not already wall-backed is a doorway-notch
+            # suppression candidate before it's allowed to break the room.
+            room_broken = False
+            for i in range(n):
+                ratio = backed_ratio[i]
+                if ratio is None or ratio >= COVERAGE_THRESHOLD:
+                    continue
+                a, b, edge_len = ring_edges[i]
+                dx, dy = b[0] - a[0], b[1] - a[1]
+                ux, uy = (dx / edge_len, dy / edge_len) if edge_len else (0.0, 0.0)
+
+                opening_cov = _opening_coverage(a, b, edge_len, dx, dy, p, wall_depth)
+                cos_to_neighbor = _nearest_wall_backed_cos(i, ring_edges, backed_ratio, ux, uy)
+                is_doorway_notch = (
+                    opening_cov >= OPENING_COVERAGE_THRESHOLD
+                    and cos_to_neighbor is not None
+                    and cos_to_neighbor <= PERPENDICULARITY_COS_THRESHOLD
+                    and edge_len <= NOTCH_LENGTH_MULTIPLE * wall_depth
+                )
+                if is_doorway_notch:
+                    cos_str = f"{cos_to_neighbor:.3f}"
+                    notch_suppressions.append(
+                        f"room_boundary_notch_suppressed:{rt}_{inst_idx}:edge{i}:"
+                        f"opening_cov={opening_cov:.3f}:cos_to_neighbor={cos_str}:"
+                        f"len={edge_len:.2f}:wall_depth={wall_depth:.2f}"
+                    )
+                    continue
+                room_broken = True
             if room_broken:
                 any_room_boundary_unmatched = True
                 flags.append(f"room_boundary_no_wall_match:{rt}_{inst_idx}")
 
     clean_at_source = not flags
-    return dict(resplan_id=raw_plan.get("id"), flags=flags, clean_at_source=clean_at_source)
+    return dict(resplan_id=raw_plan.get("id"), flags=flags, clean_at_source=clean_at_source,
+                notch_suppressions=notch_suppressions)
 
 
 def main(limit: int | None = None) -> None:
