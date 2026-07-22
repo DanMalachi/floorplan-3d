@@ -646,13 +646,75 @@ clean, inflating the exact clean-rate metric the 90% bar gates on. Test
 that the rule refuses to suppress a defect, not only that it suppresses
 notches.
 
-**Next session (suppression build) starts here, its own STOP**: implement
-the 3-condition conjunction in the real edge-classification path,
-threshold 0.65, flip the xfail, add the defect-non-suppression guardrail
-test, re-measure the clean-at-source-CONDITIONED rate after.
+**BUILT (2026-07-22, approved).** The 3-condition conjunction landed in
+`check_plan` (`measure_clean_at_source.py` only — `rooms.py`/`skeleton.py`/
+offset multiplier/corner solver untouched). Suppressions logged to a new,
+separate `notch_suppressions` list (never merged into `flags`, so an
+audited suppression structurally can't corrupt `clean_at_source`).
+`test_doorway_notch_does_not_flag` flipped from `xfail` to passing.
+Two new tests: a genuine-defect-with-incidental-opening-proximity
+guardrail, and a multi-edge zigzag adversarial case reproducing plan
+12017's real two-doors-one-wall pattern. Full repo suite 66/66.
+
+**Important limit on the guardrail test, promoted from a test-comment
+footnote — read this before trusting the guardrail's coverage**: while
+building it, found that `fill_openings_into_wall` unions ANY nearby
+door/window polygon back into the wall — so on a STRAIGHT wall run, an
+opening close enough to give a missing edge high `opening_coverage` also
+tends to heal that same edge's own wall-ink ratio back above
+`COVERAGE_THRESHOLD` before the suppression logic is ever reached (both
+quantities are projections of the same overlap, coupled by construction).
+**A straight defect-with-incidental-opening-proximity case could not be
+built in isolation** — only a corner-shaped anomaly decouples the two
+(the crossbar heals via the parallel fill, the jambs don't, since they're
+perpendicular — the same mechanism a real notch relies on). This means
+the guardrail test proves the rule is safe on the FAVORABLE (separable)
+geometry; it does NOT by itself prove safety on the coupled (straight-run)
+case — that can only be settled empirically, at population scale.
+**Required check for the next session's re-measurement, not just an
+aggregate clean-rate delta**: does ANY plan previously classed
+`a_genuine_gt_defect_between_rooms` (in `classify_room_boundary_no_wall_match.py`'s
+taxonomy) flip to `clean_at_source` after suppression goes live? If zero
+flip, the guardrail holds at scale. If any flip, that's a real defect the
+rule wrongly suppressed and the conjunction needs revisiting before the
+90% bar is gated on this number.
+
+**Next session (re-measurement) starts here, its own STOP**: run
+`measure_clean_at_source.py` on the full 17K with suppression live,
+report (a) the new clean-at-source rate, (b) the converter-clean-subset
+rate re-measured against it, AND (c) the defect-flip check above as an
+explicit, separate number — not folded into the aggregate delta.
 
 ## Filed, not actioned (per Dan's instruction — record only, no fix this
 session)
+
+- **Issue #5 — small-room/thick-wall proximity-bleed, now confirmed as a
+  recurring pattern across two independent trigger sites, tracked as its
+  own issue (was a footnote below).** `measure_clean_at_source.py`'s
+  coverage check scales its search band to `wall_depth`
+  (`ink_proximity = (TOLERANCE + wall_depth/2) * PROXIMITY_MULTIPLIER`,
+  ~12 units at `wall_depth=4`), so ANY wall-ink boundary — not just an
+  opposite room wall — falling within that generous radius and roughly
+  parallel to the edge being checked can spuriously "cover" it. Two
+  independent confirmed triggers: (1) 2026-07-21, an opposite room wall's
+  parallel inner face in a small room (`test_genuinely_missing_wall_must_flag`
+  had to be widened from 10x10 to 30x10 to reproduce a real flag at all);
+  (2) 2026-07-22, the OUTER building boundary itself, in the zigzag
+  adversarial fixture (a notch jamb 12 units from the outer wall got
+  spuriously "covered" by it; fixed by widening the fixture). Two
+  unrelated geometries triggering the same mechanism makes this a pattern,
+  not a one-off fixture quirk. **Risk direction that matters at
+  population scale, per Dan's 2026-07-22 note**: this isn't just a test-
+  fixture annoyance — the SAME mechanism can spuriously cover a genuinely
+  broken edge in a REAL plan, masking a real defect and inflating
+  `clean_at_source` from the OPPOSITE direction of the notch-suppression
+  risk (notch suppression risks wrongly clearing a defect via the
+  discriminator; this risks wrongly clearing one via the underlying
+  coverage check itself, no discriminator involved at all). Not this
+  session's fix — filed so it surfaces as a tracked issue before it shows
+  up as a silently-wrong ceiling number on plans with small required rooms
+  and thick walls, or on plans where a required room sits close to the
+  building's outer envelope.
 
 - **`verify_no_angle_valid_candidate.py` carries the same unclamped-
   overlap bug `measure_clean_at_source.py` had** (2026-07-21 part 4's
@@ -663,20 +725,13 @@ session)
   (used by `classify_no_angle_valid_candidate_population.py` too). Pick up
   alongside skeleton-simplification work above, since that's when its
   numbers would next be relied on.
-- **Small-room/thick-wall proximity-bleed is a known measurement quirk,
-  not a bug to fix.** Surfaced while building this session's validation
-  suite: `measure_clean_at_source.py`'s coverage check scales its search
-  band to `wall_depth`, so for a room whose full width/depth is smaller
-  than roughly `2 * ink_proximity` (~24 units at `wall_depth=4`), the
-  OPPOSITE wall's parallel inner face can fall inside the search band and
-  spuriously "cover" an edge from clear across the room. Confirmed while
-  building `test_genuinely_missing_wall_must_flag` (had to widen a 10×10
-  test room to 30×10 to reproduce a real flag at all). **First thing to
-  suspect if a future ceiling number looks wrong specifically on plans
-  with tiny required rooms and thick walls** — required rooms
-  (bathroom/storage especially) are frequently small enough in real
-  ResPlan data for this to matter at population scale, not just in
-  synthetic test fixtures.
+- **Small-room/thick-wall proximity-bleed** — first surfaced here
+  (2026-07-21, `test_genuinely_missing_wall_must_flag`'s 10×10→30×10
+  widening). Promoted to **Issue #5** (see above, under the doorway-notch
+  build section) after a second, independent trigger site (the outer
+  building boundary, 2026-07-22) confirmed it's a recurring pattern, not
+  a one-off fixture quirk — read that entry for the full mechanism and
+  the population-scale masking risk.
 
 ## Still parked — until the converter clean-subset rate is near bar
 
