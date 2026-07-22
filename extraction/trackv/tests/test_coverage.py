@@ -44,10 +44,19 @@ def _shift_primitives(dissection, dx: float, dy: float):
     the same class of small registration slack Phase 1 documented in real
     baseline output (GitHub issue #5), here scoped down to Track V's own
     redraw step rather than a cross-baseline rescale."""
+    def _shift_segment(op, pts):
+        return (op, tuple((x + dx, y + dy) for x, y in pts))
+
     shifted = []
     for pd in dissection:
         prims = [
-            dataclasses.replace(p, points=[(x + dx, y + dy) for x, y in p.points])
+            dataclasses.replace(
+                p,
+                subpaths=[
+                    [_shift_segment(op, pts) for op, pts in subpath]
+                    for subpath in p.subpaths
+                ],
+            )
             for p in pd.primitives
         ]
         shifted.append(dataclasses.replace(pd, primitives=prims))
