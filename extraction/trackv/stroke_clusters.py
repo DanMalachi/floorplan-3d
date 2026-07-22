@@ -35,7 +35,7 @@ import numpy as np
 from extraction.trackv.primitives import PageDissection, VectorPrimitive
 
 DEFAULT_VALLEY_RATIO = 0.6
-DEFAULT_MIN_CLUSTER_SIZE = 2
+DEFAULT_MIN_CLUSTER_SIZE = 4
 DEFAULT_MIN_BANDWIDTH = 1e-4
 DEFAULT_GRID_POINTS = 2000
 
