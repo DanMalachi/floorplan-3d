@@ -144,7 +144,21 @@ def run_15x30() -> dict:
     })
 
 
-def run_30x50() -> dict:
+def run_30x50(clean_anchors_only: bool = True) -> dict:
+    """clean_anchors_only=True (default, per Dan's step-1 instruction on the
+    second diagnostic round): use only the 4 points that land on GT's LEFT
+    side (top-left and bottom-left corners, each hit independently by two
+    different pred walls -- W13.start & W36.start both target the same
+    top-left corner; W36.end & W19.start both target the same bottom-left
+    corner). Excludes W13.end and W19.end -- the original 6-point fit's two
+    largest-residual points (1557mm, 1777mm), traced to a real cause, not
+    noise: GT's building outline steps on the right side (w_s104/w_s106
+    form a separate return wall there), so the top wall's right endpoint
+    and the bottom wall's right endpoint are genuinely NOT the same
+    physical corner, and forcing them into one fit was pulling the
+    least-squares solution toward a compromise that fit neither well.
+    Pass False to reproduce the original 6-point fit for comparison.
+    """
     plan_id = "30x50-Model-landscape"
     pred = json.loads((PRED_DIR / f"{plan_id}.json").read_text(encoding="utf-8"))
     gt = json.loads((GT_DIR / f"{plan_id}.json").read_text(encoding="utf-8"))
@@ -159,16 +173,30 @@ def run_30x50() -> dict:
     # detections W19/W42) <-> w_s110 (bottom wall). All three visually
     # confirmed against the plot: three long red lines at top, left, and
     # bottom of the pred cluster, matching the same three sides in GT.
-    src = [
-        tuple(pw["W13"]["start"]), tuple(pw["W13"]["end"]),  # top wall, left-to-right (x: 255.8 -> 1413.9)
-        tuple(pw["W36"]["start"]), tuple(pw["W36"]["end"]),  # left wall, top-to-bottom (y: 247.6 -> 932.8)
-        tuple(pw["W19"]["start"]), tuple(pw["W19"]["end"]),  # bottom wall, left-to-right (x: 255.7 -> 1425.4)
-    ]
-    dst = [
-        (4116.6, 4085.3), (16912.8, 4059.2),  # w_s102 start/end (top, left-to-right)
-        (4116.6, 4085.3), (4143.0, 11179.7),  # w_s111 end/start (left, top-to-bottom: y 4085.3 -> 11179.7)
-        (4143.0, 11179.7), (13523.4, 11127.2),  # w_s110 end/start (bottom, left-to-right)
-    ]
+    if clean_anchors_only:
+        src = [
+            tuple(pw["W13"]["start"]),  # top-left corner (from top wall)
+            tuple(pw["W36"]["start"]),  # top-left corner (from left wall) -- independent cross-check
+            tuple(pw["W36"]["end"]),  # bottom-left corner (from left wall)
+            tuple(pw["W19"]["start"]),  # bottom-left corner (from bottom wall) -- independent cross-check
+        ]
+        dst = [
+            (4116.6, 4085.3),
+            (4116.6, 4085.3),
+            (4143.0, 11179.7),
+            (4143.0, 11179.7),
+        ]
+    else:
+        src = [
+            tuple(pw["W13"]["start"]), tuple(pw["W13"]["end"]),  # top wall, left-to-right (x: 255.8 -> 1413.9)
+            tuple(pw["W36"]["start"]), tuple(pw["W36"]["end"]),  # left wall, top-to-bottom (y: 247.6 -> 932.8)
+            tuple(pw["W19"]["start"]), tuple(pw["W19"]["end"]),  # bottom wall, left-to-right (x: 255.7 -> 1425.4)
+        ]
+        dst = [
+            (4116.6, 4085.3), (16912.8, 4059.2),  # w_s102 start/end (top, left-to-right)
+            (4116.6, 4085.3), (4143.0, 11179.7),  # w_s111 end/start (left, top-to-bottom: y 4085.3 -> 11179.7)
+            (4143.0, 11179.7), (13523.4, 11127.2),  # w_s110 end/start (bottom, left-to-right)
+        ]
     transform = fit_similarity_umeyama(src, dst)
     residuals = fit_residuals(transform, src, dst)
 
@@ -231,7 +259,11 @@ def _finish(plan_id, pred, gt, transform, residuals, scale_check) -> dict:
 
 
 def main() -> None:
-    results = {"15x30-ft-Best-House-Plan-Model": run_15x30(), "30x50-Model-landscape": run_30x50()}
+    results = {
+        "15x30-ft-Best-House-Plan-Model": run_15x30(),
+        "30x50-Model-landscape": run_30x50(clean_anchors_only=True),
+        "30x50-Model-landscape_ORIGINAL_6POINT_FOR_COMPARISON": run_30x50(clean_anchors_only=False),
+    }
     OUT_PATH.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
 

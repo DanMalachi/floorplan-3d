@@ -137,6 +137,223 @@
   "30x50-Model-landscape": {
     "plan_id": "30x50-Model-landscape",
     "pinned_transform": {
+      "scale": 10.262803284354373,
+      "rotation_deg": -0.46534816926872524,
+      "tx": 1486.351335162714,
+      "ty": 1622.3556659580026
+    },
+    "anchor_fit_residuals_native_to_gt_mm": [
+      57.4,
+      58.9,
+      45.5,
+      45.3
+    ],
+    "scale_cross_check": {
+      "nominal_mm": [
+        9144.0,
+        15240.0
+      ],
+      "gt_bbox_mm": [
+        12796.2,
+        7120.5
+      ],
+      "pred_bbox_native": [
+        1183.2,
+        707.3
+      ],
+      "pinned_transform_implied_pred_envelope_mm": [
+        12143.1,
+        7258.5
+      ]
+    },
+    "n_gt_walls": 19,
+    "n_pred_walls": 118,
+    "per_gt_wall_verdict": [
+      {
+        "verdict": "MATCHED",
+        "best_pred_id": "W13",
+        "residual": 87.9,
+        "residual_frac_of_tau": 0.601,
+        "overlap": 0.929,
+        "gt_id": "w_s102",
+        "gt_length": 12796.3
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W41",
+        "residual": 804.9,
+        "residual_frac_of_tau": 5.497,
+        "overlap": 0.956,
+        "gt_id": "w_s104",
+        "gt_length": 4493.2
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W104",
+        "residual": 1158.6,
+        "residual_frac_of_tau": 7.911,
+        "overlap": 0.001,
+        "gt_id": "w_s106",
+        "gt_length": 3363.4
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W94",
+        "residual": 1038.5,
+        "residual_frac_of_tau": 7.092,
+        "overlap": 0.418,
+        "gt_id": "w_s108",
+        "gt_length": 2601.2
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W42",
+        "residual": 232.0,
+        "residual_frac_of_tau": 1.584,
+        "overlap": 0.995,
+        "gt_id": "w_s110",
+        "gt_length": 9380.5
+      },
+      {
+        "verdict": "MATCHED",
+        "best_pred_id": "W36",
+        "residual": 32.4,
+        "residual_frac_of_tau": 0.221,
+        "overlap": 0.991,
+        "gt_id": "w_s111",
+        "gt_length": 7094.4
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W89",
+        "residual": 263.2,
+        "residual_frac_of_tau": 1.797,
+        "overlap": 0.635,
+        "gt_id": "w_s117",
+        "gt_length": 2365.1
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W18",
+        "residual": 315.3,
+        "residual_frac_of_tau": 2.153,
+        "overlap": 0.349,
+        "gt_id": "w_s119",
+        "gt_length": 1734.3
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W108",
+        "residual": 297.1,
+        "residual_frac_of_tau": 2.029,
+        "overlap": 0.226,
+        "gt_id": "w_s121",
+        "gt_length": 2312.3
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W47",
+        "residual": 450.7,
+        "residual_frac_of_tau": 3.078,
+        "overlap": 0.002,
+        "gt_id": "w_s124",
+        "gt_length": 630.6
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W73",
+        "residual": 259.9,
+        "residual_frac_of_tau": 1.774,
+        "overlap": 0.209,
+        "gt_id": "w_s126",
+        "gt_length": 2312.5
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W104",
+        "residual": 413.2,
+        "residual_frac_of_tau": 2.822,
+        "overlap": 0.445,
+        "gt_id": "w_s129",
+        "gt_length": 1419.9
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W64",
+        "residual": 305.7,
+        "residual_frac_of_tau": 2.088,
+        "overlap": 0.037,
+        "gt_id": "w_s132",
+        "gt_length": 683.9
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W3",
+        "residual": 889.9,
+        "residual_frac_of_tau": 6.077,
+        "overlap": 0.75,
+        "gt_id": "w_s138",
+        "gt_length": 3048.5
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W25",
+        "residual": 516.6,
+        "residual_frac_of_tau": 3.528,
+        "overlap": 0.685,
+        "gt_id": "w_s142",
+        "gt_length": 2611.8
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W87",
+        "residual": 160.6,
+        "residual_frac_of_tau": 1.097,
+        "overlap": 0.548,
+        "gt_id": "w_s147",
+        "gt_length": 3538.5
+      },
+      {
+        "verdict": "FRAGMENTED",
+        "best_pred_id": "W45",
+        "residual": 89.7,
+        "residual_frac_of_tau": 0.612,
+        "overlap": 0.749,
+        "gt_id": "w_s149",
+        "gt_length": 3250.2
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W67",
+        "residual": 397.3,
+        "residual_frac_of_tau": 2.713,
+        "overlap": 0.004,
+        "gt_id": "w_s150",
+        "gt_length": 1164.9
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W41",
+        "residual": 857.6,
+        "residual_frac_of_tau": 5.856,
+        "overlap": 0.054,
+        "gt_id": "w_s152",
+        "gt_length": 1004.0
+      }
+    ],
+    "verdict_counts": {
+      "MATCHED": 2,
+      "MISPLACED": 9,
+      "FRAGMENTED": 1,
+      "ABSENT": 7
+    },
+    "hungarian_matched_at_1pct": 2,
+    "hungarian_precision_1pct": 0.0169,
+    "hungarian_recall_1pct": 0.1053
+  },
+  "30x50-Model-landscape_ORIGINAL_6POINT_FOR_COMPARISON": {
+    "plan_id": "30x50-Model-landscape",
+    "pinned_transform": {
       "scale": 9.70673455011048,
       "rotation_deg": 2.3471126208315725,
       "tx": 1836.4823846048075,

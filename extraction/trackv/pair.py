@@ -84,6 +84,12 @@ class PairResult:
     walls: list[WallCandidate]
     opening_candidates: list[OpeningCandidate]
     funnel: PairFunnel
+    # Diagnostic-only: the accepted, thickness-plausible wall list *before*
+    # _collinear_merge runs. Doesn't affect `walls`/`opening_candidates`
+    # (the shipped output) at all -- exists so a diagnostic can tell
+    # "the merge never fired here" apart from "the merge fired but
+    # under-reached" apart from "nothing was ever paired here."
+    pre_merge_walls: list[WallCandidate] = field(default_factory=list)
 
 
 def _deg2rad(d: float) -> float:
@@ -397,4 +403,6 @@ def pair_walls(selection: SelectionResult, page_size_px: tuple[float, float]) ->
     funnel.n_merges_applied = len(walls) - len(merged_walls) + len(opening_candidates)
     funnel.n_opening_candidates = len(opening_candidates)
 
-    return PairResult(walls=merged_walls, opening_candidates=opening_candidates, funnel=funnel)
+    return PairResult(
+        walls=merged_walls, opening_candidates=opening_candidates, funnel=funnel, pre_merge_walls=walls
+    )

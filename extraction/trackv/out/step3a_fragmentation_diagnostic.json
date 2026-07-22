@@ -1,0 +1,438 @@
+{
+  "15x30-ft-Best-House-Plan-Model": {
+    "plan_id": "15x30-ft-Best-House-Plan-Model",
+    "per_wall": {
+      "w_s2": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 8.563,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          534.7
+        ],
+        "n_fragments_found": 2,
+        "n_merged_pieces": 2,
+        "coverage_fraction": 0.585,
+        "closest_fragment_perp_offset_mm": 338.0,
+        "gaps": [
+          {
+            "gap_mm": 1382.2,
+            "gap_center_along_wall_mm": 1876.2,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          }
+        ],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s4": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 9.43,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          1088.5
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 2,
+        "coverage_fraction": 0.764,
+        "closest_fragment_perp_offset_mm": 337.2,
+        "gaps": [
+          {
+            "gap_mm": 1781.8,
+            "gap_center_along_wall_mm": 3862.6,
+            "merge_already_fired_here": true,
+            "coincides_with_gt_opening": false
+          }
+        ],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s6": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 8.185,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          524.0
+        ],
+        "n_fragments_found": 5,
+        "n_merged_pieces": 5,
+        "coverage_fraction": 0.182,
+        "closest_fragment_perp_offset_mm": 369.0,
+        "gaps": [
+          {
+            "gap_mm": 492.0,
+            "gap_center_along_wall_mm": 1704.2,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          },
+          {
+            "gap_mm": 492.0,
+            "gap_center_along_wall_mm": 2205.6,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          },
+          {
+            "gap_mm": 743.5,
+            "gap_center_along_wall_mm": 2832.8,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          },
+          {
+            "gap_mm": 373.9,
+            "gap_center_along_wall_mm": 3400.0,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          }
+        ],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s7": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 1.48,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          1088.5
+        ],
+        "n_fragments_found": 4,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.976,
+        "closest_fragment_perp_offset_mm": 133.5,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s23": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 1.659,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          153.5
+        ],
+        "n_fragments_found": 2,
+        "n_merged_pieces": 2,
+        "coverage_fraction": 0.255,
+        "closest_fragment_perp_offset_mm": 23.8,
+        "gaps": [
+          {
+            "gap_mm": 681.1,
+            "gap_center_along_wall_mm": 784.6,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": true
+          }
+        ],
+        "n_gt_openings_on_this_wall": 1
+      },
+      "w_s25": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 3.269,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          109.6
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.023,
+        "closest_fragment_perp_offset_mm": 66.5,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 1
+      },
+      "w_s29": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 2.238,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          379.2
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 2,
+        "coverage_fraction": 0.565,
+        "closest_fragment_perp_offset_mm": 117.9,
+        "gaps": [
+          {
+            "gap_mm": 569.9,
+            "gap_center_along_wall_mm": 916.0,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          }
+        ],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s35": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 6.236,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          524.0
+        ],
+        "n_fragments_found": 0
+      }
+    },
+    "counts": {
+      "FRAGMENTED": 5,
+      "MISPLACED": 2,
+      "TRULY_ABSENT": 1
+    }
+  },
+  "30x50-Model-landscape": {
+    "plan_id": "30x50-Model-landscape",
+    "per_wall": {
+      "w_s104": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 5.497,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          437.8
+        ],
+        "n_fragments_found": 0
+      },
+      "w_s106": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 7.911,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          327.7
+        ],
+        "n_fragments_found": 0
+      },
+      "w_s108": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 7.092,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          253.5
+        ],
+        "n_fragments_found": 0
+      },
+      "w_s110": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 1.584,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          914.0
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.995,
+        "closest_fragment_perp_offset_mm": 41.0,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 2
+      },
+      "w_s117": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 1.797,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          230.5
+        ],
+        "n_fragments_found": 9,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.637,
+        "closest_fragment_perp_offset_mm": 308.1,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s119": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 2.153,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          169.0
+        ],
+        "n_fragments_found": 4,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.691,
+        "closest_fragment_perp_offset_mm": 196.2,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 1
+      },
+      "w_s121": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 2.029,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          225.3
+        ],
+        "n_fragments_found": 5,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.663,
+        "closest_fragment_perp_offset_mm": 326.2,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s124": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 3.078,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          61.4
+        ],
+        "n_fragments_found": 1,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.002,
+        "closest_fragment_perp_offset_mm": 91.3,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s126": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 1.774,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          225.3
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 2,
+        "coverage_fraction": 0.212,
+        "closest_fragment_perp_offset_mm": 80.0,
+        "gaps": [
+          {
+            "gap_mm": 840.0,
+            "gap_center_along_wall_mm": 425.0,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": false
+          }
+        ],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s129": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 2.822,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          138.4
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.778,
+        "closest_fragment_perp_offset_mm": 278.2,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s132": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 2.088,
+        "verdict": "MISPLACED",
+        "native_span": [
+          0.0,
+          66.6
+        ],
+        "n_fragments_found": 1,
+        "n_merged_pieces": 1,
+        "coverage_fraction": 0.037,
+        "closest_fragment_perp_offset_mm": 39.6,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s138": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 6.077,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          297.0
+        ],
+        "n_fragments_found": 3,
+        "n_merged_pieces": 0,
+        "coverage_fraction": 0.0,
+        "closest_fragment_perp_offset_mm": 76.0,
+        "gaps": [],
+        "n_gt_openings_on_this_wall": 0
+      },
+      "w_s142": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 3.528,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          254.5
+        ],
+        "n_fragments_found": 0
+      },
+      "w_s147": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 1.097,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          344.8
+        ],
+        "n_fragments_found": 14,
+        "n_merged_pieces": 2,
+        "coverage_fraction": 0.549,
+        "closest_fragment_perp_offset_mm": 108.4,
+        "gaps": [
+          {
+            "gap_mm": 684.8,
+            "gap_center_along_wall_mm": 3098.9,
+            "merge_already_fired_here": true,
+            "coincides_with_gt_opening": true
+          }
+        ],
+        "n_gt_openings_on_this_wall": 1
+      },
+      "w_s150": {
+        "original_verdict": "MISPLACED",
+        "original_residual_frac_of_tau": 2.713,
+        "verdict": "FRAGMENTED",
+        "native_span": [
+          0.0,
+          113.5
+        ],
+        "n_fragments_found": 7,
+        "n_merged_pieces": 4,
+        "coverage_fraction": 0.048,
+        "closest_fragment_perp_offset_mm": 315.2,
+        "gaps": [
+          {
+            "gap_mm": 70.1,
+            "gap_center_along_wall_mm": 80.2,
+            "merge_already_fired_here": true,
+            "coincides_with_gt_opening": true
+          },
+          {
+            "gap_mm": 849.6,
+            "gap_center_along_wall_mm": 544.7,
+            "merge_already_fired_here": true,
+            "coincides_with_gt_opening": true
+          },
+          {
+            "gap_mm": 146.2,
+            "gap_center_along_wall_mm": 1047.2,
+            "merge_already_fired_here": false,
+            "coincides_with_gt_opening": true
+          }
+        ],
+        "n_gt_openings_on_this_wall": 1
+      },
+      "w_s152": {
+        "original_verdict": "ABSENT",
+        "original_residual_frac_of_tau": 5.856,
+        "verdict": "TRULY_ABSENT",
+        "native_span": [
+          0.0,
+          97.8
+        ],
+        "n_fragments_found": 0
+      }
+    },
+    "counts": {
+      "TRULY_ABSENT": 6,
+      "MISPLACED": 7,
+      "FRAGMENTED": 3
+    }
+  }
+}

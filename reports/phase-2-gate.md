@@ -363,3 +363,66 @@ Any pairing/selection rethink, any fragmentation/collinear-merge tuning, the 1-D
 ### Disposition
 
 Held for Dan's review. Durable artifacts added: `extraction/trackv/analyze_step3a_pinned.py` + `out/step3a_pinned_diagnostic.json`, `extraction/trackv/plot_pin_check.py` + `out/pin_check_*.png`, this section. Not merged to main. Merge and all fix-builds wait on this read.
+
+## Step 3a third diagnostic STOP — fragmentation confirmed as the leading mechanism
+
+**Reframe accepted and confirmed: recovered walls are SHORT FRAGMENTS, not misplaced walls.** This is a continuity/assembly-adjacent failure (pairing produces correct pieces that don't get stitched into full-span walls), not a pairing-position failure. Still no fix built -- `eval/` untouched, debt/xfail tests unchanged. One additive, behavior-preserving change was needed to make this diagnosis possible: `pair.py`'s `PairResult` gained a `pre_merge_walls` field exposing the accepted, thickness-plausible wall list *before* `_collinear_merge` runs (previously computed internally and discarded) -- `walls`/`opening_candidates`/`funnel`, the actual shipped output, are byte-for-byte unchanged; confirmed by rerunning the full 43-test suite (still 43 passed, 1 xfailed).
+
+### Step 1 — killing the 30x50 scale confound
+
+Re-fit 30x50's transform from a cleaner 4-point anchor subset: `W13.start` and `W36.start` (both independently targeting GT's top-left corner) plus `W36.end` and `W19.start` (both independently targeting GT's bottom-left corner) -- dropping `W13.end`/`W19.end`, the original 6-point fit's two largest-residual points (1557mm, 1777mm), traced last round to a real cause: GT's building outline steps on the right side, so those two points are not actually the same physical corner and were pulling the least-squares fit toward a compromise.
+
+| | anchor residuals (mm) | rotation | pinned-implied envelope vs GT's own bbox | verdict counts (MATCHED/MISPLACED/FRAGMENTED/ABSENT) | recall @ τ=1% |
+|---|---|---|---|---|---|
+| original 6-point fit | 117–1777 (mean-dragged) | 2.35° | 11485×6865 vs 12796×7121 (10%/4% off) | 1/8/1/9 | 0.053 |
+| **clean 4-point fit** | **45–59 (tight)** | **-0.47°** | **12143×7259 vs 12796×7121 (5%/2% off)** | 2/9/1/7 | 0.105 |
+
+The clean fit is unambiguously better on every internal-consistency measure -- residuals dropped ~20-30x, rotation now agrees with select.py's own independently-measured theta (~0.5° on this corpus) instead of disagreeing by ~2°, and the implied building envelope tracks GT's own bounding box far more closely. **ABSENT did drop (9→7), confirming part of the original count was a scale-fit artifact, not a real recall gap** -- but ABSENT+MISPLACED together barely move (17/19 → 16/19). The clean fit is what's used for every 30x50 result below; **per Dan's instruction the mechanism verdict is still weighted on 15x30**, whose scale was already trusted (~8% agreement with nominal) and needed no correction.
+
+### Step 2 — positive fragmentation confirmation (not elimination)
+
+For every ABSENT/MISPLACED GT wall, `pair.py`'s pre-merge candidate fragments were overlaid on that wall's span (GT wall inverse-transformed into the predicted frame via the frozen pinned transform) and classified directly from coverage, not inferred from the residual/overlap verdict alone. One coordinate-frame bug caught and fixed while building this: the pinned transform was fit against `step3a_predictions/*.json` (scaled by the schema's own now-superseded 1.900238x `image_transform` convention), while a fresh `pair_walls()` call returns raw, unscaled native coordinates -- applying one directly against the other silently searched in the wrong place (a failed round-trip sanity check, inverting a known anchor point and getting back a value ~1.9x off from the expected native coordinate, caught it before any numbers were trusted). Fixed by scaling the pre-merge fragments into the same schema-scaled frame the pinned transform actually operates in.
+
+**15x30** (8 target walls, `extraction/trackv/out/step3a_fragmentation_diagnostic.json`):
+
+| GT wall | original verdict | fragmentation verdict | fragments found | coverage | closest-frag perp offset (mm) | gaps |
+|---|---|---|---|---|---|---|
+| w_s2 | ABSENT | **FRAGMENTED** | 2 | 0.585 | 338.0 | 1 |
+| w_s4 | ABSENT | **FRAGMENTED** | 3 | 0.764 | 337.2 | 1 |
+| w_s6 | ABSENT | **FRAGMENTED** | 5 | 0.182 | 369.0 | 4 |
+| w_s7 | MISPLACED | MISPLACED | 4 | 0.976 | 133.5 | 0 |
+| w_s23 | MISPLACED | **FRAGMENTED** | 2 | 0.255 | 23.8 | 1 |
+| w_s25 | ABSENT | MISPLACED | 3 | 0.023 | 66.5 | 0 |
+| w_s29 | MISPLACED | **FRAGMENTED** | 3 | 0.565 | 117.9 | 1 |
+| w_s35 | ABSENT | TRULY_ABSENT | 0 | -- | -- | -- |
+
+**5/8 (63%) reclassify as FRAGMENTED — ink was correctly found, in pieces. Only 1/8 is genuinely TRULY_ABSENT.** `w_s7` (the single most-trusted anchor wall) stays MISPLACED under this finer lens too, but with 97.6% coverage and zero gaps -- its residual is a small, single perpendicular offset (133.5mm), not a fragmentation artifact; a real, if modest, centerline-recovery imprecision on the one wall recovered essentially whole.
+
+**30x50** (16 target walls, post-clean-scale): TRULY_ABSENT 6, MISPLACED 7, FRAGMENTED 3. A more mixed picture than 15x30 -- fragmentation is present and confirmed (3/16) but genuine single-piece misplacement is the largest single category (7/16), with real coverage gaps remaining too (6/16). Consistent with 30x50 being the noisier, less-trusted evidence base; not weighted as heavily as 15x30 per instruction.
+
+### Gap-vs-opening coincidence
+
+Every gap on a FRAGMENTED wall checked against that wall's own GT-recorded openings (`Wall.openings`, `center_offset` ± `width/2`):
+
+- **15x30: 1 of 8 gaps coincides with a real GT opening** (`w_s23`'s single gap, a real door). The other 7 -- including all 4 gaps on `w_s6` and both gaps on `w_s2`/`w_s4` -- do not correspond to any door or window in GT. **Most fragmentation is not (mis-scoped) opening detection; it's arbitrary breaks in candidate coverage unrelated to real architectural features.**
+- **30x50: 4 of 5 gaps "coincide"** -- but flagged, not taken at face value: 3 of those 4 are all on the same wall (`w_s150`, length only 1164.9mm) against its single recorded opening, which given the coincidence test's generous match window (sum of half-widths) on a short wall is more likely a threshold artifact than three independent confirmations. Treating `w_s150` as one data point, not three, the honest count is closer to 2/3 wall-level gap groups coinciding, on a much smaller sample than 15x30's.
+
+### Step 3 — is collinear-merge under-reaching or not firing at all?
+
+Checked directly against `pair.py`'s existing merge (built in 3a, unmodified): for each gap, whether an `opening_candidate` already exists there (merge fired and is reflected in the shipped, post-merge `walls` output) vs. not.
+
+- **15x30: merge fired on only 1 of 8 gaps** (`w_s4`'s). **30x50: merge fired on 3 of 5.**
+- Spot-checked *why* the other 7 (15x30) don't fire, on the clearest case (`w_s2`'s top-wall fragments): the nearby candidate fragments in that region sit at **measurably different perpendicular offsets** (native y-midpoints 134.7 / 154.8 / 194.2 / 194.2 across four fragments in the same rough area, not one consistent line) with generous individual gap bounds (397–2074 native units, well above the actual gaps between them) -- meaning the gap-*size* bound (`OPENING_GAP_MULTIPLIER × local thickness`) is not obviously the limiting factor here. **The more likely limiter, on this sample, is `_collinear_merge`'s grouping key** (`(axis_bucket, round(perp / thickness × 4))`): fragments of what should be the same physical wall are landing in different perpendicular bins because each fragment's own independently-recovered thickness and offset are individually noisy (the same over-production/precision problem documented in the first diagnostic round), so they never get compared for merging at all, rather than being compared and rejected on gap size.
+- **This distinguishes "not firing at all" from "under-reaching" -- and points at grouping/collinearity tolerance, not the gap-length bound, as the more likely fix target**, though this is a spot-check on one wall's fragments, not an exhaustive audit of all 12 unfired gaps across both plans.
+
+### Synthesis
+
+The leading hypothesis is confirmed on the trusted (15x30) evidence base: **most of what scored as ABSENT is really FRAGMENTED** -- pairing does find real wall ink for the majority of these walls, but splits it into pieces that (a) mostly don't line up with real GT openings, so this isn't disguised opening-detection working correctly, and (b) mostly don't get healed by the existing collinear-merge, most plausibly because fragments of the same true wall aren't even being recognized as candidates for merging (a grouping/tolerance issue) rather than the merge's gap-size bound being too tight. This reframes the likely fix target for a future session: **before/alongside anything touching filtering or the gap-size bound, the collinear-merge's *grouping* step -- how it decides two fragments belong to the same physical line -- is the more evidence-backed place to look.** Not built this session.
+
+### Explicitly not built this round
+
+Any change to `_collinear_merge`'s grouping/tolerance, any gap-bound retuning, any pairing rethink, any change to `eval/`, 3b, 3c.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts added: `extraction/trackv/analyze_step3a_fragmentation.py` + `out/step3a_fragmentation_diagnostic.json`, the `pair.py` `pre_merge_walls` diagnostic field (additive, shipped output unchanged, 43/43 tests + 1 xfail unaffected), `analyze_step3a_pinned.py`'s `run_30x50(clean_anchors_only=...)` comparison, this section. Not merged to main. Merge and fix-scope wait on this read.
