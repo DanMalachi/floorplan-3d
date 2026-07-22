@@ -1,0 +1,356 @@
+{
+  "15x30-ft-Best-House-Plan-Model": {
+    "plan_id": "15x30-ft-Best-House-Plan-Model",
+    "pinned_transform": {
+      "scale": 8.284746566406698,
+      "rotation_deg": 1.3059980545051764,
+      "tx": -2.2183262524213205,
+      "ty": -43.47399962683994
+    },
+    "anchor_fit_residuals_native_to_gt_mm": [
+      155.7,
+      314.6,
+      278.9
+    ],
+    "scale_cross_check": {
+      "nominal_mm": [
+        4572.0,
+        9144.0
+      ],
+      "gt_bbox_mm": [
+        4429.6,
+        9018.0
+      ],
+      "pred_bbox_native": [
+        597.4,
+        1123.9
+      ],
+      "pinned_transform_implied_pred_envelope_mm": [
+        4949.5,
+        9311.4
+      ]
+    },
+    "n_gt_walls": 10,
+    "n_pred_walls": 72,
+    "per_gt_wall_verdict": [
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W20",
+        "residual": 860.3,
+        "residual_frac_of_tau": 8.563,
+        "overlap": 0.238,
+        "gt_id": "w_s2",
+        "gt_length": 4429.6
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W43",
+        "residual": 947.4,
+        "residual_frac_of_tau": 9.43,
+        "overlap": 0.464,
+        "gt_id": "w_s4",
+        "gt_length": 9017.7
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W70",
+        "residual": 822.4,
+        "residual_frac_of_tau": 8.185,
+        "overlap": 0.002,
+        "gt_id": "w_s6",
+        "gt_length": 4341.0
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W42",
+        "residual": 148.7,
+        "residual_frac_of_tau": 1.48,
+        "overlap": 0.976,
+        "gt_id": "w_s7",
+        "gt_length": 9018.3
+      },
+      {
+        "verdict": "MATCHED",
+        "best_pred_id": "W44",
+        "residual": 89.3,
+        "residual_frac_of_tau": 0.889,
+        "overlap": 0.885,
+        "gt_id": "w_s21",
+        "gt_length": 2039.5
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W31",
+        "residual": 166.6,
+        "residual_frac_of_tau": 1.659,
+        "overlap": 0.235,
+        "gt_id": "w_s23",
+        "gt_length": 1271.3
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W25",
+        "residual": 328.4,
+        "residual_frac_of_tau": 3.269,
+        "overlap": 0.023,
+        "gt_id": "w_s25",
+        "gt_length": 907.8
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W19",
+        "residual": 224.9,
+        "residual_frac_of_tau": 2.238,
+        "overlap": 0.364,
+        "gt_id": "w_s29",
+        "gt_length": 3141.2
+      },
+      {
+        "verdict": "MATCHED",
+        "best_pred_id": "W16",
+        "residual": 68.2,
+        "residual_frac_of_tau": 0.679,
+        "overlap": 0.9,
+        "gt_id": "w_s32",
+        "gt_length": 3140.2
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W17",
+        "residual": 626.6,
+        "residual_frac_of_tau": 6.236,
+        "overlap": 0.553,
+        "gt_id": "w_s35",
+        "gt_length": 4341.1
+      }
+    ],
+    "verdict_counts": {
+      "MATCHED": 2,
+      "MISPLACED": 3,
+      "FRAGMENTED": 0,
+      "ABSENT": 5
+    },
+    "hungarian_matched_at_1pct": 2,
+    "hungarian_precision_1pct": 0.0278,
+    "hungarian_recall_1pct": 0.2
+  },
+  "30x50-Model-landscape": {
+    "plan_id": "30x50-Model-landscape",
+    "pinned_transform": {
+      "scale": 9.70673455011048,
+      "rotation_deg": 2.3471126208315725,
+      "tx": 1836.4823846048075,
+      "ty": 1639.7402096194219
+    },
+    "anchor_fit_residuals_native_to_gt_mm": [
+      117.2,
+      1557.1,
+      93.0,
+      485.9,
+      430.6,
+      1777.5
+    ],
+    "scale_cross_check": {
+      "nominal_mm": [
+        9144.0,
+        15240.0
+      ],
+      "gt_bbox_mm": [
+        12796.2,
+        7120.5
+      ],
+      "pred_bbox_native": [
+        1183.2,
+        707.3
+      ],
+      "pinned_transform_implied_pred_envelope_mm": [
+        11485.2,
+        6865.2
+      ]
+    },
+    "n_gt_walls": 19,
+    "n_pred_walls": 118,
+    "per_gt_wall_verdict": [
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W13",
+        "residual": 327.2,
+        "residual_frac_of_tau": 2.235,
+        "overlap": 0.877,
+        "gt_id": "w_s102",
+        "gt_length": 12796.3
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W41",
+        "residual": 1471.2,
+        "residual_frac_of_tau": 10.046,
+        "overlap": 0.876,
+        "gt_id": "w_s104",
+        "gt_length": 4493.2
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W104",
+        "residual": 1035.3,
+        "residual_frac_of_tau": 7.07,
+        "overlap": 0.007,
+        "gt_id": "w_s106",
+        "gt_length": 3363.4
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W40",
+        "residual": 1184.0,
+        "residual_frac_of_tau": 8.085,
+        "overlap": 0.0,
+        "gt_id": "w_s108",
+        "gt_length": 2601.2
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W42",
+        "residual": 263.2,
+        "residual_frac_of_tau": 1.798,
+        "overlap": 1.0,
+        "gt_id": "w_s110",
+        "gt_length": 9380.5
+      },
+      {
+        "verdict": "MATCHED",
+        "best_pred_id": "W36",
+        "residual": 142.6,
+        "residual_frac_of_tau": 0.974,
+        "overlap": 0.936,
+        "gt_id": "w_s111",
+        "gt_length": 7094.4
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W28",
+        "residual": 275.0,
+        "residual_frac_of_tau": 1.878,
+        "overlap": 0.523,
+        "gt_id": "w_s117",
+        "gt_length": 2365.1
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W106",
+        "residual": 314.6,
+        "residual_frac_of_tau": 2.149,
+        "overlap": 0.01,
+        "gt_id": "w_s119",
+        "gt_length": 1734.3
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W34",
+        "residual": 303.6,
+        "residual_frac_of_tau": 2.073,
+        "overlap": 0.589,
+        "gt_id": "w_s121",
+        "gt_length": 2312.3
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W58",
+        "residual": 411.9,
+        "residual_frac_of_tau": 2.813,
+        "overlap": 0.099,
+        "gt_id": "w_s124",
+        "gt_length": 630.6
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W73",
+        "residual": 604.3,
+        "residual_frac_of_tau": 4.127,
+        "overlap": 0.198,
+        "gt_id": "w_s126",
+        "gt_length": 2312.5
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W41",
+        "residual": 533.6,
+        "residual_frac_of_tau": 3.644,
+        "overlap": 1.0,
+        "gt_id": "w_s129",
+        "gt_length": 1419.9
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W64",
+        "residual": 718.8,
+        "residual_frac_of_tau": 4.908,
+        "overlap": 0.0,
+        "gt_id": "w_s132",
+        "gt_length": 683.9
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W37",
+        "residual": 863.2,
+        "residual_frac_of_tau": 5.895,
+        "overlap": 0.007,
+        "gt_id": "w_s138",
+        "gt_length": 3048.5
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W25",
+        "residual": 573.2,
+        "residual_frac_of_tau": 3.914,
+        "overlap": 0.61,
+        "gt_id": "w_s142",
+        "gt_length": 2611.8
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W87",
+        "residual": 249.4,
+        "residual_frac_of_tau": 1.703,
+        "overlap": 0.518,
+        "gt_id": "w_s147",
+        "gt_length": 3538.5
+      },
+      {
+        "verdict": "FRAGMENTED",
+        "best_pred_id": "W45",
+        "residual": 130.7,
+        "residual_frac_of_tau": 0.892,
+        "overlap": 0.74,
+        "gt_id": "w_s149",
+        "gt_length": 3250.2
+      },
+      {
+        "verdict": "MISPLACED",
+        "best_pred_id": "W28",
+        "residual": 279.6,
+        "residual_frac_of_tau": 1.91,
+        "overlap": 0.594,
+        "gt_id": "w_s150",
+        "gt_length": 1164.9
+      },
+      {
+        "verdict": "ABSENT",
+        "best_pred_id": "W41",
+        "residual": 1132.4,
+        "residual_frac_of_tau": 7.733,
+        "overlap": 0.0,
+        "gt_id": "w_s152",
+        "gt_length": 1004.0
+      }
+    ],
+    "verdict_counts": {
+      "MATCHED": 1,
+      "MISPLACED": 8,
+      "FRAGMENTED": 1,
+      "ABSENT": 9
+    },
+    "hungarian_matched_at_1pct": 1,
+    "hungarian_precision_1pct": 0.0085,
+    "hungarian_recall_1pct": 0.0526
+  }
+}

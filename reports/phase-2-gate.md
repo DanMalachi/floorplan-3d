@@ -265,3 +265,101 @@ Any fix to over-production (periodicity discriminator proposed, not built), any 
 ### Disposition
 
 Held for Dan's review. Durable artifacts added: `extraction/trackv/score_align.py` + `tests/test_score_align.py`, `extraction/trackv/run_score_align.py` + `out/step3a_aligned_score.json`, `extraction/trackv/analyze_step3a_walls.py`, the xfail debt test, this section, GitHub issue #8. Not merged to main. Merge decision waits on this read per Dan's instruction.
+
+## Step 3a second diagnostic STOP — hand-pinned recall analysis
+
+**Reframe accepted and confirmed:** over-production explains zero cycle closure and low precision, but does **not** explain low recall (15x30: 2/10 GT matched; 30x50: 0/19 GT matched under the automatic adapter) -- a sound wall matches its GT counterpart under Hungarian assignment regardless of how much unrelated junk surrounds it. `score_align.py`'s automatic refine pools over *all* coarse-matched candidates, so a scale/rotation error there is itself a confound indistinguishable from a real recall problem. This section resolves it by fitting the transform from a small number of hand-identified, visually verified anchors only, frozen (no pooled refine), then diagnosing every individual GT wall against that frozen transform. Nothing built beyond the diagnostic; `eval/` untouched.
+
+### Step 1 — hand-pinned transform
+
+Visual verification via `extraction/trackv/plot_pin_check.py` (`out/pin_check_*.png`, both plans' predicted and GT walls plotted with each side's top-3-longest highlighted) plus the raw longest-wall coordinate dump, inspected directly before picking any anchor -- not assumed from IDs or lengths alone.
+
+**15x30** — only one confidently-verifiable anchor emerged. `W42` (native, len 1062.8) is the only one of the pred's top-3-longest walls that sits at a bounding-box *edge*; the plot shows the other two top-3 walls (`W9`, `W12`) sitting in the middle of a dense hatch tangle, not at any perimeter -- not used. `W42`'s two endpoints pin the left wall's top-left and bottom-left corners (`w_s7`↔`w_s2`/`w_s6` junctions). A second anchor, `W43` (the only wall found anywhere near the pred bbox's right edge, len 504.8, covering only the lower ~45% of the expected right-wall height per a direct fragment search), pins a probable bottom-right corner -- flagged as the weaker of the two anchors going in, since it's a partial fragment, not a clean corner-to-corner wall.
+
+**30x50** — three confident anchors, all visually unmistakable in the plot (three long red lines at top, left, and bottom of the pred cluster, matching the same three sides in GT): `W13`↔`w_s102` (top), `W36`↔`w_s111` (left), `W19`↔`w_s110` (bottom). One real bug caught while building this: the first fit attempt for the left-wall correspondence swapped top/bottom endpoint order (`W36.end`, the wall's *bottom* point by native y, was paired against GT's *top* point) -- caught because it produced a wildly inconsistent fit (anchor residuals up to 6440mm on a ~12800mm-diagonal plan) before being traced to the ordering bug and fixed; residuals dropped to the 93–1777mm range reported below once corrected.
+
+| plan | pinned scale | pinned rotation | anchor fit residuals (mm) | nominal footprint (mm) | GT's own bbox (mm) | pinned-transform-implied pred envelope (mm) |
+|---|---|---|---|---|---|---|
+| 15x30 | 8.285 | 1.31° | 155.7, 314.6, 278.9 | 4572 × 9144 | 4429.6 × 9018.0 | 4949.5 × 9311.4 |
+| 30x50 | 9.707 | 2.35° | 117.2, 1557.1, 93.0, 485.9, 430.6, 1777.5 | 9144 × 15240 | 12796.2 × 7120.5 | 11485.2 × 6865.2 |
+
+**Scale cross-check against nominal size:** 15x30 agrees reasonably (implied envelope within 8.3%/1.8% of nominal 15ft×30ft) -- a positive signal that this plan's pinning is in the right ballpark. **30x50 disagrees substantially** (implied envelope off by 20–55% from nominal 30ft×50ft, and the aspect ratio itself doesn't match) -- but this traces to GT's *own* geometry, not the pinning: the implied envelope (11485×6865) is close to GT's own measured bounding box (12796×7121, within 10%/4%), and it was already known from this step's first diagnostic pass that 30x50's provisional, unaudited GT does not follow the simple nominal-name-to-mm convention 15x30/20x45 do. Reported as instructed, not smoothed over: the disagreement is real, but it's a pre-existing GT-labeling-convention issue, not new evidence against the pinning itself.
+
+30x50's two large anchor residuals (1557.1, 1777.5mm) both belong to the *right-side* endpoints of the top and bottom wall anchors — traced directly: GT's building outline has a step/notch on the right side (visible in `pin_check_30x50-...png` and in the registry data itself: `w_s104`/`w_s106` form a separate shorter return wall there), so the top wall's right endpoint and the bottom wall's right endpoint are *not* the same physical corner, unlike the left side where both anchors agree tightly (93.0, 117.2, 430.6, 485.9mm). Not a pinning error -- an accurate reflection of a non-rectangular footprint that a 3-anchor simple-rectangle assumption only partially captures.
+
+### Step 2 — per-GT-wall verdict (the branch call)
+
+Every GT wall scored against *every* predicted wall (not just Hungarian-matched ones) under the frozen pinned transform, using `matching.py`'s own `_sym_mean_dist`/`_overlap_ratio` primitives directly (imported, not reimplemented, so the diagnostic can't silently drift from the real metric). Classification: **MATCHED** (residual < τ, overlap > 0.8) / **MISPLACED** (residual ≥ τ but < 3τ) / **FRAGMENTED** (residual < τ, overlap ≤ 0.8) / **ABSENT** (residual ≥ 3τ, i.e. no plausible candidate anywhere nearby). τ = 1% of GT diagonal throughout this section.
+
+**15x30** (`extraction/trackv/out/step3a_pinned_diagnostic.json`):
+
+| GT wall | length (mm) | verdict | best pred | residual (mm) | residual/τ | overlap |
+|---|---|---|---|---|---|---|
+| w_s2 | 4429.6 | ABSENT | W20 | 860.3 | 8.56 | 0.238 |
+| w_s4 | 9017.7 | ABSENT | W43 | 947.4 | 9.43 | 0.464 |
+| w_s6 | 4341.0 | ABSENT | W70 | 822.4 | 8.19 | 0.002 |
+| w_s7 | 9018.3 | MISPLACED | W42 | 148.7 | 1.48 | 0.976 |
+| w_s21 | 2039.5 | **MATCHED** | W44 | 89.3 | 0.89 | 0.885 |
+| w_s23 | 1271.3 | MISPLACED | W31 | 166.6 | 1.66 | 0.235 |
+| w_s25 | 907.8 | ABSENT | W25 | 328.4 | 3.27 | 0.023 |
+| w_s29 | 3141.2 | MISPLACED | W19 | 224.9 | 2.24 | 0.364 |
+| w_s32 | 3140.2 | **MATCHED** | W16 | 68.2 | 0.68 | 0.900 |
+| w_s35 | 4341.1 | ABSENT | W17 | 626.6 | 6.24 | 0.553 |
+
+Counts: MATCHED 2, MISPLACED 3, FRAGMENTED 0, ABSENT 5.
+
+**30x50:**
+
+| GT wall | length (mm) | verdict | best pred | residual (mm) | residual/τ | overlap |
+|---|---|---|---|---|---|---|
+| w_s102 | 12796.3 | MISPLACED | W13 | 327.2 | 2.24 | 0.877 |
+| w_s104 | 4493.2 | ABSENT | W41 | 1471.2 | 10.05 | 0.876 |
+| w_s106 | 3363.4 | ABSENT | W104 | 1035.3 | 7.07 | 0.007 |
+| w_s108 | 2601.2 | ABSENT | W40 | 1184.0 | 8.09 | 0.000 |
+| w_s110 | 9380.5 | MISPLACED | W42 | 263.2 | 1.80 | 1.000 |
+| w_s111 | 7094.4 | **MATCHED** | W36 | 142.6 | 0.97 | 0.936 |
+| w_s117 | 2365.1 | MISPLACED | W28 | 275.0 | 1.88 | 0.523 |
+| w_s119 | 1734.3 | MISPLACED | W106 | 314.6 | 2.15 | 0.010 |
+| w_s121 | 2312.3 | MISPLACED | W34 | 303.6 | 2.07 | 0.589 |
+| w_s124 | 630.6 | MISPLACED | W58 | 411.9 | 2.81 | 0.099 |
+| w_s126 | 2312.5 | ABSENT | W73 | 604.3 | 4.13 | 0.198 |
+| w_s129 | 1419.9 | ABSENT | W41 | 533.6 | 3.64 | 1.000 |
+| w_s132 | 683.9 | ABSENT | W64 | 718.8 | 4.91 | 0.000 |
+| w_s138 | 3048.5 | ABSENT | W37 | 863.2 | 5.90 | 0.007 |
+| w_s142 | 2611.8 | ABSENT | W25 | 573.2 | 3.91 | 0.610 |
+| w_s147 | 3538.5 | MISPLACED | W87 | 249.4 | 1.70 | 0.518 |
+| w_s149 | 3250.2 | **FRAGMENTED** | W45 | 130.7 | 0.89 | 0.740 |
+| w_s150 | 1164.9 | MISPLACED | W28 | 279.6 | 1.91 | 0.594 |
+| w_s152 | 1004.0 | ABSENT | W41 | 1132.4 | 7.73 | 0.000 |
+
+Counts: MATCHED 1, MISPLACED 8, FRAGMENTED 1, ABSENT 9.
+
+**A necessary caveat before the verdict:** ABSENT and FRAGMENTED are not as cleanly separated by this classification as the four labels suggest. `_sym_mean_dist` samples 9 points along the *shorter* of the two walls and measures symmetric point-to-segment distance -- a severely truncated fragment (e.g. `w_s2`'s best candidate `W20`, a 127-native-unit fragment against a 4429.6mm GT wall spanning roughly 4x that after scaling) inflates this distance heavily even when the fragment's own available extent is well-aligned, because most of the *longer* wall's sampled points land far from the short fragment. Checked directly against `w_s2`/`w_s4`/`w_s6` (15x30's top/right/bottom exterior walls): a manual coordinate search (not shown in the table, in this step's working notes) found real, correctly-positioned fragments for all three -- `W20` (top, ~21% of expected width), `W43` (right, ~45% of expected height) -- that this residual-first classification reads as ABSENT rather than FRAGMENTED purely because the mismatch is too severe to pass even a 3τ residual gate. **The true fragmentation burden is very likely undercounted by the FRAGMENTED label alone; some meaningful fraction of "ABSENT" is actually "recovered, but so short the standard metric can't tell it apart from nothing."**
+
+**Branch verdict — GEOMETRY/COVERAGE dominates on both plans, correcting the first diagnostic's "leans filtering" read.** ABSENT is the single largest category on both plans (5/10 on 15x30, 9/19 on 30x50) and MISPLACED is second (3/10, 8/19) -- together they account for 8/10 and 17/19 of all GT walls. Pure MATCHED is rare (2/10, 1/19). This is a materially different, less favorable picture than the first (automatically-refined, pollution-confounded) diagnostic suggested. Reasoning:
+- The dominant failure is **coverage, not position**: for roughly half of GT's real walls on both plans, *no* predicted wall (out of 72–118 candidates) lands within even a generous 3τ of it -- select.py/pair.py's candidate generation appears to genuinely never produce a viable pairing near that specific real wall at all, for a meaningful fraction of real walls. That is a pairing/selection recall gap, not a filtering-precision problem; no amount of better filtering recovers a wall that was never paired in the first place.
+- Where a real wall *is* recovered, position is usually close but not tight: MISPLACED residuals cluster in the 1.5–2.8τ range (not 5–10τ, which is where ABSENT sits) -- consistent with the fragmentation-driven endpoint imprecision found directly in this step (e.g. `W42`, the single most-confident anchor on 15x30, itself starts short of the true top-left corner, which alone explains most of its own 1.48τ residual as an anchor).
+- Per the caveat above, genuine fragmentation is a real, likely-undercounted contributor sitting *underneath* several ABSENT verdicts, not a separate small correction -- but it presents as a coverage/geometry problem in the metric either way, not as excess-precision noise.
+- Over-production (confirmed real in the first diagnostic pass) explains precision and cycle closure, and does not conflict with this finding -- both are true simultaneously: pairing produces too many wrong candidates *and* too few right ones.
+
+**Path forward implied (not built this session):** a pairing rethink is warranted before further filtering/merge work, per the instructed GEOMETRY-branch guidance -- specifically, understanding *why* select.py/pair.py's candidate generation misses roughly half of real walls entirely (not just why it over-generates elsewhere), and separately, whether collinear-merge/endpoint handling can be tightened so recovered walls reach their true corners rather than stopping short.
+
+### Step 3 — hatch-identity check on the unclassified 56–57% majority
+
+Attempted three quantitative confirmations against a sample of the "unclassified" spurious walls from the first diagnostic (`analyze_step3a_walls.py`'s `hatch_cluster_uninformative` category), cross-checked against the confirmed-real anchor walls from Step 1 as a control. **Result: inconclusive by the proxies tried, and the reason why is itself informative.**
+
+1. **Raw local density of nearby diagonal (hatch-band, ≥30° from axis) segment midpoints**, radius scaled to 3x each wall's own length: uniformly enormous for the sample (1,155 to 15,809+ nearby diagonal segments) -- but *also* enormous around the confirmed-real anchors (15,809 around `W42`/`W43` on 15x30; 25,749 around all three 30x50 anchors), because those radii scale with each wall's own length and the anchors are long, saturating to near-page-wide counts. Not a fair comparison as constructed.
+2. **Spacing regularity (coefficient of variation) of nearby diagonal-segment perpendicular positions**, fixed radius: confounded by binning resolution -- median gaps collapsed to exactly the 0.5-unit bin size used for deduplication on nearly every sample, meaning the reported "spacing" was measuring the tool's own resolution, not a real hatch pitch. Discarded as unreliable rather than reported as a real number.
+3. **Local diagonal-ink *fraction*** (not raw count) in a small fixed-radius (25 native units) window around each wall's midpoint, corrected for #1's radius-scaling flaw: unclassified sample mean 0.407 (15x30) / 0.522 (30x50) -- but the **confirmed-real anchor walls score *higher*, not lower**: 0.978–0.994 on both plans. This is the opposite of what a naive "spurious walls sit in hatch, real walls don't" hypothesis predicts.
+
+Investigated why #3 goes the "wrong" way rather than discarded: it's architecturally expected, not a bug. In this double-line-plus-hatch convention, a real wall's boundary stroke sits *directly against* the hatch fill that occupies the wall's own thickness -- the wall boundary and its hatch are adjacent by construction, not separated. Proximity to hatch is therefore not diagnostic of *anything* on this corpus; both real wall edges and coincidentally-axis-aligned hatch remnants sit inside hatch-dense neighborhoods, because hatch coverage is pervasive across large regions of both plans rather than spatially localized to specific "noise pockets."
+
+**This does not confirm or refute the hatch-leakage hypothesis for the unclassified majority -- it rules out simple proximity/density-based confirmation as the wrong tool for the job**, and points at the reason `docs/paper.md` §5.6 Layer 2 specifies a **1-D FFT along the candidate itself** rather than a neighborhood-density check: periodicity needs to be measured *along the candidate segment's own local profile*, checking for regular parallel structure specifically at (or near) *its own* orientation, not "any diagonal segment within some radius." That is a different, more specific tool than anything tried this round, and was not built -- per instruction, this step only establishes whether the tool is the right one, and the finding is that a cruder proxy isn't a substitute for it, not that the FFT approach itself is unwarranted. **No hatch-identity fraction is reported** -- fabricating one from an confounded proxy would violate this project's own no-placeholder-metrics discipline more than reporting "not established this round."
+
+### Explicitly not built this round
+
+Any pairing/selection rethink, any fragmentation/collinear-merge tuning, the 1-D FFT periodicity discriminator (still only proposed), any change to `eval/`, 3b, 3c.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts added: `extraction/trackv/analyze_step3a_pinned.py` + `out/step3a_pinned_diagnostic.json`, `extraction/trackv/plot_pin_check.py` + `out/pin_check_*.png`, this section. Not merged to main. Merge and all fix-builds wait on this read.
