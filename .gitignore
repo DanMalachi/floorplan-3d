@@ -75,3 +75,7 @@ floorplan_for_training/dxf_dwg/
 
 .vercel
 .venv
+
+# Milestone-2-step-2 stroke-width histograms -- diagnostic images,
+# regenerable via extraction/trackv/run_stroke_clustering.py, not durable.
+/extraction/trackv/out/stroke_hist/

@@ -91,3 +91,56 @@ No regression on the three already-vector plans; all three genuine vector plans 
 **Commits on `phase-2-trackv-m2`:** `64fc5d2` (core fix), `f7b0891` (adapt existing dilation-offset fixture to the new field), `5de6d40` (new compound-path regression test), `269ce00` (re-run corpus sweep). **Merge approved by Dan.**
 
 **Design note carried into milestone 2, step 2 (stroke-width clustering → parallel-pair centerline+thickness recovery, fresh session, own plan + STOP):** consumers now see `subpaths: list[list[Segment]]` with mixed `"l"`/`"c"` ops and a fill-rule bit, not a flat point list. Clustering and centerline recovery need to handle curve segments and multi-contour paths (the wall-with-courtyard case) from the start — design for this representation, don't assume polylines. This is the seam step 2 is most likely to trip on.
+
+## Milestone 2, step 2 — stroke-width clustering: does it separate walls from noise?
+
+Branch `phase-2-trackv-m2b` (worktree `fp-phase2`, rebased on `main` @ `d5ad7c3`, i.e. directly on top of step 1 — no drift). Scope was stroke-width clustering only, tested against the corpus's four track_v plans (15x30, 20x45, 30x50, Matterport). **Explicitly not built this step, per instruction:** centerline recovery, parallel-pair matching, medial-axis thickness recovery, any schema/`ExtractionResult` output. This step's deliverable is an intermediate — clustered stroke primitives + width statistics — not walls.
+
+**Built:** `extraction/trackv/stroke_clusters.py` (`extract_stroke_population` — splits a dissection into the stroke-width population vs. filled-no-stroke residue; `cluster_widths` — the clustering algorithm) + `extraction/trackv/run_stroke_clustering.py` (corpus sweep, writes `extraction/trackv/out/stroke_cluster_results.json` + gitignored per-plan histogram PNGs under `extraction/trackv/out/stroke_hist/`) + `extraction/trackv/tests/test_stroke_clusters.py` (19 tests, all passing).
+
+### Method, and why it isn't variance-based
+
+The obvious first instinct — pick k via variance reduction (elbow/GVF, or plain k-means with a BIC-style stopping rule) — was tried and rejected: variance-reduction criteria *always* find a large apparent improvement from k=1→2 even on genuinely unimodal continuous data, because an optimally-placed 2-way split of a single Gaussian still "explains" a large fraction of its variance by construction (this is a known property of 1D k-means/Jenks, not a bug in the implementation). That directly fails the required "single population must not over-split" behavior, empirically confirmed by testing it before discarding it.
+
+What's implemented instead: kernel density estimation over the raw width population, with a **peak/valley-ratio modality test** — a candidate split (a valley between two density peaks) is accepted only if the valley's density is small (≤ 60%, `valley_ratio=0.6`) relative to the smaller of its two flanking peaks. This tests for an actual low-density gap, not merely "does splitting reduce variance", which is the correct question for "is this really two populations." Bandwidth uses an IQR-based robust scale estimate (falling back to std, then to range/6) specifically because the real data's dominant behavior is one exact-repeated literal float value shared by the vast majority of primitives (see below) — a plain std-based bandwidth would be dragged around by whichever tail is currently present. A minimum cluster size (4) discards single/double-point tail artifacts that a KDE will still occasionally split off from a large, tightly-concentrated unimodal sample (found empirically: n≥300, std=0.05 draws produced spurious 2-3 point splits before this safeguard).
+
+**Unit tests** (`test_stroke_clusters.py`): a clean two-mode Gaussian population (means 2 units apart, std 0.05) splits into exactly 2 clusters with no overlap; single-population Gaussians across n ∈ {30,100,300,1000} × std ∈ {0.05,0.1,0.2} (12 combinations, fixed seeds) all stay at exactly 1 cluster; the degenerate-but-real corpus shapes (one dominant repeated value + far outliers; exactly 2 distinct pens; exactly 3 distinct pens) all cluster as expected; `extract_stroke_population` correctly separates a filled-only primitive (no stroke width) from a stroked one on a synthetic 2-primitive fixture.
+
+### Per-plan cluster structure (`extraction/trackv/out/stroke_cluster_results.json`)
+
+| plan | stroked prims | clusters | dominant cluster | dominant cluster's diagonal-segment fraction |
+|---|---|---|---|---|
+| 15x30 | 20,741 | 2: `{0.0: n=4}`, `{0.72: n=20,737}` | 0.72, **99.98%** of stroked prims | **78.5%** |
+| 20x45 | 251 | 3: `{0.0: n=43}`, `{0.48: n=26}`, `{0.72: n=182}` | 0.72, 72.5% of stroked prims | 9.3% |
+| 30x50 | 33,117 | 2: `{0.0: n=4,227}`, `{0.72: n=28,890}` | 0.72, 87.2% of stroked prims | **78.5%** |
+| Matterport | 526 (of 682 total; 156 are filled-no-stroke) | 5, see below | 0.654–0.758, 94.7% of stroked prims | 29.2% |
+
+**A dominant cluster does emerge in every plan** — that half of the paper's §3.7 hypothesis holds. What does *not* hold, on two of the four plans, is the other half: that the dominant cluster is separable from hatching.
+
+### The hatching finding (direct answer to the "does it share the wall cluster" question)
+
+Diagonal-segment fraction was computed per cluster (angle mod 180°, axis-aligned = within 20° of 0°/90°) as a hatch-likelihood proxy independent of the clustering itself. **On 15x30 and 30x50, the single dominant stroke-width cluster is 78.5% diagonal-angled segments.** That is not "hatching sits mostly in one cluster with a wall minority" — it is hatching and wall-boundary-like geometry sharing the *exact same literal pen width* (`0.72`pt), because whatever CAD/generator produced these two PDFs draws essentially everything — walls, hatch fill, dimension extensions, furniture — at one global stroke width. Stroke-width clustering, run alone, cannot separate a wall edge from a hatch tick on these two plans: they land in the same bucket by construction, not by algorithm failure. This falsifies the paper's §3.7/§5.2 prefilter claim ("wall strokes form the dominant cluster separable from hatching") for this corpus's two densest hatched plans specifically.
+
+30x50's secondary cluster (`0.0`/hairline, n=4,227, 12.8% of stroked prims) is *not* clean signal either: it's 27% diagonal (some hatch bleeds in here too), every one of its primitives is `fill_and_stroke` (not stroke-only), and its median segment length is 0.84pt — these read as short filled dash/tick marks, a different hatch-rendering style co-existing with the diagonal-line hatch in the dominant cluster, not a wall-relevant group.
+
+**20x45 behaves differently** — its three clusters are 96.7%/78.3%/90.6% axis-aligned respectively (diagonal fractions 9–22%), i.e. comparatively little hatch content bleeding into any width bucket, and the 0.72 cluster's segments have a plausible wall-like median length (24.8pt) — this plan is not densely hatch-vector-drawn the way the other two are, and its width buckets look closer to the paper's assumed separable structure. This is real plan-to-plan variability within a single `convention_class=hatched` label, not noise: **hatched-convention plans are not one uniform structure**, and the ratio of hatch ink to wall ink at the vector-primitive level swings from ~9% diagonal content (20x45) to ~78% (15x30, 30x50).
+
+### Filled-no-stroke fraction (deferred to the later medial-axis path)
+
+Only Matterport has any filled-primitive-with-no-stroke content: 156 of 682 primitives (**22.9% by count**). 15x30, 20x45, and 30x50 have zero — every primitive in those three plans carries a numeric stroke width, so nothing is deferred there; whatever their walls are, they're stroke-drawn (double-line or hatch-boundary convention), not solid poché fills, consistent with their `convention_class=hatched` registry label. Matterport's `convention_class=poche`, and this is exactly where that shows up: its true wall geometry very likely lives entirely in this filled-no-stroke bucket (poché fill, no border stroke), which by definition carries no width signal and cannot be clustered — only a medial-axis pass on the fill geometry itself will recover wall thickness there.
+
+**The area-based version of this fraction is unreliable and should not be quoted:** computed at 2.9% (vs. 22.9% by count) because one single `fill_and_stroke` primitive — almost certainly a full-page background/floor silhouette — covers ~44% of the page area on its own (2.6M of 5.9M sq-pt) and swamps the area denominator. This is flagged, not corrected: distinguishing "real wall ink" from "an unrelated background plate" is a semantic judgment call outside this step's scope (that's residue classification, §5.2 item 3). The **count-based** 22.9% is the trustworthy number here.
+
+### Verdict: is clustering alone a viable wall-stroke selector?
+
+**No, not on its own, on this corpus.** On 15x30 and 30x50 — the two plans with the heaviest genuinely-vector-drawn hatching — the dominant stroke-width cluster is a majority-diagonal (hatch-dominated) mix, not a wall-selective one; picking "the biggest cluster" would hand the next step a pile that's mostly hatching. On Matterport, the width population barely contains the walls at all (they're filled, not stroked), so clustering the stroke population misses the wall question entirely regardless of how well it clusters. Only 20x45, the smallest and least hatch-dense of the four, produces clusters where the dominant one is plausibly wall-associated by itself.
+
+This means the geometric pairing/medial-axis step (originally staged as step 3, refining step 2's output) is not a refinement on top of a mostly-working width selector — it is **load-bearing**: the axis-alignment signal (which this step computed only as a diagnostic, not as a selector) is doing more of the real separating work than width is, on the two plans that most stress-test the hypothesis. Concretely, whatever step 3 becomes should treat width clustering as a candidate-generation/prefilter aid at best (e.g., restrict to the dominant width cluster(s) before geometric pairing, to cut the search space), not as the primary wall/non-wall decision — that decision needs geometry (parallel-offset pairing, axis-alignment, run-length/collinearity), consistent with what the diagonal-fraction diagnostic already surfaced here for free.
+
+### Reproduce
+
+`py -m extraction.trackv.run_stroke_clustering` from repo root (writes `extraction/trackv/out/stroke_cluster_results.json`, prints the same to stdout; histograms need `matplotlib`, gitignored, not required for the JSON). `py -m pytest extraction/trackv/tests/test_stroke_clusters.py -q` for the unit tests.
+
+### Explicitly not done this step
+
+Wall-face pairing, parallel-segment offset detection, centerline recovery, filled-polygon medial-axis thickness recovery, any semantic wall/non-wall decision, any schema or `ExtractionResult` output, any modification to `eval/`, `extraction/schema/`, `extraction/synth/`, or `legacy/`.
