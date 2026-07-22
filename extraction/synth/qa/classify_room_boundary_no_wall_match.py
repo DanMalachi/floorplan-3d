@@ -250,6 +250,28 @@ def analyze_edge(p, room_type, inst_idx, edge_index, a, b, wall_geom, filled_wal
     )
 
 
+def _cos_to_nearest_backed_neighbor(edge_index, ring_edges, backed_ratio, ux, uy):
+    """Own implementation (independent of measure_clean_at_source's
+    _nearest_wall_backed_cos -- not imported/aliased, per the 2026-07-22
+    resolution session's explicit instruction to keep classify()'s notch
+    signal computation separate from check_plan's): cos(angle) between this
+    edge's own unit direction and the nearest ring neighbor (searching
+    outward in both directions) that IS wall-backed (backed_ratio >=
+    COVERAGE_THRESHOLD). Returns None if no wall-backed edge exists
+    anywhere in the ring."""
+    n = len(ring_edges)
+    for offset in range(1, n):
+        for sign in (-1, 1):
+            cand = (edge_index + sign * offset) % n
+            if backed_ratio[cand] is not None and backed_ratio[cand] >= COVERAGE_THRESHOLD:
+                wa, wb, wlen = ring_edges[cand]
+                if wlen:
+                    wdx, wdy = wb[0] - wa[0], wb[1] - wa[1]
+                    return abs(ux * (wdx / wlen) + uy * (wdy / wlen))
+                return None
+    return None
+
+
 def analyze_plan(raw_plan):
     p = normalize_keys(dict(raw_plan))
     wall_geom = p.get("wall")
@@ -269,25 +291,67 @@ def analyze_plan(raw_plan):
             if poly is None or poly.is_empty or poly.geom_type != "Polygon":
                 continue
             coords = list(poly.exterior.coords)
-            for i in range(len(coords) - 1):
+            n = len(coords) - 1
+            # Build the full ring's wall-backed status up front (not just
+            # for edges that turn out broken) -- the perpendicularity signal
+            # below needs to look up ANY other edge's backed status,
+            # including ones later in the ring than the edge currently
+            # under evaluation. Same two-pass shape as check_plan's own
+            # loop, independently re-coded here.
+            ring_edges = []
+            backed_ratio = [None] * n
+            for i in range(n):
                 a, b = coords[i], coords[i + 1]
                 dx, dy = b[0] - a[0], b[1] - a[1]
                 edge_len = (dx * dx + dy * dy) ** 0.5
+                ring_edges.append((a, b, edge_len))
                 if edge_len < TOLERANCE:
                     continue
-                if tree is None:
-                    ratio = 0.0
-                else:
-                    ratio = _edge_covered(a, b, edge_len, wall_edges, tree, narrow_prox)
-                if ratio >= COVERAGE_THRESHOLD:
+                backed_ratio[i] = 0.0 if tree is None else _edge_covered(a, b, edge_len, wall_edges, tree, narrow_prox)
+
+            for i in range(n):
+                ratio = backed_ratio[i]
+                if ratio is None or ratio >= COVERAGE_THRESHOLD:
                     continue
+                a, b, edge_len = ring_edges[i]
                 r = analyze_edge(p, rt, inst_idx, i, a, b, wall_geom, filled_wall_geom, wall_depth, wall_edges, tree, inner_union)
+                dx, dy = b[0] - a[0], b[1] - a[1]
+                ux, uy = (dx / edge_len, dy / edge_len) if edge_len else (0.0, 0.0)
+                r["cos_to_nearest_backed_neighbor"] = _cos_to_nearest_backed_neighbor(
+                    i, ring_edges, backed_ratio, ux, uy)
                 r["resplan_id"] = raw_plan.get("id")
                 results.append(r)
     return results
 
 
-OPENING_COVERAGE_THRESHOLD = 0.8
+# Notch branch, corrected 2026-07-22 per reports/p3a-notch-resolution.md's
+# exhaustive 8-edge audit (every a_genuine_gt_defect_between_rooms edge
+# with opening_coverage >= 0.65 across the full 17K population -- the only
+# band where a single-condition >=0.8 cutoff could ever disagree with a
+# real notch). opening_coverage ALONE does not separate notches from
+# non-notches in that band: audited notches measured 0.681-0.749, audited
+# non-notches measured 0.702-0.794 -- overlapping ranges. Perpendicularity
+# to the nearest wall-backed ring neighbor is what actually separates them
+# (audited notches: cos<=0.004; audited non-notches: cos>=0.644, a wide,
+# clean gap in this sample), with jamb-length-vs-wall-depth as a third,
+# corroborating signal (audited notches: ratio in [0.943,1.354]; audited
+# non-notches: ratio in [1.658,5.749]). Own thresholds below are chosen
+# from THIS audit's own gaps, independently of check_plan's suppression
+# predicate (measure_clean_at_source.py) -- not copied from it, and
+# computed via a separate, locally re-implemented perpendicularity helper
+# (_cos_to_nearest_backed_neighbor above) rather than importing check_plan's
+# _nearest_wall_backed_cos. classify() is a labeling oracle, not an
+# operational suppression rule, so it is free to be MORE permissive in
+# recognizing notches than check_plan needs to be conservative -- e.g. the
+# jamb-length threshold here (1.5x) is looser than check_plan's (1.2x),
+# because the audit surfaced one genuine notch (plan 11587) that
+# check_plan's own tighter bound leaves unsuppressed (a known, accepted,
+# conservative recall gap in the OPERATIONAL rule, not something this
+# labeling fix should paper over by copying that same tightness into the
+# oracle).
+OPENING_COVERAGE_THRESHOLD = 0.65  # floor only -- see NOTCH_* below for the full conjunction
+NOTCH_PERPENDICULARITY_COS_CEILING = 0.2
+NOTCH_JAMB_LENGTH_MULTIPLE = 1.5
 SMALL_EDGE_WALL_DEPTH_MULTIPLE = 1.5
 
 
@@ -299,13 +363,15 @@ def classify(e):
 
     1. measurement_bug_false_positive — handled by the caller before this
        function is ever called (ink_ratio_narrow >= threshold already).
-    2. e_opening_doorway_notch — opening_coverage >= 0.8: CONFIRMED on
-       plans 7607/9206/3807/10171 (edge coordinates land exactly on the
-       door polygon's own bounding box) — the room polygon steps into a
-       wall_depth-deep notch tracing the door reveal, not a real
-       wall-line edge at all. No further wall-side union step would fix
-       this; it needs an edge-classification change (skip edges captured
-       by a door polygon), which is fix work, correctly out of scope here.
+    2. e_opening_doorway_notch — CORRECTED 2026-07-22 (was a single
+       opening_coverage>=0.8 condition; see comment above the constants for
+       the audit that justified the 3-condition replacement): the room
+       polygon steps into a wall_depth-deep notch tracing a door/window
+       reveal, not a real wall-line edge at all — CONFIRMED on plans
+       7607/9206/3807/10171 (original discovery) and 5683/11576/11587 (this
+       session's audit). No further wall-side union step would fix this;
+       it needs an edge-classification change (skip edges captured by a
+       door polygon), which is fix work, correctly out of scope here.
     3. c_exterior_boundary_or_void — outward probe lands OUTSIDE the
        'inner' building envelope: exterior wall gap, balcony/rail
        frontage, or genuine void beyond the traced footprint.
@@ -332,7 +398,11 @@ def classify(e):
     """
     if e["outward_probe_degenerate"]:
         return "unresolved_degenerate_probe"
-    if e["opening_coverage"] >= OPENING_COVERAGE_THRESHOLD:
+    cos_n = e.get("cos_to_nearest_backed_neighbor")
+    if (e["opening_coverage"] >= OPENING_COVERAGE_THRESHOLD
+            and cos_n is not None
+            and cos_n <= NOTCH_PERPENDICULARITY_COS_CEILING
+            and e["edge_len"] <= NOTCH_JAMB_LENGTH_MULTIPLE * e["wall_depth"]):
         return "e_opening_doorway_notch"
     if not e["outward_inside_inner"]:
         return "c_exterior_boundary_or_void"

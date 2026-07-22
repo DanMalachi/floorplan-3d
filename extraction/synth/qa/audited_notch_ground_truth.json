@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "created": "2026-07-22",
+    "purpose": "Human-audited ground truth for the doorway-notch suppression risk surface (reports/p3a-notch-resolution.md). Oracle for gate_flip_check_audited.py -- NOT classify()'s output. classify() is the CANDIDATE GENERATOR (finds edges to audit); this file is the audited verdict.",
+    "scope": "Every a_genuine_gt_defect_between_rooms edge (classify()'s pre-fix output) with opening_coverage >= 0.65, exhaustively enumerated across the full 17,000-plan ResPlan population as of this date. This is the ONLY band check_plan's suppression predicate can ever touch (opening_cov >= 0.65 is one of its three conjuncts), so it bounds the entire false-suppression risk surface.",
+    "regeneration_trigger": "Any new a_genuine_gt_defect_between_rooms edge with opening_coverage >= 0.65 that appears after GT growth (new plans added to ResPlan, or classify()'s upstream signals change) is NOT covered by this file and must be manually audited (rendered + visually verified) before being trusted by the gate. gate_flip_check_audited.py checks for and flags any such edge by (plan_id, room, edge_index) key not present here."
+  },
+  "audited_edges": [
+    {"plan_id": 5683, "room": "bedroom_0", "edge_index": 3, "verdict": "notch", "opening_coverage": 0.749, "cos_to_neighbor": 0.004, "jamb_ratio": 0.943, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_00_SUPPRESSED_5683_bedroom_0_e3.png"},
+    {"plan_id": 5683, "room": "bedroom_0", "edge_index": 5, "verdict": "notch", "opening_coverage": 0.749, "cos_to_neighbor": 0.0, "jamb_ratio": 0.943, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_01_SUPPRESSED_5683_bedroom_0_e5.png"},
+    {"plan_id": 11576, "room": "bedroom_0", "edge_index": 30, "verdict": "notch", "opening_coverage": 0.681, "cos_to_neighbor": 0.0, "jamb_ratio": 1.001, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_02_SUPPRESSED_11576_bedroom_0_e30.png"},
+    {"plan_id": 1935, "room": "bathroom_0", "edge_index": 6, "verdict": "not_notch_diagonal_chamfer", "opening_coverage": 0.724, "cos_to_neighbor": 0.644, "jamb_ratio": 1.658, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_03_NOT_suppressed_1935_bathroom_0_e6.png"},
+    {"plan_id": 2405, "room": "bedroom_1", "edge_index": 2, "verdict": "not_notch_long_diagonal_edge", "opening_coverage": 0.702, "cos_to_neighbor": 0.793, "jamb_ratio": 5.749, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_04_NOT_suppressed_2405_bedroom_1_e2.png"},
+    {"plan_id": 9869, "room": "bedroom_1", "edge_index": 6, "verdict": "not_notch_diagonal_chamfer", "opening_coverage": 0.794, "cos_to_neighbor": 0.891, "jamb_ratio": 1.911, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_05_NOT_suppressed_9869_bedroom_1_e6.png"},
+    {"plan_id": 1437, "room": "bathroom_2", "edge_index": 11, "verdict": "not_notch_jagged_boundary_artifact", "opening_coverage": 0.758, "cos_to_neighbor": 0.769, "jamb_ratio": 3.668, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_06_NOT_suppressed_1437_bathroom_2_e11.png"},
+    {"plan_id": 11587, "room": "bedroom_1", "edge_index": 8, "verdict": "notch_but_check_plan_recall_miss", "opening_coverage": 0.739, "cos_to_neighbor": 0.0, "jamb_ratio": 1.354, "door_witness": true, "residual_gap_beyond_door_span": 0.0, "overlay": "extraction/synth/reports/notch_audit_07_NOT_suppressed_11587_bedroom_1_e8.png"}
+  ]
+}
