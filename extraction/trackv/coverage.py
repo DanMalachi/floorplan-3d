@@ -82,27 +82,34 @@ def _rasterize_vector_mask(dissection: PageDissection, dpi: int, dilate_px: int)
     page = doc.new_page(width=dissection.page_size_px[0], height=dissection.page_size_px[1])
     shape = page.new_shape()
     for prim in dissection.primitives:
-        pts = prim.points
-        if not pts:
+        if not prim.subpaths:
             continue
-        if prim.kind == "curve" and len(pts) >= 4:
-            shape.draw_bezier(fitz.Point(*pts[0]), fitz.Point(*pts[1]), fitz.Point(*pts[2]), fitz.Point(*pts[3]))
-        else:
-            # "rect"/"quad" are structurally closed by definition (4 corners
-            # of a rectangle always bound a closed shape) regardless of the
-            # source drawing's closePath flag, which describes how the path
-            # was authored, not whether its boundary is visually open.
-            should_close = prim.closed or prim.kind in ("rect", "quad")
-            segment_points = list(pts)
-            if should_close and segment_points[0] != segment_points[-1]:
-                segment_points = segment_points + [segment_points[0]]
-            for a, b in zip(segment_points, segment_points[1:]):
-                shape.draw_line(fitz.Point(*a), fitz.Point(*b))
+        # "rect"/"quad" are structurally closed by definition (4 corners of
+        # a rectangle always bound a closed shape) regardless of the source
+        # drawing's closePath flag, which describes how the path was
+        # authored, not whether its boundary is visually open.
+        should_close = prim.closed or prim.kind in ("rect", "quad")
+        for subpath in prim.subpaths:
+            if not subpath:
+                continue
+            for op, seg_pts in subpath:
+                if op == "c":
+                    shape.draw_bezier(*(fitz.Point(*p) for p in seg_pts))
+                else:
+                    shape.draw_line(fitz.Point(*seg_pts[0]), fitz.Point(*seg_pts[1]))
+            # Close *this* subpath specifically -- each contour of a
+            # compound path (e.g. a glyph's outer ring and its inner hole)
+            # closes independently, not just the drawing's last one.
+            first_point = subpath[0][1][0]
+            last_point = subpath[-1][1][-1]
+            if should_close and first_point != last_point:
+                shape.draw_line(fitz.Point(*last_point), fitz.Point(*first_point))
         shape.finish(
             width=prim.stroke_width if prim.stroke_width else 0.75,
             color=(0, 0, 0) if prim.stroke_color is not None else None,
             fill=(0, 0, 0) if prim.fill_color is not None else None,
             closePath=prim.closed,
+            even_odd=prim.even_odd,
         )
     shape.commit()
     pix = page.get_pixmap(dpi=dpi, colorspace=fitz.csGRAY, alpha=False)
