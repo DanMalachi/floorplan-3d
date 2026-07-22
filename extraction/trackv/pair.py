@@ -43,6 +43,12 @@ MIN_CANDIDATE_LENGTH_FRAC = 0.01  # of plan diagonal -- floor below which a cand
 MIN_THICKNESS_STROKE_MULTIPLE = 1.0  # thickness must exceed the pair's own pen width, else it's a near-duplicate
 OPENING_GAP_MULTIPLIER = 20.0  # gap <= this many multiples of local thickness merges as an opening
 SNAP_TOLERANCE_ABS = 1e-2  # plan units; below this a gap is "touching", not a real opening
+COLLINEAR_GROUPING_TOLERANCE_FRAC = 0.005  # of plan diagonal -- tight, thickness-INDEPENDENT perpendicular
+# tolerance for "these fragments sit on the same physical centerline". Replaces an earlier design
+# (round(perp / thickness * 4)) that keyed grouping off each fragment's own recovered thickness --
+# found, by direct fragmentation diagnosis against 15x30/30x50 (reports/phase-2-gate.md), to scatter
+# real same-wall fragments into different bins whenever their individually-recovered thickness was
+# noisy (the same over-production/precision problem documented earlier), which is most fragments.
 
 
 @dataclass
@@ -231,16 +237,67 @@ def _bucket_wall(along_dir: Point2, perp_dir: Point2, lo: float, hi: float, perp
     return start, end
 
 
-def _collinear_merge(walls: list[WallCandidate], d_a: Point2, n_a: Point2) -> tuple[list[WallCandidate], list[OpeningCandidate]]:
-    """Group same-axis, same-perpendicular-line wall stubs, merge those with
-    an end gap in (SNAP_TOLERANCE_ABS, OPENING_GAP_MULTIPLIER * local
-    thickness], and record the merged-over span as an opening candidate.
+def _weighted_median(values_weights: list[tuple[float, float]]) -> float:
+    """Standard weighted median: the value at which cumulative weight first
+    reaches half the total. Falls back to the plain middle value if total
+    weight is degenerate (e.g. all-zero-length fragments, shouldn't happen
+    in practice since pair_walls already enforces a length floor)."""
+    ordered = sorted(values_weights, key=lambda vw: vw[0])
+    total = sum(w for _v, w in ordered)
+    if total <= 0:
+        return ordered[len(ordered) // 2][0]
+    half = total / 2.0
+    cum = 0.0
+    for v, w in ordered:
+        cum += w
+        if cum >= half:
+            return v
+    return ordered[-1][0]
 
-    Two distinct scales, deliberately not conflated: SNAP_TOLERANCE_ABS is
-    the near-exact junction/endpoint tolerance (Track V geometry is exact,
-    so this stays tiny); the opening-gap bound is architecture-scaled off
-    each line's own recovered thickness, since no real-world unit scale
-    exists yet at this stage (that is Phase 5's job).
+
+def _cluster_by_perp(idxs: list[int], perp_of: dict[int, float], tolerance: float) -> list[list[int]]:
+    """Chain-clusters indices whose perpendicular coordinate is within
+    `tolerance` of a neighbor, sorted ascending -- an absolute, thickness-
+    independent tolerance (unlike the old `round(perp / thickness * 4)`
+    scheme), so two fragments' own noisy recovered thicknesses can no
+    longer decide whether they're considered the same physical line."""
+    ordered = sorted(idxs, key=lambda i: (perp_of[i], i))
+    clusters: list[list[int]] = []
+    for i in ordered:
+        if clusters and perp_of[i] - perp_of[clusters[-1][-1]] <= tolerance:
+            clusters[-1].append(i)
+        else:
+            clusters.append([i])
+    return clusters
+
+
+def _collinear_merge(
+    walls: list[WallCandidate], d_a: Point2, n_a: Point2, diagonal: float
+) -> tuple[list[WallCandidate], list[OpeningCandidate]]:
+    """Group same-axis wall stubs that sit on the same physical centerline
+    -- a TIGHT, absolute perpendicular tolerance (COLLINEAR_GROUPING_
+    TOLERANCE_FRAC * diagonal), not each fragment's own noisy recovered
+    thickness -- then merge stubs within a group whose end gap sits in
+    (SNAP_TOLERANCE_ABS, OPENING_GAP_MULTIPLIER * local thickness], and
+    record the merged-over span as an opening candidate. Two distinct
+    scales, deliberately not conflated: SNAP_TOLERANCE_ABS is the near-
+    exact junction/endpoint tolerance (Track V geometry is exact, so this
+    stays tiny); the opening-gap bound is architecture-scaled off the
+    merging pieces' own recovered thickness.
+
+    Grouping and the opening-gap bound are deliberately separate concerns
+    now: a tight perpendicular tolerance means two genuinely distinct
+    near-parallel walls (a party wall, a narrow void) never even enter the
+    same group to be considered for merging, regardless of the gap-bound
+    logic -- see tests/test_pair.py's two required guardrail cases. The
+    REQUIRED along-axis overlap-or-small-gap check (never plain infinite-
+    line collinearity) is what stops two same-line-but-unrelated walls in
+    different rooms from merging even when the tight perp tolerance alone
+    would have grouped them.
+
+    Thickness is recovered as an OUTPUT of each merged group -- the
+    length-weighted median of its member fragments' thicknesses -- not
+    required as an input to grouping at all.
     """
     if not walls:
         return [], []
@@ -248,27 +305,20 @@ def _collinear_merge(walls: list[WallCandidate], d_a: Point2, n_a: Point2) -> tu
     def frame_for(bucket: str) -> tuple[Point2, Point2]:
         return (d_a, n_a) if bucket == "A" else (n_a, d_a)
 
-    # group by (bucket, rounded perpendicular line coordinate)
-    groups: dict[tuple[str, int], list[int]] = {}
-    perp_cache: dict[int, float] = {}
+    perp_of: dict[int, float] = {}
+    by_bucket: dict[str, list[int]] = {"A": [], "B": []}
     for wi, w in enumerate(walls):
-        along_dir, perp_dir = frame_for(w.axis_bucket)
-        perp = _dot(_midpoint(w.start, w.end), perp_dir)
-        perp_cache[wi] = perp
-        # group by thickness-scaled rounding so stubs of the same physical
-        # line (whose perp differs only by float noise) land together
-        key = (w.axis_bucket, round(perp / max(w.thickness, 1e-6) * 4))
-        groups.setdefault(key, []).append(wi)
+        _along_dir, perp_dir = frame_for(w.axis_bucket)
+        perp_of[wi] = _dot(_midpoint(w.start, w.end), perp_dir)
+        by_bucket[w.axis_bucket].append(wi)
+
+    tolerance = COLLINEAR_GROUPING_TOLERANCE_FRAC * diagonal
 
     merged: list[WallCandidate] = []
     openings: list[OpeningCandidate] = []
     consumed: set[int] = set()
 
-    for key in sorted(groups.keys()):
-        idxs = groups[key]
-        if len(idxs) == 1:
-            continue
-        bucket = key[0]
+    for bucket in ("A", "B"):
         along_dir, perp_dir = frame_for(bucket)
 
         def along_lo(wi: int) -> float:
@@ -279,61 +329,65 @@ def _collinear_merge(walls: list[WallCandidate], d_a: Point2, n_a: Point2) -> tu
             w = walls[wi]
             return max(_dot(w.start, along_dir), _dot(w.end, along_dir))
 
-        idxs_sorted = sorted(idxs, key=lambda wi: (along_lo(wi), wi))
-        chain_lo = along_lo(idxs_sorted[0])
-        chain_hi = along_hi(idxs_sorted[0])
-        chain_perp_sum = perp_cache[idxs_sorted[0]]
-        chain_thick_sum = walls[idxs_sorted[0]].thickness
-        chain_members = [idxs_sorted[0]]
-        chain_openings: list[OpeningCandidate] = []
+        for idxs in _cluster_by_perp(by_bucket[bucket], perp_of, tolerance):
+            if len(idxs) == 1:
+                continue
 
-        def flush_chain():
-            n = len(chain_members)
-            for wi in chain_members:
-                consumed.add(wi)
-            perp_mid = chain_perp_sum / n
-            thickness = chain_thick_sum / n
-            start, end = _bucket_wall(along_dir, perp_dir, chain_lo, chain_hi, perp_mid, bucket)
-            wall_idx = len(merged)
-            merged.append(
-                WallCandidate(
-                    start=start,
-                    end=end,
-                    thickness=thickness,
-                    axis_bucket=bucket,
-                    source_segment_indices=walls[chain_members[0]].source_segment_indices,
+            idxs_sorted = sorted(idxs, key=lambda wi: (along_lo(wi), wi))
+            chain_lo = along_lo(idxs_sorted[0])
+            chain_hi = along_hi(idxs_sorted[0])
+            chain_thick_weighted: list[tuple[float, float]] = [
+                (walls[idxs_sorted[0]].thickness, chain_hi - chain_lo)
+            ]
+            chain_members = [idxs_sorted[0]]
+            chain_openings: list[OpeningCandidate] = []
+
+            def flush_chain():
+                perp_mid = sum(perp_of[wi] for wi in chain_members) / len(chain_members)
+                thickness = _weighted_median(chain_thick_weighted)
+                start, end = _bucket_wall(along_dir, perp_dir, chain_lo, chain_hi, perp_mid, bucket)
+                wall_idx = len(merged)
+                merged.append(
+                    WallCandidate(
+                        start=start,
+                        end=end,
+                        thickness=thickness,
+                        axis_bucket=bucket,
+                        source_segment_indices=walls[chain_members[0]].source_segment_indices,
+                    )
                 )
-            )
-            for oc in chain_openings:
-                oc.host_wall_index = wall_idx
-                openings.append(oc)
+                for oc in chain_openings:
+                    oc.host_wall_index = wall_idx
+                    openings.append(oc)
+                for wi in chain_members:
+                    consumed.add(wi)
 
-        for wi in idxs_sorted[1:]:
-            gap = along_lo(wi) - chain_hi
-            local_thickness = (chain_thick_sum / len(chain_members) + walls[wi].thickness) / 2.0
-            gap_bound = OPENING_GAP_MULTIPLIER * local_thickness
-            if SNAP_TOLERANCE_ABS < gap <= gap_bound:
-                gap_start, gap_end = _bucket_wall(along_dir, perp_dir, chain_hi, along_lo(wi), chain_perp_sum / len(chain_members), bucket)
-                chain_openings.append(OpeningCandidate(host_wall_index=-1, start=gap_start, end=gap_end, gap_length=gap))
-                chain_hi = along_hi(wi)
-                chain_perp_sum += perp_cache[wi]
-                chain_thick_sum += walls[wi].thickness
-                chain_members.append(wi)
-            elif gap <= SNAP_TOLERANCE_ABS:
-                # already touching/overlapping -- treat as continuous, fold in
-                chain_hi = max(chain_hi, along_hi(wi))
-                chain_perp_sum += perp_cache[wi]
-                chain_thick_sum += walls[wi].thickness
-                chain_members.append(wi)
-            else:
-                flush_chain()
-                chain_lo = along_lo(wi)
-                chain_hi = along_hi(wi)
-                chain_perp_sum = perp_cache[wi]
-                chain_thick_sum = walls[wi].thickness
-                chain_members = [wi]
-                chain_openings = []
-        flush_chain()
+            for wi in idxs_sorted[1:]:
+                gap = along_lo(wi) - chain_hi
+                local_thickness = _weighted_median(chain_thick_weighted + [(walls[wi].thickness, along_hi(wi) - along_lo(wi))])
+                gap_bound = OPENING_GAP_MULTIPLIER * local_thickness
+                frag_len = along_hi(wi) - along_lo(wi)
+                if SNAP_TOLERANCE_ABS < gap <= gap_bound:
+                    gap_start, gap_end = _bucket_wall(
+                        along_dir, perp_dir, chain_hi, along_lo(wi), perp_of[wi], bucket
+                    )
+                    chain_openings.append(OpeningCandidate(host_wall_index=-1, start=gap_start, end=gap_end, gap_length=gap))
+                    chain_hi = along_hi(wi)
+                    chain_thick_weighted.append((walls[wi].thickness, frag_len))
+                    chain_members.append(wi)
+                elif gap <= SNAP_TOLERANCE_ABS:
+                    # already touching/overlapping -- treat as continuous, fold in
+                    chain_hi = max(chain_hi, along_hi(wi))
+                    chain_thick_weighted.append((walls[wi].thickness, frag_len))
+                    chain_members.append(wi)
+                else:
+                    flush_chain()
+                    chain_lo = along_lo(wi)
+                    chain_hi = along_hi(wi)
+                    chain_thick_weighted = [(walls[wi].thickness, frag_len)]
+                    chain_members = [wi]
+                    chain_openings = []
+            flush_chain()
 
     for wi, w in enumerate(walls):
         if wi not in consumed:
@@ -399,7 +453,7 @@ def pair_walls(selection: SelectionResult, page_size_px: tuple[float, float]) ->
             )
         )
 
-    merged_walls, opening_candidates = _collinear_merge(walls, d_a, n_a)
+    merged_walls, opening_candidates = _collinear_merge(walls, d_a, n_a, diagonal)
     funnel.n_merges_applied = len(walls) - len(merged_walls) + len(opening_candidates)
     funnel.n_opening_candidates = len(opening_candidates)
 

@@ -426,3 +426,60 @@ Any change to `_collinear_merge`'s grouping/tolerance, any gap-bound retuning, a
 ### Disposition
 
 Held for Dan's review. Durable artifacts added: `extraction/trackv/analyze_step3a_fragmentation.py` + `out/step3a_fragmentation_diagnostic.json`, the `pair.py` `pre_merge_walls` diagnostic field (additive, shipped output unchanged, 43/43 tests + 1 xfail unaffected), `analyze_step3a_pinned.py`'s `run_30x50(clean_anchors_only=...)` comparison, this section. Not merged to main. Merge and fix-scope wait on this read.
+
+## Step 3a fix — re-keyed collinear-merge, scored — merge decision
+
+Mechanism confirmed (FRAGMENTED-dominant, 5/8 on 15x30, root cause localized to `_collinear_merge`'s grouping key). This session builds the fix and scores it. `eval/` untouched; debt/xfail tests unchanged; both required guardrail tests green before scoring, per instruction.
+
+### The fix
+
+`_collinear_merge` (`extraction/trackv/pair.py`) re-keyed from `(axis_bucket, round(perp / thickness * 4))` -- grouping fragments by their own noisy recovered thickness, the confirmed root cause -- to `(axis_bucket, tight absolute perpendicular tolerance)`: fragments now cluster by chain-linked proximity in perpendicular position alone (`COLLINEAR_GROUPING_TOLERANCE_FRAC = 0.005` of plan diagonal, ~7 native units on this corpus), independent of thickness entirely. Thickness is now an *output* of each merged group -- the length-weighted median of its member fragments' thicknesses -- not an input to deciding whether they belong together. The existing along-axis overlap-or-small-gap requirement (opening-scale bound, unchanged) still governs whether two same-line fragments actually merge, so two same-line-but-far-apart walls in different rooms still don't collapse into one.
+
+**Guardrails, both required, both green:**
+- `test_close_parallel_walls_do_not_merge_guardrail` -- two walls 50 units apart in perpendicular offset (well above the ~7-unit tolerance) must stay separate, with no opening candidate invented between them.
+- `test_fragments_with_different_noisy_thickness_still_merge_on_geometry` -- two collinear stubs with *different* recovered thickness (9.8 vs 10.2, realistic pairing noise) must still merge, with the merged thickness landing at the length-weighted median (10.2, verified exactly).
+
+One test-fixture bug found and fixed while building these: `test_pair.py`'s `_support_pairs` helper spaced independent synthetic walls only 3 units apart in perpendicular offset -- safe under the old thickness-relative binning, but inside the new tight absolute tolerance, so unrelated support walls started spuriously merging with each other. Fixed by widening the fixture's spacing to 200 units; not a fix-code bug, a fixture built for the old scheme's tolerances.
+
+Full suite: 45 passed, 1 xfailed (the logged Manhattan-bias debt, unchanged).
+
+### Funnel, before vs. after
+
+| plan | pair: accepted (pre-merge) | merges applied | opening candidates | **walls before assemble** | assemble: junctions | connected components | cycles closed |
+|---|---|---|---|---|---|---|---|
+| 15x30 before | 120 | 60 | 12 | **72** | 128 | 61 | 0 |
+| 15x30 after | 120 | **92** | 15 | **43** | 86 | 43 | 0 |
+| 30x50 before | 191 | 97 | 24 | **118** | 207 | 96 | 0 |
+| 30x50 after | 191 | **161** | 24 | **54** | 108 | 54 | 0 |
+
+Wall count roughly halved on both plans (72→43, 118→54) from correctly merging fragments that the old thickness-keyed grouping was scattering apart -- direct, mechanical confirmation of the diagnosed root cause. **Cycle closure stays at 0 on both plans, and this is expected, not a fix failure**: `_collinear_merge` only stitches fragments *along one wall's own axis*; it has no mechanism to connect two *perpendicular* walls at a shared corner. That's `assemble.py`'s endpoint-snap job (`SNAP_TOLERANCE_NATIVE`), untouched this session, and per the documented endpoint-precision gap (`w_s7`'s 133mm perpendicular offset even on the single most-trusted anchor wall) real corners are apparently still further apart than that snap tolerance allows. Flagged, not chased, per instruction.
+
+### Score
+
+Pinned transforms unchanged from the last STOP (anchor wall coordinates are bit-identical pre- and post-fix -- the specific fragments chosen as anchors didn't need merging themselves) -- 15x30's 3-anchor fit and 30x50's clean 4-point re-fit, both round-trip-verified against the 1.9x schema-scale frame before scoring anything, per instruction.
+
+| plan | τ=0.5% (Phase 2 exit metric) | τ=1% | τ=2% |
+|---|---|---|---|
+| 15x30 | P=0.000 R=0.000 **F1=0.000** (0 matched) | P=0.047 R=0.200 F1=0.076 (2 matched) | P=0.070 R=0.300 F1=0.113 (3 matched) |
+| 30x50 | P=0.019 R=0.053 **F1=0.027** (1 matched) | P=0.037 R=0.105 F1=0.055 (2 matched) | P=0.056 R=0.158 F1=0.082 (3 matched) |
+
+**Wall F1 @ τ=0.5%: 0.000 (15x30) and 0.027 (30x50), against Phase 2's exit bar of ≥ 0.99.** Not close, at any τ tried, on either plan.
+
+Real, if modest, directional improvement is visible per-wall, not just in aggregate wall count: `w_s102` (30x50's top wall) flipped from MISPLACED (residual 2.24τ, overlap 0.877) to **MATCHED** (residual 0.58τ, overlap 0.929); `w_s111` (30x50's left wall) tightened from a marginal 0.97τ match to a comfortable 0.29τ match. Several previously-ABSENT walls' residuals dropped meaningfully even where the verdict bucket didn't flip (`w_s2`: 8.56τ → 4.47τ). But most of the corpus's real walls still don't clear even the loosest τ=2% band, for reasons this fix doesn't touch: the ~133mm single-wall perpendicular-offset precision gap (logged, not chased, per instruction) and genuine coverage gaps unrelated to fragmentation (multiple GT walls still show `overlap=0.0` against their best candidate -- no fragment anywhere nearby at all, not a merge problem).
+
+### Merge recommendation
+
+**Do not merge to main.** Schema validity clears its bar (1.0 ≥ 0.99 required, both plans, zero validator errors) but **wall F1 @ τ=0.5% is 0.000/0.027 against a required ≥ 0.99** -- not a marginal miss, orders of magnitude short. The collinear-merge fix is confirmed working exactly as diagnosed (fragment count roughly halved, several individual walls now cleanly matched or much closer), which validates the three-round diagnostic chain that led here, but it was never going to close a gap this large on its own -- it fixes continuity, not the two things still standing between this corpus and the exit bar:
+
+1. **Endpoint/centerline precision** -- even fully-merged, well-covered walls (`w_s7`, `w_s102`, `w_s111`) sit 0.29–1.48τ off GT's centerline, not 0τ. Logged this session, not chased.
+2. **Genuine coverage gaps** -- several GT walls have no predicted candidate anywhere nearby (`overlap=0.0`), unrelated to fragmentation. Not diagnosed this session -- the next open question, per instruction's own framing ("if it doesn't fully [improve], it's the NEXT diagnostic, not this session's scope").
+
+Recommend continuing to hold `phase-2-trackv-m2c` for further diagnosis/fixing rather than merging a validity-only pass to main.
+
+### Explicitly not built this round
+
+Any fix to endpoint/centerline precision, any pairing-coverage-gap diagnosis or fix, any `assemble.py` corner-snapping change, any change to `eval/`, 3b, 3c.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts added: the `_collinear_merge` re-key in `extraction/trackv/pair.py` (`COLLINEAR_GROUPING_TOLERANCE_FRAC`, `_weighted_median`, `_cluster_by_perp`), two new required guardrail tests in `tests/test_pair.py` (both green), regenerated `out/step3a_predictions/*.json` + `out/step3a_report.json` + `out/step3a_pinned_diagnostic.json` reflecting the fix, this section. Not merged to main -- wall F1 remains far below Phase 2's exit bar despite the confirmed, working fix.

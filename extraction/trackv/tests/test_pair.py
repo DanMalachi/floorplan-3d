@@ -51,12 +51,17 @@ def _selection(segments: list[SelectedSegment]) -> SelectionResult:
 
 
 def _support_pairs(thickness: float, n: int = 4, x0: float = 0.0, slot_width: float = 40.0) -> list[SelectedSegment]:
-    """n same-thickness horizontal pairs, each in its own private x-slot so
-    they cannot cross-pair with each other or with anything else."""
+    """n same-thickness horizontal pairs, each in its own private x-slot AND
+    far enough apart in y (200 units, versus PAGE's tight collinear-grouping
+    tolerance of COLLINEAR_GROUPING_TOLERANCE_FRAC * diagonal ~= 7 units)
+    that they land in different collinear-merge perpendicular clusters --
+    these represent n *independent* walls for thickness-cluster population
+    purposes, not fragments of one wall, and must not spuriously merge with
+    each other under the tight absolute grouping tolerance."""
     segs = []
     for i in range(n):
         xa, xb = x0 + i * slot_width, x0 + i * slot_width + slot_width - 5.0
-        y = 10.0 + i * 3.0  # vary y so groups don't collide in the sweep's perp ordering by coincidence
+        y = 10.0 + i * 200.0
         segs.append(_seg((xa, y), (xb, y), 1.0, 1000 + 2 * i))
         segs.append(_seg((xa, y + thickness), (xb, y + thickness), 1.0, 1000 + 2 * i + 1))
     return segs
@@ -141,3 +146,53 @@ def test_large_gap_between_collinear_stubs_does_not_merge():
     stub_walls = [w for w in result.walls if w.start[1] == 305.0 and w.end[1] == 305.0]
     assert len(stub_walls) == 2, "a gap far larger than any opening must stay two separate walls"
     assert result.opening_candidates == []
+
+
+def test_close_parallel_walls_do_not_merge_guardrail():
+    """Required guardrail (gate report, collinear-merge re-key): two
+    genuinely distinct near-parallel walls -- e.g. a party wall and a
+    narrow void a real gap away -- must never be collapsed into one wall
+    just because they're collinear-ish and close. Perpendicular separation
+    here (50 units) is well above COLLINEAR_GROUPING_TOLERANCE_FRAC * PAGE
+    diagonal (0.005 * 1414.2 ~= 7.1 units), so the two walls must never
+    even enter the same perpendicular-grouping cluster to be considered
+    for merging, regardless of how the gap-bound logic behaves."""
+    thickness = 10.0
+    support = _support_pairs(thickness, n=4, x0=0.0)
+    # both walls span the SAME x-range (600-760) so they would be
+    # candidates for merging under plain infinite-line collinearity --
+    # separation must come from the perpendicular tolerance, not from the
+    # two walls never overlapping in the first place
+    party_wall = [_seg((600, 700), (760, 700), 1.0, 90), _seg((600, 710), (760, 710), 1.0, 91)]
+    narrow_void_wall = [_seg((600, 750), (760, 750), 1.0, 92), _seg((600, 760), (760, 760), 1.0, 93)]
+
+    result = pair_walls(_selection(support + party_wall + narrow_void_wall), PAGE)
+    distinct_walls = [w for w in result.walls if 599 <= min(w.start[0], w.end[0]) and max(w.start[0], w.end[0]) <= 761]
+    assert len(distinct_walls) == 2, "two genuinely separate near-parallel walls must not merge into one"
+    ys = sorted(w.start[1] for w in distinct_walls)
+    assert abs(ys[0] - 705.0) < 1e-6 and abs(ys[1] - 755.0) < 1e-6
+    assert result.opening_candidates == [], "no opening should be inferred between two unrelated walls"
+
+
+def test_fragments_with_different_noisy_thickness_still_merge_on_geometry():
+    """The core motivating fix: two collinear stubs of the SAME true wall
+    whose individually-recovered thickness differs slightly (9.8 vs 10.2 --
+    realistic pairing noise, not identical) must still merge, because
+    grouping is now keyed on perpendicular position, not on each
+    fragment's own thickness. The old `round(perp / thickness * 4)` key
+    could and did scatter exactly this case into different bins on the
+    real corpus. Merged thickness must be the length-weighted median of
+    the two source thicknesses, not a simple average."""
+    support = _support_pairs(10.0, n=4, x0=0.0)
+    left = [_seg((600, 140), (660, 140), 1.0, 90), _seg((600, 149.8), (660, 149.8), 1.0, 91)]  # thickness 9.8, len 60
+    right = [_seg((668, 140), (768, 140), 1.0, 92), _seg((668, 150.2), (768, 150.2), 1.0, 93)]  # thickness 10.2, len 100
+
+    result = pair_walls(_selection(support + left + right), PAGE)
+    stub_walls = [w for w in result.walls if 599 <= min(w.start[0], w.end[0]) and max(w.start[0], w.end[0]) <= 769]
+    assert len(stub_walls) == 1, "fragments of one wall with slightly different recovered thickness must still merge"
+    w = stub_walls[0]
+    xs = sorted([w.start[0], w.end[0]])
+    assert abs(xs[0] - 600.0) < 1e-6 and abs(xs[1] - 768.0) < 1e-6
+    # weighted median over [(9.8, weight=60), (10.2, weight=100)]: cumulative
+    # weight reaches half (80) only once the 10.2 sample is included -> 10.2
+    assert abs(w.thickness - 10.2) < 1e-6

@@ -31,20 +31,20 @@
       ]
     },
     "n_gt_walls": 10,
-    "n_pred_walls": 72,
+    "n_pred_walls": 43,
     "per_gt_wall_verdict": [
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W20",
-        "residual": 860.3,
-        "residual_frac_of_tau": 8.563,
-        "overlap": 0.238,
+        "best_pred_id": "W24",
+        "residual": 449.5,
+        "residual_frac_of_tau": 4.474,
+        "overlap": 0.347,
         "gt_id": "w_s2",
         "gt_length": 4429.6
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W43",
+        "best_pred_id": "W38",
         "residual": 947.4,
         "residual_frac_of_tau": 9.43,
         "overlap": 0.464,
@@ -53,7 +53,7 @@
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W70",
+        "best_pred_id": "W14",
         "residual": 822.4,
         "residual_frac_of_tau": 8.185,
         "overlap": 0.002,
@@ -62,7 +62,7 @@
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W42",
+        "best_pred_id": "W37",
         "residual": 148.7,
         "residual_frac_of_tau": 1.48,
         "overlap": 0.976,
@@ -71,7 +71,7 @@
       },
       {
         "verdict": "MATCHED",
-        "best_pred_id": "W44",
+        "best_pred_id": "W40",
         "residual": 89.3,
         "residual_frac_of_tau": 0.889,
         "overlap": 0.885,
@@ -80,7 +80,7 @@
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W31",
+        "best_pred_id": "W33",
         "residual": 166.6,
         "residual_frac_of_tau": 1.659,
         "overlap": 0.235,
@@ -89,16 +89,16 @@
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W25",
-        "residual": 328.4,
-        "residual_frac_of_tau": 3.269,
-        "overlap": 0.023,
+        "best_pred_id": "W33",
+        "residual": 402.2,
+        "residual_frac_of_tau": 4.003,
+        "overlap": 0.0,
         "gt_id": "w_s25",
         "gt_length": 907.8
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W19",
+        "best_pred_id": "W26",
         "residual": 224.9,
         "residual_frac_of_tau": 2.238,
         "overlap": 0.364,
@@ -107,7 +107,7 @@
       },
       {
         "verdict": "MATCHED",
-        "best_pred_id": "W16",
+        "best_pred_id": "W22",
         "residual": 68.2,
         "residual_frac_of_tau": 0.679,
         "overlap": 0.9,
@@ -116,7 +116,7 @@
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W17",
+        "best_pred_id": "W23",
         "residual": 626.6,
         "residual_frac_of_tau": 6.236,
         "overlap": 0.553,
@@ -131,22 +131,42 @@
       "ABSENT": 5
     },
     "hungarian_matched_at_1pct": 2,
-    "hungarian_precision_1pct": 0.0278,
-    "hungarian_recall_1pct": 0.2
+    "hungarian_precision_1pct": 0.0465,
+    "hungarian_recall_1pct": 0.2,
+    "wall_f1_by_tau": {
+      "0.005": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "n_matched": 0
+      },
+      "0.01": {
+        "precision": 0.0465,
+        "recall": 0.2,
+        "f1": 0.0755,
+        "n_matched": 2
+      },
+      "0.02": {
+        "precision": 0.0698,
+        "recall": 0.3,
+        "f1": 0.1132,
+        "n_matched": 3
+      }
+    }
   },
   "30x50-Model-landscape": {
     "plan_id": "30x50-Model-landscape",
     "pinned_transform": {
-      "scale": 10.262803284354373,
-      "rotation_deg": -0.46534816926872524,
-      "tx": 1486.351335162714,
-      "ty": 1622.3556659580026
+      "scale": 10.26512071746118,
+      "rotation_deg": -0.46527934533924264,
+      "tx": 1496.5301105996937,
+      "ty": 1620.0388781800384
     },
     "anchor_fit_residuals_native_to_gt_mm": [
-      57.4,
-      58.9,
-      45.5,
-      45.3
+      59.1,
+      60.9,
+      56.2,
+      56.1
     ],
     "scale_cross_check": {
       "nominal_mm": [
@@ -158,184 +178,184 @@
         7120.5
       ],
       "pred_bbox_native": [
-        1183.2,
-        707.3
+        1180.6,
+        706.9
       ],
       "pinned_transform_implied_pred_envelope_mm": [
-        12143.1,
-        7258.5
+        12118.9,
+        7256.4
       ]
     },
     "n_gt_walls": 19,
-    "n_pred_walls": 118,
+    "n_pred_walls": 54,
     "per_gt_wall_verdict": [
       {
         "verdict": "MATCHED",
-        "best_pred_id": "W13",
-        "residual": 87.9,
-        "residual_frac_of_tau": 0.601,
+        "best_pred_id": "W0",
+        "residual": 85.4,
+        "residual_frac_of_tau": 0.583,
         "overlap": 0.929,
         "gt_id": "w_s102",
         "gt_length": 12796.3
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W41",
-        "residual": 804.9,
-        "residual_frac_of_tau": 5.497,
+        "best_pred_id": "W38",
+        "residual": 792.5,
+        "residual_frac_of_tau": 5.412,
         "overlap": 0.956,
         "gt_id": "w_s104",
         "gt_length": 4493.2
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W104",
-        "residual": 1158.6,
-        "residual_frac_of_tau": 7.911,
-        "overlap": 0.001,
+        "best_pred_id": "W36",
+        "residual": 1248.8,
+        "residual_frac_of_tau": 8.527,
+        "overlap": 0.002,
         "gt_id": "w_s106",
         "gt_length": 3363.4
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W94",
-        "residual": 1038.5,
-        "residual_frac_of_tau": 7.092,
-        "overlap": 0.418,
+        "best_pred_id": "W45",
+        "residual": 967.0,
+        "residual_frac_of_tau": 6.604,
+        "overlap": 0.0,
         "gt_id": "w_s108",
         "gt_length": 2601.2
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W42",
-        "residual": 232.0,
-        "residual_frac_of_tau": 1.584,
-        "overlap": 0.995,
+        "best_pred_id": "W22",
+        "residual": 246.4,
+        "residual_frac_of_tau": 1.683,
+        "overlap": 0.994,
         "gt_id": "w_s110",
         "gt_length": 9380.5
       },
       {
         "verdict": "MATCHED",
-        "best_pred_id": "W36",
-        "residual": 32.4,
-        "residual_frac_of_tau": 0.221,
+        "best_pred_id": "W23",
+        "residual": 42.7,
+        "residual_frac_of_tau": 0.291,
         "overlap": 0.991,
         "gt_id": "w_s111",
         "gt_length": 7094.4
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W89",
-        "residual": 263.2,
-        "residual_frac_of_tau": 1.797,
+        "best_pred_id": "W29",
+        "residual": 253.0,
+        "residual_frac_of_tau": 1.728,
         "overlap": 0.635,
         "gt_id": "w_s117",
         "gt_length": 2365.1
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W18",
-        "residual": 315.3,
-        "residual_frac_of_tau": 2.153,
-        "overlap": 0.349,
+        "best_pred_id": "W52",
+        "residual": 372.3,
+        "residual_frac_of_tau": 2.543,
+        "overlap": 0.004,
         "gt_id": "w_s119",
         "gt_length": 1734.3
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W108",
-        "residual": 297.1,
-        "residual_frac_of_tau": 2.029,
+        "best_pred_id": "W31",
+        "residual": 317.3,
+        "residual_frac_of_tau": 2.167,
         "overlap": 0.226,
         "gt_id": "w_s121",
         "gt_length": 2312.3
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W47",
-        "residual": 450.7,
-        "residual_frac_of_tau": 3.078,
-        "overlap": 0.002,
+        "best_pred_id": "W6",
+        "residual": 504.1,
+        "residual_frac_of_tau": 3.443,
+        "overlap": 0.0,
         "gt_id": "w_s124",
         "gt_length": 630.6
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W73",
-        "residual": 259.9,
-        "residual_frac_of_tau": 1.774,
-        "overlap": 0.209,
+        "best_pred_id": "W10",
+        "residual": 312.4,
+        "residual_frac_of_tau": 2.133,
+        "overlap": 0.581,
         "gt_id": "w_s126",
         "gt_length": 2312.5
       },
       {
-        "verdict": "MISPLACED",
-        "best_pred_id": "W104",
-        "residual": 413.2,
-        "residual_frac_of_tau": 2.822,
-        "overlap": 0.445,
+        "verdict": "ABSENT",
+        "best_pred_id": "W37",
+        "residual": 592.8,
+        "residual_frac_of_tau": 4.048,
+        "overlap": 0.778,
         "gt_id": "w_s129",
         "gt_length": 1419.9
       },
       {
-        "verdict": "MISPLACED",
-        "best_pred_id": "W64",
-        "residual": 305.7,
-        "residual_frac_of_tau": 2.088,
-        "overlap": 0.037,
+        "verdict": "ABSENT",
+        "best_pred_id": "W6",
+        "residual": 1651.1,
+        "residual_frac_of_tau": 11.275,
+        "overlap": 0.0,
         "gt_id": "w_s132",
         "gt_length": 683.9
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W3",
-        "residual": 889.9,
-        "residual_frac_of_tau": 6.077,
-        "overlap": 0.75,
+        "best_pred_id": "W8",
+        "residual": 522.5,
+        "residual_frac_of_tau": 3.568,
+        "overlap": 1.0,
         "gt_id": "w_s138",
         "gt_length": 3048.5
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W25",
-        "residual": 516.6,
-        "residual_frac_of_tau": 3.528,
-        "overlap": 0.685,
+        "best_pred_id": "W47",
+        "residual": 662.9,
+        "residual_frac_of_tau": 4.527,
+        "overlap": 0.684,
         "gt_id": "w_s142",
         "gt_length": 2611.8
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W87",
-        "residual": 160.6,
-        "residual_frac_of_tau": 1.097,
+        "best_pred_id": "W46",
+        "residual": 169.7,
+        "residual_frac_of_tau": 1.159,
         "overlap": 0.548,
         "gt_id": "w_s147",
         "gt_length": 3538.5
       },
       {
         "verdict": "FRAGMENTED",
-        "best_pred_id": "W45",
-        "residual": 89.7,
-        "residual_frac_of_tau": 0.612,
-        "overlap": 0.749,
+        "best_pred_id": "W11",
+        "residual": 82.6,
+        "residual_frac_of_tau": 0.564,
+        "overlap": 0.746,
         "gt_id": "w_s149",
         "gt_length": 3250.2
       },
       {
-        "verdict": "MISPLACED",
-        "best_pred_id": "W67",
-        "residual": 397.3,
-        "residual_frac_of_tau": 2.713,
-        "overlap": 0.004,
+        "verdict": "ABSENT",
+        "best_pred_id": "W29",
+        "residual": 685.2,
+        "residual_frac_of_tau": 4.679,
+        "overlap": 0.039,
         "gt_id": "w_s150",
         "gt_length": 1164.9
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W41",
-        "residual": 857.6,
-        "residual_frac_of_tau": 5.856,
+        "best_pred_id": "W38",
+        "residual": 854.5,
+        "residual_frac_of_tau": 5.835,
         "overlap": 0.054,
         "gt_id": "w_s152",
         "gt_length": 1004.0
@@ -343,29 +363,49 @@
     ],
     "verdict_counts": {
       "MATCHED": 2,
-      "MISPLACED": 9,
+      "MISPLACED": 6,
       "FRAGMENTED": 1,
-      "ABSENT": 7
+      "ABSENT": 10
     },
     "hungarian_matched_at_1pct": 2,
-    "hungarian_precision_1pct": 0.0169,
-    "hungarian_recall_1pct": 0.1053
+    "hungarian_precision_1pct": 0.037,
+    "hungarian_recall_1pct": 0.1053,
+    "wall_f1_by_tau": {
+      "0.005": {
+        "precision": 0.0185,
+        "recall": 0.0526,
+        "f1": 0.0274,
+        "n_matched": 1
+      },
+      "0.01": {
+        "precision": 0.037,
+        "recall": 0.1053,
+        "f1": 0.0548,
+        "n_matched": 2
+      },
+      "0.02": {
+        "precision": 0.0556,
+        "recall": 0.1579,
+        "f1": 0.0822,
+        "n_matched": 3
+      }
+    }
   },
   "30x50-Model-landscape_ORIGINAL_6POINT_FOR_COMPARISON": {
     "plan_id": "30x50-Model-landscape",
     "pinned_transform": {
-      "scale": 9.70673455011048,
-      "rotation_deg": 2.3471126208315725,
-      "tx": 1836.4823846048075,
-      "ty": 1639.7402096194219
+      "scale": 9.70116592262825,
+      "rotation_deg": 2.3406131183370116,
+      "tx": 1846.0775679434973,
+      "ty": 1642.9535033652082
     },
     "anchor_fit_residuals_native_to_gt_mm": [
-      117.2,
-      1557.1,
-      93.0,
-      485.9,
-      430.6,
-      1777.5
+      122.9,
+      1556.5,
+      84.3,
+      494.9,
+      428.5,
+      1780.0
     ],
     "scale_cross_check": {
       "nominal_mm": [
@@ -377,197 +417,217 @@
         7120.5
       ],
       "pred_bbox_native": [
-        1183.2,
-        707.3
+        1180.6,
+        706.9
       ],
       "pinned_transform_implied_pred_envelope_mm": [
-        11485.2,
-        6865.2
+        11453.1,
+        6857.7
       ]
     },
     "n_gt_walls": 19,
-    "n_pred_walls": 118,
+    "n_pred_walls": 54,
     "per_gt_wall_verdict": [
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W13",
-        "residual": 327.2,
-        "residual_frac_of_tau": 2.235,
+        "best_pred_id": "W0",
+        "residual": 330.8,
+        "residual_frac_of_tau": 2.259,
         "overlap": 0.877,
         "gt_id": "w_s102",
         "gt_length": 12796.3
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W41",
-        "residual": 1471.2,
-        "residual_frac_of_tau": 10.046,
+        "best_pred_id": "W38",
+        "residual": 1469.9,
+        "residual_frac_of_tau": 10.037,
         "overlap": 0.876,
         "gt_id": "w_s104",
         "gt_length": 4493.2
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W104",
-        "residual": 1035.3,
-        "residual_frac_of_tau": 7.07,
-        "overlap": 0.007,
+        "best_pred_id": "W37",
+        "residual": 1421.6,
+        "residual_frac_of_tau": 9.708,
+        "overlap": 0.039,
         "gt_id": "w_s106",
         "gt_length": 3363.4
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W40",
-        "residual": 1184.0,
-        "residual_frac_of_tau": 8.085,
+        "best_pred_id": "W36",
+        "residual": 1183.2,
+        "residual_frac_of_tau": 8.08,
         "overlap": 0.0,
         "gt_id": "w_s108",
         "gt_length": 2601.2
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W42",
-        "residual": 263.2,
-        "residual_frac_of_tau": 1.798,
+        "best_pred_id": "W22",
+        "residual": 275.2,
+        "residual_frac_of_tau": 1.88,
         "overlap": 1.0,
         "gt_id": "w_s110",
         "gt_length": 9380.5
       },
       {
-        "verdict": "MATCHED",
-        "best_pred_id": "W36",
-        "residual": 142.6,
-        "residual_frac_of_tau": 0.974,
+        "verdict": "MISPLACED",
+        "best_pred_id": "W23",
+        "residual": 148.8,
+        "residual_frac_of_tau": 1.016,
         "overlap": 0.936,
         "gt_id": "w_s111",
         "gt_length": 7094.4
       },
       {
-        "verdict": "MISPLACED",
-        "best_pred_id": "W28",
-        "residual": 275.0,
-        "residual_frac_of_tau": 1.878,
-        "overlap": 0.523,
+        "verdict": "ABSENT",
+        "best_pred_id": "W29",
+        "residual": 596.4,
+        "residual_frac_of_tau": 4.073,
+        "overlap": 0.549,
         "gt_id": "w_s117",
         "gt_length": 2365.1
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W106",
-        "residual": 314.6,
-        "residual_frac_of_tau": 2.149,
+        "best_pred_id": "W52",
+        "residual": 314.9,
+        "residual_frac_of_tau": 2.15,
         "overlap": 0.01,
         "gt_id": "w_s119",
         "gt_length": 1734.3
       },
       {
-        "verdict": "MISPLACED",
-        "best_pred_id": "W34",
-        "residual": 303.6,
-        "residual_frac_of_tau": 2.073,
-        "overlap": 0.589,
+        "verdict": "ABSENT",
+        "best_pred_id": "W31",
+        "residual": 446.3,
+        "residual_frac_of_tau": 3.047,
+        "overlap": 0.213,
         "gt_id": "w_s121",
         "gt_length": 2312.3
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W58",
-        "residual": 411.9,
-        "residual_frac_of_tau": 2.813,
+        "best_pred_id": "W6",
+        "residual": 410.7,
+        "residual_frac_of_tau": 2.805,
         "overlap": 0.099,
         "gt_id": "w_s124",
         "gt_length": 630.6
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W73",
-        "residual": 604.3,
-        "residual_frac_of_tau": 4.127,
-        "overlap": 0.198,
+        "best_pred_id": "W37",
+        "residual": 801.6,
+        "residual_frac_of_tau": 5.474,
+        "overlap": 0.068,
         "gt_id": "w_s126",
         "gt_length": 2312.5
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W41",
-        "residual": 533.6,
-        "residual_frac_of_tau": 3.644,
+        "best_pred_id": "W38",
+        "residual": 534.8,
+        "residual_frac_of_tau": 3.652,
         "overlap": 1.0,
         "gt_id": "w_s129",
         "gt_length": 1419.9
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W64",
-        "residual": 718.8,
-        "residual_frac_of_tau": 4.908,
+        "best_pred_id": "W37",
+        "residual": 1757.8,
+        "residual_frac_of_tau": 12.004,
         "overlap": 0.0,
         "gt_id": "w_s132",
         "gt_length": 683.9
       },
       {
-        "verdict": "ABSENT",
-        "best_pred_id": "W37",
-        "residual": 863.2,
-        "residual_frac_of_tau": 5.895,
-        "overlap": 0.007,
+        "verdict": "MISPLACED",
+        "best_pred_id": "W8",
+        "residual": 410.1,
+        "residual_frac_of_tau": 2.8,
+        "overlap": 1.0,
         "gt_id": "w_s138",
         "gt_length": 3048.5
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W25",
-        "residual": 573.2,
-        "residual_frac_of_tau": 3.914,
-        "overlap": 0.61,
+        "best_pred_id": "W47",
+        "residual": 899.3,
+        "residual_frac_of_tau": 6.141,
+        "overlap": 0.622,
         "gt_id": "w_s142",
         "gt_length": 2611.8
       },
       {
         "verdict": "MISPLACED",
-        "best_pred_id": "W87",
-        "residual": 249.4,
-        "residual_frac_of_tau": 1.703,
-        "overlap": 0.518,
+        "best_pred_id": "W46",
+        "residual": 243.8,
+        "residual_frac_of_tau": 1.665,
+        "overlap": 0.517,
         "gt_id": "w_s147",
         "gt_length": 3538.5
       },
       {
         "verdict": "FRAGMENTED",
-        "best_pred_id": "W45",
-        "residual": 130.7,
-        "residual_frac_of_tau": 0.892,
-        "overlap": 0.74,
+        "best_pred_id": "W11",
+        "residual": 140.3,
+        "residual_frac_of_tau": 0.958,
+        "overlap": 0.739,
         "gt_id": "w_s149",
         "gt_length": 3250.2
       },
       {
-        "verdict": "MISPLACED",
-        "best_pred_id": "W28",
-        "residual": 279.6,
-        "residual_frac_of_tau": 1.91,
-        "overlap": 0.594,
+        "verdict": "ABSENT",
+        "best_pred_id": "W29",
+        "residual": 771.2,
+        "residual_frac_of_tau": 5.266,
+        "overlap": 0.133,
         "gt_id": "w_s150",
         "gt_length": 1164.9
       },
       {
         "verdict": "ABSENT",
-        "best_pred_id": "W41",
-        "residual": 1132.4,
-        "residual_frac_of_tau": 7.733,
+        "best_pred_id": "W38",
+        "residual": 1131.3,
+        "residual_frac_of_tau": 7.725,
         "overlap": 0.0,
         "gt_id": "w_s152",
         "gt_length": 1004.0
       }
     ],
     "verdict_counts": {
-      "MATCHED": 1,
-      "MISPLACED": 8,
+      "MATCHED": 0,
+      "MISPLACED": 7,
       "FRAGMENTED": 1,
-      "ABSENT": 9
+      "ABSENT": 11
     },
-    "hungarian_matched_at_1pct": 1,
-    "hungarian_precision_1pct": 0.0085,
-    "hungarian_recall_1pct": 0.0526
+    "hungarian_matched_at_1pct": 0,
+    "hungarian_precision_1pct": 0.0,
+    "hungarian_recall_1pct": 0.0,
+    "wall_f1_by_tau": {
+      "0.005": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "n_matched": 0
+      },
+      "0.01": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "n_matched": 0
+      },
+      "0.02": {
+        "precision": 0.037,
+        "recall": 0.1053,
+        "f1": 0.0548,
+        "n_matched": 2
+      }
+    }
   }
 }

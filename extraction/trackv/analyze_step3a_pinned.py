@@ -114,9 +114,9 @@ def run_15x30() -> dict:
     # This is the plan's only pair of independently-plausible anchors;
     # flagged as thinner evidence than 30x50's three-anchor fit.
     src = [
-        tuple(pw["W42"]["start"]),  # top-left corner region
-        tuple(pw["W42"]["end"]),  # bottom-left corner
-        tuple(pw["W43"]["end"]),  # probable bottom-right corner
+        tuple(pw["W37"]["start"]),  # top-left corner region
+        tuple(pw["W37"]["end"]),  # bottom-left corner
+        tuple(pw["W38"]["end"]),  # probable bottom-right corner
     ]
     dst = [
         (1932.7, 2475.5),  # GT top-left corner (w_s7/w_s2 junction)
@@ -175,10 +175,10 @@ def run_30x50(clean_anchors_only: bool = True) -> dict:
     # bottom of the pred cluster, matching the same three sides in GT.
     if clean_anchors_only:
         src = [
-            tuple(pw["W13"]["start"]),  # top-left corner (from top wall)
-            tuple(pw["W36"]["start"]),  # top-left corner (from left wall) -- independent cross-check
-            tuple(pw["W36"]["end"]),  # bottom-left corner (from left wall)
-            tuple(pw["W19"]["start"]),  # bottom-left corner (from bottom wall) -- independent cross-check
+            tuple(pw["W0"]["start"]),  # top-left corner (from top wall)
+            tuple(pw["W23"]["start"]),  # top-left corner (from left wall) -- independent cross-check
+            tuple(pw["W23"]["end"]),  # bottom-left corner (from left wall)
+            tuple(pw["W22"]["start"]),  # bottom-left corner (from bottom wall) -- independent cross-check
         ]
         dst = [
             (4116.6, 4085.3),
@@ -188,9 +188,9 @@ def run_30x50(clean_anchors_only: bool = True) -> dict:
         ]
     else:
         src = [
-            tuple(pw["W13"]["start"]), tuple(pw["W13"]["end"]),  # top wall, left-to-right (x: 255.8 -> 1413.9)
-            tuple(pw["W36"]["start"]), tuple(pw["W36"]["end"]),  # left wall, top-to-bottom (y: 247.6 -> 932.8)
-            tuple(pw["W19"]["start"]), tuple(pw["W19"]["end"]),  # bottom wall, left-to-right (x: 255.7 -> 1425.4)
+            tuple(pw["W0"]["start"]), tuple(pw["W0"]["end"]),  # top wall, left-to-right (x: 255.8 -> 1413.9)
+            tuple(pw["W23"]["start"]), tuple(pw["W23"]["end"]),  # left wall, top-to-bottom (y: 247.6 -> 932.8)
+            tuple(pw["W22"]["start"]), tuple(pw["W22"]["end"]),  # bottom wall, left-to-right (x: 255.7 -> 1425.4)
         ]
         dst = [
             (4116.6, 4085.3), (16912.8, 4059.2),  # w_s102 start/end (top, left-to-right)
@@ -238,6 +238,20 @@ def _finish(plan_id, pred, gt, transform, residuals, scale_check) -> dict:
 
     m = match_walls(aligned["walls"], gt["walls"], 0.01, diagonal)
 
+    # Phase 2's own exit metric (docs/extraction-plan.md: "wall F1 >= 0.99 @
+    # tau=0.5%") plus the standard sweep (eval/metrics/engine.py's TAUS),
+    # fractional-of-diagonal per paper Appendix C -- confirmed no spec
+    # deviation earlier in this diagnostic chain.
+    wall_f1_by_tau = {}
+    for tau_frac in (0.005, 0.01, 0.02):
+        mm = match_walls(aligned["walls"], gt["walls"], tau_frac, diagonal)
+        wall_f1_by_tau[str(tau_frac)] = {
+            "precision": round(mm.precision, 4),
+            "recall": round(mm.recall, 4),
+            "f1": round(mm.f1, 4),
+            "n_matched": len(mm.pairs),
+        }
+
     return {
         "plan_id": plan_id,
         "pinned_transform": {
@@ -255,6 +269,7 @@ def _finish(plan_id, pred, gt, transform, residuals, scale_check) -> dict:
         "hungarian_matched_at_1pct": len(m.pairs),
         "hungarian_precision_1pct": round(m.precision, 4),
         "hungarian_recall_1pct": round(m.recall, 4),
+        "wall_f1_by_tau": wall_f1_by_tau,
     }
 
 
