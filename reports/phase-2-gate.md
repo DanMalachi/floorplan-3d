@@ -66,3 +66,28 @@ Stroke-width clustering, wall-face pairing/centerline recovery, filled-polygon m
 ## Disposition
 
 Durable artifacts from this milestone: this report, `extraction/trackv/{primitives,dissect,coverage,run_corpus}.py` + tests, `extraction/trackv/out/coverage_results.json`, `extraction/trackv/out/matterport_band_crop.png`. Commits on `phase-2-trackv`: `48becb5`, `16310f6`, `d7581b0`, `fd60927`, plus this report's post-review revision. **Merge approved by Dan** after the Matterport routing correction and the milestone-2 priority note above. No further Track V work started this session (milestone 2 — stroke-width clustering / centerline recovery, now gated on the subpath-flattening fix first — explicitly not begun, per instruction).
+
+## Milestone 2, step 1 — subpath-flattening fix landed
+
+Branch `phase-2-trackv-m2` (worktree `fp-phase2`, forked from `main` @ `7f53273`). Fixes exactly the bug flagged above, nothing else (stroke-width clustering, centerline recovery, medial-axis, layer/color classification, and VLM calls are explicitly out of scope for this step and not started).
+
+**Fix:** `VectorPrimitive` now carries `subpaths: list[list[Segment]]` (one entry per contour) instead of a single flattened point list. `dissect.py`'s `_extract_subpaths` splits a drawing's raw `items` on point-discontinuity — PyMuPDF emits no explicit move-to marker between subpaths, confirmed directly against the real Matterport PDF's raw items (7 genuine gaps, largest 23.7pt, zero float-rounding false positives at the sub-hundredth-point level). Segments keep their real op (`"l"`/`"c"`) instead of collapsing a multi-curve subpath into one spurious 4-point bezier, since the real watermark glyphs interleave line and curve ops within a single subpath (also confirmed directly against the corpus file). `coverage.py`'s redraw now walks each subpath independently, closes each one on its own rather than only the drawing's last, and propagates the source's `even_odd` fill-rule bit so a hole renders as a hole rather than a solid overfill.
+
+**Corrected coverage, re-running `run_corpus.py`:**
+
+| plan_id | coverage before | coverage after | routes_to before | routes_to after |
+|---|---|---|---|---|
+| `Matterport Sample_BW` | 93.56% | **100.0%** | track_r | **track_v** |
+| `15x30-ft-Best-House-Plan-Model` | 99.83% | 100.0% | track_v | track_v |
+| `20x45-Model` | 100.0% | 100.0% | track_v | track_v |
+| `30x50-Model-landscape` | 99.87% | 100.0% | track_v | track_v |
+
+No regression on the three already-vector plans; all three genuine vector plans and Matterport now score exactly 100%. Full sweep in `extraction/trackv/out/coverage_results.json`.
+
+**Registry ruling this unblocks (Dan's call, `eval/` untouched here):** Matterport's routing recorded in this report's milestone-1 section as "track_v, pending subpath-flattening fix" should now read plain **`track_v`** — the fix has landed and cleared the bar outright (100%, not just the 96.77% watermark-excluded estimate). This is the durable source for that registry edit, same discipline as the `7f53273` ruling.
+
+**Regression test:** `extraction/trackv/tests/test_compound_paths.py`, two fixtures — a pure-line rect-with-hole and a glyph-like hole mixing line/curve segments (matching Matterport's real op profile). Both assert the dissected primitive keeps 2 distinct subpaths and round-trips at ≥98% coverage under the new code. Checked directly against the pre-fix code (pulled from `HEAD`, run standalone, not committed): the pure-line fixture still fills fully under old flattening — a self-intersecting overfill happens not to reduce the coverage ratio, so it isn't a discriminator by itself — but the mixed line/curve fixture drops to **44.63% coverage, routes_to=track_r** under old code. That's the fixture that actually proves subpath preservation is what fixed this, not just green tests.
+
+**Commits on `phase-2-trackv-m2`:** `64fc5d2` (core fix), `f7b0891` (adapt existing dilation-offset fixture to the new field), `5de6d40` (new compound-path regression test), `269ce00` (re-run corpus sweep). **Merge approved by Dan.**
+
+**Design note carried into milestone 2, step 2 (stroke-width clustering → parallel-pair centerline+thickness recovery, fresh session, own plan + STOP):** consumers now see `subpaths: list[list[Segment]]` with mixed `"l"`/`"c"` ops and a fill-rule bit, not a flat point list. Clustering and centerline recovery need to handle curve segments and multi-contour paths (the wall-with-courtyard case) from the start — design for this representation, don't assume polylines. This is the seam step 2 is most likely to trip on.
