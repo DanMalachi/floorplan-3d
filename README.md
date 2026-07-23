@@ -9,8 +9,7 @@ no plan-specific tuning, so the user can trust the generated home without
 verifying every wall, door, and window. Perception is the current bottleneck to a
 magical product, not the product itself; the technology stays invisible.
 
-![3D view of an uploaded floorplan, furnished, ceiling removed](<img width="1268" height="898" alt="Screenshot 2026-07-23 134034" src="https://github.com/user-attachments/assets/ce6e25bb-5717-444c-b16e-220790a4d665" />
-)
+![Cutaway 3D view of a furnished apartment](docs/media/hero-3d-view.png)
 
 📖 **See [`docs/VISION.md`](docs/VISION.md) for the full project vision — why the
 design experience is the destination and automatic understanding is the current
@@ -28,9 +27,7 @@ justified against it.
 
 | Walkthrough mode | Material / paint catalog |
 |---|---|
-| ![First-person walkthrough of a furnished room]<img width="1271" height="901" alt="Screenshot 2026-07-23 134317" src="https://github.com/user-attachments/assets/d34a957a-0c01-49c2-b0b0-372f6cd1da5c" />
-) | ![Paint color catalog panel](<img width="1264" height="901" alt="Screenshot 2026-07-23 134614" src="https://github.com/user-attachments/assets/d798c605-b58d-4137-8be5-39752551b249" />
-) |
+| ![First-person walkthrough of a furnished room](docs/media/walkthrough.png) | ![Paint color catalog panel](docs/media/paint-catalog.png) |
 
 ## Documentation
 
