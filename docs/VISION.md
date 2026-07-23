@@ -2,7 +2,7 @@
 
 > This is the north star for the project. Every architectural and research
 > decision should be justified against it. It sits **above** the tactical
-> docs (`perception-data-strategy.md`, `technical-summary.md`, etc.) — those
+> docs (`perception-data-strategy.md`, `extraction-plan.md`, etc.) — those
 > describe *how we are currently pursuing* this goal, not the goal itself.
 
 ## The vision (this never changes)
