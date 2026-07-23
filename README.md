@@ -32,8 +32,8 @@ justified against it.
 ## Documentation
 
 - [`docs/VISION.md`](docs/VISION.md) — north star: why this is a design-experience product, not a floorplan parser
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the reasoning-engine architecture behind the understanding pipeline
-- [`docs/technical-summary.md`](docs/technical-summary.md) — how tracing and understanding actually work today
+- [`docs/paper.md`](docs/paper.md) — technical blueprint behind the extraction pipeline
+- [`docs/extraction-plan.md`](docs/extraction-plan.md) — phase-by-phase execution plan and current status
 - [`CLAUDE.md`](CLAUDE.md) — the working rules this project is built under (phase gates, frozen contracts, protected paths)
 
 ## Getting started
