@@ -9,46 +9,54 @@ no plan-specific tuning, so the user can trust the generated home without
 verifying every wall, door, and window. Perception is the current bottleneck to a
 magical product, not the product itself; the technology stays invisible.
 
+![3D view of an uploaded floorplan, furnished, ceiling removed](docs/media/hero-3d-view.jpg)
+
 📖 **See [`docs/VISION.md`](docs/VISION.md) for the full project vision — why the
 design experience is the destination and automatic understanding is the current
-bottleneck.** That document is the north star; every architectural decision is
+bottleneck.**  That document is the north star; every architectural decision is
 justified against it.
 
----
+## What's here
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+- A **Next.js / React Three Fiber** app: upload or trace a floorplan, edit it in
+  2D, and render/walk it in 3D — walls, openings, furniture (a real IKEA
+  catalog), paint, and floors — with live multi-user co-editing.
+- A **ground-up rebuild of the floorplan-understanding pipeline** (Python), built
+  phase-by-phase against a held-out benchmark rather than tuned per plan. This is
+  the active R&D surface of the project.
 
-## Getting Started
+| Walkthrough mode | Material / paint catalog |
+|---|---|
+| ![First-person walkthrough of a furnished room](docs/media/walkthrough.jpg) | ![Paint color catalog panel](docs/media/paint-catalog.jpg) |
 
-First, run the development server:
+## Documentation
+
+- [`docs/VISION.md`](docs/VISION.md) — north star: why this is a design-experience product, not a floorplan parser
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the reasoning-engine architecture behind the understanding pipeline
+- [`docs/technical-summary.md`](docs/technical-summary.md) — how tracing and understanding actually work today
+- [`CLAUDE.md`](CLAUDE.md) — the working rules this project is built under (phase gates, frozen contracts, protected paths)
+
+## Getting started
+
+The product (Next.js app):
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The extraction/understanding pipeline (Python, standalone service, consumed by
+the app through a JSON contract — see [`CLAUDE.md`](CLAUDE.md) for the full
+repo map):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pip install -r extraction/requirements.txt
+python -m eval.cli run
+```
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All rights reserved. Source is visible for portfolio purposes; no license is
+granted for reuse or redistribution.
