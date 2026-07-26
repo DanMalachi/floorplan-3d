@@ -436,6 +436,20 @@ def compute_conditional_clean_rate(n=300):
         src_clean = check_plan(p)["clean_at_source"]
         _, stats = convert_plan(p)
         conv_clean = bool(stats.get("clean"))
+        # Containment invariant (verified 2026-07-26: 135/135 converter-clean
+        # plans were also clean_at_source, post-notch-suppression): you cannot
+        # cleanly CONVERT a plan whose source isn't clean_at_source in the
+        # first place -- conversion only adds lossy steps (skeletonization,
+        # wall_cycle assembly, offset calibration) on top of the raw source,
+        # never repairs it. If this ever fires, one of the two measures
+        # (check_plan's or convert_plan's own clean definition) has drifted
+        # out of sync with the other -- surface it immediately, don't let it
+        # silently inflate a future conditional-rate measurement.
+        assert not conv_clean or src_clean, (
+            f"containment invariant violated: plan {p.get('id')} is "
+            f"converter_clean but not clean_at_source -- check_plan and "
+            f"convert_plan's clean definitions have diverged"
+        )
         if src_clean:
             n_clean_at_source += 1
         if conv_clean:
