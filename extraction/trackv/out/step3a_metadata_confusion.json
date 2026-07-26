@@ -1,0 +1,1169 @@
+{
+  "labeled": {
+    "plan_id": "30x50-Model-landscape",
+    "n_candidates": 54,
+    "n_gt_walls": 19,
+    "gt_diagonal_mm": 14644.0,
+    "anchor_guard": {
+      "recorded_residuals_mm": [
+        59.1,
+        60.9,
+        56.2,
+        56.1
+      ],
+      "reproduced_residuals_mm": [
+        59.1,
+        60.9,
+        56.2,
+        56.1
+      ],
+      "max_drift_mm": 0.04,
+      "tolerance_mm": 5.0,
+      "passed": true
+    },
+    "labeling_rule": {
+      "orientation_tolerance_deg": 15.0,
+      "min_overlap_fraction_of_candidate": 0.5,
+      "note": "NOT matching.py's Hungarian criterion -- a fragment covering part of a real GT wall counts as REAL evidence; SPURIOUS means it lies on no GT wall at all."
+    },
+    "partition_f1_ceiling": {
+      "layer": {
+        "channel": "layer",
+        "bucket_sizes": {
+          "None": 54
+        },
+        "n_candidates": 54,
+        "n_gt_walls": 19,
+        "best_possible": {
+          "f1_ceiling": 0.5205,
+          "selection_size": 54,
+          "values_kept": [
+            "None"
+          ]
+        },
+        "exit_bar": 0.99,
+        "can_reach_exit_bar": false
+      },
+      "stroke_color": {
+        "channel": "stroke_color",
+        "bucket_sizes": {
+          "#000000": 50,
+          "MIXED(#000000|#ff0000)": 2,
+          "MIXED(#000000|#a57c00|#ff0000)": 1,
+          "MIXED(#000000|#a57c00)": 1
+        },
+        "n_candidates": 54,
+        "n_gt_walls": 19,
+        "best_possible": {
+          "f1_ceiling": 0.5507,
+          "selection_size": 50,
+          "values_kept": [
+            "#000000"
+          ]
+        },
+        "exit_bar": 0.99,
+        "can_reach_exit_bar": false
+      },
+      "fill_color": {
+        "channel": "fill_color",
+        "bucket_sizes": {
+          "none": 54
+        },
+        "n_candidates": 54,
+        "n_gt_walls": 19,
+        "best_possible": {
+          "f1_ceiling": 0.5205,
+          "selection_size": 54,
+          "values_kept": [
+            "none"
+          ]
+        },
+        "exit_bar": 0.99,
+        "can_reach_exit_bar": false
+      },
+      "stroke_width": {
+        "channel": "stroke_width",
+        "bucket_sizes": {
+          "0.72": 54
+        },
+        "n_candidates": 54,
+        "n_gt_walls": 19,
+        "best_possible": {
+          "f1_ceiling": 0.5205,
+          "selection_size": 54,
+          "values_kept": [
+            "0.72"
+          ]
+        },
+        "exit_bar": 0.99,
+        "can_reach_exit_bar": false
+      },
+      "dashes": {
+        "channel": "dashes",
+        "bucket_sizes": {
+          "[] 0": 54
+        },
+        "n_candidates": 54,
+        "n_gt_walls": 19,
+        "best_possible": {
+          "f1_ceiling": 0.5205,
+          "selection_size": 54,
+          "values_kept": [
+            "[] 0"
+          ]
+        },
+        "exit_bar": 0.99,
+        "can_reach_exit_bar": false
+      }
+    },
+    "by_tau": {
+      "0.005": {
+        "tau_frac": 0.005,
+        "tau_mm": 73.2,
+        "sanity": {
+          "n_real": 5,
+          "n_spurious": 49,
+          "n_gt_walls": 19,
+          "n_gt_walls_with_at_least_one_real_candidate": 5,
+          "gt_walls_with_no_candidate": [
+            "w_s104",
+            "w_s106",
+            "w_s108",
+            "w_s117",
+            "w_s119",
+            "w_s121",
+            "w_s124",
+            "w_s126",
+            "w_s129",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s150",
+            "w_s152"
+          ]
+        },
+        "gt_coverage": 0.263,
+        "labels_trustworthy": false,
+        "void_reason": "only 5/19 GT walls have any candidate lying on them (bar: 90%); SPURIOUS here conflates 'not a wall' with 'displaced by coordinate-frame error' -- matrix not reportable as evidence"
+      },
+      "0.01": {
+        "tau_frac": 0.01,
+        "tau_mm": 146.4,
+        "sanity": {
+          "n_real": 6,
+          "n_spurious": 48,
+          "n_gt_walls": 19,
+          "n_gt_walls_with_at_least_one_real_candidate": 6,
+          "gt_walls_with_no_candidate": [
+            "w_s104",
+            "w_s106",
+            "w_s108",
+            "w_s117",
+            "w_s119",
+            "w_s121",
+            "w_s124",
+            "w_s129",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s150",
+            "w_s152"
+          ]
+        },
+        "gt_coverage": 0.316,
+        "labels_trustworthy": false,
+        "void_reason": "only 6/19 GT walls have any candidate lying on them (bar: 90%); SPURIOUS here conflates 'not a wall' with 'displaced by coordinate-frame error' -- matrix not reportable as evidence",
+        "confusion": {
+          "layer": {
+            "channel": "layer",
+            "n_distinct_values": 1,
+            "n_candidates_mixed": 0,
+            "table": [
+              {
+                "value": "None",
+                "REAL": 6,
+                "SPURIOUS": 48,
+                "n": 54,
+                "purity": 0.8889,
+                "majority": "SPURIOUS"
+              }
+            ],
+            "separates_cleanly": false,
+            "verdict": "DEAD (single value across the whole population -- no information)"
+          },
+          "stroke_color": {
+            "channel": "stroke_color",
+            "n_distinct_values": 4,
+            "n_candidates_mixed": 4,
+            "table": [
+              {
+                "value": "#000000",
+                "REAL": 4,
+                "SPURIOUS": 46,
+                "n": 50,
+                "purity": 0.92,
+                "majority": "SPURIOUS"
+              },
+              {
+                "value": "MIXED(#000000|#ff0000)",
+                "REAL": 2,
+                "SPURIOUS": 0,
+                "n": 2,
+                "purity": 1.0,
+                "majority": "REAL"
+              },
+              {
+                "value": "MIXED(#000000|#a57c00|#ff0000)",
+                "REAL": 0,
+                "SPURIOUS": 1,
+                "n": 1,
+                "purity": 1.0,
+                "majority": "SPURIOUS"
+              },
+              {
+                "value": "MIXED(#000000|#a57c00)",
+                "REAL": 0,
+                "SPURIOUS": 1,
+                "n": 1,
+                "purity": 1.0,
+                "majority": "SPURIOUS"
+              }
+            ],
+            "separates_cleanly": false,
+            "verdict": "PARTIAL (no value is class-pure)"
+          },
+          "fill_color": {
+            "channel": "fill_color",
+            "n_distinct_values": 1,
+            "n_candidates_mixed": 0,
+            "table": [
+              {
+                "value": "none",
+                "REAL": 6,
+                "SPURIOUS": 48,
+                "n": 54,
+                "purity": 0.8889,
+                "majority": "SPURIOUS"
+              }
+            ],
+            "separates_cleanly": false,
+            "verdict": "DEAD (single value across the whole population -- no information)"
+          },
+          "stroke_width": {
+            "channel": "stroke_width",
+            "n_distinct_values": 1,
+            "n_candidates_mixed": 0,
+            "table": [
+              {
+                "value": "0.72",
+                "REAL": 6,
+                "SPURIOUS": 48,
+                "n": 54,
+                "purity": 0.8889,
+                "majority": "SPURIOUS"
+              }
+            ],
+            "separates_cleanly": false,
+            "verdict": "DEAD (single value across the whole population -- no information)"
+          },
+          "dashes": {
+            "channel": "dashes",
+            "n_distinct_values": 1,
+            "n_candidates_mixed": 0,
+            "table": [
+              {
+                "value": "[] 0",
+                "REAL": 6,
+                "SPURIOUS": 48,
+                "n": 54,
+                "purity": 0.8889,
+                "majority": "SPURIOUS"
+              }
+            ],
+            "separates_cleanly": false,
+            "verdict": "DEAD (single value across the whole population -- no information)"
+          }
+        },
+        "seqno_distribution": {
+          "REAL": {
+            "n": 6,
+            "min": 9052,
+            "p25": 9063,
+            "median": 9073,
+            "p75": 11486,
+            "max": 11506
+          },
+          "SPURIOUS": {
+            "n": 48,
+            "min": 0,
+            "p25": 11487,
+            "median": 11540,
+            "p75": 16621,
+            "max": 17129
+          }
+        },
+        "per_candidate": [
+          {
+            "id": "W0",
+            "label": "REAL",
+            "best_gt": "w_s102",
+            "length_mm": 11888.2,
+            "stroke_color": "MIXED(#000000|#ff0000)",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11506,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W1",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 9318.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11508,
+            "seqno_max": 37335
+          },
+          {
+            "id": "W2",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 2145.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16646,
+            "seqno_max": 16847
+          },
+          {
+            "id": "W3",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 3202.3,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11517,
+            "seqno_max": 16839
+          },
+          {
+            "id": "W4",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 6277.9,
+            "stroke_color": "MIXED(#000000|#a57c00|#ff0000)",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9061,
+            "seqno_max": 37327
+          },
+          {
+            "id": "W5",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 3202.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11520,
+            "seqno_max": 16835
+          },
+          {
+            "id": "W6",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1333.1,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9069,
+            "seqno_max": 11513
+          },
+          {
+            "id": "W7",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1352.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16831,
+            "seqno_max": 16836
+          },
+          {
+            "id": "W8",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 7383.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11512,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W9",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1376.5,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11509,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W10",
+            "label": "REAL",
+            "best_gt": "w_s126",
+            "length_mm": 2476.3,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9063,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W11",
+            "label": "REAL",
+            "best_gt": "w_s149",
+            "length_mm": 2545.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9071,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W12",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 3318.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9064,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W13",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 390.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 13146,
+            "seqno_max": 13149
+          },
+          {
+            "id": "W14",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 484.5,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11625,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W15",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 3866.8,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9056,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W16",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1375.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16872,
+            "seqno_max": 17090
+          },
+          {
+            "id": "W17",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 330.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 12417,
+            "seqno_max": 12422
+          },
+          {
+            "id": "W18",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 7180.3,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9060,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W19",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1352.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 17092,
+            "seqno_max": 17095
+          },
+          {
+            "id": "W20",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 571.1,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11619,
+            "seqno_max": 11848
+          },
+          {
+            "id": "W21",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 6648.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9054,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W22",
+            "label": "REAL",
+            "best_gt": "w_s110",
+            "length_mm": 12007.5,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9052,
+            "seqno_max": 37314
+          },
+          {
+            "id": "W23",
+            "label": "REAL",
+            "best_gt": "w_s111",
+            "length_mm": 7033.7,
+            "stroke_color": "MIXED(#000000|#ff0000)",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9073,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W24",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 970.8,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 17129,
+            "seqno_max": 17130
+          },
+          {
+            "id": "W25",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 968.5,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9077,
+            "seqno_max": 9078
+          },
+          {
+            "id": "W26",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 5354.6,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16621,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W27",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 5368.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9076,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W28",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 5375.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9079,
+            "seqno_max": 17119
+          },
+          {
+            "id": "W29",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1549.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11487,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W30",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1939.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11489,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W31",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 522.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11629,
+            "seqno_max": 11719
+          },
+          {
+            "id": "W32",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 4817.1,
+            "stroke_color": "MIXED(#000000|#a57c00)",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11631,
+            "seqno_max": 17930
+          },
+          {
+            "id": "W33",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1142.2,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 12146,
+            "seqno_max": 12343
+          },
+          {
+            "id": "W34",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 2052.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11498,
+            "seqno_max": 12223
+          },
+          {
+            "id": "W35",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 4551.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11499,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W36",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 968.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9050,
+            "seqno_max": 37336
+          },
+          {
+            "id": "W37",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 3335.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 9045,
+            "seqno_max": 37346
+          },
+          {
+            "id": "W38",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 4304.5,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 0,
+            "seqno_max": 37314
+          },
+          {
+            "id": "W39",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1376.3,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16838,
+            "seqno_max": 16873
+          },
+          {
+            "id": "W40",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1352.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 17086,
+            "seqno_max": 17091
+          },
+          {
+            "id": "W41",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1352.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16837,
+            "seqno_max": 16840
+          },
+          {
+            "id": "W42",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1206.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11510,
+            "seqno_max": 11519
+          },
+          {
+            "id": "W43",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 522.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 12003,
+            "seqno_max": 12005
+          },
+          {
+            "id": "W44",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 423.7,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11807,
+            "seqno_max": 12411
+          },
+          {
+            "id": "W45",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 395.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11540,
+            "seqno_max": 11557
+          },
+          {
+            "id": "W46",
+            "label": "REAL",
+            "best_gt": "w_s147",
+            "length_mm": 1939.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11486,
+            "seqno_max": 11493
+          },
+          {
+            "id": "W47",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1934.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11494,
+            "seqno_max": 11496
+          },
+          {
+            "id": "W48",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1151.3,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16622,
+            "seqno_max": 16634
+          },
+          {
+            "id": "W49",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1102.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16889,
+            "seqno_max": 16890
+          },
+          {
+            "id": "W50",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1088.4,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11501,
+            "seqno_max": 11539
+          },
+          {
+            "id": "W51",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 1058.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16632,
+            "seqno_max": 16635
+          },
+          {
+            "id": "W52",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 524.1,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 16607,
+            "seqno_max": 16608
+          },
+          {
+            "id": "W53",
+            "label": "SPURIOUS",
+            "best_gt": null,
+            "length_mm": 522.0,
+            "stroke_color": "#000000",
+            "dashes": "[] 0",
+            "stroke_width": "0.72",
+            "seqno_min": 11992,
+            "seqno_max": 11994
+          }
+        ]
+      },
+      "0.02": {
+        "tau_frac": 0.02,
+        "tau_mm": 292.9,
+        "sanity": {
+          "n_real": 9,
+          "n_spurious": 45,
+          "n_gt_walls": 19,
+          "n_gt_walls_with_at_least_one_real_candidate": 8,
+          "gt_walls_with_no_candidate": [
+            "w_s104",
+            "w_s106",
+            "w_s108",
+            "w_s119",
+            "w_s124",
+            "w_s129",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s150",
+            "w_s152"
+          ]
+        },
+        "gt_coverage": 0.421,
+        "labels_trustworthy": false,
+        "void_reason": "only 8/19 GT walls have any candidate lying on them (bar: 90%); SPURIOUS here conflates 'not a wall' with 'displaced by coordinate-frame error' -- matrix not reportable as evidence"
+      }
+    },
+    "frame_contamination_evidence": {
+      "SUMMARY": "Walls are DETECTED but laterally DISPLACED: most GT walls have an orientation- and overlap-compatible candidate, yet few clear the lateral bound, and the displacement is strongly x-heavy. Two specific mechanisms were tested and BOTH came back negative -- see lateral_vs_anchor_distance_correlation (local-fit-degrading-with-distance) and x_displacement_scale_signature (wrong uniform x scale). The mechanism is therefore NOT established here; what is established is that the labels built on this frame are void.",
+      "x_displacement_scale_signature": {
+        "n_walls": 9,
+        "correlation_offset_vs_gt_x": 0.14,
+        "slope_mm_per_mm": 0.0391,
+        "envelope_x_error_frac_for_comparison": 0.0529
+      },
+      "per_gt_wall_lateral_offset": [
+        {
+          "gt_id": "w_s102",
+          "best_candidate": "W0",
+          "lateral_mm": 37.7,
+          "overlap": 1.0,
+          "anchor_distance_mm": 6398.1,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s104",
+          "best_candidate": "W38",
+          "lateral_mm": 791.3,
+          "overlap": 0.998,
+          "anchor_distance_mm": 12974.5,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s106",
+          "best_candidate": "W10",
+          "lateral_mm": 1372.7,
+          "overlap": 0.548,
+          "anchor_distance_mm": 11372.8,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s108",
+          "best_candidate": "W50",
+          "lateral_mm": 985.0,
+          "overlap": 1.0,
+          "anchor_distance_mm": 9477.4,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s110",
+          "best_candidate": "W22",
+          "lateral_mm": 41.1,
+          "overlap": 0.777,
+          "anchor_distance_mm": 4690.3,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s111",
+          "best_candidate": "W23",
+          "lateral_mm": 40.7,
+          "overlap": 1.0,
+          "anchor_distance_mm": 3547.2,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s117",
+          "best_candidate": "W29",
+          "lateral_mm": 181.9,
+          "overlap": 0.968,
+          "anchor_distance_mm": 3462.8,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s119",
+          "best_candidate": "W42",
+          "lateral_mm": 3438.2,
+          "overlap": 1.0,
+          "anchor_distance_mm": 4738.8,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s121",
+          "best_candidate": "W31",
+          "lateral_mm": 159.0,
+          "overlap": 1.0,
+          "anchor_distance_mm": 5111.0,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s124",
+          "best_candidate": null,
+          "lateral_mm": null,
+          "anchor_distance_mm": null
+        },
+        {
+          "gt_id": "w_s126",
+          "best_candidate": "W10",
+          "lateral_mm": 73.6,
+          "overlap": 0.542,
+          "anchor_distance_mm": 11004.8,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s129",
+          "best_candidate": "W36",
+          "lateral_mm": 1574.9,
+          "overlap": 0.999,
+          "anchor_distance_mm": 11569.7,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s132",
+          "best_candidate": null,
+          "lateral_mm": null,
+          "anchor_distance_mm": null
+        },
+        {
+          "gt_id": "w_s138",
+          "best_candidate": "W13",
+          "lateral_mm": 1481.5,
+          "overlap": 1.0,
+          "anchor_distance_mm": 6992.2,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s142",
+          "best_candidate": "W47",
+          "lateral_mm": 627.4,
+          "overlap": 0.924,
+          "anchor_distance_mm": 5142.1,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s147",
+          "best_candidate": "W46",
+          "lateral_mm": 52.2,
+          "overlap": 1.0,
+          "anchor_distance_mm": 3711.8,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s149",
+          "best_candidate": "W11",
+          "lateral_mm": 7.5,
+          "overlap": 0.952,
+          "anchor_distance_mm": 3899.3,
+          "gt_orientation": "horizontal",
+          "displaced_along": "y"
+        },
+        {
+          "gt_id": "w_s150",
+          "best_candidate": "W33",
+          "lateral_mm": 3759.0,
+          "overlap": 0.721,
+          "anchor_distance_mm": 4395.2,
+          "gt_orientation": "vertical",
+          "displaced_along": "x"
+        },
+        {
+          "gt_id": "w_s152",
+          "best_candidate": null,
+          "lateral_mm": null,
+          "anchor_distance_mm": null
+        }
+      ],
+      "n_gt_walls_with_an_orientation_and_overlap_compatible_candidate": 16,
+      "lateral_vs_anchor_distance_correlation": 0.063,
+      "lateral_offset_by_displacement_axis": {
+        "x": {
+          "n": 9,
+          "min_mm": 40.7,
+          "median_mm": 627.4,
+          "max_mm": 3759.0
+        },
+        "y": {
+          "n": 7,
+          "min_mm": 7.5,
+          "median_mm": 73.6,
+          "max_mm": 3438.2
+        }
+      },
+      "envelope_anisotropy": {
+        "pred_envelope_mm": [
+          12119.4,
+          7158.6
+        ],
+        "gt_bbox_mm": [
+          12796.2,
+          7120.5
+        ],
+        "x_error_pct": -5.29,
+        "y_error_pct": 0.54
+      }
+    }
+  },
+  "availability_only": {
+    "plan_id": "15x30-ft-Best-House-Plan-Model",
+    "n_candidates": 43,
+    "note": "label-free: 15x30's pinned transform is 3-6 tau (handoff Blocker 2), so its candidates are not labeled against GT here.",
+    "channels": {
+      "layer": {
+        "n_distinct_values": 1,
+        "counts": {
+          "None": 43
+        }
+      },
+      "stroke_color": {
+        "n_distinct_values": 2,
+        "counts": {
+          "#000000": 39,
+          "MIXED(#000000|#ff0000)": 4
+        }
+      },
+      "fill_color": {
+        "n_distinct_values": 1,
+        "counts": {
+          "none": 43
+        }
+      },
+      "stroke_width": {
+        "n_distinct_values": 1,
+        "counts": {
+          "0.72": 43
+        }
+      },
+      "dashes": {
+        "n_distinct_values": 1,
+        "counts": {
+          "[] 0": 43
+        }
+      }
+    }
+  }
+}
