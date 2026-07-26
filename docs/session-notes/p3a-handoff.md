@@ -1,4 +1,4 @@
-# Phase 3a session handoff — updated 2026-07-21
+# Phase 3a session handoff — updated 2026-07-26
 
 Branch: `phase-3a-renderer` (worktree `fp-phase3a`, terminal B per
 `docs/extraction-plan.md`'s two-terminal table). The 2026-07-19 session
@@ -9,6 +9,135 @@ diagnostic (`diagnose_cycle_unrepairable.py`) surfaced, then fixed a QA
 script bug in `diagnose_clean_rate.py` that had been hiding a second,
 same-sized failure mode (`broken_room_cycle` on required rooms) behind
 "uncategorized". The renderer (deliverable 2) has still not been started.
+Auditing of the notch-suppression/`classify()` diagnostic layer is now
+DONE (2026-07-22 through 2026-07-26 sessions) — see "2026-07-26 session"
+below for the current numbers and **read the standing discipline rule
+immediately below first**, it's the reason this session's own bugs got
+caught before being reported.
+
+## Standing discipline, adopted 2026-07-26 — read this before trusting any new QA number
+
+**Pattern across this phase's diagnostic history**: three defects have now
+been found in this phase's *measurement/QA code*
+(`_edge_covered`'s unclamped overlap sum; `classify()`'s original
+single-condition `opening_coverage>=0.8` notch cliff with no shape check;
+this session's own search-radius-reused-for-an-area-overlap-question bug in
+`size_diagonal_wall_mismatch.py`) — and **zero** in the converter itself
+(`rooms.py`/`skeleton.py` have been stable since the 2026-07-20 corner-mitre
+fix). The error mass lives in the QA layer, which is exactly the layer the
+90% P0-gate decision is gated on.
+
+**Rule**: any NEWLY-DERIVED QA/diagnostic number is **provisional** until
+either (a) a second, independently-derived signal corroborates it, or
+(b) a spot-check confirms it visually against source data. This is not a
+suggestion to be more careful in the abstract — it is the specific
+discipline that caught this session's own area-overlap calibration bug
+(a visually-confirmed case scored 0.1-0.35 under the first version, 0.65-
+0.71 under the corrected one) before it was reported as a population
+number. Apply it to every future population-scale diagnostic in this
+phase, not just the ones that happen to feel uncertain.
+
+## 2026-07-26 session — audit complete, gate PASS, two follow-on sizings, lever #1 is next
+
+Four pieces of work, four commits (`ee6adfd`, `b9087af`, `75ab226`,
+`d24e6e4`):
+
+1. **Re-measured the conditional converter-clean rate** with notch
+   suppression live (`reports/p3a-conditional-rate-recheck.md`): **52.5%**
+   (135/257, n=300), matching a pre-registered 46-52% prediction. The
+   apparent drop from 61.0% is the denominator (`clean_at_source`)
+   becoming honest, not converter regression — confirmed `rooms.py`/
+   `skeleton.py` zero-diff since the corner-mitre fix. **Promoted a free
+   invariant to an assertion**: `converter_clean` is now a provable subset
+   of `clean_at_source` (135/135) — `compute_conditional_clean_rate`
+   (`classify_room_boundary_no_wall_match.py`) now asserts this on every
+   run; if it ever fires, the two `clean` definitions have drifted apart.
+2. **Audited the 57 previously-unaudited notch-risk-band edges**
+   (`reports/p3a-audit-57-unaudited.md`) — priority 1 from the
+   2026-07-22 session's spec. Result: 0/57 wrongly excluded from the
+   notch category; `gate_flip_check_audited.py` now **PASSes** (was
+   INCOMPLETE) against the full 65-edge audited ground truth. Named a new
+   mechanism, `not_notch_diagonal_wall_mismatch` (smooth diagonal
+   room-boundary edge over a staircase-quantized or otherwise-unmatched
+   wall — real ink present, a coverage-matching TECHNIQUE gap, not a
+   missing partition) — dominant in this specific 57-edge sample (~81%)
+   **but read item 4 before citing that rate anywhere**. Priority 2
+   (spot-check of `classify()`'s `b`/`c`/`d`/`f` branches) is **DROPPED**,
+   not deferred, per Dan's ruling — `classify()` is validated and the real
+   bar (52.5%→90%) is converter work.
+3. **Sized duplicate/near-duplicate plans across the full 17K**
+   (`reports/p3a-duplicate-plan-scan.md`) — filed as its own issue since
+   P3a's deliverable is a training set and paper §6.2 requires
+   plan-source-level split separation. Found 139 exact-duplicate clusters
+   (282 plans, 1.66%) and 12 stricter near-duplicate pairs (24 plans),
+   confirmed genuine (not a signature collision) via direct shapely
+   `.equals()` on the largest cluster. **Priority correction, same day**:
+   1.66% is not itself alarming — the RULE survives at full priority
+   regardless (assign future splits by geometry hash, never `plan_id`),
+   the alarm doesn't. The near-dup pair count is a lower bound, not a
+   measurement — re-examine the threshold when splits are actually cut,
+   not before.
+4. **Sized the diagonal-wall-mismatch mechanism at population scale**
+   (`reports/p3a-diagonal-mismatch-sizing.md`), because this phase was
+   already burned once projecting a small sample onto a headline number
+   (the 96.4% ceiling estimate). Result: **~5.5% of the full 1853-edge
+   `a_genuine_gt_defect_between_rooms` bucket** (102 edges, 55 plans) —
+   NOT the ~81% the 57-edge sample showed. **Both numbers are correct**;
+   they describe different denominators (the 57-edge sample was drawn
+   from the `opening_coverage>=0.65` risk band specifically, where this
+   mechanism concentrates; the full bucket has no such filter and is 83%
+   axis-aligned edges the mechanism can't apply to). Always state both
+   denominators together if citing either rate. This sizing pass also
+   self-caught and fixed a calibration bug before reporting (see standing
+   discipline above).
+
+**Next session: build unparked lever #1 — converter-side doorway-notch
+handling in `rooms.py`.** First converter change since the corner-mitre
+fix. The diagnosis is already done (17 rooms / 26 edges, the 3-condition
+conjunction, the `[0.3,0.5)` empty-band threshold justification, opening-
+type coverage checked, front_door divergence and the 12017 zigzag both
+named — see the doorway-notch discriminator section below) — reuse it,
+don't re-derive it. Order within the session, **diagnose before building**:
+
+1. **Settle the face-polygon reconstruction question first, before writing
+   any fix code.** `check_plan` only decides "is this plan source-clean" —
+   excusing a notch edge there is free. `rooms.py` must actually ASSEMBLE
+   a closed wall cycle: excusing an edge isn't enough, the cycle still has
+   to close across the notch, and the resulting mitered face polygon still
+   has to area-match the source room polygon within the 5% gate (which Dan
+   has standing instructions not to loosen). The source room polygon
+   INCLUDES the notch; a face reconstructed from a straight wall run does
+   not — on a small required room (bathroom/storage, where notches
+   cluster), that difference is plausibly at or over 5% on its own.
+   **Measure notch areas as a fraction of their own room areas BEFORE
+   building anything** — that number answers whether the fix needs to
+   geometrically reconstruct the notch into the face polygon, or can get
+   away with excusing the edge and eating the area error. Don't discover
+   this when the area gate starts rejecting rooms you just "fixed."
+2. **Pre-registered prediction, write it down before building, check it
+   after**: roughly 66 plans (of the 300-sample denominator) entered
+   `clean_at_source` via the source-side suppression fix. If the
+   converter-side fix recovers most of them, the conditional rate should
+   move from 52.5% to roughly **70-80%**. Materially below that means a
+   SECOND independent failure cause on those plans — which would be the
+   more valuable finding, not a disappointing one.
+3. **Carry forward the known guardrail limit, restate it in the build's
+   test docstring, don't let it get silently dropped**: a straight-run
+   defect-with-incidental-opening-proximity case cannot be constructed in
+   isolation (`fill_openings_into_wall` couples the two quantities by
+   construction — only a corner-shaped anomaly decouples them, since the
+   crossbar heals via the parallel fill and the jambs don't). The
+   `rooms.py` version of this fix inherits the same limitation.
+
+**Consolidation — at the END of the lever #1 session, not now.** Findings
+are currently spread across this file (getting long), `p3a-notch-
+diagnosis.md`, `p3a-notch-resolution.md`, `p3a-conditional-rate-recheck.md`,
+and `p3a-audit-57-unaudited.md`. Once lever #1 moves the conditional rate,
+that's the natural point to fold the live numbers (87.2% `clean_at_source`,
+the conditional rate, the containment invariant, the audited defect count,
+the duplicate-split rule) into a single Phase 3a gate report, demoting the
+diagnostic reports to appendix references. Don't do it before the number
+moves — it would only need rewriting.
 
 ## Current state — done and tested
 
