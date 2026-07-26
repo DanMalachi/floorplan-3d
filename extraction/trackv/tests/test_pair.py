@@ -148,6 +148,38 @@ def test_large_gap_between_collinear_stubs_does_not_merge():
     assert result.opening_candidates == []
 
 
+def test_merged_wall_carries_every_member_fragments_source_indices():
+    """A merged wall's `source_segment_indices` is only its FIRST chain
+    member's two faces -- by design, it names the pair the merged geometry
+    was keyed from. `member_source_indices` is the complete set, needed by
+    any provenance-based analysis (style-metadata harvesting) that must see
+    all the primitives a merged wall was actually built from, not an
+    arbitrary two-face sample of them."""
+    support = _support_pairs(10.0, n=4, x0=0.0)  # candidate indices 0-7
+    # three collinear stubs of one wall, door-sized gaps between them --
+    # candidate indices 8-13, in the order passed to _selection
+    stubs = [
+        _seg((600, 140), (660, 140), 1.0, 90),
+        _seg((600, 150), (660, 150), 1.0, 91),
+        _seg((668, 140), (728, 140), 1.0, 92),
+        _seg((668, 150), (728, 150), 1.0, 93),
+        _seg((736, 140), (800, 140), 1.0, 94),
+        _seg((736, 150), (800, 150), 1.0, 95),
+    ]
+
+    result = pair_walls(_selection(support + stubs), PAGE)
+    stub_walls = [w for w in result.walls if 599 <= min(w.start[0], w.end[0]) and max(w.start[0], w.end[0]) <= 801]
+    assert len(stub_walls) == 1, "the three stubs must merge into one wall"
+    w = stub_walls[0]
+    assert w.member_source_indices == (8, 9, 10, 11, 12, 13)
+    assert len(w.source_segment_indices) == 2, "the keying pair stays two-valued, unchanged"
+
+    # unmerged walls carry their own single pair, so the field is always
+    # populated -- never empty for a real wall
+    for sw in result.walls:
+        assert len(sw.member_source_indices) >= 2
+
+
 def test_close_parallel_walls_do_not_merge_guardrail():
     """Required guardrail (gate report, collinear-merge re-key): two
     genuinely distinct near-parallel walls -- e.g. a party wall and a

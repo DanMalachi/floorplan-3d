@@ -41,6 +41,13 @@ class VectorPrimitive:
     # redraws match the source's actual hole semantics.
     even_odd: bool
     layer: str | None
+    # PDF dash-array as PyMuPDF reports it (e.g. "[] 0" for solid, "[3 2] 0"
+    # for dashed) and the drawing's sequence number within the page's content
+    # stream. Both are style/authoring metadata the dissector gets for free
+    # from get_drawings(); carried (not interpreted) so a classification
+    # diagnostic can test them as evidence channels alongside color/width.
+    dashes: str | None = None
+    seqno: int | None = None
 
 
 @dataclass

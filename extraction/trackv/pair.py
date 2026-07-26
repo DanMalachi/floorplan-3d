@@ -58,6 +58,13 @@ class WallCandidate:
     thickness: float
     axis_bucket: str  # "A" or "B"
     source_segment_indices: tuple[int, int]  # indices into SelectionResult.candidates
+    # EVERY selection candidate this wall was built from, across all fragments
+    # folded in by _collinear_merge -- not just the two faces of its first
+    # chain member (which is all source_segment_indices survives the merge as).
+    # Exists so provenance-based analysis (e.g. harvesting each contributing
+    # primitive's style metadata) sees a merged wall's whole source population
+    # rather than an arbitrary two-face sample of it. Sorted, deduplicated.
+    member_source_indices: tuple[int, ...] = ()
 
 
 @dataclass
@@ -354,6 +361,9 @@ def _collinear_merge(
                         thickness=thickness,
                         axis_bucket=bucket,
                         source_segment_indices=walls[chain_members[0]].source_segment_indices,
+                        member_source_indices=tuple(
+                            sorted({si for wi in chain_members for si in walls[wi].member_source_indices})
+                        ),
                     )
                 )
                 for oc in chain_openings:
@@ -450,6 +460,7 @@ def pair_walls(selection: SelectionResult, page_size_px: tuple[float, float]) ->
                 thickness=abs(thickness),
                 axis_bucket=bucket,
                 source_segment_indices=(i_idx, j_idx),
+                member_source_indices=tuple(sorted((i_idx, j_idx))),
             )
         )
 

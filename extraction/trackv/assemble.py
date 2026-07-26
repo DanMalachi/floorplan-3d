@@ -506,7 +506,20 @@ def _resolve_junction_closure(
 
         pts = split_points.get(wi, [])
         if not pts:
-            result.append((base_id, WallCandidate(eff_start, eff_end, w.thickness, w.axis_bucket, w.source_segment_indices), None))
+            result.append(
+                (
+                    base_id,
+                    WallCandidate(
+                        eff_start,
+                        eff_end,
+                        w.thickness,
+                        w.axis_bucket,
+                        w.source_segment_indices,
+                        w.member_source_indices,
+                    ),
+                    None,
+                )
+            )
             continue
 
         stats.n_walls_split += 1
@@ -519,7 +532,14 @@ def _resolve_junction_closure(
             result.append(
                 (
                     f"{base_id}_{k}",
-                    WallCandidate(piece_start, piece_end, w.thickness, w.axis_bucket, w.source_segment_indices),
+                    WallCandidate(
+                        piece_start,
+                        piece_end,
+                        w.thickness,
+                        w.axis_bucket,
+                        w.source_segment_indices,
+                        w.member_source_indices,
+                    ),
                     base_id,
                 )
             )

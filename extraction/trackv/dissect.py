@@ -127,6 +127,8 @@ def dissect(path: Path) -> list[PageDissection]:
                     closed=bool(dr.get("closePath")),
                     even_odd=bool(dr.get("even_odd")),
                     layer=dr.get("layer") or None,
+                    dashes=dr.get("dashes"),
+                    seqno=dr.get("seqno"),
                 )
             )
         pages.append(
