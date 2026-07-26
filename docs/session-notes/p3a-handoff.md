@@ -55,6 +55,64 @@ together, every time either is cited, not just at first mention.** Cheap,
 mechanical, and it would have caught all four instances above without
 needing any code to be fixed.
 
+## 2026-07-26 session (2nd) — lever #1's diagnose step is DONE, build next
+
+Ran exactly the two bounded diagnose numbers the section below specifies,
+nothing more: `extraction/synth/qa/diagnose_notch_area_fraction.py`, full
+17K population, report at `reports/p3a-notch-area-fraction-sizing.md`
+(read that for the full method/result — this is the pointer + the
+decision).
+
+**Numbers**: notch-affected rooms are rare relative to all required-room
+instances (bathroom 1.29%, bedroom 0.96%; storage/stair 0% — a DIFFERENT,
+not-notch-driven broken-edge cause, not sized this session, filed for
+later) but the notch's own area, among affected rooms, is small (median
+0.06-0.14%, p90 well under 1%, max 3.93%). Bracketed against the 5% gate
+minus this phase's own already-measured baseline face-polygon error
+(median 2.09% / p90 4.79%): 0.2%/0% of notch-affected bathroom/bedroom
+rooms would fail even under the pessimistic (p90-baseline) bracket at the
+low end, 22.3%/27.8% at the high end. Recoverability (no OTHER broken
+edge on the same room): 98.3% bathroom, 87.2% bedroom.
+
+**Decision: build option C (normalize the notch out of the SOURCE room
+polygon before the area comparison), not option B (skip the edge, eat the
+error).** Not because B measured badly — it would work for ~72-78% of
+notch-affected rooms even in the pessimistic bracket — but because C is
+essentially free now: the notch-pocket polygon the diagnose script
+already builds for the area sum **is** the polygon C would union into the
+source, and C has no residual-budget ambiguity at all (works regardless
+of notch size), where B leaves the 22-28% pessimistic-case rooms as a
+real, unresolved gate risk. See the report's "Reading this correctly" for
+the full reasoning.
+
+**One self-caught bug worth carrying forward, same standing discipline as
+below**: the first version of the diagnose script grouped notch edges by
+matched-opening-polygon identity alone and produced two impossible
+outliers (fraction >99% of room area — a notch that consumes the whole
+room). Root cause: two real, physically unrelated notches on OPPOSITE
+sides of one room (plan 64, `bedroom_1`) both best-matched the same door
+polygon; grouping by shared key alone merged them into one giant span.
+Fixed by additionally clustering by ring proximity (a same-key group only
+merges if its members are within a few ring edges of each other) before
+closing each cluster's span — caught via the max-fraction column looking
+wrong (>100% is a hard impossibility, not a judgment call), consistent
+with the existing project's discipline that any newly-derived population
+number is provisional until it looks right on inspection, not just
+internally consistent.
+
+**Next session: build it.** The discriminator, opening-grouping, and
+signed-area pocket logic are already validated (2 synthetic fixtures + 3
+visual spot-checks, `extraction/synth/qa/diagnose_notch_area_fraction.py`
++ its test file) — the build session's job is porting this into
+`rooms.py`'s actual `assemble_rooms`/face-polygon path (union the pocket
+into the source room polygon before the area-match comparison, don't
+re-derive the pocket-finding logic) and re-measuring the
+clean-at-source-CONDITIONED rate afterward (pre-registered prediction:
+52.5% → roughly 70-80%; materially below that means the
+`notch_plus_other` rooms — 12.8% of bedroom's notch-affected population —
+are masking a second cause, which would itself be a valuable finding, not
+a disappointing one).
+
 ## 2026-07-26 session — audit complete, gate PASS, two follow-on sizings, lever #1 is next
 
 Four pieces of work, four commits (`ee6adfd`, `b9087af`, `75ab226`,
