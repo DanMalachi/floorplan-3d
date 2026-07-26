@@ -110,7 +110,7 @@ def _build_extraction_result(plan_id: str, entry, walls, junctions, sha256: str)
     }
 
 
-def run_plan(plan_id: str, entry) -> dict:
+def run_plan(plan_id: str, entry, enable_splitting: bool = True) -> dict:
     pdf_path = REPO_ROOT / entry.source_file
     sha256 = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
     dissection = dissect(pdf_path)[0]
@@ -119,7 +119,7 @@ def run_plan(plan_id: str, entry) -> dict:
 
     selection = select_axis_aligned(dissection)
     pair_result = pair_walls(selection, dissection.page_size_px)
-    assemble_result = assemble(pair_result, scale_to_gt_frame=scale)
+    assemble_result = assemble(pair_result, scale_to_gt_frame=scale, enable_splitting=enable_splitting)
 
     plan = _build_extraction_result(plan_id, entry, assemble_result.walls, assemble_result.junctions, sha256)
     plan["image_transform"]["matrix"] = [[scale, 0.0, 0.0], [0.0, scale, 0.0], [0.0, 0.0, 1.0]]
@@ -165,6 +165,10 @@ def run_plan(plan_id: str, entry) -> dict:
             "n_walls_before_assemble": len(pair_result.walls),
         },
         "assemble": {
+            # n_walls_final is POST-closure (post-split) -- an increase here
+            # relative to n_walls_before_assemble reflects walls split at new
+            # T/X junctions, not over-production; see junction_closure below
+            # for the split accounting that explains any delta.
             "n_walls_final": len(assemble_result.walls),
             "n_junctions": len(assemble_result.junctions),
             "n_connected_components": assemble_result.n_connected_components,
@@ -172,6 +176,31 @@ def run_plan(plan_id: str, entry) -> dict:
             "n_open_cycle_dangling_ends": len(assemble_result.open_cycle_diagnostics),
             "open_cycle_wall_ids": [d.wall_id for d in assemble_result.open_cycle_diagnostics],
             "n_degenerate_zero_length_walls": assemble_result.n_degenerate_zero_length_walls,
+        },
+        "junction_closure": {
+            # non-schema sidecar (extraction_v1.schema.json is frozen and has
+            # no parent-wall field): lets a re-merge script recover a split
+            # wall's pre-split geometry/identity by parent id, e.g. to make
+            # analyze_step3a_pinned.py's anchor picks (which reference
+            # pre-split wall ids) resolvable again without re-fitting.
+            "wall_parent_ids": {w.id: w.parent_wall_id for w in assemble_result.walls if w.parent_wall_id},
+            "n_candidates_considered": assemble_result.closure.n_candidates_considered,
+            "n_accepted_l": assemble_result.closure.n_accepted_l,
+            "n_accepted_t": assemble_result.closure.n_accepted_t,
+            "n_accepted_x": assemble_result.closure.n_accepted_x,
+            "n_noop_touch": assemble_result.closure.n_noop_touch,
+            "n_rejected": assemble_result.closure.n_rejected,
+            "n_walls_split": assemble_result.closure.n_walls_split,
+            "rejected_log": [
+                {
+                    "wall_a_id": r.wall_a_id,
+                    "wall_b_id": r.wall_b_id,
+                    "reason": r.reason,
+                    "magnitude": r.magnitude,
+                    "bound": r.bound,
+                }
+                for r in assemble_result.closure.rejected
+            ],
         },
         "schema_validity": {
             "valid": validation.valid,
@@ -191,8 +220,14 @@ def run_plan(plan_id: str, entry) -> dict:
 
 
 def main() -> None:
+    # --no-splitting: run the pre-split candidate set through the same
+    # funnel/eval path, for over-production diagnostics (reports/
+    # phase-2-gate.md's candidate-count-vs-GT finding) -- see
+    # assemble.py's `enable_splitting` docstring. Diagnostic switch only;
+    # normal runs (the default) leave splitting on.
+    enable_splitting = "--no-splitting" not in sys.argv
     entries = {e.plan_id: e for e in load_registry()}
-    funnels = [run_plan(pid, entries[pid]) for pid in TARGET_PLAN_IDS]
+    funnels = [run_plan(pid, entries[pid], enable_splitting=enable_splitting) for pid in TARGET_PLAN_IDS]
 
     preds = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in PRED_DIR.glob("*.json")}
     gts = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in GT_DIR.glob("*.json")}

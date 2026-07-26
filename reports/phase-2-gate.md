@@ -483,3 +483,50 @@ Any fix to endpoint/centerline precision, any pairing-coverage-gap diagnosis or 
 ### Disposition
 
 Held for Dan's review. Durable artifacts added: the `_collinear_merge` re-key in `extraction/trackv/pair.py` (`COLLINEAR_GROUPING_TOLERANCE_FRAC`, `_weighted_median`, `_cluster_by_perp`), two new required guardrail tests in `tests/test_pair.py` (both green), regenerated `out/step3a_predictions/*.json` + `out/step3a_report.json` + `out/step3a_pinned_diagnostic.json` reflecting the fix, this section. Not merged to main -- wall F1 remains far below Phase 2's exit bar despite the confirmed, working fix.
+
+## Step 3a fix — junction closure (extend-to-intersection) — headline finding: candidate over-production, not a topology bug
+
+**Lead with this: closure worked, and it functioned as a detector, not a fix.** GT has 2 T-junctions across 19 walls (30x50). Predictions, once closure actually connects what's really there, show 84 accepted T + 46 accepted X across 54 candidates -- a ~65x topology-density error. Unlike every wall-F1 number in this milestone, this measurement needs no pinned transform, no coordinate-frame alignment, nothing scoring-adjacent -- it's frame-independent and directly comparable to GT's own junction graph. It is the first reliable measurement of candidate quality Phase 2 has had, and it was invisible before this fix because every wall candidate sat in its own isolated connected component (see the m2c handoff: `n_connected_components == n_walls_final` on both plans, i.e. zero cross-wall junctions of any kind).
+
+### The fix
+
+`assemble.py` gained `_resolve_junction_closure`: for every wall-end still dangling after the existing tight-tolerance snap, find cross-orientation (near-perpendicular) partner walls, compute the *exact* intersection of their infinite centerlines (exact because every wall is analytically axis-aligned within one global theta frame -- see `pair.py`'s `_bucket_wall`), and either **SPLIT** the partner (crossing point strictly interior to its own span -- a T- or, rarely, X-junction) or **MOVE** a genuinely dangling endpoint out to meet it (an L-corner), never both loosely at once. Two independently-scaled bounds, both keyed to each wall's own recovered thickness: a generous axial-extension bound (~1.5x thickness) for ends that are actually dangling (safe to relocate, nothing else depends on that point yet), and a tight overhang bound (~0.5x thickness) for the rare case where a non-dangling end falls just short. Every candidate is enumerated and gated *before* anything is applied (never pairwise-in-sequence, which can double-count or oscillate); every wall's accepted split points are batched and cut once into N+1 pieces, never iteratively. Rejected candidates are logged with the specific bound they failed (wall ids, magnitude, bound) -- a kill-chain audit trail, not a silent drop. Split pieces carry `parent_wall_id` back to their pre-split origin.
+
+**Guardrails, both required, both still green**, plus 8 new tests covering the closure logic itself (L-corner mutual extension, T-split with parent tracking, X-split, rejected-candidate logging, batched multi-tap splitting, and an `enable_splitting=False` diagnostic-mode test). Full suite: 51 passed, 3 xfailed.
+
+### Funnel, before vs. after
+
+| plan | connected components | cycles closed | walls (post-closure) | n_walls_split | accepted L / T / X | rejected |
+|---|---|---|---|---|---|---|
+| 15x30 | 43 → **7** | 0 → **24** | 43 → **136** | 33 (of 43) | 7 / 31 / **31** | 391 |
+| 30x50 | 54 → **6** | 0 → **50** | 54 → **230** | 47 (of 54) | 19 / 84 / **46** | 571 |
+
+Cycle closure and connectivity both improved sharply, exactly as intended. But **77–87% of all wall candidates got split at least once**, not the ~47%/72% axial-dominant share estimated going in, and X-junctions (predicted "probably zero") landed at 31 and 46 -- comparable in magnitude to T. Concrete inspection (`W2` crossing three ~275-unit verticals `W26/27/28` at three different points, mirrored by a second triad `W46/47/48` against a neighboring wall) shows repeating triads of near-identical-length parallel segments crossing shared perpendiculars at multiple points -- consistent with window-mullion/frame elements that `pair.py`'s thickness-plausibility guard lets through as wall candidates, now being connected into the graph by closure. All three of 30x50's pinned-transform anchor walls (its longest, most-trusted perimeter walls -- `W0`, `W22`, `W23`) were themselves split, confirming the longest candidates take the most damage, as expected if the mechanism is real over-production rather than noise.
+
+### Root cause and why this is not a bound-tuning problem
+
+Dan's own arithmetic forecloses it: 30x50's GT has 19 walls; `pair.py` emits 54 candidates. Even at perfect recall, precision caps at 19/54 = 0.35 and wall F1 caps at ~0.52 pre-split, ~0.15 post-split (19/230) -- against a required 0.99. **No closure logic, no split bound, and no downstream tuning can reach the exit bar while the candidate set is ~3x over-produced.** Over-production is not a contributing factor to the F1 problem -- it IS the F1 problem, and it was invisible until closure made it legible by actually connecting candidates together.
+
+The asymmetry that surfaced it (MOVE is thickness-bounded, SPLIT was not) is real and correctly identified, but **the fix is not a symmetric bound on the split side** -- that would suppress the symptom, restore a plausible-looking wall count, and destroy the clearest quality signal this phase has produced, while being exactly the kind of threshold-tuned-around-a-symptom change this project's own discipline forbids. The principled read: splitting should only ever be triggered by junctions between candidates that *survived selection*, and `assemble.py` currently performs no selection at all -- paper 5.4's promise that topology filters false positives depends on a solve step that selects a subset; unconditional assembly never runs that filter. That is a missing step (selection/residue-classification, already in Phase 2's own scope per `extraction-plan.md`: "layer/color metadata harvesting; residue classification hooks... use geometric priors only"), not a missing constant.
+
+**Housekeeping added so this diagnosis doesn't require reverting code:** `assemble()` / `_resolve_junction_closure` take `enable_splitting: bool = True`; `--no-splitting` on `run_step3a.py` runs the exact pre-split candidate set through the same funnel/eval path (verified: wall count is bit-identical to pre-closure, 43/54). Split pieces' `parent_wall_id` is also exposed as a non-schema sidecar (`junction_closure.wall_parent_ids`) in the funnel report, so a future re-merge script can recover the pinned diagnostic's now-shattered anchor walls (`W0`, `W22`, `W23`) by parent id without re-fitting the transform.
+
+### Corrected framing: two independent blockers, neither is tuning
+
+Phase 2 currently has **two independent blockers** to its exit bar, and no wall F1 number should be reported as a milestone result until at least one clears:
+
+1. **Candidate over-production** (this session's finding) -- precision ceiling ≈0.35 pre-split, measured directly from GT-wall-count vs. candidate-count, frame-independent.
+2. **Coordinate-frame unmeasurability** (issue #8, carried from the prior STOP) -- 15x30's pinned-transform anchor-fit residuals are 3–6τ, several times the exit metric's own tolerance, so **15x30's wall F1 must be reported as UNMEASURABLE, not 0.000** -- a zero implies a measured failure; this is an absent measurement. 30x50's clean 4-anchor fit is sub-τ (~0.8τ) and remains trustworthy, but its F1 is still capped by blocker 1 regardless.
+
+### Next work, in order (both squarely Phase 2's own scope, not P4/P6 creep)
+
+1. **Layer/color/stroke metadata first** -- may be free, high-precision evidence per paper 5.2 step 1. Check whether the identified spurious candidates (`W2`, `W26/27/28`, `W46/47/48`) differ from confirmed real walls (`W0`, `W22`, `W23`) by PDF layer name, color, or stroke attributes before building anything geometric.
+2. **Periodicity/repetition signature second**, only if metadata doesn't separate them -- "repeating triads of near-identical-length parallel segments crossing shared perpendiculars" is the paper 5.6 Layer 2 signature (hatching/stair-tread periodicity via 1-D FFT along the candidate), and is what milestone-2-step-2 already predicted would be needed once stroke width alone was found unable to separate wall from hatch. Deterministic geometry only -- no cross-evidence voting or adjudication (P6's job).
+
+### Explicitly not built this round
+
+Any bound or threshold on the SPLIT side of closure (considered, explicitly rejected as symptom-suppression). Any layer/color/periodicity filtering itself (next session). Any change to `select.py`, `pair.py`, `eval/`, or the frozen schema. Re-fitting or re-running the pinned-transform diagnostic (its anchors are recoverable via `parent_wall_id` when needed, not re-derived here).
+
+### Disposition
+
+Held for Dan's review; **committed** (closure is correct against what was specified, tested, both guardrails green, and per instruction commits as-is rather than waiting on the over-production question it surfaced). Durable artifacts: `_resolve_junction_closure` + supporting closure machinery in `extraction/trackv/assemble.py`, `enable_splitting` flag threaded through `assemble()`/`run_step3a.py`/`--no-splitting`, `parent_wall_id` on `AssembledWall` + `wall_parent_ids` funnel sidecar, 10 new tests + 1 corpus-level `xfail(strict=True)` regression tripwire in `tests/test_assemble.py` (X-junction count is NOT zero, tracked not silently normalized), this section. Not a merge-readiness change either way -- Phase 2 remains blocked on candidate over-production and coordinate-frame unmeasurability, neither addressed by this session's own scope.
