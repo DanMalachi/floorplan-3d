@@ -1,15 +1,21 @@
 # P3a — duplicate/near-duplicate plan scan (training-set contamination risk)
 
-Filed as its own issue, higher priority than a counting-artifact footnote,
-per Dan's 2026-07-26 note: **this is not primarily a notch-audit counting
-problem — it's a training-set contamination risk.** P3a's deliverable is a
-training set for E1/E2 (paper.md, extraction-plan.md's P3a section). Paper
-§6.2 requires plan-**source**-level split separation so near-duplicate
-plans never straddle train/val. If ResPlan carries systematic duplicates
-and a future split is assigned by `plan_id`, every downstream Phase 3b
-E1/E2 validation number is inflated by leakage, invisibly. Sized now, while
-it's a cheap population scan, per Dan's explicit instruction — not after
-the 20K-image starter set is minted.
+Filed as its own issue rather than a notch-audit counting footnote, per
+Dan's 2026-07-26 note: P3a's deliverable is a training set for E1/E2
+(paper.md, extraction-plan.md's P3a section), and paper §6.2 requires
+plan-**source**-level split separation so near-duplicate plans never
+straddle train/val.
+
+**Priority correction, recorded 2026-07-26 (same day, after the measurement
+landed):** the original framing rated this "higher priority than a counting
+artifact" on the assumption the rate could be large. **The measured rate
+(1.66% exact duplicates) is not, on its own, a metric-inflating hazard** —
+Dan's own read, and correct. What survives at full priority is the **rule**,
+not the alarm: **assign splits by geometry hash, never by `plan_id`.** That
+rule costs nothing to follow and is correct regardless of how large the
+duplicate rate turns out to be — it doesn't need the 1.66% to be big to be
+worth doing. See "Not a settled number" below for the one part of this
+scan that is still open.
 
 **Trigger**: plan 2098/2099 surfaced incidentally during the 57-edge notch
 audit (`reports/p3a-audit-57-unaudited.md`) sharing what looked like
@@ -77,16 +83,19 @@ over-flagging based on partial similarity.
 ## What this means for Phase 3a / Phase 3b
 
 - **1.80% of the raw 17K population is touched by some form of plan-level
-  duplication** — small in absolute terms, but systematic (139 independent
-  clusters, not one or two flukes), confirming Dan's prediction that
-  2098/2099-style duplication would not be an isolated pair.
-- **Split assignment must NOT be done by `plan_id` alone.** Any train/val/
-  test split for the eventual 20K-image starter set (or the corpus
-  registry referenced in `eval/registry/registry.csv` for the P0 gate) must
-  either (a) assign every plan in an exact-duplicate cluster to the SAME
-  split, or (b) deduplicate to one representative per cluster before
-  splitting. The near-duplicate pairs (12, stricter tolerance) are a
-  smaller, secondary risk — same recommendation applies.
+  duplication** — small, and (per the correction above) not itself an
+  alarm. Still systematic (139 independent clusters, not one or two
+  flukes) — confirms Dan's prediction that 2098/2099-style duplication
+  would not be an isolated pair, even though 2098/2099 itself didn't
+  qualify.
+- **Split assignment must NOT be done by `plan_id` alone — this is the
+  part to actually act on.** Any train/val/test split for the eventual
+  20K-image starter set (or the corpus registry referenced in
+  `eval/registry/registry.csv` for the P0 gate) must either (a) assign
+  every plan in an exact-duplicate cluster to the SAME split, or
+  (b) deduplicate to one representative per cluster before splitting. This
+  is correct practice independent of the measured rate — worth doing at
+  zero measured urgency, not because 1.66% is alarming.
 - **Recommend**: wire the exact-duplicate-cluster signature (this script's
   first pass; it's cheap, O(n), no pairwise cost) into the corpus registry
   pipeline (`eval/registry/registry.csv`'s generation path or an adjacent
@@ -99,6 +108,21 @@ over-flagging based on partial similarity.
   does not change the P0-gate reachability arithmetic materially by itself
   — the risk here is train/val leakage inflating a validation metric
   silently, not a capacity problem.
+
+## Not a settled number: the near-duplicate count is a lower bound, not a measurement
+
+**The 12 strict near-duplicate pairs are a lower bound on the leakage
+surface, not a measurement of it** — near-duplicate counts move with the
+matching criterion by construction, and the criterion here (1% area / 1.0
+unit centroid, on *every* room instance) was chosen tight, to catch
+genuine near-clone twins without over-flagging merely-similar floor plans.
+A looser criterion would find more pairs; a model does not need
+byte-identical geometry to memorize a near-duplicate, so "12" should not be
+read as "the" near-duplicate count, only as "at least 12 under a strict
+rule." **Re-examine the threshold when splits are actually assigned, not
+before** — that's the point at which the criterion's looseness/tightness
+trade-off actually matters, and doing it now would be tuning a number this
+session has no consumer for yet.
 
 ## Not done this session
 

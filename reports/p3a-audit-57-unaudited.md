@@ -65,11 +65,22 @@ matches the resolution report's own explanation of that transition.)
 
 The 57 verdicts alone don't change any gate number (`check_plan` untouched,
 `clean_at_source` unaffected). What's new is *why* these are not notches —
-and it's a single, dominant, previously-unnamed mechanism, not a diverse
-bag of edge cases:
+and within THIS 57-edge sample it's a single, dominant, previously-unnamed
+mechanism, not a diverse bag of edge cases (see the population-scale
+denominator caveat below the mechanism's name — this dominance is a sample
+property, not a population property):
 
-**`not_notch_diagonal_wall_mismatch` — ~46/57 edges (new verdict, extends
-the taxonomy).** A smooth diagonal room-boundary edge crosses a wall that
+**`not_notch_diagonal_wall_mismatch` — ~46/57 edges of THIS SAMPLE (81%;
+new verdict, extends the taxonomy). Population-scale, measured directly
+in `reports/p3a-diagonal-mismatch-sizing.md`, not extrapolated: ~102/1853
+edges of the FULL `a_genuine_gt_defect_between_rooms` bucket (5.5%).**
+Both numbers are correct — they describe different denominators. This
+57-edge sample was drawn specifically from `opening_coverage>=0.65` (a
+door/window nearby), a condition under which this mechanism happens to be
+common; the full `a` bucket has no such restriction and is mostly
+axis-aligned edges the mechanism can't apply to at all (83% of it isn't
+even geometrically diagonal). State both numbers together if you cite
+either one elsewhere. A smooth diagonal room-boundary edge crosses a wall that
 the source represents as an axis-aligned staircase of small orthogonal
 segments (visibly rendered as a "staircase" in most overlays — e.g. plans
 4296, 3313, 13746), or that is simply absent from the wall polygon's own
@@ -107,21 +118,23 @@ a wide margin, but worth a clamp if this signal is reused for a future fix.)
 
 `classify()`'s `a_genuine_gt_defect_between_rooms` label was built to mean
 "a real partition the source omits" (see its docstring). This session found
-that **the majority of the edges landing in that bucket, at least in this
-57-edge cohort, are not that** — they're a wall the source draws, that a
-specific measurement technique can't match because of *how* it's drawn
-(staircase-quantized vs. smooth diagonal), not *whether* it's drawn. That
-distinction matters because it changes which of these are fixable and
-where: `not_notch_diagonal_wall_mismatch` is a **measurement-technique**
-gap (potentially fixable in `measure_clean_at_source.py`'s or `rooms.py`'s
-coverage check — e.g. by testing coverage against a *polyline* of nearby
-wall-boundary segments rather than requiring a single near-parallel
-candidate), not a permanent, un-fixable GT ceiling the way class (a) is
-currently framed as being. **This is a lead for a future session, not a
-fix proposed or built here** — no pipeline code changed. It also means the
-`a_genuine_gt_defect_between_rooms` label itself should not be trusted as
-"permanent ceiling" without further work; it currently conflates real
-defects with this technique-mismatch mechanism.
+that **within this 57-edge cohort**, the majority of the edges are not
+that — they're a wall the source draws, that a specific measurement
+technique can't match because of *how* it's drawn (staircase-quantized vs.
+smooth diagonal), not *whether* it's drawn. **Population-scale, this
+mechanism is a minor contributor (~5.5% of the full bucket, measured in
+`reports/p3a-diagonal-mismatch-sizing.md`), not the majority** — the label
+still mostly means what its docstring says, at population scale; this
+session's finding narrows roughly 5-6% of it, not "most of it." That
+distinction still matters because it changes which of *that* 5-6% is
+fixable and where: `not_notch_diagonal_wall_mismatch` is a
+**measurement-technique** gap (potentially fixable in
+`measure_clean_at_source.py`'s or `rooms.py`'s coverage check — e.g. by
+testing coverage against a *polyline* of nearby wall-boundary segments
+rather than requiring a single near-parallel candidate), not a permanent,
+un-fixable GT ceiling the way class (a) is currently framed as being.
+**This is a lead for a future session, not a fix proposed or built here**
+— no pipeline code changed.
 
 ## Secondary finding: over-counting from duplicate edges and a near-duplicate plan
 
@@ -164,8 +177,12 @@ artifact** worth flagging before any edge-level population count (like the
 
 Net: of the 57 edges, at least 8 (4 pairs) are exact duplicates and 3 are a
 near-duplicate cluster, collapsing to roughly **50 distinct real-world
-edges** behind the 57 entries — and those 50 are themselves dominated
-(~46/50) by the single diagonal-wall-mismatch mechanism above.
+edges** behind the 57 entries — and those 50 are dominated (~46/50) by the
+diagonal-wall-mismatch mechanism *within this sample*. Population-scale,
+that mechanism is ~5.5% of the full 1853-edge bucket (see
+`p3a-diagonal-mismatch-sizing.md`) — the duplicate-counting rate found
+here has not been sized at population scale and should not be assumed to
+generalize at the same ~14% (8/57) rate either.
 
 ## What this changes and doesn't change
 
@@ -173,38 +190,44 @@ edges** behind the 57 entries — and those 50 are themselves dominated
   was not touched this session.
 - **The corrected `classify()` defect count (1853 edges / 1109 plans,
   from the notch-resolution session) should not be read as 1853/1109
-  independent, permanent GT defects.** This session's audit of a 57-edge
-  sample of that count found ~90% of it is one measurement-technique
-  mechanism (diagonal-vs-staircase) plus a nontrivial duplicate-counting
-  rate, not a diverse population of un-fixable source omissions. This is a
-  **stronger caution than the resolution report's own** ("candidates for
-  audit, not audited truth") — it's now a specific, named reason to expect
-  the true un-fixable defect count to be substantially smaller than 1853,
-  not just "unverified."
+  independent, permanent GT defects — but only for the reasons actually
+  measured, not the sample rate.** This session's 57-edge sample found the
+  diagonal-wall-mismatch mechanism on ~81% of ITSELF, but population-scale
+  sizing (`p3a-diagonal-mismatch-sizing.md`) found it explains only ~5.5%
+  of the full 1853-edge bucket — the sample was drawn from a subpopulation
+  where the mechanism happens to concentrate, and does not generalize.
+  What DOES still discount the 1853 figure: the duplicate-counting rate
+  found in this sample (4 exact pairs + 1 cluster among 57 edges) is a
+  real, if not yet population-sized, reason to expect some inflation, and
+  `classify()` remains a heuristic candidate generator, not audited ground
+  truth, for the ~94.5% of the bucket this session did not explain. Do not
+  carry forward the earlier (now-corrected) claim that "~90%" of the
+  bucket is measurement-technique noise — that was this session's own
+  premature extrapolation, caught by the population-scale sizing before
+  it was allowed to stand.
 - **The suppression rule (`check_plan`'s doorway-notch handling) remains
   ACCEPTED and is now PASS, not just INCOMPLETE**, against the full
   65-edge audited ground truth (was 8, INCOMPLETE pending this session).
-- **Priority 2 (spot-check of `classify()`'s `b`/`c`/`d`/`f` branches)
-  remains deferred**, per this session's explicit scope. Given this
-  session's finding, a future spot-check of the `d_tracing_artifact_small_notch`
-  bucket in particular should watch for the same diagonal-wall-mismatch
-  mechanism — it's plausible some `d`-bucket edges are the same phenomenon
-  at smaller `edge_len`, not truly a different category.
+- **Priority 2 (spot-check of `classify()`'s `b`/`c`/`d`/`f` branches) is
+  DROPPED, not deferred**, per Dan's explicit ruling (2026-07-26):
+  `classify()` is validated across 65 audited edges, the gate PASSes, and
+  the actual bar (52.5% conditional clean rate vs. the 90% target) is
+  converter work, not further auditing — diminishing returns on more
+  taxonomy spot-checks. Not picked back up unless something specific
+  re-motivates it.
 
-## Recommended next steps (not started, for a future session)
+## Recommended next steps
 
-1. **Population-scale sizing of the diagonal-wall-mismatch mechanism**:
-   this session confirmed it on ~46/57 sampled edges; a dedicated
-   diagnostic (reusing `_nearest_wall_backed_cos` plus a check for
-   staircase-shaped wall-boundary geometry near the edge) could measure
-   what fraction of the full 1853-edge `a`-bucket this explains, the same
-   way `classify_no_angle_valid_candidate_population.py` sized issue #4.
+1. ~~Population-scale sizing of the diagonal-wall-mismatch mechanism~~ —
+   **done**, same session: `reports/p3a-diagonal-mismatch-sizing.md`
+   (~5.5% of the full bucket, not the sample's ~81%).
 2. **A converter/measurement-side fix idea worth evaluating** (not
    designed here): match coverage against a short polyline of consecutive
    wall-boundary segments near the edge's direction, rather than requiring
    one single near-parallel candidate — would directly address the
-   structural limitation named above.
-3. **De-duplication pass** before trusting any future edge- or plan-level
-   population count from ResPlan: a cheap geometry-hash or `.equals()`
-   check across room-polygon sets would catch near-duplicate plans like
-   2098/2099 before they inflate a count.
+   structural limitation named above, for the ~5.5% it actually explains.
+3. **De-duplication as a standing rule, not a one-off pass**: split
+   assignment for any future ResPlan-derived training set must use a
+   geometry-hash signature, never `plan_id` alone — sized at population
+   scale in `reports/p3a-duplicate-plan-scan.md` (1.66% exact-duplicate
+   rate, not itself alarming, but the rule is correct regardless).
