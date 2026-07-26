@@ -117,6 +117,20 @@ type coverage checked, front_door divergence and the 12017 zigzag both
 named — see the doorway-notch discriminator section below) — reuse it,
 don't re-derive it. Order within the session, **diagnose before building**:
 
+**The diagnose step is BOUNDED — read this before starting it, not after
+it's already sprawled.** Weeks of this phase went into making measurement
+honest, and it worked — the numbers are trustworthy now and the rules that
+keep them that way are written above. **The risk has flipped**:
+`rooms.py`/`skeleton.py` haven't changed since the corner-mitre fix, and
+the temptation next session will be to keep measuring instead of building.
+The diagnose step for lever #1 is exactly two things: **(1) notch area as
+a fraction of room area, reported by room type, and (2) the resulting
+normalize-vs-eat-the-error decision.** That's the whole diagnose step. Once
+those numbers are in, build. **If the diagnosis starts branching into new
+mechanisms or new taxonomies, that's scope creep wearing the discipline's
+clothes — note the branch in this file for later, don't follow it now.**
+The bar is 52.5% against 90%, and only converter code moves it.
+
 1. **Settle the face-polygon reconstruction question first, before writing
    any fix code — THREE options, not two, and the obvious one is likely
    unavailable.** `check_plan` only decides "is this plan source-clean" —
