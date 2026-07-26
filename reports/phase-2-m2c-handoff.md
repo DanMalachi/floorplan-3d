@@ -2,6 +2,8 @@
 
 Branch `phase-2-trackv-m2c` (worktree `fp-phase2`). Not merged to main — held on this branch by explicit decision. This document exists so a cold session can resume with zero re-derivation. Full evidence, tables, and residuals live in `reports/phase-2-gate.md`'s step-3a sections; this is the compressed pointer, not a replacement for it.
 
+> **Read "DONE SINCE THIS DOC WAS WRITTEN" and "RESUME POINTER" at the bottom first.** Blocker 1's metadata branch below has since been run and closed as a negative result, and the recommended next step has changed from periodicity to Blocker 2. The Blocker-1 step-1 instructions in this section are kept for the record, not as live direction.
+
 ## STATUS
 
 3a is built: `select.py` (axis-alignment), `pair.py` (parallel-pair recovery + thickness-plausibility guard + re-keyed collinear-merge), `assemble.py` (junction snap + junction closure via extend-to-intersection + wall-only schema output), `score_align.py` (scoring-only coordinate adapter, outside `eval/`).
@@ -50,6 +52,24 @@ Do these **in this order**:
 - **Both collinear-merge guardrails must stay green** through any further work here — unchanged this session, still the anti-over-merge tripwire.
 - **30x50's GT runs meaningfully off-nominal** — known, already-diagnosed, not new.
 
+## DONE SINCE THIS DOC WAS WRITTEN — metadata check, closed as a negative result
+
+Full section in `reports/phase-2-gate.md` ("Blocker-1 step 1 — style-metadata separation"). Compressed:
+
+- **Metadata cannot separate real from spurious candidates on this corpus, and the verdict needs no coordinate frame.** 4 of 5 channels take exactly ONE value across all 54 pre-split candidates (`layer` all `None` — neither plan has any optional-content groups at all; `fill_color`, `stroke_width` 0.72, `dashes` all uniform). `stroke_color` partitions {50, 2, 1, 1}, so the best wall-F1 *any* filter on it could reach is **0.5507** vs. the 0.99 bar — computed from bucket sizes alone (`F1 ≤ 2·min(k,n)/(k+n)`), never from a label. 15x30 matches: {43}/{43}/{43}/{43} and {39, 4}.
+- **Do not re-run this expecting a different answer, and do not build a metadata filter.** The decision rule's third branch fired.
+- **The labeled confusion matrix was built and is VOID** — at τ=1% only 6 of 19 GT walls have any candidate lying on them. SPURIOUS was absorbing frame-displaced real walls. Retained in `out/step3a_metadata_confusion.json` under `labels_trustworthy: false`; never quote it.
+- Additive pipeline changes only: `dashes`/`seqno` on `VectorPrimitive`, `member_source_indices` on `WallCandidate` (a merged wall's `source_segment_indices` is only its first chain member's two faces — provenance analysis needs the rest). Predictions bit-identical; suite 52 passed, 3 xfailed.
+
+**New evidence bearing on Blocker 2, and on whether the two blockers are independent:** the 4 clean anchors re-fit to the recorded residuals *exactly* (0.1 mm), yet the rest of the plan does not follow — 16/19 GT walls have an orientation+overlap-compatible candidate but only 6 clear the lateral bound. Displacement is sharply x-heavy: median **627 mm in x (≈4.3τ) vs 74 mm in y (≈0.5τ)**, against an envelope error of −5.29% x / +0.54% y. Two mechanisms were tested over the full population and **both falsified**: fit-degrades-with-anchor-distance (r=0.063) and single-wrong-uniform-x-scale (r=0.14). The mechanism is NOT established — do not assume one. Untested third candidate: the per-GT "best candidate" is drawn from an over-produced set, so correspondence error and frame error may be mixing, which would mean **Blocker 1 and Blocker 2 are not independent** as assumed since the closure round.
+
 ## RESUME POINTER
 
-Start the next session with the **layer/color/stroke metadata check**, run as the full-population confusion matrix described above (all 54 pre-split candidates on 30x50 vs. GT's 19 walls via `--no-splitting`) — not a re-inspection of the six examples (`W2`/`W26-28`/`W46-48` vs. `W0`/`W22`/`W23`) that formed the hypothesis in the first place. Do not touch closure's SPLIT-side bound. Do not re-run or re-derive the pinned transform without first resolving anchor IDs via `wall_parent_ids`. Bring the confusion matrix to the first STOP, not a filter — same discipline as every prior round this milestone.
+Start with **Blocker 2 (issue #8), not periodicity.** The ordering flipped this round for a measured reason: candidate quality could not be scored against GT on the one plan whose transform was believed trustworthy, so periodicity built now would be scored through the same unusable frame.
+
+In order:
+1. **Factual question first, it may collapse the whole issue**: does a page-unit form of this corpus's GT exist upstream of its mm conversion (the Phase-0.4 SVG-authoring path implies SVG user-space was the original frame)? If yes, issue #8 becomes "score Track V in page units" and no fitting is needed at all. If no, the mm↔page relationship is Phase 5's scale-recovery job, not Phase 2's to hand-fit.
+2. **Then the bounded falsification test** already specified: refit the similarity by global least-squares over *all* confidently-matched wall pairs rather than 3–6 hand-picked anchors. If 15x30 drops under ~1τ it was anchor selection; if it stays 3τ+ with anisotropic structure, the similarity model itself is wrong. Note this round's x/y asymmetry is exactly that anisotropic signature — but on 30x50, and with its mechanism unestablished.
+3. **Periodicity/repetition signature** stays queued as Blocker 1's only remaining in-scope lead, after a usable frame exists.
+
+Standing constraints, unchanged: do not touch closure's SPLIT-side bound. Do not re-derive the pinned transform's anchors without resolving IDs via `wall_parent_ids` (or by running pre-split, where the original IDs are still valid — what the metadata diagnostic does). Bring measurements to a STOP, not a fix.

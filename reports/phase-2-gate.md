@@ -530,3 +530,67 @@ Any bound or threshold on the SPLIT side of closure (considered, explicitly reje
 ### Disposition
 
 Held for Dan's review; **committed** (closure is correct against what was specified, tested, both guardrails green, and per instruction commits as-is rather than waiting on the over-production question it surfaced). Durable artifacts: `_resolve_junction_closure` + supporting closure machinery in `extraction/trackv/assemble.py`, `enable_splitting` flag threaded through `assemble()`/`run_step3a.py`/`--no-splitting`, `parent_wall_id` on `AssembledWall` + `wall_parent_ids` funnel sidecar, 10 new tests + 1 corpus-level `xfail(strict=True)` regression tripwire in `tests/test_assemble.py` (X-junction count is NOT zero, tracked not silently normalized), this section. Not a merge-readiness change either way -- Phase 2 remains blocked on candidate over-production and coordinate-frame unmeasurability, neither addressed by this session's own scope.
+
+---
+
+## Step 3a Blocker-1 step 1 — style-metadata separation: NEGATIVE RESULT, and it needs no coordinate frame
+
+**Lead with this: PDF style metadata cannot separate real wall candidates from spurious ones on this corpus, and that verdict does not depend on the pinned transform, the labels, or anything scoring-adjacent.** Four of five channels take exactly ONE value across all 54 pre-split candidates on 30x50 — zero information, no labeling required to see it. The fifth (stroke colour) partitions the population {50, 2, 1, 1}, and the best wall-F1 *any* filter built on it could possibly reach is **0.5507**, against an exit bar of 0.99.
+
+This is the third branch of the decision rule fixed in advance by `reports/phase-2-m2c-handoff.md` ("no separation ⇒ report as a one-paragraph negative result and go straight to periodicity"). It is also paper §5.2's own hedge landing on the unfavourable side: layer names are free high-precision evidence *when present*, and here they are simply absent.
+
+### What was measured
+
+`extraction/trackv/analyze_step3a_metadata.py` (new; diagnostic, not a pipeline module). Runs `dissect → select → pair` in-process and stops there — the **pre-split** candidate set (54 on 30x50), since classification is upstream of closure's splitting. Never calls `assemble()`, never touches `out/step3a_predictions/`. Channels harvested per candidate through its full provenance: `layer`, `stroke_color`, `fill_color`, `stroke_width`, `dashes`, plus `seqno` (content-stream order) as an ordinal.
+
+Two supporting changes were needed and are the session's only pipeline edits, both strictly additive:
+
+- `VectorPrimitive` now carries `dashes` and `seqno` (`primitives.py`, `dissect.py`) — PyMuPDF already returns both in the `get_drawings()` dict; dissection was discarding them.
+- `WallCandidate` gained `member_source_indices` (`pair.py`, propagated in `assemble.py`). `source_segment_indices` survives `_collinear_merge` as only the *first* chain member's two faces, so a merged wall's other fragments' metadata was unreachable — the matrix would have been built on an arbitrary two-face sample of each merged wall. New test in `tests/test_pair.py` (a 3-fragment merge must carry all 6 member indices). Suite: **52 passed, 3 xfailed**; `run_step3a.py` re-run produces **bit-identical** predictions, confirming the edits change no behaviour.
+
+### The transform-free bound (this is the result)
+
+For a selection of *k* candidates scored against *n* GT walls under `matching.py`'s one-to-one assignment, at most `min(k, n)` can match, so `F1 ≤ 2·min(k,n)/(k+n)` — an upper bound that holds regardless of which candidates are truly real. A metadata filter can only ever select a union of its channel's value buckets, so enumerating all such unions bounds the whole channel.
+
+| channel | buckets over the 54 candidates | best possible wall-F1 | reaches 0.99? |
+|---|---|---|---|
+| `layer` | {54} — all `None` | 0.5205 | no |
+| `fill_color` | {54} — all none | 0.5205 | no |
+| `stroke_width` | {54} — all 0.72 | 0.5205 | no |
+| `dashes` | {54} — all `[] 0` | 0.5205 | no |
+| `stroke_color` | {50, 2, 1, 1} | **0.5507** | no |
+
+`layer` is dead at the source, not merely uniform: neither plan has any optional-content groups at all (`doc.get_layers() == []`), and `layer` is `None` on all 33117 (30x50) / 20741 (15x30) primitives. These are marketing/CAD-export PDFs with the layer structure flattened out — the case paper §5.2 anticipated.
+
+`stroke_color`'s three minority buckets are not a wall/non-wall signal: each is a `MIXED(...)` candidate whose provenance includes one of the four page-wide red/ochre annotation primitives bleeding into an otherwise all-black wall. Keeping the black bucket means keeping 50 of 54 candidates — i.e. doing nothing. **The channel cannot construct a ~19-candidate selection at all**, which is what the exit bar requires, so its correlation with truth is moot.
+
+15x30 (label-free, no transform needed) is the same picture on its own 43 candidates: `layer` {43}, `fill_color` {43}, `stroke_width` {43}, `dashes` {43}, `stroke_color` {39, 4}.
+
+### The labeled confusion matrix is VOID — reported, not quietly dropped
+
+The handoff asked for a full-population REAL/SPURIOUS confusion matrix on 30x50. It was built, and it **fails its own sanity check**: at τ=1% only **6 of 19 GT walls** have any candidate lying on them (5/19 at 0.5%, 8/19 at 2%). Since Track V's documented problem is candidate *excess*, not absence, a SPURIOUS label here conflates "not a wall" with "displaced by coordinate-frame error" — so the matrix measures Blocker 2, not Blocker 1, and is not reportable as evidence. It is retained in `out/step3a_metadata_confusion.json` under `labels_trustworthy: false` with the void reason attached, so it can never be quoted as a result by accident.
+
+Note this **does not weaken the verdict above**: the bound is computed from bucket sizes alone and never consults a label.
+
+The frame's own guard did pass exactly — re-fitting the 4 clean anchors reproduced the recorded residuals to 0.1 mm (`[59.1, 60.9, 56.2, 56.1]`), confirming the labels were built in precisely the frame the recorded ~0.8τ was measured in. **The anchors fit; the rest of the plan does not.**
+
+### Two mechanisms tested for that displacement, both NEGATIVE
+
+Walls are detected but laterally displaced: 16 of 19 GT walls have an orientation- and overlap-compatible candidate once the lateral bound is lifted, yet only 6 clear it. The displacement is sharply x-heavy — median lateral offset **627 mm along x (≈4.3τ) vs 74 mm along y (≈0.5τ)**, an 8.5× asymmetry — matching an envelope error of −5.29% in x against +0.54% in y (a uniform-scale similarity cannot satisfy both axes).
+
+Two specific mechanisms were then tested against the full population and **both were falsified**:
+
+1. *Fit degrades with distance from the hand-picked anchors* — correlation of lateral offset vs. distance-to-nearest-anchor: **0.063**. No.
+2. *A single wrong uniform x scale* — correlation of x-offset vs. the wall's own x-coordinate: **0.14**, slope 0.039 vs. the envelope's 0.053. Too weak to claim. No.
+
+So the anisotropy is real and measured, but **the mechanism behind it is NOT established** and is not asserted here. A third candidate not tested this round: the per-GT-wall "best candidate" in this no-lateral-bound view is itself chosen from an over-produced set, so the residual population may be mixing correspondence error with frame error — which would make Blocker 1 and Blocker 2 not independent, contrary to the framing carried since the closure round.
+
+### Explicitly not built this round
+
+Any filter, threshold, or rejection rule on metadata (the deliverable was the measurement, per the handoff — and the measurement says don't build one). Periodicity/FFT. Any change to closure's SPLIT-side bound, `select.py`'s logic, `eval/`, or the frozen schema. Any re-derivation or repair of the pinned transform — the anchor guard only *checks* it. 15x30 labeling (its transform remains 3–6τ, so its candidates are reported label-free only).
+
+### Disposition
+
+Held for Dan's review. Durable artifacts: `extraction/trackv/analyze_step3a_metadata.py`, `out/step3a_metadata_confusion.json`, `dashes`/`seqno` on `VectorPrimitive`, `member_source_indices` on `WallCandidate` + its test, this section.
+
+**Blocker 1's metadata branch is closed as a negative result — periodicity is now the only remaining in-scope lead for it.** But the honest ordering has changed: this round could not measure candidate quality against GT at all on the one plan whose transform was believed trustworthy, and turned up evidence that the two blockers may not be independent. **Recommend Blocker 2 (issue #8) next, not periodicity** — the handoff's own falsification test (global least-squares refit over all confidently-matched pairs; and first, the factual question of whether a page-unit form of this GT exists upstream of its mm conversion) — because periodicity would otherwise be built and then scored through the same unusable frame.
