@@ -14,6 +14,20 @@ priority-2 spot-check of `classify()`'s other branches
 (`audit_unaudited_57.py`, `merge_57_audit.py`) and the extended
 `audited_notch_ground_truth.json`.
 
+**Population-scale follow-up, read before trusting the "~46/57" rate
+below as a general statement about the `a` bucket**:
+`reports/p3a-diagonal-mismatch-sizing.md` measured `not_notch_diagonal_wall_mismatch`'s
+share of the FULL 1853-edge `a_genuine_gt_defect_between_rooms` population
+directly (not extrapolated from this sample) and found **~5.5% of edges /
+5.0% of plans**, not anywhere near the 81% (46/57) rate below. The
+mechanism is real (confirmed here by visual audit) but this specific
+57-edge sample is a **non-random subpopulation** (drawn from the
+opening-coverage>=0.65 risk band, i.e. edges with a door/window nearby —
+exactly the condition under which this diagonal-chamfer-near-an-opening
+pattern turned out to be common) and does not represent the bucket at
+large. Read the mechanism description below as "real and confirmed," not
+as "explains most of the ceiling."
+
 ## Method
 
 Same as the original 8-edge audit (`audit_notch_blind_spot.py`): for each
