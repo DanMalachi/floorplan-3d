@@ -27,7 +27,7 @@ this session's own search-radius-reused-for-an-area-overlap-question bug in
 fix). The error mass lives in the QA layer, which is exactly the layer the
 90% P0-gate decision is gated on.
 
-**Rule**: any NEWLY-DERIVED QA/diagnostic number is **provisional** until
+**Rule 1**: any NEWLY-DERIVED QA/diagnostic number is **provisional** until
 either (a) a second, independently-derived signal corroborates it, or
 (b) a spot-check confirms it visually against source data. This is not a
 suggestion to be more careful in the abstract — it is the specific
@@ -36,6 +36,24 @@ discipline that caught this session's own area-overlap calibration bug
 0.71 under the corrected one) before it was reported as a population
 number. Apply it to every future population-scale diagnostic in this
 phase, not just the ones that happen to feel uncertain.
+
+**Rule 2, added same day — Rule 1 doesn't cover this failure mode, a
+different one kept recurring**: Rule 1 catches defects in measurement
+*code*. It does not catch a *correct* number quoted without its
+denominator, or a subpopulation share silently treated as a population
+share — and that specific mistake happened **four times** in this phase
+without any code being wrong: the 96.4% revised-ceiling estimate
+(projected from n=27, later needing correction), the 63.1%→46.1%
+sample-to-population gap in the doorway-notch sizing, the 81%/5.5%
+diagonal-wall-mismatch pair this session, and a stale "~90% of the bucket"
+claim this session's own draft briefly asserted before being caught and
+corrected. **Rule: every percentage carries its denominator in the same
+sentence. No sample-derived share is ever stated as a population share
+without an actual population measurement backing it — and where both a
+sample rate and a population rate exist for the same thing, state both
+together, every time either is cited, not just at first mention.** Cheap,
+mechanical, and it would have caught all four instances above without
+needing any code to be fixed.
 
 ## 2026-07-26 session — audit complete, gate PASS, two follow-on sizings, lever #1 is next
 
@@ -100,20 +118,45 @@ named — see the doorway-notch discriminator section below) — reuse it,
 don't re-derive it. Order within the session, **diagnose before building**:
 
 1. **Settle the face-polygon reconstruction question first, before writing
-   any fix code.** `check_plan` only decides "is this plan source-clean" —
+   any fix code — THREE options, not two, and the obvious one is likely
+   unavailable.** `check_plan` only decides "is this plan source-clean" —
    excusing a notch edge there is free. `rooms.py` must actually ASSEMBLE
    a closed wall cycle: excusing an edge isn't enough, the cycle still has
    to close across the notch, and the resulting mitered face polygon still
    has to area-match the source room polygon within the 5% gate (which Dan
    has standing instructions not to loosen). The source room polygon
    INCLUDES the notch; a face reconstructed from a straight wall run does
-   not — on a small required room (bathroom/storage, where notches
-   cluster), that difference is plausibly at or over 5% on its own.
-   **Measure notch areas as a fraction of their own room areas BEFORE
-   building anything** — that number answers whether the fix needs to
-   geometrically reconstruct the notch into the face polygon, or can get
-   away with excusing the edge and eating the area error. Don't discover
-   this when the area gate starts rejecting rooms you just "fixed."
+   not.
+   - **Option A, "reconstruct the notch into the face polygon," is
+     probably NOT actually available**: the `wall_cycle` representation is
+     built from wall segments, and a doorway notch by definition is NOT
+     backed by any wall — there is nothing in the wall data to
+     reconstruct the notch shape FROM. Check this is really a dead end
+     before spending build time on it, but expect it to be.
+   - **Option B, "excuse the edge and eat the area error,"** is what's
+     been assumed so far — on a small required room (bathroom/storage,
+     where notches cluster), that error is plausibly at or over the 5%
+     gate on its own, which would make the "fix" reject rooms it was
+     supposed to recover.
+   - **Option C, likely the right one: NORMALIZE THE SOURCE ROOM POLYGON**
+     — fill the doorway notch out of the SOURCE room polygon before the
+     area comparison, so both sides of the 5% check are compared on the
+     same convention (a face polygon that also doesn't include the
+     notch). **This is not loosening the gate — it's correcting the
+     comparison**, precisely the move already made once in this phase
+     with `EMPIRICAL_FACE_OFFSET_MULTIPLIER` ("correct the comparison,
+     don't widen the guard"). The 5% gate stays exactly as-is; Dan's
+     standing instruction is preserved because nothing about the
+     tolerance changes, only what's being compared.
+   - **Measure notch areas as a fraction of their own room areas BEFORE
+     building anything** — this settles which option is viable (confirms
+     A is dead, sizes how bad B would be, sizes what C needs to
+     normalize). **Report the fractions BY ROOM TYPE, not pooled** —
+     notch geometry clusters on small required rooms (bathroom/storage),
+     exactly where the fraction-of-room-area is largest, so a pooled
+     median will look reassuring and hide the cases that actually decide
+     the design. Don't discover the area-gate interaction when it starts
+     rejecting rooms you just "fixed."
 2. **Pre-registered prediction, write it down before building, check it
    after**: roughly 66 plans (of the 300-sample denominator) entered
    `clean_at_source` via the source-side suppression fix. If the
