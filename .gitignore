@@ -73,5 +73,17 @@ floorplan_for_training/dxf_dwg/
 # CLI deploy uploads them from local disk (see .vercelignore, which keeps them in).
 /public/furniture/ikea/thumb/
 
+# BlenderKit raw downloads (~412 MB of undecimated archviz .glb with 4K textures).
+# Regenerable with `npm run bk:models`. Only the OPTIMIZED copies under opt/ are
+# committed and served — 75 files, ~20 MB after Draco + WebP, small enough that
+# keeping them in git makes a deploy reproducible from a clean checkout, unlike
+# the 400 MB IKEA set which had to go to Blob.
+/public/furniture/blenderkit/*.glb
+
+# ambientCG intermediate JPEGs (~38 MB) unpacked from the source zips. The
+# committed artifact is the repacked WebP under public/materials/.
+# Regenerable with `npm run mat:fetch`.
+/scripts/materials/.raw/
+
 .vercel
 .venv

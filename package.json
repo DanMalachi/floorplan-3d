@@ -15,7 +15,19 @@
     "ikea:models": "tsx scripts/ikea/fetch-models.ts",
     "ikea:thumbnails": "tsx scripts/ikea/fetch-thumbnails.ts",
     "ikea:catalog": "tsx scripts/ikea/build-catalog.ts",
-    "ikea:upload": "tsx scripts/ikea/upload-blob.ts"
+    "ikea:upload": "tsx scripts/ikea/upload-blob.ts",
+    "bk:index": "tsx scripts/blenderkit/fetch-index.ts",
+    "bk:select": "tsx scripts/blenderkit/select.ts",
+    "bk:models": "tsx scripts/blenderkit/fetch-models.ts",
+    "bk:audit": "tsx scripts/blenderkit/audit.ts",
+    "bk:optimize": "tsx scripts/blenderkit/optimize.ts",
+    "bk:verify": "tsx scripts/blenderkit/verify-optimized.ts",
+    "bk:catalog": "tsx scripts/blenderkit/build-catalog.ts",
+    "bk:thumbnails": "tsx scripts/blenderkit/fetch-thumbnails.ts",
+    "mat:index": "tsx scripts/materials/fetch-index.ts",
+    "mat:fetch": "tsx scripts/materials/fetch-materials.ts",
+    "mat:repack": "tsx scripts/materials/repack.ts",
+    "mat:sheet": "tsx scripts/materials/contact-sheet.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",
