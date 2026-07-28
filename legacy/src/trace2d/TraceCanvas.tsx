@@ -244,12 +244,10 @@ export default function TraceCanvas() {
     }
     if (bestV) return { kind: "vertex", nodeId: bestV.id, point: { x: bestV.x, y: bestV.y } };
 
-    // Hybrid: snap to a wall centerline / corner from the imported PDF.
-    if (wallSnap && importedSegments.length > 0) {
-      const ws = snapWallPoint(pos.x, pos.y, importedSegments, { targets: extractionTargets });
-      if (ws) return { kind: "free", point: { x: ws.x, y: ws.y }, snapped: true };
-    }
-
+    // An existing traced wall outranks the imported plan underneath it. Traced
+    // walls sit ON the imported centrelines, so if the PDF snap were tried first
+    // it would always win and hand back a detached free point — the click would
+    // look right but never join the graph, so the room could not close.
     const hit = nearestSegment(pos.x, pos.y, pointMap, segments);
     if (hit && hit.dist <= ESNAP) {
       const seg = segMap.get(hit.segmentId);
@@ -265,6 +263,12 @@ export default function TraceCanvas() {
           };
         }
       }
+    }
+
+    // Hybrid: snap to a wall centerline / corner from the imported PDF.
+    if (wallSnap && importedSegments.length > 0) {
+      const ws = snapWallPoint(pos.x, pos.y, importedSegments, { targets: extractionTargets });
+      if (ws) return { kind: "free", point: { x: ws.x, y: ws.y }, snapped: true };
     }
 
     let x = pos.x;
@@ -335,7 +339,11 @@ export default function TraceCanvas() {
     shiftRef.current = !!e.evt.shiftKey;
     const drawingWall = mode === "wall" && activeLastPointId != null;
     const drawingOpening = (mode === "door" || mode === "window") && openingStart != null;
-    const hoverSnap = mode === "wall" && wallSnap && importedSegments.length > 0;
+    // Track the cursor whenever a hover ring could be shown: over the imported
+    // plan (wall snap) or over an already-traced wall (edge split).
+    const hoverSnap =
+      mode === "wall" &&
+      ((wallSnap && importedSegments.length > 0) || segments.length > 0);
     if (drawingWall || drawingOpening || hoverSnap) {
       const pos = groupRef.current?.getRelativePointerPosition();
       if (pos) setPointer(pos);
@@ -632,27 +640,39 @@ export default function TraceCanvas() {
                 );
               })()}
 
-            {/* Hover snap indicator before placing the first point */}
+            {/* Hover snap indicator before placing the first point. Resolved through
+                the same function the click uses, so the ring always shows what will
+                actually happen — green means "this splits the wall and joins in". */}
             {mode === "wall" &&
               !activeLastPointId &&
               pointer &&
-              wallSnap &&
-              importedSegments.length > 0 &&
               (() => {
-                const ws = snapWallPoint(pointer.x, pointer.y, importedSegments, {
-                  targets: extractionTargets,
-                });
-                if (!ws) return null;
-                return (
-                  <Circle
-                    x={ws.x}
-                    y={ws.y}
-                    radius={handleR * 1.6}
-                    stroke={ws.corner ? "#ffd23f" : "#37c2ff"}
-                    strokeWidth={2 / scale}
-                    listening={false}
-                  />
-                );
+                const tgt = resolveTarget(pointer, shiftRef.current);
+                if (tgt.kind === "edge") {
+                  return (
+                    <Circle
+                      x={tgt.point.x}
+                      y={tgt.point.y}
+                      radius={handleR * 1.6}
+                      stroke="#4ade80"
+                      strokeWidth={2 / scale}
+                      listening={false}
+                    />
+                  );
+                }
+                if (tgt.kind === "free" && tgt.snapped) {
+                  return (
+                    <Circle
+                      x={tgt.point.x}
+                      y={tgt.point.y}
+                      radius={handleR * 1.6}
+                      stroke="#37c2ff"
+                      strokeWidth={2 / scale}
+                      listening={false}
+                    />
+                  );
+                }
+                return null;
               })()}
 
             {/* Calibration overlay */}
