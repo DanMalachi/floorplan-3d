@@ -21,7 +21,7 @@ import { rasterToCandidates, type RasterProposal } from "@legacy/trace2d/rasterC
 import { proposeRaster } from "@legacy/trace2d/proposeRaster";
 import { buildOverlayImage } from "@legacy/trace2d/buildOverlay";
 import type { VlmLabel, VlmMissed } from "@legacy/lib/rooms/vlmClassify";
-import type { ImportText } from "@legacy/trace2d/importPdf";
+import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
   TraceSegment,
@@ -598,7 +598,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
       get().setSourcePdfName(file.name);
       try {
         if (isPdfFile(file)) {
-          const { importPdf } = await import("@legacy/trace2d/importPdf");
+          // Runs entirely in the browser (pdf.js). The old server route spawned
+          // Python, which has no interpreter on Vercel — see importPdfClient.ts.
+          const { importPdf } = await import("@/lib/import/importPdfClient");
           const r = await importPdf(file);
           get().setImage(r.image);
           if (!r.isVector) {
@@ -630,6 +632,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
             const res = await fetch("/api/dwg2dxf", { method: "POST", body: form });
             const j = await res.json();
             if (!res.ok || j.error) {
+              // The converter is a native desktop binary, so it exists only on a
+              // local machine — a hosted deployment can never satisfy this. Say
+              // what the user can actually do instead of surfacing a server error.
+              if (res.status === 501) {
+                throw new Error(
+                  "DWG needs a local converter that isn't available here. Export the drawing to DXF from your CAD tool and import that — the DXF path also recovers real-world scale automatically.",
+                );
+              }
               throw new Error(j.error ? `${j.error}${j.detail ? `: ${j.detail}` : ""}` : `HTTP ${res.status}`);
             }
             r = dxfTextToResult(j.dxf);
