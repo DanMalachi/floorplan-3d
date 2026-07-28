@@ -7,7 +7,7 @@ import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
-import { floorTexture, FLOOR_ROUGHNESS } from "./textures";
+import { floorTexture, floorRoughness } from "./textures";
 import { ACCENT } from "./WallMesh";
 
 function Floor({ roomId, style, geometry }: {
@@ -31,7 +31,10 @@ function Floor({ roomId, style, geometry }: {
       map: tex.map,
       normalMap: tex.normalMap,
       normalScale: new THREE.Vector2(0.6, 0.6),
-      roughness: FLOOR_ROUGHNESS[style],
+      // Catalog materials ship a roughness map; procedural styles leave it
+      // undefined and rely on the scalar alone.
+      roughnessMap: tex.roughnessMap,
+      roughness: floorRoughness(style),
       metalness: 0,
       emissive: new THREE.Color(ACCENT),
       emissiveIntensity: 0,

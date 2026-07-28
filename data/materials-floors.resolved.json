@@ -1,0 +1,258 @@
+[
+  {
+    "id": "wood-oak-natural",
+    "name": "Natural oak",
+    "family": "wood",
+    "assetId": "WoodFloor051",
+    "coverM": 1.8,
+    "sizeSource": "ambientcg",
+    "roughness": 0.7,
+    "maps": {
+      "color": "wood-oak-natural/color.jpg",
+      "normal": "wood-oak-natural/normal.jpg",
+      "roughness": "wood-oak-natural/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor051"
+  },
+  {
+    "id": "wood-plank-pale",
+    "name": "Pale wide plank",
+    "family": "wood",
+    "assetId": "WoodFloor039",
+    "coverM": 1.9,
+    "sizeSource": "ambientcg",
+    "roughness": 0.75,
+    "maps": {
+      "color": "wood-plank-pale/color.jpg",
+      "normal": "wood-plank-pale/normal.jpg",
+      "roughness": "wood-plank-pale/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor039"
+  },
+  {
+    "id": "wood-grey-weathered",
+    "name": "Weathered grey",
+    "family": "wood",
+    "assetId": "WoodFloor041",
+    "coverM": 1.9,
+    "sizeSource": "ambientcg",
+    "roughness": 0.85,
+    "maps": {
+      "color": "wood-grey-weathered/color.jpg",
+      "normal": "wood-grey-weathered/normal.jpg",
+      "roughness": "wood-grey-weathered/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor041"
+  },
+  {
+    "id": "wood-walnut-dark",
+    "name": "Dark walnut",
+    "family": "wood",
+    "assetId": "WoodFloor048",
+    "coverM": 1.3,
+    "sizeSource": "ambientcg",
+    "roughness": 0.6,
+    "maps": {
+      "color": "wood-walnut-dark/color.jpg",
+      "normal": "wood-walnut-dark/normal.jpg",
+      "roughness": "wood-walnut-dark/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor048"
+  },
+  {
+    "id": "wood-chevron",
+    "name": "Chevron parquet",
+    "family": "wood",
+    "assetId": "WoodFloor052",
+    "coverM": 1.8,
+    "sizeSource": "ambientcg",
+    "roughness": 0.65,
+    "maps": {
+      "color": "wood-chevron/color.jpg",
+      "normal": "wood-chevron/normal.jpg",
+      "roughness": "wood-chevron/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor052"
+  },
+  {
+    "id": "wood-basketweave",
+    "name": "Basketweave parquet",
+    "family": "wood",
+    "assetId": "WoodFloor034",
+    "coverM": 1.9,
+    "sizeSource": "ambientcg",
+    "roughness": 0.7,
+    "maps": {
+      "color": "wood-basketweave/color.jpg",
+      "normal": "wood-basketweave/normal.jpg",
+      "roughness": "wood-basketweave/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor034"
+  },
+  {
+    "id": "tile-white-large",
+    "name": "White large-format",
+    "family": "tile",
+    "assetId": "Tiles107",
+    "coverM": 1,
+    "sizeSource": "ambientcg",
+    "roughness": 0.3,
+    "maps": {
+      "color": "tile-white-large/color.jpg",
+      "normal": "tile-white-large/normal.jpg",
+      "roughness": "tile-white-large/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles107"
+  },
+  {
+    "id": "tile-black-gloss",
+    "name": "Black gloss",
+    "family": "tile",
+    "assetId": "Tiles108",
+    "coverM": 1,
+    "sizeSource": "ambientcg",
+    "roughness": 0.2,
+    "maps": {
+      "color": "tile-black-gloss/color.jpg",
+      "normal": "tile-black-gloss/normal.jpg",
+      "roughness": "tile-black-gloss/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles108"
+  },
+  {
+    "id": "tile-hex-white",
+    "name": "White hexagon",
+    "family": "tile",
+    "assetId": "Tiles071",
+    "coverM": 0.45,
+    "sizeSource": "ambientcg",
+    "roughness": 0.35,
+    "maps": {
+      "color": "tile-hex-white/color.jpg",
+      "normal": "tile-hex-white/normal.jpg",
+      "roughness": "tile-hex-white/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles071"
+  },
+  {
+    "id": "tile-checker-marble",
+    "name": "Marble checkerboard",
+    "family": "tile",
+    "assetId": "Tiles074",
+    "coverM": 2.1,
+    "sizeSource": "ambientcg",
+    "roughness": 0.25,
+    "maps": {
+      "color": "tile-checker-marble/color.jpg",
+      "normal": "tile-checker-marble/normal.jpg",
+      "roughness": "tile-checker-marble/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles074"
+  },
+  {
+    "id": "stone-travertine",
+    "name": "Light travertine",
+    "family": "stone",
+    "assetId": "Travertine009",
+    "coverM": 1.2,
+    "sizeSource": "ambientcg",
+    "roughness": 0.45,
+    "maps": {
+      "color": "stone-travertine/color.jpg",
+      "normal": "stone-travertine/normal.jpg",
+      "roughness": "stone-travertine/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Travertine009"
+  },
+  {
+    "id": "stone-terrazzo",
+    "name": "Colourful terrazzo",
+    "family": "stone",
+    "assetId": "Terrazzo013",
+    "coverM": 1.5,
+    "sizeSource": "curated-fallback",
+    "roughness": 0.3,
+    "maps": {
+      "color": "stone-terrazzo/color.jpg",
+      "normal": "stone-terrazzo/normal.jpg",
+      "roughness": "stone-terrazzo/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Terrazzo013"
+  },
+  {
+    "id": "carpet-beige",
+    "name": "Beige loop pile",
+    "family": "carpet",
+    "assetId": "Carpet016",
+    "coverM": 1.7,
+    "sizeSource": "ambientcg",
+    "roughness": 0.95,
+    "maps": {
+      "color": "carpet-beige/color.jpg",
+      "normal": "carpet-beige/normal.jpg",
+      "roughness": "carpet-beige/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Carpet016"
+  },
+  {
+    "id": "carpet-navy",
+    "name": "Navy cut pile",
+    "family": "carpet",
+    "assetId": "Carpet012",
+    "coverM": 2,
+    "sizeSource": "curated-fallback",
+    "roughness": 0.95,
+    "maps": {
+      "color": "carpet-navy/color.jpg",
+      "normal": "carpet-navy/normal.jpg",
+      "roughness": "carpet-navy/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Carpet012"
+  },
+  {
+    "id": "concrete-light",
+    "name": "Polished concrete",
+    "family": "concrete",
+    "assetId": "Concrete034",
+    "coverM": 1.1,
+    "sizeSource": "ambientcg",
+    "roughness": 0.65,
+    "maps": {
+      "color": "concrete-light/color.jpg",
+      "normal": "concrete-light/normal.jpg",
+      "roughness": "concrete-light/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Concrete034"
+  },
+  {
+    "id": "concrete-grey",
+    "name": "Grey screed",
+    "family": "concrete",
+    "assetId": "Concrete031",
+    "coverM": 2.5,
+    "sizeSource": "curated-fallback",
+    "roughness": 0.8,
+    "maps": {
+      "color": "concrete-grey/color.jpg",
+      "normal": "concrete-grey/normal.jpg",
+      "roughness": "concrete-grey/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Concrete031"
+  }
+]

@@ -7,12 +7,22 @@
 
 import * as THREE from "three";
 import type { FloorStyle } from "@/schema/scene";
+import { loadFloorTextures, floorMaterialRoughness } from "@/materials/loader";
 
 interface FloorTex {
-  map: THREE.CanvasTexture;
-  normalMap: THREE.CanvasTexture;
+  map: THREE.Texture;
+  normalMap: THREE.Texture;
+  /** Only image-based catalog materials ship one; procedural styles use the
+   *  scalar from floorRoughness() alone. */
+  roughnessMap?: THREE.Texture;
 }
 const cache = new Map<FloorStyle, FloorTex>();
+
+/** The three procedurally drawn styles this module has always provided. */
+type ProceduralStyle = "wood" | "tile" | "concrete";
+const PROCEDURAL: ProceduralStyle[] = ["wood", "tile", "concrete"];
+const isProcedural = (s: FloorStyle): s is ProceduralStyle =>
+  (PROCEDURAL as string[]).includes(s);
 
 /** A drawn colour canvas plus the real-world size (meters) it spans. */
 interface Drawn {
@@ -146,32 +156,59 @@ function applyTiling(tex: THREE.CanvasTexture, cover: number) {
 }
 
 /** How pronounced each style's relief is (grout crisper than wood grain). */
-const NORMAL_STRENGTH: Record<FloorStyle, number> = {
+const NORMAL_STRENGTH: Record<ProceduralStyle, number> = {
   wood: 2.2,
   tile: 3.5,
   concrete: 1.2,
 };
 
+/**
+ * Textures for a floor style.
+ *
+ * Two sources feed this now. Ids in the image-based catalog (src/materials)
+ * resolve to real PBR maps; the three original ids — and anything unrecognised,
+ * so a project can never render an untextured floor — fall through to the
+ * procedural canvases below.
+ */
 export function floorTexture(style: FloorStyle): FloorTex {
   let tex = cache.get(style);
-  if (!tex) {
-    const { canvas, cover } =
-      style === "wood" ? woodCanvas() : style === "tile" ? tileCanvas() : concreteCanvas();
-    const map = new THREE.CanvasTexture(canvas);
-    map.colorSpace = THREE.SRGBColorSpace;
-    applyTiling(map, cover);
-    const normalMap = new THREE.CanvasTexture(heightToNormal(canvas, NORMAL_STRENGTH[style]));
-    normalMap.colorSpace = THREE.NoColorSpace; // normal data is linear, never sRGB
-    applyTiling(normalMap, cover);
-    tex = { map, normalMap };
-    cache.set(style, tex);
+  if (tex) return tex;
+
+  if (!isProcedural(style)) {
+    const loaded = loadFloorTextures(style);
+    if (loaded) {
+      cache.set(style, loaded);
+      return loaded;
+    }
   }
+
+  // Procedural fallback. An unknown id lands on "wood" rather than crashing.
+  const key: ProceduralStyle = isProcedural(style) ? style : "wood";
+  const { canvas, cover } =
+    key === "wood" ? woodCanvas() : key === "tile" ? tileCanvas() : concreteCanvas();
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  applyTiling(map, cover);
+  const normalMap = new THREE.CanvasTexture(heightToNormal(canvas, NORMAL_STRENGTH[key]));
+  normalMap.colorSpace = THREE.NoColorSpace; // normal data is linear, never sRGB
+  applyTiling(normalMap, cover);
+  tex = { map, normalMap };
+  cache.set(style, tex);
   return tex;
 }
 
-/** Surface response per style — tile is glossier than wood or concrete. */
-export const FLOOR_ROUGHNESS: Record<FloorStyle, number> = {
+/** Surface response for the procedural styles — tile is glossier than wood. */
+const PROCEDURAL_ROUGHNESS: Record<ProceduralStyle, number> = {
   wood: 0.75,
   tile: 0.35,
   concrete: 0.9,
 };
+
+/** Base roughness for any floor style, catalog or procedural. */
+export function floorRoughness(style: FloorStyle): number {
+  if (!isProcedural(style)) {
+    const r = floorMaterialRoughness(style);
+    if (r !== null) return r;
+  }
+  return PROCEDURAL_ROUGHNESS[isProcedural(style) ? style : "wood"];
+}
