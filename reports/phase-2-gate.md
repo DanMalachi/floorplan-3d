@@ -925,3 +925,76 @@ Held for Dan's review. Durable artifacts: `analyze_step3a_pairing_factorial.py`,
 **The simulate-before-building rule has now stopped four fixes** (closure split-side bound; run-merging; bounded-diameter clustering; and this factorial's three levers). Three of the four looked obviously correct beforehand. The single most valuable output of this phase may be that rule's track record rather than any individual measurement.
 
 **Correction to the previous section's numbers:** `analyze_step3a_chain_spread.py` scored its τ=0.005 row on *un-assembled* walls, reporting baseline recall 0.2069 / precision 0.0619. The correct assembled baseline is **0.2759 / 0.0825**. Its conclusion is unaffected — both arms of that comparison used the same path and recall was identical between them — but the absolute τ=0.005 figures in that section should be read from this factorial's baseline row instead.
+
+## Step 3a Blocker 1 — length-floor test: the fork resolves as BOTH halves, not one
+
+Dan's sharpened hypothesis: `MIN_CANDIDATE_LENGTH_FRAC` deletes the correct partner face before pairing runs, which is why the window fix (previous section) recovered only 2 of 8 displaced walls. Tested directly and decisively on the 6 walls window did *not* recover (`analyze_step3a_length_floor_test.py`, `out/step3a_length_floor_test.json`).
+
+### Method
+
+For each of the 6 walls, using `selection.candidates` (the full pre-length-floor population — the floor is applied only inside `pair_walls()`, never inside `select.py`), split covering ink by which side of the GT centerline it falls on. The known-correct ink side was already established (displacement measurement's L1). The question is the *opposite* side — the true partner face:
+
+- **NEVER_PRESENT** — no segment at all on the opposite side, at any length. The floor is irrelevant; select.py never extracted that face.
+- **PRESENT_AND_KEPT** — a segment exists on the opposite side and already clears the *current, unmodified* length floor. The floor is not the cause; something else in raw-pair-formation or greedy selection is.
+- **PRESENT_AND_REMOVED** — exists, but every such segment is shorter than the current floor.
+
+### Result: a clean 3/3 split, and the third bucket (the one Dan flagged as mattering most) is empty
+
+| wall | verdict | opposite-side segment(s) found |
+|---|---|---|
+| 15x30 `w_s2` | **NEVER_PRESENT** | none |
+| 15x30 `w_s4` | **NEVER_PRESENT** | none |
+| 15x30 `w_s6` | **NEVER_PRESENT** | none |
+| 30x50 `w_s111` | **PRESENT_AND_KEPT** | length 7326mm (floor 253mm) |
+| 30x50 `w_s117` | **PRESENT_AND_KEPT** | length 2442mm (floor 253mm) |
+| 30x50 `w_s142` | **PRESENT_AND_KEPT** | length 2595mm (floor 253mm) |
+
+`PRESENT_AND_REMOVED` — the bucket the hypothesis needed to be right — is **empty, 0/6**. The length floor is not deleting anyone's correct partner on this population. **Dan's sharpened hypothesis is falsified as stated.**
+
+But it forks correctly into two distinct, real problems, neither of which is the floor:
+
+1. **15x30's three walls: recall's ceiling is upstream of pairing, in `select.py`/`dissect.py`.** No amount of pairing-side work — window, thickness, greedy, or floor — can produce a partner that was never extracted as ink in the first place. This is new information: Phase 2's pairing-stage work has a hard ceiling on this plan that has not been located.
+2. **30x50's three walls: the correct partner survives, at generous length, well inside even the ORIGINAL window (7326/2442/2595mm, all under the original 6327mm window and trivially under the new 500mm one) — yet the pipeline still pairs the wrong distant line.** This is neither the window, the floor, nor (per the prior factorial) the greedy sort order in isolation. **Unlocated.** A candidate for the actual cause, not yet tested: the correct partner may be getting *consumed by a different wrong pair first* under greedy's overlap-first ordering — i.e., a distant line has even *longer* overlap with the correct-partner segment than the correct pair does, and wins the greedy competition for that segment before the correct pair is ever considered. Flagged as the next specific thing to check, not claimed.
+
+### Joint simulation: window + length-floor, alone and combined
+
+`analyze_step3a_length_floor_factorial.py`, `out/step3a_length_floor_factorial.json`. Same discipline: simulation only, baseline cell reproduces the shipped pipeline. Physical prior, stated without reference to either plan: **`MIN_WALL_FACE_LENGTH_MM = 200`** — the shortest common freestanding architectural wall element (a pier between openings, a corner return, a jamb stub) rarely measures under ~200mm; below that a line is far more likely a dimension tick or hatch remnant, which mirrors `pair.py`'s own stated rationale for having a floor at all.
+
+Pre-registered before running, and derivable directly from the table above without simulating anything: **loosening the floor should recover ZERO of the 6 target walls** — NEVER_PRESENT has nothing to loosen into at any length, and PRESENT_AND_KEPT already clears the current floor. Confirmed exactly:
+
+| cell | candidates | P@0.01 | R@0.01 | F1@0.01 | P@0.005 | R@0.005 | F1@0.005 | of the 6 recovered |
+|---|---|---|---|---|---|---|---|---|
+| baseline | 97 | 0.1031 | 0.3448 | 0.1587 | 0.0825 | 0.2759 | 0.1270 | 0 |
+| length_floor alone | 100 | 0.0900 | 0.3103 | 0.1395 | 0.0600 | 0.2069 | 0.0930 | 0 |
+| window alone | 88 | 0.1250 | 0.3793 | 0.1880 | 0.0795 | 0.2414 | 0.1197 | 0 |
+| window + length_floor | 86 | 0.1279 | 0.3793 | 0.1913 | 0.0814 | 0.2414 | 0.1217 | 0 |
+
+Length-floor alone *loses* a small amount of recall (0.3448→0.3103) and precision — it admits a few new short candidates elsewhere in the plan that dilute the match without helping it; net negative on this corpus. Combined with the window it adds a rounding-level F1 gain (0.1880→0.1913) with no additional wall recovered. **Confirms the pre-registration exactly: this lever does nothing for the diagnosed problem and should not be pursued further on its own.**
+
+### STRUCTURAL FINDING — named, not fixed this round
+
+**The pipeline expresses physical thresholds as fractions of page geometry, and this is architecturally wrong by construction, not merely mistuned.** `MAX_THICKNESS_SEARCH_FRAC · diagonal` (search window) and `MIN_CANDIDATE_LENGTH_FRAC · diagonal` (length floor) both scale with *sheet size*. A real wall is ~150mm regardless of whether it's drawn on an A4 sheet or a wall-sized plot. Page-relative constants cannot be correct across plans of different scale or zoom — this is the structural reason both constants came out wrong (27–42× and comparably oversized), not a tuning failure, and it is the same family as the self-certifying-guard anti-pattern above: a threshold derived from something other than the physical quantity it is meant to bound.
+
+**Root cause of the root cause: `mm_per_unit` is unavailable at pair time.** The schema's own `units` block (`system: "plan_units"`, `mm_per_unit: None`, `scale_confidence: 0.0`) is explicit that scale recovery is Phase 5's job, downstream of Track V entirely. Pairing therefore has no choice but to reason in page-relative terms. **This is a genuine cross-phase dependency, not a Phase 2 oversight, and it should be raised with whoever owns Phase 5 planning: Phase 2 wants at least a rough scale earlier than currently planned.**
+
+**Proposed, NOT built:** an uncontaminated scale proxy derived upstream of pairing. The legitimacy line, stated explicitly per Dan's constraint: select-stage raw ink is not contaminated by pairing decisions (pairing hasn't happened yet), so a **modal stroke-width or modal parallel-separation statistic taken directly from `select.py`'s output** sits on the correct side of that line. Anything derived from paired output (recovered wall thickness, candidate geometry) sits on the wrong side and would repeat the anti-pattern named above. This proposal is unbuilt, unsimulated, and is Dan's call whether it belongs in Phase 2 or is itself Phase 5 scope pulled forward.
+
+### NOT MEASURED / not claimed
+
+Why 30x50's three PRESENT_AND_KEPT walls still mispair despite a generously-long, in-window correct partner — the greedy-competition hypothesis above is a lead, not a finding. Whether 15x30's NEVER_PRESENT walls are a select.py defect or a genuine feature of that source PDF (occluded face, single-line drafting convention for that wall). The scale-proxy proposal's accuracy or its interaction with anything downstream.
+
+### Explicitly not built this round
+
+No change to any file. No lever adopted. `below_length_floor` lead is now understood to be a null result rather than merely unstarted — recorded as such, not left ambiguous.
+
+### Disposition — arithmetic stated without softening, decision point flagged for the gate, not resolved here
+
+**Best simulated F1 across every cell tried this phase, either factorial, is 0.2338 @ τ=0.01 (`thickness` alone) and 0.2078 @ τ=0.005, against an exit bar of F1 ≥ 0.99 @ τ=0.005.** Today's and the prior session's work is precision-only; **recall is unmoved** (best 0.3793 vs baseline 0.3448, one wall, from a lever that only partly worked) and remains the binding constraint on this phase.
+
+**The fork, stated as it was asked to be, decided at the gate and not here:**
+- 3 of 8 displaced walls (15x30) have a located, structural cause — page-relative thresholds and an absent upstream scale — with a proposed (unbuilt) fix path.
+- 3 of 8 (30x50) have no located cause at all; the obvious levers are exhausted and falsified.
+- 2 of 8 (`w_s106`, `w_s138`) are already fixed by the window lever.
+- Whether this constitutes "recall is capped by a removable, structural cause" or "recall's ceiling is unlocated and Phase 2's approach needs reconsidering at the gate" is genuinely mixed evidence for both readings on this 8-wall population, and is Dan's decision, not a conclusion this document reaches on his behalf.
+
+Durable artifacts: `analyze_step3a_length_floor_test.py`, `analyze_step3a_length_floor_factorial.py`, their JSON outputs, this section.

@@ -1,0 +1,108 @@
+{
+  "pre_registered_expectation_note": "Dan's hypothesis, his track record on this file noted (4 prior calls, mixed); fork stated as instructed rather than a point prediction -- PRESENT_AND_REMOVED dominating caps recall removably, NEVER_PRESENT dominating means the ceiling is upstream in select.py.",
+  "n_walls_tested": 6,
+  "verdict_counts": {
+    "NEVER_PRESENT": 3,
+    "PRESENT_AND_KEPT": 3
+  },
+  "per_wall": [
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s2",
+      "gt_length_mm": 4429.6,
+      "length_floor_mm": 163.1,
+      "verdict": "NEVER_PRESENT",
+      "n_opposite_side_segments": 0,
+      "opposite_side_segments": [],
+      "n_same_side_segments": 1
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s4",
+      "gt_length_mm": 9017.7,
+      "length_floor_mm": 163.1,
+      "verdict": "NEVER_PRESENT",
+      "n_opposite_side_segments": 0,
+      "opposite_side_segments": [],
+      "n_same_side_segments": 1
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s6",
+      "gt_length_mm": 4341.0,
+      "length_floor_mm": 163.1,
+      "verdict": "NEVER_PRESENT",
+      "n_opposite_side_segments": 0,
+      "opposite_side_segments": [],
+      "n_same_side_segments": 1
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s111",
+      "gt_length_mm": 7094.4,
+      "length_floor_mm": 253.1,
+      "verdict": "PRESENT_AND_KEPT",
+      "n_opposite_side_segments": 2,
+      "opposite_side_segments": [
+        {
+          "select_idx": 41,
+          "offset_mm": -63.7,
+          "length_native": 298.44,
+          "length_mm": 7326.0,
+          "kept_by_length_floor": true
+        },
+        {
+          "select_idx": 22478,
+          "offset_mm": -63.7,
+          "length_native": 298.44,
+          "length_mm": 7326.0,
+          "kept_by_length_floor": true
+        }
+      ],
+      "n_same_side_segments": 4
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s117",
+      "gt_length_mm": 2365.1,
+      "length_floor_mm": 253.1,
+      "verdict": "PRESENT_AND_KEPT",
+      "n_opposite_side_segments": 2,
+      "opposite_side_segments": [
+        {
+          "select_idx": 46,
+          "offset_mm": -36.0,
+          "length_native": 99.48,
+          "length_mm": 2442.0,
+          "kept_by_length_floor": true
+        },
+        {
+          "select_idx": 22461,
+          "offset_mm": -36.0,
+          "length_native": 99.48,
+          "length_mm": 2442.0,
+          "kept_by_length_floor": true
+        }
+      ],
+      "n_same_side_segments": 5
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s142",
+      "gt_length_mm": 2611.8,
+      "length_floor_mm": 253.1,
+      "verdict": "PRESENT_AND_KEPT",
+      "n_opposite_side_segments": 1,
+      "opposite_side_segments": [
+        {
+          "select_idx": 60,
+          "offset_mm": -62.4,
+          "length_native": 105.72,
+          "length_mm": 2595.2,
+          "kept_by_length_floor": true
+        }
+      ],
+      "n_same_side_segments": 2
+    }
+  ]
+}

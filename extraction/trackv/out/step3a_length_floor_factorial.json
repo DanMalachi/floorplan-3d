@@ -1,0 +1,307 @@
+{
+  "physical_priors": {
+    "window_max_mm": 500.0,
+    "min_wall_face_length_mm": 200.0
+  },
+  "cells": {
+    "baseline(none)": {
+      "pooled": {
+        "0.01": {
+          "tp": 10,
+          "precision": 0.1031,
+          "recall": 0.3448,
+          "f1": 0.1587
+        },
+        "0.005": {
+          "tp": 8,
+          "precision": 0.0825,
+          "recall": 0.2759,
+          "f1": 0.127
+        }
+      },
+      "per_plan": {
+        "15x30-ft-Best-House-Plan-Model": {
+          "n_candidates": 43,
+          "per_tau": {
+            "0.01": {
+              "tp": 3,
+              "n_pred": 43,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s32",
+                "w_s7"
+              ]
+            },
+            "0.005": {
+              "tp": 2,
+              "n_pred": 43,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s32"
+              ]
+            }
+          }
+        },
+        "30x50-Model-landscape": {
+          "n_candidates": 54,
+          "per_tau": {
+            "0.01": {
+              "tp": 7,
+              "n_pred": 54,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s102",
+                "w_s104",
+                "w_s110",
+                "w_s121",
+                "w_s126",
+                "w_s129",
+                "w_s149"
+              ]
+            },
+            "0.005": {
+              "tp": 6,
+              "n_pred": 54,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s102",
+                "w_s104",
+                "w_s110",
+                "w_s121",
+                "w_s129",
+                "w_s149"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "length_floor": {
+      "pooled": {
+        "0.01": {
+          "tp": 9,
+          "precision": 0.09,
+          "recall": 0.3103,
+          "f1": 0.1395
+        },
+        "0.005": {
+          "tp": 6,
+          "precision": 0.06,
+          "recall": 0.2069,
+          "f1": 0.093
+        }
+      },
+      "per_plan": {
+        "15x30-ft-Best-House-Plan-Model": {
+          "n_candidates": 42,
+          "per_tau": {
+            "0.01": {
+              "tp": 3,
+              "n_pred": 42,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s32",
+                "w_s7"
+              ]
+            },
+            "0.005": {
+              "tp": 2,
+              "n_pred": 42,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s32"
+              ]
+            }
+          }
+        },
+        "30x50-Model-landscape": {
+          "n_candidates": 58,
+          "per_tau": {
+            "0.01": {
+              "tp": 6,
+              "n_pred": 58,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s102",
+                "w_s104",
+                "w_s110",
+                "w_s121",
+                "w_s126",
+                "w_s149"
+              ]
+            },
+            "0.005": {
+              "tp": 4,
+              "n_pred": 58,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s102",
+                "w_s104",
+                "w_s121",
+                "w_s149"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "window": {
+      "pooled": {
+        "0.01": {
+          "tp": 11,
+          "precision": 0.125,
+          "recall": 0.3793,
+          "f1": 0.188
+        },
+        "0.005": {
+          "tp": 7,
+          "precision": 0.0795,
+          "recall": 0.2414,
+          "f1": 0.1197
+        }
+      },
+      "per_plan": {
+        "15x30-ft-Best-House-Plan-Model": {
+          "n_candidates": 41,
+          "per_tau": {
+            "0.01": {
+              "tp": 4,
+              "n_pred": 41,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s29",
+                "w_s32",
+                "w_s7"
+              ]
+            },
+            "0.005": {
+              "tp": 3,
+              "n_pred": 41,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s29",
+                "w_s32"
+              ]
+            }
+          }
+        },
+        "30x50-Model-landscape": {
+          "n_candidates": 47,
+          "per_tau": {
+            "0.01": {
+              "tp": 7,
+              "n_pred": 47,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s102",
+                "w_s104",
+                "w_s106",
+                "w_s110",
+                "w_s129",
+                "w_s138",
+                "w_s149"
+              ]
+            },
+            "0.005": {
+              "tp": 4,
+              "n_pred": 47,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s104",
+                "w_s129",
+                "w_s138",
+                "w_s149"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "window+length_floor": {
+      "pooled": {
+        "0.01": {
+          "tp": 11,
+          "precision": 0.1279,
+          "recall": 0.3793,
+          "f1": 0.1913
+        },
+        "0.005": {
+          "tp": 7,
+          "precision": 0.0814,
+          "recall": 0.2414,
+          "f1": 0.1217
+        }
+      },
+      "per_plan": {
+        "15x30-ft-Best-House-Plan-Model": {
+          "n_candidates": 40,
+          "per_tau": {
+            "0.01": {
+              "tp": 4,
+              "n_pred": 40,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s29",
+                "w_s32",
+                "w_s7"
+              ]
+            },
+            "0.005": {
+              "tp": 3,
+              "n_pred": 40,
+              "n_gt": 10,
+              "matched_gt_ids": [
+                "w_s21",
+                "w_s29",
+                "w_s32"
+              ]
+            }
+          }
+        },
+        "30x50-Model-landscape": {
+          "n_candidates": 46,
+          "per_tau": {
+            "0.01": {
+              "tp": 7,
+              "n_pred": 46,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s102",
+                "w_s104",
+                "w_s106",
+                "w_s110",
+                "w_s129",
+                "w_s138",
+                "w_s149"
+              ]
+            },
+            "0.005": {
+              "tp": 4,
+              "n_pred": 46,
+              "n_gt": 19,
+              "matched_gt_ids": [
+                "w_s104",
+                "w_s129",
+                "w_s138",
+                "w_s149"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "recovered_of_6_diagnosed_walls_at_tau_0_01": {
+    "baseline(none)": [],
+    "length_floor": [],
+    "window": [],
+    "window+length_floor": []
+  }
+}
