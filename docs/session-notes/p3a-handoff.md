@@ -17,12 +17,89 @@ follow-on session (**2026-07-29, 2nd**) **retargeted the P0-style clean-rate
 bar** (old 90% bar retired, see `reports/p3a-gate-v2-retarget.md` and
 `docs/extraction-plan.md`'s P3a "Done when" line) and ran the co-occurrence +
 stair diagnosis Dan asked for before any lever #2 sizing
-(`reports/p3a-defect-cooccurrence-and-stair-diagnosis.md`) — **read that
-report before starting stair or storage work**; it found stair's real
-bottleneck is upstream of the converter entirely (92.1% of stair instances
-fail already at the source `clean_at_source` check), the opposite shape from
-lever #1. The standing discipline rule below is still why every session's
-numbers in this file are trustworthy.
+(`reports/p3a-defect-cooccurrence-and-stair-diagnosis.md`). **A third
+same-day session corrected two of the 2nd session's own conclusions** — see
+"2026-07-29 session (3rd)" below and `reports/p3a-discriminator-
+disagreement-and-corrections.md`: the co-occurrence hypothesis is
+FALSIFIED (Dan's own hypothesis, tested and rejected), the replacement
+"discriminator disagreement explains it" claim was itself unmeasured and
+wrongly asserted, and the **5x conditional-rate miss is UNEXPLAINED** even
+after properly measuring discriminator disagreement in both directions.
+**Read the 3rd-session report before trusting anything the 2nd session's
+report says about WHY lever #1 under-performed** — the stair diagnosis and
+gate-retarget numbers from the 2nd session are unaffected and still stand
+(stair's bottleneck is still upstream of the converter; the gate's volume
+floor and per-type survival numbers are unchanged), only the wall-count
+scalar axis (corrected: now PASSES) and the miss-explanation narrative
+needed fixing. The standing discipline rule below is still why every
+session's numbers in this file are trustworthy — including this one, which
+exists because Dan caught two things worth catching.
+
+## 2026-07-29 session (3rd) — co-occurrence hypothesis falsified, both-directions discriminator disagreement measured, wall-count corrected (no lever built)
+
+Full detail: `reports/p3a-discriminator-disagreement-and-corrections.md`.
+Direct response to Dan rejecting the 2nd session's conclusions. Four
+pieces, all read-only measurement, no lever built:
+
+1. **Co-occurrence hypothesis FALSIFIED, recorded as Dan's own** (it was
+   his hypothesis before this session, tested directly): 18.6% multi-defect
+   rate cannot produce the ~2,100-3,600-plan shortfall the 5x miss
+   represents. The 2nd session's own report is corrected in place (not
+   silently rewritten — the false claim is left visible, marked superseded)
+   rather than quietly editing away that it originally asserted
+   "discriminator disagreement remains the better-supported explanation"
+   without ever measuring it — Dan correctly rejected that as numerically
+   unsupported (13/17,000 plans, one direction only, cannot explain
+   thousands either).
+2. **Both-directions, per-edge discriminator disagreement measured, full
+   population** (`extraction/synth/qa/measure_discriminator_disagreement.py`,
+   reimplements both check_plan's raw-ink and assemble_rooms's skeleton-band
+   per-edge coverage read-only, no changes to either core file). Pre-
+   registered prediction (under-recognition >> over-recognition, low
+   thousands) was **WRONG in both direction and magnitude**: over-
+   recognition (1,307 edges) is 2.8x LARGER than under-recognition (469
+   edges) — the direction previously only visible as 13 plan-level
+   containment violations turns out to be ~100x that at edge level, because
+   an over-recognized edge only flips a WHOLE PLAN wrongly-clean when every
+   other edge/room in it is also clean (true for only ~1% of over-
+   recognized edges). **Total disagreement (1,776 edges) is still smaller
+   than the shortfall it's a candidate explanation for. The 5x miss is
+   UNEXPLAINED** — stated plainly, not stretched to fit. Compounding
+   AND-semantics across required rooms per plan (lever #1 report's own
+   qualitative argument) remains unquantified and is the natural next
+   question, not measured this session.
+3. **Per-room-type survival table delivered with bathroom included, PASS/
+   FAIL at the proposed 15%-relative threshold** (still awaiting sign-off,
+   not applied): bathroom PASSES on survival-deviation grounds (47.0%,
+   −3.1% relative) despite being 70% of the currently-broken population by
+   raw count (4,618/6,603 plans) — survival deviation and raw broken-count
+   rank candidates differently, and Dan picks from the table, not from a
+   pre-selected ranking. Only `storage` (−56.5%) and `stair` (−98.4%) fail.
+4. **Wall-count/plan scalar axis CORRECTED**
+   (`extraction/synth/qa/measure_wallcount_source_derived.py`): the 2nd
+   session's +4.94% FAIL used the converter's own `n_walls` output, flagged
+   by Dan as potentially circular. Recomputed from raw ResPlan source
+   geometry (confirmed already multi-part at the source level, 4-11 parts/
+   plan spot-checked) — **PASSES at −0.59% relative, sign flipped**. The
+   original FAIL is retracted as a converter-output artifact (skeletonization
+   behaves differently on plans that also fail room assembly, independent of
+   true source complexity), not a real finding. **All 3 scalar axes now
+   PASS** — only the per-room-type survival threshold remains unresolved on
+   the distribution-match half of the gate.
+
+**Next session**: still no lever built (three sessions running on the same
+day, all diagnosis/measurement per instruction). Two genuinely open
+questions, not one: (a) if not co-occurrence and not (solely) discriminator
+disagreement, what DOES explain the remaining shortfall? Compounding
+AND-semantics across required rooms per plan is the leading unquantified
+candidate — sizing it would mean measuring, per broken plan, how many
+required rooms are BOTH notch-affected AND currently under-recognized,
+compounded across the plan, not just per-edge; (b) Dan's lever #2 pick is
+still open between stair (worst survival deviation, but tiny absolute
+count, source-level fix needed) and bathroom (passes survival deviation,
+but by far the largest raw broken-plan count, converter-level discriminator
+reconciliation needed) — both tables are now in front of him, neither is
+locked in.
 
 ## 2026-07-29 session (2nd) — gate v2 retarget, defect co-occurrence, stair diagnosis (no lever built)
 

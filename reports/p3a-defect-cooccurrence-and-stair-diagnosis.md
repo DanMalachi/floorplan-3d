@@ -45,15 +45,26 @@ itself — see the note at the end of this section).
 | 4 | 6 | 0.1% |
 | **≥2 (unfixable by a single-class lever)** | **1,229** | **18.6%** |
 
-**This does not confirm Dan's stated hypothesis as the dominant mechanism**,
-and that is reported plainly rather than bent to fit: only 18.6% of the
-CURRENT (post-lever-1) broken population carries a second co-occurring
-defect class. The already-identified discriminator-disagreement mechanism
-(§2 of the lever #1 report) remains the better-supported explanation for
-that specific 5x miss. What this measurement adds, and the reason Dan asked
-for it regardless of whether it explained lever #1's own shortfall: **it is
-now a real, quantified, population-scale number** (not asserted) that every
-future lever's pre-registered prediction must subtract before promising a
+**UPDATE, same-day follow-on session — this hypothesis is FALSIFIED, not
+just unconfirmed.** Only 18.6% of the CURRENT (post-lever-1) broken
+population carries a second co-occurring defect class — a mechanism present
+in at most 18.6% of the broken population cannot produce the observed
+shortfall (roughly 2,100-3,600 plans). This is Dan's own hypothesis, tested
+directly against the population, and it did not survive. **The claim
+originally made here — that the discriminator-disagreement mechanism
+"remains the better-supported explanation" — was itself asserted without
+measurement and was correctly rejected by Dan as numerically unsupported**
+(the only number then available, 13/17,000 containment violations, measures
+one direction only and cannot explain a shortfall of thousands either). See
+`reports/p3a-discriminator-disagreement-and-corrections.md` for the actual
+both-directions, per-edge, full-population measurement that followed: real
+disagreement exists (1,776 edges total) but is still not large enough to
+fully explain the 5x miss on its own. **The 5x miss is UNEXPLAINED as of
+that report — this section is superseded, kept only so the false start is
+visible rather than quietly edited away.** What this measurement still adds,
+regardless of not explaining lever #1's own shortfall: **it is now a real,
+quantified, population-scale number** (not asserted) that every future
+lever's pre-registered prediction must subtract before promising a
 gain — an 18.6% multi-defect rate means any single-class fix has a ceiling
 below 100% of its "class present" count, and that ceiling is now known
 instead of assumed.
@@ -232,10 +243,16 @@ Two candidate scopes, correctly separated per Dan's instruction (never
 ## Bottom line
 
 Co-occurrence in the CURRENT broken population is real (18.6% multi-defect)
-but modest — it is not the dominant explanation for lever #1's own 5x miss
-(that remains the discriminator-disagreement mechanism already identified),
-but it is now a quantified, population-scale number every future lever must
-account for. Stairs are not a converter-assembly problem the way notches
+but **FALSIFIED as an explanation for lever #1's own 5x miss** (Dan's
+hypothesis, tested directly — 18.6% cannot produce a shortfall of
+thousands). The replacement explanation this report originally proposed
+(discriminator disagreement) was itself unmeasured and correctly rejected;
+`reports/p3a-discriminator-disagreement-and-corrections.md` measured it
+properly (both directions, full population) and found it real but still
+insufficient to fully explain the miss — **the 5x miss is UNEXPLAINED**.
+The co-occurrence number is still useful going forward: it is now a
+quantified, population-scale figure every future lever must account for.
+Stairs are not a converter-assembly problem the way notches
 were: 92.1% of stair damage happens before `assemble_rooms` ever runs, at
 the source `clean_at_source` check, dominated by one named, population-
 confirmed mechanism (`c_exterior_boundary_or_void`, 72.9% of all stair

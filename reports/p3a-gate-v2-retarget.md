@@ -55,29 +55,39 @@ concurrency headroom on a 12-core machine).
 
 ### 2a. Scalar axes — converter_clean subset vs. full 17K, tolerance 2% relative
 
+**CORRECTED 2026-07-29 (3rd session) — see `reports/p3a-discriminator-
+disagreement-and-corrections.md` §3.** The wall-count/plan axis below was
+originally measured via the converter's own `n_walls` output and FAILED at
++4.94%. Dan flagged this as potentially circular (converter-derived value,
+converter-derived subset membership). Recomputed from raw SOURCE geometry
+(`len(get_geometries(plan["wall"]))`, zero converter involvement in the
+value) — **it PASSES, at −0.59% relative, sign flipped from the original**.
+The original FAIL is retracted as a converter-output artifact, not a real
+source-complexity bias. Table below shows the corrected, load-bearing
+figure; the retracted converter-derived one is kept for reference only.
+
 | Axis | Full population | Clean subset | Gap (relative) | Status |
 |---|---|---|---|---|
 | doors/plan | 6.382 | 6.349 | +0.52% | **PASS** |
 | rooms/plan | 8.217 | 8.078 | +1.68% | **PASS** |
-| wall-count/plan | 33.264 | 31.623 | **+4.94%** | **FAIL** |
+| wall-count/plan (source-derived, corrected) | 9.037 | 9.091 | **−0.59%** | **PASS** |
+| ~~wall-count/plan (converter-derived, retracted)~~ | ~~33.264~~ | ~~31.623~~ | ~~+4.94%~~ | ~~FAIL~~ |
 
-The 2% tolerance is not invented for this report — it's the doors/plan gap
-lever #1 already demonstrated achievable (`reports/p3a-lever1-build-and-
-remeasurement.md` §4: +1.4% → +0.5%). doors/plan and rooms/plan both clear
-it. **wall-count/plan is a new finding, not previously measured in this
-phase**: the clean subset has systematically fewer walls per plan than the
-full population (31.6 vs 33.3, −4.94% relative) — clean plans skew toward
-structurally simpler layouts. Two caveats on this axis, stated plainly
-rather than papered over: (a) unlike doors/rooms, ResPlan's wall layer has
-no natural discrete "count" at the source level (one unified polygon mass,
-not discrete wall objects) — `wall-count/plan` here is the **converter's
-own** post-skeletonization segment count (`stats["n_walls"]`), not a pure
-raw-source measurement like the other two axes, so it partially reflects
-skeletonization behavior, not only source content; (b) this makes it a
-weaker signal than doors/rooms, but the direction (simpler plans survive
-more) is real and worth Phase 3b knowing about — a wall-complexity bias in
-the training set is a plausible bottleneck knock-on for a solver built on
-skeleton output, and this is the first time this phase has measured it.
+**All 3 scalar axes now PASS at 2% relative.** The 2% tolerance is not
+invented for this report — it's the doors/plan gap lever #1 already
+demonstrated achievable (`reports/p3a-lever1-build-and-remeasurement.md`
+§4: +1.4% → +0.5%). For the historical record: ResPlan's wall layer looks
+like one unified polygon mass at first glance, but is actually already
+multi-part at the SOURCE level (confirmed 4-11 disjoint parts/plan on a
+5-plan spot check) — `wall-count/plan` is now that raw part count, a true
+source-derived measurement with zero converter involvement, same footing
+as doors/rooms. The original converter-derived version (`stats["n_walls"]`,
+the post-skeletonization segment count) is retracted, not merely
+superseded: its +4.94% gap did not reflect a real source-complexity bias in
+the clean subset, only an artifact of how skeletonization happens to behave
+differently on plans that also fail room assembly. No wall-complexity bias
+finding survives this correction — worth knowing so it isn't
+re-introduced from stale memory of this report's first draft.
 
 ### 2b. Per-room-type survival rate — measured, threshold PROPOSED, not yet ratified
 
@@ -126,17 +136,31 @@ a number inside an obvious canyon. **This bar fails loudly today on `stair`
 (0.8%) and `storage` (21.1%), by design** — that is the point of the
 retarget, not a defect in it.
 
+**Explicit PASS/FAIL table (per Dan's request that the table, not the
+number, be what's approved) is in `reports/p3a-discriminator-disagreement-
+and-corrections.md` §2**, alongside each type's raw broken-plan count —
+notably `bathroom` PASSES on survival-deviation grounds (−3.1% relative)
+despite being 70% of the currently-broken population by raw count, which
+is why survival deviation and raw broken-count rank lever candidates
+differently and both are laid out there for Dan's pick.
+
 ## Bottom line
 
-Volume floor: PASS, uncontested. Scalar axes: 2/3 PASS (doors, rooms),
-wall-count/plan FAILS at +4.94% (new finding, converter-derived metric,
-caveated above). Per-room-type survival: proposed 15%-relative threshold
-would FAIL loudly on `stair` and `storage` today, exactly as intended —
-**pending Dan's sign-off on the 15% number before it's treated as the
-ratified bar.** No lever built this session (see companion report,
-`reports/p3a-defect-cooccurrence-and-stair-diagnosis.md`, for the
-co-occurrence measurement and stair diagnosis that inform lever #2's future
-sizing).
+Volume floor: PASS, uncontested. Scalar axes: **3/3 PASS** (doors, rooms,
+wall-count — wall-count corrected 2026-07-29 3rd session from an initial
+converter-derived FAIL to a source-derived PASS, see `reports/p3a-
+discriminator-disagreement-and-corrections.md` §3). Per-room-type
+survival: proposed 15%-relative threshold would FAIL loudly on `stair` and
+`storage` today, exactly as intended — **pending Dan's sign-off on the 15%
+number before it's treated as the ratified bar**; explicit PASS/FAIL table
+with bathroom included is in the corrections report §2. No lever built
+this session (see companion reports, `reports/p3a-defect-cooccurrence-and-
+stair-diagnosis.md` and `reports/p3a-discriminator-disagreement-and-
+corrections.md`, for the co-occurrence measurement, both-directions
+discriminator disagreement, and stair diagnosis that inform lever #2's
+future sizing — none of it locks lever #2 to stair; bathroom remains in
+contention by raw broken-plan count even though it passes on survival
+deviation).
 
 ## Also this session: containment-invariant assert made non-fatal
 
