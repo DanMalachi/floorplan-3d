@@ -51,13 +51,19 @@ def _measure(plans: list[dict], n: int, label: str) -> dict:
     n_clean_at_source = 0
     n_converter_clean = 0
     n_both = 0
+    containment_violations = []
     for p in plans[:n]:
         src_clean = check_plan(p)["clean_at_source"]
         _, stats = convert_plan(p)
         conv_clean = bool(stats.get("clean"))
-        assert not conv_clean or src_clean, (
-            f"containment invariant violated: plan {p.get('id')} is converter_clean but not clean_at_source"
-        )
+        # Known, bounded raw-ink-vs-skeleton-band discriminator disagreement
+        # (13/17,000, 0.076%, see reports/p3a-lever1-build-and-remeasurement.md
+        # sec 6). Non-fatal by design (Dan's 2026-07-29 ruling): log + count,
+        # never assert-crash a sample run that happens to land on one.
+        if conv_clean and not src_clean:
+            containment_violations.append(p.get("id"))
+            print(f"  [containment violation, logged not fatal] plan {p.get('id')}: "
+                  f"converter_clean but not clean_at_source")
         n_clean_at_source += src_clean
         n_converter_clean += conv_clean
         n_both += src_clean and conv_clean
@@ -69,8 +75,10 @@ def _measure(plans: list[dict], n: int, label: str) -> dict:
           f"({100 * n_converter_clean / len(plans[:n]):.1f}%)")
     print(f"  converter_clean AND clean_at_source: {n_both}/{len(plans[:n])}")
     print(f"  converter_clean | clean_at_source: {n_both}/{n_clean_at_source} ({conditional:.1f}%)")
+    print(f"  containment invariant violations (known bounded class, logged not fatal): "
+          f"{len(containment_violations)}/{len(plans[:n])}")
     return dict(n=len(plans[:n]), clean_at_source=n_clean_at_source, converter_clean=n_converter_clean,
-                both=n_both, conditional_pct=conditional)
+                both=n_both, conditional_pct=conditional, containment_violations=containment_violations)
 
 
 def main(n: int = 300) -> None:

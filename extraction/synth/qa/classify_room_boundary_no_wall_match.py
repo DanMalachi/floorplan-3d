@@ -432,24 +432,29 @@ def compute_conditional_clean_rate(n=300):
     n_clean_at_source = 0
     n_converter_clean = 0
     n_both = 0
+    containment_violations = []
     for p in plans:
         src_clean = check_plan(p)["clean_at_source"]
         _, stats = convert_plan(p)
         conv_clean = bool(stats.get("clean"))
         # Containment invariant (verified 2026-07-26: 135/135 converter-clean
-        # plans were also clean_at_source, post-notch-suppression): you cannot
-        # cleanly CONVERT a plan whose source isn't clean_at_source in the
-        # first place -- conversion only adds lossy steps (skeletonization,
-        # wall_cycle assembly, offset calibration) on top of the raw source,
-        # never repairs it. If this ever fires, one of the two measures
-        # (check_plan's or convert_plan's own clean definition) has drifted
-        # out of sync with the other -- surface it immediately, don't let it
-        # silently inflate a future conditional-rate measurement.
-        assert not conv_clean or src_clean, (
-            f"containment invariant violated: plan {p.get('id')} is "
-            f"converter_clean but not clean_at_source -- check_plan and "
-            f"convert_plan's clean definitions have diverged"
-        )
+        # plans were also clean_at_source, pre-lever-1): you cannot cleanly
+        # CONVERT a plan whose source isn't clean_at_source in the first
+        # place -- conversion only adds lossy steps on top of the raw
+        # source, never repairs it. Population-scale re-check (2026-07-29,
+        # post lever #1) found 13/17,000 (0.076%) real violations: a known,
+        # bounded raw-ink-vs-skeleton-band discriminator disagreement
+        # (check_plan reads raw wall ink, assemble_rooms's stage-1 reads
+        # skeleton bands -- two different inputs by design, see
+        # reports/p3a-lever1-build-and-remeasurement.md sec 6 and Dan's
+        # 2026-07-29 ruling not to unify them over a 0.076% class). NON-FATAL
+        # by design: a class this small must not be able to assert-crash a
+        # sampling run that happens to land on one of these plans -- log,
+        # classify, count, keep going.
+        if conv_clean and not src_clean:
+            containment_violations.append(p.get("id"))
+            print(f"  [containment violation, logged not fatal] plan {p.get('id')}: "
+                  f"converter_clean but not clean_at_source")
         if src_clean:
             n_clean_at_source += 1
         if conv_clean:
@@ -464,6 +469,10 @@ def compute_conditional_clean_rate(n=300):
     if n_clean_at_source:
         print(f"  converter_clean | clean_at_source: {n_both}/{n_clean_at_source} "
               f"({100 * n_both / n_clean_at_source:.1f}%) <- the number the task asked for")
+    print(f"  containment invariant violations (known bounded class, logged not fatal): "
+          f"{len(containment_violations)}/{n}")
+    if containment_violations:
+        print(f"    ids: {containment_violations}")
 
 
 def plot_instance(raw_plan, room_type, inst_idx, edge_index, category, out_path):
