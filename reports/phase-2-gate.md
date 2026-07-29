@@ -839,4 +839,89 @@ No change to `MAX_THICKNESS_SEARCH_FRAC`, `_thickness_plausible_clusters`, `_gre
 
 Held for Dan's review. Durable artifacts: `analyze_step3a_displacement.py`, `out/step3a_displacement.json`, `out/step3a_displacement_overlays.png`, `analyze_step3a_chain_spread.py` (falsified lead, kept), `out/step3a_chain_spread.json`, this section.
 
-**Root cause established: the recall gap is not a rejection problem, a fragmentation problem, or a matcher problem — it is that `pair.py` pairs wall faces with distant unrelated parallel lines, and its thickness guard is calibrated on the very contamination it exists to reject.** The obvious next step — narrow the search window to an architecturally-motivated bound and/or derive the plausibility cluster from something other than the contaminated population — is a *fix*, and per standing discipline must be **simulated offline and scored at τ=0.01 and τ=0.005 before it is funded**, exactly as the run-merge and bounded-diameter counterfactuals were (both of which that rule correctly stopped).
+**Root cause established: the recall gap is not a rejection problem, a fragmentation problem, or a matcher problem — it is that `pair.py` pairs wall faces with distant unrelated parallel lines, and its thickness guard is calibrated on the very contamination it exists to reject.** The obvious next step — narrow the search window to an architecturally-motivated bound and/or derive the plausibility cluster from something other than the contaminated population — is a *fix*, and per standing discipline must be **simulated offline and scored at τ=0.01 and τ=0.005 before it is funded**, exactly as the run-merge and bounded-diameter counterfactuals were (both of which that rule correctly stopped). That simulation is the next section, and it stopped a fourth.
+
+## NAMED ANTI-PATTERN — the self-certifying guard
+
+**Any guard whose threshold is calibrated on the population it filters will, once that population is dominated by the failure the guard exists to catch, certify whatever the pipeline produces.** It cannot fail loudly. It reports zero rejections and looks healthy.
+
+This is recorded as a named anti-pattern rather than a bug because it is the most transferable finding of the phase, and because this codebase has now hit it **three times in three different modules**, twice before anyone named it.
+
+**Confirmed live instance — `pair.py::_thickness_plausible_clusters`.** Clusters the observed pair-thickness distribution to decide which thicknesses are plausible. Wrong-partner pairs are 82–97% of that distribution, so the derived cluster spans 21–6324mm on 30x50 (a single cluster covering everything) and `n_pairs_rejected_thickness_outlier` is **0 on both plans and always has been**. The guard has never once fired. Same structural error as fitting a coordinate frame to the predictions being scored: the ruler is derived from the thing it is meant to judge.
+
+**Historic instance, already fixed before it was named — `pair.py::_cluster_by_perp`.** Its grouping tolerance was originally `round(perp / thickness * 4)`, keyed to each fragment's *own recovered thickness* — a pipeline-produced, contaminated quantity. Replaced by an absolute fraction of the plan diagonal precisely because noisy recovered thickness was scattering real same-wall fragments. Correct fix, same disease.
+
+**Instance correctly avoided by a domain prior — `select.py::_dominant_axis`, and this is the model to copy.** A plain global argmax over the orientation histogram locks θ onto the *hatch* angle, because hatching outweighs wall strokes in aggregate length on both plans (15x30: ~164k units at bin 44–45 vs ~15k at bin 0). That would have silently inverted the entire selector — keep hatch, reject walls — **with no error signal**, which is the anti-pattern's signature. It was avoided by encoding a real drafting convention (hatch is conventionally drawn ~45° to read as distinct from axis-aligned structural lines) instead of trusting the population's own statistics. **A domain prior, not a data statistic, is what breaks the loop.**
+
+**Audited clean.** `select.py`'s use of `cluster_widths` is diagnostic-only (per-cluster aligned/diagonal counters); actual selection uses an absolute 20° tolerance. `coverage.py`'s Track V/R router uses an absolute 95% bar. `_cluster_by_perp`'s current tolerance is an absolute fraction of diagonal.
+
+**Open / watch — `assemble.py`'s closure bounds.** `AXIAL_EXTENSION_BOUND_FRAC * w.thickness` and `STATIONARY_OVERHANG_FRAC * w.thickness` scale each bound by *that wall's own recovered thickness* — a pipeline-produced quantity now known to be contaminated (median recovered pre-merge thickness 504–653mm against a real ~150mm; only 3–18% of pre-merge candidates are physically plausible). Not the same self-certifying loop, but the same family: a bound trusting a pipeline output that is measurably wrong. **Untested. Must be re-checked after any pairing fix lands, because the thickness it depends on will change.**
+
+**Rule going forward, for this phase and beyond:** a guard's threshold must come from a physical/domain prior, an absolute bound, or a demonstrably uncontaminated reference — never from the distribution it is filtering. If a guard reports zero rejections on real data, treat that as a suspected self-certifying guard until proven otherwise, not as evidence of a clean population.
+
+## Step 3a Blocker 1 — FULL FACTORIAL SIMULATION of the three candidate fixes: all three fail to recover recall
+
+`extraction/trackv/analyze_step3a_pairing_factorial.py`, `out/step3a_pairing_factorial.json`. Simulation only — `pair.py`, `assemble.py`, `eval/` all unmodified; levers applied in a local reimplementation whose all-levers-off cell reproduces the shipped pipeline exactly (43/54 candidates; tp 3/7 at τ=0.01, 2/6 at τ=0.005 — identical to the recorded baseline).
+
+### The physical prior, stated so it can be checked without reference to this corpus
+
+`WALL_THICKNESS_MIN_MM = 50`, `WALL_THICKNESS_MAX_MM = 500`. Lower bound: the thinnest thing built as a wall in residential practice (stud/glass partitions ~50–75mm); below that, two parallel strokes are a drafting artifact, not a wall's two faces. Upper bound: comfortably above half-brick ~115mm, full-brick ~230mm, insulated/cavity exterior ~300mm, and this project's own domain note on Israeli MAMAD safe-room walls at 250–400mm; stone/retaining reach ~500mm. **Neither bound was chosen by trying values against 15x30 or 30x50.** Both are deliberately generous — the job is to exclude the 4–6 *metre* "walls" the current window admits, not to fit a tight range.
+
+Resulting search window: **31.6 native units (15x30) / 20.4 (30x50)**, against the current `0.25 · diagonal` = **257.75** on both.
+
+> **Architectural consequence, flagged now rather than discovered later:** converting a mm prior into pair.py's native units requires mm-per-unit **at pair time**, and the shipped pipeline does not have it there (`units.system = "plan_units"`, `mm_per_unit = None`, `scale_confidence = 0.0`; scale recovery is Phase 5's job). This simulation uses the derived frame constant. A passing result here would therefore **not** have been a drop-in patch — it would need scale-before-pairing or a scale-free restatement of the prior.
+
+### Full factorial, pooled across both plans (29 GT walls)
+
+| cell | candidates | P@0.01 | R@0.01 | F1@0.01 | P@0.005 | R@0.005 | F1@0.005 |
+|---|---|---|---|---|---|---|---|
+| baseline (none) | 97 | 0.1031 | 0.3448 | 0.1587 | 0.0825 | 0.2759 | 0.1270 |
+| greedy | 116 | 0.0345 | 0.1379 | 0.0552 | 0.0172 | 0.0690 | 0.0276 |
+| **thickness** | **48** | **0.1875** | 0.3103 | **0.2338** | **0.1667** | 0.2759 | **0.2078** |
+| thickness+greedy | 81 | 0.0494 | 0.1379 | 0.0727 | 0.0370 | 0.1034 | 0.0545 |
+| window | 88 | 0.1250 | **0.3793** | 0.1880 | 0.0795 | 0.2414 | 0.1197 |
+| window+greedy | 104 | 0.0385 | 0.1379 | 0.0602 | 0.0288 | 0.1034 | 0.0451 |
+| window+thickness | 70 | 0.1571 | **0.3793** | 0.2222 | 0.1143 | 0.2759 | 0.1616 |
+| window+thickness+greedy | 81 | 0.0494 | 0.1379 | 0.0727 | 0.0370 | 0.1034 | 0.0545 |
+
+### THE HEADLINE: the root cause is real, and fixing it does not recover recall
+
+**Best recall in the entire factorial is 0.3793 against a baseline of 0.3448 — one wall.** Every F1 gain in the table is precision-driven (junk deleted), not recall-driven (walls found). The exit bar is F1 ≥ 0.99; the best cell reaches 0.2338.
+
+The window lever *does* work on exactly the walls it was designed for — it recovers **2 of the 8 diagnosed displaced walls** (`w_s106`, `w_s138`, both 30x50; 0 of 3 on 15x30). So the mechanism is confirmed a second time, independently. But **eliminating wrong-partner pairs is necessary and not sufficient**: for 6 of the 8, removing the wrong partner leaves *nothing correct in its place*. The correct opposite face is apparently not in the candidate set at all.
+
+### Pre-registration scored, plainly
+
+| prediction (mine unless noted) | outcome |
+|---|---|
+| L-window is the dominant lever, recall 0.60–0.75 | **WRONG, badly.** Actual 0.3793 (+1 wall). |
+| L-thickness weak on recall because greedy consumes faces *before* the filter runs | **RIGHT on mechanism** — recall 0.3448→0.3103, no gain, the small loss I allowed for. |
+| L-thickness precision 0.25–0.45 | **WRONG, too optimistic.** Actual 0.1875 — though it is the single best lever by F1. |
+| L-greedy modest, recall 0.45–0.60 | **CATASTROPHICALLY WRONG — wrong direction.** Actual 0.1379, a 60% collapse. |
+| all three combined best, recall 0.65–0.85 | **WRONG.** Combined = 0.1379; greedy dominates negatively wherever it appears. |
+| no cell reaches the 0.99 exit bar | **RIGHT.** Best F1 0.2338. |
+| *(Dan's)* correct pairing improves τ=0.005 by a larger factor than τ=0.01 | **FAILS, and is said plainly as instructed.** Only `thickness` shows it (×1.0 vs ×0.9). `window` actively *hurt* tight-tau recall (0.2759→0.2414). The chain "fix pairing → true centerlines → tight-tau gains" does not hold, because no lever produced materially more correct centerlines in the first place. |
+
+### Why L-greedy collapses — and why the existing sort is right
+
+Nearest-partner-first maximises exactly the failure `_raw_pairs_in_bucket`'s own docstring already warns about: it preferentially consumes segments into the *thinnest* available pairs, which are near-duplicate strokes (double-drawn edges, rendering duplicates, hatch line pairs) sitting almost on top of each other. `MIN_THICKNESS_STROKE_MULTIPLE` blocks the most degenerate of these but not the merely-thin. **Longest-overlap-first is doing real work**: a long shared overlap is genuine evidence of a shared wall run, and proximity alone is not. This lever is falsified and should not be revisited.
+
+### What this reframes — the next lead, NOT started
+
+If the correct opposite face is missing for 6 of 8 displaced walls, the question moves **upstream of pairing**, to whether both faces survive into the candidate set at all. `MIN_CANDIDATE_LENGTH_FRAC = 0.01 · diagonal` drops every segment shorter than **253mm (30x50) / 163mm (15x30)** before pairing is attempted. The earlier attribution already found `below_length_floor` as the primary cause for 2 walls — and on those two, **12 of 14 and 15 of 15** covering segments were below the floor. Its 2/10 headline share may badly understate it, because the floor also silently removes *one face of a pair* on walls attributed elsewhere. This is a hypothesis, unmeasured, and explicitly not acted on.
+
+### NOT MEASURED / not claimed
+
+Why 6 of 8 displaced walls have no correct partner available. Whether the length floor is responsible. Whether the same levers behave differently on the other two Track V plans (Matterport, 20x45) — this factorial covers only 15x30 and 30x50. The scale-free restatement of the physical prior. Any interaction with `assemble.py`'s thickness-scaled closure bounds (flagged above as a watch item).
+
+### Explicitly not built this round
+
+Nothing was changed in `pair.py`, `assemble.py`, or anywhere under `eval/`. No lever was adopted. No threshold was tuned. `below_length_floor` still queued and unstarted.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts: `analyze_step3a_pairing_factorial.py`, `out/step3a_pairing_factorial.json`, this section and the anti-pattern section above.
+
+**The simulate-before-building rule has now stopped four fixes** (closure split-side bound; run-merging; bounded-diameter clustering; and this factorial's three levers). Three of the four looked obviously correct beforehand. The single most valuable output of this phase may be that rule's track record rather than any individual measurement.
+
+**Correction to the previous section's numbers:** `analyze_step3a_chain_spread.py` scored its τ=0.005 row on *un-assembled* walls, reporting baseline recall 0.2069 / precision 0.0619. The correct assembled baseline is **0.2759 / 0.0825**. Its conclusion is unaffected — both arms of that comparison used the same path and recall was identical between them — but the absolute τ=0.005 figures in that section should be read from this factorial's baseline row instead.
