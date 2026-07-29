@@ -1,4 +1,4 @@
-# Phase 3a session handoff — updated 2026-07-26
+# Phase 3a session handoff — updated 2026-07-29
 
 Branch: `phase-3a-renderer` (worktree `fp-phase3a`, terminal B per
 `docs/extraction-plan.md`'s two-terminal table). The 2026-07-19 session
@@ -9,11 +9,49 @@ diagnostic (`diagnose_cycle_unrepairable.py`) surfaced, then fixed a QA
 script bug in `diagnose_clean_rate.py` that had been hiding a second,
 same-sized failure mode (`broken_room_cycle` on required rooms) behind
 "uncategorized". The renderer (deliverable 2) has still not been started.
-Auditing of the notch-suppression/`classify()` diagnostic layer is now
-DONE (2026-07-22 through 2026-07-26 sessions) — see "2026-07-26 session"
-below for the current numbers and **read the standing discipline rule
-immediately below first**, it's the reason this session's own bugs got
-caught before being reported.
+Auditing of the notch-suppression/`classify()` diagnostic layer completed
+2026-07-22 through 2026-07-26, and **lever #1 (doorway-notch handling,
+Option C) is now BUILT** (2026-07-29 session) — see "2026-07-29 session"
+below and the full report at
+`reports/p3a-lever1-build-and-remeasurement.md` **before starting any new
+work**; it names a real, unresolved 13/17,000-plan containment-invariant
+break that the next session should read about first. The standing
+discipline rule immediately below is still why this session's own
+numbers are trustworthy.
+
+## 2026-07-29 session — lever #1 BUILT, re-measured, one new finding open
+
+Full detail: `reports/p3a-lever1-build-and-remeasurement.md`. Summary:
+
+- **Built** in two commits (`9b59ba4` pure `notch.py` module move, `8d1f227`
+  the actual `assemble_rooms` stage-1 exemption + area-gate normalization).
+  53/53 tests green, including a new committed converter-path defect-flip
+  test (`test_gate_flip_check_audited.py`) — zero of 62 human-audited
+  genuine-defect edges wrongly flip to converter-assembled.
+- **Conditional clean rate**: 52.5% → 58.4% (n=300) / **55.6%**
+  (population, 17,000 plans) — short of the pre-registered 70-80%. Held-out
+  check (305 tuning-influenced plans excluded) confirms the discriminator
+  generalizes (58.0%, not materially below the full-sample 58.4%).
+- **The metric that actually mattered** (Dan's reframe: bias, not volume):
+  doors-per-plan gap between the converter-clean subset and the full 17K
+  **narrowed as predicted**, +1.4% relative (before) → +0.5% (after).
+- **New finding, not pre-registered**: population-scale run surfaced 13
+  plans (0.076%) where the previously-verified containment invariant
+  (`converter_clean ⇒ clean_at_source`) no longer holds — `check_plan`'s
+  raw-wall-ink notch discriminator and `assemble_rooms`'s new
+  skeleton-band notch discriminator can disagree on the same edge. Not
+  fixed this session (scope: gate report only). **Read report §6 before
+  trusting a future `compute_conditional_clean_rate(300)` run that happens
+  not to hit one of the 13 ids** — it would assert-crash if it did.
+- **Next session**: no lever #2 started (per instruction, stopped at the
+  gate report). Two candidates once picked back up: (a) reconcile the
+  two notch discriminators' input geometry (§6) so the containment
+  invariant is exactly true again, before trusting further population
+  numbers without re-checking it; (b) size the `notch_plus_other` /
+  storage-stair (non-notch) failure populations that explain the
+  70-80%-vs-55.6% shortfall, per the diagnose step's own pre-registered
+  branch ("materially below that means a SECOND independent failure
+  cause... which would be the more valuable finding").
 
 ## Standing discipline, adopted 2026-07-26 — read this before trusting any new QA number
 
