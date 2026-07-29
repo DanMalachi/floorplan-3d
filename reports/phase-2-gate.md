@@ -657,3 +657,103 @@ Held for Dan's review. Durable artifacts: `extraction/trackv/analyze_step3a_fram
 **Blocker 2 (issue #8) is CLOSED.** The coordinate frame is derived, not fitted — zero free parameters, formula and constants recorded above so a future reader can regenerate rather than trust them. The prior 3–6τ "unmeasurable" reading on 15x30 was an artifact of the old 4-parameter anchor fit, not a property of the frame itself. The bbox-based offsets seen mid-investigation are recorded above specifically so they are never reused as calibration.
 
 **The real target, now unblocked, is Blocker 1 — candidate over-production (~3x predicted walls vs. GT).** That work is explicitly not started this session.
+
+## Step 3a Blocker 1 resumed — recall is the real gap, two of Dan's own hypotheses falsified, coverage metric retired and replaced
+
+Opened per Dan's direct instruction: classification before tuning, no thresholds fit to make these two plans look good, hypotheses tested on the whole population, never on the examples that suggested them.
+
+### Step 0 — fresh wall-level matched baseline under the derived (zero-parameter) transform
+
+`extraction/trackv/analyze_step3a_blocker1_baseline.py`. Replaces both the raw 54-vs-19 candidate-count arithmetic (still true, still not a matched baseline) and the 3.7%/9.4% vertex-proximity figures (too strict a test — a correct wall split at a different point scores zero on it).
+
+| plan | n_pred (pre-split) | n_gt | P@τ0.01 | R@τ0.01 | F1@τ0.01 |
+|---|---|---|---|---|---|
+| 15x30 | 43 | 10 | 0.070 | 0.30 | 0.113 |
+| 30x50 | 54 | 19 | 0.130 | 0.368 | 0.192 |
+
+Post-split F1 collapses to ~0 — `match_walls`'s `overlap_ratio>0.8` fails split fragments that only cover part of a GT wall's span. Corroborating evidence for the mechanism below, not a separate defect.
+
+### Step 1 — family classification matrix (pre-split, both plans, 97 candidates)
+
+`extraction/trackv/analyze_step3a_family_classification.py`. First pass defined `sheet_border` as touching the physical PDF page edge — zero hits. The real rectangle Dan identified from the overlay (30x50, candidates `W0`/`W22`/`W23`/`W38`) sits ~1000mm *outside the GT envelope*, not near the page edge; rule rewritten to detect a near-full-span parallel-offset loop against the GT bbox instead. Recorded so a future reader doesn't repeat the same wrong assumption.
+
+| family | n | share | matched | spurious | spurious% |
+|---|---|---|---|---|---|
+| sheet_border | 4 | 4.1% | 0 | 4 | 100% |
+| dimension | 3 | 3.1% | 0 | 3 | 100% |
+| furniture_fixture | 39 | 40.2% | 1 | 38 | 97.4% |
+| other | 51 | 52.6% | 9 | 42 | 82.4% |
+
+**FALSIFIED HYPOTHESIS 1 (Dan's, from the overlay review): sheet_border + dimension are the over-production story.** Combined they are 7.2% of candidates. Killing both perfectly recovers almost nothing. Dropped — visual salience of long lines does not equal population share.
+
+**Real problem restated: recall, not precision.** Only 10/29 GT walls across both plans have any one-to-one match at τ=0.01. Ceiling arithmetic assuming a perfect kill of every spurious candidate with zero collateral: 15x30 → P=1.0, R=0.30, F1=0.46; 30x50 → P=1.0, R=0.368, F1=0.54. The 0.99 exit bar (at the tighter τ=0.005) is unreachable by precision work alone, and this restores the project's own recall-first doctrine (a missed wall costs ~10x a spurious one) to a phase that had been running against it.
+
+### Step 2 — coverage measurement, FIRST ATTEMPT — SUPERSEDED, do not use
+
+`out/step3a_coverage.json` (script `analyze_step3a_coverage.py`) reported select-stage coverage mean 0.887 / pair-stage mean 0.673 (τ=0.01) / pair-stage mean 0.591 (τ=0.005), and a death-bucket split of 1 (a) / 9 (b) / 9 (c) across 19 unmatched GT walls.
+
+**SUPERSEDED. Reason:** `_coverage_fraction` matched each GT-wall centerline sample to the nearest candidate segment **regardless of orientation**. Every GT wall endpoint sits at a junction where a crossing (perpendicular) wall's corner is trivially within τ — confirmed directly on 15x30's `w_s23`: ~30% genuine same-orientation coverage near one end, a real gap through the middle, then false "coverage" from an unrelated perpendicular candidate near the other end, contributing nothing real. Do not cite the numbers in this subsection as pipeline quality; they are retired below, not merely caveated, per Dan's explicit instruction not to leave two disagreeing tables in the tree.
+
+### Step 3 — run-merge probe (offline, `eval/` untouched) — FALSIFIED HYPOTHESIS 2
+
+`extraction/trackv/analyze_step3a_run_merge_probe.py`. Test: re-group pair.py's already-merged pre-split candidates by the same axis-bucket + tight perpendicular tolerance it already uses, but span each group's full min-to-max projection with **no** opening-gap bound — i.e., let a run merge straight through a crossing wall's junction, matching GT's one-wall-per-run convention (10 walls for an entire 15x30 house).
+
+Pre-registered expectation (recorded before running): recall +25 to +35pp, sharp precision gain via candidate-count drop, still short of 0.99.
+
+| | today | run-merged | Δ |
+|---|---|---|---|
+| candidates (both plans) | 97 | 86 | −11.3% |
+| recall @ τ=0.01 (both plans) | 0.345 | 0.345 | **0** |
+
+**FALSIFIED HYPOTHESIS 2 (Dan's, and the prior session's framing): fragmentation/segmentation-convention mismatch is the driver of bucket (c).** If single GT walls were being chopped into multiple same-line fragments, removing the gap bound would have merged far more than 11 candidates and recovered at least some GT walls. It recovered zero. Dropped as the primary mechanism for bucket (c); guardrail respected throughout — nothing under `eval/` was imported or modified, no matcher threshold touched.
+
+Chasing the null result (rather than reporting it flat) is what surfaced the Step 2 coverage confound in the first place: `w_s23`'s "coverage" turned out to come from a perpendicular candidate near its far endpoint, not a mergeable same-line fragment — explaining directly why merging same-axis candidates did nothing for it.
+
+### Step 4 — coverage measurement, CORRECTED (orientation-constrained) — this is the number to use
+
+`extraction/trackv/analyze_step3a_coverage_oriented.py`, `out/step3a_coverage_oriented.json`. A candidate counts toward a GT wall's coverage only if (i) its direction is within `selection.angular_tolerance_deg` of the wall's direction (mod 180 — reuses the existing, already-justified tolerance, no new constant invented) and (ii) its perpendicular offset from the wall's own centerline is within τ. No orientation-agnostic fallback.
+
+Pre-registered expectation (Dan's, recorded before running): bucket (c) shrinks substantially, (a)+(b) grow, select-stage coverage falls materially below 0.887.
+
+| population | τ | mean | median | min | max |
+|---|---|---|---|---|---|
+| select-stage | 0.01 | 0.870 | 0.952 | 0.095 | 1.0 |
+| pair-stage | 0.01 | 0.586 | 0.762 | 0.0 | 1.0 |
+| select-stage | 0.005 | 0.488 | 0.429 | 0.0 | 1.0 |
+| pair-stage | 0.005 | 0.516 | 0.571 | 0.0 | 1.0 |
+
+Death buckets, 19 unmatched GT walls, corrected metric:
+
+| bucket | n (old) | n (corrected) |
+|---|---|---|
+| a — dissect/select blind | 1 | 2 |
+| b — select saw it, pair dropped it | 9 | 10 |
+| c — coverage exists, match still fails | 9 | 7 |
+
+Contamination (old − corrected, per GT wall, τ=0.01): pair-stage mean 0.087 / median 0.0 / max 0.571; select-stage mean 0.017 / median 0.0 / max 0.048.
+
+**Verdict on the pre-registration: PARTIALLY CONFIRMED, direction right, magnitude smaller than expected.** Bucket (c) did shrink (9→7) and (a)+(b) did grow (10→12), and `w_s23` — the wall used to diagnose the confound — moved from (c) to (b) exactly as the mechanism predicts. But median contamination across the population is **0** — most GT walls were not materially affected; the mean is pulled up by a right-skewed few (max single-wall shift 0.571). Select-stage coverage barely moved (0.887→0.870), not the material fall predicted. Stated plainly per standing discipline: the confound was real and worth fixing, but it does not overturn the overall picture — genuine coverage remains moderate-to-good at τ=0.01 (pair-stage median 0.762) and drops further at the tighter exit-bar τ=0.005 (median 0.571), which is now itself real signal, not an artifact.
+
+**Bucket (b) — select saw it, pair dropped it — is now the single largest identified loss (10/19, 52.6% of unmatched), tied with the corrected coverage drop between stages (0.870→0.586 mean at τ=0.01).** Not yet bisected into its two named suspects (thickness-outlier rejection; no parallel partner found) — that bisection is the next session's work, not done here.
+
+### Tau-sensitivity risk — DOWNGRADED (numbers were contaminated), STRUCTURAL CONCERN UNCHANGED
+
+Prior session's numeric support (pair-stage coverage 0.905→0.667 median, τ=0.01→0.005) came from the retired orientation-agnostic metric and is superseded by the table above: corrected pair-stage median is 0.762 (τ=0.01) → 0.571 (τ=0.005), a real but smaller drop than first reported. Cross-axis contamination is more forgiving at larger τ, so tightening τ strips contamination faster than real coverage — some, not all, of the originally-reported drop was artifact.
+
+**The structural concern itself is independent of this correction and is unchanged, open, RISK — not acted on:**
+- Exit-bar τ=0.005 of plan diagonal ≈ 50mm on these plans (15x30 diagonal ≈10.05m).
+- GT is `gt_status: "provisional_unaudited"`; `convert_legacy_gt.py` assigns a **default 150mm thickness** where the legacy trace format recorded none. A centerline-vs-face convention difference of half a wall thickness is ~75mm — larger than the entire 50mm error budget at the exit-bar τ.
+- Specific checkable suspect (not yet tested): a systematic centerline-vs-face offset of ~half thickness between pred and GT conventions, testable as a signed residual along each wall's normal — a consistent one-sided ~75mm offset would confirm a convention bug, not noise.
+- Phase 0's plan requires 30–50 audited plans with 10 double-annotated to establish inter-annotator agreement as a published ceiling. Not done. Phase 2 cannot honestly claim F1≥0.99 @ τ=0.005 against GT whose own precision at that τ is unmeasured.
+
+Not started: any GT audit work. That is Phase 0 scope and Dan's call, not Phase 2's.
+
+### Explicitly not built this round
+
+No kill rules (guardrail: `eval/` public interfaces stay frozen; the legitimate fix for bucket (c), if it turns out to be needed, is production-side collinear-run-merging in `assemble.py` sized by real evidence, not a matcher change). Bucket (b) not bisected into its two named suspects. Bucket (c)'s 7 remaining walls not re-examined individually. No GT audit work.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts: `analyze_step3a_blocker1_baseline.py`, `analyze_step3a_family_classification.py`, `analyze_step3a_coverage.py` (retired, kept for the record), `analyze_step3a_run_merge_probe.py`, `analyze_step3a_coverage_oriented.py`, and their JSON outputs under `out/`, this section.
+
+**Two of this phase's own hypotheses died this round, both recorded above rather than quietly dropped: sheet_border+dimension are not the over-production story (7.2% combined), and fragmentation/segmentation-convention mismatch is not bucket (c)'s driver (run-merge recovered zero GT walls).** The real gap is recall (10/29 GT walls matched at all) with bucket (b) — pairing dropping candidates select already saw — as the largest identified single loss event. Next session's work, in order: bisect bucket (b) into its two named suspects (thickness-outlier rejection vs. no-parallel-partner-found) via a per-wall attribution histogram before changing any `pair.py` logic; bucket (c) and any run-merging fix stay downstream of that, sized by whatever bucket (b)'s bisection leaves outstanding. Kill rules and any matcher-adjacent work remain explicitly out of scope.
