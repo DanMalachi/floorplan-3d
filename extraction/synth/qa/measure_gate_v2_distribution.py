@@ -16,15 +16,27 @@ Phase 3b's training set. Two parts, one population pass:
         own doors/plan gap already demonstrated achievable (measure_
         distribution_shift.py: +1.4% -> +0.5%), grounded, not invented.
      b. Per-room-type survival rate (clean-subset instance count / full-
-        population instance count, for each of the 7 traced room types) —
-        prints the full spread so a threshold can be PROPOSED against the
-        observed natural gap (see reports/p3a-gate-v2-retarget.md), not
-        invented silently. This script does not hardcode a pass/fail
-        threshold for 2b; that number needs Dan's sign-off first.
+        population instance count, for each of the 7 traced room types),
+        PASS/FAIL at SURVIVAL_THRESHOLD_RELATIVE_PCT below (RATIFIED,
+        see the constant's own comment for the justification).
 
 Reuses measure_distribution_shift.py's exact per-plan scan pattern (raw
 source door/room counts via get_geometries/ROOM_LABEL_MAP, converter's own
-`clean` flag and `n_walls`) — one population pass, not three separate ones.
+`clean` flag) — one population pass, not three separate ones.
+
+**wall-count/plan is SOURCE-derived, permanently** (corrected 2026-07-29,
+3rd session, see reports/p3a-discriminator-disagreement-and-corrections.md
+§3): `len(get_geometries(plan["wall"]))` — ResPlan's raw wall MultiPolygon's
+own disjoint-part count (confirmed already multi-part at the source level,
+4-11 parts/plan spot-checked), zero converter involvement in the value.
+The original version of this script used the converter's own post-
+skeletonization segment count (`stats["n_walls"]`) instead, which FAILED at
++4.94% relative — Dan flagged this as potentially circular (converter-
+derived value AND converter-derived subset membership), and the
+source-derived recomputation confirmed it: PASSES at -0.59%, sign flipped.
+The converter-derived path is deliberately not left in this file in any
+form (not commented out, not a fallback) so the gate cannot silently
+revert to the retracted metric.
 
 CLI: python -m extraction.synth.qa.measure_gate_v2_distribution [limit] [workers]
 """
@@ -46,21 +58,35 @@ PKL_PATH = Path(__file__).resolve().parents[3] / "data" / "resplan" / "raw" / "R
 VOLUME_FLOOR = 6700
 SCALAR_AXIS_TOLERANCE_PCT = 2.0
 
+# RATIFIED by Dan, 2026-07-29 (3rd session). Justification for the record
+# (this matters more than the number itself): the observed per-type
+# survival distribution is BIMODAL with a 53-point gap between the worst
+# PASSING type (bathroom, -3.1% relative) and the best FAILING type
+# (storage, -56.5% relative). Any threshold chosen between roughly 5% and
+# 50% relative deviation produces the IDENTICAL PASS/FAIL verdict on every
+# type measured so far -- the value is not load-bearing and does not need
+# defending later; 15% was picked as a round number comfortably inside that
+# range (5x margin above the tightest real cluster), not tuned to a close
+# call. If a future room type's survival ever lands inside the 5-50% gap,
+# that would be the first genuinely close case this threshold has to
+# adjudicate -- revisit the number then, not before.
+SURVIVAL_THRESHOLD_RELATIVE_PCT = 15.0
+
 
 def _score_one(raw_plan: dict) -> dict:
     p = normalize_keys(dict(raw_plan))
     n_doors = len(get_geometries(p.get("door")))
+    n_wall_parts = len(get_geometries(p.get("wall")))
     room_types = []
     for rt in ROOM_LABEL_MAP:
         room_types.extend([rt] * len(get_geometries(p.get(rt))))
     _, stats = convert_plan(raw_plan)
-    ok = bool(stats.get("ok"))
     return dict(
         id=raw_plan.get("id"),
         n_doors=n_doors,
         n_rooms=len(room_types),
         room_types=room_types,
-        n_walls=stats.get("n_walls", 0) if ok else 0,
+        n_walls=n_wall_parts,
         converter_clean=bool(stats.get("clean")),
     )
 
@@ -106,7 +132,8 @@ def main(limit: int | None = None, workers: int = 8) -> None:
         print(f"  {label:16s} full={full_mean:.3f}  clean={clean_mean:.3f}  "
               f"gap={gap:+.3f} ({gap_pct:+.2f}% relative)  -> {axis_status}")
 
-    print(f"\n{'=' * 70}\n2b. PER-ROOM-TYPE SURVIVAL RATE (no threshold applied here — proposal only)")
+    print(f"\n{'=' * 70}\n2b. PER-ROOM-TYPE SURVIVAL RATE (RATIFIED threshold: "
+          f"{SURVIVAL_THRESHOLD_RELATIVE_PCT}% relative deviation)")
     full_mix = Counter()
     clean_mix = Counter()
     for r in records:
@@ -117,19 +144,25 @@ def main(limit: int | None = None, workers: int = 8) -> None:
     overall_survival = 100 * n_clean / n_total
     print(f"  overall unconditional survival (== converter_clean rate): {overall_survival:.1f}%")
     survivals = []
+    any_fail = False
     for rt in sorted(ROOM_LABEL_MAP):
         full_n = full_mix.get(rt, 0)
         clean_n = clean_mix.get(rt, 0)
         surv = 100 * clean_n / full_n if full_n else float("nan")
-        survivals.append((rt, full_n, clean_n, surv))
         dev = surv - overall_survival
-        rel_dev = 100 * dev / overall_survival
+        rel_dev = 100 * dev / overall_survival if overall_survival else 0.0
+        rt_status = "PASS" if abs(rel_dev) <= SURVIVAL_THRESHOLD_RELATIVE_PCT else "FAIL"
+        any_fail = any_fail or rt_status == "FAIL"
+        survivals.append((rt, full_n, clean_n, surv, rel_dev, rt_status))
         print(f"    {rt:10s} full_n={full_n:6d}  clean_n={clean_n:6d}  survival={surv:5.1f}%  "
-              f"deviation={dev:+6.1f}pp  ({rel_dev:+.0f}% relative to overall)")
+              f"deviation={dev:+6.1f}pp  ({rel_dev:+.0f}% relative)  -> {rt_status}")
 
-    print("\n  sorted ascending by survival rate (look for the natural gap here):")
-    for rt, full_n, clean_n, surv in sorted(survivals, key=lambda t: t[3]):
-        print(f"    {surv:5.1f}%  {rt}")
+    print("\n  sorted ascending by survival rate:")
+    for rt, full_n, clean_n, surv, rel_dev, rt_status in sorted(survivals, key=lambda t: t[3]):
+        print(f"    {surv:5.1f}%  {rt:10s} {rt_status}")
+
+    print(f"\n  2b overall: {'FAIL' if any_fail else 'PASS'} "
+          f"({'at least one room type exceeds the threshold' if any_fail else 'all room types within threshold'})")
 
 
 if __name__ == "__main__":
