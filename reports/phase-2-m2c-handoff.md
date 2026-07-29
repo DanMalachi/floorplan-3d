@@ -2,7 +2,11 @@
 
 Branch `phase-2-trackv-m2c` (worktree `fp-phase2`). Not merged to main — held on this branch by explicit decision. This document exists so a cold session can resume with zero re-derivation. Full evidence, tables, and residuals live in `reports/phase-2-gate.md`'s step-3a sections; this is the compressed pointer, not a replacement for it.
 
-> **Read "BLOCKER 2 CLOSED" and "RESUME POINTER" at the bottom first.** Blocker 1's metadata branch was run and closed as a negative result (see "DONE SINCE THIS DOC WAS WRITTEN" below), then Blocker 2 (issue #8, coordinate frame) was run and CLOSED — derived, zero fitted parameters, confirmed by direct visual review of the overlay. **Blocker 1 (over-production) is the live target now.** Everything above "DONE SINCE THIS DOC WAS WRITTEN" is kept for the record, not as live direction — in particular its Blocker 2 instructions are superseded, not current.
+> **START AT THE BOTTOM: read "ROOT CAUSE FOUND" and the "RESUME POINTER" that follows it. Everything else in this document is history.**
+>
+> Short version for a cold session: Blocker 2 (coordinate frame) is CLOSED — derived, zero fitted parameters. Blocker 1 was reframed from over-production (precision) to **recall**, and its root cause is now **found and quantitatively verified**: `pair.py` pairs wall faces with distant unrelated parallel lines, and its thickness-plausibility guard is calibrated on the very contamination it exists to reject. Four hypotheses were falsified along the way and are recorded so they are not re-attempted. **No fix has been built or simulated.** That is the next job.
+>
+> Everything above the "ROOT CAUSE FOUND" section is kept for the record, not as live direction. In particular: the Blocker 2 instructions, the over-production framing, the kill-rule plan, and the bucket-(b) "pair dropped it" label are all **superseded**.
 
 ## STATUS
 
@@ -74,20 +78,67 @@ Full derivation, formula, and evidence in `reports/phase-2-gate.md`'s "Step 3a B
 
 **Correction — do not carry the 3.7%/9.4% vertex-proximity figures into Blocker 1 as a recall or over-production baseline.** Those came from the endpoint-residual diagnostic (fraction of predicted endpoints landing within 300mm of *any* GT vertex) and are a stricter test than wall correctness: a correctly-extracted wall that's merely split at a different point, or that legitimately terminates mid-span at a T-junction, contributes endpoints far from any GT vertex and scores zero on that test even though the wall itself is right. Dan reviewed the overlay directly and confirms substantial red-on-green collinearity — wall-level recall is materially higher than 3.7%/9.4%. **Blocker 1 needs its own wall-level matched baseline (the harness, tau-based) measured fresh at the start of that session** — do not reuse the vertex-proximity numbers as if they were it.
 
-## RESUME POINTER — Blocker 1 (candidate over-production), fresh session
+## SUPERSEDED RESUME POINTER (over-production / kill rules) — kept for the record only
 
-**Open this in a new terminal/session**, not a continuation — the closing session's context is 8+ commits of now-irrelevant frame arithmetic; a clean context on a well-defined problem is worth more than continuity here. `git status` first to confirm you're on `phase-2-trackv-m2c` in the `fp-phase2` worktree, clean tree, latest commit is the "Blocker 2 closed" one.
+The plan that stood here — measure a matched baseline, classify candidates into `{sheet-border, dimension, furniture/fixture, other}`, then write kill rules — **was executed and is finished.** Its conclusion inverted its own premise: precision work cannot reach the exit bar and over-production is not the blocker. See below. Do not restart it.
 
-**Step 0, before anything else: measure a fresh wall-level matched baseline via the harness (tau-based), on both plans, under the now-derived zero-parameter transform.** This is the number Blocker 1 works against — not the 54-vs-19 raw-candidate-count arithmetic (still true and still the headline, but not a matched baseline) and not the vertex-proximity 3.7%/9.4% (explicitly not this, see correction above).
+---
 
-**Then open with classification, not tuning.** Per Dan's direct instruction: label every over-produced candidate into `{sheet-border, dimension, furniture/fixture, other}` across BOTH plans and report the full confusion matrix with population shares — standing rule, hypotheses get tested on the whole population, never on the examples that suggested them. A large `other` bucket is itself the finding; report it before writing any kill rule, don't fold it away.
+# ROOT CAUSE FOUND — `pair.py` pairs wall faces with distant unrelated parallel lines
 
-Three named hypotheses to test, visible directly in the overlay (`out/step3a_frame_overlay.png`):
+Full evidence, tables and overlays: `reports/phase-2-gate.md`, section "Step 3a Blocker 1 — ROOT CAUSE FOUND". Read that before touching anything. Compressed here so a cold session can act without re-deriving.
 
-1. **Sheet border / title-block frame** — the large rectangle enclosing the whole drawing, outside the building envelope. Visible clearly on 30x50. Likely explains a real share of the bbox-stretch effect previously (wrongly) attributed to generic noise in the now-rejected bbox measurement.
-2. **Dimension chains / extension lines** — long lines running past the building envelope on both plans.
-3. **Furniture + fixture linework** — the dense short-stroke field inside rooms, heaviest on 15x30.
+## The finding
 
-**Explicitly do not open Blocker 1 by tuning thresholds on these two plans.** Per-plan tuning is a trap this project already fell into once — the standing discipline is to enumerate building-block morphology, not per-plan tune. Kill families with rules that name what they kill, not thresholds fit to make these two plans' numbers look good. Every kill rule must state which named family it targets and log its rejection reason per the funnel's kill-log convention (`pair.py`'s existing `n_pairs_rejected_thickness_outlier`-style funnel counters are the pattern to follow).
+Raw select-stage ink is **correct** — it sits within −98…+147mm of the GT centerline on every affected wall (face offset, as expected). The wall candidate built from that ink lands **107–2208mm away**, because `pair.py` matched a true wall face against a distant parallel line instead of its own opposite face 150mm away. Verified across the full affected population, not inferred from one case:
 
-Standing constraints, unchanged: do not touch closure's SPLIT-side bound (see "Explicitly ruled out" above — still ruled out). Bring measurements to a STOP before building any filter, same as Blocker 1's metadata step and Blocker 2's frame derivation both did.
+- `displacement ≈ half the recovered pair thickness` — the exact signature of a wrong-partner pair. 7 of 8 walls land at ratio 0.93–1.12, median 0.997. (`w_s106`, the smallest displacement, does not fit and is not claimed to.)
+- Measured as a three-level decomposition (L1 select ink → L2 pre-merge pair centerline → L3 final merged), all against the same reference. **L1 clean, displacement appears at L2, unchanged by L3.** Pairing, not merging.
+- Confirmed by direct visual review of `out/step3a_displacement_overlays.png` (one frame per wall, true scale).
+
+## Why the existing guard never fired
+
+| | 15x30 | 30x50 |
+|---|---|---|
+| pair search window (`MAX_THICKNESS_SEARCH_FRAC` = 0.25 · diagonal) | 4077 mm | 6327 mm |
+| GT wall thickness | 150 mm | 150 mm |
+| accepted "plausible" thickness clusters | (11–59), (112–3775) | (21–6324) — one cluster, spans everything |
+| `n_pairs_rejected_thickness_outlier` | 0 | 0 |
+| pre-merge candidates with plausible thickness (150±75mm) | 3% | 18% |
+
+1. The search window is **27–42× the real wall thickness** — the correct partner has no privileged status among hundreds of candidates inside 4–6 metres.
+2. `_thickness_plausible_clusters` **calibrates itself on the contaminated population it is meant to filter**. Wrong-partner pairs are 82–97% of that population, so the derived cluster spans the whole range and rejects nothing. Same class of error as fitting the coordinate frame to the predictions being scored.
+3. `_greedy_select_pairs` sorts on longest overlap first, so a long face against a long distant line outranks the correct local pair.
+
+## RESUME POINTER — next session
+
+**Nothing has been fixed. No parameter was changed. The next job is to simulate a fix, not to build one.**
+
+1. **Simulate offline first, score before funding.** Standing rule, and it has now stopped three fixes that would have been wasted or harmful (length/connectivity bound on closure's split side; run-merging; bounded-diameter clustering — the last one measured *identical* recall and *worse* precision). Build the counterfactual the same way `analyze_step3a_run_merge_probe.py` and `analyze_step3a_chain_spread.py` did: import pair.py's pure helpers read-only, change one thing, re-score recall/precision/F1 at **τ=0.01 and τ=0.005**, both plans. Do not edit `pair.py` until a simulation says it helps.
+2. **Two independent levers, simulate them separately before combining** — they are different faults and either could be sufficient:
+   - the **search window** (`MAX_THICKNESS_SEARCH_FRAC`) — needs an architecturally-motivated bound, not a value tuned to make these two plans look good;
+   - the **plausibility guard** — needs its plausible range derived from something *other* than the contaminated population (architectural priors, or the un-contaminated subset, or an absolute physical bound). Fixing the guard alone may be enough; fixing the window alone may be enough. Measure which.
+3. **Pre-register a prediction before each simulation and score it plainly afterwards.** Four hypotheses have been falsified in this phase so far; the discipline of stating them first is what made each one cheap.
+4. **Re-check the downstream buckets after any fix rather than treating them as separate problems.** Bucket (c)'s 7 walls, and the family-classification `other` bucket (52.6% of candidates), are now plausible *consequences* of this same cause — untested, but do not spend a session on them as independent problems first.
+5. `below_length_floor` (2 walls) — real, clean, distinct lever, **one fifth the size** of the displacement problem. Queued, unstarted, correctly deprioritised.
+
+## Falsified — recorded so they are not re-attempted
+
+- **Sheet border + dimension lines as the over-production story.** 7.2% of candidates combined. Killing both perfectly is worth almost nothing.
+- **Fragmentation / segmentation-convention mismatch as bucket (c)'s driver.** Run-merge with no gap bound: 97→86 candidates, recall 0.345→0.345, **zero** GT walls recovered.
+- **Chain-clustering drift in `_cluster_by_perp` as the displacement cause.** Spread/threshold correlation with unmatched status r=−0.09 (wrong sign); bounded-diameter counterfactual gave **identical** recall and *worse* precision (0.1031→0.0917, candidates 97→109). The drift is real (7/48 groups exceed tolerance) but is not what breaks these walls.
+- **Both originally-named bucket-(b) suspects** — `thickness_outlier_rejected` = 0, `no_raw_partner_found` = 0.
+- **Coverage measured without an orientation constraint** (`analyze_step3a_coverage.py`) — retired; every GT endpoint sits at a junction where a crossing wall is trivially within τ. Use `analyze_step3a_coverage_oriented.py`.
+- **Fitting the coordinate frame** — closed, derived, zero parameters. Never re-fit.
+
+## Standing constraints, unchanged
+
+- `eval/` public interfaces are **frozen**. Loosening `overlap_ratio` or relaxing Hungarian one-to-one is a frozen-contract violation *and* the same error as fitting the frame — making the ruler agree with the prediction. If you find yourself editing anything under `eval/`, stop.
+- Do not touch closure's SPLIT-side bound (see "Explicitly ruled out" above — still ruled out).
+- Do not touch the pairing **geometry** — recovered thickness on a correct pair is ~149mm against GT's 150mm. The centerline math works; *which segments get paired* is the defect.
+- Bring measurements to a STOP before building. Every round of this phase has done so.
+- **GT-audit risk stays open and is Phase 0 scope, not Phase 2's**: `provisional_unaudited`, default 150mm thickness, exit-bar τ=0.005 ≈ 50mm, inter-annotator agreement never measured. Independently corroborated this round — GT's uniform default thickness measurably smears the face-offset signal. Do not start audit work; do not let the exit bar be claimed against unaudited GT without saying so.
+
+## Model escalation
+
+Per `docs/extraction-plan.md` Phase 2, wall-face pairing is designated **Opus 4.8 / xhigh** — that is exactly where this is now stuck. If the terminal is restarted on Opus mid-stream, that is the plan being followed, not a reset. This document is the handoff; nothing is lost.

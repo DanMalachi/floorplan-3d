@@ -758,3 +758,85 @@ No kill rules (guardrail: `eval/` public interfaces stay frozen; the legitimate 
 Held for Dan's review. Durable artifacts: `analyze_step3a_blocker1_baseline.py`, `analyze_step3a_family_classification.py`, `analyze_step3a_coverage.py` (retired, kept for the record), `analyze_step3a_run_merge_probe.py`, `analyze_step3a_coverage_oriented.py`, and their JSON outputs under `out/`, this section.
 
 **Two of this phase's own hypotheses died this round, both recorded above rather than quietly dropped: sheet_border+dimension are not the over-production story (7.2% combined), and fragmentation/segmentation-convention mismatch is not bucket (c)'s driver (run-merge recovered zero GT walls).** The real gap is recall (10/29 GT walls matched at all) with bucket (b) — pairing dropping candidates select already saw — as the largest identified single loss event. Next session's work, in order: bisect bucket (b) into its two named suspects (thickness-outlier rejection vs. no-parallel-partner-found) via a per-wall attribution histogram before changing any `pair.py` logic; bucket (c) and any run-merging fix stay downstream of that, sized by whatever bucket (b)'s bisection leaves outstanding. Kill rules and any matcher-adjacent work remain explicitly out of scope.
+
+## Step 3a Blocker 1 — ROOT CAUSE FOUND: `pair.py` pairs wall faces with distant unrelated parallel lines
+
+This is the first mechanically-established, quantitatively-verified cause of the recall gap. Everything above it in the Blocker 1 sequence was elimination; this is the positive finding.
+
+### Taxonomy correction — bucket (b) is misnamed and the old name misdirects
+
+The label "select saw it, pair dropped it" is **wrong** and must not be carried forward. Nothing is dropped for these 8 walls: a candidate **exists**, with correct orientation and (post-merge) a near-correct recovered thickness. It simply sits far from the ink. Renamed **`b_displaced_candidate`**. The remaining 2 of the original 10 keep their own distinct name, `below_length_floor` — real, clean, one fifth the size, queued and unstarted.
+
+The old label sends a reader hunting for a rejection that never happened. `analyze_step3a_bucket_b_attribution.py` measured exactly that: `thickness_outlier_rejected` = **0**, `no_raw_partner_found` = **0**. Both originally-named suspects scored zero.
+
+### The measurement (`analyze_step3a_displacement.py`, `out/step3a_displacement.json`)
+
+Three observable pipeline levels, every one measured as a signed perpendicular offset against the *same* reference — the intended GT wall's own centerline, along that wall's normal. Whichever level first shows the displacement is the stage that caused it. No mechanism was assumed in advance.
+
+| wall | GT len (mm) | L1 select ink (min/med/max mm) | L2 pre-merge pair centerline (mm) | L3 final (mm) | displacement |
+|---|---|---|---|---|---|
+| 15x30 `w_s2` | 4430 | −67 / −67 / −67 | 1467 | 1488 | **+1488** |
+| 15x30 `w_s4` | 9018 | −78 / −78 / −78 | −574 | −574 | **−574** |
+| 15x30 `w_s6` | 4341 | 10 / 10 / 10 | 877 | 877 | **+877** |
+| 30x50 `w_s106` | 3363 | −76 / 31 / 146 | 108 … 3086 | 108 | **+108** |
+| 30x50 `w_s111` | 7094 | −64 / 19 / 96 | −983 … 58 | −929 | **−929** |
+| 30x50 `w_s117` | 2365 | −36 / 113 / 127 | −1565 … −284 | −1511 | **−1511** |
+| 30x50 `w_s138` | 3048 | −98 / −97 / 56 | −2199 … 1202 | −2145 | **−2145** |
+| 30x50 `w_s142` | 2612 | −62 / 77 / 87 | −2428 … −371 | −2208 | **−2208** |
+
+**L1 is clean on every wall.** Raw select-stage ink sits within −98…+147mm of the GT centerline — i.e. on the wall, at face offset, exactly as the face-offset finding predicts. The pipeline sees this ink correctly.
+
+**The displacement appears at L2 and is unchanged by L3.** Merging is not the cause; **pairing is**. (This also explains why the earlier bounded-diameter merge counterfactual recovered exactly zero recall — the damage was already done upstream of merging.)
+
+### The mechanism, verified on the full bucket, not inferred from one case
+
+`displacement ≈ half the recovered pair thickness` — the signature of a face paired with the **wrong** partner: the centerline lands midway between the true wall face and some distant parallel line.
+
+| wall | displacement | pair thickness | ratio \|disp\| / (thickness/2) |
+|---|---|---|---|
+| `w_s2` | 1488 | 3059 | 0.973 |
+| `w_s4` | −574 | 1024 | 1.121 |
+| `w_s6` | 877 | 1743 | 1.007 |
+| `w_s111` | −929 | 1832 | 1.014 |
+| `w_s117` | −1511 | 3059 | 0.988 |
+| `w_s138` | −2145 | 4500 | 0.954 |
+| `w_s142` | −2208 | 4730 | 0.933 |
+| `w_s106` | 108 | 78 | 2.776 ← the one exception, and the smallest displacement in the set |
+
+7 of 8 land in 0.93–1.12, median 0.997. `w_s106` (displacement 108mm, thinnest pair) does not fit and is **not** claimed to — its candidate is roughly correctly placed and is failing to match for some other reason, unexamined.
+
+**Direct visual confirmation** (`out/step3a_displacement_overlays.png`, one frame per wall, true scale): in every panel the covering ink lies exactly on the GT centerline, while the final candidate runs parallel and far away, midway to another distant parallel line visible among the member segments. On `w_s6` the arithmetic is visible by eye — ink at y≈11500, an unrelated line at y≈9750, candidate at y≈10600 = their midpoint.
+
+### Why the existing guard never caught it
+
+`pair.py`'s design intent, per its own comment on `MAX_THICKNESS_SEARCH_FRAC`, is *search wide, then reject implausible thickness explicitly* so bad pairs are visible in the funnel rather than silently missing. The first half works; the second half has never fired once.
+
+| | 15x30 | 30x50 |
+|---|---|---|
+| pair search window (`MAX_THICKNESS_SEARCH_FRAC` = 0.25 · diagonal) | **4077 mm** | **6327 mm** |
+| GT wall thickness | 150 mm | 150 mm |
+| accepted "plausible" thickness clusters | (11–59), (112–**3775**) | (21–**6324**) — a single cluster spanning everything |
+| `n_pairs_rejected_thickness_outlier` | **0** | **0** |
+| pre-merge candidates with plausible thickness (150±75mm) | **3%** | **18%** |
+| median recovered pre-merge thickness | 653 mm | 504 mm |
+
+Two compounding faults, both structural:
+
+1. **The search window is 27–42× the real wall thickness.** Any wall face has hundreds of parallel partners inside 4–6 metres; the correct partner 150mm away has no privileged status.
+2. **The plausibility guard is self-calibrating on the contaminated population it is supposed to filter.** `_thickness_plausible_clusters` clusters the *observed* thickness distribution — and since wrong-partner pairs dominate that distribution (97% / 82% of it), the cluster it derives spans the entire range and accepts everything. On 30x50 it produces one cluster from 21mm to 6324mm. This is the same class of error as fitting the coordinate frame to the predictions being scored: the ruler is derived from the thing it is meant to judge.
+
+`_greedy_select_pairs` compounds it by sorting on longest overlap first, so a long face against a long distant line outranks the correct local pair.
+
+### NOT MEASURED / not claimed
+
+Whether fixing the search window and/or the plausibility guard actually recovers recall — **not simulated, not built, per the standing simulate-before-building rule.** No parameter was changed. `w_s106`'s different failure is unexplained. Whether the same mechanism drives bucket (c)'s 7 walls or the family-classification `other` bucket is untested, though both are now plausible downstream consequences of the same cause and should be re-checked after any fix rather than treated as separate problems.
+
+### Explicitly not built this round
+
+No change to `MAX_THICKNESS_SEARCH_FRAC`, `_thickness_plausible_clusters`, `_greedy_select_pairs`, or any other pair.py logic. No counterfactual re-score of a narrowed window. `eval/` untouched. `below_length_floor` (2 walls) still queued and unstarted.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts: `analyze_step3a_displacement.py`, `out/step3a_displacement.json`, `out/step3a_displacement_overlays.png`, `analyze_step3a_chain_spread.py` (falsified lead, kept), `out/step3a_chain_spread.json`, this section.
+
+**Root cause established: the recall gap is not a rejection problem, a fragmentation problem, or a matcher problem — it is that `pair.py` pairs wall faces with distant unrelated parallel lines, and its thickness guard is calibrated on the very contamination it exists to reject.** The obvious next step — narrow the search window to an architecturally-motivated bound and/or derive the plausibility cluster from something other than the contaminated population — is a *fix*, and per standing discipline must be **simulated offline and scored at τ=0.01 and τ=0.005 before it is funded**, exactly as the run-merge and bounded-diameter counterfactuals were (both of which that rule correctly stopped).

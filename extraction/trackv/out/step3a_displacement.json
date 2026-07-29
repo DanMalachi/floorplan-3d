@@ -1,0 +1,911 @@
+{
+  "summary": {
+    "taxonomy_correction": "bucket (b) renamed b_displaced_candidate -- a candidate EXISTS with correct orientation and near-correct thickness but sits off-position; nothing was rejected. below_length_floor (2 walls) is a separate, still-queued lever.",
+    "n_walls": 8,
+    "displacement_mm": {
+      "values": [
+        1487.6,
+        -574.1,
+        877.3,
+        107.7,
+        -928.8,
+        -1511.0,
+        -2145.3,
+        -2207.6
+      ],
+      "abs_mean": 1229.9,
+      "abs_median": 1208.2,
+      "abs_min": 107.7,
+      "abs_max": 2207.6,
+      "n_positive": 3,
+      "n_negative": 5
+    },
+    "correlations_n8_fragile": {
+      "note": "n=8 is the FULL population of this bucket, but a Pearson r at n=8 is fragile -- read as descriptive, not inferential.",
+      "abs_displacement_vs_gt_length": -0.5089,
+      "abs_displacement_vs_member_count": 0.6618,
+      "abs_displacement_vs_gt_thickness": null
+    },
+    "overlay_path": "extraction\\trackv\\out\\step3a_displacement_overlays.png"
+  },
+  "per_wall": [
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s2",
+      "gt_length_mm": 4429.6,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "H",
+      "n_covering_select_segments": 1,
+      "L1_select_offsets": {
+        "n_distinct": 1,
+        "min": -67.0,
+        "max": -67.0,
+        "median": -67.0
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 1,
+        "min": 1467.1,
+        "max": 1467.1,
+        "median": 1467.1
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 1,
+        "min": 3058.7,
+        "max": 3058.7,
+        "median": 3058.7
+      },
+      "L3_final_offsets": {
+        "n_distinct": 1,
+        "min": 1487.6,
+        "max": 1487.6,
+        "median": 1487.6
+      },
+      "intended_final_candidate": {
+        "final_idx": 1,
+        "via_select_idx": 24,
+        "offset_mm": 1487.6,
+        "thickness_mm": 2722.2,
+        "n_members": 8,
+        "n_covering_segments_carried": 1
+      },
+      "displacement_mm": 1487.6,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 24,
+            "offset_mm": -67.0
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 1,
+            "via_select_idx": 24,
+            "offset_mm": 1467.1,
+            "thickness_mm": 3058.7,
+            "partner_source_indices": [
+              24,
+              30
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 1,
+            "via_select_idx": 24,
+            "offset_mm": 1487.6,
+            "thickness_mm": 2722.2,
+            "n_members": 8
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s4",
+      "gt_length_mm": 9017.7,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "V",
+      "n_covering_select_segments": 1,
+      "L1_select_offsets": {
+        "n_distinct": 1,
+        "min": -77.6,
+        "max": -77.6,
+        "median": -77.6
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 1,
+        "min": -574.1,
+        "max": -574.1,
+        "median": -574.1
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 1,
+        "min": 1024.2,
+        "max": 1024.2,
+        "median": 1024.2
+      },
+      "L3_final_offsets": {
+        "n_distinct": 1,
+        "min": -574.1,
+        "max": -574.1,
+        "median": -574.1
+      },
+      "intended_final_candidate": {
+        "final_idx": 38,
+        "via_select_idx": 9,
+        "offset_mm": -574.1,
+        "thickness_mm": 1024.2,
+        "n_members": 2,
+        "n_covering_segments_carried": 1
+      },
+      "displacement_mm": -574.1,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 9,
+            "offset_mm": -77.6
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 55,
+            "via_select_idx": 9,
+            "offset_mm": -574.1,
+            "thickness_mm": 1024.2,
+            "partner_source_indices": [
+              9,
+              126
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 38,
+            "via_select_idx": 9,
+            "offset_mm": -574.1,
+            "thickness_mm": 1024.2,
+            "n_members": 2
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s6",
+      "gt_length_mm": 4341.0,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "H",
+      "n_covering_select_segments": 1,
+      "L1_select_offsets": {
+        "n_distinct": 1,
+        "min": 10.3,
+        "max": 10.3,
+        "median": 10.3
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 1,
+        "min": 877.3,
+        "max": 877.3,
+        "median": 877.3
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 1,
+        "min": 1743.2,
+        "max": 1743.2,
+        "median": 1743.2
+      },
+      "L3_final_offsets": {
+        "n_distinct": 1,
+        "min": 877.3,
+        "max": 877.3,
+        "median": 877.3
+      },
+      "intended_final_candidate": {
+        "final_idx": 21,
+        "via_select_idx": 3,
+        "offset_mm": 877.3,
+        "thickness_mm": 1743.2,
+        "n_members": 2,
+        "n_covering_segments_carried": 1
+      },
+      "displacement_mm": 877.3,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 3,
+            "offset_mm": 10.3
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 0,
+            "via_select_idx": 3,
+            "offset_mm": 877.3,
+            "thickness_mm": 1743.2,
+            "partner_source_indices": [
+              8,
+              3
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 21,
+            "via_select_idx": 3,
+            "offset_mm": 877.3,
+            "thickness_mm": 1743.2,
+            "n_members": 2
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s106",
+      "gt_length_mm": 3363.4,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "H",
+      "n_covering_select_segments": 6,
+      "L1_select_offsets": {
+        "n_distinct": 4,
+        "min": -75.9,
+        "max": 146.4,
+        "median": 30.7
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 4,
+        "min": 107.7,
+        "max": 3086.3,
+        "median": 1446.8
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 4,
+        "min": 77.6,
+        "max": 6324.4,
+        "median": 2822.8
+      },
+      "L3_final_offsets": {
+        "n_distinct": 4,
+        "min": 107.7,
+        "max": 3072.4,
+        "median": 1453.3
+      },
+      "intended_final_candidate": {
+        "final_idx": 14,
+        "via_select_idx": 207,
+        "offset_mm": 107.7,
+        "thickness_mm": 77.6,
+        "n_members": 2,
+        "n_covering_segments_carried": 2
+      },
+      "displacement_mm": 107.7,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 27,
+            "offset_mm": -75.9
+          },
+          {
+            "select_idx": 30,
+            "offset_mm": 146.4
+          },
+          {
+            "select_idx": 206,
+            "offset_mm": -7.6
+          },
+          {
+            "select_idx": 207,
+            "offset_mm": 68.9
+          },
+          {
+            "select_idx": 22481,
+            "offset_mm": -75.9
+          },
+          {
+            "select_idx": 22487,
+            "offset_mm": 146.4
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 10,
+            "via_select_idx": 27,
+            "offset_mm": 3086.3,
+            "thickness_mm": 6324.4,
+            "partner_source_indices": [
+              22445,
+              27
+            ]
+          },
+          {
+            "pre_merge_idx": 40,
+            "via_select_idx": 30,
+            "offset_mm": 756.2,
+            "thickness_mm": 1219.5,
+            "partner_source_indices": [
+              22489,
+              30
+            ]
+          },
+          {
+            "pre_merge_idx": 61,
+            "via_select_idx": 207,
+            "offset_mm": 107.7,
+            "thickness_mm": 77.6,
+            "partner_source_indices": [
+              22487,
+              207
+            ]
+          },
+          {
+            "pre_merge_idx": 13,
+            "via_select_idx": 22481,
+            "offset_mm": 2137.4,
+            "thickness_mm": 4426.2,
+            "partner_source_indices": [
+              77,
+              22481
+            ]
+          },
+          {
+            "pre_merge_idx": 61,
+            "via_select_idx": 22487,
+            "offset_mm": 107.7,
+            "thickness_mm": 77.6,
+            "partner_source_indices": [
+              22487,
+              207
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 4,
+            "via_select_idx": 27,
+            "offset_mm": 3072.4,
+            "thickness_mm": 2601.4,
+            "n_members": 6
+          },
+          {
+            "final_idx": 12,
+            "via_select_idx": 30,
+            "offset_mm": 707.3,
+            "thickness_mm": 1219.5,
+            "n_members": 6
+          },
+          {
+            "final_idx": 14,
+            "via_select_idx": 207,
+            "offset_mm": 107.7,
+            "thickness_mm": 77.6,
+            "n_members": 2
+          },
+          {
+            "final_idx": 8,
+            "via_select_idx": 22481,
+            "offset_mm": 2199.3,
+            "thickness_mm": 4426.2,
+            "n_members": 6
+          },
+          {
+            "final_idx": 14,
+            "via_select_idx": 22487,
+            "offset_mm": 107.7,
+            "thickness_mm": 77.6,
+            "n_members": 2
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s111",
+      "gt_length_mm": 7094.4,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "V",
+      "n_covering_select_segments": 6,
+      "L1_select_offsets": {
+        "n_distinct": 5,
+        "min": -63.7,
+        "max": 95.9,
+        "median": 19.3
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 4,
+        "min": -983.4,
+        "max": 57.6,
+        "median": -455.8
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 3,
+        "min": 76.6,
+        "max": 1831.9,
+        "median": 1791.2
+      },
+      "L3_final_offsets": {
+        "n_distinct": 3,
+        "min": -928.8,
+        "max": 57.6,
+        "median": 44.1
+      },
+      "intended_final_candidate": {
+        "final_idx": 23,
+        "via_select_idx": 41,
+        "offset_mm": -928.8,
+        "thickness_mm": 150.2,
+        "n_members": 10,
+        "n_covering_segments_carried": 2
+      },
+      "displacement_mm": -928.8,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 41,
+            "offset_mm": -63.7
+          },
+          {
+            "select_idx": 43,
+            "offset_mm": 82.4
+          },
+          {
+            "select_idx": 44,
+            "offset_mm": 5.8
+          },
+          {
+            "select_idx": 4457,
+            "offset_mm": 95.9
+          },
+          {
+            "select_idx": 4458,
+            "offset_mm": 19.3
+          },
+          {
+            "select_idx": 22478,
+            "offset_mm": -63.7
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 114,
+            "via_select_idx": 41,
+            "offset_mm": -955.6,
+            "thickness_mm": 1831.9,
+            "partner_source_indices": [
+              22435,
+              41
+            ]
+          },
+          {
+            "pre_merge_idx": 140,
+            "via_select_idx": 43,
+            "offset_mm": 44.1,
+            "thickness_mm": 76.6,
+            "partner_source_indices": [
+              44,
+              43
+            ]
+          },
+          {
+            "pre_merge_idx": 140,
+            "via_select_idx": 44,
+            "offset_mm": 44.1,
+            "thickness_mm": 76.6,
+            "partner_source_indices": [
+              44,
+              43
+            ]
+          },
+          {
+            "pre_merge_idx": 139,
+            "via_select_idx": 4457,
+            "offset_mm": 57.6,
+            "thickness_mm": 76.6,
+            "partner_source_indices": [
+              4458,
+              4457
+            ]
+          },
+          {
+            "pre_merge_idx": 139,
+            "via_select_idx": 4458,
+            "offset_mm": 57.6,
+            "thickness_mm": 76.6,
+            "partner_source_indices": [
+              4458,
+              4457
+            ]
+          },
+          {
+            "pre_merge_idx": 115,
+            "via_select_idx": 22478,
+            "offset_mm": -983.4,
+            "thickness_mm": 1791.2,
+            "partner_source_indices": [
+              22434,
+              22478
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 23,
+            "via_select_idx": 41,
+            "offset_mm": -928.8,
+            "thickness_mm": 150.2,
+            "n_members": 10
+          },
+          {
+            "final_idx": 25,
+            "via_select_idx": 43,
+            "offset_mm": 44.1,
+            "thickness_mm": 76.6,
+            "n_members": 2
+          },
+          {
+            "final_idx": 25,
+            "via_select_idx": 44,
+            "offset_mm": 44.1,
+            "thickness_mm": 76.6,
+            "n_members": 2
+          },
+          {
+            "final_idx": 24,
+            "via_select_idx": 4457,
+            "offset_mm": 57.6,
+            "thickness_mm": 76.6,
+            "n_members": 2
+          },
+          {
+            "final_idx": 24,
+            "via_select_idx": 4458,
+            "offset_mm": 57.6,
+            "thickness_mm": 76.6,
+            "n_members": 2
+          },
+          {
+            "final_idx": 23,
+            "via_select_idx": 22478,
+            "offset_mm": -928.8,
+            "thickness_mm": 150.2,
+            "n_members": 10
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s117",
+      "gt_length_mm": 2365.1,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "V",
+      "n_covering_select_segments": 7,
+      "L1_select_offsets": {
+        "n_distinct": 5,
+        "min": -36.0,
+        "max": 126.9,
+        "median": 112.6
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 3,
+        "min": -1565.0,
+        "max": -283.7,
+        "median": -296.8
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 3,
+        "min": 792.4,
+        "max": 3058.6,
+        "median": 819.2
+      },
+      "L3_final_offsets": {
+        "n_distinct": 2,
+        "min": -1511.0,
+        "max": -290.2,
+        "median": -900.6
+      },
+      "intended_final_candidate": {
+        "final_idx": 27,
+        "via_select_idx": 46,
+        "offset_mm": -1511.0,
+        "thickness_mm": 3058.6,
+        "n_members": 14,
+        "n_covering_segments_carried": 2
+      },
+      "displacement_mm": -1511.0,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 46,
+            "offset_mm": -36.0
+          },
+          {
+            "select_idx": 52,
+            "offset_mm": 112.6
+          },
+          {
+            "select_idx": 53,
+            "offset_mm": 126.9
+          },
+          {
+            "select_idx": 22461,
+            "offset_mm": -36.0
+          },
+          {
+            "select_idx": 22463,
+            "offset_mm": 126.9
+          },
+          {
+            "select_idx": 22467,
+            "offset_mm": 123.9
+          },
+          {
+            "select_idx": 22468,
+            "offset_mm": 112.1
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 117,
+            "via_select_idx": 46,
+            "offset_mm": -1565.0,
+            "thickness_mm": 3058.6,
+            "partner_source_indices": [
+              42,
+              46
+            ]
+          },
+          {
+            "pre_merge_idx": 124,
+            "via_select_idx": 52,
+            "offset_mm": -283.7,
+            "thickness_mm": 792.4,
+            "partner_source_indices": [
+              4216,
+              52
+            ]
+          },
+          {
+            "pre_merge_idx": 118,
+            "via_select_idx": 22461,
+            "offset_mm": -1565.0,
+            "thickness_mm": 3058.6,
+            "partner_source_indices": [
+              22459,
+              22461
+            ]
+          },
+          {
+            "pre_merge_idx": 125,
+            "via_select_idx": 22468,
+            "offset_mm": -296.8,
+            "thickness_mm": 819.2,
+            "partner_source_indices": [
+              4217,
+              22468
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 27,
+            "via_select_idx": 46,
+            "offset_mm": -1511.0,
+            "thickness_mm": 3058.6,
+            "n_members": 14
+          },
+          {
+            "final_idx": 29,
+            "via_select_idx": 52,
+            "offset_mm": -290.2,
+            "thickness_mm": 792.4,
+            "n_members": 4
+          },
+          {
+            "final_idx": 27,
+            "via_select_idx": 22461,
+            "offset_mm": -1511.0,
+            "thickness_mm": 3058.6,
+            "n_members": 14
+          },
+          {
+            "final_idx": 29,
+            "via_select_idx": 22468,
+            "offset_mm": -290.2,
+            "thickness_mm": 792.4,
+            "n_members": 4
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s138",
+      "gt_length_mm": 3048.5,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "H",
+      "n_covering_select_segments": 3,
+      "L1_select_offsets": {
+        "n_distinct": 3,
+        "min": -97.7,
+        "max": 55.5,
+        "median": -97.4
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 2,
+        "min": -2198.8,
+        "max": 1202.4,
+        "median": -498.2
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 2,
+        "min": 2601.4,
+        "max": 4499.8,
+        "median": 3550.6
+      },
+      "L3_final_offsets": {
+        "n_distinct": 2,
+        "min": -2145.3,
+        "max": 1235.6,
+        "median": -454.9
+      },
+      "intended_final_candidate": {
+        "final_idx": 15,
+        "via_select_idx": 90,
+        "offset_mm": -2145.3,
+        "thickness_mm": 1054.5,
+        "n_members": 72,
+        "n_covering_segments_carried": 1
+      },
+      "displacement_mm": -2145.3,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 49,
+            "offset_mm": -97.4
+          },
+          {
+            "select_idx": 90,
+            "offset_mm": 55.5
+          },
+          {
+            "select_idx": 91,
+            "offset_mm": -97.7
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 33,
+            "via_select_idx": 90,
+            "offset_mm": -2198.8,
+            "thickness_mm": 4499.8,
+            "partner_source_indices": [
+              90,
+              202
+            ]
+          },
+          {
+            "pre_merge_idx": 14,
+            "via_select_idx": 91,
+            "offset_mm": 1202.4,
+            "thickness_mm": 2601.4,
+            "partner_source_indices": [
+              76,
+              91
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 15,
+            "via_select_idx": 90,
+            "offset_mm": -2145.3,
+            "thickness_mm": 1054.5,
+            "n_members": 72
+          },
+          {
+            "final_idx": 4,
+            "via_select_idx": 91,
+            "offset_mm": 1235.6,
+            "thickness_mm": 2601.4,
+            "n_members": 6
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s142",
+      "gt_length_mm": 2611.8,
+      "gt_thickness_mm": 150.0,
+      "gt_orientation": "V",
+      "n_covering_select_segments": 3,
+      "L1_select_offsets": {
+        "n_distinct": 3,
+        "min": -62.4,
+        "max": 87.2,
+        "median": 76.9
+      },
+      "L2_pre_merge_offsets": {
+        "n_distinct": 2,
+        "min": -2427.6,
+        "max": -370.8,
+        "median": -1399.2
+      },
+      "L2_pre_merge_thicknesses": {
+        "n_distinct": 2,
+        "min": 916.1,
+        "max": 4730.3,
+        "median": 2823.2
+      },
+      "L3_final_offsets": {
+        "n_distinct": 2,
+        "min": -2207.6,
+        "max": -370.8,
+        "median": -1289.2
+      },
+      "intended_final_candidate": {
+        "final_idx": 28,
+        "via_select_idx": 60,
+        "offset_mm": -2207.6,
+        "thickness_mm": 494.9,
+        "n_members": 16,
+        "n_covering_segments_carried": 1
+      },
+      "displacement_mm": -2207.6,
+      "_detail": {
+        "L1": [
+          {
+            "select_idx": 60,
+            "offset_mm": -62.4
+          },
+          {
+            "select_idx": 61,
+            "offset_mm": 87.2
+          },
+          {
+            "select_idx": 183,
+            "offset_mm": 76.9
+          }
+        ],
+        "L2": [
+          {
+            "pre_merge_idx": 116,
+            "via_select_idx": 60,
+            "offset_mm": -2427.6,
+            "thickness_mm": 4730.3,
+            "partner_source_indices": [
+              45,
+              60
+            ]
+          },
+          {
+            "pre_merge_idx": 122,
+            "via_select_idx": 61,
+            "offset_mm": -370.8,
+            "thickness_mm": 916.1,
+            "partner_source_indices": [
+              59,
+              61
+            ]
+          }
+        ],
+        "L3": [
+          {
+            "final_idx": 28,
+            "via_select_idx": 60,
+            "offset_mm": -2207.6,
+            "thickness_mm": 494.9,
+            "n_members": 16
+          },
+          {
+            "final_idx": 47,
+            "via_select_idx": 61,
+            "offset_mm": -370.8,
+            "thickness_mm": 916.1,
+            "n_members": 2
+          }
+        ]
+      }
+    }
+  ]
+}
