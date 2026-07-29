@@ -1,0 +1,128 @@
+{
+  "pre_registered_expectation": "recall +25 to +35pp (land ~0.55-0.65), precision improves sharply via candidate-count drop, still far short of 0.99 -- and should NOT move bucket (a)/(b) walls",
+  "summary": {
+    "n_gt_total": 29,
+    "n_candidates_today_total": 97,
+    "n_candidates_run_merged_total": 86,
+    "recall_today_tau_0_01": 0.3448,
+    "recall_run_merged_tau_0_01": 0.3448
+  },
+  "per_plan": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "n_gt_walls": 10,
+      "n_candidates_today": 43,
+      "n_candidates_run_merged": 38,
+      "today": {
+        "0.005": {
+          "n_pred": 43,
+          "n_gt": 10,
+          "tp": 2,
+          "precision": 0.0465,
+          "recall": 0.2,
+          "f1": 0.0755
+        },
+        "0.01": {
+          "n_pred": 43,
+          "n_gt": 10,
+          "tp": 3,
+          "precision": 0.0698,
+          "recall": 0.3,
+          "f1": 0.1132
+        },
+        "0.02": {
+          "n_pred": 43,
+          "n_gt": 10,
+          "tp": 3,
+          "precision": 0.0698,
+          "recall": 0.3,
+          "f1": 0.1132
+        }
+      },
+      "run_merged": {
+        "0.005": {
+          "n_pred": 38,
+          "n_gt": 10,
+          "tp": 2,
+          "precision": 0.0526,
+          "recall": 0.2,
+          "f1": 0.0833
+        },
+        "0.01": {
+          "n_pred": 38,
+          "n_gt": 10,
+          "tp": 3,
+          "precision": 0.0789,
+          "recall": 0.3,
+          "f1": 0.125
+        },
+        "0.02": {
+          "n_pred": 38,
+          "n_gt": 10,
+          "tp": 3,
+          "precision": 0.0789,
+          "recall": 0.3,
+          "f1": 0.125
+        }
+      }
+    },
+    "30x50-Model-landscape": {
+      "plan_id": "30x50-Model-landscape",
+      "n_gt_walls": 19,
+      "n_candidates_today": 54,
+      "n_candidates_run_merged": 48,
+      "today": {
+        "0.005": {
+          "n_pred": 54,
+          "n_gt": 19,
+          "tp": 4,
+          "precision": 0.0741,
+          "recall": 0.2105,
+          "f1": 0.1096
+        },
+        "0.01": {
+          "n_pred": 54,
+          "n_gt": 19,
+          "tp": 7,
+          "precision": 0.1296,
+          "recall": 0.3684,
+          "f1": 0.1918
+        },
+        "0.02": {
+          "n_pred": 54,
+          "n_gt": 19,
+          "tp": 7,
+          "precision": 0.1296,
+          "recall": 0.3684,
+          "f1": 0.1918
+        }
+      },
+      "run_merged": {
+        "0.005": {
+          "n_pred": 48,
+          "n_gt": 19,
+          "tp": 4,
+          "precision": 0.0833,
+          "recall": 0.2105,
+          "f1": 0.1194
+        },
+        "0.01": {
+          "n_pred": 48,
+          "n_gt": 19,
+          "tp": 7,
+          "precision": 0.1458,
+          "recall": 0.3684,
+          "f1": 0.209
+        },
+        "0.02": {
+          "n_pred": 48,
+          "n_gt": 19,
+          "tp": 7,
+          "precision": 0.1458,
+          "recall": 0.3684,
+          "f1": 0.209
+        }
+      }
+    }
+  }
+}
