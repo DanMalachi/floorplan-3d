@@ -31,9 +31,77 @@ gate-retarget numbers from the 2nd session are unaffected and still stand
 (stair's bottleneck is still upstream of the converter; the gate's volume
 floor and per-type survival numbers are unchanged), only the wall-count
 scalar axis (corrected: now PASSES) and the miss-explanation narrative
-needed fixing. The standing discipline rule below is still why every
-session's numbers in this file are trustworthy — including this one, which
-exists because Dan caught two things worth catching.
+needed fixing. **A 4th same-day session (`reports/p3a-storage-mechanism-
+and-calibration.md`) ran the two checks Dan approved doing next, before any
+lever #2 proposal**: storage does NOT share stair's mechanism (two separate
+levers — storage is 81.5%/38.8% genuine irrecoverable GT defects, an 8.4%
+ceiling; stair stays 79.2%/72.9% exterior/void-adjacency, recoverable in
+principle), and the sizing method itself was calibrated against its own
+traced track record (factor 0.468) — **stair's real target is 33.9% of all
+757 instances, not the raw 72.4% taxonomy ceiling.** The RATIFIED 15%
+survival threshold and the corrected source-derived wall-count are now
+PERMANENT in `measure_gate_v2_distribution.py` (not just proposed in a
+report) — see "Current state" below before assuming either could
+silently revert. The standing discipline rule below is still why every
+session's numbers in this file are trustworthy — including these, which
+exist because Dan caught things worth catching and then told the next
+session exactly what to check before proposing anything.
+
+## 2026-07-29 session (4th) — storage mechanism check + lever #1 sizing-method calibration (no lever built, no lever #2 proposed yet)
+
+Full detail: `reports/p3a-storage-mechanism-and-calibration.md`. Delivers
+exactly the two things Dan approved (task A, task B) — task C (propose
+lever #2) explicitly NOT done yet, awaiting this report's review.
+
+1. **Task A — does storage share stair's mechanism? NO.**
+   `extraction/synth/qa/diagnose_storage_failure.py` (new, mirrors
+   `diagnose_stair_failure.py` exactly, same `classify()` taxonomy reused
+   unchanged, filtered to storage instead of stair, full population).
+   Storage's dominant mechanism is `a_genuine_gt_defect_between_rooms`
+   (81.5% of broken / 38.8% of all 1,797 storage instances) — a real,
+   irrecoverable source-data defect (storage closets embedded in solid
+   wall mass with no cut door), population-confirming the 2026-07-21
+   3-instance spot-check. Stair's own dominant mechanism
+   (`c_exterior_boundary_or_void`, 72.9%) is essentially absent from
+   storage (0.6%). **Two separate levers, confirmed cheaply before scoping
+   either.** Storage's recoverability ceiling is only 8.4% of all
+   instances (vs. stair's 72.4%) — its low 21.1% survival rate is mostly a
+   genuine data-quality problem, not a converter gap.
+2. **Task B — calibrate the sizing method, pure bookkeeping, no new
+   hypothesis.** `extraction/synth/qa/calibrate_lever1_prediction.py` (new):
+   identifies the population that "entered `clean_at_source` via the
+   notch-suppression fix" (precise, reproducible: `notch_suppressions`
+   non-empty AND `flags` empty) — the exact population lever #1's own
+   diagnose-step prediction was about — and traces each one's ACTUAL
+   post-build `convert_plan` outcome, full population. Result: **1,184
+   plans predicted to fully clear; only 554 (46.8%) actually did.
+   Calibration factor: 0.468.** Note: this session's precise population
+   count (27/300 on the exact `plans[:300]` sample) does not match the
+   handoff's old prose "roughly 66 plans" figure — that figure's exact
+   derivation isn't reproducible from any committed script; stated plainly,
+   not silently reconciled, since chasing it wasn't what task B asked for.
+   **Applied to stair's 72.4% recoverability ceiling: calibrated estimate
+   = 33.9% of all 757 stair instances — this is the number any lever #2
+   proposal should size against, not the raw 72.4%.** Still-broken
+   breakdown (restricted to real blocking causes, not the informational
+   `cycle_repaired`/open-plan flags the raw histogram also contains):
+   bathroom (373 combined `cycle_unrepairable`+`broken_room_cycle`) and
+   bedroom (310) dominate by a wide margin over storage (28) and stair (6)
+   — a second, independent confirmation that bathroom/bedroom under-
+   recognition remains the largest still-open mechanism, not stair or
+   storage (expected: this traced population is by construction
+   notch-affected, and stair/storage were already established as ~0%
+   notch-driven).
+
+**Next session**: task C — propose lever #2 with a calibrated estimate
+(33.9% for stair; storage's own ceiling, 8.4%, is far lower and its
+mechanism largely unfixable by software), sized as the ONLY-defect
+population per lever #1's own lesson (not "contains this defect"), and
+STOP for Dan's approval before building anything. Both stair (worse
+survival deviation, tiny absolute population, needs a `check_plan` source-
+level fix) and bathroom (passes survival deviation, by far the largest raw
+broken-plan count at 4,618/6,603, needs the raw-ink/skeleton-band
+discriminator reconciliation) remain candidates Dan has not locked between.
 
 ## 2026-07-29 session (3rd) — co-occurrence hypothesis falsified, both-directions discriminator disagreement measured, wall-count corrected (no lever built)
 
@@ -115,14 +183,19 @@ instruction not to build lever #2 this session:
    0.8% stair). New bar, both parts measured population-scale: (a) volume
    floor — PASSES; (b) distribution match — scalar axes (doors/rooms/wall-
    count per plan) within 2% relative (doors 0.5%/rooms 1.7% PASS,
-   wall-count/plan 4.9% FAILS, a new finding); per-room-type survival rate,
-   no class more than a threshold from the overall 48.5% survival rate. A
+   wall-count/plan 4.9% FAILS, a new finding — **later corrected to PASS,
+   see the 3rd/4th session notes above and below, the FAIL was a
+   converter-derived artifact**); per-room-type survival rate, no class
+   more than a threshold from the overall 48.5% survival rate. A
    **15%-relative threshold is proposed** (5x margin above the tightest real
    cluster's 3% deviation, nowhere near storage's 57%/stair's 98% failure
-   margins) — **not yet ratified, needs Dan's sign-off**, per instruction not
-   to invent the number silently. `docs/extraction-plan.md`'s P3a "Done
-   when" line updated in place, old bar struck through and marked
-   SUPERSEDED with the reason, not deleted.
+   margins) — **RATIFIED 2026-07-29 (3rd session) — both this threshold
+   AND the wall-count fix are now PERMANENT in
+   `measure_gate_v2_distribution.py` itself (constants + corrected
+   source-derived computation, not just described in a report), so neither
+   can silently revert.** `docs/extraction-plan.md`'s P3a "Done when" line
+   updated in place, old bar struck through and marked SUPERSEDED with the
+   reason, not deleted.
 2. **Defect co-occurrence measured, full population** (`extraction/synth/
    qa/measure_defect_cooccurrence.py`), scoped to `clean_at_source ∧
    ¬converter_clean` (6,603/17,000 plans, the same population the
