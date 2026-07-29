@@ -1,0 +1,102 @@
+{
+  "mm_per_pred_unit": {
+    "15x30-ft-Best-House-Plan-Model": 8.323667459886908,
+    "30x50-Model-landscape": 12.918215560344834
+  },
+  "overlay_path": "extraction\\trackv\\out\\step3a_frame_overlay.png",
+  "endpoint_residuals": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "n_pred_endpoints": 272,
+      "median_dist_all": 1195.5833411736978,
+      "iqr_dist_all": [
+        758.0361209757717,
+        1539.817245260173
+      ],
+      "by_radius_mm": {
+        "50": {
+          "n_near": 4,
+          "frac": 0.0147,
+          "median_dx": 8.970159085400155,
+          "median_dy": -17.45373388626922
+        },
+        "100": {
+          "n_near": 4,
+          "frac": 0.0147,
+          "median_dx": 8.970159085400155,
+          "median_dy": -17.45373388626922
+        },
+        "150": {
+          "n_near": 6,
+          "frac": 0.0221,
+          "median_dx": -0.15235944399751133,
+          "median_dy": -1.9998647109578087
+        },
+        "200": {
+          "n_near": 9,
+          "frac": 0.0331,
+          "median_dx": 24.426940890562037,
+          "median_dy": -11.720567640188165
+        },
+        "300": {
+          "n_near": 10,
+          "frac": 0.0368,
+          "median_dx": 24.426940890562037,
+          "median_dy": -14.245175327793731
+        },
+        "500": {
+          "n_near": 31,
+          "frac": 0.114,
+          "median_dx": -31.663203166220228,
+          "median_dy": -14.445812906552419
+        }
+      }
+    },
+    "30x50-Model-landscape": {
+      "n_pred_endpoints": 460,
+      "median_dist_all": 1193.9031015077712,
+      "iqr_dist_all": [
+        656.5502074040143,
+        1622.8268869525964
+      ],
+      "by_radius_mm": {
+        "50": {
+          "n_near": 16,
+          "frac": 0.0348,
+          "median_dx": 19.916431943860516,
+          "median_dy": 9.234432794556596
+        },
+        "100": {
+          "n_near": 24,
+          "frac": 0.0522,
+          "median_dx": 12.243579513988152,
+          "median_dy": 9.399877003823804
+        },
+        "150": {
+          "n_near": 30,
+          "frac": 0.0652,
+          "median_dx": 20.54802425273101,
+          "median_dy": 8.448155950954515
+        },
+        "200": {
+          "n_near": 34,
+          "frac": 0.0739,
+          "median_dx": 19.916431943860516,
+          "median_dy": 7.6618791073524335
+        },
+        "300": {
+          "n_near": 43,
+          "frac": 0.0935,
+          "median_dx": 19.916431943860516,
+          "median_dy": 7.6618791073524335
+        },
+        "500": {
+          "n_near": 71,
+          "frac": 0.1543,
+          "median_dx": 18.160828226975354,
+          "median_dy": 5.702697891812932
+        }
+      }
+    },
+    "_scatter_path": "extraction\\trackv\\out\\step3a_endpoint_residual_scatter.png"
+  }
+}

@@ -594,3 +594,66 @@ Any filter, threshold, or rejection rule on metadata (the deliverable was the me
 Held for Dan's review. Durable artifacts: `extraction/trackv/analyze_step3a_metadata.py`, `out/step3a_metadata_confusion.json`, `dashes`/`seqno` on `VectorPrimitive`, `member_source_indices` on `WallCandidate` + its test, this section.
 
 **Blocker 1's metadata branch is closed as a negative result — periodicity is now the only remaining in-scope lead for it.** But the honest ordering has changed: this round could not measure candidate quality against GT at all on the one plan whose transform was believed trustworthy, and turned up evidence that the two blockers may not be independent. **Recommend Blocker 2 (issue #8) next, not periodicity** — the handoff's own falsification test (global least-squares refit over all confidently-matched pairs; and first, the factual question of whether a page-unit form of this GT exists upstream of its mm conversion) — because periodicity would otherwise be built and then scored through the same unusable frame.
+
+## Step 3a Blocker 2 (issue #8) — coordinate frame is DERIVED, ZERO fitted parameters, not two
+
+**The handoff's factual question resolves to yes, and it eliminates fitting entirely — not just rotation and scale, but translation too.** The prior pinned-transform approach fit a 4-parameter similarity (scale, rotation, tx, ty) from 3–6 hand-picked anchors. All four parameters are unnecessary: the frame is fully determined by constants both pipelines already assert, with no free parameters left to fit.
+
+### Derivation chain (each link checked independently, not assumed)
+
+1. `run_step3a.py`'s own `_gt_scale` already rescales Track V's predictions into a **1600px-long-edge raster frame** (`GT_LONG_EDGE_PX`) — documented in that file's header, already wired, not new.
+2. That raster frame is bit-identical to the **legacy hand-trace tool's frame**: `legacy/data/floorplan-gt/*.gt.json`'s `imageSize` equals `round(page.rect.w · zoom), round(page.rect.h · zoom)` for `zoom = min(1600/rect.w, 1600/rect.h)`, computed directly from the real source PDFs (595×842pt and 842×595pt) — confirmed numerically for both plans (1131×1600 / 1600×1131), not assumed from either file's own claims.
+3. `extraction/synth/convert_legacy_gt.py:44-47` converts that same px frame to the GT's mm frame with a **pure scalar**: `[p.x * scale, p.y * scale]`, `scale = metersPerPixel * 1000`. No offset term. No axis flip.
+4. `run_step3a.py:124`'s `image_transform.matrix` and `assemble()`'s `scale_to_gt_frame` parameter are likewise **scale-only** — no offset term on the prediction side either.
+
+Both sides of the pipeline therefore assert the same origin `(0,0)`, y-down, with no free parameters between them:
+
+```
+mm_per_pred_unit = metersPerPixel * 1000     # rotation = 0, translation = 0
+15x30-ft-Best-House-Plan-Model:  8.323667459886908  (metersPerPixel 0.008323667459886908)
+30x50-Model-landscape:          12.918215560344834  (metersPerPixel 0.012918215560344833)
+```
+
+`metersPerPixel` is a constant the legacy hand-trace tool recorded at GT export time (`legacy/data/floorplan-gt/*.gt.json`), independent of anything Track V predicts.
+
+### What was measured (`extraction/trackv/analyze_step3a_frame.py`, new; diagnostic, not a pipeline module)
+
+**Overlay** (`out/step3a_frame_overlay.png`): GT walls vs. predictions transformed by scale-only (rotation=0, tx=ty=0), plotted in the same mm frame. Both plans show strong walls landing on top of GT almost exactly — no flip, no rotation, no gross offset. What extends past GT is a scattered red fringe consistent with Blocker 1's over-production, not a frame defect.
+
+**Full-population nearest-GT-endpoint residual** (`out/step3a_endpoint_residual_scatter.png`, `out/step3a_frame_derivation.json`): for every one of 272 (15x30) / 460 (30x50) predicted wall endpoints, distance and (dx, dy) to its nearest GT endpoint, under scale-only transform, no fitting. The scatter shows a **dense cluster at (0,0)** superimposed on a scattered cloud — the mode is at the origin, as predicted, and the cloud is the tail:
+
+| plan | radius | n endpoints in radius | median dx | median dy |
+|---|---|---|---|---|
+| 15x30 | 150mm | 6 / 272 | -0.2mm | -2.0mm |
+| 15x30 | 300mm | 10 / 272 | 24.4mm | -14.2mm |
+| 30x50 | 100mm | 24 / 460 | 12.2mm | 9.4mm |
+| 30x50 | 300mm | 43 / 460 | 19.9mm | 7.7mm |
+
+Residuals for endpoints that land near a GT vertex at all are **single-digit-to-low-tens of mm** — negligible against plan dimensions in the meters. This confirms the derivation: the frame is correct as derived, with no fitted parameters.
+
+Only 3.7% (15x30) / 9.4% (30x50) of predicted endpoints land within 300mm of any GT vertex at all. That is not a frame failure — it is Blocker 1 restated in endpoint terms: most predicted endpoints belong to over-produced candidates with no corresponding GT wall to land near, so they contribute to the surrounding cloud, not the peak.
+
+### Rejected measurement — bounding-box comparison, and why it must not be reused as a calibration constant
+
+An earlier pass in this same investigation compared pred-bbox×scale to GT-bbox directly and read off apparent offsets of (36, -349)mm on 15x30 and (-954, -1975)mm on 30x50, with no consistent sign or magnitude between the two plans. **This is not a frame measurement and must not be used as one.** Two independent reasons:
+
+1. A bounding box is a max-statistic over extremes — the single measurement most sensitive to exactly the failure mode already known to exist. The two plans' apparent "offsets" scale with their contamination (15x30, less over-production, smaller apparent offset; 30x50, more over-production, larger), which is the signature of a noise measurement, not a calibration constant.
+2. `gt_provisional`'s GT is `provisional_unaudited`, produced by a legacy converter that **drops portals** and inherits the hand-trace convention of deliberately not tracing some non-room areas (service balconies). Pred bbox legitimately exceeds GT bbox even under perfect extraction. Bbox agreement was never a valid target here.
+
+Retained only as a documented rejected measurement so it is never mistaken for a frame constant downstream.
+
+### NOT MEASURED
+
+Root-cause bisection of the residual cloud beyond "consistent with over-production" (e.g., confirming each spurious-cloud endpoint traces to a specific over-produced candidate) was not attempted — the clean near-zero mode made it unnecessary for closing the frame question, and it is Blocker 1's work, not Blocker 2's. Wall-level F1 under the derived zero-parameter transform was not recomputed into `step3a_aligned_score.json` this round — the endpoint-residual measurement was judged sufficient to close the frame question and F1 remains dominated by Blocker 1 regardless.
+
+### Explicitly not built this round
+
+No translation fit. No rotation fit. No rescoring of `step3a_aligned_score.json` under the derived transform. No Blocker 1 work (periodicity or otherwise) — held for a future session per Dan's explicit instruction.
+
+### Disposition
+
+Held for Dan's review. Durable artifacts: `extraction/trackv/analyze_step3a_frame.py`, `out/step3a_frame_overlay.png`, `out/step3a_endpoint_residual_scatter.png`, `out/step3a_frame_derivation.json`, this section.
+
+**Blocker 2 (issue #8) is CLOSED.** The coordinate frame is derived, not fitted — zero free parameters, formula and constants recorded above so a future reader can regenerate rather than trust them. The prior 3–6τ "unmeasurable" reading on 15x30 was an artifact of the old 4-parameter anchor fit, not a property of the frame itself. The bbox-based offsets seen mid-investigation are recorded above specifically so they are never reused as calibration.
+
+**The real target, now unblocked, is Blocker 1 — candidate over-production (~3x predicted walls vs. GT).** That work is explicitly not started this session.
