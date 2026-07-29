@@ -11,15 +11,106 @@ same-sized failure mode (`broken_room_cycle` on required rooms) behind
 "uncategorized". The renderer (deliverable 2) has still not been started.
 Auditing of the notch-suppression/`classify()` diagnostic layer completed
 2026-07-22 through 2026-07-26, and **lever #1 (doorway-notch handling,
-Option C) is now BUILT** (2026-07-29 session) — see "2026-07-29 session"
-below and the full report at
-`reports/p3a-lever1-build-and-remeasurement.md` **before starting any new
-work**; it names a real, unresolved 13/17,000-plan containment-invariant
-break that the next session should read about first. The standing
-discipline rule immediately below is still why this session's own
-numbers are trustworthy.
+Option C) is BUILT** (2026-07-29 session) — see "2026-07-29 session (1st)"
+below and `reports/p3a-lever1-build-and-remeasurement.md`. A same-day
+follow-on session (**2026-07-29, 2nd**) **retargeted the P0-style clean-rate
+bar** (old 90% bar retired, see `reports/p3a-gate-v2-retarget.md` and
+`docs/extraction-plan.md`'s P3a "Done when" line) and ran the co-occurrence +
+stair diagnosis Dan asked for before any lever #2 sizing
+(`reports/p3a-defect-cooccurrence-and-stair-diagnosis.md`) — **read that
+report before starting stair or storage work**; it found stair's real
+bottleneck is upstream of the converter entirely (92.1% of stair instances
+fail already at the source `clean_at_source` check), the opposite shape from
+lever #1. The standing discipline rule below is still why every session's
+numbers in this file are trustworthy.
 
-## 2026-07-29 session — lever #1 BUILT, re-measured, one new finding open
+## 2026-07-29 session (2nd) — gate v2 retarget, defect co-occurrence, stair diagnosis (no lever built)
+
+Full detail: `reports/p3a-gate-v2-retarget.md` and `reports/p3a-defect-
+cooccurrence-and-stair-diagnosis.md`. Four pieces of work, per Dan's explicit
+instruction not to build lever #2 this session:
+
+1. **P3a's gate bar RETARGETED** (Dan's ruling). The old "≥90% clean
+   conversion of the 17K" bar is retired — volume was never binding (8,249/
+   17,000 converter_clean, population re-measured this session, clears the
+   ~6,700-plan floor a 20K-image set needs) and a single pooled rate hid the
+   defect that matters (60x spread across room types, 49.2% bedroom down to
+   0.8% stair). New bar, both parts measured population-scale: (a) volume
+   floor — PASSES; (b) distribution match — scalar axes (doors/rooms/wall-
+   count per plan) within 2% relative (doors 0.5%/rooms 1.7% PASS,
+   wall-count/plan 4.9% FAILS, a new finding); per-room-type survival rate,
+   no class more than a threshold from the overall 48.5% survival rate. A
+   **15%-relative threshold is proposed** (5x margin above the tightest real
+   cluster's 3% deviation, nowhere near storage's 57%/stair's 98% failure
+   margins) — **not yet ratified, needs Dan's sign-off**, per instruction not
+   to invent the number silently. `docs/extraction-plan.md`'s P3a "Done
+   when" line updated in place, old bar struck through and marked
+   SUPERSEDED with the reason, not deleted.
+2. **Defect co-occurrence measured, full population** (`extraction/synth/
+   qa/measure_defect_cooccurrence.py`), scoped to `clean_at_source ∧
+   ¬converter_clean` (6,603/17,000 plans, the same population the
+   conditional clean rate's numerator gap describes). 81.4% of broken plans
+   have exactly one defect class, 18.6% have ≥2. This does **not** turn out
+   to be the dominant explanation for lever #1's own 5x miss (that remains
+   the raw-ink-vs-skeleton-band discriminator disagreement, already named
+   in the lever #1 report) — reported as such, not bent to fit — but it's
+   now a real, quantified number every future lever's sizing must account
+   for. `bathroom` dominates the current broken population (4,618/6,603
+   plans, 85.0% isolated) — the population the discriminator-reconciliation
+   fix would target. Stair sized correctly per instruction: **23/6,603
+   (0.3%) plans have stair as their ONLY defect** — not the 40/6,603 (0.6%)
+   "contains a stair defect" number, and nowhere near the 757-instance
+   population the 0.8% survival headline implies.
+3. **Stair failure diagnosed at population scale, starting from plans 1448
+   and 9796 as instructed** (`extraction/synth/qa/diagnose_stair_failure.py`,
+   reuses `classify_room_boundary_no_wall_match.py`'s taxonomy completely
+   unchanged, filtered to stair). **Headline: 92.1% of all 757 stair
+   instances (697) are already broken at the SOURCE level**
+   (`clean_at_source`), before `assemble_rooms` ever runs — the stair
+   bottleneck is almost entirely upstream of the converter, the opposite
+   shape from lever #1's notch mechanism. Dominant mechanism, population-
+   confirmed: `c_exterior_boundary_or_void` (72.9% of ALL stair instances) —
+   the room edge's outward probe lands outside the traced building envelope,
+   plausibly a real stairwell/vertical-circulation pattern, not a wall-
+   tracing omission (inference, not confirmed by the taxonomy itself). Both
+   named exemplars (1448 → `c_exterior_boundary_or_void`, 9796 →
+   `b_shared_wall_wide_recoverable`) reproduce exactly at population scale.
+   Recoverability ceiling (non-genuine-defect edges only): 72.4% of all 757
+   — **stated as an upper bound to pre-register against, not a promise**,
+   same caution as lever #1's own over-predicted 70-80% band. **A future
+   stairs lever needs to be a `check_plan`/source-level fix, not an
+   `assemble_rooms` fix** — sizing it against the converter-broken
+   population (23-40 plans, previous bullet) would target the wrong ~8% of
+   the problem.
+4. **13/17,000 containment-invariant violation made non-fatal.** The two
+   `assert not conv_clean or src_clean` sites (`classify_room_boundary_no_
+   wall_match.py::compute_conditional_clean_rate`, `held_out_conditional_
+   clean_rate.py::_measure`) now log + count instead of crashing. Per Dan's
+   explicit ruling: **not unified with `assemble_rooms`'s discriminator** —
+   two implementations over two different inputs (raw wall ink vs. skeleton
+   bands) was a deliberate design choice, and 0.076% doesn't justify
+   collapsing it. `population_conditional_clean_rate.py` already handled
+   this correctly (unchanged). Full suite re-run after the edit: 53/53
+   passing.
+
+**Next session**: no lever built (per instruction). Two live threads,
+priority order unchanged from the 1st 2026-07-29 session's own framing
+except stair is now correctly re-scoped: (a) reconcile the raw-ink-vs-
+skeleton-band discriminator disagreement (still the highest-leverage single
+fix — it's both the dominant cause of lever #1's under-recovery AND the
+13-plan containment break, AND `bathroom` — the mechanism it would fix — is
+70% of the current broken population per this session's co-occurrence
+measurement); (b) design a `check_plan`-level stair discriminator for the
+`c_exterior_boundary_or_void` pattern (72.4% ceiling, unbuilt, no design
+proposed yet) — **diagnose-before-build discipline still applies**: the
+ceiling is an upper bound, not a promise, per this exact phase's own recent
+history of over-predicting from a taxonomy-recoverable number without
+checking whether the actual discriminator recognizes it in practice. Also
+open, not urgent: the 68-plan `hard_failure` class surfaced by this
+session's co-occurrence scan (`convert_plan` raising on clean_at_source
+plans) — small, 100% isolated, not diagnosed this session.
+
+## 2026-07-29 session (1st) — lever #1 BUILT, re-measured, one new finding open
 
 Full detail: `reports/p3a-lever1-build-and-remeasurement.md`. Summary:
 
