@@ -2,7 +2,7 @@
 
 Branch `phase-2-trackv-m2c` (worktree `fp-phase2`). Not merged to main — held on this branch by explicit decision. This document exists so a cold session can resume with zero re-derivation. Full evidence, tables, and residuals live in `reports/phase-2-gate.md`'s step-3a sections; this is the compressed pointer, not a replacement for it.
 
-> **Read "DONE SINCE THIS DOC WAS WRITTEN" and "RESUME POINTER" at the bottom first.** Blocker 1's metadata branch below has since been run and closed as a negative result, and the recommended next step has changed from periodicity to Blocker 2. The Blocker-1 step-1 instructions in this section are kept for the record, not as live direction.
+> **Read "BLOCKER 2 CLOSED" and "RESUME POINTER" at the bottom first.** Blocker 1's metadata branch was run and closed as a negative result (see "DONE SINCE THIS DOC WAS WRITTEN" below), then Blocker 2 (issue #8, coordinate frame) was run and CLOSED — derived, zero fitted parameters, confirmed by direct visual review of the overlay. **Blocker 1 (over-production) is the live target now.** Everything above "DONE SINCE THIS DOC WAS WRITTEN" is kept for the record, not as live direction — in particular its Blocker 2 instructions are superseded, not current.
 
 ## STATUS
 
@@ -12,7 +12,7 @@ Branch `phase-2-trackv-m2c` (worktree `fp-phase2`). Not merged to main — held 
 - Cycle closure: **24/50 cycles found** (15x30/30x50), connected components down from 43/54 (every wall isolated) to **7/6**. Closure (extend-to-intersection in `assemble.py`) works as designed and is committed.
 - **Wall F1 is not a reportable number right now, on either plan — two independent blockers, not tuning:**
   1. **Candidate over-production** (this session's headline finding): `pair.py` emits ~3x as many wall candidates as GT has walls (54 vs 19 on 30x50). Precision therefore caps at ≈0.35 even at perfect recall — nowhere near the 0.99 exit bar — **regardless of anything in `assemble.py` or downstream**. Frame-independent, measured directly: GT has 2 T-junctions across 19 walls; predictions show 84 accepted T + 46 accepted X across 54 candidates once closure actually connects them (a ~65x topology-density error). This was invisible before closure because every candidate sat in its own isolated component.
-  2. **Coordinate-frame unmeasurability** (issue #8, unresolved): 15x30's pinned-transform anchor-fit residuals are 3–6τ — several times the exit metric's own tolerance — so **15x30's wall F1 is UNMEASURABLE, not 0.000**. A zero implies a measured failure; this is an absent measurement. 30x50's clean 4-anchor fit is sub-τ (~0.8τ) and stays trustworthy, but its F1 is still capped by blocker 1.
+  2. **Coordinate-frame unmeasurability** (issue #8) — **CLOSED, see bottom of doc.** Was: 15x30's pinned-transform anchor-fit residuals were 3–6τ, making 15x30's wall F1 UNMEASURABLE under the old 4-parameter anchor fit. Root cause turned out to be the fit itself, not the frame — the frame needed zero fitted parameters all along. Superseded, kept here only so the old numbers aren't mistaken for current.
 - **Not merged as a phase-exit candidate** — not because closure failed (it didn't), but because both blockers above are still open.
 
 ## WHAT'S DONE AND PROVEN — do not re-litigate, do not re-run to re-confirm
@@ -63,13 +63,31 @@ Full section in `reports/phase-2-gate.md` ("Blocker-1 step 1 — style-metadata 
 
 **New evidence bearing on Blocker 2, and on whether the two blockers are independent:** the 4 clean anchors re-fit to the recorded residuals *exactly* (0.1 mm), yet the rest of the plan does not follow — 16/19 GT walls have an orientation+overlap-compatible candidate but only 6 clear the lateral bound. Displacement is sharply x-heavy: median **627 mm in x (≈4.3τ) vs 74 mm in y (≈0.5τ)**, against an envelope error of −5.29% x / +0.54% y. Two mechanisms were tested over the full population and **both falsified**: fit-degrades-with-anchor-distance (r=0.063) and single-wrong-uniform-x-scale (r=0.14). The mechanism is NOT established — do not assume one. Untested third candidate: the per-GT "best candidate" is drawn from an over-produced set, so correspondence error and frame error may be mixing, which would mean **Blocker 1 and Blocker 2 are not independent** as assumed since the closure round.
 
-## RESUME POINTER
+## BLOCKER 2 CLOSED — frame is derived, zero fitted parameters
 
-Start with **Blocker 2 (issue #8), not periodicity.** The ordering flipped this round for a measured reason: candidate quality could not be scored against GT on the one plan whose transform was believed trustworthy, so periodicity built now would be scored through the same unusable frame.
+Full derivation, formula, and evidence in `reports/phase-2-gate.md`'s "Step 3a Blocker 2 (issue #8)" section — read that before touching anything frame-related. Compressed:
 
-In order:
-1. **Factual question first, it may collapse the whole issue**: does a page-unit form of this corpus's GT exist upstream of its mm conversion (the Phase-0.4 SVG-authoring path implies SVG user-space was the original frame)? If yes, issue #8 becomes "score Track V in page units" and no fitting is needed at all. If no, the mm↔page relationship is Phase 5's scale-recovery job, not Phase 2's to hand-fit.
-2. **Then the bounded falsification test** already specified: refit the similarity by global least-squares over *all* confidently-matched wall pairs rather than 3–6 hand-picked anchors. If 15x30 drops under ~1τ it was anchor selection; if it stays 3τ+ with anisotropic structure, the similarity model itself is wrong. Note this round's x/y asymmetry is exactly that anisotropic signature — but on 30x50, and with its mechanism unestablished.
-3. **Periodicity/repetition signature** stays queued as Blocker 1's only remaining in-scope lead, after a usable frame exists.
+- **`mm_per_pred_unit = metersPerPixel * 1000`, rotation = 0, translation = 0.** 15x30 = 8.323667459886908, 30x50 = 12.918215560344834. Not fit — derived from constants both sides of the pipeline already assert (`run_step3a.py`'s existing `_gt_scale`, the legacy hand-trace tool's recorded `metersPerPixel`, `convert_legacy_gt.py`'s pure-scalar conversion). Regenerate via `extraction/trackv/analyze_step3a_frame.py`, don't hand-recompute.
+- Confirmed two ways: (1) full-population nearest-GT-endpoint residual — mode at the origin, single-digit-to-low-tens-of-mm median for endpoints that land near any GT vertex at all; (2) direct visual review of the overlay (`out/step3a_frame_overlay.png`) by Dan — envelope sits on GT exactly, both plans, no shift, no flip.
+- The old 3–6τ "unmeasurable" reading on 15x30 was an artifact of the prior 4-parameter anchor fit (scale+rotation+tx+ty from 3–6 hand-picked anchors), not a property of the frame. Anchor selection was the bug; the frame needed no fitting at all.
+- **Do not re-open this.** Do not fit translation, rotation, or scale on this corpus's frame again. If a future plan's frame looks wrong, re-derive from its own `metersPerPixel`/`_gt_scale`, don't hand-fit.
 
-Standing constraints, unchanged: do not touch closure's SPLIT-side bound. Do not re-derive the pinned transform's anchors without resolving IDs via `wall_parent_ids` (or by running pre-split, where the original IDs are still valid — what the metadata diagnostic does). Bring measurements to a STOP, not a fix.
+**Correction — do not carry the 3.7%/9.4% vertex-proximity figures into Blocker 1 as a recall or over-production baseline.** Those came from the endpoint-residual diagnostic (fraction of predicted endpoints landing within 300mm of *any* GT vertex) and are a stricter test than wall correctness: a correctly-extracted wall that's merely split at a different point, or that legitimately terminates mid-span at a T-junction, contributes endpoints far from any GT vertex and scores zero on that test even though the wall itself is right. Dan reviewed the overlay directly and confirms substantial red-on-green collinearity — wall-level recall is materially higher than 3.7%/9.4%. **Blocker 1 needs its own wall-level matched baseline (the harness, tau-based) measured fresh at the start of that session** — do not reuse the vertex-proximity numbers as if they were it.
+
+## RESUME POINTER — Blocker 1 (candidate over-production), fresh session
+
+**Open this in a new terminal/session**, not a continuation — the closing session's context is 8+ commits of now-irrelevant frame arithmetic; a clean context on a well-defined problem is worth more than continuity here. `git status` first to confirm you're on `phase-2-trackv-m2c` in the `fp-phase2` worktree, clean tree, latest commit is the "Blocker 2 closed" one.
+
+**Step 0, before anything else: measure a fresh wall-level matched baseline via the harness (tau-based), on both plans, under the now-derived zero-parameter transform.** This is the number Blocker 1 works against — not the 54-vs-19 raw-candidate-count arithmetic (still true and still the headline, but not a matched baseline) and not the vertex-proximity 3.7%/9.4% (explicitly not this, see correction above).
+
+**Then open with classification, not tuning.** Per Dan's direct instruction: label every over-produced candidate into `{sheet-border, dimension, furniture/fixture, other}` across BOTH plans and report the full confusion matrix with population shares — standing rule, hypotheses get tested on the whole population, never on the examples that suggested them. A large `other` bucket is itself the finding; report it before writing any kill rule, don't fold it away.
+
+Three named hypotheses to test, visible directly in the overlay (`out/step3a_frame_overlay.png`):
+
+1. **Sheet border / title-block frame** — the large rectangle enclosing the whole drawing, outside the building envelope. Visible clearly on 30x50. Likely explains a real share of the bbox-stretch effect previously (wrongly) attributed to generic noise in the now-rejected bbox measurement.
+2. **Dimension chains / extension lines** — long lines running past the building envelope on both plans.
+3. **Furniture + fixture linework** — the dense short-stroke field inside rooms, heaviest on 15x30.
+
+**Explicitly do not open Blocker 1 by tuning thresholds on these two plans.** Per-plan tuning is a trap this project already fell into once — the standing discipline is to enumerate building-block morphology, not per-plan tune. Kill families with rules that name what they kill, not thresholds fit to make these two plans' numbers look good. Every kill rule must state which named family it targets and log its rejection reason per the funnel's kill-log convention (`pair.py`'s existing `n_pairs_rejected_thickness_outlier`-style funnel counters are the pattern to follow).
+
+Standing constraints, unchanged: do not touch closure's SPLIT-side bound (see "Explicitly ruled out" above — still ruled out). Bring measurements to a STOP before building any filter, same as Blocker 1's metadata step and Blocker 2's frame derivation both did.
