@@ -1,0 +1,323 @@
+{
+  "pre_registered_expectation": "coverage HIGH (~0.7-0.9), pointing to representation/merging defect, not upstream blindness",
+  "tau_primary": 0.01,
+  "tau_exit_bar": 0.005,
+  "coverage_bucket_threshold": 0.5,
+  "coverage_pair_distribution_tau_0_01": {
+    "n": 29,
+    "mean": 0.673,
+    "median": 0.905,
+    "min": 0.048,
+    "max": 1.0,
+    "q1": 0.333,
+    "q3": 0.952
+  },
+  "coverage_select_distribution_tau_0_01": {
+    "n": 29,
+    "mean": 0.887,
+    "median": 1.0,
+    "min": 0.143,
+    "max": 1.0,
+    "q1": 0.857,
+    "q3": 1.0
+  },
+  "coverage_pair_distribution_tau_0_005": {
+    "n": 29,
+    "mean": 0.591,
+    "median": 0.667,
+    "min": 0.048,
+    "max": 1.0,
+    "q1": 0.143,
+    "q3": 0.952
+  },
+  "n_gt_walls_total": 29,
+  "n_matched_total": 10,
+  "n_unmatched_total": 19,
+  "death_bucket_histogram": {
+    "a_dissect_select_blind": {
+      "n": 1,
+      "share_of_unmatched": 0.0526,
+      "gt_wall_ids": [
+        "15x30-ft-Best-House-Plan-Model:w_s35"
+      ]
+    },
+    "b_pair_dropped_it": {
+      "n": 9,
+      "share_of_unmatched": 0.4737,
+      "gt_wall_ids": [
+        "15x30-ft-Best-House-Plan-Model:w_s2",
+        "15x30-ft-Best-House-Plan-Model:w_s4",
+        "15x30-ft-Best-House-Plan-Model:w_s6",
+        "15x30-ft-Best-House-Plan-Model:w_s25",
+        "30x50-Model-landscape:w_s106",
+        "30x50-Model-landscape:w_s111",
+        "30x50-Model-landscape:w_s117",
+        "30x50-Model-landscape:w_s138",
+        "30x50-Model-landscape:w_s150"
+      ]
+    },
+    "c_match_failure_despite_coverage": {
+      "n": 9,
+      "share_of_unmatched": 0.4737,
+      "gt_wall_ids": [
+        "15x30-ft-Best-House-Plan-Model:w_s23",
+        "15x30-ft-Best-House-Plan-Model:w_s29",
+        "30x50-Model-landscape:w_s108",
+        "30x50-Model-landscape:w_s119",
+        "30x50-Model-landscape:w_s124",
+        "30x50-Model-landscape:w_s132",
+        "30x50-Model-landscape:w_s142",
+        "30x50-Model-landscape:w_s147",
+        "30x50-Model-landscape:w_s152"
+      ]
+    }
+  },
+  "per_plan": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "n_gt_walls": 10,
+      "n_matched": 3,
+      "rows": [
+        {
+          "gt_wall_id": "w_s2",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.429,
+          "coverage_pair_tau_0_005": 0.429,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s4",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.048,
+          "coverage_pair_tau_0_005": 0.048,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s6",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.048,
+          "coverage_pair_tau_0_005": 0.048,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s7",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 0.905,
+          "coverage_pair_tau_0_01": 0.905,
+          "coverage_pair_tau_0_005": 0.571,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s21",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.952,
+          "coverage_pair_tau_0_005": 0.952,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s23",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.619,
+          "coverage_pair_tau_0_01": 0.571,
+          "coverage_pair_tau_0_005": 0.381,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s25",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.524,
+          "coverage_pair_tau_0_01": 0.238,
+          "coverage_pair_tau_0_005": 0.048,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s29",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.619,
+          "coverage_pair_tau_0_005": 0.571,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s32",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 0.952,
+          "coverage_pair_tau_0_01": 0.952,
+          "coverage_pair_tau_0_005": 0.952,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s35",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.143,
+          "coverage_pair_tau_0_01": 0.238,
+          "coverage_pair_tau_0_005": 0.143,
+          "death_bucket": "a_dissect_select_blind"
+        }
+      ]
+    },
+    "30x50-Model-landscape": {
+      "plan_id": "30x50-Model-landscape",
+      "n_gt_walls": 19,
+      "n_matched": 7,
+      "rows": [
+        {
+          "gt_wall_id": "w_s102",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.952,
+          "coverage_pair_tau_0_005": 0.952,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s104",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.952,
+          "coverage_pair_tau_0_005": 0.952,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s106",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.286,
+          "coverage_pair_tau_0_005": 0.048,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s108",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.762,
+          "coverage_pair_tau_0_01": 0.857,
+          "coverage_pair_tau_0_005": 0.667,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s110",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.952,
+          "coverage_pair_tau_0_005": 0.762,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s111",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.381,
+          "coverage_pair_tau_0_005": 0.381,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s117",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.333,
+          "coverage_pair_tau_0_005": 0.143,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s119",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.81,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 1.0,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s121",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 1.0,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s124",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 1.0,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s126",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 1.0,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s129",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 0.952,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s132",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 1.0,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s138",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.095,
+          "coverage_pair_tau_0_005": 0.048,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s142",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.571,
+          "coverage_pair_tau_0_005": 0.19,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s147",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.857,
+          "coverage_pair_tau_0_01": 0.905,
+          "coverage_pair_tau_0_005": 0.81,
+          "death_bucket": "c_match_failure_despite_coverage"
+        },
+        {
+          "gt_wall_id": "w_s149",
+          "matched_one_to_one_tau_0_01": true,
+          "coverage_select_tau_0_01": 1.0,
+          "coverage_pair_tau_0_01": 0.952,
+          "coverage_pair_tau_0_005": 0.952,
+          "death_bucket": null
+        },
+        {
+          "gt_wall_id": "w_s150",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.619,
+          "coverage_pair_tau_0_01": 0.286,
+          "coverage_pair_tau_0_005": 0.143,
+          "death_bucket": "b_pair_dropped_it"
+        },
+        {
+          "gt_wall_id": "w_s152",
+          "matched_one_to_one_tau_0_01": false,
+          "coverage_select_tau_0_01": 0.524,
+          "coverage_pair_tau_0_01": 1.0,
+          "coverage_pair_tau_0_005": 1.0,
+          "death_bucket": "c_match_failure_despite_coverage"
+        }
+      ]
+    }
+  }
+}
