@@ -1,0 +1,1512 @@
+{
+  "thresholds": {
+    "tau_primary": 0.01,
+    "page_edge_tol_frac": 0.01,
+    "border_min_len_frac": 0.5,
+    "outside_envelope_buffer_frac": 0.02,
+    "dimension_outside_frac": 0.8,
+    "furniture_inside_frac": 0.8,
+    "furniture_max_len_frac": 0.12
+  },
+  "confusion_matrix_overall": {
+    "total_candidates": 97,
+    "by_family": {
+      "sheet_border": {
+        "n": 4,
+        "share_of_total": 0.0412,
+        "n_matched": 0,
+        "n_spurious": 4,
+        "spurious_share_within_family": 1.0
+      },
+      "dimension": {
+        "n": 3,
+        "share_of_total": 0.0309,
+        "n_matched": 0,
+        "n_spurious": 3,
+        "spurious_share_within_family": 1.0
+      },
+      "furniture_fixture": {
+        "n": 39,
+        "share_of_total": 0.4021,
+        "n_matched": 1,
+        "n_spurious": 38,
+        "spurious_share_within_family": 0.9744
+      },
+      "other": {
+        "n": 51,
+        "share_of_total": 0.5258,
+        "n_matched": 9,
+        "n_spurious": 42,
+        "spurious_share_within_family": 0.8235
+      }
+    }
+  },
+  "confusion_matrix_by_plan": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "total_candidates": 43,
+      "by_family": {
+        "sheet_border": {
+          "n": 0,
+          "share_of_total": 0.0,
+          "n_matched": 0,
+          "n_spurious": 0,
+          "spurious_share_within_family": null
+        },
+        "dimension": {
+          "n": 3,
+          "share_of_total": 0.0698,
+          "n_matched": 0,
+          "n_spurious": 3,
+          "spurious_share_within_family": 1.0
+        },
+        "furniture_fixture": {
+          "n": 18,
+          "share_of_total": 0.4186,
+          "n_matched": 0,
+          "n_spurious": 18,
+          "spurious_share_within_family": 1.0
+        },
+        "other": {
+          "n": 22,
+          "share_of_total": 0.5116,
+          "n_matched": 3,
+          "n_spurious": 19,
+          "spurious_share_within_family": 0.8636
+        }
+      }
+    },
+    "30x50-Model-landscape": {
+      "total_candidates": 54,
+      "by_family": {
+        "sheet_border": {
+          "n": 4,
+          "share_of_total": 0.0741,
+          "n_matched": 0,
+          "n_spurious": 4,
+          "spurious_share_within_family": 1.0
+        },
+        "dimension": {
+          "n": 0,
+          "share_of_total": 0.0,
+          "n_matched": 0,
+          "n_spurious": 0,
+          "spurious_share_within_family": null
+        },
+        "furniture_fixture": {
+          "n": 21,
+          "share_of_total": 0.3889,
+          "n_matched": 1,
+          "n_spurious": 20,
+          "spurious_share_within_family": 0.9524
+        },
+        "other": {
+          "n": 29,
+          "share_of_total": 0.537,
+          "n_matched": 6,
+          "n_spurious": 23,
+          "spurious_share_within_family": 0.7931
+        }
+      }
+    }
+  },
+  "per_plan": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "n_candidates": 43,
+      "n_gt_walls": 10,
+      "n_matched_tau_0_01": 3,
+      "page_bbox_mm": [
+        0.0,
+        0.0,
+        9411.082448708237,
+        13317.867935819051
+      ],
+      "gt_bbox_mm": [
+        1932.7152334279322,
+        2475.506223035973,
+        6362.272798579215,
+        11493.496187151657
+      ],
+      "rows": [
+        {
+          "id": "W0",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 294.6,
+          "start": [
+            5831.2,
+            3070.7
+          ],
+          "end": [
+            6125.8,
+            3073.3
+          ]
+        },
+        {
+          "id": "W1",
+          "family": "other",
+          "matched": false,
+          "length_mm": 3025.4,
+          "start": [
+            3193.1,
+            3950.0
+          ],
+          "end": [
+            6218.4,
+            3976.4
+          ]
+        },
+        {
+          "id": "W2",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1562.8,
+          "start": [
+            4559.0,
+            4885.7
+          ],
+          "end": [
+            6121.8,
+            4899.3
+          ]
+        },
+        {
+          "id": "W3",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1840.1,
+          "start": [
+            3282.6,
+            5292.0
+          ],
+          "end": [
+            5122.7,
+            5308.1
+          ]
+        },
+        {
+          "id": "W4",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1401.8,
+          "start": [
+            4172.8,
+            7947.3
+          ],
+          "end": [
+            5574.6,
+            7959.5
+          ]
+        },
+        {
+          "id": "W5",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 222.1,
+          "start": [
+            5603.7,
+            7955.6
+          ],
+          "end": [
+            5825.7,
+            7957.5
+          ]
+        },
+        {
+          "id": "W6",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2033.8,
+          "start": [
+            4087.3,
+            8597.4
+          ],
+          "end": [
+            6121.0,
+            8615.2
+          ]
+        },
+        {
+          "id": "W7",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 654.5,
+          "start": [
+            2173.9,
+            3813.3
+          ],
+          "end": [
+            2168.2,
+            4467.8
+          ]
+        },
+        {
+          "id": "W8",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 918.2,
+          "start": [
+            2193.1,
+            8917.2
+          ],
+          "end": [
+            2185.1,
+            9835.4
+          ]
+        },
+        {
+          "id": "W9",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 521.8,
+          "start": [
+            3799.4,
+            7203.1
+          ],
+          "end": [
+            3794.9,
+            7724.9
+          ]
+        },
+        {
+          "id": "W10",
+          "family": "other",
+          "matched": false,
+          "length_mm": 3308.8,
+          "start": [
+            4172.8,
+            7947.3
+          ],
+          "end": [
+            4144.0,
+            11256.0
+          ]
+        },
+        {
+          "id": "W11",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1365.2,
+          "start": [
+            4558.0,
+            3298.9
+          ],
+          "end": [
+            4546.1,
+            4664.1
+          ]
+        },
+        {
+          "id": "W12",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1800.5,
+          "start": [
+            4540.3,
+            7222.9
+          ],
+          "end": [
+            4524.6,
+            9023.3
+          ]
+        },
+        {
+          "id": "W13",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1374.0,
+          "start": [
+            4752.2,
+            3287.5
+          ],
+          "end": [
+            4740.2,
+            4661.4
+          ]
+        },
+        {
+          "id": "W14",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 301.5,
+          "start": [
+            4668.3,
+            10954.7
+          ],
+          "end": [
+            4665.6,
+            11256.1
+          ]
+        },
+        {
+          "id": "W15",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2452.4,
+          "start": [
+            4910.6,
+            8274.0
+          ],
+          "end": [
+            4889.2,
+            10726.3
+          ]
+        },
+        {
+          "id": "W16",
+          "family": "other",
+          "matched": false,
+          "length_mm": 7965.7,
+          "start": [
+            5229.8,
+            3290.7
+          ],
+          "end": [
+            5160.3,
+            11256.1
+          ]
+        },
+        {
+          "id": "W17",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1097.4,
+          "start": [
+            5574.6,
+            7959.5
+          ],
+          "end": [
+            5565.0,
+            9056.9
+          ]
+        },
+        {
+          "id": "W18",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1374.0,
+          "start": [
+            5808.9,
+            3287.5
+          ],
+          "end": [
+            5796.9,
+            4661.4
+          ]
+        },
+        {
+          "id": "W19",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 757.3,
+          "start": [
+            5755.6,
+            9974.4
+          ],
+          "end": [
+            5749.0,
+            10731.6
+          ]
+        },
+        {
+          "id": "W20",
+          "family": "other",
+          "matched": false,
+          "length_mm": 3676.4,
+          "start": [
+            5991.2,
+            2905.7
+          ],
+          "end": [
+            5959.1,
+            6581.9
+          ]
+        },
+        {
+          "id": "W21",
+          "family": "other",
+          "matched": false,
+          "length_mm": 3025.4,
+          "start": [
+            3172.3,
+            10602.8
+          ],
+          "end": [
+            6197.6,
+            10629.2
+          ]
+        },
+        {
+          "id": "W22",
+          "family": "other",
+          "matched": true,
+          "length_mm": 3024.4,
+          "start": [
+            3180.4,
+            7027.6
+          ],
+          "end": [
+            6204.7,
+            7054.0
+          ]
+        },
+        {
+          "id": "W23",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2788.1,
+          "start": [
+            3413.9,
+            10336.5
+          ],
+          "end": [
+            6201.9,
+            10360.9
+          ]
+        },
+        {
+          "id": "W24",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2256.3,
+          "start": [
+            4580.2,
+            2441.6
+          ],
+          "end": [
+            6836.5,
+            2461.2
+          ]
+        },
+        {
+          "id": "W25",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1573.7,
+          "start": [
+            4546.1,
+            4664.1
+          ],
+          "end": [
+            6119.8,
+            4677.8
+          ]
+        },
+        {
+          "id": "W26",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2258.5,
+          "start": [
+            4552.0,
+            5420.4
+          ],
+          "end": [
+            6810.5,
+            5440.1
+          ]
+        },
+        {
+          "id": "W27",
+          "family": "dimension",
+          "matched": false,
+          "length_mm": 1059.1,
+          "start": [
+            2125.2,
+            2126.6
+          ],
+          "end": [
+            3184.2,
+            2135.9
+          ]
+        },
+        {
+          "id": "W28",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1055.3,
+          "start": [
+            4561.8,
+            4382.6
+          ],
+          "end": [
+            5617.0,
+            4391.8
+          ]
+        },
+        {
+          "id": "W29",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 905.0,
+          "start": [
+            2121.9,
+            11102.4
+          ],
+          "end": [
+            3026.9,
+            11110.3
+          ]
+        },
+        {
+          "id": "W30",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 521.9,
+          "start": [
+            5603.7,
+            9339.8
+          ],
+          "end": [
+            6125.6,
+            9344.4
+          ]
+        },
+        {
+          "id": "W31",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 521.8,
+          "start": [
+            5603.7,
+            7870.8
+          ],
+          "end": [
+            6125.5,
+            7875.3
+          ]
+        },
+        {
+          "id": "W32",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 342.6,
+          "start": [
+            3963.2,
+            7450.7
+          ],
+          "end": [
+            4305.9,
+            7453.7
+          ]
+        },
+        {
+          "id": "W33",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 350.1,
+          "start": [
+            2878.6,
+            4506.3
+          ],
+          "end": [
+            3228.6,
+            4509.3
+          ]
+        },
+        {
+          "id": "W34",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 216.3,
+          "start": [
+            5603.7,
+            9254.8
+          ],
+          "end": [
+            5819.9,
+            9256.7
+          ]
+        },
+        {
+          "id": "W35",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 210.7,
+          "start": [
+            5870.7,
+            3208.6
+          ],
+          "end": [
+            6081.4,
+            3210.5
+          ]
+        },
+        {
+          "id": "W36",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 141.9,
+          "start": [
+            5867.7,
+            4777.8
+          ],
+          "end": [
+            6009.6,
+            4779.0
+          ]
+        },
+        {
+          "id": "W37",
+          "family": "other",
+          "matched": true,
+          "length_mm": 8846.4,
+          "start": [
+            2045.9,
+            2635.7
+          ],
+          "end": [
+            1968.7,
+            11481.8
+          ]
+        },
+        {
+          "id": "W38",
+          "family": "dimension",
+          "matched": false,
+          "length_mm": 4202.1,
+          "start": [
+            6941.5,
+            7151.3
+          ],
+          "end": [
+            6904.8,
+            11353.2
+          ]
+        },
+        {
+          "id": "W39",
+          "family": "dimension",
+          "matched": false,
+          "length_mm": 2979.0,
+          "start": [
+            6836.5,
+            2461.2
+          ],
+          "end": [
+            6810.5,
+            5440.1
+          ]
+        },
+        {
+          "id": "W40",
+          "family": "other",
+          "matched": true,
+          "length_mm": 1872.5,
+          "start": [
+            3244.9,
+            2636.9
+          ],
+          "end": [
+            3228.6,
+            4509.3
+          ]
+        },
+        {
+          "id": "W41",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1349.3,
+          "start": [
+            6146.7,
+            3298.9
+          ],
+          "end": [
+            6134.9,
+            4648.1
+          ]
+        },
+        {
+          "id": "W42",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 917.4,
+          "start": [
+            3413.9,
+            10336.5
+          ],
+          "end": [
+            3405.9,
+            11253.9
+          ]
+        }
+      ]
+    },
+    "30x50-Model-landscape": {
+      "plan_id": "30x50-Model-landscape",
+      "n_candidates": 54,
+      "n_gt_walls": 19,
+      "n_matched_tau_0_01": 7,
+      "page_bbox_mm": [
+        0.0,
+        0.0,
+        20669.144896551734,
+        14605.8684245229
+      ],
+      "gt_bbox_mm": [
+        4116.588532349313,
+        4059.1500320708287,
+        16912.83698706217,
+        11179.665193642344
+      ],
+      "rows": [
+        {
+          "id": "W0",
+          "family": "sheet_border",
+          "matched": false,
+          "length_mm": 15125.4,
+          "start": [
+            3240.7,
+            3061.5
+          ],
+          "end": [
+            18365.5,
+            3193.5
+          ]
+        },
+        {
+          "id": "W1",
+          "family": "other",
+          "matched": true,
+          "length_mm": 12121.1,
+          "start": [
+            4791.3,
+            4023.2
+          ],
+          "end": [
+            16911.9,
+            4128.9
+          ]
+        },
+        {
+          "id": "W2",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2700.2,
+          "start": [
+            4512.9,
+            4408.6
+          ],
+          "end": [
+            7213.0,
+            4432.2
+          ]
+        },
+        {
+          "id": "W3",
+          "family": "other",
+          "matched": false,
+          "length_mm": 4029.9,
+          "start": [
+            4998.9,
+            4928.4
+          ],
+          "end": [
+            9028.6,
+            4963.6
+          ]
+        },
+        {
+          "id": "W4",
+          "family": "other",
+          "matched": false,
+          "length_mm": 7900.5,
+          "start": [
+            9169.1,
+            5415.9
+          ],
+          "end": [
+            17069.3,
+            5484.8
+          ]
+        },
+        {
+          "id": "W5",
+          "family": "other",
+          "matched": false,
+          "length_mm": 4029.6,
+          "start": [
+            4997.7,
+            5853.8
+          ],
+          "end": [
+            9027.2,
+            5889.0
+          ]
+        },
+        {
+          "id": "W6",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2993.4,
+          "start": [
+            12915.4,
+            5889.4
+          ],
+          "end": [
+            15908.6,
+            5915.5
+          ]
+        },
+        {
+          "id": "W7",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1702.3,
+          "start": [
+            5011.8,
+            6209.5
+          ],
+          "end": [
+            6714.1,
+            6224.4
+          ]
+        },
+        {
+          "id": "W8",
+          "family": "other",
+          "matched": false,
+          "length_mm": 10415.8,
+          "start": [
+            6377.9,
+            6265.6
+          ],
+          "end": [
+            16793.3,
+            6356.4
+          ]
+        },
+        {
+          "id": "W9",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2442.7,
+          "start": [
+            4971.7,
+            6695.7
+          ],
+          "end": [
+            7414.3,
+            6717.0
+          ]
+        },
+        {
+          "id": "W10",
+          "family": "other",
+          "matched": true,
+          "length_mm": 3116.3,
+          "start": [
+            13684.7,
+            7075.0
+          ],
+          "end": [
+            16800.8,
+            7102.2
+          ]
+        },
+        {
+          "id": "W11",
+          "family": "other",
+          "matched": true,
+          "length_mm": 3203.5,
+          "start": [
+            4296.7,
+            7597.2
+          ],
+          "end": [
+            7500.1,
+            7625.1
+          ]
+        },
+        {
+          "id": "W12",
+          "family": "other",
+          "matched": false,
+          "length_mm": 4176.3,
+          "start": [
+            11717.0,
+            7802.6
+          ],
+          "end": [
+            15893.2,
+            7839.1
+          ]
+        },
+        {
+          "id": "W13",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 491.6,
+          "start": [
+            10113.8,
+            8322.5
+          ],
+          "end": [
+            10605.4,
+            8326.8
+          ]
+        },
+        {
+          "id": "W14",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 609.7,
+          "start": [
+            13990.6,
+            8421.6
+          ],
+          "end": [
+            14600.3,
+            8426.9
+          ]
+        },
+        {
+          "id": "W15",
+          "family": "other",
+          "matched": false,
+          "length_mm": 5259.6,
+          "start": [
+            7108.4,
+            8807.0
+          ],
+          "end": [
+            12367.7,
+            8852.9
+          ]
+        },
+        {
+          "id": "W16",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1731.1,
+          "start": [
+            4950.3,
+            9306.8
+          ],
+          "end": [
+            6681.3,
+            9321.9
+          ]
+        },
+        {
+          "id": "W17",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 415.3,
+          "start": [
+            10190.0,
+            9281.8
+          ],
+          "end": [
+            10605.3,
+            9285.4
+          ]
+        },
+        {
+          "id": "W18",
+          "family": "other",
+          "matched": false,
+          "length_mm": 9036.2,
+          "start": [
+            4465.6,
+            10791.9
+          ],
+          "end": [
+            13501.4,
+            10870.7
+          ]
+        },
+        {
+          "id": "W19",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1702.3,
+          "start": [
+            4964.7,
+            10987.5
+          ],
+          "end": [
+            6667.0,
+            11002.3
+          ]
+        },
+        {
+          "id": "W20",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 731.9,
+          "start": [
+            10588.0,
+            11041.0
+          ],
+          "end": [
+            11319.9,
+            11047.4
+          ]
+        },
+        {
+          "id": "W21",
+          "family": "other",
+          "matched": true,
+          "length_mm": 8723.8,
+          "start": [
+            4729.2,
+            11138.6
+          ],
+          "end": [
+            13452.7,
+            11214.8
+          ]
+        },
+        {
+          "id": "W22",
+          "family": "sheet_border",
+          "matched": false,
+          "length_mm": 15251.8,
+          "start": [
+            3162.2,
+            12060.8
+          ],
+          "end": [
+            18413.4,
+            12193.9
+          ]
+        },
+        {
+          "id": "W23",
+          "family": "sheet_border",
+          "matched": false,
+          "length_mm": 8999.6,
+          "start": [
+            3240.7,
+            3061.5
+          ],
+          "end": [
+            3162.2,
+            12060.8
+          ]
+        },
+        {
+          "id": "W24",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1221.8,
+          "start": [
+            4186.3,
+            5296.8
+          ],
+          "end": [
+            4175.6,
+            6518.5
+          ]
+        },
+        {
+          "id": "W25",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1218.8,
+          "start": [
+            4186.3,
+            8923.0
+          ],
+          "end": [
+            4175.6,
+            10141.7
+          ]
+        },
+        {
+          "id": "W26",
+          "family": "other",
+          "matched": false,
+          "length_mm": 7115.7,
+          "start": [
+            4791.3,
+            4023.2
+          ],
+          "end": [
+            4729.2,
+            11138.6
+          ]
+        },
+        {
+          "id": "W27",
+          "family": "other",
+          "matched": false,
+          "length_mm": 6755.9,
+          "start": [
+            5880.9,
+            4289.2
+          ],
+          "end": [
+            5822.0,
+            11044.9
+          ]
+        },
+        {
+          "id": "W28",
+          "family": "other",
+          "matched": false,
+          "length_mm": 6764.3,
+          "start": [
+            6897.6,
+            4211.5
+          ],
+          "end": [
+            6838.6,
+            10975.5
+          ]
+        },
+        {
+          "id": "W29",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2163.5,
+          "start": [
+            7108.4,
+            8807.0
+          ],
+          "end": [
+            7089.5,
+            10970.5
+          ]
+        },
+        {
+          "id": "W30",
+          "family": "other",
+          "matched": true,
+          "length_mm": 2440.6,
+          "start": [
+            9115.4,
+            8617.0
+          ],
+          "end": [
+            9094.1,
+            11057.5
+          ]
+        },
+        {
+          "id": "W31",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 656.9,
+          "start": [
+            9697.8,
+            10192.5
+          ],
+          "end": [
+            9692.1,
+            10849.3
+          ]
+        },
+        {
+          "id": "W32",
+          "family": "other",
+          "matched": false,
+          "length_mm": 6268.3,
+          "start": [
+            10642.7,
+            4772.9
+          ],
+          "end": [
+            10588.0,
+            11041.0
+          ]
+        },
+        {
+          "id": "W33",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2731.5,
+          "start": [
+            12071.8,
+            7406.9
+          ],
+          "end": [
+            12048.0,
+            10138.3
+          ]
+        },
+        {
+          "id": "W34",
+          "family": "other",
+          "matched": false,
+          "length_mm": 3449.7,
+          "start": [
+            12902.1,
+            7414.2
+          ],
+          "end": [
+            12872.0,
+            10863.7
+          ]
+        },
+        {
+          "id": "W35",
+          "family": "other",
+          "matched": false,
+          "length_mm": 5727.2,
+          "start": [
+            13596.0,
+            4190.1
+          ],
+          "end": [
+            13546.0,
+            9917.0
+          ]
+        },
+        {
+          "id": "W36",
+          "family": "furniture_fixture",
+          "matched": true,
+          "length_mm": 1218.1,
+          "start": [
+            15215.1,
+            7167.7
+          ],
+          "end": [
+            15204.4,
+            8385.8
+          ]
+        },
+        {
+          "id": "W37",
+          "family": "other",
+          "matched": true,
+          "length_mm": 4258.2,
+          "start": [
+            16911.9,
+            4128.9
+          ],
+          "end": [
+            16874.8,
+            8387.0
+          ]
+        },
+        {
+          "id": "W38",
+          "family": "sheet_border",
+          "matched": false,
+          "length_mm": 5423.4,
+          "start": [
+            18365.5,
+            3193.5
+          ],
+          "end": [
+            18318.2,
+            8616.7
+          ]
+        },
+        {
+          "id": "W39",
+          "family": "other",
+          "matched": false,
+          "length_mm": 3731.3,
+          "start": [
+            4973.4,
+            7345.0
+          ],
+          "end": [
+            8704.6,
+            7377.5
+          ]
+        },
+        {
+          "id": "W40",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1702.4,
+          "start": [
+            4964.7,
+            8982.9
+          ],
+          "end": [
+            6667.0,
+            8997.8
+          ]
+        },
+        {
+          "id": "W41",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1702.4,
+          "start": [
+            5011.8,
+            4205.0
+          ],
+          "end": [
+            6714.1,
+            4219.8
+          ]
+        },
+        {
+          "id": "W42",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1518.5,
+          "start": [
+            7506.0,
+            4768.4
+          ],
+          "end": [
+            9024.4,
+            4781.6
+          ]
+        },
+        {
+          "id": "W43",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 656.9,
+          "start": [
+            11716.2,
+            9766.6
+          ],
+          "end": [
+            12373.1,
+            9772.4
+          ]
+        },
+        {
+          "id": "W44",
+          "family": "other",
+          "matched": false,
+          "length_mm": 1982.2,
+          "start": [
+            10065.8,
+            10121.0
+          ],
+          "end": [
+            12048.0,
+            10138.3
+          ]
+        },
+        {
+          "id": "W45",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2143.5,
+          "start": [
+            12044.1,
+            10587.1
+          ],
+          "end": [
+            14187.5,
+            10605.8
+          ]
+        },
+        {
+          "id": "W46",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2527.5,
+          "start": [
+            7436.3,
+            4189.6
+          ],
+          "end": [
+            7414.3,
+            6717.0
+          ]
+        },
+        {
+          "id": "W47",
+          "family": "other",
+          "matched": false,
+          "length_mm": 2535.5,
+          "start": [
+            8732.4,
+            4192.9
+          ],
+          "end": [
+            8710.3,
+            6728.3
+          ]
+        },
+        {
+          "id": "W48",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1513.4,
+          "start": [
+            5653.2,
+            4745.8
+          ],
+          "end": [
+            5640.0,
+            6259.1
+          ]
+        },
+        {
+          "id": "W49",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1387.4,
+          "start": [
+            5355.1,
+            9002.4
+          ],
+          "end": [
+            5343.0,
+            10389.8
+          ]
+        },
+        {
+          "id": "W50",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1369.7,
+          "start": [
+            13816.0,
+            9917.2
+          ],
+          "end": [
+            13804.0,
+            11286.8
+          ]
+        },
+        {
+          "id": "W51",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 1393.5,
+          "start": [
+            6390.0,
+            4872.1
+          ],
+          "end": [
+            6377.9,
+            6265.6
+          ]
+        },
+        {
+          "id": "W52",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 659.6,
+          "start": [
+            8979.5,
+            8896.2
+          ],
+          "end": [
+            8973.7,
+            9555.8
+          ]
+        },
+        {
+          "id": "W53",
+          "family": "furniture_fixture",
+          "matched": false,
+          "length_mm": 656.9,
+          "start": [
+            11531.9,
+            10192.1
+          ],
+          "end": [
+            11526.2,
+            10849.0
+          ]
+        }
+      ]
+    }
+  }
+}

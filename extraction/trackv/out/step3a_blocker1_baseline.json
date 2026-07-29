@@ -1,0 +1,413 @@
+{
+  "pre_split": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "enable_splitting": false,
+      "n_pred_walls": 43,
+      "n_gt_walls": 10,
+      "matched_at_tau": {
+        "0.005": {
+          "n_pred": 43,
+          "n_gt": 10,
+          "tp": 2,
+          "precision": 0.0465,
+          "recall": 0.2,
+          "f1": 0.0755,
+          "matched_pred_ids": [
+            "W22",
+            "W40"
+          ],
+          "unmatched_gt_ids": [
+            "w_s2",
+            "w_s23",
+            "w_s25",
+            "w_s29",
+            "w_s35",
+            "w_s4",
+            "w_s6",
+            "w_s7"
+          ]
+        },
+        "0.01": {
+          "n_pred": 43,
+          "n_gt": 10,
+          "tp": 3,
+          "precision": 0.0698,
+          "recall": 0.3,
+          "f1": 0.1132,
+          "matched_pred_ids": [
+            "W22",
+            "W37",
+            "W40"
+          ],
+          "unmatched_gt_ids": [
+            "w_s2",
+            "w_s23",
+            "w_s25",
+            "w_s29",
+            "w_s35",
+            "w_s4",
+            "w_s6"
+          ]
+        },
+        "0.02": {
+          "n_pred": 43,
+          "n_gt": 10,
+          "tp": 3,
+          "precision": 0.0698,
+          "recall": 0.3,
+          "f1": 0.1132,
+          "matched_pred_ids": [
+            "W22",
+            "W37",
+            "W40"
+          ],
+          "unmatched_gt_ids": [
+            "w_s2",
+            "w_s23",
+            "w_s25",
+            "w_s29",
+            "w_s35",
+            "w_s4",
+            "w_s6"
+          ]
+        }
+      },
+      "wall_f1_by_tau_harness": {
+        "0.005": 0.0755,
+        "0.01": 0.1132,
+        "0.02": 0.1132
+      },
+      "wall_precision_by_tau_harness": {
+        "0.005": 0.0465,
+        "0.01": 0.0698,
+        "0.02": 0.0698
+      },
+      "wall_recall_by_tau_harness": {
+        "0.005": 0.2,
+        "0.01": 0.3,
+        "0.02": 0.3
+      }
+    },
+    "30x50-Model-landscape": {
+      "plan_id": "30x50-Model-landscape",
+      "enable_splitting": false,
+      "n_pred_walls": 54,
+      "n_gt_walls": 19,
+      "matched_at_tau": {
+        "0.005": {
+          "n_pred": 54,
+          "n_gt": 19,
+          "tp": 6,
+          "precision": 0.1111,
+          "recall": 0.3158,
+          "f1": 0.1644,
+          "matched_pred_ids": [
+            "W1",
+            "W11",
+            "W21",
+            "W30",
+            "W36",
+            "W37"
+          ],
+          "unmatched_gt_ids": [
+            "w_s106",
+            "w_s108",
+            "w_s111",
+            "w_s117",
+            "w_s119",
+            "w_s124",
+            "w_s126",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s147",
+            "w_s150",
+            "w_s152"
+          ]
+        },
+        "0.01": {
+          "n_pred": 54,
+          "n_gt": 19,
+          "tp": 7,
+          "precision": 0.1296,
+          "recall": 0.3684,
+          "f1": 0.1918,
+          "matched_pred_ids": [
+            "W1",
+            "W10",
+            "W11",
+            "W21",
+            "W30",
+            "W36",
+            "W37"
+          ],
+          "unmatched_gt_ids": [
+            "w_s106",
+            "w_s108",
+            "w_s111",
+            "w_s117",
+            "w_s119",
+            "w_s124",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s147",
+            "w_s150",
+            "w_s152"
+          ]
+        },
+        "0.02": {
+          "n_pred": 54,
+          "n_gt": 19,
+          "tp": 8,
+          "precision": 0.1481,
+          "recall": 0.4211,
+          "f1": 0.2192,
+          "matched_pred_ids": [
+            "W1",
+            "W10",
+            "W11",
+            "W21",
+            "W29",
+            "W30",
+            "W36",
+            "W37"
+          ],
+          "unmatched_gt_ids": [
+            "w_s106",
+            "w_s108",
+            "w_s111",
+            "w_s119",
+            "w_s124",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s147",
+            "w_s150",
+            "w_s152"
+          ]
+        }
+      },
+      "wall_f1_by_tau_harness": {
+        "0.005": 0.1644,
+        "0.01": 0.1918,
+        "0.02": 0.2192
+      },
+      "wall_precision_by_tau_harness": {
+        "0.005": 0.1111,
+        "0.01": 0.1296,
+        "0.02": 0.1481
+      },
+      "wall_recall_by_tau_harness": {
+        "0.005": 0.3158,
+        "0.01": 0.3684,
+        "0.02": 0.4211
+      }
+    }
+  },
+  "post_split": {
+    "15x30-ft-Best-House-Plan-Model": {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "enable_splitting": true,
+      "n_pred_walls": 136,
+      "n_gt_walls": 10,
+      "matched_at_tau": {
+        "0.005": {
+          "n_pred": 136,
+          "n_gt": 10,
+          "tp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "matched_pred_ids": [],
+          "unmatched_gt_ids": [
+            "w_s2",
+            "w_s21",
+            "w_s23",
+            "w_s25",
+            "w_s29",
+            "w_s32",
+            "w_s35",
+            "w_s4",
+            "w_s6",
+            "w_s7"
+          ]
+        },
+        "0.01": {
+          "n_pred": 136,
+          "n_gt": 10,
+          "tp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "matched_pred_ids": [],
+          "unmatched_gt_ids": [
+            "w_s2",
+            "w_s21",
+            "w_s23",
+            "w_s25",
+            "w_s29",
+            "w_s32",
+            "w_s35",
+            "w_s4",
+            "w_s6",
+            "w_s7"
+          ]
+        },
+        "0.02": {
+          "n_pred": 136,
+          "n_gt": 10,
+          "tp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "matched_pred_ids": [],
+          "unmatched_gt_ids": [
+            "w_s2",
+            "w_s21",
+            "w_s23",
+            "w_s25",
+            "w_s29",
+            "w_s32",
+            "w_s35",
+            "w_s4",
+            "w_s6",
+            "w_s7"
+          ]
+        }
+      },
+      "wall_f1_by_tau_harness": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.02": 0.0
+      },
+      "wall_precision_by_tau_harness": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.02": 0.0
+      },
+      "wall_recall_by_tau_harness": {
+        "0.005": 0.0,
+        "0.01": 0.0,
+        "0.02": 0.0
+      }
+    },
+    "30x50-Model-landscape": {
+      "plan_id": "30x50-Model-landscape",
+      "enable_splitting": true,
+      "n_pred_walls": 230,
+      "n_gt_walls": 19,
+      "matched_at_tau": {
+        "0.005": {
+          "n_pred": 230,
+          "n_gt": 19,
+          "tp": 1,
+          "precision": 0.0043,
+          "recall": 0.0526,
+          "f1": 0.008,
+          "matched_pred_ids": [
+            "W15_0"
+          ],
+          "unmatched_gt_ids": [
+            "w_s102",
+            "w_s104",
+            "w_s106",
+            "w_s108",
+            "w_s110",
+            "w_s111",
+            "w_s117",
+            "w_s121",
+            "w_s124",
+            "w_s126",
+            "w_s129",
+            "w_s132",
+            "w_s138",
+            "w_s142",
+            "w_s147",
+            "w_s149",
+            "w_s150",
+            "w_s152"
+          ]
+        },
+        "0.01": {
+          "n_pred": 230,
+          "n_gt": 19,
+          "tp": 3,
+          "precision": 0.013,
+          "recall": 0.1579,
+          "f1": 0.0241,
+          "matched_pred_ids": [
+            "W10_1",
+            "W15_0",
+            "W35_0"
+          ],
+          "unmatched_gt_ids": [
+            "w_s102",
+            "w_s104",
+            "w_s106",
+            "w_s108",
+            "w_s110",
+            "w_s111",
+            "w_s117",
+            "w_s121",
+            "w_s124",
+            "w_s126",
+            "w_s129",
+            "w_s138",
+            "w_s142",
+            "w_s147",
+            "w_s149",
+            "w_s150"
+          ]
+        },
+        "0.02": {
+          "n_pred": 230,
+          "n_gt": 19,
+          "tp": 3,
+          "precision": 0.013,
+          "recall": 0.1579,
+          "f1": 0.0241,
+          "matched_pred_ids": [
+            "W10_1",
+            "W15_0",
+            "W35_0"
+          ],
+          "unmatched_gt_ids": [
+            "w_s102",
+            "w_s104",
+            "w_s106",
+            "w_s108",
+            "w_s110",
+            "w_s111",
+            "w_s117",
+            "w_s121",
+            "w_s124",
+            "w_s126",
+            "w_s129",
+            "w_s138",
+            "w_s142",
+            "w_s147",
+            "w_s149",
+            "w_s150"
+          ]
+        }
+      },
+      "wall_f1_by_tau_harness": {
+        "0.005": 0.008,
+        "0.01": 0.0241,
+        "0.02": 0.0241
+      },
+      "wall_precision_by_tau_harness": {
+        "0.005": 0.0043,
+        "0.01": 0.013,
+        "0.02": 0.013
+      },
+      "wall_recall_by_tau_harness": {
+        "0.005": 0.0526,
+        "0.01": 0.1579,
+        "0.02": 0.1579
+      }
+    }
+  }
+}
