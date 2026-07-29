@@ -69,11 +69,16 @@ Implement paper §1.3 + Appendix C exactly: Hungarian matching (scipy) for corne
 
 **Branch:** `phase-3a-renderer` · **Model:** Sonnet 4.6 / high · **Read:** paper §3.6, §6.3. **Data:** `data/resplan/ResPlan.pkl` (17K plans, shapely polygons for wall/window/door/rooms, MIT).
 
-1. `extraction/synth/resplan_convert.py`: ResPlan plan → schema-v1-shaped GT (wall polygons → centerline+thickness via medial axis; window/door polygons → host-wall projection with center_offset/width; rooms → wall cycles). Flag plans that fail conversion cleanly; target ≥ 90% clean conversion of the 17K.
+1. `extraction/synth/resplan_convert.py`: ResPlan plan → schema-v1-shaped GT (wall polygons → centerline+thickness via medial axis; window/door polygons → host-wall projection with center_offset/width; rooms → wall cycles). Flag plans that fail conversion cleanly. ~~target ≥ 90% clean conversion of the 17K~~ **SUPERSEDED 2026-07-29 (Dan's ruling) — see the "Done when" line below and `reports/p3a-gate-v2-retarget.md` for the full reasoning.** Volume was never the binding constraint (8,226 converter_clean plans already clears the ~6,700-plan floor a 20K-image set at 3 renders/plan needs), and a single clean-rate percentage averages away exactly the defect that matters (per-room-type survival, e.g. stair recovering at 0.8% while the pooled rate reads 48.4%).
 2. `extraction/synth/render.py`: parametric renderer producing training images from any schema-v1 plan in multiple conventions: poché (solid/gray fill), double-line hollow, single-stroke, colored-fill, hatched. Randomize: stroke widths, DPI/size, rotation, noise/JPEG artifacts, furniture symbols (simple parametric set), dimension chains with extension lines + arrowheads, text labels (multi-script incl. Hebrew RTL via a font list), north arrows, scale bars, legends, watermarks. Every render ships with pixel-exact GT (the source plan) + distractor annotations (furniture/dimension/text boxes for E2 training).
 3. Determinism: seeded; a manifest per generated set.
 
-**Done when:** visual contact sheet of ≥ 5 conventions × 10 plans approved by Dan; converter stats reported; 20K-image starter set generated with manifests. *(Uses temporary copies of the metric code if P0 isn't merged yet; reconcile on rebase.)*
+**Done when (RETARGETED 2026-07-29, replaces the old "≥90% clean conversion" bar):** visual contact sheet of ≥ 5 conventions × 10 plans approved by Dan; converter stats reported; 20K-image starter set generated with manifests; **and** the two-part gate below, both measured population-scale (`extraction/synth/qa/measure_gate_v2_distribution.py`):
+   1. **Volume floor**: ≥ ~6,700 converted-clean plans. **PASSES today** (8,226/17,000 converter_clean) — state the number, do not re-litigate it.
+   2. **Distribution match**, converted-clean subset vs. the full 17K:
+      - Scalar axes (doors/plan, rooms/plan, wall-count/plan) within 2% relative (doors/plan is already at 0.5%, the figure this tolerance is grounded in).
+      - Per-room-type survival rate: no required or open-plan room type's survival may deviate from the overall unconditional survival rate (48.4%) by more than a threshold — see `reports/p3a-gate-v2-retarget.md` for the proposed number and its evidence; **requires Dan's sign-off before it's load-bearing.** Fails loudly today on `stair` (0.8% survival) and `storage` (21.1%) — that failure is the point of the retarget, not a bug in it.
+   *(Uses temporary copies of the metric code if P0 isn't merged yet; reconcile on rebase.)*
 
 ---
 
