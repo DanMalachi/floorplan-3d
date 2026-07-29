@@ -4,6 +4,37 @@ from shapely.geometry import MultiPolygon, Polygon, box
 from extraction.synth.rooms import _MITER_LIMIT, _corner_vertices, _mitered_face_polygon, assemble_rooms, wall_roles
 from extraction.synth.skeleton import WallSegment
 
+# -- Doorway-notch (lever #1) fixture geometry --------------------------
+# A single 40x30 room, wall thickness = notch depth = wall_depth = 4.0 —
+# same scale as test_measure_clean_at_source.py's
+# test_doorway_notch_does_not_flag and test_diagnose_notch_area_fraction.py's
+# fixtures, deliberately NOT decoupled: the wall's own band radius
+# (thickness/2 + assemble_rooms's default tolerance=2.0) must comfortably
+# reach the notch's crossbar edge (parallel to the wall run, sits `notch
+# depth - thickness/2` away from the centerline) for the crossbar to heal
+# via ordinary wall coverage on its own, exactly like the real converter
+# path — a thinner/decoupled wall leaves the crossbar itself unbacked, and
+# since it isn't perpendicular it can never pass the notch discriminator
+# either, breaking the room for a DIFFERENT reason than the one under test.
+# The jamb edge length (== notch depth == wall_depth here) must also be >=
+# assemble_rooms's own default `tolerance` (2.0) or it's silently treated
+# as a sub-tolerance corner-transition artifact and never reaches the
+# discriminator at all (rooms.py's own skip, matching
+# qa/measure_clean_at_source.py::check_plan's identical TOLERANCE-gated
+# skip) — 4.0 clears that with margin.
+_NOTCH_T = 4.0
+_NOTCH_H = _NOTCH_T / 2
+_NOTCH_WALL_DEPTH = 4.0
+
+
+def _notch_room_segments():
+    return [
+        WallSegment(start=(-_NOTCH_H, -_NOTCH_H), end=(40 + _NOTCH_H, -_NOTCH_H), thickness=_NOTCH_T),  # 0: bottom
+        WallSegment(start=(40 + _NOTCH_H, -_NOTCH_H), end=(40 + _NOTCH_H, 30 + _NOTCH_H), thickness=_NOTCH_T),  # 1
+        WallSegment(start=(40 + _NOTCH_H, 30 + _NOTCH_H), end=(-_NOTCH_H, 30 + _NOTCH_H), thickness=_NOTCH_T),  # 2
+        WallSegment(start=(-_NOTCH_H, 30 + _NOTCH_H), end=(-_NOTCH_H, -_NOTCH_H), thickness=_NOTCH_T),  # 3: left
+    ]
+
 # A 10x10 living room + 10x10 balcony stacked with a real wall_depth (0.3)
 # gap between them, matching the physically-correct model used everywhere
 # else: every wall's centerline sits half-thickness back from EACH face it
@@ -204,3 +235,92 @@ def test_wall_roles_external_vs_rail_vs_internal():
     lone_roles, lone_flags = wall_roles(lone_wall, MultiPolygon([INNER]), {0: {"balcony"}})
     assert lone_roles[0] == "rail"
     assert "resplan_rail_from_balcony" in lone_flags[0]
+
+
+def test_doorway_notch_room_assembles_with_normalization():
+    # A door 30 wide, notch depth 4 (== wall thickness == wall_depth),
+    # centered on the bottom wall (margins of 5 on each side). Two things
+    # must both hold for this room to assemble at all: (1) stage 1 must
+    # excuse the two perpendicular jamb edges instead of unconditionally
+    # marking the room broken (no wall band ever backs a notch jamb, by
+    # construction — the crossbar between them heals via ordinary wall
+    # coverage on its own, same as the real converter path); (2) the area
+    # gate must compare against the notch-normalized source area
+    # (poly.difference(pocket)), not the raw source area which INCLUDES the
+    # 120-unit notch pocket. Hand-verified: face_poly ~= 1245.78 (the
+    # EMPIRICAL_FACE_OFFSET_MULTIPLIER's own ~3.8% baseline slack vs. the
+    # 1200 straight-run area); raw comparison against source=1320
+    # (1200+120) gives area_err ~= 5.62% > the 5% gate (FAILS); normalized
+    # comparison against 1200 gives ~= 3.815% (PASSES). Before this build,
+    # this exact room was unconditionally `broken_room_cycle` at stage 1,
+    # before ever reaching the area gate.
+    segments = _notch_room_segments()
+    ring = [(0, 0), (5, 0), (5, -4), (35, -4), (35, 0), (40, 0), (40, 30), (0, 30)]
+    room = Polygon(ring)
+    door = box(5, -4, 35, 0)
+
+    rooms, wall_to_types, flags = assemble_rooms(
+        segments,
+        {"bedroom": MultiPolygon([room])},
+        openings={"door": MultiPolygon([door])},
+        wall_depth=_NOTCH_WALL_DEPTH,
+    )
+
+    assert not any(f.startswith("broken_room_cycle") for f in flags)
+    assert not any(f.startswith("cycle_unrepairable") for f in flags)
+    assert len(rooms) == 1
+    bedroom = rooms[0]
+    assert bedroom.room_type == "bedroom"
+    assert set(bedroom.wall_cycle) == {0, 1, 2, 3}
+    assert "notch_normalized:bedroom_0" in flags
+
+
+def test_doorway_notch_room_without_openings_kwarg_stays_broken():
+    # Same geometry as above, but called the way every pre-lever-#1 caller
+    # does (no openings/wall_depth passed) -- confirms the defaults are a
+    # true no-op, not just "usually fine": this room MUST still fail exactly
+    # as it did before this build, since the discriminator can't run at all
+    # without opening geometry.
+    segments = _notch_room_segments()
+    ring = [(0, 0), (5, 0), (5, -4), (35, -4), (35, 0), (40, 0), (40, 30), (0, 30)]
+    room = Polygon(ring)
+
+    rooms, wall_to_types, flags = assemble_rooms(segments, {"bedroom": MultiPolygon([room])})
+    assert rooms == []
+    assert any(f.startswith("broken_room_cycle") for f in flags)
+
+
+def test_notch_exemption_length_guardrail_not_wrongly_excused():
+    # Same perpendicular jamb shape and high opening_cov (door bbox matches
+    # the notch exactly) as the passing case above, but depth=6 against the
+    # SAME wall_depth=4.0 -- edge_len (6) > NOTCH_LENGTH_MULTIPLE * wall_depth
+    # (4.8), so the length condition alone must block exemption even though
+    # perpendicularity and opening coverage both still hold. This is the
+    # required positive guardrail: a genuinely broken edge with incidental
+    # opening proximity must not be wrongly excused.
+    #
+    # Known limitation (inherited from qa/measure_clean_at_source.py's own
+    # guardrail, see its "Important limit on the guardrail test" note): a
+    # STRAIGHT-run defect with incidental opening proximity can't be
+    # isolated in a test like this, because fill_openings_into_wall-style
+    # healing (and here, simple wall-band coverage) tends to heal a
+    # straight-run edge's own coverage before the notch check is ever
+    # reached -- only a corner-shaped (jamb) anomaly decouples opening
+    # proximity from wall coverage, which is exactly what this fixture is
+    # (deliberately) built as. This guardrail proves the LENGTH condition
+    # works, not that every geometry shape is safe from false suppression.
+    segments = _notch_room_segments()
+    ring = [(0, 0), (15, 0), (15, -6), (25, -6), (25, 0), (40, 0), (40, 30), (0, 30)]
+    room = Polygon(ring)
+    door = box(15, -6, 25, 0)
+
+    rooms, wall_to_types, flags = assemble_rooms(
+        segments,
+        {"bedroom": MultiPolygon([room])},
+        openings={"door": MultiPolygon([door])},
+        wall_depth=_NOTCH_WALL_DEPTH,
+    )
+
+    assert rooms == []
+    assert any(f.startswith("broken_room_cycle") for f in flags)
+    assert not any(f.startswith("notch_normalized") for f in flags)

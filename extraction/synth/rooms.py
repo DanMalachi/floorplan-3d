@@ -19,6 +19,16 @@ from typing import Optional
 from shapely.geometry import LineString, Point, Polygon
 from shapely.strtree import STRtree
 
+from extraction.synth.notch import (
+    NOTCH_LENGTH_MULTIPLE,
+    OPENING_COVERAGE_THRESHOLD,
+    PERPENDICULARITY_COS_THRESHOLD,
+    _cluster_ring_indices,
+    _nearest_wall_backed_cos,
+    _opening_coverage_and_match,
+    _signed_area,
+    notch_pocket_points,
+)
 from extraction.synth.skeleton import WallSegment
 from extraction.synth.vendor.resplan_utils import get_geometries
 
@@ -312,6 +322,8 @@ def assemble_rooms(
     adjacency_epsilon: float = 0.1,
     max_bridge_depth: int = 3,
     area_match_tolerance: float = 0.05,
+    openings: dict[str, object] | None = None,
+    wall_depth: float = 4.0,
 ) -> tuple[list[RoomAssembly], dict[int, set[str]], list[str]]:
     """Returns (assembled rooms, {wall_index: {room_type, ...}} for
     successfully-assembled rooms only, batch flags).
@@ -325,7 +337,21 @@ def assemble_rooms(
     A repaired cycle is only accepted if its implied polygon area matches
     the source room polygon within area_match_tolerance — conservative by
     design: reject with "cycle_unrepairable" rather than force a cycle
-    closed that doesn't actually represent the room's real shape."""
+    closed that doesn't actually represent the room's real shape.
+
+    `openings` (optional {"door"/"window"/"front_door": geom}) and
+    `wall_depth` enable doorway-notch handling (lever #1, see
+    docs/session-notes/p3a-handoff.md): a room polygon edge that no wall
+    band ever backs (by construction — a doorway notch traces the room
+    boundary through the door threshold, where no wall exists) is excused
+    from the coverage requirement instead of unconditionally breaking the
+    room, when it matches the same validated 3-condition discriminator
+    `qa/measure_clean_at_source.py::check_plan` already uses for a
+    different purpose. The excused edges' own pocket area is then
+    subtracted from the source polygon before the area-match gate below,
+    so both sides of that comparison exclude the notch. Passing neither
+    argument (both defaults) makes this a no-op — every existing caller's
+    behavior is unchanged."""
     batch_flags: list[str] = []
     if not segments:
         return [], {}, ["no_wall_segments_for_room_assembly"]
@@ -333,6 +359,12 @@ def assemble_rooms(
     bands = [_band(s, tolerance) for s in segments]
     tree = STRtree(bands)
     adjacency = _build_adjacency(segments, adjacency_epsilon)
+
+    opening_polys = [
+        ((ot, idx), part)
+        for ot in ("door", "window", "front_door")
+        for idx, part in enumerate(get_geometries((openings or {}).get(ot)))
+    ]
 
     rooms: list[RoomAssembly] = []
     wall_to_room_types: dict[int, set[str]] = {}
@@ -343,12 +375,24 @@ def assemble_rooms(
             if poly is None or poly.is_empty or poly.geom_type != "Polygon":
                 continue
             coords = list(poly.exterior.coords)
-            wall_seq: list[int] = []
-            broken = False
-            for i in range(len(coords) - 1):
+            n = len(coords) - 1
+
+            # Pass 1: per-edge candidate wall coverage — same
+            # candidate/overlap/dedupe logic as before, but the
+            # accept/reject decision is now DEFERRED to pass 2, because the
+            # doorway-notch discriminator's perpendicularity check needs
+            # every other ring edge's coverage computed first (including
+            # edges later in ring order than the one currently being
+            # evaluated — mirrors qa/measure_clean_at_source.py::check_plan's
+            # own two-pass structure).
+            ring_edges: list[tuple[tuple[float, float], tuple[float, float], float]] = []
+            edge_deduped: list[list[int] | None] = [None] * n
+            edge_ratio: list[float | None] = [None] * n
+            for i in range(n):
                 a, b = coords[i], coords[i + 1]
                 dx, dy = b[0] - a[0], b[1] - a[1]
                 edge_len = (dx * dx + dy * dy) ** 0.5
+                ring_edges.append((a, b, edge_len))
                 if edge_len < tolerance:
                     # Sub-tolerance edges are corner-transition artifacts
                     # (stair-stepping in the source polygon), not real wall
@@ -399,12 +443,52 @@ def assemble_rooms(
                 edge_wall_ids = [idx for _, _, idx, _ in overlaps]
                 deduped = [w for j, w in enumerate(edge_wall_ids) if j == 0 or w != edge_wall_ids[j - 1]]
 
-                if not deduped or covered / edge_len < coverage_threshold:
-                    broken = True
+                edge_deduped[i] = deduped
+                edge_ratio[i] = covered / edge_len if edge_len else 0.0
+
+            # Pass 2: build wall_seq from cleanly-covered edges; for
+            # everything else (today's unconditional broken=True trigger),
+            # give the doorway-notch discriminator a chance to excuse the
+            # edge first — a notch jamb/crossbar is never backed by any
+            # wall band by construction (no wall exists there), so it can
+            # never pass the coverage check above no matter how the
+            # thresholds are tuned; excusing it is the only way its room
+            # ever assembles.
+            wall_seq: list[int] = []
+            broken = False
+            notch_excused_edges: list[tuple[int, tuple]] = []
+            for i in range(n):
+                a, b, edge_len = ring_edges[i]
+                deduped = edge_deduped[i]
+                ratio = edge_ratio[i]
+
+                if deduped is None:
+                    continue  # sub-tolerance edge, unchanged skip
+
+                if deduped and ratio is not None and ratio >= coverage_threshold:
+                    for idx in deduped:
+                        if not wall_seq or wall_seq[-1] != idx:
+                            wall_seq.append(idx)
                     continue
-                for idx in deduped:
-                    if not wall_seq or wall_seq[-1] != idx:
-                        wall_seq.append(idx)
+
+                if opening_polys:
+                    dx, dy = b[0] - a[0], b[1] - a[1]
+                    ux, uy = (dx / edge_len, dy / edge_len) if edge_len else (0.0, 0.0)
+                    opening_cov, match_key = _opening_coverage_and_match(
+                        a, b, edge_len, dx, dy, opening_polys, wall_depth
+                    )
+                    cos_to_neighbor = _nearest_wall_backed_cos(i, ring_edges, edge_ratio, ux, uy, coverage_threshold)
+                    is_notch = (
+                        opening_cov >= OPENING_COVERAGE_THRESHOLD
+                        and cos_to_neighbor is not None
+                        and cos_to_neighbor <= PERPENDICULARITY_COS_THRESHOLD
+                        and edge_len <= NOTCH_LENGTH_MULTIPLE * wall_depth
+                    )
+                    if is_notch and match_key is not None:
+                        notch_excused_edges.append((i, match_key))
+                        continue
+
+                broken = True
             # dedupe wrap-around repeat (first == last after closing the ring)
             if len(wall_seq) >= 2 and wall_seq[0] == wall_seq[-1]:
                 wall_seq = wall_seq[:-1]
@@ -427,13 +511,60 @@ def assemble_rooms(
             # to the source room polygon's area.
             face_poly = _mitered_face_polygon(repaired_seq, segments, (poly.centroid.x, poly.centroid.y))
             implied_area = face_poly.area if face_poly is not None else 0.0
-            area_err = abs(implied_area - poly.area) / max(poly.area, 1e-9)
+
+            # Doorway-notch area-gate normalization (Option C, lever #1).
+            # If any ring edge was excused above, the wall_cycle closes
+            # across the notch via a straight run, so face_poly is smaller
+            # than the source poly by exactly the notch's own area (poly's
+            # OWN area INCLUDES the notch — ResPlan traces the room
+            # boundary through the door threshold). Normalize poly DOWN
+            # (poly.difference(pocket), never union — confirmed against
+            # test_doorway_notch_does_not_flag's fixture: 1216 source - 16
+            # notch = 1200, matching the straight-run face; see
+            # extraction/synth/tests/test_notch.py) so both sides of the
+            # gate below are compared on the same convention. Falls back to
+            # the raw poly.area if no pocket ends up usable (every
+            # candidate cluster degenerate or an outward anomaly) — same
+            # semantics as no notch having been excused at all.
+            compare_area = poly.area
+            notch_applied = False
+            if notch_excused_edges:
+                verts = coords[:-1]
+                groups: dict[tuple, list[int]] = {}
+                for edge_idx, key in notch_excused_edges:
+                    groups.setdefault(key, []).append(edge_idx)
+                # A shared opening key is necessary but not sufficient for
+                # "same pocket" — cluster each key-group by ring proximity
+                # first (see _cluster_ring_indices's docstring: plan 64 had
+                # two unrelated opposite-side notches both best-matching
+                # one door).
+                clustered_groups: list[list[int]] = []
+                for idxs in groups.values():
+                    clustered_groups.extend(_cluster_ring_indices(idxs, n))
+                parent_signed = _signed_area(verts)
+                normalized = poly
+                for idxs in clustered_groups:
+                    pocket_pts, status = notch_pocket_points(verts, idxs, n, parent_signed)
+                    if status == "ok":
+                        normalized = normalized.difference(Polygon(pocket_pts))
+                if (
+                    normalized.is_valid
+                    and not normalized.is_empty
+                    and normalized.geom_type == "Polygon"
+                    and normalized.area < poly.area
+                ):
+                    compare_area = normalized.area
+                    notch_applied = True
+
+            area_err = abs(implied_area - compare_area) / max(compare_area, 1e-9)
             if implied_area <= 0 or area_err > area_match_tolerance:
                 batch_flags.append(f"cycle_unrepairable:{room_type}_{inst_idx}")
                 continue
 
             if repaired_seq != wall_seq:
                 batch_flags.append(f"cycle_repaired:{room_type}_{inst_idx}")
+            if notch_applied:
+                batch_flags.append(f"notch_normalized:{room_type}_{inst_idx}")
 
             rooms.append(
                 RoomAssembly(room_type=room_type, instance_index=inst_idx, wall_cycle=repaired_seq, area=poly.area)

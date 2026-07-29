@@ -85,7 +85,12 @@ def convert_plan(plan: dict) -> tuple[Optional[ExtractionResult], dict]:
         stats["flags"].extend(f"opening:{f}" for f in open_flags)
 
         room_polys = {rt: plan.get(rt) for rt in ROOM_LABEL_MAP if plan.get(rt) is not None}
-        rooms_raw, wall_to_types, room_flags = assemble_rooms(skel.segments, room_polys)
+        rooms_raw, wall_to_types, room_flags = assemble_rooms(
+            skel.segments,
+            room_polys,
+            openings={"door": plan.get("door"), "window": plan.get("window"), "front_door": plan.get("front_door")},
+            wall_depth=wall_depth,
+        )
         stats["flags"].extend(f"room:{f}" for f in room_flags)
 
         roles, role_flags_per_seg = wall_roles(skel.segments, plan.get("inner"), wall_to_types)
