@@ -103,12 +103,20 @@ MIN_INK_EDGE_LEN = TOLERANCE  # matches rooms.py's own sub-tolerance-edge skip
 PROXIMITY_MULTIPLIER = 3.0  # matches verify_no_angle_valid_candidate.py
 COVERAGE_THRESHOLD = 0.5  # matches rooms.py::assemble_rooms's default
 
-# Doorway-notch suppression discriminator (validated 2026-07-21/22
-# diagnostic sessions, see this module's docstring above for the
-# population-scale justification of each value).
-OPENING_COVERAGE_THRESHOLD = 0.65
-PERPENDICULARITY_COS_THRESHOLD = 0.15
-NOTCH_LENGTH_MULTIPLE = 1.2
+# Doorway-notch discriminator constants + the opening-coverage/perpendicularity
+# helpers moved to extraction/synth/notch.py 2026-07-29 (lever #1 build) so
+# rooms.py -- core converter code, which never imports from qa/ -- can reuse
+# the exact same, already-validated logic. Re-imported here (not just
+# referenced) so every existing `from
+# extraction.synth.qa.measure_clean_at_source import OPENING_COVERAGE_THRESHOLD`
+# (etc.) elsewhere in qa/ keeps working unmodified.
+from extraction.synth.notch import (  # noqa: E402
+    NOTCH_LENGTH_MULTIPLE,
+    OPENING_COVERAGE_THRESHOLD,
+    PERPENDICULARITY_COS_THRESHOLD,
+    _nearest_wall_backed_cos,
+    _opening_coverage,
+)
 
 
 def _wall_boundary_edges(wall_geom) -> list[tuple[tuple[float, float], tuple[float, float], float]]:
@@ -170,53 +178,6 @@ def _edge_covered(a, b, edge_len, wall_edges, tree, ink_proximity) -> float:
     overlaps.sort()
     covered = sum(t1 - t0 for t0, t1 in overlaps) * edge_len
     return covered / edge_len if edge_len else 0.0
-
-
-def _opening_coverage(a, b, edge_len, dx, dy, p, wall_depth) -> float:
-    """How much of THIS edge's own [0,1] parametric span is spanned by a
-    door/window/front_door footprint, independent of wall-ink geometry.
-    Same projection technique as _edge_covered, applied to opening
-    polygons instead — validated in classify_room_boundary_no_wall_match.py's
-    analyze_edge and diagnose_doorway_notch.py (2026-07-21/22 diagnostic
-    sessions, both unchanged by this build)."""
-    edge_band = LineString([a, b]).buffer(TOLERANCE + wall_depth / 2)
-    best = 0.0
-    for ot in ("door", "window", "front_door"):
-        g = p.get(ot)
-        if g is None:
-            continue
-        for part in get_geometries(g):
-            inter = part.intersection(edge_band)
-            if inter.is_empty or inter.geom_type != "Polygon":
-                continue
-            pts = list(inter.exterior.coords)
-            ts = [((px - a[0]) * dx + (py - a[1]) * dy) / (edge_len * edge_len) for px, py in pts]
-            t0, t1 = max(min(ts), 0.0), min(max(ts), 1.0)
-            if t1 > t0:
-                best = max(best, t1 - t0)
-    return best
-
-
-def _nearest_wall_backed_cos(edge_index, ring_edges, backed_ratio, ux, uy):
-    """Perpendicularity signal for the notch discriminator: cos(angle)
-    between this edge's own unit direction (ux, uy) and the nearest ring
-    neighbor (searching outward from edge_index in both directions) that
-    IS wall-backed (backed_ratio >= COVERAGE_THRESHOLD). Returns None if
-    no wall-backed edge exists anywhere in the ring (degenerate room).
-    Perpendicularity is checked against the nearest REAL wall, not just
-    the immediately-adjacent ring edge, so a chain of several broken
-    edges (e.g. a multi-step notch) doesn't block each other's lookup."""
-    n = len(ring_edges)
-    for offset in range(1, n):
-        for sign in (-1, 1):
-            cand = (edge_index + sign * offset) % n
-            if backed_ratio[cand] is not None and backed_ratio[cand] >= COVERAGE_THRESHOLD:
-                wa, wb, wlen = ring_edges[cand]
-                if wlen:
-                    wdx, wdy = wb[0] - wa[0], wb[1] - wa[1]
-                    return abs(ux * (wdx / wlen) + uy * (wdy / wlen))
-                return None
-    return None
 
 
 def check_plan(raw_plan: dict) -> dict:

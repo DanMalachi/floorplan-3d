@@ -79,7 +79,12 @@ of the SOURCE room polygon before the area comparison) is viable
 essentially by construction regardless of notch size -- both sides of the
 gate end up compared on the same convention either way, and the notch-run
 polygon this script builds for the area sum IS the same polygon C would
-union into the source, so C costs almost nothing extra once this
+SUBTRACT from the source (poly.difference(pocket), not a union -- the
+source polygon's own area already INCLUDES the notch, per this docstring's
+own opening paragraph, so normalizing it to the wall-cycle's straight-run
+convention means removing the notch, not adding it; confirmed against
+test_doorway_notch_does_not_flag's fixture: 1216 source - 16 notch = 1200,
+matching the straight-run face). So C costs almost nothing extra once this
 diagnostic exists. This measurement's real job is deciding whether B
 (skip the edge, eat the resulting error, no source-polygon change needed)
 is available as a simpler alternative -- not a symmetric B-vs-C fork.
@@ -104,15 +109,21 @@ import numpy as np
 from shapely.geometry import LineString
 from shapely.strtree import STRtree
 
-from extraction.synth.qa.measure_clean_at_source import (
-    COVERAGE_THRESHOLD,
+from extraction.synth.notch import (
     NOTCH_LENGTH_MULTIPLE,
     OPENING_COVERAGE_THRESHOLD,
     PERPENDICULARITY_COS_THRESHOLD,
+    _cluster_ring_indices,
+    _nearest_wall_backed_cos,
+    _opening_coverage_and_match,
+    _signed_area,
+    notch_pocket_points,
+)
+from extraction.synth.qa.measure_clean_at_source import (
+    COVERAGE_THRESHOLD,
     PROXIMITY_MULTIPLIER,
     TOLERANCE,
     _edge_covered,
-    _nearest_wall_backed_cos,
     _wall_boundary_edges,
 )
 from extraction.synth.resplan_convert import CLEAN_REQUIRED_ROOM_TYPES
@@ -132,117 +143,6 @@ EXCEEDANCE_THRESHOLDS = {
     "vs_median_baseline (>2.91%)": AREA_MATCH_TOLERANCE - BASELINE_MEDIAN_ERR,
     "vs_p90_baseline (>0.21%)": AREA_MATCH_TOLERANCE - BASELINE_P90_ERR,
 }
-
-
-def _opening_coverage_and_match(a, b, edge_len, dx, dy, opening_polys, wall_depth):
-    """Same projection technique as measure_clean_at_source.py's
-    _opening_coverage, but also returns WHICH opening (by stable (type,
-    index) key, not Python object identity -- shapely's MultiPolygon.geoms
-    is not guaranteed to hand back the same object across repeated
-    accesses) produced the best coverage, so notch-flagged edges sharing
-    a door/window/front_door instance can be grouped into one pocket."""
-    edge_band = LineString([a, b]).buffer(TOLERANCE + wall_depth / 2)
-    best = 0.0
-    best_key = None
-    for key, part in opening_polys:
-        inter = part.intersection(edge_band)
-        if inter.is_empty or inter.geom_type != "Polygon":
-            continue
-        pts = list(inter.exterior.coords)
-        ts = [((px - a[0]) * dx + (py - a[1]) * dy) / (edge_len * edge_len) for px, py in pts]
-        t0, t1 = max(min(ts), 0.0), min(max(ts), 1.0)
-        if t1 > t0 and (t1 - t0) > best:
-            best = t1 - t0
-            best_key = key
-    return best, best_key
-
-
-def _signed_area(pts: list[tuple[float, float]]) -> float:
-    """Shoelace signed area of the closed loop pts[0]->pts[1]->...->pts[-1]
-    ->pts[0] (pts given WITHOUT a repeated closing point -- closure is
-    implicit via the modulo index). Sign follows the winding direction of
-    pts itself, so comparing signs between two calls is only meaningful
-    when both loops are traversed in a consistent (ring-inherited) order,
-    which is how this script always calls it."""
-    n = len(pts)
-    s = 0.0
-    for i in range(n):
-        x1, y1 = pts[i]
-        x2, y2 = pts[(i + 1) % n]
-        s += x1 * y2 - x2 * y1
-    return s / 2.0
-
-
-# A same-opening match does NOT by itself guarantee two notch-flagged
-# edges belong to the same physical pocket -- population-scale running
-# surfaced plan 64 (bedroom_1, 16-edge ring): edges 0/2 and 8/10 (two
-# real, physically UNRELATED notches on opposite sides of the room) both
-# best-matched the same door polygon, and grouping by key alone merged
-# them into one "pocket" spanning half the ring (fraction=100.51%, an
-# impossible number caught precisely because Rule 1 treats every
-# newly-derived figure as provisional until corroborated). A real pocket
-# (jamb-crossbar-jamb, or the validated 12017 zigzag's up to ~4 short
-# edges) never spans more than a handful of ring edges -- this cap is
-# deliberately generous relative to that (validated zigzag gap is 2) while
-# excluding plan 64's gap of 6 (exactly half its 16-edge ring).
-MAX_NOTCH_SPAN_EDGES = 4
-
-
-def _cluster_ring_indices(indices: list[int], n: int, max_gap: int = MAX_NOTCH_SPAN_EDGES) -> list[list[int]]:
-    """Splits a same-opening-key index set into circularly-local clusters,
-    breaking wherever the circular gap between consecutive (sorted)
-    indices exceeds max_gap. Each returned cluster is safe to hand to
-    _circular_span on its own (guaranteed locally close, not just "closer
-    than the single largest gap in the whole set")."""
-    s = sorted(set(indices))
-    if len(s) <= 1:
-        return [s]
-    gaps = [((s[(k + 1) % len(s)] - s[k]) % n, k) for k in range(len(s))]
-    break_ks = {k for gap, k in gaps if gap > max_gap}
-    if not break_ks:
-        return [s]
-    clusters: list[list[int]] = []
-    cur = [s[0]]
-    for k in range(len(s) - 1):
-        if k in break_ks:
-            clusters.append(cur)
-            cur = []
-        cur.append(s[k + 1])
-    clusters.append(cur)
-    # The break between the LAST and FIRST element (circular wraparound)
-    # was already accounted for via break_ks over k in range(len(s)) above
-    # only for k < len(s)-1; if index len(s)-1 (the wrap gap) also broke,
-    # the first and last clusters are actually separate (already true by
-    # construction since we never merge across it) -- otherwise merge the
-    # wraparound pair back into one cluster.
-    if len(clusters) > 1 and (len(s) - 1) not in break_ks:
-        clusters[0] = clusters[-1] + clusters[0]
-        clusters.pop()
-    return clusters
-
-
-def _circular_span(indices: list[int], n: int) -> tuple[int, int]:
-    """The smallest contiguous circular arc [start, end] (ring-edge
-    indices, inclusive) covering every index in `indices`. Picks the
-    largest circular gap between consecutive (sorted) indices as the arc's
-    break point. Callers must pre-cluster via _cluster_ring_indices first
-    if `indices` might span multiple unrelated pockets sharing one
-    opening key -- this function alone cannot tell "one notch with a wide
-    interstitial gap" apart from "two unrelated notches," it just closes
-    whatever indices it's given."""
-    s = sorted(set(indices))
-    if len(s) == 1:
-        return s[0], s[0]
-    gaps = []
-    for k in range(len(s)):
-        cur, nxt = s[k], s[(k + 1) % len(s)]
-        gap = (nxt - cur) % n
-        gaps.append((gap, k))
-    gaps.sort(reverse=True)
-    _, k = gaps[0]
-    start = s[(k + 1) % len(s)]
-    end = s[k]
-    return start, end
 
 
 def analyze_room(poly, wall_edges, tree, ink_proximity, opening_polys, wall_depth) -> dict | None:
@@ -315,22 +215,14 @@ def analyze_room(poly, wall_edges, tree, ink_proximity, opening_polys, wall_dept
     n_outward_anomaly = 0
     n_degenerate = 0
     for edge_indices in clustered_groups:
-        start, end = _circular_span(edge_indices, n)
-        num_edges = (end - start) % n + 1
-        if num_edges >= n - 1:
+        pocket_pts, status = notch_pocket_points(verts, edge_indices, n, parent_signed)
+        if status == "degenerate":
             n_degenerate += 1
-            continue
-        vertex_idxs = [(start + k) % n for k in range(num_edges + 1)]
-        pocket_pts = [verts[j] for j in vertex_idxs]
-        pocket_signed = _signed_area(pocket_pts)
-        if pocket_signed == 0.0:
-            n_degenerate += 1
-            continue
-        if (pocket_signed > 0) == (parent_signed > 0):
-            total_notch_area += abs(pocket_signed)
-            n_notch_runs += 1
-        else:
+        elif status == "outward_anomaly":
             n_outward_anomaly += 1
+        else:
+            total_notch_area += abs(_signed_area(pocket_pts))
+            n_notch_runs += 1
 
     fraction = total_notch_area / poly.area if poly.area > 0 else 0.0
     return dict(
