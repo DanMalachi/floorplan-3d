@@ -1,0 +1,108 @@
+{
+  "pre_registered_split": "no-parallel-partner-found dominates thickness-outlier-rejection, at least 60/40",
+  "n_bucket_b_walls": 10,
+  "primary_reason_totals": {
+    "survived_unexplained": 8,
+    "below_length_floor": 2
+  },
+  "no_parallel_partner_total_(raw+greedy)": 0,
+  "thickness_outlier_total": 0,
+  "observed_split_no_partner_vs_thickness": null,
+  "per_wall": [
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s2",
+      "n_covering_select_segments": 1,
+      "status_counts": {
+        "survived_unexplained": 1
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s4",
+      "n_covering_select_segments": 1,
+      "status_counts": {
+        "survived_unexplained": 1
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s6",
+      "n_covering_select_segments": 1,
+      "status_counts": {
+        "survived_unexplained": 1
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "15x30-ft-Best-House-Plan-Model",
+      "gt_wall_id": "w_s23",
+      "n_covering_select_segments": 14,
+      "status_counts": {
+        "below_length_floor": 12,
+        "survived_unexplained": 2
+      },
+      "primary_reason": "below_length_floor"
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s106",
+      "n_covering_select_segments": 6,
+      "status_counts": {
+        "survived_unexplained": 5,
+        "lost_greedy_competition": 1
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s111",
+      "n_covering_select_segments": 6,
+      "status_counts": {
+        "survived_unexplained": 6
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s117",
+      "n_covering_select_segments": 7,
+      "status_counts": {
+        "survived_unexplained": 4,
+        "below_length_floor": 3
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s138",
+      "n_covering_select_segments": 3,
+      "status_counts": {
+        "below_length_floor": 1,
+        "survived_unexplained": 2
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s142",
+      "n_covering_select_segments": 3,
+      "status_counts": {
+        "survived_unexplained": 2,
+        "below_length_floor": 1
+      },
+      "primary_reason": "survived_unexplained"
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s150",
+      "n_covering_select_segments": 15,
+      "status_counts": {
+        "below_length_floor": 15
+      },
+      "primary_reason": "below_length_floor"
+    }
+  ]
+}
