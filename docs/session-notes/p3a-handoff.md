@@ -29,29 +29,70 @@ Full detail: `reports/p3a-lever1-build-and-remeasurement.md`. Summary:
   test (`test_gate_flip_check_audited.py`) — zero of 62 human-audited
   genuine-defect edges wrongly flip to converter-assembled.
 - **Conditional clean rate**: 52.5% → 58.4% (n=300) / **55.6%**
-  (population, 17,000 plans) — short of the pre-registered 70-80%. Held-out
-  check (305 tuning-influenced plans excluded) confirms the discriminator
-  generalizes (58.0%, not materially below the full-sample 58.4%).
+  (population, 17,000 plans) — short of the pre-registered 70-80% band,
+  and specifically the predicted GAIN was over-predicted by roughly **5x**
+  (predicted gain ~17.5-27.5 points; actual population gain only 3.1
+  points, 5.9 at n=300 — the low end of the predicted range alone is
+  ~5.6x the population gain). Held-out check (305 tuning-influenced plans
+  excluded) confirms the discriminator generalizes fine to unseen plans
+  (58.0%, not materially below the full-sample 58.4%) — the shortfall is
+  NOT an overfit-to-tuning-plans problem.
+  - **Cause of the over-prediction, checked this session, not just
+    hypothesized**: the diagnose step's own pre-registered branch expected
+    the shortfall (if any) to come from `notch_plus_other` rooms (a second,
+    independent defect alongside the notch). Sampled 1500 plans directly:
+    that population is **tiny** (1 of 81 notch-affected rooms, ~1.2%) — NOT
+    the bottleneck. The real cause is the SAME mechanism as the 13-plan
+    containment-invariant bug below, just showing up far more often in the
+    opposite direction: of 80 sampled "pure-notch" rooms (no second
+    defect, should be lever-1-recoverable per the diagnose step's own
+    98.3%/87.2% bathroom/bedroom estimates), only **64 (80%) actually
+    recovered** — 13 (16%) still hit `broken_room_cycle` because
+    `assemble_rooms`'s skeleton-band discriminator never excused the edge
+    even though the raw-ink discriminator (`check_plan`, what the
+    diagnose step benchmarked against) would have; 3 (4%) got excused but
+    then failed the area gate. An ~80% per-room recovery rate, compounded
+    across multiple required rooms per plan (AND semantics — one
+    surviving `broken_room_cycle` room fails the whole plan) plus
+    pre-existing non-notch failure modes (stair/storage, next bullet),
+    arithmetically lands well below the per-room recovery rate. **The
+    skeleton-band discriminator under-recognizing notches relative to the
+    raw-ink one it was modeled on is the dominant, now-confirmed cause** —
+    fixing that (see containment-invariant bullet) is likely the single
+    highest-leverage next move, more so than sizing `notch_plus_other`
+    further.
 - **The metric that actually mattered** (Dan's reframe: bias, not volume):
   doors-per-plan gap between the converter-clean subset and the full 17K
   **narrowed as predicted**, +1.4% relative (before) → +0.5% (after).
+- **`stair` is next priority, flagged explicitly**: only **6 of 757**
+  stair instances (0.8%) survive into the converter-clean subset,
+  population-wide, and this session's build moved that number by exactly
+  zero (6/757 both before and after lever #1) — expected, since
+  stair/storage breakage was already diagnosed pre-session as NOT
+  notch-driven, but it is now, by a wide margin, the single worst-recovered
+  required room type and has had no dedicated diagnostic session of its
+  own yet (unlike the notch mechanism, which had three). Candidate for
+  next session's diagnose-before-build pass.
 - **New finding, not pre-registered**: population-scale run surfaced 13
   plans (0.076%) where the previously-verified containment invariant
   (`converter_clean ⇒ clean_at_source`) no longer holds — `check_plan`'s
   raw-wall-ink notch discriminator and `assemble_rooms`'s new
-  skeleton-band notch discriminator can disagree on the same edge. Not
-  fixed this session (scope: gate report only). **Read report §6 before
-  trusting a future `compute_conditional_clean_rate(300)` run that happens
-  not to hit one of the 13 ids** — it would assert-crash if it did.
+  skeleton-band notch discriminator can disagree on the same edge (in
+  BOTH directions — this is the same root cause as the 5x
+  over-prediction above, just the rarer direction where skeleton-band
+  over-recognizes instead of under-recognizes). Not fixed this session
+  (scope: gate report only). **Read report §6 before trusting a future
+  `compute_conditional_clean_rate(300)` run that happens not to hit one
+  of the 13 ids** — it would assert-crash if it did.
 - **Next session**: no lever #2 started (per instruction, stopped at the
-  gate report). Two candidates once picked back up: (a) reconcile the
-  two notch discriminators' input geometry (§6) so the containment
-  invariant is exactly true again, before trusting further population
-  numbers without re-checking it; (b) size the `notch_plus_other` /
-  storage-stair (non-notch) failure populations that explain the
-  70-80%-vs-55.6% shortfall, per the diagnose step's own pre-registered
-  branch ("materially below that means a SECOND independent failure
-  cause... which would be the more valuable finding").
+  gate report). In priority order: (a) reconcile the two notch
+  discriminators' input geometry (raw wall ink vs. skeleton bands) — this
+  is now confirmed to be both the dominant cause of the 5x
+  under-recovery AND the cause of the 13-plan containment-invariant
+  break, so one fix likely addresses both; (b) `stair`'s 0.8% recovery
+  rate has no diagnosis yet at all — needs its own diagnose-before-build
+  pass, same discipline as the notch work got. `notch_plus_other` is
+  confirmed small (~1%) and is NOT worth further sizing work.
 
 ## Standing discipline, adopted 2026-07-26 — read this before trusting any new QA number
 

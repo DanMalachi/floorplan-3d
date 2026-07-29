@@ -69,17 +69,56 @@ session). Both are **materially below the 70-80% band**, and the
 population number is itself below the n=300 sample (another instance of
 this phase's recurring sample-vs-population optimism gap, Rule 2).
 
-Per the handoff's own framing, this is a finding, not a failure: rooms
-where every sub-threshold edge is notch-flagged are fully recoverable by
-lever #1 alone; a room with at least one sub-threshold edge that does
-NOT satisfy the notch conjunction has a second, independent defect (the
-`notch_plus_other` population, 12.8% of bedroom's notch-affected rooms per
-the diagnose-step report) that lever #1 alone cannot fix. The shortfall
-vs. the 70-80% prediction is consistent with that second cause being
-larger than the diagnose step's bracket assumed — a real, separate
-population to size, not a build defect. `broken_room_cycle` on
-`storage`/`stair` (0% notch-driven per the original diagnosis) is the
-other known, deliberately-untouched contributor.
+Per the handoff's own framing, this is a finding, not a failure — and the
+cause was CHECKED this session, not left as a hypothesis. The
+diagnose step's own pre-registered branch expected any shortfall to come
+from `notch_plus_other` rooms (a second, independent defect alongside the
+notch, not fixable by lever #1 alone). Sampled 1500 plans directly via
+`diagnose_notch_area_fraction.py::check_plan`: **that population is tiny**
+— 1 of 81 notch-affected rooms (~1.2%), not the bottleneck the diagnose
+step worried about.
+
+The real cause, same sample: of 80 "pure-notch" rooms (`other_broken`
+False — no second defect, exactly the population lever #1 should recover),
+
+| Outcome | Count | % |
+|---|---|---|
+| Recovered (assembled cleanly) | 64 | 80% |
+| Still `broken_room_cycle` (stage-1 never excused the edge) | 13 | 16% |
+| Excused, then failed the area gate (`cycle_unrepairable`) | 3 | 4% |
+
+The 16% stage-1 failures are rooms where `check_plan`'s raw-wall-ink
+discriminator (what the diagnose step's 98.3%/87.2% bathroom/bedroom
+recoverability estimate was benchmarked against) would classify the edge
+as a notch, but `assemble_rooms`'s own skeleton-band discriminator does
+not — **the exact same raw-ink-vs-skeleton-band disagreement mechanism as
+finding §6 below**, just showing up far more often in this direction
+(under-recognition, 13/80 here) than in §6's direction (over-recognition,
+13/17,000 population-wide). An ~80% per-room recovery rate, compounded by
+AND-semantics across multiple required rooms per plan (one surviving
+`broken_room_cycle` fails the whole plan) plus the pre-existing,
+notch-unrelated `stair`/`storage` failure mode (next section), lands the
+plan-level conditional rate well below the per-room recovery rate.
+**Reconciling the two discriminators (§6) is therefore likely the
+single highest-leverage next move** — more so than further sizing
+`notch_plus_other`, which this session's measurement shows is not where
+the shortfall lives.
+
+`broken_room_cycle` on `storage`/`stair` (0% notch-driven per the original
+diagnosis, deliberately untouched by lever #1) is the other known
+contributor — see the dedicated priority note below.
+
+### 2b. `stair` recovery — 0.8%, unchanged, flagged as next priority
+
+Population-wide: only **6 of 757** stair instances (0.8%) survive into
+the converter-clean subset, and this build moved that number by exactly
+zero — 6/757 both before (`78d61ec`) and after (`8d1f227`), per
+§4's before/after room-type mix table. Expected (stair/storage breakage
+was already diagnosed pre-session as not notch-driven), but worth naming
+explicitly: `stair` is now, by a wide margin, the worst-recovered required
+room type, and unlike the notch mechanism (three dedicated diagnostic
+sessions) it has had no diagnose-before-build pass of its own yet. `storage`
+recovery is much better but still weak (18.3%→21.1%, see §4).
 
 ### 3. Converter-path defect-flip check — PASS, load-bearing
 
@@ -170,15 +209,18 @@ Lever #1 shipped and works as designed — the discriminator generalizes to
 held-out plans, doesn't wrongly excuse audited genuine defects (per the
 committed converter-path flip test), and measurably narrows the
 door-representation bias it was built to fix (the actual pre-registered
-success condition, per Dan's reframe). The conditional clean rate moved
-52.5% → 58.4% (n=300) / **55.6%** (population, 17,000 plans), short of the
-pre-registered 70-80% — a genuine, separate finding (a second, non-notch
-defect population on the same rooms) to size next, not a defect in this
-build. Separately, population-scale measurement surfaced a real, small
-(13/17,000) containment-invariant break between `check_plan`'s and
-`assemble_rooms`'s independently-computed notch discriminators (§6) that
-needs reconciling before the next session's numbers can be trusted without
-re-checking it.
+success condition, per Dan's reframe: +1.4%→+0.5% relative gap). The
+conditional clean rate moved 52.5% → 58.4% (n=300) / **55.6%** (population,
+17,000 plans) — the predicted GAIN was over-predicted by roughly **5x**
+(§2). CHECKED, not just hypothesized: the cause is NOT `notch_plus_other`
+(confirmed tiny, ~1.2% of notch-affected rooms) but the raw-wall-ink vs.
+skeleton-band discriminator disagreement — the same root mechanism as the
+13/17,000 containment-invariant break (§6), just showing up far more often
+(16% of sampled pure-notch rooms under-recognized) than over-recognized.
+Reconciling those two discriminators is the clearest highest-leverage next
+move, ahead of further `notch_plus_other` sizing. `stair` recovery (0.8%,
+unchanged by this build) is flagged as the other next-session priority —
+it has never had its own diagnose-before-build pass.
 
 ## Not done this session (per scope)
 
