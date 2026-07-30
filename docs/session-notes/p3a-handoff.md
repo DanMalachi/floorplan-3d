@@ -1,4 +1,4 @@
-# Phase 3a session handoff — updated 2026-07-30
+# Phase 3a session handoff — updated 2026-07-30 (2nd)
 
 Branch: `phase-3a-renderer` (worktree `fp-phase3a`, terminal B per
 `docs/extraction-plan.md`'s two-terminal table). The 2026-07-19 session
@@ -47,7 +47,68 @@ session's numbers in this file are trustworthy — including these, which
 exist because Dan caught things worth catching and then told the next
 session exactly what to check before proposing anything.
 
-## 2026-07-30 session — bathroom mechanism check, task C still not resolvable cleanly (no lever built)
+## 2026-07-30 session (2nd) — bathroom lever #2 census: the proposed fix recovers ~0%, real mechanism is elsewhere (no lever built)
+
+Full detail: `reports/p3a-bathroom-lever2-census.md`. Direct response to
+Dan rejecting a plan to scope bathroom's ceiling to the 469-edge
+under-recognition set alone — pre-registered objection (469 edges vs.
+3,923 bathroom-ONLY-broken plans caps a maximally generous ceiling at
+11.9-12.0%, and a plan needs EVERY blocking edge fixed, not one) was
+scored before running anything, then measured directly instead of assumed.
+
+**`extraction/synth/qa/size_bathroom_lever2_census.py`** (new): full
+17,000-plan population, reproduces the exact bathroom-ONLY-broken
+population (3,932 plans, confirming the 1st session's 3,923), then runs
+BOTH `diagnose_broken_room_cycle.py`'s stage-1 taxonomy AND
+`diagnose_cycle_unrepairable.py`'s stage-2 taxonomy on every bathroom room
+in it (both reused unchanged — the two disjoint, exhaustive mechanisms
+`resplan_convert.py`'s clean bar actually checks), plus tags every stage-1
+edge with `measure_discriminator_disagreement.py`'s own per-edge
+under-recognition check (reused unchanged, only the edge-index bookkeeping
+is new).
+
+**Result: the discriminator-reconciliation fix — the lever this handoff
+had been pointing at for bathroom since the 3rd/4th 2026-07-29 sessions —
+would recover approximately ZERO plans.** Raw plan-level reconciliation
+ceiling: **0/3,932 (0.0%)**, not the pre-registered-as-an-overestimate
+11.9% naive cap — the real number isn't "lower than the cap," it's zero.
+Only 7/1,170 stage-1 blocking edges (0.6%) are even under-recognition-
+tagged. **Stage-1 (the mechanism this whole phase's notch/discriminator
+work has been about) only touches 619/3,932 plans (15.7%) at all.**
+
+**The actual dominant mechanism is stage-2 `area_match_near_miss`: 4,592
+room failures across 3,467/3,932 plans (88.2%)** — the mitered face
+polygon's area falling outside the 5% gate against the source room
+polygon. **This is not a new mechanism — it's the SAME residual noise from
+`EMPIRICAL_FACE_OFFSET_MULTIPLIER`'s own calibration, already measured and
+already concluded (2026-07-20) to have "no obvious further lever."**
+Bathroom's small room area makes it disproportionately sensitive to this
+same fixed-magnitude offset noise. **Bottom line: neither original lever
+#2 candidate currently has a known, buildable payoff** — stair is fully
+calibrated (33.9%) but its addressable population is tiny (23 plans,
+~8 calibrated); bathroom's addressable population is huge (3,932 plans)
+but its actual dominant mechanism (area-match near-miss) has no proposed
+fix, and the mechanism that DOES have a proposed fix (discriminator
+reconciliation) measures to 0.0% on this population. This is a correction
+to the phase's own standing framing (the "bathroom needs discriminator
+reconciliation" story that's been in this file since 2026-07-29's 2nd/3rd
+sessions), reported as plainly as the co-occurrence hypothesis's own
+falsification was.
+
+**No lever built, `assemble_rooms` untouched, no bar moved, no exemption
+granted — all per explicit instruction. Next session: Dan's decision.**
+Open threads, not resolved: (a) is `area_match_near_miss`'s 5% gate
+residual actually unfixable, or does it deserve the same kind of
+diagnose-before-giving-up pass lever #1's own notch mechanism got before
+Option C was found? — the 2026-07-20 "no obvious lever" conclusion predates
+this whole notch/discriminator investigation and was never revisited at
+population scale for bathroom specifically; (b) is there a THIRD lever #2
+candidate worth sizing, given both original candidates now look weak; (c)
+if neither stair nor bathroom is buildable yet, does Dan want to hold P3a
+at its current 55.6% conditional rate and move to the renderer (deliverable
+2, not started at all), or keep sizing.
+
+## 2026-07-30 session (1st) — bathroom mechanism check, task C still not resolvable cleanly (no lever built)
 
 Full detail: `reports/p3a-bathroom-mechanism-check.md`. Picks up exactly
 where the 4th 2026-07-29 session left off: task C (propose lever #2,
