@@ -3,9 +3,9 @@
   "source": {
     "file_sha256": "9edbaf89da14d552c605e882e72df98e0ca11735f97e0daf35ddb6376d54715d",
     "filename": "Matterport Sample_BW.pdf",
-    "encoding_class": "R",
-    "convention_class": "single_stroke",
-    "scope_class": "single",
+    "encoding_class": "V",
+    "convention_class": "poche",
+    "scope_class": "multi_floor",
     "router_confidence": 0.0
   },
   "units": {

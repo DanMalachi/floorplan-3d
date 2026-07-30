@@ -3,8 +3,8 @@
   "source": {
     "file_sha256": "5f0d547472edcf720e52c68cc90c0d7cb75661cdd8580cf8c62063186062b502",
     "filename": "20x45-Model.pdf",
-    "encoding_class": "R",
-    "convention_class": "single_stroke",
+    "encoding_class": "V",
+    "convention_class": "hatched",
     "scope_class": "single",
     "router_confidence": 0.0
   },

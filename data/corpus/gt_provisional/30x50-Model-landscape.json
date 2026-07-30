@@ -3,8 +3,8 @@
   "source": {
     "file_sha256": "1f2fb721d8e20641e4da1db27333c3b73da2466140153f1eaaa47b2646030537",
     "filename": "30x50-Model-landscape.pdf",
-    "encoding_class": "R",
-    "convention_class": "single_stroke",
+    "encoding_class": "V",
+    "convention_class": "hatched",
     "scope_class": "single",
     "router_confidence": 0.0
   },
