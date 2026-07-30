@@ -1,4 +1,4 @@
-# Phase 3a session handoff — updated 2026-07-30 (2nd)
+# Phase 3a session handoff — updated 2026-07-30 (3rd)
 
 Branch: `phase-3a-renderer` (worktree `fp-phase3a`, terminal B per
 `docs/extraction-plan.md`'s two-terminal table). The 2026-07-19 session
@@ -46,6 +46,67 @@ silently revert. The standing discipline rule below is still why every
 session's numbers in this file are trustworthy — including these, which
 exist because Dan caught things worth catching and then told the next
 session exactly what to check before proposing anything.
+
+## 2026-07-30 session (3rd) — offset-mixture test: MULTIMODAL confirmed, but the recoverable ceiling is small; P3a is DONE with bathroom's area_match_near_miss mechanism either way (no lever built)
+
+Full detail: `reports/p3a-offset-bimodality.md`. One capped measurement per
+Dan's explicit instruction: **P3a leaves bathroom's
+`area_match_near_miss` mechanism alone for good after this session** —
+four days on this defect class is enough.
+
+Scored first: the 2nd session's 469-edge/12% cap held (0% ≤ 12%) but for
+the wrong reason — it assumed the 469-edge set WAS bathroom's mechanism
+and only argued its size; the census showed it is 7/1,170 edges, not the
+mechanism at all. Dismissed before running anything further: lead's
+suspicion that `EMPIRICAL_FACE_OFFSET_MULTIPLIER` shares a root with
+Phase 2's fabricated GT thickness — checked, ruled out, different dataset
+(107,608 real ResPlan measurements vs Phase 2's placeholder 150.0mm GT).
+
+**The fork**: `EMPIRICAL_FACE_OFFSET_MULTIPLIER` (k=0.838, stdev=0.94,
+residual sigma=0.417, fit 2026-07-20 as a single population) was tested
+for whether its spread is a mixture of two authoring conventions rather
+than noise. **`extraction/synth/qa/measure_offset_bimodality.py`** (new):
+re-measured the same 800-plan/107,608-measurement calibration population
+(`calibrate_offset.py`'s `measure_wall_offsets`, reused unchanged, now
+tagged with plan_id), fine histogram + formal bimodality read (Sarle's BC
++ KDE peak count), then separately measured the 4,592
+`area_match_near_miss` bathroom rooms' own offset ratios against their own
+repaired wall cycles.
+
+**Result: MULTIMODAL, confirmed and material.** A coarse histogram/summary
+stats alone would have missed it — 0.4% long-tail ray-cast outliers (up to
+ratio≈78) needed filtering first, and even then the bimodality
+coefficient (0.537) sat just BELOW the classic 5/9 threshold; **the fine
+histogram is what actually shows it**: two real humps at ratio≈0.27 and
+≈1.06 with a 20-40× valley drop between them, roughly 49%/51% mass split.
+**Lead's fork hypothesis scored: "multimodal" CONFIRMED; "per-plan rather
+than per-wall" NOT SUPPORTED** — the per-wall pooled distribution shows a
+much cleaner 2-mode split than the per-plan median distribution (which is
+messier, arguably 3-modal). Half right, probably backwards on locus —
+consistent with lead's own stated 1-for-7 track record, not deferred to.
+
+**Sized ceiling** (per-mode reassignment simulated in-process, monkeypatch
+only, `EMPIRICAL_FACE_OFFSET_MULTIPLIER` never touched on disk): **93/3,932
+plan-level (2.37%) raw, ~44/3,932 (1.11%) calibrated (0.468 factor,
+reported separately)** — using a diagnostic-only mode-assignment (the
+room's own measurement, flagged as circular-adjacent, not a real
+detector). Roughly 5-6× stair's absolute size (~44 vs ~8 calibrated
+plans) but far smaller than the original discriminator-reconciliation hope,
+and unlike stair's number this one needs an assignment signal that doesn't
+exist yet (no correlate found — wall role/thickness not checked, flagged
+as an open question, not chased, per the explicit cap on this session).
+
+**No lever built. `EMPIRICAL_FACE_OFFSET_MULTIPLIER`, `area_match_tolerance`,
+`assemble_rooms`, `check_plan` all untouched. No third lever #2 candidate
+opened.** Both original candidates are now fully accounted for: stair
+(small-but-clean, ~8 calibrated plans, buildable today as a source-level
+`check_plan` fix) vs. bathroom (real-but-small-and-not-yet-buildable, ~44
+calibrated plans, needs an assignment detector that doesn't exist).
+**Next session, Dan's decision, not resolved here**: build stair's small
+clean lever, accept both are too small to prioritize right now and move
+to the renderer (deliverable 2, not started at all), or something else.
+No further bathroom sizing work — per instruction, this phase is done
+asking that question.
 
 ## 2026-07-30 session (2nd) — bathroom lever #2 census: the proposed fix recovers ~0%, real mechanism is elsewhere (no lever built)
 
