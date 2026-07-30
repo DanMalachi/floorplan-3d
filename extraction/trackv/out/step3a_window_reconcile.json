@@ -1,0 +1,463 @@
+{
+  "pre_registered_predictions": {
+    "P1": "w_s142's correct pair (61,60) is formed AND accepted by greedy under the 500mm window.",
+    "P2": "It then dies at _thickness_plausible_clusters -- the self-certifying guard recalibrates on the narrowed population and no longer admits 149.6mm. Secondary: _collinear_merge drags the centerline.",
+    "P3": "Achieved-geometry correction leaves w_s117 (0.903) and w_s142 (0.935) unchanged (union == largest single pair for both); w_s111 falls from 0.344 to ~0.172. Verdict tally unaffected.",
+    "P4": "4 near-face segments are dropped by the 253mm floor across the two in-reach walls; cannot change the verdict since both already clear 0.8."
+  },
+  "settled_by_code_read_not_measurement": {
+    "question": "Did either factorial's window cell re-run pair formation and greedy, or only filter already-selected output?",
+    "answer": "It RE-RAN both, from scratch, in both factorials.",
+    "evidence": "analyze_step3a_length_floor_factorial.py:110-117 and analyze_step3a_pairing_factorial.py:200-212 call _project_bucket -> _raw_pairs_in_bucket(narrowed window) -> pair.py's own _greedy_select_pairs; per-wall recovery is attributed from match_walls's own m.pairs at length_floor_factorial.py:165.",
+    "implication": "The contradiction is not a simulation bug and not in pair formation or greedy. It lies downstream of greedy."
+  },
+  "window_cell": {
+    "window_mm": 500.0,
+    "window_native": 20.369,
+    "n_accepted_greedy": 159,
+    "n_rejected_thickness_outlier": 0,
+    "thickness_clusters_mm": [
+      {
+        "low": 17.7,
+        "high": 494.9,
+        "count": 159
+      }
+    ],
+    "n_final_walls": 47,
+    "matched_gt_ids": [
+      "w_s102",
+      "w_s104",
+      "w_s106",
+      "w_s110",
+      "w_s129",
+      "w_s138",
+      "w_s149"
+    ],
+    "n_matched": 7
+  },
+  "P1_P2_stage_fate": [
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        41,
+        43
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 169.8,
+      "overlap_mm": 1219.5,
+      "seg_41_consumed_by": {
+        "pair": [
+          41,
+          42
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "seg_43_consumed_by": {
+        "pair": [
+          44,
+          43
+        ],
+        "overlap_mm": 1218.8,
+        "thickness_mm": 76.6
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        41,
+        44
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 93.2,
+      "overlap_mm": 1219.5,
+      "seg_41_consumed_by": {
+        "pair": [
+          41,
+          42
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "seg_44_consumed_by": {
+        "pair": [
+          44,
+          43
+        ],
+        "overlap_mm": 1218.8,
+        "thickness_mm": 76.6
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        41,
+        4457
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 138.2,
+      "overlap_mm": 1222.4,
+      "seg_41_consumed_by": {
+        "pair": [
+          41,
+          42
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "seg_4457_consumed_by": {
+        "pair": [
+          4457,
+          22455
+        ],
+        "overlap_mm": 1222.4,
+        "thickness_mm": 76.2
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        41,
+        4458
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 61.6,
+      "overlap_mm": 1222.4,
+      "seg_41_consumed_by": {
+        "pair": [
+          41,
+          42
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "seg_4458_consumed_by": {
+        "pair": [
+          4458,
+          45
+        ],
+        "overlap_mm": 1222.4,
+        "thickness_mm": 152.8
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        43,
+        22478
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 169.8,
+      "overlap_mm": 1219.5,
+      "seg_43_consumed_by": {
+        "pair": [
+          44,
+          43
+        ],
+        "overlap_mm": 1218.8,
+        "thickness_mm": 76.6
+      },
+      "seg_22478_consumed_by": {
+        "pair": [
+          22478,
+          22459
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        44,
+        22478
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 93.2,
+      "overlap_mm": 1219.5,
+      "seg_44_consumed_by": {
+        "pair": [
+          44,
+          43
+        ],
+        "overlap_mm": 1218.8,
+        "thickness_mm": 76.6
+      },
+      "seg_22478_consumed_by": {
+        "pair": [
+          22478,
+          22459
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        4457,
+        22478
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 138.2,
+      "overlap_mm": 1222.4,
+      "seg_4457_consumed_by": {
+        "pair": [
+          4457,
+          22455
+        ],
+        "overlap_mm": 1222.4,
+        "thickness_mm": 76.2
+      },
+      "seg_22478_consumed_by": {
+        "pair": [
+          22478,
+          22459
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s111",
+      "pair": [
+        4458,
+        22478
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 61.6,
+      "overlap_mm": 1222.4,
+      "seg_4458_consumed_by": {
+        "pair": [
+          4458,
+          45
+        ],
+        "overlap_mm": 1222.4,
+        "thickness_mm": 152.8
+      },
+      "seg_22478_consumed_by": {
+        "pair": [
+          22478,
+          22459
+        ],
+        "overlap_mm": 3358.0,
+        "thickness_mm": 245.1
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s117",
+      "pair": [
+        46,
+        52
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": true,
+      "survived_thickness_guard": true,
+      "thickness_mm": 151.6,
+      "overlap_mm": 2135.6,
+      "died_at": "survived_to_merge"
+    },
+    {
+      "gt_wall_id": "w_s117",
+      "pair": [
+        46,
+        22468
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 151.9,
+      "overlap_mm": 2056.0,
+      "seg_46_consumed_by": {
+        "pair": [
+          46,
+          52
+        ],
+        "overlap_mm": 2135.6,
+        "thickness_mm": 151.6
+      },
+      "seg_22468_consumed_by": {
+        "pair": [
+          22461,
+          22468
+        ],
+        "overlap_mm": 2056.0,
+        "thickness_mm": 151.9
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s117",
+      "pair": [
+        52,
+        22461
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": false,
+      "survived_thickness_guard": false,
+      "thickness_mm": 151.6,
+      "overlap_mm": 2135.6,
+      "seg_52_consumed_by": {
+        "pair": [
+          46,
+          52
+        ],
+        "overlap_mm": 2135.6,
+        "thickness_mm": 151.6
+      },
+      "seg_22461_consumed_by": {
+        "pair": [
+          22461,
+          22468
+        ],
+        "overlap_mm": 2056.0,
+        "thickness_mm": 151.9
+      },
+      "died_at": "greedy_consumption"
+    },
+    {
+      "gt_wall_id": "w_s117",
+      "pair": [
+        22461,
+        22468
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": true,
+      "survived_thickness_guard": true,
+      "thickness_mm": 151.9,
+      "overlap_mm": 2056.0,
+      "died_at": "survived_to_merge"
+    },
+    {
+      "gt_wall_id": "w_s142",
+      "pair": [
+        60,
+        61
+      ],
+      "formed_under_window": true,
+      "accepted_by_greedy": true,
+      "survived_thickness_guard": true,
+      "thickness_mm": 149.6,
+      "overlap_mm": 2440.6,
+      "died_at": "survived_to_merge"
+    }
+  ],
+  "P3_achieved_geometry": [
+    {
+      "gt_wall_id": "w_s111",
+      "union_of_formed_pairs_prev_section": 0.3444,
+      "best_single_accepted_pair_overlap_ratio": 0.0,
+      "best_single_pair_source": null,
+      "best_single_pair_sym_mean_dist_mm": null,
+      "tau_abs_mm": 146.4,
+      "single_pair_would_match": false,
+      "final_wall_carrying_that_pair_after_collinear_merge": {
+        "n_members": 6,
+        "overlap_ratio": 1.0,
+        "sym_mean_dist_mm": 941.5,
+        "length_mm": 8851.6
+      },
+      "matched_by_matcher": false
+    },
+    {
+      "gt_wall_id": "w_s117",
+      "union_of_formed_pairs_prev_section": 0.9029,
+      "best_single_accepted_pair_overlap_ratio": 0.9028,
+      "best_single_pair_source": [
+        46,
+        52
+      ],
+      "best_single_pair_sym_mean_dist_mm": 46.4,
+      "tau_abs_mm": 146.4,
+      "single_pair_would_match": true,
+      "final_wall_carrying_that_pair_after_collinear_merge": {
+        "n_members": 6,
+        "overlap_ratio": 0.9594,
+        "sym_mean_dist_mm": 838.7,
+        "length_mm": 6867.8
+      },
+      "matched_by_matcher": false
+    },
+    {
+      "gt_wall_id": "w_s142",
+      "union_of_formed_pairs_prev_section": 0.9345,
+      "best_single_accepted_pair_overlap_ratio": 0.9345,
+      "best_single_pair_source": [
+        60,
+        61
+      ],
+      "best_single_pair_sym_mean_dist_mm": 20.7,
+      "tau_abs_mm": 146.4,
+      "single_pair_would_match": true,
+      "final_wall_carrying_that_pair_after_collinear_merge": {
+        "n_members": 8,
+        "overlap_ratio": 0.9561,
+        "sym_mean_dist_mm": 752.6,
+        "length_mm": 6867.8
+      },
+      "matched_by_matcher": false
+    }
+  ],
+  "P4_near_face_length_floor_kills": [
+    {
+      "gt_wall_id": "w_s111",
+      "n_near_faces_total": 4,
+      "n_killed_by_floor": 0,
+      "killed": []
+    },
+    {
+      "gt_wall_id": "w_s117",
+      "n_near_faces_total": 5,
+      "n_killed_by_floor": 3,
+      "killed": [
+        {
+          "near_face_idx": 53,
+          "length_mm": 153.2
+        },
+        {
+          "near_face_idx": 22463,
+          "length_mm": 153.2
+        },
+        {
+          "near_face_idx": 22467,
+          "length_mm": 79.5
+        }
+      ]
+    },
+    {
+      "gt_wall_id": "w_s142",
+      "n_near_faces_total": 2,
+      "n_killed_by_floor": 1,
+      "killed": [
+        {
+          "near_face_idx": 183,
+          "length_mm": 226.8
+        }
+      ]
+    }
+  ]
+}

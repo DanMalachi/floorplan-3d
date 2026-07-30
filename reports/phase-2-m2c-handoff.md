@@ -1,5 +1,25 @@
 # Phase 2 Track V — Milestone 2 Step 3a Handoff
 
+---
+
+> # PHASE CLOSED 2026-07-30 — VERDICT: **NOT MET**
+>
+> Exit bar wall F1 ≥ 0.99 @ τ=0.005. Best measured: **0.2338 @ τ=0.01, 0.2078 @ τ=0.005.** Even fixing both in-reach walls perfectly and granting perfect precision gives **F1 ≈ 0.62–0.65**. Verdict rests on wall counts alone and does not depend on the pairing factorial.
+>
+> **Read `reports/phase-2-gate.md` from the top — the verdict section there is authoritative.** This handoff is the navigational record. Nothing merged to `main`; branch `phase-2-trackv-m2c` is the record. No code was changed in the closing sessions: reports, one doc, and read-only diagnostics only.
+>
+> **Permanently recorded findings — do not re-derive:**
+> 1. **Greedy's absolute-overlap sort is CONFIRMED as the `PRESENT_AND_KEPT` cause.** The correct near face is fragmented while its partner is not, so a long unrelated parallel line out-scores the correct pair for the partner segment and consumes it. 13/13 decided on the primary sort key. **Nearest-first is NOT the fix — already measured catastrophic (recall 0.1379).**
+> 2. **`_collinear_merge`, not pairing, destroys the two in-reach walls.** Under a 500mm window `w_s117` and `w_s142` are recovered correctly (thickness within ~2mm of GT; centerline 20.7/46.4mm against τ=146.4mm) and then chained into 6867.8mm walls displaced 752.6–941.5mm by the plain mean of member perpendiculars at `pair.py:353`. **The pairing factorial's window row is therefore correct as measured and wrong as explained — NOT SAFE TO QUOTE about pairing quality.**
+> 3. **4 of 8 displaced walls are outside `pair.py`'s reach entirely** — 15x30 `w_s2`/`w_s4`/`w_s6` (no opposite-face ink at any length) and 30x50 `w_s111` (near-face coverage 0.172 as a single wall, against a 0.8 bar). **Select/dissect near-face fragmentation is the never-located upstream limit, and it is where recall actually lives.**
+> 4. **35.1% of 30x50's select candidates and 13.7% of 15x30's are exact geometric duplicates.** This is a precision **and F1-ceiling** fact, not precision-only: the transform-free bound `F1 ≤ 2·min(k,n)/(k+n)` lifts as `k` falls from 97 toward ~63. It still cannot pass the recall wall, so it is not a route to the exit bar.
+> 5. **Self-certifying-guard audit** of `extraction/trackv/` is in the gate report: 4 LIVE entries, 3 of them tracing to the same contaminated input (recovered wall thickness, a pairing *output*). **Nothing was fixed — deliberately.**
+> 6. **Cross-phase scale dependency** written up as a standalone request: `docs/p5-scale-dependency-request.md`.
+>
+> **Six hypotheses were falsified across this phase, two of them mine.** The simulate-before-building rule stopped four fixes that would have been wasted or harmful. That is the phase's most transferable process result.
+>
+> Everything below is the historical record of how the phase got here.
+
 Branch `phase-2-trackv-m2c` (worktree `fp-phase2`). Not merged to main — held on this branch by explicit decision. This document exists so a cold session can resume with zero re-derivation. Full evidence, tables, and residuals live in `reports/phase-2-gate.md`'s step-3a sections; this is the compressed pointer, not a replacement for it.
 
 > **START AT THE BOTTOM: read the "CURRENT STATE (as of 2026-07-30)" section. Everything above it in this document is history.**

@@ -1,4 +1,40 @@
-# Phase 2 Gate Report — Track V Milestone 1 (Dissection + Coverage Test)
+# Phase 2 Gate Report — Track V
+
+---
+
+# VERDICT: **NOT MET** — Track V milestone 2 step 3a does not clear the Phase 2 exit bar
+
+**Exit bar: wall F1 ≥ 0.99 @ τ=0.005. Best measured anywhere in this phase: F1 = 0.2338 @ τ=0.01, 0.2078 @ τ=0.005.** Decided 2026-07-30. This verdict does not depend on any contested table below, and it does not depend on the pairing factorial at all — it follows from wall counts alone.
+
+### The arithmetic, from wall counts only
+
+29 GT walls across the two Track V plans (15x30: 10, 30x50: 19). 11 matched under the window lever.
+
+- **In reach of a pairing-side fix: 2 walls** — 30x50 `w_s117`, `w_s142`. Both have a correct pair that forms, is accepted, and clears the frozen matcher's bars as a single wall (measured, see "window reconciliation" below).
+- **Out of reach, upstream ceiling: 4 walls** — 15x30 `w_s2`/`w_s4`/`w_s6` have no opposite-face ink at any length; 30x50 `w_s111` has near-face ink covering only 34.4% of its span against a 0.8 bar.
+- **Never diagnosed: 11 walls.**
+
+Fix both in-reach walls perfectly and recall reaches **13–14 / 29 = 0.45–0.48**. Grant *perfect* precision — against an actual 0.10–0.13 — and **F1 = 0.62–0.65 against a 0.99 bar.** There is no combination of the levers investigated in this phase that reaches the exit bar.
+
+**The 2026-07-30 sessions lowered the perfect-fix ceiling from ~0.77 to ~0.65** by proving 4 of the 8 diagnosed displaced walls are unreachable from `pair.py`. That is a result, not a shortfall: the phase now knows where its ceiling is and why.
+
+### What is genuinely established (not "failed to find")
+
+1. **Root cause, verified:** `pair.py` pairs wall faces with distant unrelated parallel lines. Displacement ≈ half the recovered pair thickness, 7/8 walls at ratio 0.93–1.12.
+2. **The greedy absolute-overlap sort is CONFIRMED as the `PRESENT_AND_KEPT` cause** — the correct near face is fragmented while its partner is not, so a long unrelated line out-scores the correct pair for the partner segment and consumes it. 13/13 decided on the primary sort key.
+3. **`_collinear_merge` is the stage that actually destroys the two in-reach walls, not pairing** — measured 2026-07-30, and it inverts the pairing factorial's attribution (see below).
+4. **4 of 8 displaced walls have an upstream select/dissect ceiling** that no pairing-side lever can reach. Near-face fragmentation is the never-located upstream limit.
+5. **The self-certifying-guard anti-pattern**, named, audited, and now confirmed inert a second time under a narrowed window (0 rejections both times).
+6. **Page-relative physical thresholds** are architecturally wrong by construction, driven by a real cross-phase dependency: `mm_per_unit` is unavailable at pair time.
+7. **35.1% of 30x50's select candidates and 13.7% of 15x30's are exact geometric duplicates.**
+
+### Scope of what follows
+
+Everything below this verdict is the evidence record, in the order it was measured. **Sections are marked SUPERSEDED where a later measurement replaced them — a superseded table is wrong, not merely dated, and must not be cited.** Nothing in this phase was merged to `main`; branch `phase-2-trackv-m2c` is the record.
+
+---
+
+## Milestone 1 (Dissection + Coverage Test)
 
 Branch `phase-2-trackv` (worktree `fp-phase2`, forked from `main` @ `d3b3ee1`, which merged the Phase 1 gate report). **This is a milestone checkpoint, not a full Phase 2 closure** — per the session's explicit scope, only milestone 1 (PyMuPDF dissection + the ink-coverage router test) was built. Stroke-width clustering, wall-face pairing/centerline recovery, medial-axis extraction, layer/color-based classification, and residue classification (`docs/extraction-plan.md`'s remaining Phase 2 items) are not started. Held here for Dan's merge decision per his explicit instruction — nothing merges to main without it.
 
@@ -859,7 +895,13 @@ This is recorded as a named anti-pattern rather than a bug because it is the mos
 
 **Rule going forward, for this phase and beyond:** a guard's threshold must come from a physical/domain prior, an absolute bound, or a demonstrably uncontaminated reference — never from the distribution it is filtering. If a guard reports zero rejections on real data, treat that as a suspected self-certifying guard until proven otherwise, not as evidence of a clean population.
 
-## Step 3a Blocker 1 — FULL FACTORIAL SIMULATION of the three candidate fixes: all three fail to recover recall
+## Step 3a Blocker 1 — FULL FACTORIAL SIMULATION of the three candidate fixes
+
+> **⚠ ATTRIBUTION SUPERSEDED — 2026-07-30. NOT SAFE TO QUOTE as evidence about pairing quality.**
+>
+> This section's **numbers stand** (they were re-verified: both factorials genuinely re-run pair formation and greedy under the narrowed window). Its **explanation is wrong.** Its original title claimed "all three fail to recover recall", and the window row was read as showing that fixing the search window does not help. The window reconciliation section at the end of this report measures the opposite: **under the window, `w_s117` and `w_s142` are recovered correctly at the pairing stage** (thickness within ~2mm of GT, centerline within 21–46mm of a 146mm tolerance) and are then destroyed by `_collinear_merge`, which chains them into 6867.8mm walls displaced 752.6–941.5mm.
+>
+> The `L-greedy` finding in this section is **NOT** superseded — nearest-first really is catastrophic (recall 0.1379) and must not be revisited. The `L-thickness` and `L-window` recall rows must be read only alongside the reconciliation section.
 
 `extraction/trackv/analyze_step3a_pairing_factorial.py`, `out/step3a_pairing_factorial.json`. Simulation only — `pair.py`, `assemble.py`, `eval/` all unmodified; levers applied in a local reimplementation whose all-levers-off cell reproduces the shipped pipeline exactly (43/54 candidates; tp 3/7 at τ=0.01, 2/6 at τ=0.005 — identical to the recorded baseline).
 
@@ -958,6 +1000,8 @@ But it forks correctly into two distinct, real problems, neither of which is the
 
 ### Joint simulation: window + length-floor, alone and combined
 
+> **⚠ The `of the 6 recovered` column below is SUPERSEDED as evidence about the window lever** (2026-07-30). Its counts are correct; the inference "window recovers 0, therefore the window fix does not help" is not. `w_s117` and `w_s142` are recovered at the pairing stage under the window and lost afterwards in `_collinear_merge`. See the window reconciliation section. The length-floor rows are unaffected and stand — but note the floor's effect on **near-face** fragments was never tested here and is quantified in that same section (4 segments across the two in-reach walls).
+
 `analyze_step3a_length_floor_factorial.py`, `out/step3a_length_floor_factorial.json`. Same discipline: simulation only, baseline cell reproduces the shipped pipeline. Physical prior, stated without reference to either plan: **`MIN_WALL_FACE_LENGTH_MM = 200`** — the shortest common freestanding architectural wall element (a pier between openings, a corner return, a jamb stub) rarely measures under ~200mm; below that a line is far more likely a dimension tick or hatch remnant, which mirrors `pair.py`'s own stated rationale for having a floor at all.
 
 Pre-registered before running, and derivable directly from the table above without simulating anything: **loosening the floor should recover ZERO of the 6 target walls** — NEVER_PRESENT has nothing to loosen into at any length, and PRESENT_AND_KEPT already clears the current floor. Confirmed exactly:
@@ -1034,6 +1078,8 @@ This is a **third distinct structural fault in the same function**, alongside th
 
 ### Two-thirds of these walls are recoverable and one is not — the ceiling check
 
+> **⚠ METHOD SUPERSEDED for `w_s111` only** (2026-07-30). The union below aggregates every *formed* correct pair, but `_greedy_select_pairs`'s `used` set forbids co-accepting pairs that share a segment, and `_overlap_ratio` scores one predicted wall against one GT wall with no union. Re-measured correctly: `w_s117` **0.9028** and `w_s142` **0.9345** are unchanged (for both, the union already equalled the largest single pair), but **`w_s111` falls from 0.344 to 0.172**. All three conclusions below hold; `w_s111` is simply further under the bar than stated.
+
 Suppose greedy were fixed perfectly and every formed correct pair were accepted. The wall those pairs describe spans only the union of their along-axis overlaps, and `eval/`'s frozen matcher requires `overlap_ratio > 0.8` of the GT wall. Computed as a union of intervals:
 
 | wall | union span of formed correct pairs | GT length | coverage | matchable with perfect greedy? |
@@ -1080,3 +1126,74 @@ No change to `pair.py`, `select.py`, `assemble.py`, or anything under `eval/`. N
 That is a materially different gate picture from the previous section's: the ceiling is now *located* in both halves, and it is split between a fixable pairing fault and a hard upstream ink-coverage limit — but **no recall number has improved, and the unresolved contradiction above means the factorial's negative headline is not safe to rely on.** Recall remains the binding constraint and no measurement in this section changes any reported metric. Gate disposition remains Dan's.
 
 Durable artifacts: `analyze_step3a_greedy_competition.py`, `out/step3a_greedy_competition.json`, this section.
+
+---
+
+## Step 3a — WINDOW RECONCILIATION: contradiction settled, and it reverses the factorial's attribution
+
+`analyze_step3a_window_reconcile.py`, `out/step3a_window_reconcile.json`. One run, no factorial, no lever adopted, nothing built. This section **supersedes the pairing factorial's and the length-floor factorial's attribution of *where* the window lever fails** — their measured numbers stand, their explanation does not.
+
+### First, settled by code read rather than measurement
+
+**Question:** did either factorial's window cell re-run pair formation and greedy, or only filter already-selected output?
+
+**Answer: it RE-RAN both, from scratch, in both factorials.** `analyze_step3a_length_floor_factorial.py:110-117` and `analyze_step3a_pairing_factorial.py:200-212` each call `_project_bucket` → `_raw_pairs_in_bucket(narrowed window)` → pair.py's own `_greedy_select_pairs`, and per-wall recovery is attributed from `match_walls`'s own `m.pairs` (`length_floor_factorial.py:165`). **There is no stale-population simulation bug.** The contradiction therefore had to lie downstream of greedy, which is where this probe looked.
+
+### Result — the window lever works exactly as designed, and `_collinear_merge` then destroys the wall
+
+Stage-by-stage fate of every formed correct pair under the 500mm window (`window_native` = 20.369 units):
+
+| wall | correct pair | thickness | formed | accepted by greedy | survived thickness guard | died at |
+|---|---|---|---|---|---|---|
+| `w_s142` | (60, 61) | **149.6mm** | yes | **yes** | **yes** | survived to merge |
+| `w_s117` | (46, 52) | **151.6mm** | yes | **yes** | **yes** | survived to merge |
+| `w_s117` | (22461, 22468) | 151.9mm | yes | yes | yes | survived to merge |
+| `w_s111` | all 8 combos | 61.6–169.8mm | yes | **no** | — | greedy consumption |
+
+And as a single pre-merge wall, scored exactly as the frozen matcher scores it (τ_abs = 146.4mm):
+
+| wall | `overlap_ratio` | `sym_mean_dist` | would match as a single wall? | after `_collinear_merge` | matched? |
+|---|---|---|---|---|---|
+| `w_s142` | **0.9345** | **20.7mm** | **YES** | 8 members, length 6867.8mm, dist **752.6mm** | **no** |
+| `w_s117` | **0.9028** | **46.4mm** | **YES** | 6 members, length 6867.8mm, dist **838.7mm** | **no** |
+| `w_s111` | n/a (no pair accepted) | — | no | 6 members, length 8851.6mm, dist 941.5mm | no |
+
+**This is the resolution.** The window lever recovers `w_s117` and `w_s142` correctly at the pairing stage — right thickness to within ~2mm of GT, right position to within 21–46mm against a 146mm tolerance. `_collinear_merge` then chains each 2.4m wall into a **6867.8mm** wall spanning several GT walls, and because `flush_chain` sets the merged centerline to a plain unweighted **mean of member perpendiculars** (`pair.py:353`), the result lands **752.6–941.5mm off — 5.1× to 6.4× τ.** `overlap_ratio` stays high (0.956–1.0) precisely because the over-long wall covers the GT wall's whole span; it is the *distance* term that fails. Both walls are lost after being correctly recovered.
+
+**Consequence for the record: the pairing factorial's "window recovers 0 of these 6 walls" is correct as measured and wrong as explained.** It was read as evidence that fixing the window does not help recall. It is actually evidence that a downstream over-merge masks a window fix that did work. Any future reader must not cite the factorial's window row as evidence about pairing quality.
+
+### Pre-registration scored plainly
+
+- **P1 — CONFIRMED.** `w_s142`'s correct pair is formed and accepted by greedy under the window.
+- **P2 — FALSIFIED (primary), secondary confirmed.** I predicted the pair would die at `_thickness_plausible_clusters`, recalibrated on the narrowed population. It did **not** — the pair survived the guard. The guard was inert instead: cluster 17.7–494.9mm, count 159, **`n_rejected_thickness_outlier` = 0 again**, spanning essentially the entire narrowed window. My *secondary* candidate, `_collinear_merge` dragging the centerline, is what actually happened. Sixth falsified hypothesis of the phase.
+- **P3 — CONFIRMED.** Dan's correction of the union method is right in method (`_overlap_ratio` scores one pred wall against one GT wall, `eval/metrics/matching.py:97-106`) and changes nothing in the verdict: `w_s117` 0.9029 union vs **0.9028** best single pair, `w_s142` 0.9345 vs **0.9345** — for both, the union already equalled the largest single pair. `w_s111`'s figure could not be measured from accepted walls because none of its 8 correct pairs survives greedy even under the window; by arithmetic from the competition probe its single-pair achievable coverage is 1222.4/7094.4 = **0.172**, down from the union's 0.344 and still far under the 0.8 bar. **The 4-of-8-unreachable tally is unaffected.**
+- **P4 — CONFIRMED exactly.** Near-face segments dropped by the 253mm floor: `w_s117` **3 of 5** (idx 53 @153.2mm, 22463 @153.2mm, 22467 @79.5mm), `w_s142` **1 of 2** (idx 183 @226.8mm), `w_s111` **0 of 4**. Real, and a different side of the wall from the falsified partner-face hypothesis. **Cannot change the verdict: both affected walls already clear 0.8 without those fragments.** Reported as a count; no floor change built.
+
+### NOT MEASURED / not claimed
+
+Whether fixing `_collinear_merge` would actually recover `w_s117`/`w_s142` end-to-end — not simulated, and deliberately not, since the verdict does not depend on it. Why `_collinear_merge` chains this far (the 126.5mm perpendicular tolerance and the opening-gap bound are both implicated; neither was isolated). Whether the same over-merge damages any of the 11 never-diagnosed walls. Whether `w_s111`'s 8 correct pairs would survive greedy under any window at all.
+
+### Explicitly not built this round
+
+No change to `pair.py`, `select.py`, `assemble.py`, or anything under `eval/`. The greedy sort was not touched. The length floor was not changed. No deduplication. No scale proxy. One new read-only diagnostic.
+
+---
+
+## SELF-CERTIFYING-GUARD AUDIT — `extraction/trackv/` only, identify-and-list, NOTHING FIXED
+
+A guard qualifies if **any threshold it applies, or any output position it computes, is derived from the population it filters.** Such a guard cannot fail loudly: once that population is dominated by the failure the guard exists to catch, it certifies whatever the pipeline produces. **Zero rejections on real data is the tell, not a clean bill of health.** Nothing below is fixed — an unmeasured fix in a closing phase is worse than a documented defect.
+
+| file:line | what it bounds / decides | what it calibrates on | status |
+|---|---|---|---|
+| `pair.py:211` `_thickness_plausible_clusters` | rejects implausible pair thicknesses | KDE clusters over the accepted-pair thickness population **it is filtering** | **LIVE — confirmed inert twice.** Baseline: cluster 21–6324mm, 0 rejections. Under the 500mm window: 17.7–494.9mm, count 159, **0 rejections again.** It has never rejected a single pair on real data. |
+| `pair.py:353` `perp_mid = sum(perp_of[wi] …) / len(chain_members)` | the merged wall's **centerline position** | plain unweighted mean of the member fragments' perpendiculars | **LIVE — newly measured as the stage that destroys the two in-reach walls.** Not a threshold, same family: an output position that is a statistic of a contaminated member set. 752.6–941.5mm displacement vs τ 146.4mm. |
+| `pair.py:377` `local_thickness` → `OPENING_GAP_MULTIPLIER * local_thickness` | the opening-gap bound deciding whether two fragments merge | length-weighted median of the merging fragments' **own recovered thicknesses** — a pairing output | **LIVE — newly implicated.** Contaminated recovered thickness (median 504–653mm vs real ~150mm) inflates a 20× gap bound to ~10–13m, which is how the 6867.8mm over-merge above becomes reachable. |
+| `assemble.py:339` `AXIAL_EXTENSION_BOUND_FRAC * w.thickness`, `assemble.py:344` `STATIONARY_OVERHANG_FRAC * w.thickness` | junction-closure extension and overhang bounds | each wall's **own recovered thickness** | **LIVE watch item, unchanged.** Inherits pairing's contamination directly. |
+| `pair.py:265` `_cluster_by_perp` | groups fragments onto one physical centerline | `COLLINEAR_GROUPING_TOLERANCE_FRAC * diagonal` — absolute, thickness-independent | **FIXED historically.** Was `round(perp / thickness * 4)`, keyed to contaminated recovered thickness. No longer self-certifying — but it is now *page*-relative, the other named structural fault. |
+| `select.py:112` `_dominant_axis` | the global θ frame | **a domain prior** — hatch is ~45°, walls are axis-aligned | **CORRECTLY AVOIDED — copy this pattern.** A plain argmax would lock θ onto the hatch angle (hatch outweighs walls 164k vs 15k in aggregate length) and silently invert the selector with no error signal. |
+| `select.py:200` `cluster_widths(population.stroke_widths)` | nothing — reported only | stroke-width population | **CLEAN — diagnostic-only, gates no decision.** |
+| `coverage.py:29` `TRACK_V_COVERAGE_BAR = 0.95` | Track V vs Track R routing | **an absolute bar** | **CLEAN.** |
+
+**Transferable rule for later phases: the break is a domain prior or an absolute bound, never a data statistic taken from the filtered population.** Three of the four LIVE entries above are in `_collinear_merge`/`assemble` and all three trace to the same input — recovered wall thickness, which is a pairing *output*.
+
+Durable artifacts: `analyze_step3a_window_reconcile.py`, `out/step3a_window_reconcile.json`, this section and the audit above.
