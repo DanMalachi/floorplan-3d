@@ -2,9 +2,11 @@
 
 Branch `phase-2-trackv-m2c` (worktree `fp-phase2`). Not merged to main — held on this branch by explicit decision. This document exists so a cold session can resume with zero re-derivation. Full evidence, tables, and residuals live in `reports/phase-2-gate.md`'s step-3a sections; this is the compressed pointer, not a replacement for it.
 
-> **START AT THE BOTTOM: read "ROOT CAUSE FOUND" and the "RESUME POINTER" that follows it. Everything else in this document is history.**
+> **START AT THE BOTTOM: read the "CURRENT STATE (as of 2026-07-30)" section. Everything above it in this document is history.**
 >
-> Short version for a cold session: Blocker 2 (coordinate frame) is CLOSED — derived, zero fitted parameters. Blocker 1 was reframed from over-production (precision) to **recall**, and its root cause is now **found and quantitatively verified**: `pair.py` pairs wall faces with distant unrelated parallel lines, and its thickness-plausibility guard is calibrated on the very contamination it exists to reject. Four hypotheses were falsified along the way and are recorded so they are not re-attempted. **No fix has been built or simulated.** That is the next job.
+> Short version for a cold session: Blocker 2 (coordinate frame) is CLOSED — derived, zero fitted parameters. Blocker 1 was reframed from over-production (precision) to **recall**. Its root cause is found and verified — `pair.py` pairs wall faces with distant unrelated parallel lines — and as of 2026-07-30 the remaining "unlocated" sub-case is located too. **Four levers have now been simulated and none recovers recall** (best 0.3793 vs 0.3448 baseline, one wall, against an exit bar of F1 ≥ 0.99). Five hypotheses have been falsified and are recorded so they are not re-attempted. **Nothing has been built or merged. Held for Dan's gate decision.**
+>
+> One unresolved contradiction is flagged in CURRENT STATE and must be settled before the factorial's negative result is quoted at the gate.
 >
 > Everything above the "ROOT CAUSE FOUND" section is kept for the record, not as live direction. In particular: the Blocker 2 instructions, the over-production framing, the kill-rule plan, and the bucket-(b) "pair dropped it" label are all **superseded**.
 
@@ -110,17 +112,51 @@ Raw select-stage ink is **correct** — it sits within −98…+147mm of the GT 
 2. `_thickness_plausible_clusters` **calibrates itself on the contaminated population it is meant to filter**. Wrong-partner pairs are 82–97% of that population, so the derived cluster spans the whole range and rejects nothing. Same class of error as fitting the coordinate frame to the predictions being scored.
 3. `_greedy_select_pairs` sorts on longest overlap first, so a long face against a long distant line outranks the correct local pair.
 
-## RESUME POINTER — next session
+## SUPERSEDED RESUME POINTER (simulate-the-fix) — kept for the record only
 
-**Nothing has been fixed. No parameter was changed. The next job is to simulate a fix, not to build one.**
+The plan that stood here — "nothing has been fixed, the next job is to simulate a fix" — **was executed across three further sessions and is finished.** Both named levers were simulated, plus a third and a fourth. See "CURRENT STATE" below. Do not restart it.
 
-1. **Simulate offline first, score before funding.** Standing rule, and it has now stopped three fixes that would have been wasted or harmful (length/connectivity bound on closure's split side; run-merging; bounded-diameter clustering — the last one measured *identical* recall and *worse* precision). Build the counterfactual the same way `analyze_step3a_run_merge_probe.py` and `analyze_step3a_chain_spread.py` did: import pair.py's pure helpers read-only, change one thing, re-score recall/precision/F1 at **τ=0.01 and τ=0.005**, both plans. Do not edit `pair.py` until a simulation says it helps.
-2. **Two independent levers, simulate them separately before combining** — they are different faults and either could be sufficient:
-   - the **search window** (`MAX_THICKNESS_SEARCH_FRAC`) — needs an architecturally-motivated bound, not a value tuned to make these two plans look good;
-   - the **plausibility guard** — needs its plausible range derived from something *other* than the contaminated population (architectural priors, or the un-contaminated subset, or an absolute physical bound). Fixing the guard alone may be enough; fixing the window alone may be enough. Measure which.
-3. **Pre-register a prediction before each simulation and score it plainly afterwards.** Four hypotheses have been falsified in this phase so far; the discipline of stating them first is what made each one cheap.
-4. **Re-check the downstream buckets after any fix rather than treating them as separate problems.** Bucket (c)'s 7 walls, and the family-classification `other` bucket (52.6% of candidates), are now plausible *consequences* of this same cause — untested, but do not spend a session on them as independent problems first.
-5. `below_length_floor` (2 walls) — real, clean, distinct lever, **one fifth the size** of the displacement problem. Queued, unstarted, correctly deprioritised.
+---
+
+# CURRENT STATE (as of 2026-07-30) — read this section, everything above is history
+
+Branch `phase-2-trackv-m2c`, worktree `fp-phase2`, not merged. **Held for Dan's gate decision.** Full detail in `reports/phase-2-gate.md`'s last four sections, in order: ROOT CAUSE FOUND → pairing factorial → length-floor test → greedy competition.
+
+### What has been simulated, and what it measured
+
+All simulation-only, `eval/` never touched, baseline cells reproducing the shipped pipeline exactly.
+
+- **Pairing factorial** (`analyze_step3a_pairing_factorial.py`), full 2³ over search window / thickness guard / greedy sort. **Best recall in all 8 cells = 0.3793 vs baseline 0.3448 — one wall.** Every F1 gain is precision-driven; best cell is `thickness` alone at F1@0.01 0.2338. **`L-greedy` (nearest-first) is catastrophic (recall 0.1379) — longest-overlap-first must not be revisited as a wholesale replacement.**
+- **Length-floor test + factorial** — Dan's hypothesis (the floor deletes the correct partner) **falsified, `PRESENT_AND_REMOVED` is empty 0/6.** Forks into NEVER_PRESENT 3/6 (15x30, upstream ceiling) and PRESENT_AND_KEPT 3/6 (30x50).
+- **Greedy competition** (`analyze_step3a_greedy_competition.py`, this session) — **the PRESENT_AND_KEPT cause is LOCATED.** Correct pair formed 3/3, accepted 0/3, decided on the primary sort key 13/13. The correct near face is fragmented while its partner is not, so absolute overlap caps at the fragment length and a long unrelated parallel line out-scores the correct pair for the partner segment and consumes it. Thieves sit at 1831.9 / 3058.6 / 4730.3mm recovered thickness.
+
+### Exit-bar arithmetic, unsoftened
+
+Best simulated F1 anywhere this phase: **0.2338 @ τ=0.01, 0.2078 @ τ=0.005, against an exit bar of 0.99 @ τ=0.005.** Recall essentially unmoved all phase. Recall is the binding constraint.
+
+### The 8 displaced walls, current tally
+
+| status | walls | reachable from pairing? |
+|---|---|---|
+| fixed by window lever | `w_s106`, `w_s138` | yes, already |
+| located pairing cause + enough ink coverage to match | `w_s117` (90.3%), `w_s142` (93.5%) | **yes** |
+| located **upstream** ceiling in select/dissect | 15x30 `w_s2`/`w_s4`/`w_s6` (no partner ink at all), 30x50 `w_s111` (34.4% coverage) | **no** |
+
+### DO THIS FIRST NEXT SESSION — one cheap measurement, highest value in the phase
+
+**There is an unresolved contradiction between the two most recent sections and it must be settled before anything is built or quoted at the gate.** Every thief that steals `w_s117`/`w_s142`'s correct partner has a recovered thickness of 3058.6 / 4730.3mm — far outside the 50–500mm physical window the factorial simulated — and both walls clear the matcher's `overlap_ratio > 0.8` bar. **On that evidence the window lever alone should have recovered them; the factorial says it recovered 0 of these 6.** Both cannot be right as stated.
+
+The decisive test: re-run `analyze_step3a_greedy_competition.py` **with the narrowed window applied** and observe who consumes the correct partner then. Three untested explanations — (a) a different thief inside the narrowed window takes over; (b) `_collinear_merge` drags the correct wall's centerline off afterwards; (c) `match_walls`'s one-to-one Hungarian gives the GT wall to another candidate. **Until settled, do not quote the factorial's "all three levers fail" as a settled negative at the gate.**
+
+### Then, and only if the contradiction resolves in favour of a real fix
+
+The pairing defect is now specific enough to state: **overlap length is compared in absolute terms across pairs of wildly differing plausibility, with no thickness admissibility applied first.** Any fix must be simulated before it is built, per the standing rule below. Note this is *not* a licence to reorder greedy to nearest-first — that is already measured as catastrophic.
+
+### Also available, honestly sized
+
+- **Exact-duplicate deduplication of the select population** — newly measured: **35.1% of 30x50's 22513 select candidates and 13.7% of 15x30's are exact geometric duplicates.** Unusually safe (exact identity, no threshold, cannot lose a real wall) but it removes no thief, so **expect no recall gain**; its value is halving 30x50's pairing population so later diagnostics are cheaper and less noisy. Precision-only, and precision alone cannot reach the bar.
+- **The upstream ceiling (4 of 8 walls)** is now the larger share of the displaced population and is entirely outside `pair.py`. Nobody has looked at why those near faces are missing or fragmented. This is where recall actually lives, and it is select/dissect work, not pairing work.
+- **Cross-phase scale dependency** — `MAX_THICKNESS_SEARCH_FRAC` and `MIN_CANDIDATE_LENGTH_FRAC` both scale with *page* geometry because `mm_per_unit` is unavailable at pair time (Phase 5 owns scale recovery). Architecturally wrong by construction, not mistuned. Proposed (unbuilt, Dan's scope call): an uncontaminated scale proxy from select-stage stroke-width/separation statistics — legitimate only because it is upstream of pairing.
 
 ## Falsified — recorded so they are not re-attempted
 

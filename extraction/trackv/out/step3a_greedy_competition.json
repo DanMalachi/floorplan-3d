@@ -1,0 +1,823 @@
+{
+  "pre_registered_prediction": "Correct pair IS formed; loses on the SECOND sort key (thickness ascending) to a thinner wrong pair at equal overlap, not on absolute overlap. Falsifier: correct pair never formed -> greedy exonerated, the named gate is the finding instead.",
+  "summary": {
+    "n_walls": 3,
+    "n_with_correct_pair_formed": 3,
+    "n_with_correct_pair_accepted": 0,
+    "killed_by_counts": {
+      "length_floor": 7
+    },
+    "decided_by_sort_field_counts": {
+      "overlap_len": 13
+    },
+    "n_matchable_even_with_perfect_greedy": 2
+  },
+  "per_wall": [
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s111",
+      "gt_length_mm": 7094.4,
+      "near_face_idxs": [
+        43,
+        44,
+        4457,
+        4458
+      ],
+      "partner_idxs": [
+        41,
+        22478
+      ],
+      "n_combinations": 8,
+      "any_correct_pair_formed": true,
+      "any_correct_pair_accepted": false,
+      "ceiling_if_greedy_were_perfect": {
+        "union_span_of_formed_correct_pairs_mm": 2443.2,
+        "gt_length_mm": 7094.4,
+        "coverage_ratio": 0.3444,
+        "matcher_overlap_ratio_bar": 0.8,
+        "matchable_even_with_perfect_greedy": false
+      },
+      "combinations": [
+        {
+          "near_face_idx": 43,
+          "partner_idx": 41,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 169.8,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1219.5
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 169.8,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.6781,
+          "thickness_native": 6.9178,
+          "bucket": "B",
+          "greedy_rank": 859,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 44,
+            "j_idx": 43,
+            "overlap_mm": 1218.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22435,
+            "j_idx": 41,
+            "overlap_mm": 3468.1,
+            "thickness_mm": 1831.9,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 921
+        },
+        {
+          "near_face_idx": 43,
+          "partner_idx": 22478,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 169.8,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1219.5
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 169.8,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.6781,
+          "thickness_native": 6.9178,
+          "bucket": "B",
+          "greedy_rank": 860,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 44,
+            "j_idx": 43,
+            "overlap_mm": 1218.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22434,
+            "j_idx": 22478,
+            "overlap_mm": 3436.4,
+            "thickness_mm": 1791.2,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 921
+        },
+        {
+          "near_face_idx": 44,
+          "partner_idx": 41,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 93.2,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1219.5
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 93.2,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.6781,
+          "thickness_native": 3.7979,
+          "bucket": "B",
+          "greedy_rank": 855,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 44,
+            "j_idx": 43,
+            "overlap_mm": 1218.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22435,
+            "j_idx": 41,
+            "overlap_mm": 3468.1,
+            "thickness_mm": 1831.9,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 921
+        },
+        {
+          "near_face_idx": 44,
+          "partner_idx": 22478,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 93.2,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1219.5
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 93.2,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.6781,
+          "thickness_native": 3.7979,
+          "bucket": "B",
+          "greedy_rank": 856,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 44,
+            "j_idx": 43,
+            "overlap_mm": 1218.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22434,
+            "j_idx": 22478,
+            "overlap_mm": 3436.4,
+            "thickness_mm": 1791.2,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 921
+        },
+        {
+          "near_face_idx": 4457,
+          "partner_idx": 41,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 138.2,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1222.4
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 138.2,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.7981,
+          "thickness_native": 5.6293,
+          "bucket": "B",
+          "greedy_rank": 829,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4458,
+            "j_idx": 4457,
+            "overlap_mm": 1221.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22435,
+            "j_idx": 41,
+            "overlap_mm": 3468.1,
+            "thickness_mm": 1831.9,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 847
+        },
+        {
+          "near_face_idx": 4457,
+          "partner_idx": 22478,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 138.2,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1222.4
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 138.2,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.7981,
+          "thickness_native": 5.6293,
+          "bucket": "B",
+          "greedy_rank": 830,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4458,
+            "j_idx": 4457,
+            "overlap_mm": 1221.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22434,
+            "j_idx": 22478,
+            "overlap_mm": 3436.4,
+            "thickness_mm": 1791.2,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 847
+        },
+        {
+          "near_face_idx": 4458,
+          "partner_idx": 41,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 61.6,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1222.4
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 61.6,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.7981,
+          "thickness_native": 2.5094,
+          "bucket": "B",
+          "greedy_rank": 811,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4458,
+            "j_idx": 4457,
+            "overlap_mm": 1221.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22435,
+            "j_idx": 41,
+            "overlap_mm": 3468.1,
+            "thickness_mm": 1831.9,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 847
+        },
+        {
+          "near_face_idx": 4458,
+          "partner_idx": 22478,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 61.6,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 1222.4
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 61.6,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 49.7981,
+          "thickness_native": 2.5094,
+          "bucket": "B",
+          "greedy_rank": 812,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4458,
+            "j_idx": 4457,
+            "overlap_mm": 1221.8,
+            "thickness_mm": 76.6,
+            "i_role": "near_face",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22434,
+            "j_idx": 22478,
+            "overlap_mm": 3436.4,
+            "thickness_mm": 1791.2,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 847
+        }
+      ]
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s117",
+      "gt_length_mm": 2365.1,
+      "near_face_idxs": [
+        52,
+        53,
+        22463,
+        22467,
+        22468
+      ],
+      "partner_idxs": [
+        46,
+        22461
+      ],
+      "n_combinations": 10,
+      "any_correct_pair_formed": true,
+      "any_correct_pair_accepted": false,
+      "ceiling_if_greedy_were_perfect": {
+        "union_span_of_formed_correct_pairs_mm": 2135.6,
+        "gt_length_mm": 2365.1,
+        "coverage_ratio": 0.9029,
+        "matcher_overlap_ratio_bar": 0.8,
+        "matchable_even_with_perfect_greedy": true
+      },
+      "combinations": [
+        {
+          "near_face_idx": 52,
+          "partner_idx": 46,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 151.6,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 2135.6
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 151.6,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 86.9967,
+          "thickness_native": 6.1742,
+          "bucket": "B",
+          "greedy_rank": 247,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4216,
+            "j_idx": 52,
+            "overlap_mm": 1950.0,
+            "thickness_mm": 792.4,
+            "i_role": "unrelated",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 42,
+            "j_idx": 46,
+            "overlap_mm": 2441.9,
+            "thickness_mm": 3058.6,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 353
+        },
+        {
+          "near_face_idx": 52,
+          "partner_idx": 22461,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 151.6,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 2135.6
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 151.6,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 86.9967,
+          "thickness_native": 6.1742,
+          "bucket": "B",
+          "greedy_rank": 248,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4216,
+            "j_idx": 52,
+            "overlap_mm": 1950.0,
+            "thickness_mm": 792.4,
+            "i_role": "unrelated",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22459,
+            "j_idx": 22461,
+            "overlap_mm": 2441.9,
+            "thickness_mm": 3058.6,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 353
+        },
+        {
+          "near_face_idx": 53,
+          "partner_idx": 46,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 153.2,
+            "partner_len_mm": 2442.0,
+            "floor_mm": 253.1
+          }
+        },
+        {
+          "near_face_idx": 53,
+          "partner_idx": 22461,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 153.2,
+            "partner_len_mm": 2442.0,
+            "floor_mm": 253.1
+          }
+        },
+        {
+          "near_face_idx": 22463,
+          "partner_idx": 46,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 153.2,
+            "partner_len_mm": 2442.0,
+            "floor_mm": 253.1
+          }
+        },
+        {
+          "near_face_idx": 22463,
+          "partner_idx": 22461,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 153.2,
+            "partner_len_mm": 2442.0,
+            "floor_mm": 253.1
+          }
+        },
+        {
+          "near_face_idx": 22467,
+          "partner_idx": 46,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 79.5,
+            "partner_len_mm": 2442.0,
+            "floor_mm": 253.1
+          }
+        },
+        {
+          "near_face_idx": 22467,
+          "partner_idx": 22461,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 79.5,
+            "partner_len_mm": 2442.0,
+            "floor_mm": 253.1
+          }
+        },
+        {
+          "near_face_idx": 22468,
+          "partner_idx": 46,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 151.9,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 2056.0
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 151.9,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 83.7568,
+          "thickness_native": 6.1884,
+          "bucket": "B",
+          "greedy_rank": 264,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4217,
+            "j_idx": 22468,
+            "overlap_mm": 1950.0,
+            "thickness_mm": 819.2,
+            "i_role": "unrelated",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 42,
+            "j_idx": 46,
+            "overlap_mm": 2441.9,
+            "thickness_mm": 3058.6,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 356
+        },
+        {
+          "near_face_idx": 22468,
+          "partner_idx": 22461,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 151.9,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 2056.0
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 1.0,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 151.9,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 83.7568,
+          "thickness_native": 6.1884,
+          "bucket": "B",
+          "greedy_rank": 265,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 4217,
+            "j_idx": 22468,
+            "overlap_mm": 1950.0,
+            "thickness_mm": 819.2,
+            "i_role": "unrelated",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 22459,
+            "j_idx": 22461,
+            "overlap_mm": 2441.9,
+            "thickness_mm": 3058.6,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 356
+        }
+      ]
+    },
+    {
+      "plan_id": "30x50-Model-landscape",
+      "gt_wall_id": "w_s142",
+      "gt_length_mm": 2611.8,
+      "near_face_idxs": [
+        61,
+        183
+      ],
+      "partner_idxs": [
+        60
+      ],
+      "n_combinations": 2,
+      "any_correct_pair_formed": true,
+      "any_correct_pair_accepted": false,
+      "ceiling_if_greedy_were_perfect": {
+        "union_span_of_formed_correct_pairs_mm": 2440.6,
+        "gt_length_mm": 2611.8,
+        "coverage_ratio": 0.9345,
+        "matcher_overlap_ratio_bar": 0.8,
+        "matchable_even_with_perfect_greedy": true
+      },
+      "combinations": [
+        {
+          "near_face_idx": 61,
+          "partner_idx": 60,
+          "formed": true,
+          "gates": {
+            "search_window": {
+              "pass": true,
+              "perp_gap_mm": 149.6,
+              "window_mm": 6327.2
+            },
+            "positive_overlap": {
+              "pass": true,
+              "overlap_mm": 2440.6
+            },
+            "overlap_fraction": {
+              "pass": true,
+              "fraction": 0.9995,
+              "required": 0.6
+            },
+            "min_thickness_stroke_multiple": {
+              "pass": true,
+              "thickness_mm": 149.6,
+              "min_thickness_mm": 17.7
+            }
+          },
+          "overlap_len_native": 99.4228,
+          "thickness_native": 6.0926,
+          "bucket": "B",
+          "greedy_rank": 220,
+          "n_raw_pairs_in_bucket": 3452,
+          "accepted": false,
+          "near_face_consumed_by": {
+            "i_idx": 59,
+            "j_idx": 61,
+            "overlap_mm": 2433.9,
+            "thickness_mm": 916.1,
+            "i_role": "unrelated",
+            "j_role": "near_face"
+          },
+          "partner_consumed_by": {
+            "i_idx": 45,
+            "j_idx": 60,
+            "overlap_mm": 2553.8,
+            "thickness_mm": 4730.3,
+            "i_role": "unrelated",
+            "j_role": "correct_partner"
+          },
+          "decided_by_sort_field": "overlap_len",
+          "winner_rank": 228
+        },
+        {
+          "near_face_idx": 183,
+          "partner_idx": 60,
+          "formed": false,
+          "killed_by": "length_floor",
+          "detail": {
+            "near_face_len_mm": 226.8,
+            "partner_len_mm": 2595.2,
+            "floor_mm": 253.1
+          }
+        }
+      ]
+    }
+  ]
+}

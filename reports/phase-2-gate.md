@@ -998,3 +998,85 @@ No change to any file. No lever adopted. `below_length_floor` lead is now unders
 - Whether this constitutes "recall is capped by a removable, structural cause" or "recall's ceiling is unlocated and Phase 2's approach needs reconsidering at the gate" is genuinely mixed evidence for both readings on this 8-wall population, and is Dan's decision, not a conclusion this document reaches on his behalf.
 
 Durable artifacts: `analyze_step3a_length_floor_test.py`, `analyze_step3a_length_floor_factorial.py`, their JSON outputs, this section.
+
+---
+
+## Step 3a Blocker 1 — greedy competition: the PRESENT_AND_KEPT cause is LOCATED, and it contradicts the factorial
+
+`analyze_step3a_greedy_competition.py`, `out/step3a_greedy_competition.json`. Diagnostic only; imports `pair.py`'s pure helpers read-only, changes nothing. Attacks the one lead the previous section left open: why 30x50's three `PRESENT_AND_KEPT` walls (`w_s111`, `w_s117`, `w_s142`) still mispair when their correct partner face exists, is long, and sits well inside even the original search window.
+
+### Method — instrument the decision, don't theorise about it
+
+The method that cracked the root cause was to measure *where* a fault appears rather than guess *what* it is. Same approach here. For each wall, take the known-correct near-face segments (displacement measurement's L1 ink) and the known-correct partner segments (previous section's opposite-face ink), form every near-face × partner combination, and ask in strict order: (1) is that pair FORMED in `_raw_pairs_in_bucket`, and if not which named gate killed it — axis bucket, length floor, search window, `MIN_OVERLAP_FRACTION`, `MIN_THICKNESS_STROKE_MULTIPLE`, each evaluated separately so a negative names its own culprit; (2) if formed, what is its rank under `_greedy_select_pairs`'s exact sort key; (3) if formed but not accepted, which pair consumed the near face, which consumed the partner, and **which sort field actually decided it**.
+
+### Pre-registration, scored plainly
+
+Two predictions were on the table. **The prior session's lead was right, as stated. Mine was wrong.**
+
+- **Prior session's lead (confirmed):** "a distant line has even *longer* overlap with the correct-partner segment than the correct pair does, and wins the greedy competition for that segment before the correct pair is ever considered." Confirmed on 13 of 13 formed combinations — `decided_by_sort_field` is `overlap_len` in every single case.
+- **This session's prediction (falsified, 0/13):** that the correct pair would tie on absolute overlap and lose on the *second* sort key (`thickness` ascending) to a thinner wrong pair, making `MIN_THICKNESS_STROKE_MULTIPLE` the too-loose guard. Wrong. The deciding field is never the tie-break; it is always the primary sort. Recorded as the fifth falsified hypothesis of this phase.
+
+### Result — the correct pair is formed every time, and loses every time
+
+| wall | correct pair | recovered thickness (GT 150mm) | its greedy rank | accepted | partner stolen by, thickness |
+|---|---|---|---|---|---|
+| `w_s111` | (4458, 41) | 61.6–169.8mm across 8 combos | 811 / 3452 | **no** | (22435, 41) @ **1831.9mm** |
+| `w_s117` | (52, 46) | 151.6mm | 247 / 3452 | **no** | (42, 46) @ **3058.6mm** |
+| `w_s142` | (61, 60) | **149.6mm** | 220 / 3452 | **no** | (45, 60) @ **4730.3mm** |
+
+`n_with_correct_pair_formed: 3/3`. `n_with_correct_pair_accepted: 0/3`. Every gate passes — the correct pairs are not merely present, they recover a wall thickness within ~1mm of GT on `w_s142` and within ~2mm on `w_s117`, and they rank in the top 6–25% of their bucket. They are destroyed purely by consumption.
+
+### The mechanism, stated exactly
+
+**The correct near face is fragmented; its correct partner is not.** The partner is one unbroken segment (2442–7326mm). The near face is broken into shorter pieces. Absolute overlap is bounded by `min(|near_fragment|, |partner|)`, so the correct pair's overlap is capped at the *fragment's* length — while a long unrelated parallel line overlaps the partner across its *whole* span and therefore scores a strictly larger absolute overlap. `_greedy_select_pairs` sorts on `-overlap_len` first, so the distant line reaches the front of the queue, consumes the correct partner, and the correct pair — already sitting behind it in the same queue — is skipped on the `if i_idx in used` check.
+
+This is a **third distinct structural fault in the same function**, alongside the two already named (oversized search window; self-certifying thickness guard). Its specific shape: **longest-overlap-first is the right *tie-break* signal but the wrong *primary* key, because it rewards a segment for being long rather than for being a plausible wall.** Note the factorial already established that the obvious alternative (nearest-first) is catastrophic (recall 0.3448→0.1379) — so this is *not* a licence to revisit that. The defect is that overlap length is compared in absolute terms across pairs of wildly different plausibility, with no thickness admissibility applied first.
+
+### Two-thirds of these walls are recoverable and one is not — the ceiling check
+
+Suppose greedy were fixed perfectly and every formed correct pair were accepted. The wall those pairs describe spans only the union of their along-axis overlaps, and `eval/`'s frozen matcher requires `overlap_ratio > 0.8` of the GT wall. Computed as a union of intervals:
+
+| wall | union span of formed correct pairs | GT length | coverage | matchable with perfect greedy? |
+|---|---|---|---|---|
+| `w_s111` | 2443.2mm | 7094.4mm | **0.344** | **NO** — ceiling is upstream, in near-face ink coverage |
+| `w_s117` | 2135.6mm | 2365.1mm | 0.903 | **yes** |
+| `w_s142` | 2440.6mm | 2611.8mm | 0.935 | **yes** |
+
+So the `PRESENT_AND_KEPT` bucket itself splits 2/1. Two of these three walls are recoverable by a pairing-side fix alone. `w_s111` is not, and joins 15x30's three `NEVER_PRESENT` walls as an upstream-ceiling case — **4 of the 8 displaced walls now have a located upstream (select/dissect) ceiling, not a pairing one.**
+
+### UNRESOLVED CONTRADICTION with the factorial — flagged, not explained
+
+Every thief in the table above has a recovered thickness of **1831.9 / 3058.6 / 4730.3mm**. All three are far outside the 50–500mm physical window the previous factorial simulated (≈20 native units on 30x50). The secondary thieves that consumed the *near* faces are likewise outside it (792.4 / 819.2 / 916.1mm). **On this evidence the window lever alone should have freed `w_s117` and `w_s142`, both of which clear the matcher's coverage bar — yet the factorial recorded window as recovering 0 of these 6 walls.** Those two results cannot both be right as stated.
+
+This is recorded as an open contradiction rather than resolved in either direction, because resolving it needs one specific cheap measurement that was not run: re-run this same competition probe **with the narrowed window applied**, and observe who consumes the correct partner then. Three candidate explanations, none tested — (a) a different thief that *is* inside the narrowed window takes over; (b) `_collinear_merge` subsequently drags the correct wall's centerline off-position; (c) `match_walls`'s one-to-one Hungarian assignment gives the GT wall to a different candidate. **Until it is resolved, the factorial's headline ("all three levers fail to recover recall") should be treated as possibly understating the window lever, and must not be quoted at the gate as settled.** This is the single highest-value next measurement in the phase.
+
+### Secondary finding — the length floor removes near-face *fragments*, a different claim from the falsified one
+
+`killed_by_counts: {length_floor: 7}` of 20 combinations. The removed segments are near-face **fragments** at 79.5–226.8mm against the 253mm floor. This is *not* the hypothesis falsified in the previous section, which asked whether the floor removes the correct *partner* (it does not, 0/6). Distinct, real, and secondary: for `w_s117` and `w_s142` a long-enough near-face fragment survives anyway, so nothing turns on it for these walls. Do not re-litigate it as the same lever.
+
+### NEW MEASURED FACT, previously unreported — the select population is heavily duplicated
+
+Exact-geometry duplicate census over `select_axis_aligned()` output (endpoint-normalised, rounded to 1e-4 plan units):
+
+| plan | select candidates | distinct geometries | exact duplicates | multiplicity |
+|---|---|---|---|---|
+| 15x30 | 4132 | 3565 | **567 (13.7%)** | 436 pairs, 46 triples, 9 quads, one 6×, one 8× |
+| 30x50 | 22513 | 14610 | **7903 (35.1%)** | 5903 pairs, 293 triples, 183 quads, 107 6×, 11 10×, one 13× |
+
+Visible directly in this probe's output as twinned indices with identical geometry — `(42, 46)` and `(22459, 22461)` are the same pair of lines at identical overlap 2441.9mm and identical thickness 3058.6mm; likewise `41`/`22478` and `4216`/`4217`. **Honest read: this is a precision fact, not a recall fix.** Deduplication is unusually safe — exact geometric identity is not a threshold, needs no prior, and cannot lose a real wall — but it does not remove any thief, so it should not be expected to move recall, and this phase has already established that precision work alone cannot reach the exit bar. Its real value is that it roughly halves 30x50's raw pairing population, which makes every subsequent diagnostic on this plan cheaper and less noisy.
+
+### NOT MEASURED / not claimed
+
+Whether a narrowed window actually frees `w_s117`/`w_s142` (the contradiction above — the decisive test, not run). Whether `w_s111`'s 34.4% near-face coverage is a `select.py` defect or a genuine property of the source PDF. Why the near faces are fragmented while their partners are not. Whether deduplication changes any metric — not simulated. Whether this mechanism also explains bucket (c)'s walls or the 52.6% `other` bucket; plausible, untested.
+
+### Explicitly not built this round
+
+No change to `pair.py`, `select.py`, `assemble.py`, or anything under `eval/`. No lever adopted, no threshold altered, no deduplication implemented. One new read-only diagnostic script.
+
+### Disposition
+
+**The `PRESENT_AND_KEPT` cause is no longer unlocated.** The fork stated at the previous gate section rested on "3 of 8 have no located cause at all; the obvious levers are exhausted" — that half of the fork no longer holds as written. Updated tally over the 8 displaced walls: 2 fixed by window (`w_s106`, `w_s138`); 2 with a located pairing-side cause *and* enough ink coverage to be matchable (`w_s117`, `w_s142`); 4 with a located **upstream** ceiling in select/dissect that no pairing-side lever can reach (15x30 `w_s2`/`w_s4`/`w_s6`, plus 30x50 `w_s111` at 34.4% coverage).
+
+That is a materially different gate picture from the previous section's: the ceiling is now *located* in both halves, and it is split between a fixable pairing fault and a hard upstream ink-coverage limit — but **no recall number has improved, and the unresolved contradiction above means the factorial's negative headline is not safe to rely on.** Recall remains the binding constraint and no measurement in this section changes any reported metric. Gate disposition remains Dan's.
+
+Durable artifacts: `analyze_step3a_greedy_competition.py`, `out/step3a_greedy_competition.json`, this section.
