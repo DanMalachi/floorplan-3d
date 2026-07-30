@@ -1,4 +1,4 @@
-# Phase 3a session handoff — updated 2026-07-29
+# Phase 3a session handoff — updated 2026-07-30
 
 Branch: `phase-3a-renderer` (worktree `fp-phase3a`, terminal B per
 `docs/extraction-plan.md`'s two-terminal table). The 2026-07-19 session
@@ -46,6 +46,52 @@ silently revert. The standing discipline rule below is still why every
 session's numbers in this file are trustworthy — including these, which
 exist because Dan caught things worth catching and then told the next
 session exactly what to check before proposing anything.
+
+## 2026-07-30 session — bathroom mechanism check, task C still not resolvable cleanly (no lever built)
+
+Full detail: `reports/p3a-bathroom-mechanism-check.md`. Picks up exactly
+where the 4th 2026-07-29 session left off: task C (propose lever #2,
+calibrated) needs stair and bathroom sized the SAME way before Dan can
+compare them, and bathroom never got the classify()-taxonomy treatment
+stair/storage did.
+
+**Ran it** (`extraction/synth/qa/diagnose_bathroom_failure.py`, new, mirrors
+`diagnose_stair_failure.py`/`diagnose_storage_failure.py` exactly, same
+taxonomy unchanged). **Result: it doesn't apply.** Only 529/40,413 (1.3%)
+bathroom instances even carry the `room_boundary_no_wall_match` flag this
+taxonomy classifies — an order of magnitude smaller than bathroom's real
+4,618-plan broken population, because this taxonomy operates on
+`check_plan`'s SOURCE-level raw-ink check, and bathroom's actual dominant
+mechanism (unlike stair's, which is genuinely source-level, 92.1%
+`clean_at_source`-broken) is the CONVERTER-level raw-ink-vs-skeleton-band
+discriminator disagreement inside `assemble_rooms`, already measured by the
+3rd session's `measure_discriminator_disagreement.py`. **The taxonomy that
+correctly sized stair structurally cannot size bathroom** — not a dead end,
+but the reason no bathroom-comparable-to-stair's-33.9% number exists yet.
+
+**Side-by-side assembled from what IS known** (both denominators stated
+together, per standing Rule 2): stair has a fully calibrated ceiling
+(33.9% of 757 instances) but a tiny addressable population — only
+**23/6,603 (0.3%)** broken plans have stair as their ONLY defect, so even
+a rosy 100%-recovery lever moves at most 23 plans (~0.14pp population-wide,
+~8 plans/~0.05pp at the calibrated rate). Bathroom's addressable population
+is two orders of magnitude larger — **3,923/6,603 (59.4% of all broken
+plans)** have bathroom as their ONLY defect — but its real lever
+(discriminator reconciliation) has only an edge-level signal so far (469
+under-recognition edges, population-wide, the direction that would help
+recovery), and that report already states this is insufficient to fully
+explain the mechanism's reach (compounding AND-semantics across required
+rooms per plan remains the unquantified candidate for the rest).
+
+**Next session, Dan's decision needed, not made this session**: task C is
+not yet a clean apples-to-apples comparison. Either (a) run one more
+diagnose pass sizing bathroom's own ONLY-defect population against the
+under-recognition edge set specifically (same discipline as lever #1's own
+"only-defect population, not contains-this-defect" lesson) to get a
+bathroom number comparable to stair's 33.9%, or (b) pick between the two
+candidates as-is, explicitly trading a well-calibrated-but-tiny lever
+(stair) against a huge-but-not-yet-ceiling-measured one (bathroom). No
+lever built either way until Dan picks.
 
 ## 2026-07-29 session (4th) — storage mechanism check + lever #1 sizing-method calibration (no lever built, no lever #2 proposed yet)
 
