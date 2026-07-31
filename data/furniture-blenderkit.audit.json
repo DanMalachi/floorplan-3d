@@ -1,0 +1,2048 @@
+[
+  {
+    "assetBaseId": "d889e3b1-6e86-48c6-bc5e-c6beeae322fc",
+    "name": "Bar Stool",
+    "category": "bar-chair",
+    "fileBytes": 901124,
+    "glbSize": [
+      0.47964048385620117,
+      0.9395606964826584,
+      0.46319057047367096
+    ],
+    "reported": [
+      0.4701,
+      0.4498,
+      0.933
+    ],
+    "upAxis": "y-up",
+    "score": 0.981405648912011,
+    "footprint": {
+      "w": 0.47964048385620117,
+      "d": 0.46319057047367096
+    },
+    "height": 0.9395606964826584,
+    "issues": []
+  },
+  {
+    "assetBaseId": "498c5874-53ea-4706-8603-5face9777157",
+    "name": "Chair",
+    "category": "bar-chair",
+    "fileBytes": 250900,
+    "glbSize": [
+      0.43425115942955017,
+      0.5937204733490944,
+      0.4874475449323654
+    ],
+    "reported": [
+      0.4343,
+      0.4874,
+      0.5937
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999185067176688,
+    "footprint": {
+      "w": 0.43425115942955017,
+      "d": 0.4874475449323654
+    },
+    "height": 0.5937204733490944,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d69acfaa-14da-4513-8026-3887bfd3125b",
+    "name": "Miomare bathroom shelf",
+    "category": "bathroomfurniture-furniture-set",
+    "fileBytes": 257020,
+    "glbSize": [
+      0.5429452951700089,
+      0.1574999913124599,
+      0.05794534882412361
+    ],
+    "reported": [
+      0.542,
+      0.057,
+      0.1574
+    ],
+    "upAxis": "y-up",
+    "score": 0.9937698646090981,
+    "footprint": {
+      "w": 0.5429452951700089,
+      "d": 0.05794534882412361
+    },
+    "height": 0.1574999913124599,
+    "issues": []
+  },
+  {
+    "assetBaseId": "3a845132-df64-4f02-8da6-44229fe774e4",
+    "name": "Master bed",
+    "category": "bed",
+    "fileBytes": 133244,
+    "glbSize": [
+      1.7622307538986206,
+      1.0604099767515436,
+      2.2265907526016235
+    ],
+    "reported": [
+      1.7622,
+      2.2266,
+      1.0604
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999896622583608,
+    "footprint": {
+      "w": 1.7622307538986206,
+      "d": 2.2265907526016235
+    },
+    "height": 1.0604099767515436,
+    "issues": []
+  },
+  {
+    "assetBaseId": "294c2ee9-a12f-4b8c-a5c5-f7178326cb75",
+    "name": "Chinese Console Table",
+    "category": "bedroom",
+    "fileBytes": 6125576,
+    "glbSize": [
+      1.7196246981620789,
+      0.6607421338558197,
+      0.3387930691242218
+    ],
+    "reported": [
+      1.7196246981620789,
+      0.3387930691242218,
+      0.6607421338558197
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 1.7196246981620789,
+      "d": 0.3387930691242218
+    },
+    "height": 0.6607421338558197,
+    "issues": []
+  },
+  {
+    "assetBaseId": "89df3e31-303c-4401-a54f-ec834e46e180",
+    "name": "Modern Wooden Cabinet",
+    "category": "cabinets",
+    "fileBytes": 9043300,
+    "glbSize": [
+      2.4400004148483276,
+      0.6801425069570541,
+      0.5200000107288361
+    ],
+    "reported": [
+      2.4400004148483276,
+      0.5200000107288361,
+      0.6801425069570541
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 2.4400004148483276,
+      "d": 0.5200000107288361
+    },
+    "height": 0.6801425069570541,
+    "issues": []
+  },
+  {
+    "assetBaseId": "30a3d1c5-6554-42fd-a8d0-a1efdff162b3",
+    "name": "Painted Wooden Cabinet",
+    "category": "cabinets",
+    "fileBytes": 1231116,
+    "glbSize": [
+      1.194674551486969,
+      1.1818697528215125,
+      0.6166356205940247
+    ],
+    "reported": [
+      1.194674551486969,
+      0.6166356205940247,
+      1.1818697528215125
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 1.194674551486969,
+      "d": 0.6166356205940247
+    },
+    "height": 1.1818697528215125,
+    "issues": []
+  },
+  {
+    "assetBaseId": "830e4547-ad81-48cb-b61d-d387d046a449",
+    "name": "Painted Wooden Shelves",
+    "category": "cabinets",
+    "fileBytes": 2387572,
+    "glbSize": [
+      0.511115700006485,
+      1.125072093855124,
+      0.3670949153534888
+    ],
+    "reported": [
+      0.511115700006485,
+      0.3670949153534888,
+      1.125072093855124
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.511115700006485,
+      "d": 0.3670949153534888
+    },
+    "height": 1.125072093855124,
+    "issues": []
+  },
+  {
+    "assetBaseId": "dc252bcb-1465-4c65-a03b-9e564204eae0",
+    "name": "Light Kinkiet",
+    "category": "ceiling-light",
+    "fileBytes": 114788,
+    "glbSize": [
+      0.09999995678663254,
+      0.055000003427267075,
+      0.2005101889371872
+    ],
+    "reported": [
+      0.1,
+      0.2,
+      0.055
+    ],
+    "upAxis": "y-up",
+    "score": 0.9991516838758882,
+    "footprint": {
+      "w": 0.09999995678663254,
+      "d": 0.2005101889371872
+    },
+    "height": 0.055000003427267075,
+    "issues": []
+  },
+  {
+    "assetBaseId": "046e1191-83ed-4474-b6ba-fbecef489ec8",
+    "name": "Vintage Flashlight",
+    "category": "ceiling-light",
+    "fileBytes": 143928,
+    "glbSize": [
+      0.09586484730243683,
+      0.14433311545986305,
+      0.30546389520168304
+    ],
+    "reported": [
+      0.09586484730243683,
+      0.30546389520168304,
+      0.14433311545986305
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.09586484730243683,
+      "d": 0.30546389520168304
+    },
+    "height": 0.14433311545986305,
+    "issues": []
+  },
+  {
+    "assetBaseId": "dfdffe2b-4c26-4c33-9f13-784fe54c5570",
+    "name": "Carl-hansen-son CHAIR 29",
+    "category": "chair",
+    "fileBytes": 1201948,
+    "glbSize": [
+      0.5214554667472839,
+      0.8091930034570396,
+      0.48115234076976776
+    ],
+    "reported": [
+      0.5197,
+      0.4736,
+      0.8072
+    ],
+    "upAxis": "y-up",
+    "score": 0.9928247374370764,
+    "footprint": {
+      "w": 0.5214554667472839,
+      "d": 0.48115234076976776
+    },
+    "height": 0.8091930034570396,
+    "issues": []
+  },
+  {
+    "assetBaseId": "703fe964-84bb-4468-84bd-f6aa3fb337b4",
+    "name": "Chair",
+    "category": "chair",
+    "fileBytes": 3096064,
+    "glbSize": [
+      0.5337895750999451,
+      1.0144040286540985,
+      0.5961791276931763
+    ],
+    "reported": [
+      0.5338,
+      0.5962,
+      1.0144
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999804966834954,
+    "footprint": {
+      "w": 0.5337895750999451,
+      "d": 0.5961791276931763
+    },
+    "height": 1.0144040286540985,
+    "issues": []
+  },
+  {
+    "assetBaseId": "0716c650-c735-493b-8f3a-3be2edfd3115",
+    "name": "China Chair",
+    "category": "chair",
+    "fileBytes": 3203972,
+    "glbSize": [
+      0.6991274654865265,
+      0.8892894552554935,
+      0.6674452126026154
+    ],
+    "reported": [
+      0.6991,
+      0.6674,
+      0.8893
+    ],
+    "upAxis": "y-up",
+    "score": 0.99996037249089,
+    "footprint": {
+      "w": 0.6991274654865265,
+      "d": 0.6674452126026154
+    },
+    "height": 0.8892894552554935,
+    "issues": []
+  },
+  {
+    "assetBaseId": "11adaf6f-177b-4301-82a8-8030ea31c421",
+    "name": "Chinese Stool",
+    "category": "chair",
+    "fileBytes": 8026284,
+    "glbSize": [
+      0.5989733631437808,
+      0.6305584987724009,
+      0.5064060087030917
+    ],
+    "reported": [
+      0.5989732146263123,
+      0.5064058601856232,
+      0.6305584987724009
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999998195897204,
+    "footprint": {
+      "w": 0.5989733631437808,
+      "d": 0.5064060087030917
+    },
+    "height": 0.6305584987724009,
+    "issues": []
+  },
+  {
+    "assetBaseId": "e663848a-ed62-40a2-ae71-a56a34d7d443",
+    "name": "Folding Wooden Stool",
+    "category": "chair",
+    "fileBytes": 3353064,
+    "glbSize": [
+      0.5278338193893433,
+      0.44196850061416626,
+      0.5470837950706482
+    ],
+    "reported": [
+      0.5278338193893433,
+      0.5470837950706482,
+      0.44196850061416626
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.5278338193893433,
+      "d": 0.5470837950706482
+    },
+    "height": 0.44196850061416626,
+    "issues": []
+  },
+  {
+    "assetBaseId": "246cc152-48b6-46a9-b4c1-7f7f299d0148",
+    "name": "High Chair for Little Ones",
+    "category": "chair",
+    "fileBytes": 20480,
+    "glbSize": [
+      0.36179670691490173,
+      0.6453217566013336,
+      0.33258257806301117
+    ],
+    "reported": [
+      0.3618,
+      0.3326,
+      0.6453
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999682675517735,
+    "footprint": {
+      "w": 0.36179670691490173,
+      "d": 0.33258257806301117
+    },
+    "height": 0.6453217566013336,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d85ae05e-ac69-425d-8b2a-693851a9ba6d",
+    "name": "Ikea modern chair",
+    "category": "chair",
+    "fileBytes": 233256,
+    "glbSize": [
+      0.6302675604820251,
+      0.8013054728770793,
+      0.7913509607315063
+    ],
+    "reported": [
+      0.6303,
+      0.7599,
+      0.7588
+    ],
+    "upAxis": "y-up",
+    "score": 0.9690532917049639,
+    "footprint": {
+      "w": 0.6302675604820251,
+      "d": 0.7913509607315063
+    },
+    "height": 0.8013054728770793,
+    "issues": []
+  },
+  {
+    "assetBaseId": "722988c3-67ad-497d-84ea-7b5408b05d38",
+    "name": "Marina Bench without Backrest",
+    "category": "chair",
+    "fileBytes": 10220856,
+    "glbSize": [
+      0.4565974473953247,
+      0.519969254732132,
+      1.8999998569488525
+    ],
+    "reported": [
+      0.4566,
+      1.9,
+      0.52
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999784029111304,
+    "footprint": {
+      "w": 0.4565974473953247,
+      "d": 1.8999998569488525
+    },
+    "height": 0.519969254732132,
+    "issues": []
+  },
+  {
+    "assetBaseId": "aad78f1d-ca8a-4def-bee7-836207e91484",
+    "name": "Painted Wooden Stool",
+    "category": "chair",
+    "fileBytes": 1508088,
+    "glbSize": [
+      0.38483743369579315,
+      0.5789150850614533,
+      0.40607430040836334
+    ],
+    "reported": [
+      0.38483743369579315,
+      0.40607430040836334,
+      0.5789150850614533
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.38483743369579315,
+      "d": 0.40607430040836334
+    },
+    "height": 0.5789150850614533,
+    "issues": []
+  },
+  {
+    "assetBaseId": "9df5c46e-cadf-4c15-816c-31ef905892ee",
+    "name": "Vincent shepard Teo",
+    "category": "chair",
+    "fileBytes": 2793736,
+    "glbSize": [
+      0.44157370924949646,
+      0.7923181690275674,
+      0.48523177206516266
+    ],
+    "reported": [
+      0.4386,
+      0.4823,
+      0.7922
+    ],
+    "upAxis": "y-up",
+    "score": 0.9956915030399945,
+    "footprint": {
+      "w": 0.44157370924949646,
+      "d": 0.48523177206516266
+    },
+    "height": 0.7923181690275674,
+    "issues": []
+  },
+  {
+    "assetBaseId": "eb82ecf0-7240-4e91-a699-ed8f28cae459",
+    "name": "Wooden Stool 02",
+    "category": "chair",
+    "fileBytes": 14426936,
+    "glbSize": [
+      0.2651771306991577,
+      0.18192848344915546,
+      0.18312730640172958
+    ],
+    "reported": [
+      0.2651771306991577,
+      0.18312730640172958,
+      0.18192848344915546
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.2651771306991577,
+      "d": 0.18312730640172958
+    },
+    "height": 0.18192848344915546,
+    "issues": []
+  },
+  {
+    "assetBaseId": "8a90d1ac-eefb-45ff-b854-e0d66b067d39",
+    "name": "L Shape Glass Desk",
+    "category": "desk",
+    "fileBytes": 365408,
+    "glbSize": [
+      1.399999976158142,
+      0.7566027943976223,
+      1.3999999165534973
+    ],
+    "reported": [
+      1.4,
+      1.4,
+      0.7566
+    ],
+    "upAxis": "y-up",
+    "score": 0.999998743339062,
+    "footprint": {
+      "w": 1.399999976158142,
+      "d": 1.3999999165534973
+    },
+    "height": 0.7566027943976223,
+    "issues": []
+  },
+  {
+    "assetBaseId": "4db7593a-c7c0-4517-82e6-6f5be2c865cc",
+    "name": "Floor Lamp",
+    "category": "floor-lamp",
+    "fileBytes": 56539056,
+    "glbSize": [
+      0.6079621426379368,
+      1.4608831072668762,
+      1.1083367615938187
+    ],
+    "reported": [
+      0.6059,
+      1.1083,
+      1.4585
+    ],
+    "upAxis": "y-up",
+    "score": 0.9983145533454302,
+    "footprint": {
+      "w": 0.6079621426379368,
+      "d": 1.1083367615938187
+    },
+    "height": 1.4608831072668762,
+    "issues": []
+  },
+  {
+    "assetBaseId": "0bfe4a6a-7c4a-49de-9b6b-a4e855dde193",
+    "name": "Carl-hansen-son 501",
+    "category": "furniture",
+    "fileBytes": 3321032,
+    "glbSize": [
+      0.6214429140090942,
+      0.920875138106737,
+      0.8048787431783306
+    ],
+    "reported": [
+      0.6214,
+      0.7818,
+      0.7564
+    ],
+    "upAxis": "y-up",
+    "score": 0.9308833177573237,
+    "footprint": {
+      "w": 0.6214429140090942,
+      "d": 0.8048787431783306
+    },
+    "height": 0.920875138106737,
+    "issues": []
+  },
+  {
+    "assetBaseId": "e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6",
+    "name": "Chinese Armchair",
+    "category": "furniture",
+    "fileBytes": 3544068,
+    "glbSize": [
+      0.8482747673988342,
+      1.5874828653213626,
+      0.7886627614498138
+    ],
+    "reported": [
+      0.8482747673988342,
+      0.7886627614498138,
+      1.5874828653213626
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.8482747673988342,
+      "d": 0.7886627614498138
+    },
+    "height": 1.5874828653213626,
+    "issues": []
+  },
+  {
+    "assetBaseId": "8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45",
+    "name": "Dining Table",
+    "category": "furniture",
+    "fileBytes": 57828,
+    "glbSize": [
+      2.255895972251892,
+      0.876989221200347,
+      1.3902360200881958
+    ],
+    "reported": [
+      2.255895972251892,
+      1.3902360200881958,
+      0.876989221200347
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 2.255895972251892,
+      "d": 1.3902360200881958
+    },
+    "height": 0.876989221200347,
+    "issues": []
+  },
+  {
+    "assetBaseId": "b32f180a-a041-4b01-bcfb-5ff8e6794699",
+    "name": "Gallinera Chair",
+    "category": "furniture",
+    "fileBytes": 1817304,
+    "glbSize": [
+      0.5807991623878479,
+      1.033689022064209,
+      0.6038820147514343
+    ],
+    "reported": [
+      0.5807991623878479,
+      0.6038820147514343,
+      1.033689022064209
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.5807991623878479,
+      "d": 0.6038820147514343
+    },
+    "height": 1.033689022064209,
+    "issues": []
+  },
+  {
+    "assetBaseId": "0ab00d3f-db59-42cf-b000-e8a3ce25b12c",
+    "name": "Metal Office Desk",
+    "category": "furniture",
+    "fileBytes": 177116,
+    "glbSize": [
+      2.0000003576278687,
+      0.7875000238418579,
+      0.9472135305404663
+    ],
+    "reported": [
+      2.0000003576278687,
+      0.9472135305404663,
+      0.7875000089406967
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999999936926304,
+    "footprint": {
+      "w": 2.0000003576278687,
+      "d": 0.9472135305404663
+    },
+    "height": 0.7875000238418579,
+    "issues": []
+  },
+  {
+    "assetBaseId": "2e1631c7-96ab-45c0-b822-4b4868b8d83e",
+    "name": "Metal Stool 01",
+    "category": "furniture",
+    "fileBytes": 124172,
+    "glbSize": [
+      0.3519909083843231,
+      0.8827742969733663,
+      0.354570209980011
+    ],
+    "reported": [
+      0.3519909083843231,
+      0.354570209980011,
+      0.8827742969733663
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.3519909083843231,
+      "d": 0.354570209980011
+    },
+    "height": 0.8827742969733663,
+    "issues": []
+  },
+  {
+    "assetBaseId": "5670b13c-e817-48a8-a78e-4dcfc2e4ec89",
+    "name": "Metal Stool 03",
+    "category": "furniture",
+    "fileBytes": 88260,
+    "glbSize": [
+      0.460619181394577,
+      1.0231056683696806,
+      0.470621719956398
+    ],
+    "reported": [
+      0.460619181394577,
+      0.470621719956398,
+      1.0231056683696806
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.460619181394577,
+      "d": 0.470621719956398
+    },
+    "height": 1.0231056683696806,
+    "issues": []
+  },
+  {
+    "assetBaseId": "f5f8aa7e-aa53-4c35-abb2-6c6c81b30604",
+    "name": "Mid Century Lounge Chair",
+    "category": "furniture",
+    "fileBytes": 13381020,
+    "glbSize": [
+      1.0086143612861633,
+      1.1690847246776137,
+      1.190310776233673
+    ],
+    "reported": [
+      1.0086143612861633,
+      1.190310776233673,
+      1.1690847246776137
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 1.0086143612861633,
+      "d": 1.190310776233673
+    },
+    "height": 1.1690847246776137,
+    "issues": []
+  },
+  {
+    "assetBaseId": "2762707d-892d-4fd1-8ce6-5460da1f0b5a",
+    "name": "Trecento Sessanta",
+    "category": "furniture",
+    "fileBytes": 1135896,
+    "glbSize": [
+      0.8424221873283386,
+      0.6655774712562561,
+      0.7239614427089691
+    ],
+    "reported": [
+      0.8407,
+      0.7206,
+      0.6636
+    ],
+    "upAxis": "y-up",
+    "score": 0.99678049566606,
+    "footprint": {
+      "w": 0.8424221873283386,
+      "d": 0.7239614427089691
+    },
+    "height": 0.6655774712562561,
+    "issues": []
+  },
+  {
+    "assetBaseId": "bf356937-e6e7-4a2e-91c7-c1251d1a406b",
+    "name": "Vintage Armchair",
+    "category": "furniture",
+    "fileBytes": 441116,
+    "glbSize": [
+      0.9236610531806946,
+      0.8507360857038293,
+      0.8709122240543365
+    ],
+    "reported": [
+      0.9237,
+      0.8709,
+      0.8507
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999671277054206,
+    "footprint": {
+      "w": 0.9236610531806946,
+      "d": 0.8709122240543365
+    },
+    "height": 0.8507360857038293,
+    "issues": []
+  },
+  {
+    "assetBaseId": "a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae",
+    "name": "Vintage Day Bed",
+    "category": "furniture",
+    "fileBytes": 85352,
+    "glbSize": [
+      1.9725552201271057,
+      1.1273465404283343,
+      0.85477614402771
+    ],
+    "reported": [
+      1.9725552201271057,
+      0.85477614402771,
+      1.1273465404283343
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 1.9725552201271057,
+      "d": 0.85477614402771
+    },
+    "height": 1.1273465404283343,
+    "issues": []
+  },
+  {
+    "assetBaseId": "4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e",
+    "name": "Worn Metal Rack",
+    "category": "furniture",
+    "fileBytes": 124988,
+    "glbSize": [
+      0.9154166579246521,
+      1.8999999766365256,
+      0.6000000238418579
+    ],
+    "reported": [
+      0.9154166579246521,
+      0.6000000238418579,
+      1.8999999766365256
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.9154166579246521,
+      "d": 0.6000000238418579
+    },
+    "height": 1.8999999766365256,
+    "issues": []
+  },
+  {
+    "assetBaseId": "9c201695-6847-410f-89df-7cdc0ec14f23",
+    "name": "Painted Wooden Nightstand",
+    "category": "hall",
+    "fileBytes": 1793164,
+    "glbSize": [
+      0.5045645833015442,
+      0.6155209708555738,
+      0.5087160021066666
+    ],
+    "reported": [
+      0.5045645833015442,
+      0.5087160021066666,
+      0.6155209708555738
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.5045645833015442,
+      "d": 0.5087160021066666
+    },
+    "height": 0.6155209708555738,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d88b73c8-4a8f-456e-8bea-0434b0c7d1fa",
+    "name": "China Water scoop",
+    "category": "interior",
+    "fileBytes": 7232040,
+    "glbSize": [
+      0.5297844707965851,
+      0.1872315676882863,
+      0.3786603659391403
+    ],
+    "reported": [
+      0.5298,
+      0.3787,
+      0.1872
+    ],
+    "upAxis": "y-up",
+    "score": 0.9998991426573216,
+    "footprint": {
+      "w": 0.5297844707965851,
+      "d": 0.3786603659391403
+    },
+    "height": 0.1872315676882863,
+    "issues": []
+  },
+  {
+    "assetBaseId": "8e9f05a2-8a6b-4bcf-a10c-3b30756d3892",
+    "name": "Painted Wooden Bench",
+    "category": "interior",
+    "fileBytes": 2070388,
+    "glbSize": [
+      1.1649435758590698,
+      0.8892914750613272,
+      0.4965430945158005
+    ],
+    "reported": [
+      1.1649435758590698,
+      0.4965430945158005,
+      0.8892914750613272
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 1.1649435758590698,
+      "d": 0.4965430945158005
+    },
+    "height": 0.8892914750613272,
+    "issues": []
+  },
+  {
+    "assetBaseId": "76e31f48-a0f7-4854-868a-c2f692b68f67",
+    "name": "Electric Stove",
+    "category": "kitchen-appliance",
+    "fileBytes": 8642560,
+    "glbSize": [
+      0.5025948286056519,
+      0.8586971759796143,
+      0.6476211845874786
+    ],
+    "reported": [
+      1.0967501401901245,
+      1.0967501401901245,
+      0.8586971759796143
+    ],
+    "upAxis": "y-up",
+    "score": 0.6829164550319357,
+    "footprint": {
+      "w": 0.5025948286056519,
+      "d": 0.6476211845874786
+    },
+    "height": 0.8586971759796143,
+    "issues": [
+      "axis/scale mismatch (score 0.68)"
+    ]
+  },
+  {
+    "assetBaseId": "1057fdd0-a688-4ba1-b624-94f8466ce6c8",
+    "name": "Gallinera Table",
+    "category": "living-room",
+    "fileBytes": 1250880,
+    "glbSize": [
+      0.8300825357437134,
+      0.487785704433918,
+      0.518291711807251
+    ],
+    "reported": [
+      0.8300825357437134,
+      0.518291711807251,
+      0.487785704433918
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.8300825357437134,
+      "d": 0.518291711807251
+    },
+    "height": 0.487785704433918,
+    "issues": []
+  },
+  {
+    "assetBaseId": "a9b9a0d0-0cea-4de0-a124-5a87c0f232e7",
+    "name": "Folder HUD Interface",
+    "category": "office",
+    "fileBytes": 28292,
+    "glbSize": [
+      0.11683269910976452,
+      0.16926656810738774,
+      0.25611787661910057
+    ],
+    "reported": [
+      0.0628,
+      0.2561,
+      0.168
+    ],
+    "upAxis": "y-up",
+    "score": 0.8433227559855121,
+    "footprint": {
+      "w": 0.11683269910976452,
+      "d": 0.25611787661910057
+    },
+    "height": 0.16926656810738774,
+    "issues": [
+      "axis/scale mismatch (score 0.84)"
+    ]
+  },
+  {
+    "assetBaseId": "b8b951c4-1600-40f0-ba23-36ff3f5e86bb",
+    "name": "Waste Paper Basket",
+    "category": "office",
+    "fileBytes": 5576,
+    "glbSize": [
+      0.3216068744659424,
+      0.3402619459161542,
+      0.3216068744659424
+    ],
+    "reported": [
+      0.3201,
+      0.3201,
+      0.3407
+    ],
+    "upAxis": "y-up",
+    "score": 0.9964477810701761,
+    "footprint": {
+      "w": 0.3216068744659424,
+      "d": 0.3216068744659424
+    },
+    "height": 0.3402619459161542,
+    "issues": []
+  },
+  {
+    "assetBaseId": "c0997e86-cb55-4607-a4fe-1b855c957ac0",
+    "name": "Projector Screen",
+    "category": "office-chair",
+    "fileBytes": 274972,
+    "glbSize": [
+      1.0935667157173157,
+      1.7994643449783325,
+      0.9158007800579071
+    ],
+    "reported": [
+      1.0935667157173157,
+      0.9158007800579071,
+      1.7994642853736877
+    ],
+    "upAxis": "y-up",
+    "score": 0.999999988958817,
+    "footprint": {
+      "w": 1.0935667157173157,
+      "d": 0.9158007800579071
+    },
+    "height": 1.7994643449783325,
+    "issues": []
+  },
+  {
+    "assetBaseId": "c07eef6b-349e-487a-8315-c58fe9aa1d44",
+    "name": "Bench Alley Loft Classic",
+    "category": "outdoor-furniture",
+    "fileBytes": 720288,
+    "glbSize": [
+      1.2499998807907104,
+      0.9000933170318604,
+      0.4551016837358475
+    ],
+    "reported": [
+      1.25,
+      0.4551,
+      0.9001
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999962600819478,
+    "footprint": {
+      "w": 1.2499998807907104,
+      "d": 0.4551016837358475
+    },
+    "height": 0.9000933170318604,
+    "issues": []
+  },
+  {
+    "assetBaseId": "17208e80-4a12-4509-ac48-ed20ea923f87",
+    "name": "Metal Bench",
+    "category": "outdoor-furniture",
+    "fileBytes": 8232796,
+    "glbSize": [
+      3,
+      0.8709787130355835,
+      0.671242356300354
+    ],
+    "reported": [
+      3,
+      0.6707,
+      0.8706
+    ],
+    "upAxis": "y-up",
+    "score": 0.9995857326716644,
+    "footprint": {
+      "w": 3,
+      "d": 0.671242356300354
+    },
+    "height": 0.8709787130355835,
+    "issues": []
+  },
+  {
+    "assetBaseId": "b6bdc26a-36bb-4be3-8f64-312836aae79b",
+    "name": "Modern Coffee Table",
+    "category": "outdoor-furniture",
+    "fileBytes": 327704,
+    "glbSize": [
+      1.0199999809265137,
+      0.42000012647350715,
+      0.6200000047683716
+    ],
+    "reported": [
+      1.02,
+      0.62,
+      0.42
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999998908274247,
+    "footprint": {
+      "w": 1.0199999809265137,
+      "d": 0.6200000047683716
+    },
+    "height": 0.42000012647350715,
+    "issues": []
+  },
+  {
+    "assetBaseId": "1890dedc-c249-40b7-947a-296ee154df2b",
+    "name": "Wooden Picnic Table",
+    "category": "outdoor-furniture",
+    "fileBytes": 7395420,
+    "glbSize": [
+      2.2409759759902954,
+      0.7459869086742401,
+      3.022329568862915
+    ],
+    "reported": [
+      2.2409759759902954,
+      3.022329568862915,
+      0.7459869086742401
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 2.2409759759902954,
+      "d": 3.022329568862915
+    },
+    "height": 0.7459869086742401,
+    "issues": []
+  },
+  {
+    "assetBaseId": "c0afe8be-94f7-4c7d-929c-8d8d0a36d7de",
+    "name": "Modern Fabric Pouf",
+    "category": "pouf",
+    "fileBytes": 230424,
+    "glbSize": [
+      0.7095809578895569,
+      0.43896228075027466,
+      0.48956136405467987
+    ],
+    "reported": [
+      0.7087,
+      0.4893,
+      0.4376
+    ],
+    "upAxis": "y-up",
+    "score": 0.998373731896694,
+    "footprint": {
+      "w": 0.7095809578895569,
+      "d": 0.48956136405467987
+    },
+    "height": 0.43896228075027466,
+    "issues": []
+  },
+  {
+    "assetBaseId": "6122afb7-3fb5-441e-9fa3-f57de7ebed93",
+    "name": "Ikea Onnestad Red Armchair",
+    "category": "regular-chair",
+    "fileBytes": 412468,
+    "glbSize": [
+      0.6644433736801147,
+      0.7059910320676863,
+      0.7562676668167114
+    ],
+    "reported": [
+      0.6644,
+      0.7563,
+      0.706
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999597558437503,
+    "footprint": {
+      "w": 0.6644433736801147,
+      "d": 0.7562676668167114
+    },
+    "height": 0.7059910320676863,
+    "issues": []
+  },
+  {
+    "assetBaseId": "eaeba31c-8d32-4d47-b3ce-2a494ce2b17f",
+    "name": "Office Chair",
+    "category": "regular-chair",
+    "fileBytes": 197096,
+    "glbSize": [
+      0.8693129122257233,
+      1.439303158694782,
+      0.9343453049659729
+    ],
+    "reported": [
+      0.867,
+      0.93,
+      1.4381
+    ],
+    "upAxis": "y-up",
+    "score": 0.9972842687186775,
+    "footprint": {
+      "w": 0.8693129122257233,
+      "d": 0.9343453049659729
+    },
+    "height": 1.439303158694782,
+    "issues": []
+  },
+  {
+    "assetBaseId": "ac92d62f-df99-4af2-89ac-be9549c268a6",
+    "name": "Painted Wooden Chair 02",
+    "category": "regular-chair",
+    "fileBytes": 3274444,
+    "glbSize": [
+      0.6393896599871023,
+      1.2637710904044432,
+      0.662097867355953
+    ],
+    "reported": [
+      0.6677985489368439,
+      1.598747581243515,
+      2.2544761036795897
+    ],
+    "upAxis": "z-up",
+    "score": 0.6805386848059821,
+    "footprint": {
+      "w": 0.6393896599871023,
+      "d": 1.2637710904044432
+    },
+    "height": 0.662097867355953,
+    "issues": [
+      "axis/scale mismatch (score 0.68)"
+    ]
+  },
+  {
+    "assetBaseId": "0e9aa213-afd4-4b45-ba88-d3b76bcef9ce",
+    "name": "Plastic chair",
+    "category": "regular-chair",
+    "fileBytes": 260704,
+    "glbSize": [
+      0.5409007668495178,
+      0.7338448166847229,
+      0.6028621792793274
+    ],
+    "reported": [
+      0.5403,
+      0.6011,
+      0.7337
+    ],
+    "upAxis": "y-up",
+    "score": 0.998589653356531,
+    "footprint": {
+      "w": 0.5409007668495178,
+      "d": 0.6028621792793274
+    },
+    "height": 0.7338448166847229,
+    "issues": []
+  },
+  {
+    "assetBaseId": "a48fb06f-f8d1-4936-82d1-053e6f0c372a",
+    "name": "Rustic chair",
+    "category": "regular-chair",
+    "fileBytes": 2465028,
+    "glbSize": [
+      0.437946081161499,
+      0.898768812417984,
+      0.5516225099563599
+    ],
+    "reported": [
+      0.4379,
+      0.5516,
+      0.8988
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999397576562646,
+    "footprint": {
+      "w": 0.437946081161499,
+      "d": 0.5516225099563599
+    },
+    "height": 0.898768812417984,
+    "issues": []
+  },
+  {
+    "assetBaseId": "a31c827d-81e6-4d1a-ba5a-1a6c5ea5459a",
+    "name": "Wodden chair",
+    "category": "regular-chair",
+    "fileBytes": 1255888,
+    "glbSize": [
+      0.6836433112621307,
+      1.0940603184465427,
+      0.7157032191753387
+    ],
+    "reported": [
+      0.683,
+      0.7152,
+      1.0939
+    ],
+    "upAxis": "y-up",
+    "score": 0.999403116314196,
+    "footprint": {
+      "w": 0.6836433112621307,
+      "d": 0.7157032191753387
+    },
+    "height": 1.0940603184465427,
+    "issues": []
+  },
+  {
+    "assetBaseId": "0d05c301-90b9-469a-8d52-91f9e9010244",
+    "name": "Wooden Chair",
+    "category": "regular-chair",
+    "fileBytes": 1076480,
+    "glbSize": [
+      0.5196086764335632,
+      0.9729413214583467,
+      0.5188572704792023
+    ],
+    "reported": [
+      0.5193,
+      0.5185,
+      0.9728
+    ],
+    "upAxis": "y-up",
+    "score": 0.9995240402837214,
+    "footprint": {
+      "w": 0.5196086764335632,
+      "d": 0.5188572704792023
+    },
+    "height": 0.9729413214583467,
+    "issues": []
+  },
+  {
+    "assetBaseId": "2b43761f-123c-4017-b706-ebef91754456",
+    "name": "Chinese Cabinet",
+    "category": "shelving",
+    "fileBytes": 5223712,
+    "glbSize": [
+      1.2624960541725159,
+      2.8720987772358058,
+      0.5452098585665226
+    ],
+    "reported": [
+      1.2624960541725159,
+      0.5452098548412323,
+      2.8720987772358058
+    ],
+    "upAxis": "y-up",
+    "score": 0.999999997722412,
+    "footprint": {
+      "w": 1.2624960541725159,
+      "d": 0.5452098585665226
+    },
+    "height": 2.8720987772358058,
+    "issues": []
+  },
+  {
+    "assetBaseId": "b529df0c-671b-4589-bc1c-367fda168cc4",
+    "name": "Corner Shelf",
+    "category": "shelving",
+    "fileBytes": 1979548,
+    "glbSize": [
+      0.35500001534819603,
+      1.0800000429153442,
+      0.35500001907348633
+    ],
+    "reported": [
+      0.355,
+      0.355,
+      1.08
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999999544336969,
+    "footprint": {
+      "w": 0.35500001534819603,
+      "d": 0.35500001907348633
+    },
+    "height": 1.0800000429153442,
+    "issues": []
+  },
+  {
+    "assetBaseId": "2747a371-7a7e-4b76-be24-7660093c0b84",
+    "name": "Steel Frame Shelves 03",
+    "category": "shelving",
+    "fileBytes": 3370724,
+    "glbSize": [
+      2.3510769605636597,
+      2.311832904815674,
+      0.7212461084127426
+    ],
+    "reported": [
+      2.3510769605636597,
+      0.7212460935115814,
+      2.311832904815674
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999999931132333,
+    "footprint": {
+      "w": 2.3510769605636597,
+      "d": 0.7212461084127426
+    },
+    "height": 2.311832904815674,
+    "issues": []
+  },
+  {
+    "assetBaseId": "1fa0bc00-505a-40cb-bcc4-19f237e041d4",
+    "name": "Chaise lounge (Sofa)",
+    "category": "sofa",
+    "fileBytes": 904228,
+    "glbSize": [
+      3.1021940175741207,
+      1.1248325423611938,
+      1.7561790238743988
+    ],
+    "reported": [
+      3.0947,
+      1.7462,
+      1.1199
+    ],
+    "upAxis": "y-up",
+    "score": 0.9958389712486452,
+    "footprint": {
+      "w": 3.1021940175741207,
+      "d": 1.7561790238743988
+    },
+    "height": 1.1248325423611938,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d4e83285-807e-4bcf-8d84-3dd83cb44da5",
+    "name": "Chinese Sofa",
+    "category": "sofa",
+    "fileBytes": 7486396,
+    "glbSize": [
+      2.2854329347610474,
+      0.8600191126264232,
+      0.9688513875007629
+    ],
+    "reported": [
+      2.2854329347610474,
+      0.9688513875007629,
+      0.8600191126264232
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 2.2854329347610474,
+      "d": 0.9688513875007629
+    },
+    "height": 0.8600191126264232,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d19dd7b1-6573-41c7-b12c-b3eccdb7047d",
+    "name": "Cotton Mini Sofa",
+    "category": "sofa",
+    "fileBytes": 773656,
+    "glbSize": [
+      2.5500001907348633,
+      1.0962226152187213,
+      0.9721731245517731
+    ],
+    "reported": [
+      2.55,
+      0.9722,
+      1.0962
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999838837062143,
+    "footprint": {
+      "w": 2.5500001907348633,
+      "d": 0.9721731245517731
+    },
+    "height": 1.0962226152187213,
+    "issues": []
+  },
+  {
+    "assetBaseId": "ecba830a-8df6-4375-b59c-a10a18f947f0",
+    "name": "Cotton Mini Sofa",
+    "category": "sofa",
+    "fileBytes": 729800,
+    "glbSize": [
+      2.5552250146865845,
+      1.098889273358509,
+      1.0078499913215637
+    ],
+    "reported": [
+      2.5552,
+      1.0078,
+      1.0989
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999769490593131,
+    "footprint": {
+      "w": 2.5552250146865845,
+      "d": 1.0078499913215637
+    },
+    "height": 1.098889273358509,
+    "issues": []
+  },
+  {
+    "assetBaseId": "2d312a73-fa7c-4a42-8b97-fb432e9275b6",
+    "name": "Ditre Italia Arlott High Sofa",
+    "category": "sofa",
+    "fileBytes": 66336740,
+    "glbSize": [
+      0.6012419313192368,
+      0.4065944366157055,
+      1.2262518405914307
+    ],
+    "reported": [
+      0.6012,
+      1.2263,
+      0.4066
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999591013338566,
+    "footprint": {
+      "w": 0.6012419313192368,
+      "d": 1.2262518405914307
+    },
+    "height": 0.4065944366157055,
+    "issues": []
+  },
+  {
+    "assetBaseId": "6c59319d-a7b6-470b-a0f9-981083a415ae",
+    "name": "Leather Sofa",
+    "category": "sofa",
+    "fileBytes": 795888,
+    "glbSize": [
+      3.4991066455841064,
+      0.8759709268633742,
+      1.004150152206421
+    ],
+    "reported": [
+      3.4991,
+      1.0042,
+      0.876
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999717576521018,
+    "footprint": {
+      "w": 3.4991066455841064,
+      "d": 1.004150152206421
+    },
+    "height": 0.8759709268633742,
+    "issues": []
+  },
+  {
+    "assetBaseId": "4faac4b8-cc88-4ff2-b7fd-a7edf46d3518",
+    "name": "Leather Sofa",
+    "category": "sofa",
+    "fileBytes": 731828,
+    "glbSize": [
+      2.8725125789642334,
+      1.0053330063819885,
+      1.011710286140442
+    ],
+    "reported": [
+      2.8725,
+      1.0117,
+      1.0053
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999842075152822,
+    "footprint": {
+      "w": 2.8725125789642334,
+      "d": 1.011710286140442
+    },
+    "height": 1.0053330063819885,
+    "issues": []
+  },
+  {
+    "assetBaseId": "331afbd0-0322-423e-8967-d41257b93b62",
+    "name": "Painted Wooden Sofa",
+    "category": "sofa",
+    "fileBytes": 1530856,
+    "glbSize": [
+      2.4517107009887695,
+      1.2810335159301758,
+      0.7873162031173706
+    ],
+    "reported": [
+      2.4517107009887695,
+      0.7873162031173706,
+      1.2810335159301758
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 2.4517107009887695,
+      "d": 0.7873162031173706
+    },
+    "height": 1.2810335159301758,
+    "issues": []
+  },
+  {
+    "assetBaseId": "9bff6a18-14e1-4442-aa22-6d7bb686d776",
+    "name": "Wooden Bench",
+    "category": "sofa",
+    "fileBytes": 3828464,
+    "glbSize": [
+      1.1999999284744263,
+      0.45499998331069946,
+      0.28699761629104614
+    ],
+    "reported": [
+      1.2,
+      0.287,
+      0.455
+    ],
+    "upAxis": "y-up",
+    "score": 0.999997199369821,
+    "footprint": {
+      "w": 1.1999999284744263,
+      "d": 0.28699761629104614
+    },
+    "height": 0.45499998331069946,
+    "issues": []
+  },
+  {
+    "assetBaseId": "9d6e2824-85f0-4fb0-b1b3-fa0515e3d0e7",
+    "name": "19th-Century Paper Clutter Waste",
+    "category": "stationery",
+    "fileBytes": 59487708,
+    "glbSize": [
+      0.5425872802734375,
+      0.0808476704696659,
+      0.33515797555446625
+    ],
+    "reported": [
+      0.5426,
+      0.3352,
+      0.0808
+    ],
+    "upAxis": "y-up",
+    "score": 0.9997538511250652,
+    "footprint": {
+      "w": 0.5425872802734375,
+      "d": 0.33515797555446625
+    },
+    "height": 0.0808476704696659,
+    "issues": []
+  },
+  {
+    "assetBaseId": "85570b01-52c9-4c28-8335-0c4cbbb6f553",
+    "name": "Early 1900s Office Mail Opened",
+    "category": "stationery",
+    "fileBytes": 65209568,
+    "glbSize": [
+      0.3666955530643463,
+      0.05077320081181824,
+      0.17600397765636444
+    ],
+    "reported": [
+      0.3667,
+      0.176,
+      0.0508
+    ],
+    "upAxis": "y-up",
+    "score": 0.9998125767373947,
+    "footprint": {
+      "w": 0.3666955530643463,
+      "d": 0.17600397765636444
+    },
+    "height": 0.05077320081181824,
+    "issues": []
+  },
+  {
+    "assetBaseId": "a350f6f8-f731-41cf-80d6-4e303615a6e4",
+    "name": "Large Stack of Old Office Documents",
+    "category": "stationery",
+    "fileBytes": 3009500,
+    "glbSize": [
+      0.2642136663198471,
+      0.13056708200019784,
+      0.3208209127187729
+    ],
+    "reported": [
+      0.2642,
+      0.3208,
+      0.1306
+    ],
+    "upAxis": "y-up",
+    "score": 0.9998770128034248,
+    "footprint": {
+      "w": 0.2642136663198471,
+      "d": 0.3208209127187729
+    },
+    "height": 0.13056708200019784,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d9cb5b50-5b1b-4c82-bab6-b2f2f9495daa",
+    "name": "Office Telegram Clutter",
+    "category": "stationery",
+    "fileBytes": 2866456,
+    "glbSize": [
+      0.342810729280437,
+      0.10084564385171153,
+      0.2462748789459086
+    ],
+    "reported": [
+      0.3428,
+      0.2463,
+      0.1008
+    ],
+    "upAxis": "y-up",
+    "score": 0.999804699088445,
+    "footprint": {
+      "w": 0.342810729280437,
+      "d": 0.2462748789459086
+    },
+    "height": 0.10084564385171153,
+    "issues": []
+  },
+  {
+    "assetBaseId": "a85d4f2f-b1d6-4a05-8e54-a3ba0b7efe9f",
+    "name": "Dining table",
+    "category": "table",
+    "fileBytes": 1417584,
+    "glbSize": [
+      1.8174113035202026,
+      1.4917556643486023,
+      1.016181856393814
+    ],
+    "reported": [
+      1.8174,
+      1.0162,
+      1.4918
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999820688315904,
+    "footprint": {
+      "w": 1.8174113035202026,
+      "d": 1.016181856393814
+    },
+    "height": 1.4917556643486023,
+    "issues": []
+  },
+  {
+    "assetBaseId": "1a2474e6-2fce-480a-be98-0b12c6b696ab",
+    "name": "Industrial Coffee Table",
+    "category": "table",
+    "fileBytes": 2210832,
+    "glbSize": [
+      0.7782644629478455,
+      0.6384222476248378,
+      0.7579283802275323
+    ],
+    "reported": [
+      0.7782644629478455,
+      0.757928192615509,
+      0.6384220547973598
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999998168099392,
+    "footprint": {
+      "w": 0.7782644629478455,
+      "d": 0.7579283802275323
+    },
+    "height": 0.6384222476248378,
+    "issues": []
+  },
+  {
+    "assetBaseId": "8bc7ee74-03f9-428c-961d-7441b8ecb04e",
+    "name": "Jiechen Table",
+    "category": "table",
+    "fileBytes": 309664,
+    "glbSize": [
+      1.828800082206726,
+      0.7604291439056396,
+      0.7620003819465637
+    ],
+    "reported": [
+      1.8288,
+      0.762,
+      0.7604
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999870427345492,
+    "footprint": {
+      "w": 1.828800082206726,
+      "d": 0.7620003819465637
+    },
+    "height": 0.7604291439056396,
+    "issues": []
+  },
+  {
+    "assetBaseId": "d4de2ba6-412d-4e23-8cbc-50f5ee7cfa4e",
+    "name": "Luxury Coffee Table",
+    "category": "table",
+    "fileBytes": 446812,
+    "glbSize": [
+      1.0360000133514404,
+      0.4599999785423279,
+      0.5999999046325684
+    ],
+    "reported": [
+      1.036,
+      0.6,
+      0.46
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999999271732256,
+    "footprint": {
+      "w": 1.0360000133514404,
+      "d": 0.5999999046325684
+    },
+    "height": 0.4599999785423279,
+    "issues": []
+  },
+  {
+    "assetBaseId": "c56d5811-f7c7-42a0-b007-11547d50f798",
+    "name": "Modern Glass Table",
+    "category": "table",
+    "fileBytes": 1696056,
+    "glbSize": [
+      0.5989987850189209,
+      0.37569990978226997,
+      0.5989988148212433
+    ],
+    "reported": [
+      0.599,
+      0.599,
+      0.3757
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999985843076665,
+    "footprint": {
+      "w": 0.5989987850189209,
+      "d": 0.5989988148212433
+    },
+    "height": 0.37569990978226997,
+    "issues": []
+  },
+  {
+    "assetBaseId": "4fd0b237-9527-45d5-b82a-4cfec427f673",
+    "name": "Round Wooden Table 02",
+    "category": "table",
+    "fileBytes": 1593864,
+    "glbSize": [
+      0.7961780428886414,
+      0.7460266395536621,
+      0.7961780428886414
+    ],
+    "reported": [
+      0.7961780428886414,
+      0.7961780428886414,
+      0.7460266395536621
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.7961780428886414,
+      "d": 0.7961780428886414
+    },
+    "height": 0.7460266395536621,
+    "issues": []
+  },
+  {
+    "assetBaseId": "4db96473-72ed-4947-80d8-af6dc1c4dee8",
+    "name": "Coffee Table",
+    "category": "table",
+    "fileBytes": 610324,
+    "glbSize": [
+      1.026031494140625,
+      0.4135248111560941,
+      1.026031494140625
+    ],
+    "reported": [
+      1.0255,
+      1.0255,
+      0.4135
+    ],
+    "upAxis": "y-up",
+    "score": 0.9996346605498502,
+    "footprint": {
+      "w": 1.026031494140625,
+      "d": 1.026031494140625
+    },
+    "height": 0.4135248111560941,
+    "issues": []
+  },
+  {
+    "assetBaseId": "0dd6f649-dbef-4c78-a8ae-574bcc9cad64",
+    "name": "Wooden Corner Table",
+    "category": "table",
+    "fileBytes": 78036,
+    "glbSize": [
+      0.3250000119512773,
+      0.6454000401913621,
+      0.46699998420711325
+    ],
+    "reported": [
+      0.325,
+      0.467,
+      0.6454
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999999557118432,
+    "footprint": {
+      "w": 0.3250000119512773,
+      "d": 0.46699998420711325
+    },
+    "height": 0.6454000401913621,
+    "issues": []
+  },
+  {
+    "assetBaseId": "cd259516-4f81-48a5-9097-77789637cbf4",
+    "name": "ÅRSTID Floor lamp",
+    "category": "table-lamps",
+    "fileBytes": 137280,
+    "glbSize": [
+      0.3497313857078552,
+      1.551307201385498,
+      0.3613438457250595
+    ],
+    "reported": [
+      0.3497,
+      0.3613,
+      1.5513
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999280916023242,
+    "footprint": {
+      "w": 0.3497313857078552,
+      "d": 0.3613438457250595
+    },
+    "height": 1.551307201385498,
+    "issues": []
+  },
+  {
+    "assetBaseId": "008228fc-e83c-4b13-8b2d-d27e36be1b3e",
+    "name": "ÅRSTID Table lamp",
+    "category": "table-lamps",
+    "fileBytes": 249972,
+    "glbSize": [
+      0.19830814749002457,
+      0.5600793361663818,
+      0.24919067323207855
+    ],
+    "reported": [
+      0.1983,
+      0.2492,
+      0.5601
+    ],
+    "upAxis": "y-up",
+    "score": 0.9999615316828949,
+    "footprint": {
+      "w": 0.19830814749002457,
+      "d": 0.24919067323207855
+    },
+    "height": 0.5600793361663818,
+    "issues": []
+  },
+  {
+    "assetBaseId": "af73b3a4-63fb-49fb-8737-99e1df8b013c",
+    "name": "Hair Dryer Salerm 4200",
+    "category": "utility",
+    "fileBytes": 495024,
+    "glbSize": [
+      0.6084365695714951,
+      0.11408472899347544,
+      0.6119233816862106
+    ],
+    "reported": [
+      0.6084,
+      0.6119,
+      0.1027
+    ],
+    "upAxis": "y-up",
+    "score": 0.9667032702907576,
+    "footprint": {
+      "w": 0.6084365695714951,
+      "d": 0.6119233816862106
+    },
+    "height": 0.11408472899347544,
+    "issues": []
+  },
+  {
+    "assetBaseId": "03bf23ca-0b99-454a-9ba3-5d05edbcdcf6",
+    "name": "Plunger",
+    "category": "utility",
+    "fileBytes": 1155740,
+    "glbSize": [
+      0.17205405235290527,
+      0.42111489921808243,
+      0.17205404490232468
+    ],
+    "reported": [
+      0.17205405235290527,
+      0.17205404490232468,
+      0.42111489921808243
+    ],
+    "upAxis": "y-up",
+    "score": 1,
+    "footprint": {
+      "w": 0.17205405235290527,
+      "d": 0.17205404490232468
+    },
+    "height": 0.42111489921808243,
+    "issues": []
+  },
+  {
+    "assetBaseId": "f4b1081f-6d3e-4b06-b55e-8fc2f80de17a",
+    "name": "Wall light",
+    "category": "wall-light",
+    "fileBytes": 181068,
+    "glbSize": [
+      0.11129038408398628,
+      0.21402600416805048,
+      0.40224107991767233
+    ],
+    "reported": [
+      0.1113,
+      0.4022,
+      0.214
+    ],
+    "upAxis": "y-up",
+    "score": 0.99989665866197,
+    "footprint": {
+      "w": 0.11129038408398628,
+      "d": 0.40224107991767233
+    },
+    "height": 0.21402600416805048,
+    "issues": []
+  },
+  {
+    "assetBaseId": "0d8f6d0a-a383-4476-bc1b-a8ae8ff22135",
+    "name": "Wall Light",
+    "category": "wall-light",
+    "fileBytes": 122428,
+    "glbSize": [
+      0.09937630593776703,
+      0.12572029933395976,
+      0.4737074863258927
+    ],
+    "reported": [
+      0.0969,
+      0.4735,
+      0.1245
+    ],
+    "upAxis": "y-up",
+    "score": 0.9883123527353281,
+    "footprint": {
+      "w": 0.09937630593776703,
+      "d": 0.4737074863258927
+    },
+    "height": 0.12572029933395976,
+    "issues": []
+  }
+]

@@ -45,7 +45,6 @@ const DURABLE_KEYS = [
   "importedArcs",
   "importedTexts",
   "showImport",
-  "extractionTargets",
   "wallSnap",
   "points",
   "segments",

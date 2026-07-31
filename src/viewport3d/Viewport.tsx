@@ -8,6 +8,7 @@ import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import type { FloorStyle, Opening, SlideSpec, Wall } from "@/schema/scene";
+import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
 import {
   WALL_HEIGHT,
   DEFAULT_THICKNESS,
@@ -20,6 +21,7 @@ import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
 import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
+import { NumField } from "@/ui/NumField";
 import {
   loadTambourColors,
   groupByFamily,
@@ -133,41 +135,6 @@ const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center
 
 /** Numeric field that commits on Enter/blur and never leaks keys to the pane.
  *  Most dimensions are metres; `unit` covers the ones that aren't. */
-function NumField({ label, value, onCommit, disabled, unit = "m" }: {
-  label: string;
-  value: number;
-  onCommit: (v: number) => void;
-  disabled?: boolean;
-  unit?: string;
-}) {
-  const [raw, setRaw] = useState(String(value));
-  useEffect(() => setRaw(String(value)), [value]);
-  const commit = () => {
-    const v = Number(raw);
-    if (Number.isFinite(v)) onCommit(v);
-    else setRaw(String(value));
-  };
-  return (
-    <label style={inspectorRow}>
-      <span style={{ color: T.textDim }}>{label}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <input
-          style={field({ width: 58, opacity: disabled ? 0.4 : 1 })}
-          value={raw}
-          disabled={disabled}
-          onChange={(e) => setRaw(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-            e.stopPropagation();
-          }}
-        />
-        <span style={{ color: T.textFaint }}>{unit}</span>
-      </span>
-    </label>
-  );
-}
-
 /** Small integer +/- stepper for the inspector (mullion grid). */
 function Stepper({ label, value, min = 1, max = 6, onSet }: {
   label: string;
@@ -287,11 +254,15 @@ function WallInspector({ wall }: { wall: Wall }) {
             label="Height"
             value={wall.height ?? WALL_HEIGHT}
             onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
+            displayScale={100}
+            unit="cm"
           />
           <NumField
             label="Thickness"
             value={wall.thickness ?? DEFAULT_THICKNESS}
             onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
+            displayScale={100}
+            unit="cm"
           />
           {kind === "wall" && (
             <div style={{ fontSize: 10.5, color: T.textFaint }}>
@@ -485,17 +456,23 @@ function OpeningInspector({ opening }: { opening: Opening }) {
         label="Width"
         value={opening.width}
         onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })}
+        displayScale={100}
+        unit="cm"
       />
       <NumField
         label="Height"
         value={opening.height}
         onCommit={(v) => patch("Opening height", { height: Math.max(0.4, v) })}
+        displayScale={100}
+        unit="cm"
       />
       {opening.type === "window" && (
         <NumField
           label="Sill"
           value={opening.sill}
           onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })}
+          displayScale={100}
+          unit="cm"
         />
       )}
       <div style={{ fontSize: 10.5, color: T.textFaint }}>
@@ -908,29 +885,43 @@ function PaintCatalog() {
   );
 }
 
-const FLOOR_SWATCH: Record<FloorStyle, string> = { wood: "#a67c52", tile: "#d6d5ce", concrete: "#9aa0a8" };
-
-/** Floor sub-catalog — pick a material to load the floor brush. */
+/** Floor sub-catalog — pick a material to load the floor brush.
+ *  Materials come from the image-based catalog in src/materials/registry.ts,
+ *  grouped by family so 16 entries stay scannable. */
 function FloorCatalog() {
   const brush = useSceneStore((s) => s.brush);
   const active = brush?.kind === "floor" ? brush.style : undefined;
   const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, alignContent: "start" }}>
-      {(["wood", "tile", "concrete"] as FloorStyle[]).map((style) => {
-        const on = active === style;
+    <div style={{ flex: 1, overflowY: "auto", padding: 10, alignContent: "start" }}>
+      {FAMILY_ORDER.map((family) => {
+        const items = FLOOR_MATERIALS.filter((m) => m.family === family);
+        if (!items.length) return null;
         return (
-          <button
-            key={style}
-            onClick={() => pick(style)}
-            style={{
-              display: "flex", flexDirection: "column", gap: 6, padding: 6, borderRadius: T.radiusS + 2, cursor: "pointer",
-              background: on ? T.accentSoft : "transparent", border: `1.5px solid ${on ? T.accent : "transparent"}`,
-            }}
-          >
-            <span style={{ width: "100%", height: 46, borderRadius: 6, background: FLOOR_SWATCH[style], border: "1px solid rgba(0,0,0,0.2)" }} />
-            <span style={{ fontSize: 11, color: on ? T.text : T.textDim, textTransform: "capitalize" }}>{style}</span>
-          </button>
+          <div key={family} style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, color: T.textDim, textTransform: "uppercase", letterSpacing: 0.6, margin: "0 0 6px 2px" }}>
+              {FAMILY_LABEL[family]}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+              {items.map((m) => {
+                const on = active === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => pick(m.id)}
+                    title={`${m.name} · tiles every ${m.coverM} m`}
+                    style={{
+                      display: "flex", flexDirection: "column", gap: 6, padding: 6, borderRadius: T.radiusS + 2, cursor: "pointer",
+                      background: on ? T.accentSoft : "transparent", border: `1.5px solid ${on ? T.accent : "transparent"}`,
+                    }}
+                  >
+                    <span style={{ width: "100%", height: 46, borderRadius: 6, backgroundImage: `url(${m.thumb})`, backgroundSize: "cover", backgroundPosition: "center", border: "1px solid rgba(0,0,0,0.2)" }} />
+                    <span style={{ fontSize: 11, color: on ? T.text : T.textDim, textAlign: "left" }}>{m.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         );
       })}
     </div>

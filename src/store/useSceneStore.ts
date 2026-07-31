@@ -2,26 +2,7 @@ import { create } from "zustand";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import { DEFAULT_DOOR, DEFAULT_WINDOW } from "@/schema/constants";
-import {
-  buildPlanarGraph,
-  extractWalls,
-  scaleExtractParams,
-  DEFAULT_PARAMS,
-} from "@legacy/trace2d/extractWalls";
-import {
-  detectOpenings,
-  scaleDetectParams,
-  traceToCenterlines,
-  mapOpeningToSegment,
-  DEFAULT_DETECT,
-  type SuggestedOpening,
-} from "@legacy/trace2d/detectOpenings";
-import { generateCandidates, type Candidate } from "@legacy/trace2d/candidates";
-import { rasterToCandidates, type RasterProposal } from "@legacy/trace2d/rasterCandidates";
-import { proposeRaster } from "@legacy/trace2d/proposeRaster";
-import { buildOverlayImage } from "@legacy/trace2d/buildOverlay";
-import type { VlmLabel, VlmMissed } from "@legacy/lib/rooms/vlmClassify";
-import type { ImportText } from "@legacy/trace2d/importPdf";
+import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
   TraceSegment,
@@ -49,8 +30,8 @@ export type {
 // TracePoint/TraceSegment/SegmentKind/TraceOpening/ImportSegment/ImportArc
 // moved to @legacy/trace2d/types in Phase 0 (they're also consumed by the
 // legacy trace2d pipeline; that file is the single owner now, this store
-// only imports them). TraceImage/SuggestedWall stay here — nothing outside
-// this store consumes them.
+// only imports them). TraceImage stays here — nothing outside this store
+// consumes it.
 // ---------------------------------------------------------------------------
 
 export type TraceMode = "wall" | "door" | "window" | "calibrate";
@@ -59,17 +40,6 @@ export interface TraceImage {
   src: string; // data URL
   width: number; // natural px
   height: number; // natural px
-}
-
-// A suggested wall centerline (M2), in background-image px. The user reviews and
-// accepts/rejects these; accepted ones weld into the real trace.
-export interface SuggestedWall {
-  id: string;
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  thickness: number; // px
 }
 
 interface TraceSnapshot {
@@ -293,47 +263,16 @@ export interface StoreState {
   setImportedArcs: (arcs: ImportArc[]) => void;
   setShowImport: (v: boolean) => void;
 
-  // --- suggested walls (Phase 2 / M2) ---
-  suggestedWalls: SuggestedWall[];
-  rejectedSuggestionIds: string[];
-  extractionTargets: number[]; // calibrated wall thicknesses (px)
-  pickThickness: boolean; // click-a-wall-to-learn-thickness mode
+  // --- wall snapping (manual trace aid) ---
   wallSnap: boolean; // snap traced points to imported-PDF wall centerlines/corners
-  setSuggestedWalls: (w: SuggestedWall[]) => void;
-  toggleRejectSuggestion: (id: string) => void;
-  clearSuggestions: () => void;
-  acceptSuggestions: () => void; // weld kept suggestions into the real trace
-  setPickThickness: (v: boolean) => void;
   setWallSnap: (v: boolean) => void;
-  runWallExtraction: () => Promise<void>;
-  addThicknessTarget: (t: number) => void;
-  clearThicknessTargets: () => void;
-
-  // --- raster plans (Phase 3 / M3): CV proposer over the loaded image ---
-  rasterProposal: RasterProposal | null; // cached — deterministic per image
-  extractBusy: boolean; // raster proposal runs server-side python (~seconds)
-  extractMsg: string | null; // quality/result note shown under the toolbar
 
   // --- VLM classification (Phase 2.5 / M3) ---
-  vlmModel: string; // Claude model id used by /api/classify (on-the-fly override)
-  vlmBusy: boolean;
-  vlmMissed: VlmMissed[]; // advisory "check this area" hints from the VLM
-  planHint: string; // user's one-line plan description, sent as advisory context
-  setVlmModel: (m: string) => void;
-  setPlanHint: (h: string) => void;
-  aiClassify: () => Promise<string>; // returns a status message for the toolbar
+  vlmModel: string; // Claude model id — shared with Building Knowledge Layer's room understanding
 
   // --- Building Knowledge Layer (room semantics) ---
   understandBusy: boolean;
   understandRooms: () => Promise<string>; // VLM escalation for undecided rooms
-
-  // --- suggested openings (Phase 2 / doors + windows from wall geometry) ---
-  suggestedOpenings: SuggestedOpening[];
-  rejectedOpeningIds: string[];
-  detectOpeningsOnTrace: () => void; // clean pass over traced/accepted walls
-  toggleRejectOpening: (id: string) => void;
-  clearOpenings: () => void;
-  acceptOpenings: () => void; // map kept openings onto trace segments
 
   // --- trace draft ---
   points: TracePoint[];
@@ -395,44 +334,6 @@ export const useSceneStore = create<StoreState>((set, get) => {
   const pushHistory = () =>
     set((st) => ({ history: [...st.history, snapshot()].slice(-100) }));
 
-  // Run (or reuse) the server-side CV proposal for the loaded raster plan.
-  const ensureProposal = async (): Promise<RasterProposal> => {
-    const cached = get().rasterProposal;
-    if (cached) return cached;
-    const image = get().image;
-    if (!image) throw new Error("no plan image loaded");
-    const proposal = await proposeRaster(image.src);
-    set({ rasterProposal: proposal });
-    return proposal;
-  };
-
-  // Map raster-pipeline candidates into the reviewable suggestion layers.
-  // Only heuristic-kept walls surface (rejects are hundreds of text/noise
-  // stubs on thin-stroke plans); gap-openings all surface — they're few and
-  // one click rejects a bad one.
-  const candidatesToSuggestions = (cands: Candidate[]) => {
-    const walls: SuggestedWall[] = [];
-    const opens: SuggestedOpening[] = [];
-    for (const c of cands) {
-      if (c.kind === "wall" && c.keptByHeuristic) {
-        walls.push({
-          id: `w${walls.length}`,
-          x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3],
-          thickness: c.thicknessPx,
-        });
-      } else if (c.kind === "opening") {
-        opens.push({
-          id: `ro${opens.length}`,
-          type: "door",
-          x0: c.px[0], y0: c.px[1], x1: c.px[2], y1: c.px[3],
-          width: c.lengthPx,
-          thickness: c.thicknessPx,
-          flags: c.flags,
-        });
-      }
-    }
-    return { walls, opens };
-  };
 
   return {
     scene: sampleScene,
@@ -584,21 +485,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
         openings: [],
         scene: { schemaVersion: 2, units: "meters", nodes: [], walls: [], openings: [], rooms: [], furniture: [] },
         history: [],
-        suggestedWalls: [],
-        rejectedSuggestionIds: [],
-        suggestedOpenings: [],
-        rejectedOpeningIds: [],
-        extractionTargets: [],
         calibrationPts: [],
         metersPerPixel: null,
-        rasterProposal: null,
         sel3d: null,
         placing: null,
       });
       get().setSourcePdfName(file.name);
       try {
         if (isPdfFile(file)) {
-          const { importPdf } = await import("@legacy/trace2d/importPdf");
+          // Runs entirely in the browser (pdf.js). The old server route spawned
+          // Python, which has no interpreter on Vercel — see importPdfClient.ts.
+          const { importPdf } = await import("@/lib/import/importPdfClient");
           const r = await importPdf(file);
           get().setImage(r.image);
           if (!r.isVector) {
@@ -630,6 +527,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
             const res = await fetch("/api/dwg2dxf", { method: "POST", body: form });
             const j = await res.json();
             if (!res.ok || j.error) {
+              // The converter is a native desktop binary, so it exists only on a
+              // local machine — a hosted deployment can never satisfy this. Say
+              // what the user can actually do instead of surfacing a server error.
+              if (res.status === 501) {
+                throw new Error(
+                  "DWG needs a local converter that isn't available here. Export the drawing to DXF from your CAD tool and import that — the DXF path also recovers real-world scale automatically.",
+                );
+              }
               throw new Error(j.error ? `${j.error}${j.detail ? `: ${j.detail}` : ""}` : `HTTP ${res.status}`);
             }
             r = dxfTextToResult(j.dxf);
@@ -741,7 +646,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     image: null,
     imageOpacity: 0.6,
     // A new image invalidates the cached CV proposal (it's per-image).
-    setImage: (image) => set({ image, rasterProposal: null, extractMsg: null }),
+    setImage: (image) => set({ image }),
     setImageOpacity: (imageOpacity) => set({ imageOpacity }),
 
     sourcePdfName: null,
@@ -755,163 +660,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setImportedArcs: (importedArcs) => set({ importedArcs }),
     setShowImport: (showImport) => set({ showImport }),
 
-    suggestedWalls: [],
-    rejectedSuggestionIds: [],
-    extractionTargets: [],
-    pickThickness: false,
     wallSnap: true,
-    setSuggestedWalls: (suggestedWalls) =>
-      set({ suggestedWalls, rejectedSuggestionIds: [] }),
-    setPickThickness: (pickThickness) => set({ pickThickness }),
     setWallSnap: (wallSnap) => set({ wallSnap }),
-    rasterProposal: null,
-    extractBusy: false,
-    extractMsg: null,
-    runWallExtraction: async () => {
-      const { importedSegments, importedArcs, extractionTargets, metersPerPixel, image } = get();
 
-      // Raster branch (Phase 3): no vector geometry — propose from pixels.
-      if (importedSegments.length === 0) {
-        if (!image) return;
-        set({ extractBusy: true, extractMsg: null });
-        try {
-          const proposal = await ensureProposal();
-          const gen = rasterToCandidates(proposal, metersPerPixel);
-          const { walls, opens } = candidatesToSuggestions(gen.candidates);
-          const q = proposal.quality;
-          set({
-            suggestedWalls: walls,
-            rejectedSuggestionIds: [],
-            suggestedOpenings: opens,
-            rejectedOpeningIds: [],
-            extractMsg:
-              `✓ Proposed ${walls.length} walls + ${opens.length} possible doors from the image` +
-              `${q.verdict !== "good" ? ` — quality ${q.verdict}` : ""}` +
-              `${q.notes.length ? ` (${q.notes.join("; ")})` : ""}. Review below: click a suggestion to reject it.`,
-          });
-        } catch (e) {
-          set({ extractMsg: "✗ Wall proposal failed: " + ((e as Error).message ?? String(e)) });
-        } finally {
-          set({ extractBusy: false });
-        }
-        return;
-      }
-
-      const r = extractWalls(importedSegments, {
-        ...scaleExtractParams(DEFAULT_PARAMS, metersPerPixel),
-        thicknessTargets: extractionTargets,
-        // Reject parallel walls closer than 0.3 m (stairs/hatch) once scaled.
-        minWallSepPx: metersPerPixel ? 0.3 / metersPerPixel : 0,
-      });
-      // Bundled rough opening pass over the freshly extracted centerlines.
-      const det = detectOpenings(
-        importedSegments,
-        r.centerlines,
-        importedArcs,
-        metersPerPixel,
-        scaleDetectParams(DEFAULT_DETECT, metersPerPixel),
-      );
-      set({
-        suggestedWalls: r.centerlines.map((c, i) => ({ id: `w${i}`, ...c })),
-        rejectedSuggestionIds: [],
-        suggestedOpenings: det.openings,
-        rejectedOpeningIds: [],
-      });
-    },
-    addThicknessTarget: (t) => {
-      const cur = get().extractionTargets;
-      if (cur.some((x) => Math.abs(x - t) <= 3)) return; // de-dupe similar bands
-      set({ extractionTargets: [...cur, Math.round(t)] });
-      get().runWallExtraction();
-    },
-    clearThicknessTargets: () => {
-      set({ extractionTargets: [] });
-      get().runWallExtraction();
-    },
-
+    // Read-only default now that the trace tab's model picker is gone — still
+    // consumed by Building Knowledge Layer's understandRooms below.
     vlmModel: "claude-opus-4-8",
-    vlmBusy: false,
-    vlmMissed: [],
-    planHint: "",
-    setVlmModel: (vlmModel) => set({ vlmModel }),
-    setPlanHint: (planHint) => set({ planHint }),
-    aiClassify: async () => {
-      const { importedSegments, importedArcs, metersPerPixel, extractionTargets, image, vlmModel, planHint } =
-        get();
-      if (!image) return "Load a plan first (upload an image or import a PDF).";
-      set({ vlmBusy: true });
-      try {
-        // Vector plans: candidates from parsed geometry. Raster plans: from the
-        // CV proposer over the image (same Candidate contract downstream).
-        const gen =
-          importedSegments.length > 0
-            ? generateCandidates(importedSegments, importedArcs, metersPerPixel, {
-                extractionTargets,
-              })
-            : rasterToCandidates(await ensureProposal(), metersPerPixel);
-        if (gen.candidates.length === 0) return "No candidates found in this plan.";
-        const overlay = await buildOverlayImage(image.src, gen.candidates);
-        const res = await fetch("/api/classify", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            image: overlay,
-            candidates: gen.candidates,
-            metersPerPixel,
-            planHint: planHint.trim() || null,
-            model: vlmModel,
-          }),
-        });
-        const j = await res.json();
-        if (!res.ok || j.error) throw new Error(j.error ?? `HTTP ${res.status}`);
-
-        const byId = new Map<number, VlmLabel>(
-          (j.labels as VlmLabel[]).map((l) => [l.id, l]),
-        );
-        const walls: SuggestedWall[] = [];
-        const opens: SuggestedOpening[] = [];
-        for (const c of gen.candidates) {
-          const l = byId.get(c.id);
-          if (!l) continue;
-          if (l.label === "wall" && c.kind === "wall") {
-            walls.push({
-              id: `w${walls.length}`,
-              x0: c.px[0],
-              y0: c.px[1],
-              x1: c.px[2],
-              y1: c.px[3],
-              thickness: c.thicknessPx,
-            });
-          } else if (l.label === "door" || l.label === "window") {
-            opens.push({
-              id: `vo${opens.length}`,
-              type: l.label,
-              x0: c.px[0],
-              y0: c.px[1],
-              x1: c.px[2],
-              y1: c.px[3],
-              width: c.lengthPx,
-              thickness: c.thicknessPx,
-              flags: [`vlm-${l.confidence}`],
-            });
-          }
-        }
-        const missed = (j.missed ?? []) as VlmMissed[];
-        set({
-          suggestedWalls: walls,
-          rejectedSuggestionIds: [],
-          suggestedOpenings: opens,
-          rejectedOpeningIds: [],
-          vlmMissed: missed,
-        });
-        const doors = opens.filter((o) => o.type === "door").length;
-        return `✓ AI (${j.model}): ${walls.length} walls, ${doors} doors, ${opens.length - doors} windows${missed.length ? ` · ${missed.length} area(s) flagged as possibly missed` : ""}`;
-      } catch (e) {
-        return "AI classify failed: " + ((e as Error).message ?? String(e));
-      } finally {
-        set({ vlmBusy: false });
-      }
-    },
 
     // --- Building Knowledge Layer — VLM escalation for undecided rooms ---
     understandBusy: false,
@@ -1052,99 +806,6 @@ export const useSceneStore = create<StoreState>((set, get) => {
       } finally {
         set({ understandBusy: false });
       }
-    },
-
-    suggestedOpenings: [],
-    rejectedOpeningIds: [],
-    detectOpeningsOnTrace: () => {
-      const { points, segments, importedSegments, importedArcs, metersPerPixel } = get();
-      const cls = traceToCenterlines(points, segments, importedSegments);
-      const det = detectOpenings(
-        importedSegments,
-        cls,
-        importedArcs,
-        metersPerPixel,
-        scaleDetectParams(DEFAULT_DETECT, metersPerPixel),
-      );
-      set({ suggestedOpenings: det.openings, rejectedOpeningIds: [] });
-    },
-    toggleRejectOpening: (id) =>
-      set((st) => ({
-        rejectedOpeningIds: st.rejectedOpeningIds.includes(id)
-          ? st.rejectedOpeningIds.filter((x) => x !== id)
-          : [...st.rejectedOpeningIds, id],
-      })),
-    clearOpenings: () => set({ suggestedOpenings: [], rejectedOpeningIds: [] }),
-    acceptOpenings: () => {
-      const { suggestedOpenings, rejectedOpeningIds, points, segments } = get();
-      const rejected = new Set(rejectedOpeningIds);
-      const kept = suggestedOpenings.filter((o) => !rejected.has(o.id));
-      if (kept.length === 0) return;
-      pushHistory();
-      const d = { door: DEFAULT_DOOR, window: DEFAULT_WINDOW };
-      set((st) => {
-        const openings = [...st.openings];
-        for (const op of kept) {
-          const m = mapOpeningToSegment(op, points, segments);
-          if (!m) continue; // its host wall isn't traced/accepted (yet)
-          openings.push({
-            id: newId("o"),
-            type: op.type,
-            segmentId: m.segmentId,
-            t0: m.t0,
-            t1: m.t1,
-            height: d[op.type].height,
-            sill: d[op.type].sill,
-          });
-        }
-        return { openings, suggestedOpenings: [], rejectedOpeningIds: [] };
-      });
-    },
-    toggleRejectSuggestion: (id) =>
-      set((st) => ({
-        rejectedSuggestionIds: st.rejectedSuggestionIds.includes(id)
-          ? st.rejectedSuggestionIds.filter((x) => x !== id)
-          : [...st.rejectedSuggestionIds, id],
-      })),
-    clearSuggestions: () => set({ suggestedWalls: [], rejectedSuggestionIds: [] }),
-    acceptSuggestions: () => {
-      const { suggestedWalls, rejectedSuggestionIds } = get();
-      const rejected = new Set(rejectedSuggestionIds);
-      const kept = suggestedWalls.filter((w) => !rejected.has(w.id));
-      if (kept.length === 0) return;
-      pushHistory();
-      // Node the kept centerlines into a planar graph (splits T/cross junctions
-      // so rooms can close), then weld it into any existing manual trace.
-      const graph = buildPlanarGraph(kept, 14);
-      set((st) => {
-        const WELD = 14;
-        const points = st.points.map((p) => ({ ...p }));
-        const findOrAdd = (x: number, y: number) => {
-          for (const p of points) {
-            if (Math.hypot(p.x - x, p.y - y) <= WELD) return p.id;
-          }
-          const p: TracePoint = { id: newId("p"), x, y };
-          points.push(p);
-          return p.id;
-        };
-        const map = new Map<string, string>();
-        for (const n of graph.nodes) map.set(n.id, findOrAdd(n.x, n.y));
-        const segments = st.segments.map((s) => ({ ...s }));
-        for (const g of graph.segments) {
-          const a = map.get(g.a);
-          const b = map.get(g.b);
-          if (!a || !b || a === b) continue;
-          if (segments.some((s) => (s.a === a && s.b === b) || (s.a === b && s.b === a))) continue;
-          segments.push({ id: newId("s"), a, b });
-        }
-        return {
-          points,
-          segments,
-          suggestedWalls: [],
-          rejectedSuggestionIds: [],
-          activeLastPointId: null,
-        };
-      });
     },
 
     points: [],

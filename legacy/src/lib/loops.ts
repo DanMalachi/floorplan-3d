@@ -15,6 +15,36 @@ interface XY {
 }
 
 /**
+ * Drop dangling chains, leaving the graph's 2-core.
+ *
+ * A degree-1 node cannot bound a room, so every edge hanging off one is removed —
+ * repeatedly, since removing an edge can strand the node behind it. This matters
+ * because a spur pointing INTO a room forces that room's face to walk out along
+ * the spur and back, visiting nodes twice. Such a face is still geometrically
+ * correct (the excursion contributes no area), but it is not a simple polygon,
+ * and the floor triangulation downstream needs simple polygons. Pruning first is
+ * cleaner than trying to repair the face afterwards, and it means a half-drawn
+ * wall no longer makes the room it sits in disappear.
+ */
+function twoCore(segments: TraceSegment[], coord: Map<string, XY>): TraceSegment[] {
+  let live = segments.filter(
+    (s) => s.a !== s.b && coord.has(s.a) && coord.has(s.b),
+  );
+  for (;;) {
+    const deg = new Map<string, number>();
+    for (const s of live) {
+      deg.set(s.a, (deg.get(s.a) ?? 0) + 1);
+      deg.set(s.b, (deg.get(s.b) ?? 0) + 1);
+    }
+    const kept = live.filter(
+      (s) => (deg.get(s.a) ?? 0) > 1 && (deg.get(s.b) ?? 0) > 1,
+    );
+    if (kept.length === live.length) return kept;
+    live = kept;
+  }
+}
+
+/**
  * Find every enclosed room as a planar face of the traced graph.
  *
  * Handles junctions (degree > 2): an internal wall dividing a space yields TWO
@@ -23,8 +53,8 @@ interface XY {
  * one we arrived along. Every directed edge belongs to exactly one face. With
  * this turn rule the BOUNDED interior faces come out clockwise (negative area,
  * y-up) and the single unbounded outer face per component comes out positive, so
- * we keep the negative-area faces. A dangling spur (bridge edge) is traversed in
- * both directions inside the outer face only, so it never pollutes a room.
+ * we keep the negative-area faces. Dangling spurs are pruned beforehand, so
+ * every face here is a simple polygon.
  */
 export function findRooms(
   points: TracePoint[],
@@ -32,11 +62,12 @@ export function findRooms(
 ): ClosedLoop[] {
   const coord = new Map<string, XY>(points.map((p) => [p.id, { x: p.x, y: p.y }]));
 
+  // Only the 2-core can bound rooms; a half-drawn run must not affect existing ones.
+  const core = twoCore(segments, coord);
+
   const adj = new Map<string, Set<string>>();
   for (const p of points) adj.set(p.id, new Set());
-  for (const s of segments) {
-    if (s.a === s.b) continue;
-    if (!coord.has(s.a) || !coord.has(s.b)) continue;
+  for (const s of core) {
     adj.get(s.a)!.add(s.b);
     adj.get(s.b)!.add(s.a);
   }
@@ -67,18 +98,17 @@ export function findRooms(
   const key = (u: string, v: string) => `${u}>${v}`;
   const faces: string[][] = [];
 
-  for (const s of segments) {
+  for (const s of core) {
     for (const [u0, v0] of [
       [s.a, s.b],
       [s.b, s.a],
     ] as const) {
-      if (!coord.has(u0) || !coord.has(v0)) continue;
       if (visited.has(key(u0, v0))) continue;
       const face: string[] = [];
       let u = u0;
       let v = v0;
       let guard = 0;
-      const limit = segments.length * 2 + 8;
+      const limit = core.length * 2 + 8;
       while (!visited.has(key(u, v)) && guard++ < limit) {
         visited.add(key(u, v));
         face.push(u);
@@ -93,8 +123,6 @@ export function findRooms(
 
   const loops: ClosedLoop[] = [];
   for (const f of faces) {
-    // Dedup guard: a real face visits distinct nodes.
-    if (new Set(f).size !== f.length) continue;
     if (signedAreaYUp(f, coord) < -1e-6) loops.push({ points: f });
   }
   return loops;

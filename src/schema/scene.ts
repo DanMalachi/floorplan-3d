@@ -89,7 +89,18 @@ export interface Opening {
   lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
 }
 
-export type FloorStyle = "wood" | "tile" | "concrete";
+/**
+ * A floor material id, persisted per room.
+ *
+ * Was a closed union of "wood" | "tile" | "concrete" — the three procedurally
+ * drawn styles. Widened to a string so rooms can also reference the image-based
+ * PBR catalog in src/materials/registry.ts, whose ids look like
+ * "wood-oak-natural" or "tile-hex-white".
+ *
+ * The three original values remain valid and keep resolving to the procedural
+ * textures, so projects saved before the catalog existed still render.
+ */
+export type FloorStyle = string;
 
 // ---------------------------------------------------------------------------
 // Building Knowledge Layer — semantics sit ON TOP of geometry, never inside it.
