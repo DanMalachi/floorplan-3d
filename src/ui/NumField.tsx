@@ -10,6 +10,13 @@ const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center
  *  `displayScale` to show/edit a different unit at the input boundary — e.g.
  *  100 shows/parses centimeters while onCommit still only ever emits meters,
  *  so every consumer's clamping and downstream geometry stay untouched. */
+// Kills binary floating-point dust (e.g. 2.7 * 100 = 269.99999999999994)
+// without truncating any precision a user would actually type.
+const round = (n: number, decimals: number) => {
+  const f = 10 ** decimals;
+  return Math.round(n * f) / f;
+};
+
 export function NumField({ label, value, onCommit, disabled, unit = "m", displayScale = 1 }: {
   label: string;
   value: number;
@@ -18,12 +25,12 @@ export function NumField({ label, value, onCommit, disabled, unit = "m", display
   unit?: string;
   displayScale?: number;
 }) {
-  const displayValue = value * displayScale;
+  const displayValue = round(value * displayScale, 4);
   const [raw, setRaw] = useState(String(displayValue));
   useEffect(() => setRaw(String(displayValue)), [displayValue]);
   const commit = () => {
     const v = Number(raw);
-    if (Number.isFinite(v)) onCommit(v / displayScale);
+    if (Number.isFinite(v)) onCommit(round(v / displayScale, 6));
     else setRaw(String(displayValue));
   };
   return (
@@ -44,7 +51,7 @@ export function NumField({ label, value, onCommit, disabled, unit = "m", display
             if (disabled) return;
             e.preventDefault();
             const dir = e.deltaY < 0 ? 1 : -1;
-            onCommit(value + dir / displayScale);
+            onCommit(round((displayValue + dir) / displayScale, 6));
           }}
         />
         <span style={{ color: T.textFaint }}>{unit}</span>
