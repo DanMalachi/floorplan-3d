@@ -7,7 +7,6 @@ import { Circle, Group, Image as KImage, Layer, Line, Shape, Stage, Text } from 
 import { useSceneStore } from "@/store/useSceneStore";
 import type { ImportSegment } from "./types";
 import { analyzeLoops } from "../lib/loops";
-import { measureThicknessAt } from "./extractWalls";
 import { snapWallPoint } from "./snapWall";
 
 // Group raw import segments by stroke color so the overlay draws each color in a
@@ -137,15 +136,6 @@ export default function TraceCanvas() {
   const imageOpacity = useSceneStore((s) => s.imageOpacity);
   const importedSegments = useSceneStore((s) => s.importedSegments);
   const showImport = useSceneStore((s) => s.showImport);
-  const suggestedWalls = useSceneStore((s) => s.suggestedWalls);
-  const rejectedSuggestionIds = useSceneStore((s) => s.rejectedSuggestionIds);
-  const toggleRejectSuggestion = useSceneStore((s) => s.toggleRejectSuggestion);
-  const suggestedOpenings = useSceneStore((s) => s.suggestedOpenings);
-  const rejectedOpeningIds = useSceneStore((s) => s.rejectedOpeningIds);
-  const toggleRejectOpening = useSceneStore((s) => s.toggleRejectOpening);
-  const pickThickness = useSceneStore((s) => s.pickThickness);
-  const addThicknessTarget = useSceneStore((s) => s.addThicknessTarget);
-  const extractionTargets = useSceneStore((s) => s.extractionTargets);
   const wallSnap = useSceneStore((s) => s.wallSnap);
   const points = useSceneStore((s) => s.points);
   const segments = useSceneStore((s) => s.segments);
@@ -200,8 +190,6 @@ export default function TraceCanvas() {
   const segMap = useMemo(() => new Map(segments.map((s) => [s.id, s])), [segments]);
   const analysis = useMemo(() => analyzeLoops(points, segments), [points, segments]);
   const importGroups = useMemo(() => groupByColor(importedSegments), [importedSegments]);
-  const rejectedSet = useMemo(() => new Set(rejectedSuggestionIds), [rejectedSuggestionIds]);
-  const rejectedOpeningSet = useMemo(() => new Set(rejectedOpeningIds), [rejectedOpeningIds]);
 
   useEffect(() => {
     if (mode !== "door" && mode !== "window") setOpeningStart(null);
@@ -267,7 +255,7 @@ export default function TraceCanvas() {
 
     // Hybrid: snap to a wall centerline / corner from the imported PDF.
     if (wallSnap && importedSegments.length > 0) {
-      const ws = snapWallPoint(pos.x, pos.y, importedSegments, { targets: extractionTargets });
+      const ws = snapWallPoint(pos.x, pos.y, importedSegments);
       if (ws) return { kind: "free", point: { x: ws.x, y: ws.y }, snapped: true };
     }
 
@@ -293,13 +281,6 @@ export default function TraceCanvas() {
 
     // Scale-first gate: until a scale is set, only scale calibration is allowed.
     if (metersPerPixel == null && mode !== "calibrate") return;
-
-    // Calibrate wall thickness: click a wall to learn its face-to-face gap.
-    if (pickThickness) {
-      const t = measureThicknessAt(pos.x, pos.y, importedSegments);
-      if (t) addThicknessTarget(t);
-      return;
-    }
 
     if (mode === "calibrate") {
       addCalibrationPoint(pos.x, pos.y);
@@ -384,7 +365,7 @@ export default function TraceCanvas() {
         position: "relative",
         width: "100%",
         height: "100%",
-        cursor: pickThickness || mode !== "wall" ? "crosshair" : "default",
+        cursor: mode !== "wall" ? "crosshair" : "default",
       }}
     >
       {size.w > 0 && size.h > 0 && (
@@ -462,49 +443,6 @@ export default function TraceCanvas() {
                   stroke="#46dc78"
                   strokeWidth={stroke}
                   listening={false}
-                />
-              );
-            })}
-
-            {/* Suggested walls (M2) — dashed orange, click to reject */}
-            {suggestedWalls.map((w) => {
-              const rejected = rejectedSet.has(w.id);
-              return (
-                <Line
-                  key={w.id}
-                  points={[w.x0, w.y0, w.x1, w.y1]}
-                  stroke={rejected ? "#666" : "#ff9d2e"}
-                  strokeWidth={(rejected ? 1.5 : 2.5) / scale}
-                  opacity={rejected ? 0.5 : 0.95}
-                  dash={[7 / scale, 4 / scale]}
-                  hitStrokeWidth={12 / scale}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    toggleRejectSuggestion(w.id);
-                  }}
-                />
-              );
-            })}
-
-            {/* Suggested openings — amber doors / cyan windows, bar sized to the
-                wall thickness; click to reject */}
-            {suggestedOpenings.map((o) => {
-              const rejected = rejectedOpeningSet.has(o.id);
-              const base = o.type === "door" ? "#ffb020" : "#22d3ee";
-              return (
-                <Line
-                  key={o.id}
-                  points={[o.x0, o.y0, o.x1, o.y1]}
-                  stroke={rejected ? "#666" : base}
-                  strokeWidth={rejected ? 2 / scale : Math.max(o.thickness, 3 / scale)}
-                  opacity={rejected ? 0.4 : 0.5}
-                  dash={o.type === "window" ? [6 / scale, 3 / scale] : undefined}
-                  lineCap="butt"
-                  hitStrokeWidth={Math.max(o.thickness, 14 / scale)}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    toggleRejectOpening(o.id);
-                  }}
                 />
               );
             })}

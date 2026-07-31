@@ -161,32 +161,8 @@ export function TraceRail() {
   const mode = useSceneStore((s) => s.mode);
   const setMode = useSceneStore((s) => s.setMode);
 
-  const suggestedWalls = useSceneStore((s) => s.suggestedWalls);
-  const rejectedSuggestionIds = useSceneStore((s) => s.rejectedSuggestionIds);
-  const clearSuggestions = useSceneStore((s) => s.clearSuggestions);
-  const acceptSuggestions = useSceneStore((s) => s.acceptSuggestions);
-  const runWallExtraction = useSceneStore((s) => s.runWallExtraction);
-  const extractBusy = useSceneStore((s) => s.extractBusy);
-  const extractMsg = useSceneStore((s) => s.extractMsg);
   const wallSnap = useSceneStore((s) => s.wallSnap);
   const setWallSnap = useSceneStore((s) => s.setWallSnap);
-  const pickThickness = useSceneStore((s) => s.pickThickness);
-  const setPickThickness = useSceneStore((s) => s.setPickThickness);
-  const extractionTargets = useSceneStore((s) => s.extractionTargets);
-  const clearThicknessTargets = useSceneStore((s) => s.clearThicknessTargets);
-
-  const vlmModel = useSceneStore((s) => s.vlmModel);
-  const setVlmModel = useSceneStore((s) => s.setVlmModel);
-  const planHint = useSceneStore((s) => s.planHint);
-  const setPlanHint = useSceneStore((s) => s.setPlanHint);
-  const vlmBusy = useSceneStore((s) => s.vlmBusy);
-  const aiClassify = useSceneStore((s) => s.aiClassify);
-
-  const suggestedOpenings = useSceneStore((s) => s.suggestedOpenings);
-  const rejectedOpeningIds = useSceneStore((s) => s.rejectedOpeningIds);
-  const detectOpeningsOnTrace = useSceneStore((s) => s.detectOpeningsOnTrace);
-  const acceptOpenings = useSceneStore((s) => s.acceptOpenings);
-  const clearOpenings = useSceneStore((s) => s.clearOpenings);
 
   const points = useSceneStore((s) => s.points);
   const segments = useSceneStore((s) => s.segments);
@@ -199,7 +175,6 @@ export function TraceRail() {
   const setTraceStep = useSceneStore((s) => s.setTraceStep);
 
   const [distance, setDistance] = useState("");
-  const [aiMsg, setAiMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const scaleSet = metersPerPixel != null;
@@ -214,10 +189,6 @@ export function TraceRail() {
     prevScale.current = scaleSet;
   }, [scaleSet, traceStep, setTraceStep]);
 
-  const keptWalls = suggestedWalls.length - rejectedSuggestionIds.length;
-  const keptOpenings = suggestedOpenings.length - rejectedOpeningIds.length;
-  const doorCount = suggestedOpenings.filter((o) => o.type === "door").length;
-
   const steps: StepDef[] = [
     {
       n: 1, label: "Plan", done: !!image, locked: false,
@@ -229,7 +200,7 @@ export function TraceRail() {
     },
     {
       n: 3, label: "Walls", done: segments.length > 0, locked: !scaleSet,
-      status: segments.length > 0 ? `${segments.length} traced` : "auto-detect or draw",
+      status: segments.length > 0 ? `${segments.length} traced` : "draw the walls by hand",
     },
     {
       n: 4, label: "Openings", done: openings.length > 0, locked: !scaleSet,
@@ -341,69 +312,8 @@ export function TraceRail() {
       case 3:
         return (
           <>
-            <button style={primaryBtn(!extractBusy)} disabled={extractBusy} onClick={runWallExtraction}>
-              {extractBusy ? "✨ Detecting…" : "✨ Auto-detect walls"}
-            </button>
-            {extractMsg && <div style={statusText(extractMsg.startsWith("✓"))}>{extractMsg}</div>}
-            {suggestedWalls.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 9px", borderRadius: T.radiusS, background: T.accentSoft }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>
-                  {keptWalls} wall{keptWalls === 1 ? "" : "s"} suggested
-                  {rejectedSuggestionIds.length > 0 && <span style={{ color: T.textDim, fontWeight: 400 }}> · {rejectedSuggestionIds.length} rejected</span>}
-                </div>
-                <div style={hintText}>Click a suggested wall on the plan to reject it, click again to restore.</div>
-                <div style={{ display: "flex", gap: 5 }}>
-                  <button
-                    style={chip(true, { flex: 1, textAlign: "center", fontWeight: 600, background: T.ok, opacity: keptWalls ? 1 : 0.4 })}
-                    disabled={!keptWalls}
-                    onClick={() => {
-                      acceptSuggestions();
-                      setTraceStep(4);
-                    }}
-                  >
-                    ✓ Accept {keptWalls}
-                  </button>
-                  <button style={chip(false, { flex: 1, textAlign: "center" })} onClick={clearSuggestions}>Discard</button>
-                </div>
-              </div>
-            )}
-            <Disclosure label="AI assist">
-              <button
-                style={railBtn(false, { opacity: vlmBusy ? 0.5 : 1 })}
-                disabled={vlmBusy}
-                onClick={async () => {
-                  setAiMsg("🤖 Asking the model — this can take a minute or two…");
-                  setAiMsg(await aiClassify());
-                }}
-              >
-                {vlmBusy ? "🤖 Classifying…" : "🤖 AI classify candidates"}
-              </button>
-              <select value={vlmModel} onChange={(e) => setVlmModel(e.target.value)} style={field()}>
-                <option value="claude-opus-4-8">Opus 4.8 · best</option>
-                <option value="claude-sonnet-5">Sonnet 5 · faster</option>
-                <option value="claude-haiku-4-5">Haiku 4.5 · cheapest</option>
-              </select>
-              <input
-                type="text"
-                value={planHint}
-                onChange={(e) => setPlanHint(e.target.value)}
-                placeholder="Describe the plan (optional)"
-                title="One line about the plan — rooms, decks, door types. Helps the AI tell walls from railings."
-                style={field()}
-              />
-              {aiMsg && <div style={statusText(aiMsg.startsWith("✓"))}>{aiMsg}</div>}
-            </Disclosure>
             {hasPdf && (
               <Disclosure label="Advanced (PDF)">
-                <button style={railBtn(pickThickness)} onClick={() => setPickThickness(!pickThickness)}>
-                  🎯 Learn wall thickness {pickThickness ? "— click a wall" : ""}
-                </button>
-                {extractionTargets.length > 0 && (
-                  <div style={{ ...hintText, display: "flex", gap: 6, alignItems: "center" }}>
-                    ≈ {extractionTargets.map((t) => `${t}px`).join(", ")}
-                    <button style={chip(false, { padding: "1px 7px" })} onClick={clearThicknessTargets}>reset</button>
-                  </div>
-                )}
                 <button style={railBtn(wallSnap)} onClick={() => setWallSnap(!wallSnap)}>
                   🧲 Snap tracing to PDF centerlines
                 </button>
@@ -418,38 +328,9 @@ export function TraceRail() {
       case 4:
         return (
           <>
-            {hasPdf && (
-              <button style={primaryBtn(segments.length > 0)} disabled={segments.length === 0} onClick={detectOpeningsOnTrace}>
-                ✨ Detect doors & windows
-              </button>
-            )}
-            {!hasPdf && suggestedOpenings.length === 0 && (
-              <div style={hintText}>
-                Openings from auto-detect appear here for review. You can also draw them: pick a tool below, then click two points along a wall.
-              </div>
-            )}
-            {suggestedOpenings.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 9px", borderRadius: T.radiusS, background: T.accentSoft }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>
-                  {doorCount} door{doorCount === 1 ? "" : "s"} · {suggestedOpenings.length - doorCount} window{suggestedOpenings.length - doorCount === 1 ? "" : "s"}
-                  {rejectedOpeningIds.length > 0 && <span style={{ color: T.textDim, fontWeight: 400 }}> · {rejectedOpeningIds.length} rejected</span>}
-                </div>
-                <div style={hintText}>Amber = doors, cyan = windows. Click one on the plan to reject it.</div>
-                <div style={{ display: "flex", gap: 5 }}>
-                  <button
-                    style={chip(true, { flex: 1, textAlign: "center", fontWeight: 600, background: T.ok, opacity: keptOpenings ? 1 : 0.4 })}
-                    disabled={!keptOpenings}
-                    onClick={() => {
-                      acceptOpenings();
-                      setTraceStep(5);
-                    }}
-                  >
-                    ✓ Accept {keptOpenings}
-                  </button>
-                  <button style={chip(false, { flex: 1, textAlign: "center" })} onClick={clearOpenings}>Discard</button>
-                </div>
-              </div>
-            )}
+            <div style={hintText}>
+              Draw doors and windows by hand: pick a tool below, then click two points along a wall.
+            </div>
             <DrawTools tools={["door", "window"]} />
           </>
         );
