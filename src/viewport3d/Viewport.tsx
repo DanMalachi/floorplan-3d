@@ -21,6 +21,7 @@ import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
 import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
+import { NumField } from "@/ui/NumField";
 import {
   loadTambourColors,
   groupByFamily,
@@ -134,41 +135,6 @@ const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center
 
 /** Numeric field that commits on Enter/blur and never leaks keys to the pane.
  *  Most dimensions are metres; `unit` covers the ones that aren't. */
-function NumField({ label, value, onCommit, disabled, unit = "m" }: {
-  label: string;
-  value: number;
-  onCommit: (v: number) => void;
-  disabled?: boolean;
-  unit?: string;
-}) {
-  const [raw, setRaw] = useState(String(value));
-  useEffect(() => setRaw(String(value)), [value]);
-  const commit = () => {
-    const v = Number(raw);
-    if (Number.isFinite(v)) onCommit(v);
-    else setRaw(String(value));
-  };
-  return (
-    <label style={inspectorRow}>
-      <span style={{ color: T.textDim }}>{label}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <input
-          style={field({ width: 58, opacity: disabled ? 0.4 : 1 })}
-          value={raw}
-          disabled={disabled}
-          onChange={(e) => setRaw(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-            e.stopPropagation();
-          }}
-        />
-        <span style={{ color: T.textFaint }}>{unit}</span>
-      </span>
-    </label>
-  );
-}
-
 /** Small integer +/- stepper for the inspector (mullion grid). */
 function Stepper({ label, value, min = 1, max = 6, onSet }: {
   label: string;
@@ -288,11 +254,15 @@ function WallInspector({ wall }: { wall: Wall }) {
             label="Height"
             value={wall.height ?? WALL_HEIGHT}
             onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
+            displayScale={100}
+            unit="cm"
           />
           <NumField
             label="Thickness"
             value={wall.thickness ?? DEFAULT_THICKNESS}
             onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
+            displayScale={100}
+            unit="cm"
           />
           {kind === "wall" && (
             <div style={{ fontSize: 10.5, color: T.textFaint }}>
@@ -486,17 +456,23 @@ function OpeningInspector({ opening }: { opening: Opening }) {
         label="Width"
         value={opening.width}
         onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })}
+        displayScale={100}
+        unit="cm"
       />
       <NumField
         label="Height"
         value={opening.height}
         onCommit={(v) => patch("Opening height", { height: Math.max(0.4, v) })}
+        displayScale={100}
+        unit="cm"
       />
       {opening.type === "window" && (
         <NumField
           label="Sill"
           value={opening.sill}
           onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })}
+          displayScale={100}
+          unit="cm"
         />
       )}
       <div style={{ fontSize: 10.5, color: T.textFaint }}>
