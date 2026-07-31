@@ -56,6 +56,14 @@ export interface WalkthroughConfig {
    *  can legitimately show steeper) — otherwise you couldn't climb your own
    *  staircase. Descending is never limited. */
   stepUpM: number;
+  /** Entering walkthrough flies the camera from wherever the orbit view left
+   *  it down to the spawn's eye, instead of cutting. Duration is derived from
+   *  how far it has to travel (`entryFlightSpeedMs`) and clamped: a camera
+   *  already inside the room shouldn't crawl, and one parked 40 m out
+   *  shouldn't arrive like a missile. */
+  entryFlightSpeedMs: number;
+  entryFlightMinS: number;
+  entryFlightMaxS: number;
   /** Damping rate for the eye following the floor under it (same units as
    *  doorSwingLambda). Fast enough that a step doesn't feel like an elevator,
    *  slow enough that the climb isn't a staircase-shaped jolt. */
@@ -83,4 +91,7 @@ export const WALKTHROUGH_CONFIG: WalkthroughConfig = {
   doorSwingLambda: 12,
   stepUpM: 0.34,
   groundLambda: 14,
+  entryFlightSpeedMs: 22,
+  entryFlightMinS: 0.5,
+  entryFlightMaxS: 1.3,
 };
