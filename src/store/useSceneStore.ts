@@ -67,6 +67,34 @@ interface TraceSnapshot {
 let _id = 0;
 const newId = (prefix: string) => `${prefix}${_id++}`;
 
+/**
+ * Push the id counter past ids that were LOADED rather than minted.
+ *
+ * `_id` restarts at 0 on every page load, so reopening a saved project (or
+ * joining a shared doc) and then drawing anything mints ids that already exist
+ * — `st0` twice, `pt0` twice. Duplicates are quietly destructive: `find(byId)`
+ * returns the wrong item, so the inspector edits and Delete removes something
+ * the user did not select, and the collab item maps clobber each other.
+ *
+ * Call this with every id a load brings in, before the state lands in the store.
+ */
+export function reserveIds(ids: Iterable<string>): void {
+  for (const id of ids) {
+    const n = Number(/(\d+)$/.exec(id)?.[1]);
+    if (Number.isFinite(n) && n >= _id) _id = n + 1;
+  }
+}
+
+/** Every id a Scene carries, for `reserveIds`. */
+export function* sceneIds(scene: Scene): Generator<string> {
+  for (const n of scene.nodes ?? []) yield n.id;
+  for (const w of scene.walls ?? []) yield w.id;
+  for (const o of scene.openings ?? []) yield o.id;
+  for (const r of scene.rooms ?? []) yield r.id;
+  for (const f of scene.furniture ?? []) yield f.id;
+  for (const s of scene.stairs ?? []) yield s.id;
+}
+
 // When a wall is split at parameter ts, move an opening onto the sub-wall that
 // contains its center and renormalize its span into that sub-wall's [0,1].
 function remapOpening(

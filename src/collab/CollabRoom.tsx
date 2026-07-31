@@ -19,7 +19,7 @@ import { getYjsProviderForRoom } from "@liveblocks/yjs";
 import { Html } from "@react-three/drei";
 import * as Y from "yjs";
 import { Viewport } from "@/viewport3d/Viewport";
-import { useSceneStore, pickExists, type AppMode } from "@/store/useSceneStore";
+import { useSceneStore, pickExists, reserveIds, sceneIds, type AppMode } from "@/store/useSceneStore";
 import {
   importProject,
   getRoomOwner,
@@ -78,6 +78,11 @@ function useRoomBinding(roomId: string, role: ShareRole) {
       if (useSceneStore.getState().gestureBase) return;
       const scene = readScene(doc);
       if (scene.nodes.length === 0 && scene.walls.length === 0) return; // not seeded yet
+      // Ids arriving from the shared doc were minted in SOMEONE ELSE's session,
+      // so this client's counter has to clear them before it mints its own —
+      // otherwise two peers create the same id and their edits merge into one
+      // item. Cheap: the counter only ever moves forward.
+      reserveIds(sceneIds(scene));
       const first = !framed.current && scene.nodes.length > 0;
       useSceneStore.setState((s) => ({
         scene,
