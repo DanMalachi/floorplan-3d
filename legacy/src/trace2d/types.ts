@@ -51,6 +51,38 @@ export interface TraceOpening {
   sill: number;
 }
 
+/** One straight flight of a traced staircase, in image-local pixels. */
+export interface TraceStairFlight {
+  x0: number;
+  y0: number; // foot (lower end)
+  x1: number;
+  y1: number; // head (upper end)
+}
+
+// A traced staircase. Mixed units on purpose, exactly like TraceOpening: the
+// axis is traced so it lives in image pixels, while the dimensions that aren't
+// traced (width, rise) are set in the panel and stay in METERS.
+//
+// Flights are deliberately NOT connected — the GAP a user leaves between two of
+// them IS the landing, and its footprint is derived downstream. So there is no
+// landing to trace and no landing field to fill in.
+export interface TraceStair {
+  id: string;
+  flights: TraceStairFlight[]; // >= 1, walking order, bottom first
+  width: number; // METERS, perpendicular to the run
+  rise: number; // METERS, TOTAL climb
+  steps?: number; // absent = derived from the rise
+}
+
+/** A staircase mid-gesture. `foot` holds a click waiting for its head click;
+ *  `width` stays null until the width click, and falls back to the panel's
+ *  pending width if the gesture is finished before that third click. */
+export interface TraceStairDraft {
+  flights: TraceStairFlight[];
+  foot: { x: number; y: number } | null;
+  width: number | null; // METERS
+}
+
 // Raw segment parsed from an imported vector PDF, already converted to the
 // background-image pixel space. Rendered as the M1 "what was parsed" overlay.
 export interface ImportSegment {

@@ -32,6 +32,8 @@ import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
+import { StairLayer } from "./StairMesh";
+import { StairInspector } from "./StairInspector";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
 import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
@@ -497,6 +499,12 @@ function MiniInspector() {
     const opening = scene.openings.find((o) => o.id === sel3d.id);
     if (!opening) return null;
     return <OpeningInspector opening={opening} />;
+  }
+
+  if (sel3d?.kind === "stair") {
+    const stair = (scene.stairs ?? []).find((s) => s.id === sel3d.id);
+    if (!stair) return null;
+    return <StairInspector stair={stair} />;
   }
 
   if (sel3d?.kind === "furniture") {
@@ -1243,6 +1251,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <Ceilings scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
+          <StairLayer scene={scene} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
           {/* Collaborators' selection markers (plan coords, inside the group). */}
           {collabOverlay}

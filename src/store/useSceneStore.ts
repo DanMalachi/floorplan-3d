@@ -1,13 +1,22 @@
 import { create } from "zustand";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
-import { DEFAULT_DOOR, DEFAULT_WINDOW, DEFAULT_THICKNESS, WALL_HEIGHT } from "@/schema/constants";
+import {
+  DEFAULT_DOOR,
+  DEFAULT_WINDOW,
+  DEFAULT_THICKNESS,
+  DEFAULT_STAIR,
+  WALL_HEIGHT,
+} from "@/schema/constants";
+import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
   TraceSegment,
   SegmentKind,
   TraceOpening,
+  TraceStair,
+  TraceStairDraft,
   ImportSegment,
   ImportArc,
 } from "@legacy/trace2d/types";
@@ -17,6 +26,8 @@ export type {
   TraceSegment,
   SegmentKind,
   TraceOpening,
+  TraceStair,
+  TraceStairDraft,
   ImportSegment,
   ImportArc,
 };
@@ -34,7 +45,7 @@ export type {
 // consumes it.
 // ---------------------------------------------------------------------------
 
-export type TraceMode = "wall" | "door" | "window" | "calibrate";
+export type TraceMode = "wall" | "door" | "window" | "stair" | "calibrate";
 
 export interface TraceImage {
   src: string; // data URL
@@ -46,6 +57,10 @@ interface TraceSnapshot {
   points: TracePoint[];
   segments: TraceSegment[];
   openings: TraceOpening[];
+  stairs: TraceStair[];
+  // The in-progress staircase rides in history too, so undo mid-gesture steps
+  // back through the clicks instead of silently discarding the whole draft.
+  stairDraft: TraceStairDraft | null;
   activeLastPointId: string | null;
 }
 
@@ -87,7 +102,7 @@ function remapOpening(
 
 /** What a 3D pointer event resolved to (raycast pick contract). */
 export interface PickRef {
-  kind: "wall" | "opening" | "room" | "furniture";
+  kind: "wall" | "opening" | "room" | "furniture" | "stair";
   id: string;
   // For wall picks: which face the pointer landed on / is targeted for paint.
   // "a" = wall-local +Z face, "b" = -Z face. Absent for non-wall picks.
@@ -146,6 +161,7 @@ export function pickExists(scene: Scene, pick: PickRef | null): boolean {
     case "opening": return scene.openings.some((o) => o.id === pick.id);
     case "room": return scene.rooms.some((r) => r.id === pick.id);
     case "furniture": return scene.furniture.some((f) => f.id === pick.id);
+    case "stair": return (scene.stairs ?? []).some((s) => s.id === pick.id);
   }
 }
 
@@ -278,9 +294,14 @@ export interface StoreState {
   points: TracePoint[];
   segments: TraceSegment[];
   openings: TraceOpening[];
+  // Stairs are their OWN draft array, never TraceSegments: analyzeLoops would
+  // read a stair as a room boundary and invent rooms that aren't there.
+  stairs: TraceStair[];
+  stairDraft: TraceStairDraft | null; // the staircase mid-gesture
   activeLastPointId: string | null; // chain endpoint new clicks connect to
   selectedPointId: string | null;
   selectedOpeningId: string | null;
+  selectedStairId: string | null;
 
   // --- scale calibration ---
   metersPerPixel: number | null;
@@ -292,6 +313,11 @@ export interface StoreState {
   drawKind: SegmentKind; // in wall mode, what kind of boundary the pen lays down
   drawThickness: number; // meters — stamped onto new wall segments at creation
   drawHeight: number; // meters — stamped onto new wall segments at creation
+  // Pending stair values, same contract as drawThickness/drawHeight. The width
+  // is STICKY: whatever a committed staircase ended up with becomes the default
+  // for the next one, because a plan's stairs are almost always one width.
+  drawStairWidth: number; // meters
+  drawStairRise: number; // meters, total climb
 
   // --- undo history (trace only) ---
   history: TraceSnapshot[];
@@ -320,6 +346,21 @@ export interface StoreState {
   undo: () => void;
   clearTrace: () => void;
 
+  // --- stairs (trace) ---
+  setDrawStairWidth: (v: number) => void;
+  setDrawStairRise: (v: number) => void;
+  /** One click of the stair gesture, in image pixels. Drives the whole state
+   *  machine: foot -> head -> width -> (foot -> head)* -> finishStair. */
+  stairClick: (x: number, y: number) => void;
+  finishStair: () => void; // commit the draft (Esc / Finish)
+  cancelStairDraft: () => void;
+  selectStair: (id: string | null) => void;
+  /** Edit a placed stair. `steps: null` clears the override back to derived. */
+  updateStair: (
+    id: string,
+    patch: { width?: number; rise?: number; steps?: number | null },
+  ) => void;
+
   addCalibrationPoint: (x: number, y: number) => void;
   applyCalibration: (realMeters: number) => void;
   cancelCalibration: () => void;
@@ -327,11 +368,19 @@ export interface StoreState {
 
 export const useSceneStore = create<StoreState>((set, get) => {
   const snapshot = (): TraceSnapshot => {
-    const { points, segments, openings, activeLastPointId } = get();
+    const { points, segments, openings, stairs, stairDraft, activeLastPointId } = get();
     return {
       points: points.map((p) => ({ ...p })),
       segments: segments.map((s) => ({ ...s })),
       openings: openings.map((o) => ({ ...o })),
+      stairs: stairs.map((s) => ({ ...s, flights: s.flights.map((f) => ({ ...f })) })),
+      stairDraft: stairDraft
+        ? {
+            ...stairDraft,
+            flights: stairDraft.flights.map((f) => ({ ...f })),
+            foot: stairDraft.foot ? { ...stairDraft.foot } : null,
+          }
+        : null,
       activeLastPointId,
     };
   };
@@ -639,7 +688,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
           ...scene,
           openings: scene.openings.filter((o) => o.id !== sel3d.id),
         });
-      } else {
+      } else if (sel3d.kind === "stair") {
+        commitScene("Delete stair", {
+          ...scene,
+          stairs: (scene.stairs ?? []).filter((s) => s.id !== sel3d.id),
+        });
+      } else if (sel3d.kind === "room") {
+        // Explicit rather than a trailing `else`: a kind this doesn't know
+        // must delete NOTHING, not fall through to removing a floor.
         commitScene("Delete floor", {
           ...scene,
           rooms: scene.rooms.filter((r) => r.id !== sel3d.id),
@@ -815,9 +871,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
     points: [],
     segments: [],
     openings: [],
+    stairs: [],
+    stairDraft: null,
     activeLastPointId: null,
     selectedPointId: null,
     selectedOpeningId: null,
+    selectedStairId: null,
 
     metersPerPixel: null,
     calibrationPts: [],
@@ -827,6 +886,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
     drawKind: "wall",
     drawThickness: DEFAULT_THICKNESS,
     drawHeight: WALL_HEIGHT,
+    drawStairWidth: DEFAULT_STAIR.width,
+    drawStairRise: DEFAULT_STAIR.rise,
 
     history: [],
 
@@ -834,6 +895,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({
         mode,
         calibrationPts: mode === "calibrate" ? [] : get().calibrationPts,
+        // Leaving stair mode abandons a half-drawn staircase rather than
+        // leaving invisible clicks armed for the next time you come back.
+        stairDraft: mode === "stair" ? get().stairDraft : null,
       }),
 
     setOrtho: (ortho) => set({ ortho }),
@@ -968,10 +1032,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
       })),
 
     selectPoint: (selectedPointId) =>
-      set({ selectedPointId, selectedOpeningId: null }),
+      set({ selectedPointId, selectedOpeningId: null, selectedStairId: null }),
 
     selectOpening: (selectedOpeningId) =>
-      set({ selectedOpeningId, selectedPointId: null }),
+      set({ selectedOpeningId, selectedPointId: null, selectedStairId: null }),
+
+    selectStair: (selectedStairId) =>
+      set({ selectedStairId, selectedPointId: null, selectedOpeningId: null }),
 
     addOpeningSpan: (type, segmentId, t0, t1) => {
       const lo = Math.min(1, Math.max(0, Math.min(t0, t1)));
@@ -994,7 +1061,15 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
 
     deleteSelected: () => {
-      const { selectedOpeningId, selectedPointId } = get();
+      const { selectedOpeningId, selectedPointId, selectedStairId } = get();
+      if (selectedStairId) {
+        pushHistory();
+        set((st) => ({
+          stairs: st.stairs.filter((s) => s.id !== selectedStairId),
+          selectedStairId: null,
+        }));
+        return;
+      }
       if (selectedOpeningId) {
         pushHistory();
         set((st) => ({
@@ -1026,8 +1101,15 @@ export const useSceneStore = create<StoreState>((set, get) => {
       });
     },
 
-    finishChain: () =>
-      set({ activeLastPointId: null, selectedPointId: null, selectedOpeningId: null }),
+    finishChain: () => {
+      // In stair mode "finish" means commit the staircase, not drop the wall
+      // chain — one key (Esc) ends whatever gesture is actually in flight.
+      if (get().mode === "stair" && get().stairDraft) {
+        get().finishStair();
+        return;
+      }
+      set({ activeLastPointId: null, selectedPointId: null, selectedOpeningId: null });
+    },
 
     undo: () => {
       const hist = get().history;
@@ -1037,10 +1119,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
         points: prev.points,
         segments: prev.segments,
         openings: prev.openings,
+        stairs: prev.stairs,
+        stairDraft: prev.stairDraft,
         activeLastPointId: prev.activeLastPointId,
         history: hist.slice(0, -1),
         selectedPointId: null,
         selectedOpeningId: null,
+        selectedStairId: null,
       });
     },
 
@@ -1050,10 +1135,111 @@ export const useSceneStore = create<StoreState>((set, get) => {
         points: [],
         segments: [],
         openings: [],
+        stairs: [],
+        stairDraft: null,
         activeLastPointId: null,
         selectedPointId: null,
         selectedOpeningId: null,
+        selectedStairId: null,
       });
+    },
+
+    // --- stairs -----------------------------------------------------------
+
+    setDrawStairWidth: (drawStairWidth) => set({ drawStairWidth }),
+    setDrawStairRise: (drawStairRise) => set({ drawStairRise }),
+
+    /**
+     * The stair gesture, one click at a time:
+     *
+     *   no draft            -> record the foot
+     *   foot set            -> close that flight
+     *   flight 1, no width  -> width = 2x the perpendicular distance to its axis
+     *   width set, no foot  -> record the foot of the NEXT flight
+     *
+     * The gap left between two flights becomes the landing downstream, so
+     * there is nothing here that places or sizes one.
+     */
+    stairClick: (x, y) => {
+      const st = get();
+      const d = st.stairDraft;
+
+      if (!d) {
+        pushHistory();
+        set({ stairDraft: { flights: [], foot: { x, y }, width: null } });
+        return;
+      }
+
+      if (d.foot) {
+        // Ignore a zero-length flight: two clicks in the same spot is a
+        // misclick, and it would divide by zero downstream.
+        if (Math.hypot(x - d.foot.x, y - d.foot.y) < 1e-6) return;
+        set({
+          stairDraft: {
+            ...d,
+            flights: [...d.flights, { x0: d.foot.x, y0: d.foot.y, x1: x, y1: y }],
+            foot: null,
+          },
+        });
+        return;
+      }
+
+      if (d.flights.length > 0 && d.width == null) {
+        const f = d.flights[0];
+        const mpp = st.metersPerPixel;
+        if (mpp == null) return; // no scale yet; the canvas gates this too
+        if (Math.hypot(f.x1 - f.x0, f.y1 - f.y0) < 1e-6) return;
+        // Perpendicular distance only — the click is forgiving ALONG the run
+        // and only has to be accurate across it, which is where the plan's
+        // parallel edges are. Shared with the canvas preview so what the
+        // envelope shows under the cursor is exactly what the click commits.
+        const width = clampStairWidth(2 * perpDistanceToFlight(f, x, y) * mpp);
+        set({ stairDraft: { ...d, width } });
+        return;
+      }
+
+      set({ stairDraft: { ...d, foot: { x, y } } });
+    },
+
+    finishStair: () => {
+      const st = get();
+      const d = st.stairDraft;
+      if (!d || d.flights.length === 0) {
+        set({ stairDraft: null });
+        return;
+      }
+      const width = d.width ?? st.drawStairWidth;
+      const stair: TraceStair = {
+        id: newId("st"),
+        flights: d.flights,
+        width,
+        rise: st.drawStairRise,
+      };
+      set({
+        stairs: [...st.stairs, stair],
+        stairDraft: null,
+        selectedStairId: stair.id,
+        selectedPointId: null,
+        selectedOpeningId: null,
+        drawStairWidth: width, // sticky: the next stair starts at this width
+      });
+    },
+
+    cancelStairDraft: () => set({ stairDraft: null }),
+
+    updateStair: (id, patch) => {
+      pushHistory();
+      set((st) => ({
+        stairs: st.stairs.map((s) => {
+          if (s.id !== id) return s;
+          const next: TraceStair = { ...s };
+          if (patch.width !== undefined) next.width = patch.width;
+          if (patch.rise !== undefined) next.rise = patch.rise;
+          if (patch.steps === null) delete next.steps; // back to derived
+          else if (patch.steps !== undefined) next.steps = patch.steps;
+          return next;
+        }),
+      }));
     },
 
     addCalibrationPoint: (x, y) =>

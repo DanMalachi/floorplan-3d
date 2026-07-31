@@ -195,6 +195,53 @@ export interface FurnitureItem {
   elevation?: number; // meters above floor (default 0)
 }
 
+/** One straight flight within a staircase. Centerline, plan meters. */
+export interface StairFlight {
+  x0: number;
+  y0: number; // foot (lower end)
+  x1: number;
+  y1: number; // head (upper end)
+}
+
+/**
+ * A staircase: one or more straight flights climbing to a single total `rise`.
+ *
+ * NOT part of the wall graph. The endpoints are free coordinates rather than
+ * node ids on purpose: a stair bounds no room, splits no wall and joins no
+ * corner, so it must never reach `analyzeLoops` or the junction solver.
+ *
+ * Flights are stored in walking order and are deliberately NOT connected: the
+ * GAP between consecutive flights is what a landing is, and its footprint is
+ * derived (convex hull of the two facing cross-sections). That is why this is
+ * a list of flights and not a polyline — the type encodes the rule.
+ *
+ * `rise` is the TOTAL climb, not per flight: the step count derives from it
+ * once and is distributed across the flights, so the riser is uniform over the
+ * whole staircase by construction and a landing can never sit at a height that
+ * doesn't line up.
+ *
+ * With no second floor modeled, the last flight terminates at a landing stub
+ * whose top sits at `rise` — "the floor above starts here". `rise` is always
+ * positive (up); descending stairs need a void in the floor slab, a later tier.
+ */
+export interface Stair {
+  id: Id;
+  flights: StairFlight[]; // >= 1, walking order, bottom first
+  width: number; // meters, perpendicular to the run; one width for the whole stair
+  rise: number; // meters, TOTAL climb, > 0
+  // Absent = derived from `rise` and COMFORT_RISER (see src/lib/stairs).
+  // Present = the user matched the tread count drawn on the plan.
+  steps?: number; // TOTAL across all flights
+  // How the stair is BUILT, which is a look, not a shape: both styles occupy
+  // the same footprint and the same treads.
+  //   "solid" = closed stringer — a masonry/boxed-in flight sitting on the
+  //             floor, and landings built down to the floor with it.
+  //   "open"  = open riser — floating treads on two side stringers, landings
+  //             carried as slabs. You can see through and under it.
+  // Absent = "solid".
+  style?: "solid" | "open";
+}
+
 export interface Scene {
   schemaVersion: 2;
   units: "meters";
@@ -203,5 +250,8 @@ export interface Scene {
   openings: Opening[];
   rooms: Room[];
   furniture: FurnitureItem[];
+  // Optional forever: every project saved before stairs existed has no such key
+  // at runtime, whatever the type says. Consumers read `scene.stairs ?? []`.
+  stairs?: Stair[];
   building?: BuildingSemantics; // Building Knowledge Layer — house-level verdict
 }

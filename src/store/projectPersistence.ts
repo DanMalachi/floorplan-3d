@@ -49,6 +49,7 @@ const DURABLE_KEYS = [
   "points",
   "segments",
   "openings",
+  "stairs",
   "metersPerPixel",
   "liveRoomId",
 ] as const satisfies readonly (keyof StoreState)[];

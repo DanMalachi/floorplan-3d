@@ -47,8 +47,10 @@ export function applySceneDiff(doc: Y.Doc, prev: Scene, next: Scene, origin: unk
         root.set(coll, m);
       }
       const map = m as Y.Map<Y.Map<unknown>>;
-      const prevItems = new Map((prev[coll] as unknown as Item[]).map((it) => [it.id, it]));
-      const nextItems = new Map((next[coll] as unknown as Item[]).map((it) => [it.id, it]));
+      // `?? []`: `stairs` is optional on Scene, so a project created before the
+      // stair tool existed reaches here with the key missing entirely.
+      const prevItems = new Map(((prev[coll] ?? []) as unknown as Item[]).map((it) => [it.id, it]));
+      const nextItems = new Map(((next[coll] ?? []) as unknown as Item[]).map((it) => [it.id, it]));
 
       for (const id of prevItems.keys()) if (!nextItems.has(id)) map.delete(id);
 

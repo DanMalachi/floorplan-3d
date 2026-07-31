@@ -5,7 +5,15 @@ import type { CSSProperties } from "react";
 import type Konva from "konva";
 import { Circle, Group, Image as KImage, Layer, Line, Shape, Stage, Text } from "react-konva";
 import { useSceneStore } from "@/store/useSceneStore";
-import type { ImportSegment } from "./types";
+import type { ImportSegment, TraceStair } from "./types";
+import type { Stair } from "@/schema/scene";
+import {
+  clampStairWidth,
+  perpDistanceToFlight,
+  stairLandings,
+  stairMetrics,
+} from "@/lib/stairs/stairGeometry";
+import type { StairMetrics } from "@/lib/stairs/stairGeometry";
 import { analyzeLoops } from "../lib/loops";
 import { snapWallPoint } from "./snapWall";
 
@@ -31,6 +39,84 @@ const PAD = 24;
 const MAX_UPSCALE = 6;
 const DOOR_COLOR = "#e0852b";
 const WINDOW_COLOR = "#2bd4e0";
+const STAIR_COLOR = "#b98cff"; // violet — taken by nothing else on this canvas
+
+interface StairFlightDrawing {
+  envelope: number[]; // closed quad, image px
+  treads: number[][]; // one line per interior step boundary, image px
+  foot: { x: number; y: number };
+  dir: { x: number; y: number };
+}
+
+interface StairDrawing {
+  flights: StairFlightDrawing[];
+  landings: number[][]; // derived footprints, closed polys in image px
+  metrics: StairMetrics;
+}
+
+/**
+ * Everything needed to draw one traced staircase, in image pixels.
+ *
+ * A traced stair mixes units on purpose (axis in px, width/rise in meters), so
+ * the derivation makes one round trip through `src/lib/stairs` in METERS and
+ * comes back to px. The canvas therefore draws the staircase the 3D mesh will
+ * actually build — same step count, same landings — instead of a second,
+ * drifting copy of the maths.
+ */
+function stairDrawing(stair: TraceStair, mpp: number): StairDrawing {
+  const asScene: Stair = {
+    id: stair.id,
+    flights: stair.flights.map((f) => ({
+      x0: f.x0 * mpp,
+      y0: f.y0 * mpp,
+      x1: f.x1 * mpp,
+      y1: f.y1 * mpp,
+    })),
+    width: stair.width,
+    rise: stair.rise,
+    ...(stair.steps != null ? { steps: stair.steps } : {}),
+  };
+  const metrics = stairMetrics(asScene);
+  const half = stair.width / mpp / 2; // half-width, back in pixels
+
+  const flights = stair.flights.map((f, i) => {
+    const dx = f.x1 - f.x0;
+    const dy = f.y1 - f.y0;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const nx = -uy * half; // half-width offset across the run
+    const ny = ux * half;
+
+    const treads: number[][] = [];
+    const steps = metrics.flights[i]?.steps ?? 0;
+    // Interior boundaries only: the two ends are already drawn by the envelope.
+    for (let k = 1; k < steps; k++) {
+      const along = (len * k) / steps;
+      const cx = f.x0 + ux * along;
+      const cy = f.y0 + uy * along;
+      treads.push([cx + nx, cy + ny, cx - nx, cy - ny]);
+    }
+
+    return {
+      envelope: [
+        f.x0 + nx, f.y0 + ny,
+        f.x1 + nx, f.y1 + ny,
+        f.x1 - nx, f.y1 - ny,
+        f.x0 - nx, f.y0 - ny,
+      ],
+      treads,
+      foot: { x: f.x0, y: f.y0 },
+      dir: { x: ux, y: uy },
+    };
+  });
+
+  const landings = stairLandings(asScene).map((l) =>
+    l.poly.flatMap((p) => [p.x / mpp, p.y / mpp]),
+  );
+
+  return { flights, landings, metrics };
+}
 
 const zbtn: CSSProperties = {
   width: 30,
@@ -160,6 +246,13 @@ export default function TraceCanvas() {
   const finishChain = useSceneStore((s) => s.finishChain);
   const undo = useSceneStore((s) => s.undo);
   const addCalibrationPoint = useSceneStore((s) => s.addCalibrationPoint);
+  const stairs = useSceneStore((s) => s.stairs);
+  const stairDraft = useSceneStore((s) => s.stairDraft);
+  const selectedStairId = useSceneStore((s) => s.selectedStairId);
+  const drawStairWidth = useSceneStore((s) => s.drawStairWidth);
+  const drawStairRise = useSceneStore((s) => s.drawStairRise);
+  const stairClick = useSceneStore((s) => s.stairClick);
+  const selectStair = useSceneStore((s) => s.selectStair);
 
   const htmlImg = useHtmlImage(image?.src ?? null);
 
@@ -272,6 +365,59 @@ export default function TraceCanvas() {
     return { kind: "free", point: { x, y } };
   };
 
+  // Ortho for the stair gesture. It constrains the HEAD click only — the run's
+  // direction relative to the foot waiting in the draft — and Shift inverts it,
+  // exactly as with walls. Shared with the preview so the rubber band shows the
+  // flight the next click will actually commit.
+  const stairHead = (
+    pos: { x: number; y: number },
+    foot: { x: number; y: number } | null | undefined,
+    shift: boolean,
+  ) => {
+    if (!foot || ortho === shift) return pos;
+    return Math.abs(pos.x - foot.x) >= Math.abs(pos.y - foot.y)
+      ? { x: pos.x, y: foot.y }
+      : { x: foot.x, y: pos.y };
+  };
+
+  const stairDraws = useMemo(() => {
+    if (metersPerPixel == null) return [];
+    return stairs.map((s) => ({ stair: s, draw: stairDrawing(s, metersPerPixel) }));
+  }, [stairs, metersPerPixel]);
+
+  // The staircase mid-gesture, drawn through the same function as a placed one:
+  // the pending flight runs to the cursor, and the gap behind it previews as the
+  // landing it will become.
+  const draftDraw = useMemo(() => {
+    if (metersPerPixel == null || !stairDraft) return null;
+    const flights = [...stairDraft.flights];
+    let width = stairDraft.width ?? drawStairWidth;
+
+    if (stairDraft.foot && pointer) {
+      const head = stairHead(pointer, stairDraft.foot, shiftRef.current);
+      flights.push({
+        x0: stairDraft.foot.x,
+        y0: stairDraft.foot.y,
+        x1: head.x,
+        y1: head.y,
+      });
+    } else if (stairDraft.width == null && flights.length > 0 && pointer) {
+      // Awaiting the width click: the envelope breathes with the cursor, so the
+      // click is aimed at a shape rather than at a number.
+      width = clampStairWidth(
+        2 * perpDistanceToFlight(flights[0], pointer.x, pointer.y) * metersPerPixel,
+      );
+    }
+
+    if (flights.length === 0) return null;
+    return stairDrawing(
+      { id: "draft", flights, width, rise: drawStairRise },
+      metersPerPixel,
+    );
+    // shiftRef is a ref by design (no re-render on Shift); `pointer` moves with
+    // the cursor and is what actually re-runs this.
+  }, [stairDraft, pointer, metersPerPixel, drawStairWidth, drawStairRise, ortho]);
+
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const stage = e.target.getStage();
     const group = groupRef.current;
@@ -292,6 +438,15 @@ export default function TraceCanvas() {
       if (tgt.kind === "vertex") connectToNode(tgt.nodeId);
       else if (tgt.kind === "edge") attachToSegment(tgt.segmentId, tgt.point.x, tgt.point.y);
       else addPoint(tgt.point.x, tgt.point.y);
+      return;
+    }
+
+    // A stair is NOT resolved through resolveTarget: that snaps to vertices and
+    // splits walls, and a stair must split nothing and join nothing.
+    if (mode === "stair") {
+      const p = stairHead(pos, stairDraft?.foot, e.evt.shiftKey);
+      stairClick(p.x, p.y);
+      setPointer(pos);
       return;
     }
 
@@ -320,12 +475,15 @@ export default function TraceCanvas() {
     shiftRef.current = !!e.evt.shiftKey;
     const drawingWall = mode === "wall" && activeLastPointId != null;
     const drawingOpening = (mode === "door" || mode === "window") && openingStart != null;
+    // A stair draft previews from the very first click: the pending flight, and
+    // then the envelope the width click is being aimed at.
+    const drawingStair = mode === "stair" && stairDraft != null;
     // Track the cursor whenever a hover ring could be shown: over the imported
     // plan (wall snap) or over an already-traced wall (edge split).
     const hoverSnap =
       mode === "wall" &&
       ((wallSnap && importedSegments.length > 0) || segments.length > 0);
-    if (drawingWall || drawingOpening || hoverSnap) {
+    if (drawingWall || drawingOpening || drawingStair || hoverSnap) {
       const pos = groupRef.current?.getRelativePointerPosition();
       if (pos) setPointer(pos);
     }
@@ -357,6 +515,73 @@ export default function TraceCanvas() {
   const handleR = 6 / scale;
   const stroke = 2.5 / scale;
   const drawing = activeLastPointId != null;
+
+  // One staircase, placed or mid-gesture: the derived landings, each flight's
+  // width envelope, the derived tread ladder, and an arrow at the foot so the
+  // direction of travel is never in doubt. Listening is left to the caller's
+  // wrapping Group — a draft must not be clickable.
+  const stairShapes = (d: StairDrawing, draft: boolean, selected: boolean) => {
+    const first = d.flights[0];
+    const a = 9 / scale;
+    return (
+      <>
+        {/* Landings are derived from the GAPS between flights, never traced. */}
+        {d.landings.map((poly, i) => (
+          <Line
+            key={`sl${i}`}
+            points={poly}
+            closed
+            fill={draft ? "rgba(185,140,255,0.10)" : "rgba(185,140,255,0.20)"}
+            stroke={STAIR_COLOR}
+            strokeWidth={stroke * 0.6}
+            dash={[5 / scale, 4 / scale]}
+            opacity={draft ? 0.75 : 1}
+          />
+        ))}
+        {d.flights.map((f, i) => (
+          <Group key={`sf${i}`}>
+            <Line
+              points={f.envelope}
+              closed
+              fill={selected ? "rgba(185,140,255,0.26)" : "rgba(185,140,255,0.13)"}
+              stroke={STAIR_COLOR}
+              strokeWidth={selected ? stroke * 1.3 : stroke * 0.9}
+              dash={draft ? [6 / scale, 4 / scale] : undefined}
+              opacity={draft ? 0.8 : 1}
+              shadowColor={selected ? "#fff" : undefined}
+              shadowBlur={selected ? 8 / scale : 0}
+            />
+            {f.treads.map((t, k) => (
+              <Line
+                key={k}
+                points={t}
+                stroke={STAIR_COLOR}
+                strokeWidth={stroke * 0.5}
+                opacity={0.85}
+                listening={false}
+              />
+            ))}
+          </Group>
+        ))}
+        {first && (
+          <Line
+            points={[
+              first.foot.x + first.dir.x * a * 2.2,
+              first.foot.y + first.dir.y * a * 2.2,
+              first.foot.x - first.dir.y * a * 0.9,
+              first.foot.y + first.dir.x * a * 0.9,
+              first.foot.x + first.dir.y * a * 0.9,
+              first.foot.y - first.dir.x * a * 0.9,
+            ]}
+            closed
+            fill={STAIR_COLOR}
+            opacity={draft ? 0.7 : 0.95}
+            listening={false}
+          />
+        )}
+      </>
+    );
+  };
 
   return (
     <div
@@ -507,6 +732,28 @@ export default function TraceCanvas() {
                 />
               );
             })}
+
+            {/* Stairs. The tread ladder is the accuracy check: nudge Steps in
+                the panel until it lines up with the treads printed on the plan
+                and the model matches the drawing. Clickable in stair mode only,
+                so a stair never competes with the wall pen for a click. */}
+            {stairDraws.map(({ stair, draw }) => (
+              <Group
+                key={stair.id}
+                listening={mode === "stair"}
+                onClick={(e) => {
+                  e.cancelBubble = true;
+                  selectStair(stair.id);
+                }}
+              >
+                {stairShapes(draw, false, stair.id === selectedStairId)}
+              </Group>
+            ))}
+
+            {/* Staircase mid-gesture */}
+            {draftDraw && (
+              <Group listening={false}>{stairShapes(draftDraw, true, false)}</Group>
+            )}
 
             {/* Opening trace preview */}
             {openingStart &&

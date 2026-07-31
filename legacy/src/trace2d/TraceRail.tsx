@@ -1,8 +1,8 @@
 "use client";
 
-// The guided trace rail (Phase 5 T1): the whole trace pipeline as five
-// steps — Plan · Scale · Walls · Openings · Build — with exactly one step's
-// controls visible at a time. Replaces the old all-at-once toolbar.
+// The guided trace rail (Phase 5 T1): the whole trace pipeline as six
+// steps — Plan · Scale · Walls · Openings · Stairs · Build — with exactly one
+// step's controls visible at a time. Replaces the old all-at-once toolbar.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -11,6 +11,7 @@ import { analyzeLoops } from "../lib/loops";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
 import { NumField } from "@/ui/NumField";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
+import { MAX_STAIR_WIDTH, MIN_STAIR_WIDTH, stairMetrics } from "@/lib/stairs/stairGeometry";
 import { traceToScene } from "./traceToScene";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 
@@ -209,6 +210,15 @@ export function TraceRail() {
   const points = useSceneStore((s) => s.points);
   const segments = useSceneStore((s) => s.segments);
   const openings = useSceneStore((s) => s.openings);
+  const stairs = useSceneStore((s) => s.stairs);
+  const selectedStairId = useSceneStore((s) => s.selectedStairId);
+  const drawStairWidth = useSceneStore((s) => s.drawStairWidth);
+  const drawStairRise = useSceneStore((s) => s.drawStairRise);
+  const setDrawStairWidth = useSceneStore((s) => s.setDrawStairWidth);
+  const setDrawStairRise = useSceneStore((s) => s.setDrawStairRise);
+  const updateStair = useSceneStore((s) => s.updateStair);
+  const finishChain = useSceneStore((s) => s.finishChain);
+  const deleteSelected = useSceneStore((s) => s.deleteSelected);
   const clearTrace = useSceneStore((s) => s.clearTrace);
   const setScene = useSceneStore((s) => s.setScene);
   const setAppMode = useSceneStore((s) => s.setAppMode);
@@ -249,10 +259,54 @@ export function TraceRail() {
       status: openings.length > 0 ? `${openings.length} placed` : "doors & windows",
     },
     {
-      n: 5, label: "Build", done: false, locked: !scaleSet,
+      n: 5, label: "Stairs", done: stairs.length > 0, locked: !scaleSet,
+      status: stairs.length > 0 ? `${stairs.length} placed` : "optional — steps & levels",
+    },
+    {
+      n: 6, label: "Build", done: false, locked: !scaleSet,
       status: analysis.loops.length > 0 ? `${analysis.loops.length} room${analysis.loops.length > 1 ? "s" : ""} ready` : "close a room loop",
     },
   ];
+
+  // Edits land on the SELECTED stair; with nothing selected they set the
+  // pending values the next traced stair starts from (the drawThickness /
+  // drawHeight contract). Committing a stair selects it, so in practice the
+  // fields are already pointed at the one just drawn.
+  const selectedStair = stairs.find((s) => s.id === selectedStairId) ?? null;
+  const stairWidth = selectedStair ? selectedStair.width : drawStairWidth;
+  const stairRise = selectedStair ? selectedStair.rise : drawStairRise;
+
+  const commitStairWidth = (v: number) => {
+    const w = Math.min(MAX_STAIR_WIDTH, Math.max(MIN_STAIR_WIDTH, v));
+    if (selectedStair) updateStair(selectedStair.id, { width: w });
+    setDrawStairWidth(w); // sticky, as after a width click
+  };
+  const commitStairRise = (v: number) => {
+    const r = Math.min(6, Math.max(0.1, v));
+    if (selectedStair) updateStair(selectedStair.id, { rise: r });
+    setDrawStairRise(r);
+  };
+
+  // The stair the readout describes: the selected one, else the last placed.
+  // Its numbers come from src/lib/stairs on a METERS copy of the traced axis —
+  // the same call the canvas and the 3D mesh make, so all three agree.
+  const stairTarget = useMemo(() => {
+    const t = stairs.find((s) => s.id === selectedStairId) ?? stairs[stairs.length - 1];
+    if (!t || metersPerPixel == null) return null;
+    const mpp = metersPerPixel;
+    return {
+      stair: t,
+      metrics: stairMetrics({
+        id: t.id,
+        flights: t.flights.map((f) => ({
+          x0: f.x0 * mpp, y0: f.y0 * mpp, x1: f.x1 * mpp, y1: f.y1 * mpp,
+        })),
+        width: t.width,
+        rise: t.rise,
+        ...(t.steps != null ? { steps: t.steps } : {}),
+      }),
+    };
+  }, [stairs, selectedStairId, metersPerPixel]);
 
   const applyScale = () => {
     const cm = Number(distance);
@@ -265,7 +319,7 @@ export function TraceRail() {
   const generate = () => {
     if (metersPerPixel == null) return;
     const texts = useSceneStore.getState().importedTexts;
-    setScene(traceToScene({ points, segments, openings, metersPerPixel, texts }));
+    setScene(traceToScene({ points, segments, openings, stairs, metersPerPixel, texts }));
     setAppMode("build");
   };
 
@@ -384,6 +438,84 @@ export function TraceRail() {
           </>
         );
       case 5:
+        return (
+          <>
+            <div style={hintText}>
+              Click the foot of the run, then its head, then either long edge to set
+              the width. Keep clicking to add flights — the flat gap you leave between
+              two of them becomes the landing. Esc finishes the staircase.
+            </div>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button
+                style={chip(mode === "stair", { flex: 1, textAlign: "center" })}
+                onClick={() => setMode("stair")}
+              >
+                ✎ Stair
+              </button>
+              <button style={chip(false, { flex: 1, textAlign: "center" })} onClick={finishChain}>
+                Finish
+              </button>
+              <button
+                style={chip(false, { flex: 1, textAlign: "center", opacity: selectedStair ? 1 : 0.4 })}
+                onClick={deleteSelected}
+              >
+                Delete
+              </button>
+            </div>
+            <NumField label="Width" value={stairWidth} onCommit={commitStairWidth} displayScale={100} unit="cm" />
+            <NumField label="Rise" value={stairRise} onCommit={commitStairRise} displayScale={100} unit="cm" />
+            <div style={hintText}>
+              Rise is the TOTAL climb of the whole staircase — a full storey by default,
+              less for a terrace, a stoop or a split level.
+            </div>
+            {stairTarget && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ flex: 1 }}>
+                    <NumField
+                      label="Steps"
+                      value={stairTarget.metrics.steps}
+                      unit=""
+                      disabled={!selectedStair}
+                      onCommit={(v) =>
+                        selectedStair &&
+                        updateStair(selectedStair.id, { steps: Math.max(1, Math.round(v)) })
+                      }
+                    />
+                  </div>
+                  <button
+                    style={chip(stairTarget.stair.steps == null, { opacity: selectedStair ? 1 : 0.4 })}
+                    title="Derive the step count from the rise again"
+                    onClick={() => selectedStair && updateStair(selectedStair.id, { steps: null })}
+                  >
+                    Auto
+                  </button>
+                </div>
+                <div style={hintText}>
+                  Nudge Steps until the ladder on the canvas lines up with the treads
+                  drawn on the plan — then the model matches the drawing.
+                </div>
+                <div style={{ fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
+                  {stairTarget.stair.flights.length} flight
+                  {stairTarget.stair.flights.length === 1 ? "" : "s"} ·{" "}
+                  {stairTarget.metrics.steps} steps · riser{" "}
+                  {Math.round(stairTarget.metrics.riser * 100)} cm · tread{" "}
+                  {Math.round(stairTarget.metrics.going * 100)} cm ·{" "}
+                  {Math.round(
+                    (Math.atan2(stairTarget.metrics.riser, stairTarget.metrics.going) * 180) / Math.PI,
+                  )}
+                  °
+                </div>
+                {/* Advisory only: a plan may legitimately show a stair that
+                    fails a rule of thumb, so nothing here blocks Generate. */}
+                {stairTarget.metrics.warnings.map((w, i) => (
+                  <div key={i} style={statusText(false)}>⚠ {w}</div>
+                ))}
+              </>
+            )}
+          </>
+        );
+      case 6:
         return (
           <>
             <div style={{ fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
