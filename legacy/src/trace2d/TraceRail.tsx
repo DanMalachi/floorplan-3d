@@ -13,6 +13,7 @@ import { NumField } from "@/ui/NumField";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { MAX_STAIR_WIDTH, MIN_STAIR_WIDTH, stairMetrics } from "@/lib/stairs/stairGeometry";
 import { traceToScene } from "./traceToScene";
+import { preserveSceneEdits } from "@/lib/scene/preserveEdits";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 
 // Precedent pair from src/dev/gtToScene.ts (interior 0.1 / exterior 0.2) —
@@ -318,8 +319,17 @@ export function TraceRail() {
 
   const generate = () => {
     if (metersPerPixel == null) return;
-    const texts = useSceneStore.getState().importedTexts;
-    setScene(traceToScene({ points, segments, openings, stairs, metersPerPixel, texts }));
+    const prev = useSceneStore.getState();
+    const texts = prev.importedTexts;
+    // Re-derive everything the trace owns, but keep what only 3D knows: paint,
+    // floors, door joinery, stair style, furniture. Without this, correcting one
+    // wall in the trace would throw away every decision made in Build/Decorate.
+    setScene(
+      preserveSceneEdits(
+        prev.scene,
+        traceToScene({ points, segments, openings, stairs, metersPerPixel, texts }),
+      ),
+    );
     setAppMode("build");
   };
 
