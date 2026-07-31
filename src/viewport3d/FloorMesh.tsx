@@ -10,6 +10,25 @@ import { buildFloorGeometry } from "./geometry/triangulateFloor";
 import { floorTexture, floorRoughness } from "./textures";
 import { ACCENT } from "./WallMesh";
 
+/** A flat vertical quad from (ax,ay)-(bx,by) in plan, spanning y0 to y1 —
+ *  the riser panel that closes the gap above a shorter room's ceiling where
+ *  a taller neighbor's shared wall would otherwise leave it open. */
+function buildRiserGeometry(ax: number, ay: number, bx: number, by: number, y0: number, y1: number): THREE.BufferGeometry {
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array([
+    ax, y0, ay,
+    bx, y0, by,
+    bx, y1, by,
+
+    ax, y0, ay,
+    bx, y1, by,
+    ax, y1, ay,
+  ]);
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function Floor({ roomId, style, geometry }: {
   roomId: string;
   style: FloorStyle;
@@ -120,7 +139,7 @@ export function Ceilings({ scene }: { scene: Scene }) {
   const wallMode = useSceneStore((s) => s.wallMode);
   const show = useSceneStore((s) => s.showCeilings);
 
-  const ceilings = useMemo(() => {
+  const ceilingsAndRisers = useMemo(() => {
     const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
     // RAILS only — deliberately not every non-solid kind. A rail means open to
     // the SKY, so the room loses its ceiling. A portal means open to the next
@@ -149,6 +168,7 @@ export function Ceilings({ scene }: { scene: Scene }) {
       }
     }
     const out: { id: string; geometry: THREE.BufferGeometry; height: number }[] = [];
+    const risers: { id: string; geometry: THREE.BufferGeometry }[] = [];
     for (const room of scene.rooms) {
       const loop = room.loop
         .map((id) => nodes.get(id))
@@ -175,10 +195,28 @@ export function Ceilings({ scene }: { scene: Scene }) {
           perimeterHeight = perimeterHeight == null ? h : Math.max(perimeterHeight, h);
         }
       }
-      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height: perimeterHeight ?? anyHeight ?? WALL_HEIGHT });
+      const height = perimeterHeight ?? anyHeight ?? WALL_HEIGHT;
+      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height });
+
+      // A bounding wall taller than THIS room's own ceiling (a neighbor's
+      // shared wall, excluded from the max above) would otherwise leave the
+      // airspace above this room open from its ceiling up to that wall's
+      // real height. Seal it with a vertical riser panel spanning exactly
+      // that gap, along that wall's own line.
+      for (let i = 0; i < room.loop.length; i++) {
+        const a = nodes.get(room.loop[i]);
+        const b = nodes.get(room.loop[(i + 1) % room.loop.length]);
+        if (!a || !b) continue;
+        const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
+        if (!wall) continue;
+        const wallH = wall.height ?? WALL_HEIGHT;
+        if (wallH <= height) continue;
+        risers.push({ id: `${room.id}:${wall.id}`, geometry: buildRiserGeometry(a.x, a.y, b.x, b.y, height, wallH) });
+      }
     }
-    return out;
+    return { out, risers };
   }, [scene]);
+  const { out: ceilings, risers } = ceilingsAndRisers;
 
   const mat = useMemo(
     () =>
@@ -190,14 +228,31 @@ export function Ceilings({ scene }: { scene: Scene }) {
       }),
     [],
   );
+  // Same neutral wall tone as WallMesh's WALL_COLOR — a riser reads as the
+  // wall continuing upward to seal the gap, not as another ceiling patch.
+  const riserMat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#d8d2c4",
+        roughness: 0.95,
+        metalness: 0,
+        side: THREE.DoubleSide,
+      }),
+    [],
+  );
   useEffect(() => () => mat.dispose(), [mat]);
+  useEffect(() => () => riserMat.dispose(), [riserMat]);
   useEffect(() => () => ceilings.forEach((c) => c.geometry.dispose()), [ceilings]);
+  useEffect(() => () => risers.forEach((r) => r.geometry.dispose()), [risers]);
 
   if (!show || wallMode !== "full") return null;
   return (
     <group>
       {ceilings.map((c) => (
         <mesh key={c.id} position={[0, c.height, 0]} geometry={c.geometry} material={mat} receiveShadow />
+      ))}
+      {risers.map((r) => (
+        <mesh key={r.id} geometry={r.geometry} material={riserMat} receiveShadow />
       ))}
     </group>
   );
