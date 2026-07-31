@@ -8,6 +8,11 @@ extended, never "fixed." It stays wired into the running app — gated by
 `legacyExtractionEnabled` (`src/lib/featureFlags.ts`) — as the production
 extraction path until the Phase 6 gate passes.
 
+**Exception:** `trace2d/` itself is now split into two tiers (2026-07-31) —
+see the `trace2d/` entry below. Its manual-tracing UI tier is active,
+editable product surface, not quarantined; only its auto-extraction tier
+still carries the blanket rule above.
+
 Compiled from a full-repo Explore pass on 2026-07-19, cross-checked against
 `docs/PROTECTED_PATHS.md` for overlap (none found).
 
@@ -29,7 +34,27 @@ Compiled from a full-repo Explore pass on 2026-07-19, cross-checked against
 | `floorplan_for_training/**` | `legacy/data/floorplan_for_training/**` |
 
 Why each is legacy, briefly:
-- `trace2d/` — the 2D trace editor UI, wall/opening candidate extraction, DXF/PDF import, planar-face interpretation, and GT export for the old pipeline.
+- `trace2d/` — split into two tiers, no longer one undifferentiated block:
+  - **Quarantined, read-only, unreachable** (the auto-extraction pipeline —
+    status unchanged): `extractWalls.ts`, `detectOpenings.ts`,
+    `candidates.ts`, `rasterCandidates.ts`, `proposeRaster.ts`,
+    `buildOverlay.ts`.
+  - **Active, editable, primary UI surface** (manual tracing — this is now
+    the actual product, not legacy-pending-replacement): `TracePanel.tsx`,
+    `TraceRail.tsx`, `TraceCanvas.tsx`.
+  - Unclassified by this split (present in `trace2d/` but not named in
+    either tier above — flagged here rather than guessed): `types.ts`,
+    `snapWall.ts`, `traceToScene.ts`, `exportGroundTruth.ts`,
+    `importDxf.ts`, `importPdf.ts`, `planImport.ts`, `roomCrops.ts`,
+    `dxf/layerClass.ts`, `dxf/parseDxf.ts`, `vector/faces.ts`,
+    `vector/interpret.ts`. Several of these are runtime dependencies of the
+    now-active tier (e.g. `TraceCanvas.tsx` imports `types.ts` and
+    `snapWall.ts`; `TraceRail.tsx` imports those plus `traceToScene.ts` and
+    `exportGroundTruth.ts`), so treating all of `trace2d/` as quarantined
+    no longer holds even for files outside the two named lists. Needs a
+    follow-up pass to place each of these in one of the two tiers (or a
+    third "shared by both" tier) rather than leaving them implicitly
+    quarantined by omission.
 - `eyes/observations.ts` — the OCR observation-channel contract consumed by `ocr_raster.py`.
 - `lib/rooms/vlmClassify.ts` — candidate wall/door/window VLM classification; misplaced under `lib/rooms/` (which otherwise holds the ongoing, shared Building Knowledge Layer) but is drawing-convention classification, not room semantics.
 - `lib/loops.ts` — planar-loop finding typed against trace-draft types; sole consumer is `trace2d/traceToScene.ts`.
