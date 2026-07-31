@@ -48,6 +48,18 @@ export interface WalkthroughConfig {
    *  instant snap. Same damp-based easing already used elsewhere in this
    *  codebase (WallMesh's selection-glow fades) for a consistent feel. */
   doorSwingLambda: number;
+  /** Biggest height gain (meters) a single move may make. This is the whole
+   *  stair rule: it lets you walk UP a flight from its foot, one riser at a
+   *  time, while refusing to put you on the side of a flight at head height or
+   *  on top of a landing from the floor below. Set above any riser a real
+   *  traced stair produces (the buildability warning fires at 19 cm, but a plan
+   *  can legitimately show steeper) — otherwise you couldn't climb your own
+   *  staircase. Descending is never limited. */
+  stepUpM: number;
+  /** Damping rate for the eye following the floor under it (same units as
+   *  doorSwingLambda). Fast enough that a step doesn't feel like an elevator,
+   *  slow enough that the climb isn't a staircase-shaped jolt. */
+  groundLambda: number;
 }
 
 export const WALKTHROUGH_CONFIG: WalkthroughConfig = {
@@ -69,4 +81,6 @@ export const WALKTHROUGH_CONFIG: WalkthroughConfig = {
   doorCloseDistanceM: 2.5,
   doorOpenSwingDeg: 90,
   doorSwingLambda: 12,
+  stepUpM: 0.34,
+  groundLambda: 14,
 };

@@ -7,6 +7,7 @@ import { nodeMap } from "@/lib/rooms/roomArea";
 import { T, glass } from "@/ui/tokens";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
 import { buildWallColliders, resolveWallCollision } from "./collision";
+import { buildStairGround, groundHeightAt } from "./stairGround";
 import { buildFurnitureColliders, resolveFurnitureCollision } from "./furnitureCollision";
 import {
   buildDoorAnchors,
@@ -128,6 +129,13 @@ export function WalkthroughRig({
   // earlier and never actually accumulate. Track position ourselves and
   // (re)assert it onto the camera every frame instead.
   const positionRef = useRef(new THREE.Vector3());
+  // Stairs make the floor a FUNCTION of position instead of a constant, so the
+  // rig now tracks two vertical values: the height of the surface the player is
+  // standing on (a step, a landing, or 0), and the damped eye height chasing
+  // it. Everything else about movement stays XZ.
+  const stairGround = useMemo(() => buildStairGround(scene, offset), [scene, offset]);
+  const groundRef = useRef(0);
+  const eyeYRef = useRef(CFG.eyeHeightM);
 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
@@ -153,8 +161,13 @@ export function WalkthroughRig({
     const spawnPos = { x: spawnPlan.x - offset.cx, z: spawnPlan.y - offset.cz };
     resolveWallCollision(spawnPos, colliders, CFG.playerRadiusM, 0);
     resolveFurnitureCollision(spawnPos, blockingColliders, CFG.playerRadiusM, 0);
-    positionRef.current.set(spawnPos.x, CFG.eyeHeightM, spawnPos.z);
-    cam.position.set(spawnPos.x, CFG.eyeHeightM, spawnPos.z);
+    // Spawn standing on whatever is under the spawn point (normally the floor,
+    // but a spawn inside a stair's footprint must not start the player buried
+    // in it or floating over it).
+    groundRef.current = groundHeightAt(stairGround, spawnPos.x, spawnPos.z);
+    eyeYRef.current = groundRef.current + CFG.eyeHeightM;
+    positionRef.current.set(spawnPos.x, eyeYRef.current, spawnPos.z);
+    cam.position.set(spawnPos.x, eyeYRef.current, spawnPos.z);
     if (spawnPlan.yaw !== undefined) {
       yawRef.current = spawnPlan.yaw; // face into the room from the entrance
       pitchRef.current = 0; // level gaze reads better than an inherited orbit tilt here
@@ -341,11 +354,46 @@ export function WalkthroughRig({
     }
 
     const moveLen = Math.hypot(velocity.x, velocity.z) * delta;
+    // Where the player stood at the end of last frame: already depenetrated,
+    // so it is always a legal position to fall back to.
+    const fromX = positionRef.current.x;
+    const fromZ = positionRef.current.z;
     positionRef.current.x += velocity.x * delta;
     positionRef.current.z += velocity.z * delta;
     resolveWallCollision(positionRef.current, colliders, CFG.playerRadiusM, moveLen);
     resolveFurnitureCollision(positionRef.current, blockingColliders, CFG.playerRadiusM, moveLen);
-    cam.position.set(positionRef.current.x, CFG.eyeHeightM, positionRef.current.z);
+
+    // A move that would climb more than one step isn't a climb — it's walking
+    // into the side of the staircase. Retry each axis alone before giving up,
+    // so brushing past a flight slides along it instead of sticking.
+    const climbable = (x: number, z: number) =>
+      groundHeightAt(stairGround, x, z) - groundRef.current <= CFG.stepUpM;
+    if (!climbable(positionRef.current.x, positionRef.current.z)) {
+      if (climbable(positionRef.current.x, fromZ)) {
+        positionRef.current.z = fromZ;
+      } else if (climbable(fromX, positionRef.current.z)) {
+        positionRef.current.x = fromX;
+      } else {
+        positionRef.current.x = fromX;
+        positionRef.current.z = fromZ;
+      }
+      velocity.set(0, 0, 0); // stop dead against it, don't build up speed
+      // The fallback mixes this frame's axis with last frame's; depenetrate
+      // once more so a corner case can't leave the player inside a wall.
+      resolveWallCollision(positionRef.current, colliders, CFG.playerRadiusM, 0);
+      resolveFurnitureCollision(positionRef.current, blockingColliders, CFG.playerRadiusM, 0);
+    }
+
+    groundRef.current = groundHeightAt(stairGround, positionRef.current.x, positionRef.current.z);
+    // Descending is never blocked: step off a landing and the eye damps back
+    // down, which reads as stepping down rather than falling.
+    eyeYRef.current = THREE.MathUtils.damp(
+      eyeYRef.current,
+      groundRef.current + CFG.eyeHeightM,
+      CFG.groundLambda,
+      delta,
+    );
+    cam.position.set(positionRef.current.x, eyeYRef.current, positionRef.current.z);
     cam.quaternion.setFromEuler(_euler.set(pitchRef.current, yawRef.current, 0, "YXZ"));
   });
 
