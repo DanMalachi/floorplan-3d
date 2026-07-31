@@ -56,16 +56,16 @@ Why each is legacy, briefly:
       magnet).
     - `traceToScene.ts` — imported directly by `TraceRail.tsx` ("Generate
       3D model →").
+    - `exportGroundTruth.ts` — imported directly by `TraceRail.tsx` (the
+      "⬇ Export ground truth (eval)" control). Confirmed active by
+      reachability; what still consumes its `.gt.json` output (old
+      benchmark harness, a one-off corpus-seed script, and a possibly
+      stale `DATA_RIGHTS.md` step) is a separate, still-open question for
+      Dan — not a reachability question, and out of scope for this file.
     - `dxf/layerClass.ts` — reachable via `snapWall.ts` (active); also
       reachable from `extractWalls.ts`/`detectOpenings.ts` (quarantined)
       and from `vector/interpret.ts` — reachable from both tiers, active
       wins.
-  - **NOT YET CLASSIFIED — held for Dan's review**: `exportGroundTruth.ts`.
-    Imported directly by `TraceRail.tsx` (the "⬇ Export ground truth
-    (eval)" control), so it passes the same reachability test as the four
-    files above, but what matters is what still consumes its output —
-    see the dedicated investigation in the Phase log / commit message
-    before treating that as final.
   - **ORPHANED — reachable from neither named root set** (not deleted,
     just flagged; several of these are still genuinely live at runtime,
     just not through either of the two root sets this pass tested):
