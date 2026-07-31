@@ -128,7 +128,13 @@ export function Ceilings({ scene }: { scene: Scene }) {
         .filter((w) => w.kind === "rail")
         .map((w) => [w.a, w.b].sort().join("|")),
     );
-    const out: { id: string; geometry: THREE.BufferGeometry }[] = [];
+    // Every wall by its node-pair edge, to look up each bounding wall's own
+    // (possibly customized) height — same lookup shape as WallMesh's per-wall
+    // height resolution, just keyed for room-loop traversal.
+    const wallByEdge = new Map(
+      scene.walls.map((w) => [[w.a, w.b].sort().join("|"), w]),
+    );
+    const out: { id: string; geometry: THREE.BufferGeometry; height: number }[] = [];
     for (const room of scene.rooms) {
       const loop = room.loop
         .map((id) => nodes.get(id))
@@ -138,7 +144,18 @@ export function Ceilings({ scene }: { scene: Scene }) {
         railEdges.has([id, room.loop[(i + 1) % room.loop.length]].sort().join("|")),
       );
       if (open) continue; // balcony / open-air room — no ceiling
-      out.push({ id: room.id, geometry: buildFloorGeometry(loop) });
+      // Ceiling sits at the tallest bounding wall — a shorter wall (partition/
+      // half-wall) is a valid partial-height wall, open above up to this line.
+      // Only edges that resolve to a wall record count toward the max, so a
+      // missing lookup can't silently drag the ceiling down to the default.
+      let height: number | null = null;
+      for (let i = 0; i < room.loop.length; i++) {
+        const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
+        if (!wall) continue;
+        const h = wall.height ?? WALL_HEIGHT;
+        height = height == null ? h : Math.max(height, h);
+      }
+      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height: height ?? WALL_HEIGHT });
     }
     return out;
   }, [scene]);
@@ -158,9 +175,9 @@ export function Ceilings({ scene }: { scene: Scene }) {
 
   if (!show || wallMode !== "full") return null;
   return (
-    <group position={[0, WALL_HEIGHT, 0]}>
+    <group>
       {ceilings.map((c) => (
-        <mesh key={c.id} geometry={c.geometry} material={mat} receiveShadow />
+        <mesh key={c.id} position={[0, c.height, 0]} geometry={c.geometry} material={mat} receiveShadow />
       ))}
     </group>
   );
