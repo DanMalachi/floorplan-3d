@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
-import { DEFAULT_DOOR, DEFAULT_WINDOW } from "@/schema/constants";
+import { DEFAULT_DOOR, DEFAULT_WINDOW, DEFAULT_THICKNESS, WALL_HEIGHT } from "@/schema/constants";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -290,6 +290,8 @@ export interface StoreState {
   mode: TraceMode;
   ortho: boolean; // constrain new wall segments to 90° (Shift inverts per-click)
   drawKind: SegmentKind; // in wall mode, what kind of boundary the pen lays down
+  drawThickness: number; // meters — stamped onto new wall segments at creation
+  drawHeight: number; // meters — stamped onto new wall segments at creation
 
   // --- undo history (trace only) ---
   history: TraceSnapshot[];
@@ -298,6 +300,8 @@ export interface StoreState {
   setMode: (m: TraceMode) => void;
   setOrtho: (v: boolean) => void;
   setDrawKind: (v: SegmentKind) => void;
+  setDrawThickness: (v: number) => void;
+  setDrawHeight: (v: number) => void;
   addPoint: (x: number, y: number) => void;
   connectToNode: (nodeId: string) => void; // start from / connect to an existing point
   attachToSegment: (segmentId: string, x: number, y: number) => void; // magnet onto a wall (splits it)
@@ -821,6 +825,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
     mode: "wall",
     ortho: true,
     drawKind: "wall",
+    drawThickness: DEFAULT_THICKNESS,
+    drawHeight: WALL_HEIGHT,
 
     history: [],
 
@@ -832,6 +838,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     setOrtho: (ortho) => set({ ortho }),
     setDrawKind: (drawKind) => set({ drawKind }),
+    setDrawThickness: (drawThickness) => set({ drawThickness }),
+    setDrawHeight: (drawHeight) => set({ drawHeight }),
 
     addPoint: (x, y) => {
       pushHistory();
@@ -839,7 +847,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
         const p: TracePoint = { id: newId("p"), x, y };
         const kind = st.drawKind;
         const segments = st.activeLastPointId
-          ? [...st.segments, { id: newId("s"), a: st.activeLastPointId, b: p.id, type: kind }]
+          ? [
+              ...st.segments,
+              {
+                id: newId("s"),
+                a: st.activeLastPointId,
+                b: p.id,
+                type: kind,
+                thickness: st.drawThickness,
+                height: st.drawHeight,
+              },
+            ]
           : st.segments;
         return {
           points: [...st.points, p],
@@ -869,7 +887,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
         const kind = st.drawKind;
         const segments = exists
           ? st.segments
-          : [...st.segments, { id: newId("s"), a: activeLastPointId, b: nodeId, type: kind }];
+          : [
+              ...st.segments,
+              {
+                id: newId("s"),
+                a: activeLastPointId,
+                b: nodeId,
+                type: kind,
+                thickness: st.drawThickness,
+                height: st.drawHeight,
+              },
+            ];
         // Joining an existing vertex ends the run (loop closed / network joined).
         return { segments, activeLastPointId: null, selectedPointId: null };
       });
@@ -890,10 +918,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
         const len2 = abx * abx + aby * aby || 1;
         const ts = Math.min(1, Math.max(0, ((x - a.x) * abx + (y - a.y) * aby) / len2));
 
-        // Split pieces inherit the split wall's own type; the new run's
-        // connecting segment (below) takes the current draw kind.
-        const s1 = { id: newId("s"), a: seg.a, b: P.id, type: seg.type };
-        const s2 = { id: newId("s"), a: P.id, b: seg.b, type: seg.type };
+        // Split pieces inherit the split wall's own type/thickness/height; the
+        // new run's connecting segment (below) takes the current draw values.
+        const s1 = { id: newId("s"), a: seg.a, b: P.id, type: seg.type, thickness: seg.thickness, height: seg.height };
+        const s2 = { id: newId("s"), a: P.id, b: seg.b, type: seg.type, thickness: seg.thickness, height: seg.height };
         let segments = st.segments.filter((s) => s.id !== segmentId).concat([s1, s2]);
 
         // Re-home openings that lived on the split wall onto the correct sub-wall.
@@ -906,7 +934,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
         let selectedPointId: string | null = P.id;
         if (st.activeLastPointId != null && st.activeLastPointId !== P.id) {
           const kind = st.drawKind;
-          segments = [...segments, { id: newId("s"), a: st.activeLastPointId, b: P.id, type: kind }];
+          segments = [
+            ...segments,
+            {
+              id: newId("s"),
+              a: st.activeLastPointId,
+              b: P.id,
+              type: kind,
+              thickness: st.drawThickness,
+              height: st.drawHeight,
+            },
+          ];
           activeLastPointId = null;
           selectedPointId = null;
         }

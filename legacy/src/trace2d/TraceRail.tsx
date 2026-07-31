@@ -9,8 +9,14 @@ import { useSceneStore } from "@/store/useSceneStore";
 import type { SegmentKind } from "./types";
 import { analyzeLoops } from "../lib/loops";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
+import { NumField } from "@/ui/NumField";
+import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { traceToScene } from "./traceToScene";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
+
+// Precedent pair from src/dev/gtToScene.ts (interior 0.1 / exterior 0.2) —
+// not a new number, just reused as the Exterior preset here.
+const EXTERIOR_THICKNESS = 0.2;
 
 const railBtn = (active = false, extra?: React.CSSProperties): React.CSSProperties =>
   chip(active, { width: "100%", textAlign: "left", padding: "7px 11px", ...extra });
@@ -64,6 +70,10 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   const setOrtho = useSceneStore((s) => s.setOrtho);
   const drawKind = useSceneStore((s) => s.drawKind);
   const setDrawKind = useSceneStore((s) => s.setDrawKind);
+  const drawThickness = useSceneStore((s) => s.drawThickness);
+  const setDrawThickness = useSceneStore((s) => s.setDrawThickness);
+  const drawHeight = useSceneStore((s) => s.drawHeight);
+  const setDrawHeight = useSceneStore((s) => s.setDrawHeight);
   const undo = useSceneStore((s) => s.undo);
   const finishChain = useSceneStore((s) => s.finishChain);
   const deleteSelected = useSceneStore((s) => s.deleteSelected);
@@ -115,6 +125,38 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
           </button>
         ))}
       </div>
+      {tools.includes("wall") && drawKind !== "portal" && (
+        <>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button
+              style={chip(drawThickness === DEFAULT_THICKNESS, { flex: 1, textAlign: "center" })}
+              onClick={() => setDrawThickness(DEFAULT_THICKNESS)}
+            >
+              Interior
+            </button>
+            <button
+              style={chip(drawThickness === EXTERIOR_THICKNESS, { flex: 1, textAlign: "center" })}
+              onClick={() => setDrawThickness(EXTERIOR_THICKNESS)}
+            >
+              Exterior
+            </button>
+          </div>
+          <NumField
+            label="Height"
+            value={drawHeight}
+            onCommit={(v) => setDrawHeight(Math.min(6, Math.max(0.5, v)))}
+            displayScale={100}
+            unit="cm"
+          />
+          <NumField
+            label="Thickness"
+            value={drawThickness}
+            onCommit={(v) => setDrawThickness(Math.min(1, Math.max(0.05, v)))}
+            displayScale={100}
+            unit="cm"
+          />
+        </>
+      )}
       <div style={{ display: "flex", gap: 4 }}>
         {tools.includes("wall") && (
           <button style={chip(ortho, { flex: 1 })} onClick={() => setOrtho(!ortho)} title="Constrain walls to 90° (Shift inverts per click)">

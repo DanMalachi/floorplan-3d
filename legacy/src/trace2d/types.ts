@@ -30,6 +30,11 @@ export interface TraceSegment {
   // so you can close a room without drawing a wall you'd only have to punch a
   // fake door through. Both bound rooms exactly like walls. Absent = wall.
   type?: SegmentKind;
+  // Set from the pending draw value at creation time (see TraceRail's
+  // Height/Thickness inputs). Absent = traceToScene falls back to its
+  // defaults, same as an unset Wall.thickness/height downstream.
+  thickness?: number; // meters
+  height?: number; // meters
 }
 
 // An opening is traced as a line ALONG its host wall: t0..t1 are the normalized
