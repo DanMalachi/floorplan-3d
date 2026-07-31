@@ -25,7 +25,11 @@ export interface Presentation {
 }
 
 const ROOT = "scene";
-export const COLLECTIONS = ["nodes", "walls", "openings", "rooms", "furniture"] as const;
+// `stairs` is OPTIONAL on Scene — every project made before stairs existed has
+// no such key at runtime — so every read of `scene[coll]` in this file and in
+// sceneDiff.ts must fall back to []. Adding the collection without those guards
+// crashes live collaboration on the next edit of any older project.
+export const COLLECTIONS = ["nodes", "walls", "openings", "rooms", "furniture", "stairs"] as const;
 type Collection = (typeof COLLECTIONS)[number];
 
 export const sceneRoot = (doc: Y.Doc): Y.Map<unknown> => doc.getMap(ROOT);
@@ -62,7 +66,7 @@ export function seedSceneDoc(doc: Y.Doc, scene: Scene, pres: Presentation, title
     if (scene.building !== undefined) root.set("building", scene.building);
     for (const name of COLLECTIONS) {
       const m = collectionMap(root, name);
-      for (const item of scene[name] as Array<{ id: string }>) {
+      for (const item of (scene[name] ?? []) as Array<{ id: string }>) {
         m.set(item.id, itemMap(item as unknown as Record<string, unknown>));
       }
     }
@@ -97,6 +101,7 @@ export function readScene(doc: Y.Doc): Scene {
     openings: readCollection(root, "openings"),
     rooms: readCollection(root, "rooms"),
     furniture: readCollection(root, "furniture"),
+    stairs: readCollection(root, "stairs"),
     building: (root.get("building") as Scene["building"]) ?? undefined,
   };
 }

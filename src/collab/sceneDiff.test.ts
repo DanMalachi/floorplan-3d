@@ -81,5 +81,37 @@ const ok = (cond: boolean, msg: string) => {
   }
 }
 
+// 4. A scene from before stairs existed has NO `stairs` key at all. Seeding,
+//    diffing and reading it must not throw, and adding the first stair must
+//    still produce ops.
+{
+  const doc = new Y.Doc();
+  const legacyScene = base();
+  ok(legacyScene.stairs === undefined, "fixture has no stairs key (the pre-stairs shape)");
+  seedSceneDoc(doc, legacyScene, PRES); // would throw if scene.stairs were iterated raw
+  const prev = readScene(doc);
+  ok(Array.isArray(prev.stairs) && prev.stairs.length === 0, "readScene fills stairs with []");
+
+  const next: Scene = {
+    ...legacyScene, // deliberately the UNGUARDED shape: stairs key still absent
+    stairs: [
+      {
+        id: "st0",
+        flights: [{ x0: 0, y0: 0, x1: 3.9, y1: 0 }],
+        width: 0.9,
+        rise: 2.4,
+      },
+    ],
+  };
+  applySceneDiff(doc, legacyScene, next, {});
+  const r = readScene(doc);
+  ok(r.stairs?.length === 1, "stair added to a doc that had none");
+  ok(r.stairs?.[0].flights.length === 1 && r.stairs[0].flights[0].x1 === 3.9, "flights survive as opaque JSON");
+
+  // and removing it again
+  applySceneDiff(doc, next, legacyScene, {});
+  ok(readScene(doc).stairs?.length === 0, "stair removed when the next scene has no stairs key");
+}
+
 console.log(fails === 0 ? "\nALL PASS" : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

@@ -1,4 +1,4 @@
-import { useSceneStore, type StoreState } from "./useSceneStore";
+import { reserveIds, sceneIds, useSceneStore, type StoreState } from "./useSceneStore";
 import type { GoLiveSeed } from "@/collab/goLiveHandoff";
 import type { ShareRole } from "@/collab/share";
 
@@ -49,6 +49,7 @@ const DURABLE_KEYS = [
   "points",
   "segments",
   "openings",
+  "stairs",
   "metersPerPixel",
   "liveRoomId",
 ] as const satisfies readonly (keyof StoreState)[];
@@ -161,6 +162,19 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 const persistManifest = () => idbSet(MANIFEST_KEY, manifest);
 const metaOf = (id: string | null) => manifest.find((m) => m.id === id) ?? null;
 
+/**
+ * Every id a saved project carries — the trace draft AND the generated scene.
+ * The store's id counter restarts at 0 on each page load, so it has to be told
+ * what a restored project already used before the user draws anything new.
+ */
+function* idsIn(state: ProjectState): Generator<string> {
+  for (const p of state.points ?? []) yield p.id;
+  for (const s of state.segments ?? []) yield s.id;
+  for (const o of state.openings ?? []) yield o.id;
+  for (const s of state.stairs ?? []) yield s.id;
+  if (state.scene) yield* sceneIds(state.scene);
+}
+
 /** Push the given project's saved (or pristine) state into the store. */
 async function loadIntoStore(id: string): Promise<void> {
   const doc = await idbGet<ProjectDocument>(docKey(id));
@@ -171,6 +185,7 @@ async function loadIntoStore(id: string): Promise<void> {
   // off-origin — floating away from the origin-centred environment.
   if (doc?.state && doc.schemaVersion === SCHEMA_VERSION) {
     lastSaved = JSON.stringify(doc.state);
+    reserveIds(idsIn(doc.state));
     useSceneStore.setState((s) => ({
       ...doc.state,
       // Explicit so switching from a live project to an older doc that predates

@@ -7,6 +7,7 @@ import { nodeMap } from "@/lib/rooms/roomArea";
 import { T, glass } from "@/ui/tokens";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
 import { buildWallColliders, resolveWallCollision } from "./collision";
+import { buildStairGround, groundHeightAt } from "./stairGround";
 import { buildFurnitureColliders, resolveFurnitureCollision } from "./furnitureCollision";
 import {
   buildDoorAnchors,
@@ -28,6 +29,30 @@ const _right = new THREE.Vector3();
 const _inputDir = new THREE.Vector3();
 const _targetVel = new THREE.Vector3();
 const _diff = new THREE.Vector3();
+
+/** The camera's trip from the orbit view into the player's eyes on entry. */
+interface EntryFlight {
+  t: number; // 0..1
+  durationS: number;
+  from: THREE.Vector3;
+  to: THREE.Vector3;
+  fromYaw: number;
+  deltaYaw: number; // signed shortest arc from fromYaw to the spawn heading
+  fromPitch: number;
+  toPitch: number;
+}
+
+/** Signed shortest way round from angle `a` to angle `b`, in radians. */
+function shortestAngle(a: number, b: number): number {
+  let d = (b - a) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2;
+  if (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+
+/** Smoothstep: eases out of the orbit pose and into the standing one, so the
+ *  flight has no visible start or stop, just an arrival. */
+const ease = (t: number) => t * t * (3 - 2 * t);
 
 // e.code, not e.key — layout-independent, and arrows share the same axis.
 const MOVE_KEYS: Record<string, "forward" | "back" | "left" | "right" | "sprint"> = {
@@ -128,6 +153,15 @@ export function WalkthroughRig({
   // earlier and never actually accumulate. Track position ourselves and
   // (re)assert it onto the camera every frame instead.
   const positionRef = useRef(new THREE.Vector3());
+  // Stairs make the floor a FUNCTION of position instead of a constant, so the
+  // rig now tracks two vertical values: the height of the surface the player is
+  // standing on (a step, a landing, or 0), and the damped eye height chasing
+  // it. Everything else about movement stays XZ.
+  const stairGround = useMemo(() => buildStairGround(scene, offset), [scene, offset]);
+  const groundRef = useRef(0);
+  const eyeYRef = useRef(CFG.eyeHeightM);
+  // Non-null only while the entry flight is in the air (see the mount effect).
+  const entryRef = useRef<EntryFlight | null>(null);
 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
@@ -153,12 +187,50 @@ export function WalkthroughRig({
     const spawnPos = { x: spawnPlan.x - offset.cx, z: spawnPlan.y - offset.cz };
     resolveWallCollision(spawnPos, colliders, CFG.playerRadiusM, 0);
     resolveFurnitureCollision(spawnPos, blockingColliders, CFG.playerRadiusM, 0);
-    positionRef.current.set(spawnPos.x, CFG.eyeHeightM, spawnPos.z);
-    cam.position.set(spawnPos.x, CFG.eyeHeightM, spawnPos.z);
+    // Spawn standing on whatever is under the spawn point (normally the floor,
+    // but a spawn inside a stair's footprint must not start the player buried
+    // in it or floating over it).
+    groundRef.current = groundHeightAt(stairGround, spawnPos.x, spawnPos.z);
+    eyeYRef.current = groundRef.current + CFG.eyeHeightM;
+    positionRef.current.set(spawnPos.x, eyeYRef.current, spawnPos.z);
     if (spawnPlan.yaw !== undefined) {
       yawRef.current = spawnPlan.yaw; // face into the room from the entrance
-      pitchRef.current = 0; // level gaze reads better than an inherited orbit tilt here
     }
+    // Always ARRIVE level, whatever the orbit was doing. A person who walks
+    // into a room looks ahead, not at their feet — and an orbit view is
+    // usually tilted well down, so inheriting its pitch used to land you
+    // staring at the floor. The flight makes this free: it's just the target
+    // of an interpolation, so the tilt straightens out on the way in.
+    pitchRef.current = 0;
+
+    // Fly the CAMERA down into the player's eyes rather than cutting to them.
+    // The player is already standing at the spawn (positionRef above) — only
+    // the view travels, so nothing about movement, collision or doors has to
+    // know this is happening. Duration comes from the distance: entering from
+    // an orbit already inside the room is nearly instant, from a wide top-down
+    // it's a beat longer.
+    const from = cam.position.clone();
+    const to = new THREE.Vector3(spawnPos.x, eyeYRef.current, spawnPos.z);
+    const durationS = THREE.MathUtils.clamp(
+      from.distanceTo(to) / CFG.entryFlightSpeedMs,
+      CFG.entryFlightMinS,
+      CFG.entryFlightMaxS,
+    );
+    entryRef.current = {
+      t: 0,
+      durationS,
+      from,
+      to,
+      fromYaw: start.y,
+      fromPitch: THREE.MathUtils.clamp(start.x, -PITCH_CLAMP, PITCH_CLAMP),
+      // Yaw is an angle: turning 350° the long way round would spin the world.
+      // Take the shortest arc to the target heading instead.
+      deltaYaw: shortestAngle(start.y, yawRef.current),
+      toPitch: pitchRef.current,
+    };
+    // Hold the orbit pose for frame one; the flight starts from exactly what
+    // the user was already looking at.
+    cam.position.copy(from);
 
     // FOV itself is applied by a separate effect below (reactive to the
     // slider); this one only owns capturing the pre-walkthrough value and
@@ -268,6 +340,23 @@ export function WalkthroughRig({
     const cam = camera as THREE.PerspectiveCamera;
     const delta = Math.min(rawDelta, 0.1); // clamp huge tab-away/lag spikes
 
+    // Entry flight owns the camera until it lands. Movement, doors and
+    // collision all sit this out: the player is already standing at the spawn,
+    // so there is nothing to simulate until the view catches up with them.
+    // Look input is ignored too — being able to steer mid-flight would fight
+    // the interpolation and land you somewhere the spawn never chose.
+    const entry = entryRef.current;
+    if (entry) {
+      entry.t = Math.min(1, entry.t + delta / entry.durationS);
+      const k = ease(entry.t);
+      cam.position.lerpVectors(entry.from, entry.to, k);
+      yawRef.current = entry.fromYaw + entry.deltaYaw * k;
+      pitchRef.current = THREE.MathUtils.lerp(entry.fromPitch, entry.toPitch, k);
+      cam.quaternion.setFromEuler(_euler.set(pitchRef.current, yawRef.current, 0, "YXZ"));
+      if (entry.t >= 1) entryRef.current = null; // landed — hand back to the rig
+      return;
+    }
+
     // Door proximity trigger, first per §5's stated per-frame order. Reads
     // the live store directly (not the `scene` prop) so a transition is
     // guaranteed to be seen on the very next frame, even if React hasn't
@@ -341,11 +430,46 @@ export function WalkthroughRig({
     }
 
     const moveLen = Math.hypot(velocity.x, velocity.z) * delta;
+    // Where the player stood at the end of last frame: already depenetrated,
+    // so it is always a legal position to fall back to.
+    const fromX = positionRef.current.x;
+    const fromZ = positionRef.current.z;
     positionRef.current.x += velocity.x * delta;
     positionRef.current.z += velocity.z * delta;
     resolveWallCollision(positionRef.current, colliders, CFG.playerRadiusM, moveLen);
     resolveFurnitureCollision(positionRef.current, blockingColliders, CFG.playerRadiusM, moveLen);
-    cam.position.set(positionRef.current.x, CFG.eyeHeightM, positionRef.current.z);
+
+    // A move that would climb more than one step isn't a climb — it's walking
+    // into the side of the staircase. Retry each axis alone before giving up,
+    // so brushing past a flight slides along it instead of sticking.
+    const climbable = (x: number, z: number) =>
+      groundHeightAt(stairGround, x, z) - groundRef.current <= CFG.stepUpM;
+    if (!climbable(positionRef.current.x, positionRef.current.z)) {
+      if (climbable(positionRef.current.x, fromZ)) {
+        positionRef.current.z = fromZ;
+      } else if (climbable(fromX, positionRef.current.z)) {
+        positionRef.current.x = fromX;
+      } else {
+        positionRef.current.x = fromX;
+        positionRef.current.z = fromZ;
+      }
+      velocity.set(0, 0, 0); // stop dead against it, don't build up speed
+      // The fallback mixes this frame's axis with last frame's; depenetrate
+      // once more so a corner case can't leave the player inside a wall.
+      resolveWallCollision(positionRef.current, colliders, CFG.playerRadiusM, 0);
+      resolveFurnitureCollision(positionRef.current, blockingColliders, CFG.playerRadiusM, 0);
+    }
+
+    groundRef.current = groundHeightAt(stairGround, positionRef.current.x, positionRef.current.z);
+    // Descending is never blocked: step off a landing and the eye damps back
+    // down, which reads as stepping down rather than falling.
+    eyeYRef.current = THREE.MathUtils.damp(
+      eyeYRef.current,
+      groundRef.current + CFG.eyeHeightM,
+      CFG.groundLambda,
+      delta,
+    );
+    cam.position.set(positionRef.current.x, eyeYRef.current, positionRef.current.z);
     cam.quaternion.setFromEuler(_euler.set(pitchRef.current, yawRef.current, 0, "YXZ"));
   });
 

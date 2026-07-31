@@ -1,5 +1,5 @@
-import type { Node, Opening, Room, Scene, Wall } from "@/schema/scene";
-import type { TraceOpening, TracePoint, TraceSegment } from "./types";
+import type { Node, Opening, Room, Scene, Stair, Wall } from "@/schema/scene";
+import type { TraceOpening, TracePoint, TraceSegment, TraceStair } from "./types";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { analyzeLoops } from "../lib/loops";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
@@ -18,6 +18,7 @@ export interface TraceToSceneInput {
   points: TracePoint[];
   segments: TraceSegment[];
   openings: TraceOpening[];
+  stairs?: TraceStair[];
   metersPerPixel: number;
   texts?: PlanText[]; // optional room-label tokens for the knowledge layer
 }
@@ -44,7 +45,8 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     id: s.id,
     a: s.a,
     b: s.b,
-    thickness: DEFAULT_THICKNESS,
+    thickness: s.thickness ?? DEFAULT_THICKNESS,
+    height: s.height,
     // A traced rail stays a rail in 3D (low, see-through) and a traced portal
     // builds nothing at all, instead of either becoming a full-height wall.
     // Rooms still close through both — they live in scene.walls, and closure is
@@ -72,6 +74,23 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     });
   }
 
+  // Stairs scale like nodes — only the traced AXIS is in pixels. `width`,
+  // `rise` and `steps` were set in the panel and are already meters/counts, so
+  // they pass straight through (the TraceOpening precedent: scale what was
+  // traced, never what was typed).
+  const stairs: Stair[] = (input.stairs ?? []).map((s) => ({
+    id: s.id,
+    flights: s.flights.map((f) => ({
+      x0: f.x0 * mpp,
+      y0: f.y0 * mpp,
+      x1: f.x1 * mpp,
+      y1: f.y1 * mpp,
+    })),
+    width: s.width,
+    rise: s.rise,
+    ...(s.steps != null ? { steps: s.steps } : {}),
+  }));
+
   const { loops } = analyzeLoops(points, segments);
   const rooms: Room[] = loops.map((loop, i) => ({
     id: `room${i}`,
@@ -87,6 +106,7 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     openings: sceneOpenings,
     rooms,
     furniture: [],
+    ...(stairs.length > 0 ? { stairs } : {}),
   };
 
   // Building Knowledge Layer — free pass. Deterministic features + rule labels
