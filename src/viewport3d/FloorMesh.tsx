@@ -110,10 +110,12 @@ export function Floors({ scene }: { scene: Scene }) {
   );
 }
 
-/** Per-room ceiling planes at wall height. Reuses the floor triangulation, lifted
- *  to WALL_HEIGHT. Shown only in Full wall-mode (and via the Ceilings toggle) so
- *  Cutaway/Top can always see in. Rooms bounded by any rail (balconies) are open
- *  to the sky and get no ceiling. */
+/** Per-room ceiling planes. Reuses the floor triangulation, each lifted to that
+ *  room's own ceiling height — the max wall height among walls unique to that
+ *  room's perimeter (shared/partition walls don't count, see below). Shown
+ *  only in Full wall-mode (and via the Ceilings toggle) so Cutaway/Top can
+ *  always see in. Rooms bounded by any rail (balconies) are open to the sky
+ *  and get no ceiling. */
 export function Ceilings({ scene }: { scene: Scene }) {
   const wallMode = useSceneStore((s) => s.wallMode);
   const show = useSceneStore((s) => s.showCeilings);
@@ -134,6 +136,18 @@ export function Ceilings({ scene }: { scene: Scene }) {
     const wallByEdge = new Map(
       scene.walls.map((w) => [[w.a, w.b].sort().join("|"), w]),
     );
+    // How many rooms' loops reference each wall — 1 means it's that room's own
+    // perimeter, 2 means it's a partition shared with a neighbor. A shared
+    // wall shouldn't drag a shorter neighbor's ceiling up just because they
+    // touch; it stands exposed above that neighbor's lower ceiling instead.
+    const roomsPerWall = new Map<string, number>();
+    for (const room of scene.rooms) {
+      for (let i = 0; i < room.loop.length; i++) {
+        const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
+        if (!wall) continue;
+        roomsPerWall.set(wall.id, (roomsPerWall.get(wall.id) ?? 0) + 1);
+      }
+    }
     const out: { id: string; geometry: THREE.BufferGeometry; height: number }[] = [];
     for (const room of scene.rooms) {
       const loop = room.loop
@@ -144,18 +158,24 @@ export function Ceilings({ scene }: { scene: Scene }) {
         railEdges.has([id, room.loop[(i + 1) % room.loop.length]].sort().join("|")),
       );
       if (open) continue; // balcony / open-air room — no ceiling
-      // Ceiling sits at the tallest bounding wall — a shorter wall (partition/
-      // half-wall) is a valid partial-height wall, open above up to this line.
-      // Only edges that resolve to a wall record count toward the max, so a
-      // missing lookup can't silently drag the ceiling down to the default.
-      let height: number | null = null;
+      // Ceiling sits at the tallest wall this room actually OWNS — its
+      // perimeter, walls no other room's loop touches. Shared/partition walls
+      // are excluded from this max so a tall shared wall can't pull a shorter
+      // room's ceiling up to match. Falls back to every bounding wall (old
+      // behavior) only if a room has no perimeter wall of its own at all
+      // (fully interior, boxed in by neighbors on every side).
+      let perimeterHeight: number | null = null;
+      let anyHeight: number | null = null;
       for (let i = 0; i < room.loop.length; i++) {
         const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
         if (!wall) continue;
         const h = wall.height ?? WALL_HEIGHT;
-        height = height == null ? h : Math.max(height, h);
+        anyHeight = anyHeight == null ? h : Math.max(anyHeight, h);
+        if (roomsPerWall.get(wall.id) === 1) {
+          perimeterHeight = perimeterHeight == null ? h : Math.max(perimeterHeight, h);
+        }
       }
-      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height: height ?? WALL_HEIGHT });
+      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height: perimeterHeight ?? anyHeight ?? WALL_HEIGHT });
     }
     return out;
   }, [scene]);
