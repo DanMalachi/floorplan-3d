@@ -213,9 +213,9 @@ export function TraceRail() {
   ];
 
   const applyScale = () => {
-    const m = Number(distance);
-    if (m > 0) {
-      applyCalibration(m);
+    const cm = Number(distance);
+    if (cm > 0) {
+      applyCalibration(cm / 100);
       setDistance("");
     }
   };
@@ -292,19 +292,26 @@ export function TraceRail() {
                     <div style={hintText}>Real distance between the two points:</div>
                     <div style={{ display: "flex", gap: 5 }}>
                       <input
-                        type="number" step="0.01" min="0" autoFocus
+                        type="number" step="1" min="0" autoFocus
                         value={distance}
-                        placeholder="meters"
+                        placeholder="cm"
                         onChange={(e) => setDistance(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && applyScale()}
+                        onWheel={(e) => {
+                          e.preventDefault();
+                          const dir = e.deltaY < 0 ? 1 : -1;
+                          const cur = Number(distance) || 0;
+                          setDistance(String(Math.max(0, cur + dir)));
+                        }}
                         style={field({ width: 90 })}
                       />
+                      <span style={{ color: T.textFaint, fontSize: 11.5 }}>cm</span>
                       <button style={chip(true)} onClick={applyScale}>Apply</button>
                       <button style={chip(false)} onClick={cancelCalibration}>Cancel</button>
                     </div>
                   </>
                 )}
-                <div style={hintText}>A doorway is ~0.9 m; a dimension line from the plan is even better.</div>
+                <div style={hintText}>A doorway is ~90 cm; a dimension line from the plan is even better.</div>
               </>
             )}
           </>
