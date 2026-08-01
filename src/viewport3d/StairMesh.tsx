@@ -12,6 +12,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Scene, Stair } from "@/schema/scene";
+import { shadowProps } from "@/render/materialClass";
 import { LANDING_SLAB } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { stairLandings, stairMetrics } from "@/lib/stairs/stairGeometry";
@@ -255,8 +256,7 @@ function StairMesh({ stair }: { stair: Stair }) {
           material={material}
           position={p.position}
           rotation={p.rotation}
-          castShadow
-          receiveShadow
+          {...shadowProps("opaqueArchitecture")}
         />
       ))}
     </group>

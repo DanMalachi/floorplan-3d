@@ -7,6 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
+import { applyShadowClass, shadowProps } from "@/render/materialClass";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
 import { placementCollides, snapToWall, wallOBBs, type OBB } from "./collision";
 import { GRID } from "./snap";
@@ -54,10 +55,13 @@ function normalize(
   const wrapper = new THREE.Group();
   wrapper.add(clone);
   wrapper.scale.setScalar(k);
+  // Shadow behaviour comes from the declared class, not from flags set here.
+  // A placement ghost is `transient`, whose policy currently still casts a
+  // full-strength shadow — the known defect the class exists to make fixable in
+  // one place (src/render/materialClass.ts), rather than a per-mesh oversight.
+  applyShadowClass(clone, opacity !== undefined ? "transient" : "opaqueArchitecture");
   clone.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
-    o.castShadow = true;
-    o.receiveShadow = true;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
     o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
       | THREE.Material
@@ -130,7 +134,7 @@ function PlaceholderBox({ footprint, tint, opacity }: {
   const d = footprint?.d ?? 0.5;
   const h = Math.min(w, d, 0.5);
   return (
-    <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+    <mesh position={[0, h / 2, 0]} {...shadowProps(opacity !== undefined ? "transient" : "opaqueArchitecture")}>
       <boxGeometry args={[w, h, d]} />
       <meshStandardMaterial
         color={tint === "red" ? "#ff3b30" : "#c8c8c8"}

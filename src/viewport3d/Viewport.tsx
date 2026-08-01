@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postprocessing";
-import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
+import { DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
+import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import type { FloorStyle, Opening, SlideSpec, Wall } from "@/schema/scene";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
@@ -1232,10 +1233,18 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       }}
     >
       <Canvas
-        shadows={{ type: THREE.PCFShadowMap }}
+        // Every renderer value below is recorded in src/render/contract.ts and
+        // checked at startup by <RenderContractCheck>. Values are passed
+        // explicitly even where they match the library default — see
+        // docs/render-contract.md §1.1 for why a default is not the same as a
+        // decision.
+        shadows={{ type: SHADOW.type }}
         camera={{ position: [9, 8, 11], fov: 50 }}
+        dpr={DPR}
         // `flat` disables the renderer's own tonemapping so the ToneMapping
-        // effect in the composer owns ACES (avoids double tonemapping).
+        // effect in the composer owns the display transform (avoids double
+        // tonemapping). The composer forces NoToneMapping too; this is the
+        // belt to its braces.
         flat
         // preserveDrawingBuffer lets us snapshot the frame for project thumbnails.
         gl={{ preserveDrawingBuffer: true }}
@@ -1291,15 +1300,25 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         {/* Photographic pass: ambient occlusion grounds furniture and darkens
             corners, ACES tonemapping, SMAA. AO is the cost centre — dropped
             while dragging and in Top view. */}
-        <EffectComposer multisampling={0} enableNormalPass={false}>
+        {/* Chain order is fixed by contract §2.3: HDR scene-space effects, then
+            ToneMapping, then LDR display-space effects. Bloom/SSR/DoF go ABOVE
+            the ToneMapping line; vignette/LUT/grain go below. An HDR effect
+            placed after tone mapping operates on clamped values and silently
+            stops meaning anything. */}
+        <EffectComposer
+          multisampling={0}
+          enableNormalPass={false}
+          frameBufferType={FRAME_BUFFER_TYPE}
+        >
           {!dragging && wallMode !== "top" ? (
             <N8AO aoRadius={0.7} intensity={2.4} distanceFalloff={1} halfRes />
           ) : (
             <></>
           )}
-          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          <ToneMapping mode={TONE_MAPPING.operator} />
           <SMAA />
         </EffectComposer>
+        <RenderContractCheck />
       </Canvas>
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
       {(appMode === "build" || appMode === "furnish") && <MiniInspector />}

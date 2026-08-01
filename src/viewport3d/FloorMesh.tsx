@@ -5,10 +5,38 @@ import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
+import type { Node } from "@/schema/scene";
 import { WALL_HEIGHT } from "@/schema/constants";
+import { MIN_CASTER_THICKNESS } from "@/render/contract";
+import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
 import { floorTexture, floorRoughness } from "./textures";
 import { ACCENT } from "./WallMesh";
+
+/**
+ * A ceiling SLAB from a room loop: the polygon extruded upward by `thickness`,
+ * with its underside at y = 0 so the interior ceiling surface stays exactly
+ * where the old flat plane was.
+ *
+ * It is a solid rather than a plane because a shadow caster must have thickness
+ * (contract §3.4). As a flat plane the ceiling shadowed itself — front and back
+ * faces land on the same shadow-map depth — and the roof acned visibly at every
+ * sun angle. A closed solid also lets the material be FrontSide, which makes
+ * three render BACK faces into the shadow map: the stored depth is then the far
+ * side of the slab, a full thickness behind the lit surface.
+ */
+function buildCeilingSlab(loop: Node[], thickness: number): THREE.BufferGeometry {
+  const shape = new THREE.Shape(loop.map((n) => new THREE.Vector2(n.x, n.y)));
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+  // Shape is authored in XY and extruded along +Z. rotateX(+90°) maps
+  // (x, y, 0) -> (x, 0, y), matching buildFloorGeometry's plan->world mapping,
+  // and sends the extrusion to -Y; the translate lifts it back so the slab
+  // spans [0, thickness] above the mesh origin.
+  geo.rotateX(Math.PI / 2);
+  geo.translate(0, thickness, 0);
+  geo.computeVertexNormals();
+  return geo;
+}
 
 /** A flat vertical quad from (ax,ay)-(bx,by) in plan, spanning y0 to y1 —
  *  the riser panel that closes the gap above a shorter room's ceiling where
@@ -69,7 +97,9 @@ function Floor({ roomId, style, geometry }: {
     <mesh
       geometry={geometry}
       material={mat}
-      receiveShadow
+      // A floor is opaque architecture, but a flat slab at y=0 has nothing
+      // below it to shade, so it only receives.
+      receiveShadow={shadowProps("opaqueArchitecture").receiveShadow}
       userData={{ pick: { kind: "room", id: roomId } }}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         const s = useSceneStore.getState();
@@ -196,7 +226,7 @@ export function Ceilings({ scene }: { scene: Scene }) {
         }
       }
       const height = perimeterHeight ?? anyHeight ?? WALL_HEIGHT;
-      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height });
+      out.push({ id: room.id, geometry: buildCeilingSlab(loop, MIN_CASTER_THICKNESS), height });
 
       // A bounding wall taller than THIS room's own ceiling (a neighbor's
       // shared wall, excluded from the max above) would otherwise leave the
@@ -224,7 +254,11 @@ export function Ceilings({ scene }: { scene: Scene }) {
         color: "#ededed",
         roughness: 0.95,
         metalness: 0,
-        side: THREE.DoubleSide,
+        // FrontSide, not DoubleSide: the ceiling is a closed solid now, so
+        // there is no back face to see, and FrontSide resolves shadowSide to
+        // BackSide — the shadow map stores the slab's far side rather than the
+        // surface being lit, which is what removes the self-shadow acne.
+        side: THREE.FrontSide,
       }),
     [],
   );
@@ -240,19 +274,54 @@ export function Ceilings({ scene }: { scene: Scene }) {
       }),
     [],
   );
+  // Depth-only proxy material. When the ceiling is hidden for viewing, the mesh
+  // stays in the scene as an invisible shadow caster: `colorWrite` off so it
+  // draws nothing, `depthWrite` off so it cannot occlude what is behind it in
+  // the colour pass. The shadow pass builds its own depth material and ignores
+  // both, so the roof still blocks the sun.
+  //
+  // This is what fixes sun-through-ceiling in cutaway and top (contract §5).
+  // The alternative — cutting the sun in those modes — would have darkened the
+  // entire visible outdoors, since the sun is one scene-wide light and cutaway
+  // fades only the walls facing the camera.
+  const proxyMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }),
+    [],
+  );
   useEffect(() => () => mat.dispose(), [mat]);
   useEffect(() => () => riserMat.dispose(), [riserMat]);
+  useEffect(() => () => proxyMat.dispose(), [proxyMat]);
   useEffect(() => () => ceilings.forEach((c) => c.geometry.dispose()), [ceilings]);
   useEffect(() => () => risers.forEach((r) => r.geometry.dispose()), [risers]);
 
-  if (!show || wallMode !== "full") return null;
+  // Hidden for VIEWING is not the same as absent by DESIGN. A room with no
+  // ceiling geometry at all (balcony — bounded by a rail, skipped above) is
+  // open to the sky and correctly takes direct sun. A room whose ceiling is
+  // merely hidden so the camera can see in still has a roof, and the sun must
+  // still stop at it. Only the second case gets a proxy.
+  const hidden = !show || wallMode !== "full";
+  const solid = shadowProps("opaqueArchitecture");
+
   return (
     <group>
       {ceilings.map((c) => (
-        <mesh key={c.id} position={[0, c.height, 0]} geometry={c.geometry} material={mat} receiveShadow />
+        <mesh
+          key={c.id}
+          position={[0, c.height, 0]}
+          geometry={c.geometry}
+          material={hidden ? proxyMat : mat}
+          castShadow
+          receiveShadow={!hidden && solid.receiveShadow}
+        />
       ))}
       {risers.map((r) => (
-        <mesh key={r.id} geometry={r.geometry} material={riserMat} receiveShadow />
+        <mesh
+          key={r.id}
+          geometry={r.geometry}
+          material={hidden ? proxyMat : riserMat}
+          castShadow
+          receiveShadow={!hidden && solid.receiveShadow}
+        />
       ))}
     </group>
   );

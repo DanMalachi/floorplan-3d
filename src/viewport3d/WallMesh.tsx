@@ -7,6 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS, RAIL_HEIGHT } from "@/schema/constants";
+import { shadowProps } from "@/render/materialClass";
 import {
   useSceneStore,
   type DimLabel,
@@ -340,8 +341,10 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
           position={p.position}
           rotation={[0, p.rotationY, 0]}
           geometry={geoms[i]}
-          castShadow
-          receiveShadow
+          // Opaque architecture even while a cutaway fade has it at opacity
+          // 0.13 — see the `transient` class note in src/render/materialClass.ts
+          // for why that mismatch is a known, deliberately deferred defect.
+          {...shadowProps("opaqueArchitecture")}
           userData={{ pick: { kind: "wall", id: wall.id } }}
           material={mats}
           {...hoverHandlers}
@@ -361,8 +364,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
           geometry={bbGeoms[i]}
           material={baseboardMat}
           raycast={() => null} // visual trim — clicks fall through to the wall body
-          castShadow
-          receiveShadow
+          {...shadowProps("opaqueArchitecture")}
         />
       ))}
       {volumes.map((v) => {
@@ -671,8 +673,10 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
             rotation={[0, p.rotationY, 0]}
             material={mats[p.role]}
             raycast={() => null} // visual only — the pick box above handles input
-            castShadow={p.role !== "glass"}
-            receiveShadow={p.role !== "glass"}
+            // Glass is its own class and does not cast: three's shadow maps are
+            // depth-only, so a casting pane throws a solid black rectangle
+            // across the floor it is meant to be lighting.
+            {...shadowProps(p.role === "glass" ? "glass" : "opaqueArchitecture")}
           >
             <boxGeometry args={p.size} />
           </mesh>
@@ -936,12 +940,17 @@ function RailGroup({ wall, a, b, offset }: {
 
   return (
     <group>
-      {/* glass balustrade panel — no shadow (Three casts opaque shadows for glass) */}
-      <mesh {...meshProps} position={[mid.x, panelH / 2, mid.y]} material={glass}>
+      {/* glass balustrade panel — the glass class, so it does not cast */}
+      <mesh {...meshProps} position={[mid.x, panelH / 2, mid.y]} material={glass} {...shadowProps("glass")}>
         <boxGeometry args={[len, panelH, RAIL_PANEL_THK]} />
       </mesh>
       {/* handrail cap */}
-      <mesh {...meshProps} position={[mid.x, height - RAIL_CAP_H / 2, mid.y]} material={cap} castShadow>
+      <mesh
+        {...meshProps}
+        position={[mid.x, height - RAIL_CAP_H / 2, mid.y]}
+        material={cap}
+        {...shadowProps("opaqueArchitecture")}
+      >
         <boxGeometry args={[len, RAIL_CAP_H, RAIL_CAP_THK]} />
       </mesh>
       {selected && (

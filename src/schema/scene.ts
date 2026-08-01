@@ -182,6 +182,12 @@ export interface Room {
   loop: Id[]; // ordered node ids; closure is implied (last connects to first)
   floor?: FloorStyle; // defaults to "wood"
   semantics?: RoomSemantics; // Building Knowledge Layer — additive, recomputable
+  // TODO(M2 lighting): authored ceiling state — a room is roofed by design or
+  // open to the sky by design. Must be a schema field, never inferred from
+  // whether the ceiling mesh is mounted (that also goes false in cutaway) or
+  // from rail adjacency (that misses covered balconies: roofed but open-sided,
+  // and near-universal in the target market). Lighting derivation reads schema,
+  // never runtime mesh mount state. See docs/render-contract.md §8.
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene
