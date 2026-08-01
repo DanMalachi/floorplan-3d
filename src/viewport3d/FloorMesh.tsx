@@ -6,7 +6,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Node } from "@/schema/scene";
-import { WALL_HEIGHT } from "@/schema/constants";
+import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
 import { MIN_CASTER_THICKNESS } from "@/render/contract";
 import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
@@ -38,22 +38,28 @@ function buildCeilingSlab(loop: Node[], thickness: number): THREE.BufferGeometry
   return geo;
 }
 
-/** A flat vertical quad from (ax,ay)-(bx,by) in plan, spanning y0 to y1 —
- *  the riser panel that closes the gap above a shorter room's ceiling where
- *  a taller neighbor's shared wall would otherwise leave it open. */
-function buildRiserGeometry(ax: number, ay: number, bx: number, by: number, y0: number, y1: number): THREE.BufferGeometry {
-  const geo = new THREE.BufferGeometry();
-  const positions = new Float32Array([
-    ax, y0, ay,
-    bx, y0, by,
-    bx, y1, by,
-
-    ax, y0, ay,
-    bx, y1, by,
-    ax, y1, ay,
-  ]);
-  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geo.computeVertexNormals();
+/**
+ * The riser panel that closes the gap above a shorter room's ceiling where a
+ * taller neighbor's shared wall would otherwise leave it open: a solid from
+ * (ax,ay)-(bx,by) in plan, spanning y0 to y1, as thick as the wall it continues.
+ *
+ * A box rather than the flat quad this used to be. The riser casts shadows —
+ * it has to, since it is the only thing sealing that strip of airspace — and a
+ * zero-thickness caster shadows itself (contract §3.4). Same defect the ceiling
+ * had, same fix: give it the thickness it physically has.
+ */
+function buildRiserGeometry(
+  ax: number, ay: number, bx: number, by: number,
+  y0: number, y1: number, thickness: number,
+): THREE.BufferGeometry {
+  const dx = bx - ax;
+  const dz = by - ay;
+  const len = Math.hypot(dx, dz);
+  const geo = new THREE.BoxGeometry(len, y1 - y0, thickness);
+  // Box length runs along local +X; rotating by -atan2 aligns it with the
+  // plan segment, matching how WallMesh orients its own wall bodies.
+  geo.rotateY(-Math.atan2(dz, dx));
+  geo.translate((ax + bx) / 2, (y0 + y1) / 2, (ay + by) / 2);
   return geo;
 }
 
@@ -241,7 +247,13 @@ export function Ceilings({ scene }: { scene: Scene }) {
         if (!wall) continue;
         const wallH = wall.height ?? WALL_HEIGHT;
         if (wallH <= height) continue;
-        risers.push({ id: `${room.id}:${wall.id}`, geometry: buildRiserGeometry(a.x, a.y, b.x, b.y, height, wallH) });
+        // As thick as the wall it continues upward — the riser reads as that
+        // wall carrying on, and shares its shadow footprint.
+        const t = wall.thickness ?? DEFAULT_THICKNESS;
+        risers.push({
+          id: `${room.id}:${wall.id}`,
+          geometry: buildRiserGeometry(a.x, a.y, b.x, b.y, height, wallH, t),
+        });
       }
     }
     return { out, risers };
@@ -270,7 +282,10 @@ export function Ceilings({ scene }: { scene: Scene }) {
         color: "#d8d2c4",
         roughness: 0.95,
         metalness: 0,
-        side: THREE.DoubleSide,
+        // FrontSide for the same reason as the ceiling: the riser is a closed
+        // solid now, and FrontSide resolves shadowSide to BackSide so the
+        // shadow map stores its far face instead of the lit one.
+        side: THREE.FrontSide,
       }),
     [],
   );

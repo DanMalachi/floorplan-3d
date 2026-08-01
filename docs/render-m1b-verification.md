@@ -126,13 +126,51 @@ number that looks like a result is worse than no number.
 The acne numbers in §4 are trustworthy: the probe reported `visible: true`, the
 before/after contrast is large and monotone, and it agrees with the pixel zoom.
 
-## 6. Not verified in M1b
+## 6. Riser panels — FIXED (follow-up after the main M1b pass)
 
-- **Riser panels remain zero-thickness casters.** `buildRiserGeometry` still
-  produces a flat quad, and risers now cast. They only exist when a neighbouring
-  wall is taller than a room's own ceiling, which the sample scene does not
-  contain, so this could not be exercised. It is a live violation of contract
-  §3.4 and should be closed with a fixture that produces one.
+`buildRiserGeometry` produced a flat quad, and risers cast, so they were a live
+§3.4 violation. Now a box, as thick as the wall it continues (`wall.thickness`),
+with the material moved `DoubleSide` → `FrontSide` for the same shadowSide
+reason as the ceiling.
+
+Testable at last via a dedicated fixture, `src/app/calibration/riserScene.ts`,
+driven by the `riser` rig and `scripts/render/verify-riser.mjs`. Risers only
+appear where a **shared** wall is taller than a room's own ceiling — ceiling
+height is the max over walls a room *owns*, so a room's own tall wall just
+raises its ceiling instead. The fixture is therefore two rooms side by side,
+all own-walls at 2.4 m, the single wall between them at 3.2 m.
+
+Acne signal across the sweep: **0.000 at every hour**, on both the ceiling probe
+and the riser probe, all probes reporting visible. Riser brightness tracks the
+sun sensibly (130.9 at 07:30 with the sun on that face, 58.6 at 17:30 once it
+swings round), which confirms the probe is reading lit geometry rather than a
+static background.
+
+### Caveat on what that measurement isolates
+
+In this configuration the riser is **geometrically coincident with the taller
+wall it seals against**: the riser spans [2.4, 3.2] on the wall centreline at
+the wall's own thickness, and the wall body already spans [0, 3.2] on that same
+centreline at that same thickness. The two solids occupy the same volume, and
+their colours are near-identical (`#d8d2c4` both), so any z-fighting would be
+invisible.
+
+Consequences, stated rather than glossed:
+
+- the riser probe cannot distinguish riser from wall, so "no acne on the riser"
+  is really "no acne on the coincident wall-plus-riser surface"
+- in this configuration the riser is **redundant geometry** — the wall already
+  seals the strip, and the riser doubles the shadow caster there
+
+Reading the generation rule, this looks like it always holds for solid walls:
+the riser fires exactly when a shared wall is taller than every owned wall, and
+that shared wall is rendered at its full height regardless. The plausible case
+where a riser is genuinely load-bearing is a **portal**-kind boundary, which is
+open by construction and so would leave a real gap for the riser to close. That
+was not tested and is not something to change on inference — flagged for Dan.
+
+## 7. Not verified in M1b
+
 - **Real floorplans.** Deliberately out of scope: interiors will look wrong until
   M2 supplies per-room fixtures. Nothing here was judged against one.
 - **Night.** Sky falls to full-moon 0.25 lx, which is physically right and renders

@@ -370,10 +370,17 @@ The failure mode is specific. If M2 derives per-room lighting by checking whethe
 | 4 | §5 | Camera-mode presets vs depth-only ceiling proxy | **IMPLEMENTED as proxy + interim fill.** Verified: at noon in cutaway the interior stays dim while the lawn outside stays fully sunlit — the outcome the sun-suppression preset would have destroyed |
 | 5 | §3.4 | Ceiling thickness — real slab, or documented zero-thickness exemption | **IMPLEMENTED as a real slab** (`MIN_CASTER_THICKNESS`, 0.12 m) after acne appeared exactly as predicted the moment the ceiling started casting. Acne signal 6.434 → 0.000 across the sweep |
 
-**Still open after M1b:** riser panels (`buildRiserGeometry`) remain zero-thickness
-casters and violate §3.4. They only occur when a neighbouring wall is taller than
-a room's own ceiling, which no available fixture produces, so the fix could not be
-verified and was not shipped blind.
+**Riser panels — CLOSED.** `buildRiserGeometry` now produces a solid as thick as
+the wall it continues, verified acne-free across the sun sweep against a purpose-
+built fixture (`src/app/calibration/riserScene.ts`). No zero-thickness casters
+remain in the codebase, so §3.4 holds everywhere.
+
+**Opened by that fix, for Dan:** in every configuration a solid wall can produce,
+the riser is geometrically coincident with the taller wall it seals — same
+centreline, same thickness, same span — and is therefore redundant duplicate
+geometry that doubles the shadow caster. A **portal**-kind boundary is the
+plausible case where a riser is genuinely load-bearing, since a portal is open by
+construction. Not changed on inference. See `render-m1b-verification.md` §6.
 
 ---
 

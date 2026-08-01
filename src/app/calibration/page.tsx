@@ -32,14 +32,17 @@ import {
 } from "@/render/lightPresets";
 import { sampleScene } from "@/schema/sampleScene";
 import { useSceneStore } from "@/store/useSceneStore";
+import { riserScene } from "./riserScene";
 import { Floors, Ceilings } from "@/viewport3d/FloorMesh";
 import { Walls } from "@/viewport3d/WallMesh";
 import { Environment3d } from "@/viewport3d/environment/Environment3d";
 
-type Mode = "exposure" | "roof" | "interior";
+type Mode = "exposure" | "roof" | "interior" | "riser";
 
 /** Scene centre — the sample scene spans x 0..5, y 0..7 in plan. */
 const OFFSET = { cx: 2.5, cz: 3 };
+/** The riser fixture spans x 0..8, z 0..3. */
+const RISER_OFFSET = { cx: 4, cz: 1.5 };
 
 // ---------------------------------------------------------------------------
 // Exposure rig — sun only, nothing else
@@ -95,15 +98,16 @@ function ExposureRig() {
  * stops at the ceiling, the balcony's does not, because the balcony has no
  * ceiling BY DESIGN rather than hidden for viewing.
  */
-function SceneRig() {
+function SceneRig({ riser }: { riser?: boolean }) {
   const scene = useSceneStore((s) => s.scene);
+  const off = riser ? RISER_OFFSET : OFFSET;
   return (
     <>
       <Environment3d span={12} halfX={6} halfZ={6} />
-      <group position={[-OFFSET.cx, 0, -OFFSET.cz]}>
+      <group position={[-off.cx, 0, -off.cz]}>
         <Floors scene={scene} />
         <Ceilings scene={scene} />
-        <Walls scene={scene} offset={OFFSET} />
+        <Walls scene={scene} offset={off} />
       </group>
     </>
   );
@@ -123,8 +127,9 @@ function Probe({ onSample }: { onSample: (rgb: [number, number, number]) => void
   const { gl, camera, size } = useThree();
   useEffect(() => {
     const w = window as unknown as Record<string, unknown>;
-    w.__probe = (planX: number, planZ: number, y: number, px = 12) => {
-      const v = new THREE.Vector3(planX - OFFSET.cx, y, planZ - OFFSET.cz).project(camera);
+    w.__probe = (planX: number, planZ: number, y: number, px = 12, riser = false) => {
+      const off = riser ? RISER_OFFSET : OFFSET;
+      const v = new THREE.Vector3(planX - off.cx, y, planZ - off.cz).project(camera);
       const cx = Math.round(((v.x + 1) / 2) * size.width);
       const cy = Math.round(((1 - v.y) / 2) * size.height);
       // A probe that silently returns 0 for an off-screen point certifies
@@ -194,6 +199,9 @@ const CAMERAS: Record<Mode, { pos: [number, number, number]; target: [number, nu
   // Facing the window instead would put that patch behind the camera — which
   // is what the first version of this rig did, and why it saw no window light.
   interior: { pos: [0.7 - 2.5, 1.6, 2.4 - 3], target: [4.6 - 2.5, 0.25, 1.6 - 3] },
+  // Exterior three-quarter view of the riser fixture, framing the shared wall
+  // standing 0.8 m proud of both ceilings and the riser strip either side of it.
+  riser: { pos: [7, 7.5, 9], target: [0, 2.4, 0] },
 };
 
 function Rig({ mode }: { mode: Mode }) {
@@ -222,14 +230,18 @@ export default function CalibrationPage() {
   const showCeilings = useSceneStore((s) => s.showCeilings);
 
   useEffect(() => {
-    setScene(sampleScene);
     setEnvPreset("suburb");
     setWallMode("full");
     const w = window as unknown as Record<string, unknown>;
     w.__setMode = setMode;
     w.__setHour = setHour;
     w.__setUi = setUi;
-  }, [setScene, setEnvPreset, setWallMode]);
+  }, [setEnvPreset, setWallMode]);
+  // The riser rig needs its own fixture: risers only appear where a SHARED wall
+  // is taller than a room's own ceiling, and the sample scene has no such wall.
+  useEffect(() => {
+    setScene(mode === "riser" ? riserScene : sampleScene);
+  }, [mode, setScene]);
   useEffect(() => setTimeOfDay(hour), [hour, setTimeOfDay]);
 
   const toLinear = (v: number) => {
@@ -254,7 +266,9 @@ export default function CalibrationPage() {
         gl={{ preserveDrawingBuffer: true }}
       >
         <Rig mode={mode} />
-        <Suspense fallback={null}>{mode === "exposure" ? <ExposureRig /> : <SceneRig />}</Suspense>
+        <Suspense fallback={null}>
+          {mode === "exposure" ? <ExposureRig /> : <SceneRig riser={mode === "riser"} />}
+        </Suspense>
         {/* No AO in any rig: it would darken the card and confound the acne
             read with an unrelated darkening term. */}
         <EffectComposer multisampling={0} enableNormalPass={false} frameBufferType={FRAME_BUFFER_TYPE}>
@@ -268,7 +282,7 @@ export default function CalibrationPage() {
       {ui && (
         <div style={{ position: "absolute", bottom: 14, left: 14, display: "grid", gap: 8, background: "rgba(12,12,16,0.9)", padding: 12, borderRadius: 10, fontSize: 11, width: 330 }}>
           <div style={{ display: "flex", gap: 6 }}>
-            {(["exposure", "roof", "interior"] as const).map((m) => (
+            {(["exposure", "roof", "interior", "riser"] as const).map((m) => (
               <button key={m} onClick={() => setMode(m)} style={{ ...btn(mode === m), flex: 1 }}>{m}</button>
             ))}
           </div>
