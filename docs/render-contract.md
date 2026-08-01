@@ -1,10 +1,15 @@
 # Render Contract
 
-Status: **M1a — proposed, awaiting ratification.** Nothing here is implemented. Successor to `docs/render-diagnostic.md` (M0 findings), which this document turns into law.
+Status: **M1b implemented; M1c captured PROVISIONALLY — the lighting model is NOT frozen.** Successor to `docs/render-diagnostic.md` (M0 findings), which this document turns into law.
 
 Every clause below has three parts: the **decision**, the **rationale**, and what it **forbids**. The forbidding half is the point — a clause with no prohibition is a note, not a contract.
 
-Three clauses are flagged **OPEN** and need Dan's ruling before M1b: §2.4 (tone mapping operator), §4/§2.2 (an unresolvable conflict between physical light units and the current exposure path), and §5 (I disagree with the stated preset decision after reading the cutaway implementation, as invited). They are collected in §9.
+The three clauses that were OPEN before M1b (§2.4 tone-mapping operator, §4/§2.2 the exposure-path conflict, §5 camera-mode presets) are resolved and implemented. M1c's capture opened two more; M1c-R closed one and is working the other:
+
+- **§3.1 — CLOSED at M1c-R, and M1c's reading of it was wrong.** three r182 *absorbed* `PCFSoftShadowMap` into `PCFShadowMap` rather than removing it; `PCFShadowMap` is now the soft filter. The nine M1c candidates are correctly soft-shadowed, verified by measured penumbra width, not by the constant's name. The clause is rewritten and §0.3 pins the versions so the next renamed-behaviour cannot slip through the same gap.
+- **§7.1 — OPEN, still blocks the freeze.** The IBL was never converted to physical units and is the largest single light in the scene.
+
+§9 carries the ledger; `docs/calibration/README.md` carries the account.
 
 ---
 
@@ -34,6 +39,27 @@ The protection is written to shield the 3D layer *from the extraction rebuild*, 
 **Decision.** M1b does not begin until Dan confirms in writing that the render-fidelity workstream is exempt from rule 1, or scopes an exemption to a named file list.
 
 **Forbids.** Treating "the render milestones obviously need these files" as implied permission. Also forbids the reverse dodge — reimplementing renderer setup in new parallel files to technically avoid touching protected ones, which would leave two competing renderer configs.
+
+### 0.3 Version pin — added at M1c-R, and it is the general fix
+
+**Decision.** The render stack is pinned to exact versions, recorded in `VERIFIED_AGAINST` (`src/render/contract.ts`) and as exact — not caret — ranges in `package.json`:
+
+| Package | Verified against |
+|---|---|
+| `three` | 0.185.0 |
+| `@react-three/fiber` | 9.6.1 |
+| `@react-three/drei` | 10.7.7 |
+| `postprocessing` | 6.39.2 |
+
+A change to any of them is a **contract-invalidation event**: §1, §2 and §3 are re-verified against the new build before any captured baseline is treated as valid.
+
+**Rationale.** §1.1 already says an implicit default is a decision made by a dependency's changelog, and answers it by recording the value. §3.1 is the case that answer does not cover: the value was recorded, the recording never drifted, and the clause still became false — because `PCFSoftShadowMap` meant "a 3×3 soft kernel" when M1a wrote it and means "deprecated alias, coerced elsewhere, and hard-shadowed for one whole release" now. Every clause in this document describes *behaviour* but records a *name*, and a name is only a stable reference to behaviour within a version.
+
+Renaming the constant fixes that one instance. The pin is what makes the class of defect visible, because it converts a silent semantic change into a deliberate, reviewable version bump.
+
+The caret ranges that were here (`^0.185.0` and friends) were the actual mechanism: they permit exactly the kind of minor bump that r182 was.
+
+**Forbids.** Caret or tilde ranges on these four packages. Forbids bumping any of them as an incidental part of unrelated work, or as a lockfile refresh. Forbids treating baselines captured before a bump as valid after it — they are re-captured or explicitly re-verified, and §2.4's rule that a stale baseline set is worse than none applies.
 
 ---
 
@@ -158,13 +184,42 @@ The cost is real and worth stating: Neutral is less filmic. Sunsets and bright e
 
 M0 found `PCFShadowMap`, not `PCFSoftShadowMap` (`Viewport.tsx:1235`). Changing this after baselines invalidates every reference image, so it is settled now.
 
-### 3.1 Type: PCFSoft
+### 3.1 Type: `PCFShadowMap` — which since r182 IS the soft filter
 
-**Decision.** `THREE.PCFSoftShadowMap`.
+**Decision.** `THREE.PCFShadowMap`.
 
-**Rationale.** Plain PCF gives hard, stair-stepped shadow edges. At the texel densities this scene actually runs at (§3.2) that aliasing is visible on exactly the shadows that matter most — long straight wall and window-mullion shadows falling across a floor, where the eye tracks a continuous line and reads every jag. PCFSoft's wider bilinear-weighted kernel costs additional texture fetches in the shadow lookup and nothing else: no extra pass, no extra memory, no architectural change. For an architectural interior renderer it is the standard choice and the cost is the cheapest quality win available in this milestone.
+**This clause was rewritten at M1c-R after the M1c reading of it was found to be wrong.** M1c reported that "M1b's soft-shadow decision has never rendered" and that every baseline was hard-shadowed. The first half is true in a trivial sense and the second half is false. Both halves came from reading a deprecation warning and not checking what the deprecation meant.
 
-**Forbids.** VSM (light-bleed through thin geometry is disqualifying for a scene built from thin walls, and it interacts badly with the zero-thickness ceiling of §3.4). Forbids `BasicShadowMap`. Forbids changing type after M1c without re-capturing baselines.
+**What r182 actually did.** The three.js migration guide, r181 → r182:
+
+> "PCFSoftShadowMap with WebGLRenderer is now deprecated. Use PCFShadowMap which is now soft as well."
+
+The constant was **absorbed, not removed**. In the installed build there is no soft/hard pair left to choose between — `shadowMapTypeDefines` maps `PCFShadowMap` → `SHADOWMAP_TYPE_PCF` and `VSMShadowMap` → `SHADOWMAP_TYPE_VSM`, and nothing else (`three.module.js:6579-6581`). `SHADOWMAP_TYPE_PCF` compiles a **5-tap Vogel disk, rotated per pixel by interleaved-gradient noise, sampled through `sampler2DShadow`** so each tap is itself hardware-filtered. The old hard 1-tap `step()` is the `#else` BASIC path. `PCFShadowMap` in r182+ is therefore *softer* than the 3×3 kernel the original clause asked for.
+
+So `live.shadowMapType: 1` is the soft path under its new name. **The nine M1c candidates are not hard-shadowed.**
+
+**Why naming the deprecated alias was still dangerous.** `generateShadowMapTypeDefine` falls back to `SHADOWMAP_TYPE_BASIC` for any value it does not recognise (`three.module.js:6586`), and `PCFSoftShadowMap` (2) is not in the map. It reaches the soft path only because `WebGLShadowMap.render` coerces it to `PCFShadowMap` before the define is generated (`three.module.js:9148-9152`). That coercion was broken in r182 — it tested the wrong object reference, so no coercion and no warning happened, the shader compiled BASIC, and shadows came out hard and aliased (three.js #32591). It was fixed by #32593, milestone **r183**. The installed build is 0.185.0 and carries the fix, verified in `node_modules`.
+
+Naming the alias meant the correctness of every shadow in this product depended on a coercion in someone else's `render()` loop that had already failed once.
+
+**Verified in the captures, not only in the source.** `scripts/render/shadow-edge.mjs` profiles the 10-90% transition width across a fitted shadow edge:
+
+| cell | region | 10-90% width | scatter | inliers |
+|---|---|---|---|---|
+| `suburb-top` | bench shadow on terrace concrete | 3.62 px | 1.38 px | 0.89 |
+| `city-top` | bench shadow on terrace concrete | 3.62 px | 1.38 px | 0.89 |
+| `suburb-full` | slider beam edge on roofed floor | 3.66 px | 4.65 px | 0.65 |
+
+A hard `step()` edge transitions in ~1–1.5 px, widened only by SMAA. Measured is ~2.5× that, and it matches the filter arithmetic: `shadowRadius` defaults to 1, so the Vogel disk spans one shadow-map texel = `2 × 16.6 m / 2048` = 1.62 cm, which at the top camera's 86 px/m is ~2.8 px before AA. Low scatter (1.38 px on the clean edge) says the stochastic rotation is not producing the dithered boundary that is the actual "pixelated shadow" symptom.
+
+Visual inspection at 4× on all nine cells confirms it: graded edges, no blockiness, no stair-stepping at texel scale, no per-pixel noise along boundaries. (`none-top` is not profilable — studio shadow contrast falls below the tool's gradient threshold. Its edges were checked by eye.)
+
+**Rationale for the clause as it now stands.** One filter is available and it is the right one: a rotated-disk PCF gives soft edges on exactly the shadows that matter here — long straight wall and mullion shadows across a floor, where the eye tracks a continuous line and reads every jag. The cost is extra texture fetches in the shadow lookup: no extra pass, no extra memory, no architectural change.
+
+**Forbids.** Writing `PCFSoftShadowMap` anywhere. It is a deprecated alias whose only route to correct behaviour runs through a coercion that has already regressed once, and it is scheduled for removal (the guide's r185 → r186 entry removes it for WebGPURenderer). Forbids VSM (light-bleed through thin geometry is disqualifying for a scene built from thin walls, and it interacts badly with §3.4's slab ceiling). Forbids `BasicShadowMap`. Forbids changing type after baselines are captured without re-capturing them.
+
+**Forbids, added at M1c-R.** Describing a shadow as soft or hard on the strength of the constant's name. §0.3 pins the version; the empirical check is `scripts/render/shadow-edge.mjs`, and a claim about penumbra without one of the two is not evidence.
+
 
 ### 3.2 Resolution and frustum: 2048², single frustum, with a recorded degradation threshold
 
@@ -321,7 +376,127 @@ The 128px resolution is a deliberate cost decision: it is regenerated when the p
 
 **Forbids.** Disabling the environment map in any preset — a preset that needs no IBL should set a low physical value, not switch the rig off, so materials keep behaving consistently. Forbids IBL intensity as an untracked look knob once §4 lands: it is a light with a unit like any other. Forbids per-material `envMapIntensity` overrides used to compensate for a preset's IBL level — that is the same drift §2.4 forbids, one level down. Forbids raising `resolution` without recording the frame-cost measurement.
 
+### 7.1 The clause is UNMET — measured at M1c capture (OPEN)
+
+**M1b converted the sun, the sky and the studio instruments to physical units and left the three `<Lightformer>` rects at their eye-tuned values** (1.2 / 0.7 / 0.55 outdoors, 1.6 in studio — `Environment3d.tsx:123-125`). The "once §4 lands" condition above landed; the conversion did not happen. Nothing failed loudly because the assertion in §1.3 covers renderer state, not light values.
+
+**Measured, not inferred.** Probed off the calibration chart's front bench — a known 0.18-albedo horizontal surface, no AO in that composer — in `suburb` / `perspective`, at the canonical hour and again at hour 0, where the sun is below the horizon and the sky model has fallen to its 0.25 lx moonlight floor. At hour 0 the environment map is the only light left:
+
+| probe | hour 10 | hour 0 | from IBL |
+|---|---|---|---|
+| bench top, 0.18 albedo, horizontal | 0.219 | 0.115 | **53%** |
+| terrace floor, direct sun | 0.477 | 0.205 | 43% |
+| roofed floor, deep shade | 0.250 | 0.206 | **83%** |
+
+Linear scene-referred, recovered by inverting Neutral's black-point term; approximate, because that term reads `min(r,g,b)` and these are luminances. Independently: the key rect's 1.2 renderer units is `1.2 / RENDER_EXPOSURE` = **38,200 nits**, against §4.1's own clear-sky reference of 5,000–8,000.
+
+**Why it blocks the freeze rather than being a defect to note.** The environment map does not vary with the hour, so it is a constant ambient floor under every scene — it washes out the specular difference that roughness *is*, it lifts interiors with light that has no fixture behind it (the exact M2 problem the contract says must be solved with lights that exist), and it means night is not dark. Ratifying M1c's images would make every future asset judgement depend on that constant, and §4 would be decorative.
+
+**M1b's results are unaffected.** The exposure calibration ran in the `exposure` rig, which mounts no `<Environment>`; the roof-acne and interior-leak results were differential. This is new, not a retraction.
+
+**Proposed fix: superseded by §7.2.** The first proposal here was "author the rects in nits and rescale". R2a audited the rig before doing that and found the magnitude was only half the defect — see §7.2 for the roles, the double-counting audit, and the disposition that replaces it.
+
 ---
+
+### 7.2 R2a — what each rect represents, and the double-counting audit
+
+Rescaling was not done first, deliberately. A 5–7× overage has more than one possible cause, and "the numbers were eye-tuned" is the one that requires no further thought. The audit below establishes what each rect *is* before anything is multiplied.
+
+**Everything here is computed, not estimated.** `scripts/render/ibl-audit.mjs` integrates the rig's irradiance from its geometry and colours by cosine-weighted Monte Carlo. This is computable because drei's `<Environment>` with children renders **only those children** into a virtual scene (`Environment.js` — `createPortal(children, virtualScene)`): the sky mesh, the ground, the neighbourhood and the building are not in the map. The environment is exactly these three rects, and a `Lightformer` is a `MeshBasicMaterial` with `toneMapped: false` whose colour is multiplied by `intensity`, so its rendered value *is* its radiance in renderer units.
+
+#### 7.2.1 What the three rects are, mechanically
+
+| rect | geometry | colour | radiance | nits | share of env irradiance |
+|---|---|---|---|---|---|
+| key | 14 × 14 at `y = 8`, explicit `rotation` — normal +Y, so it lies flat overhead | `#eef3ff` cool white | 1.0740 | **34,186** | **95.7 %** |
+| coolSide | 8 × 5 at `[-9, 3, -6]`, ~15.5° elevation, **aimed at the origin** | `#cfe0ff` cool blue | 0.5166 | 16,443 | 2.3 % |
+| warmSide | 8 × 5 at `[9, 3, 6]`, ~15.5° elevation, **aimed at the origin** | `#ffe6c8` warm cream | 0.4511 | 14,360 | 2.0 % |
+
+The aiming is the tell. Neither side rect carries a `rotation` prop, so `Lightformer` runs its default `lookAt([0,0,0])`, and `Object3D.lookAt` on a non-camera puts the object's +Z at the target. **They point at the scene centre.** A region of sky does not aim at anything; a softbox does.
+
+**Role assignment.** The rig is a three-point studio softbox set: an overhead key, a cool side fill, a warm side fill. That is a defensible instrument set for the `none` preset — §7 already says as much ("a studio preset has no sky, so its IBL is a lighting instrument"). It is not a sky.
+
+So **§7's own sentence "outdoors it approximates an actual sky" is not true of the implementation.** Outdoors the rig is the studio instrument set with one number changed (key 1.2 instead of 1.6). Nothing in it varies with the hour, the weather, or the sun's position.
+
+#### 7.2.2 Double-counting audit
+
+**The sun disc is NOT double-counted. The hypothesis is refuted, with numbers.**
+
+| | solar disc | brightest rect |
+|---|---|---|
+| luminance | 1.60 × 10⁹ nits | 3.42 × 10⁴ nits |
+| solid angle | 6.72 × 10⁻⁵ sr | 1.54 sr |
+
+The key rect is **47,000× too dim** and **23,000× too large** to be a sun disc, and its colour is cool rather than solar. (The disc figures also check the contract against itself: 1.6 × 10⁹ nits × 6.72 × 10⁻⁵ sr = 107,500 lx at normal incidence, which is `REFERENCE_SUN_LUX`. §4.1's sun value is self-consistent with standard photometry.)
+
+There is no sun-disc rect to delete. Good — and it must stay that way: the directional light casts the shadows, and a sun in the env map would add a second, shadowless one.
+
+**The SKY is double-counted.** This is the real finding.
+
+`hemisphereLight` is authored at `skyLux` and models diffuse skylight. The environment map also delivers diffuse irradiance, because three's `scene.environment` feeds **both** `RE_IndirectDiffuse` and `RE_IndirectSpecular` through a single scalar. Two representations of one object, summed:
+
+| source | irradiance on an up-facing surface, hour 10 |
+|---|---|
+| `hemisphereLight` (authored, physical) | 18,346 lx |
+| environment map (computed from geometry) | **54,893 lx** |
+| total "sky" | 73,239 lx |
+
+The env map delivers **3.0×** the sky it is supposed to be approximating. Measured independently at hour 0 — sun below the horizon, sky at its 0.25 lx moonlight floor, so the env map is the only light left — the probe reads ≈ 63,900 lx. The two disagree by 16%; the geometric figure is the more trustworthy of the two, and the probe's bias is understood (see 7.2.4).
+
+**Ground bounce is counted once, weakly, and in the wrong place.** Sunlit ground at hour 10 receives ~87,600 lx; at a grass albedo near 0.25 it returns ~22,000 lx upward — a real term of the same order as the sky. It is represented only by `hemisphereLight.groundColor`. `warmSide`'s colour suggests it was reaching for this, but it sits 15.5° *above* the horizon, where ground bounce cannot come from.
+
+#### 7.2.3 The structural finding: a rescale alone cannot satisfy §4.1
+
+The rig's **geometric gain** — irradiance delivered per unit key radiance, with the three intensities held in their current ratio — is
+
+```
+G = E / L_key = 1.606 sr        (a full uniform dome gives PI = 3.142 sr)
+```
+
+so **the rig covers 51.1% of the projected hemisphere.** That number is what forecloses the obvious fixes:
+
+- Make the env carry the whole sky (`E_env = skyLux`) and its panels must sit at `skyLux / G` = 11,400 nits — **43% above §4.1's 8,000 nit ceiling for a clear sky**, because half the dome is missing and the visible half has to make up for it. Reflections would show a sky that is too bright.
+- Make the env show the correct sky luminance (`skyLux / PI` = 5,840 nits, comfortably inside §4.1's 5,000–8,000) and it delivers only 51.1% of `skyLux` — leaving a real shortfall.
+- Keep `hemisphereLight` at full `skyLux` alongside either of the above and the double-count returns.
+
+Three's env map has one intensity scalar and no way to separate its diffuse from its specular contribution, and §7 forbids per-material `envMapIntensity` overrides — so "env for reflections, hemisphere for irradiance" is not available either.
+
+#### 7.2.4 Disposition — partition the dome, do not scale it
+
+**Decision (proposed, needs ratification).** The sky is one object represented by two rigs that **partition its solid angle** rather than duplicate it:
+
+| | carries | value |
+|---|---|---|
+| environment map | the part of the dome the rig actually covers | key rect radiance = `skyLux / PI`; the other two keep their current ratio to it |
+| `hemisphereLight` | the rest of the dome | `skyLux × (1 − G / PI)` |
+
+At hour 10 that is 5,840 nits on the key rect, 9,375 lx from the env (51.1%) and 8,971 lx from the hemisphere (48.9%), summing to `skyLux` exactly. The sky is counted once, and both halves are derived — the only measured input is `G`, which is a geometric constant of the rig.
+
+Three properties make this the right shape rather than a compromise:
+
+1. **It is the only option where both of §4.1's independent numbers hold at once.** `skyLux / PI` = 5,840 nits at hour 10 and 6,366 at noon, both inside the stated 5,000–8,000 clear-sky range. That the lux table and the nits table agree through `E = PI · L` is a check on the contract, not a coincidence arranged here.
+2. **The rescale is one number, not three.** The panels' *ratios* encode the sky's shape and are kept; only the level moves, via `<Environment environmentIntensity>` → `scene.environmentIntensity`. That gives §7 the single owner it asks for, in the same way §2.2 gave exposure one.
+3. **It makes the env hour-driven**, which it has never been. `skyLux` already varies with hour, weather and overcast; the env now inherits all of it, and night becomes dark.
+
+**Dispositions, per rect. Nothing is deleted.**
+
+| rect | outdoor role | disposition |
+|---|---|---|
+| key | sky dome, zenith region | survives, rescaled with the rig |
+| coolSide | sky dome, horizon region | survives, rescaled with the rig |
+| warmSide | warm horizon; the honest role is **ground bounce**, but it is above the horizon | survives, rescaled with the rig. Re-siting it below the horizon is a geometry change and is **not** in R2b — recorded as a known gap |
+
+The audit found no rect that is the wrong *object*, so nothing meets the deletion bar. What was wrong is the **level** (5.85× on the key rect) and the **duplication** (the hemisphere light was carrying a full sky alongside it). The first is a rescale; the second is why the hemisphere light changes too.
+
+**Studio.** The same partition rule applies with `STUDIO.fillLux` in place of `skyLux`. The defect is larger there, not smaller: the rig delivers 72,441 lx against a stated instrument budget of `keyLux + fillLux` = 26,000 lx.
+
+**Forbids.** Rescaling the rig to make a frame look right rather than to satisfy `E = PI · L`. Forbids re-introducing a sun into the environment map — the directional light casts the shadows and an env sun would add a second, shadowless one. Forbids letting `hemisphereLight` and the env map both carry a full sky again; if the rig's geometry changes, `G` is re-measured and the partition re-derived.
+
+#### 7.2.5 Instrument note — the probe over-reads, and gets fixed in R2b
+
+The hour-0 probe reported ≈ 63,900 lx against the geometric 54,893. The probe averages **sRGB** pixel values over a 16 × 16 box and converts the mean afterwards. That transform is convex, so the mean of the converted values is below the converted mean: averaging in display space over any region with variance **overestimates** the linear value, which is the direction and roughly the size of the gap. The box also sits close enough to the chart's first sphere to pick up geometry that is not the bench top.
+
+R2b accumulates in linear and probes a clear patch. Recorded because the R2b exit criterion is "the measurement lands near the analytically derived value", and an instrument with a known bias would otherwise be asked to confirm a derivation to a precision it does not have.
 
 ## 8. Deferred with a tripwire — ceilingless-by-design vs ceiling-hidden-for-viewing
 
@@ -369,6 +544,9 @@ The failure mode is specific. If M2 derives per-room lighting by checking whethe
 | 3 | §2.4 | Tone-mapping operator — confirm ACES or change | **IMPLEMENTED as Khronos Neutral.** Landed before any M1c baseline was captured, as required |
 | 4 | §5 | Camera-mode presets vs depth-only ceiling proxy | **IMPLEMENTED as proxy + interim fill.** Verified: at noon in cutaway the interior stays dim while the lawn outside stays fully sunlit — the outcome the sun-suppression preset would have destroyed |
 | 5 | §3.4 | Ceiling thickness — real slab, or documented zero-thickness exemption | **IMPLEMENTED as a real slab** (`MIN_CASTER_THICKNESS`, 0.12 m) after acne appeared exactly as predicted the moment the ceiling started casting. Acne signal 6.434 → 0.000 across the sweep |
+| 6 | §7 | **Opened by M1c capture.** The IBL is still authored in the pre-§4 unitless intensities and measures as one of the largest lights in the scene | **OPEN — blocks the M1c freeze.** See §7.1 |
+| 7 | §3.1 | **Opened by M1c capture, CLOSED at M1c-R — and M1c had it wrong.** r182 absorbed `PCFSoftShadowMap` into `PCFShadowMap`, which is now the soft filter; the candidates were never hard-shadowed | **RESOLVED.** §3.1 rewritten to name `PCFShadowMap`, with the migration-guide quote, the #32591/#32593 history, and measured penumbra widths (3.6 px against ~1.3 px for a hard step). Candidates salvageable on shadow grounds. New §0.3 pins the render-stack versions — the general fix for a contract that records names for behaviour |
+| 8 | §1.3 | The assertion checks the right values one frame too early to see a value the renderer overwrites during its first shadow pass | **OPEN — R3.** Timing and scope repair, plus a test that deliberately corrupts a value and proves the assertion throws |
 
 **Riser panels — CLOSED.** `buildRiserGeometry` now produces a solid as thick as
 the wall it continues, verified acne-free across the sun sweep against a purpose-
@@ -384,6 +562,16 @@ construction. Not changed on inference. See `render-m1b-verification.md` §6.
 
 ---
 
-## Appendix — what M1c must capture
+## Appendix — M1c, what was captured
 
-Recorded here so the baseline set is defined by contract rather than by whatever was on screen. Baselines are captured in `perspective` mode only (§5.4), after items 3 and 4 above are settled (§2.4, §5), and are invalidated by any change to §2.4, §3.1, §3.2 or §4.
+Recorded here so the baseline set is defined by contract rather than by whatever was on screen. Full account in `docs/calibration/README.md`.
+
+**Captured: 3 lighting presets × 3 camera modes = 9 cells**, from the `reference` rig at `/calibration`, at hour 10.0 clear, 1600×1000, headless SwiftShader. `docs/calibration/manifest.json` records every contract value in force per cell.
+
+That is more than §5.4's "perspective only", and the difference is deliberate: **only the `perspective` cells are baselines in the sense §5.4 means** — the only mode any physical-correctness claim covers. The `cutaway` and `top` cells are captured so a regression in a legibility-first mode is still visible against something, and they are labelled as carrying recorded departures (`iblScale` 1.15 / 1.3, interim `interiorFillLux` 200 / 300, retiring at M2). Nothing about capturing them makes a correctness claim about them.
+
+Each mode is shot from the camera that mode is actually used from — a single fixed camera would show nothing in `top`, which flattens walls to 0.32 m. Comparisons are therefore image-to-image within a cell, never across modes.
+
+**The set is PROVISIONAL and the lighting model is NOT frozen.** §7.1 was found during capture: the IBL is still in pre-§4 units and contributes 53% of a lit horizontal surface and 83% of a shaded interior. Freezing would ratify that. The ruling on §9 row 6 comes first; the re-capture follows it.
+
+Invalidated by any change to §2.4, §3.1, §3.2, §4, §7, or to the fixture and camera shots in `src/app/calibration/`.

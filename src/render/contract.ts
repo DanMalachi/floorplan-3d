@@ -55,11 +55,22 @@ export const TONE_MAPPING = {
 export const FRAME_BUFFER_TYPE = THREE.HalfFloatType;
 
 /**
- * Shadows (§3). PCFSoft over plain PCF: hard PCF stair-steps exactly the
- * shadows that matter most here — long straight wall and mullion shadows across
- * a floor, where the eye tracks a continuous line and reads every jag. The cost
- * is extra texture fetches in the shadow lookup; no extra pass, no extra memory.
+ * Shadows (§3). `PCFShadowMap` — which since three r182 IS the soft filter.
  *
+ * Do not "restore" PCFSoftShadowMap. r182 absorbed the two constants into one:
+ * "PCFSoftShadowMap with WebGLRenderer is now deprecated. Use PCFShadowMap
+ * which is now soft as well." SHADOWMAP_TYPE_PCF now compiles a 5-tap Vogel
+ * disk, rotated per pixel by interleaved-gradient noise, sampled through
+ * `sampler2DShadow`. The old hard 1-tap `step()` is the BASIC path.
+ *
+ * Naming the deprecated alias is actively dangerous, not merely stale:
+ * `generateShadowMapTypeDefine` falls back to SHADOWMAP_TYPE_BASIC for any
+ * value it does not recognise, and PCFSoftShadowMap is no longer in that map.
+ * It only reaches the soft path because `WebGLShadowMap.render` coerces it
+ * first — a coercion that was itself broken in r182 (#32591, fixed by #32593 in
+ * r183) and produced exactly the hard shadows the alias was meant to avoid.
+ *
+
  * Single 2048 frustum, no cascades. Texel density is `2 * (span * 0.9 + 4) /
  * 2048`: 1.7 cm/texel at a 15 m span (fine), 3.9 cm at 40 m (a chair leg falls
  * under one texel and its contact shadow disappears). Past ~25 m span the fix
@@ -72,7 +83,7 @@ export const FRAME_BUFFER_TYPE = THREE.HalfFloatType;
  * grazing light is large enough to detach contact shadows elsewhere.
  */
 export const SHADOW = {
-  type: THREE.PCFSoftShadowMap,
+  type: THREE.PCFShadowMap,
   mapSize: 2048,
   bias: -0.0002,
   normalBias: 0.02,
@@ -96,6 +107,26 @@ export const SHADOW = {
  * contract does not allow per-scene knobs.
  */
 export const MIN_CASTER_THICKNESS = 0.12;
+
+/**
+ * §0.3 — the render stack this contract was verified against.
+ *
+ * Every clause here describes behaviour, but records a NAME. `PCFSoftShadowMap`
+ * meant a 3x3 soft kernel when M1a wrote it and means "deprecated alias, coerced
+ * elsewhere" now; nothing in the repo changed. Renaming the constant fixes that
+ * one instance. Pinning is the fix for the class.
+ *
+ * A change to any of these versions is a contract-invalidation event: §1
+ * (colour management), §2 (tone mapping and the composer chain) and §3
+ * (shadows) are re-verified against the new build, and captured baselines do
+ * not remain valid across it.
+ */
+export const VERIFIED_AGAINST = {
+  three: "0.185.0",
+  "@react-three/fiber": "9.6.1",
+  "@react-three/drei": "10.7.7",
+  postprocessing: "6.39.2",
+} as const;
 
 /** Immutable record of every asserted value, for the startup check. */
 const EXPECTED = {
