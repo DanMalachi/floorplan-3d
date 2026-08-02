@@ -1,5 +1,89 @@
 [
   {
+    "id": "carpet-beige",
+    "name": "Beige loop pile",
+    "family": "carpet",
+    "class": "floors",
+    "surfaceClass": "textile",
+    "coverM": 1.7,
+    "roughness": 0.6480972028178523,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/carpet-beige/albedo.ktx2",
+      "normal": "/materials/floors/carpet-beige/normal.ktx2",
+      "orm": "/materials/floors/carpet-beige/orm.ktx2"
+    },
+    "thumb": "/materials/floors/carpet-beige/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Carpet016",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 4503604,
+    "ingestedAt": "2026-08-02T18:26:38.426Z"
+  },
+  {
     "id": "carpet-navy",
     "name": "Navy cut pile",
     "family": "carpet",
@@ -166,6 +250,90 @@
     },
     "transferBytes": 4834738,
     "ingestedAt": "2026-08-02T16:14:46.701Z"
+  },
+  {
+    "id": "concrete-grey",
+    "name": "Grey screed",
+    "family": "concrete",
+    "class": "floors",
+    "surfaceClass": "concrete",
+    "coverM": 2.5,
+    "roughness": 0.6919356402185852,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 2048,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/concrete-grey/albedo.ktx2",
+      "normal": "/materials/floors/concrete-grey/normal.ktx2",
+      "orm": "/materials/floors/concrete-grey/orm.ktx2"
+    },
+    "thumb": "/materials/floors/concrete-grey/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Concrete031",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 4981019,
+    "ingestedAt": "2026-08-02T18:28:48.685Z"
   },
   {
     "id": "concrete-light",
@@ -336,6 +504,90 @@
     "ingestedAt": "2026-08-02T16:14:55.713Z"
   },
   {
+    "id": "stone-terrazzo",
+    "name": "Colourful terrazzo",
+    "family": "stone",
+    "class": "floors",
+    "surfaceClass": "polished-stone",
+    "coverM": 1.5,
+    "roughness": 0.2234470255237058,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/stone-terrazzo/albedo.ktx2",
+      "normal": "/materials/floors/stone-terrazzo/normal.ktx2",
+      "orm": "/materials/floors/stone-terrazzo/orm.ktx2"
+    },
+    "thumb": "/materials/floors/stone-terrazzo/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Terrazzo013",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 1801426,
+    "ingestedAt": "2026-08-02T18:27:03.530Z"
+  },
+  {
     "id": "tile-black-gloss",
     "name": "Black gloss",
     "family": "tile",
@@ -418,6 +670,174 @@
     },
     "transferBytes": 415644,
     "ingestedAt": "2026-08-02T17:20:05.973Z"
+  },
+  {
+    "id": "tile-checker-marble",
+    "name": "Marble checkerboard",
+    "family": "tile",
+    "class": "floors",
+    "surfaceClass": "polished-tile",
+    "coverM": 2.1,
+    "roughness": 0.08814177419637344,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 2048,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/tile-checker-marble/albedo.ktx2",
+      "normal": "/materials/floors/tile-checker-marble/normal.ktx2",
+      "orm": "/materials/floors/tile-checker-marble/orm.ktx2"
+    },
+    "thumb": "/materials/floors/tile-checker-marble/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles074",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 1167749,
+    "ingestedAt": "2026-08-02T18:29:20.251Z"
+  },
+  {
+    "id": "tile-hex-white",
+    "name": "White hexagon",
+    "family": "tile",
+    "class": "floors",
+    "surfaceClass": "matte-tile",
+    "coverM": 0.45,
+    "roughness": 0.5112644793936528,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 256,
+      "normal": 512,
+      "orm": 256
+    },
+    "maps": {
+      "albedo": "/materials/floors/tile-hex-white/albedo.ktx2",
+      "normal": "/materials/floors/tile-hex-white/normal.ktx2",
+      "orm": "/materials/floors/tile-hex-white/orm.ktx2"
+    },
+    "thumb": "/materials/floors/tile-hex-white/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles071",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 308148,
+    "ingestedAt": "2026-08-02T18:27:15.485Z"
   },
   {
     "id": "wall-paint-white-clean",
@@ -672,6 +1092,90 @@
     "ingestedAt": "2026-08-02T17:20:31.366Z"
   },
   {
+    "id": "wood-chevron",
+    "name": "Chevron parquet",
+    "family": "wood",
+    "class": "floors",
+    "surfaceClass": "lacquered-hardwood",
+    "coverM": 1.8,
+    "roughness": 0.35362240286153634,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/wood-chevron/albedo.ktx2",
+      "normal": "/materials/floors/wood-chevron/normal.ktx2",
+      "orm": "/materials/floors/wood-chevron/orm.ktx2"
+    },
+    "thumb": "/materials/floors/wood-chevron/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor052",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 2161852,
+    "ingestedAt": "2026-08-02T18:27:40.627Z"
+  },
+  {
     "id": "wood-grey-weathered",
     "name": "Weathered grey",
     "family": "wood",
@@ -754,6 +1258,90 @@
     },
     "transferBytes": 2838252,
     "ingestedAt": "2026-08-02T17:22:07.191Z"
+  },
+  {
+    "id": "wood-oak-natural",
+    "name": "Natural oak",
+    "family": "wood",
+    "class": "floors",
+    "surfaceClass": "lacquered-hardwood",
+    "coverM": 1.8,
+    "roughness": 0.35212268081109177,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/wood-oak-natural/albedo.ktx2",
+      "normal": "/materials/floors/wood-oak-natural/normal.ktx2",
+      "orm": "/materials/floors/wood-oak-natural/orm.ktx2"
+    },
+    "thumb": "/materials/floors/wood-oak-natural/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor051",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 1796840,
+    "ingestedAt": "2026-08-02T18:28:13.482Z"
   },
   {
     "id": "wood-plank-pale",

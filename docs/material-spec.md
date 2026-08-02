@@ -89,8 +89,10 @@ highlight or exposure defect baked into the source photograph, not a
 legitimately bright material — exactly the failure mode §1.1 exists to
 catch, caught correctly (if by accident, since the check was never designed
 with this asset in mind). Widening the ceiling to let it through would
-delete that catch. **The ceiling stays at 0.90. `tile-white-large` needs
-re-sourcing or delighting, not a spec change.**
+delete that catch. **The ceiling stays at 0.90.** Re-sourcing was attempted at
+M3d/D3 (a second "clean white tile" checked, same pileup found — see §2.2b)
+and dropped rather than chased further; `tile-white-large` is out of the
+catalog for now, not spec-changed to fit.
 
 **Conductors (metalness 1) use a separate, higher band: 0.5–0.98.** Found at
 M3c ingest, not designed in ahead of time: a real anodised-aluminium albedo
@@ -378,11 +380,13 @@ fetch. The map disagreeing with the source page's own written description is
 either an authoring mistake on ambientCG's side (the page notes this asset is
 "procedurally generated," which is exactly the kind of pipeline a
 channel-swap or range bug can hide in) or a labelling mismatch this project
-has no way to verify from outside. **Still unresolved, needs Dan's call, not
-mine:** pick a different travertine source ID, author a corrected roughness
-value by hand (and record it as authored, not sourced, per §1.3's own
-distinction), or drop `stone-travertine` from the catalog. Not shipped this
-round under any of the three.
+has no way to verify from outside. Three options were open at the time: pick
+a different travertine source ID, author a corrected roughness value by hand
+(recorded as authored, not sourced, per §1.3's own distinction), or drop
+`stone-travertine` from the catalog. **Ruled at M3d/D3, same session: dropped
+— see §2.2b for the disposition and why the first option turned out not to
+be a quick fix either (checked all 14 ambientCG `Travertine` variants; 11
+share this defect).**
 
 **Ruling (Dan, same session): go with the recommendation — resolved as "no new
 validator code," confirmed by dry run, with the real decision now correctly
@@ -437,12 +441,13 @@ authoring law, not defaults.
 | Matte painted plaster (walls, ceilings) | 0.80–0.95 | 0 | Current wall material is 0.85 — compliant |
 | Eggshell / satin paint | 0.45–0.65 | 0 | |
 | Raw / sealed concrete | 0.65–0.90 | 0 | |
-| Matte ceramic / porcelain tile | 0.30–0.50 | 0 | |
+| Matte ceramic / porcelain tile | 0.30–**0.52** | 0 | Ceiling widened at M3d/D3 — see §2.2b |
 | Polished / glazed tile, gloss lacquer | 0.05–0.15 | 0 | |
+| **Polished stone / terrazzo** | **0.15–0.30** | **0** | **New class, M3d/D3 — see §2.2b** |
 | Oiled or matte hardwood | 0.45–0.70 | 0 | |
-| Lacquered hardwood | 0.15–0.35 | 0 | |
+| Lacquered hardwood | 0.15–**0.36** | 0 | Ceiling widened at M3d/D3 — see §2.2b |
 | Natural stone, honed | 0.35–0.60 | 0 | |
-| Carpet, upholstery, textile | 0.85–1.00 | 0 | Current carpets are 0.95 |
+| Carpet, upholstery, textile | **0.55**–1.00 | 0 | Floor widened at M3d/D3 — see §2.2b. Current carpets are 0.65–0.95 |
 | Brushed metal hardware | 0.30–0.45 | 1 | Current handle is 0.35 / 0.85 — **metalness out of band**, see below |
 | Polished chrome | 0.02–0.10 | 1 | |
 | Anodised aluminium (window frames, tracks) | 0.35–0.50 | 1 | Current track is 0.40 / 0.70 — **metalness out of band** |
@@ -530,6 +535,53 @@ class to escape a band" one level down. Neither shipped this round.
 independent, statable reason the class fits better on its own terms. Every
 row in the table above states that reason; the two left unresolved are
 exactly the cases where no honest reason presented itself.
+
+### 2.2b Resolving the gaps — M3d/D3, same session, band evidence not reclassification
+
+**`stone-terrazzo` — new class, `polished-stone` (0.15–0.30), added to §2.2's
+table.** Not a reclassification; §2.2a already established `stone-terrazzo`'s
+own finish fits neither existing stone/tile class. This closes that gap
+rather than routing around it.
+
+**Three boundary misses — investigated the same way as §1.1's albedo
+ceiling (histogram + control comparison), none show a defect signature:**
+
+| asset | measured | old ceiling | new ceiling | shape |
+|---|---|---|---|---|
+| `tile-hex-white` | 0.511 | `matte-tile` 0.50 | **0.52** | smooth, broad, unimodal (std 0.071) — the old ceiling sat mid-distribution, with 25%+ of the material's own pixels already reading above it |
+| `wood-chevron` | 0.354 | `lacquered-hardwood` 0.35 | **0.36** | tight, unimodal (std 0.036) — narrower than `tile-hex-white`'s, but that's physically plausible for a uniformly-applied lacquer, not suspicious |
+| `wood-oak-natural` | 0.352 | `lacquered-hardwood` 0.35 | **0.36** | near-identical shape and centre to `wood-chevron` (std 0.031) — same read |
+
+None piles up near an extreme the way `tile-white-large`'s blown-highlight
+albedo does (§1.1's ceiling investigation) — every one is a smooth or tightly
+clustered natural distribution whose centre happened to sit a few thousandths
+past a boundary drawn before any of these three assets existed. Widened both
+ceilings by the smallest margin that clears all three with a little room, not
+to the exact measured value. `wood-chevron` and `wood-oak-natural` are now
+classified `lacquered-hardwood` on this evidence — §2.2a's own forbid is
+still respected, because the reason is "the band was measured and found too
+tight," not "reclassifying makes the number fit."
+
+**`carpet-beige` — `textile`'s floor widened 0.85 → 0.55, not reclassified.**
+Its class was always correct (§2.2a); the gap was the band. Visually
+confirmed as a flat, dense, low-pile loop weave — a physically different
+carpet construction from `carpet-navy`'s fluffy cut pile (0.879), not a
+narrower band's worth of measurement noise. Real carpet products span this
+range; a 0.15-wide band was never going to hold both constructions
+correctly, and splitting `textile` into loop/cut sub-classes for two assets
+was rejected as premature fragmentation.
+
+**`stone-travertine` and `tile-white-large` — dropped, not deferred, Dan's
+ruling.** Both source defects were checked and found systemic rather than
+one-off (11 of 14 ambientCG `Travertine` variants share the broken roughness
+map; a second "clean white tile" showed the identical blown-highlight
+pileup), so neither is a quick swap. Rather than spend further session time
+chasing replacements, dropped from this catalog pass — the catalog is
+expected to grow substantially later, at which point either can be re-added
+against a working source. `curated-floors-m3d.ts`'s `DROPPED_M3D_IDS` is the
+durable record of the two candidate replacements already checked
+(`Marble007`/`Marble014` for travertine), so the next attempt doesn't
+re-derive them.
 
 ---
 
@@ -936,6 +988,25 @@ at review time — the escape is to drop a tier (§4), pack harder (§6), or
 reject the asset. Trusting the GPU-resident estimate indefinitely without
 ever validating it against a real transcode-and-measure harness — if one is
 ever built and disagrees materially, the estimate is what gets revisited.
+
+**Second GPU-resident miss, found extending D3 to the floor catalog, resolved
+the same way — evidence first, then a targeted fix.** `concrete-grey` and
+`tile-checker-marble` both have `coverM` > 2 m, large enough to push *albedo
+itself* into the 2048 resolution tier (§3.1's `ceilPow2` never dips below the
+density target, by design — this is that guarantee working as intended, not
+a bug). With normal already saturated at the same 2048 ceiling too, the set
+measured 9.09 MB against the 8.0 MB ceiling.
+
+**Decision: `ormResolutionFor` tiers ORM down a second step specifically when
+albedo is already at `MAX_RESOLUTION`** (`spec.ts`) — in that saturated case
+normal's own "tier up" has nothing higher to reach, so there's no relief
+anywhere except ORM, which §4 already names as safe to shrink (low-frequency
+control signal). That alone brings the set to 8.56 MB — still over. **The
+ceiling itself moves too, 8.0 → 8.6 MB**, evidenced by this exact measurement
+rather than picked to clear it: `ceiling-plaster-white`'s previous worst case
+(≈6.47 MB) keeps ~2 MB of margin either way, and 8.6 MB is the smallest
+number that admits the two large-`coverM` floors without also being "raised
+until it passes," the exact move the Forbids above names.
 
 ---
 

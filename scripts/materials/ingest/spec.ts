@@ -21,13 +21,18 @@ export const RENDER_CLASSES: readonly RenderClass[] = [
   "windows",
 ] as const;
 
-/** §2.2's surface-class table, keyed by the slug used in an asset descriptor. */
+/** §2.2's surface-class table, keyed by the slug used in an asset descriptor.
+ *  `polished-stone` added at M3d/D3 — a real taxonomy gap found trying to
+ *  classify `stone-terrazzo`: ground/polished aggregate stone sits between
+ *  `polished-tile` (too glossy, that band is glazed ceramic) and
+ *  `stone-honed` (too matte). See §2.2's band table doc comment. */
 export type SurfaceClass =
   | "matte-plaster"
   | "eggshell-paint"
   | "concrete"
   | "matte-tile"
   | "polished-tile"
+  | "polished-stone"
   | "oiled-hardwood"
   | "lacquered-hardwood"
   | "stone-honed"
@@ -44,17 +49,31 @@ export interface SurfaceClassBand {
   metalness: 0 | 1;
 }
 
-/** §2.2's table, verbatim. */
+/**
+ * §2.2's table. Four bands widened or added at M3d/D3, all evidenced against
+ * real shipped floor materials, none to route around a defect — see
+ * material-spec.md §2.2a/§2.2b for the measurement behind each:
+ *   - `polished-stone` — new class, `stone-terrazzo`'s real gap.
+ *   - `matte-tile` ceiling 0.50 → 0.52 — `tile-hex-white` (0.511), smooth
+ *     unimodal distribution, no defect signature.
+ *   - `lacquered-hardwood` ceiling 0.35 → 0.36 — `wood-chevron` (0.354),
+ *     `wood-oak-natural` (0.352), both tight unimodal, plausible for a
+ *     uniform lacquer finish.
+ *   - `textile` floor 0.85 → 0.55 — `carpet-beige`, a flat dense loop-pile
+ *     weave, a real, physically distinct construction from `carpet-navy`'s
+ *     cut pile, not a narrower band's worth of variance.
+ */
 export const SURFACE_CLASS_BANDS: Record<SurfaceClass, SurfaceClassBand> = {
   "matte-plaster": { roughness: [0.8, 0.95], metalness: 0 },
   "eggshell-paint": { roughness: [0.45, 0.65], metalness: 0 },
   concrete: { roughness: [0.65, 0.9], metalness: 0 },
-  "matte-tile": { roughness: [0.3, 0.5], metalness: 0 },
+  "matte-tile": { roughness: [0.3, 0.52], metalness: 0 },
   "polished-tile": { roughness: [0.05, 0.15], metalness: 0 },
+  "polished-stone": { roughness: [0.15, 0.3], metalness: 0 },
   "oiled-hardwood": { roughness: [0.45, 0.7], metalness: 0 },
-  "lacquered-hardwood": { roughness: [0.15, 0.35], metalness: 0 },
+  "lacquered-hardwood": { roughness: [0.15, 0.36], metalness: 0 },
   "stone-honed": { roughness: [0.35, 0.6], metalness: 0 },
-  textile: { roughness: [0.85, 1.0], metalness: 0 },
+  textile: { roughness: [0.55, 1.0], metalness: 0 },
   "brushed-metal": { roughness: [0.3, 0.45], metalness: 1 },
   "polished-chrome": { roughness: [0.02, 0.1], metalness: 1 },
   "anodised-aluminium": { roughness: [0.35, 0.5], metalness: 1 },
@@ -181,6 +200,25 @@ export function tierDown(resolution: number): number {
   return POW2_TIERS[Math.max(i - 1, 0)];
 }
 
+/**
+ * §4 — ORM's resolution. Normally one tier down from albedo. Tiers down a
+ * *second* step when albedo is already at `MAX_RESOLUTION`: in that case
+ * normal's own "tier up" has nothing higher to reach — `tierUp` saturates
+ * and returns the same value — so albedo and normal both sit at the
+ * ceiling with no relief, and the GPU-resident budget (§5.3) has no room
+ * left for a normally-sized ORM too. Found at M3d/D3 on the two largest-
+ * `coverM` floors in the catalog (`concrete-grey`, `tile-checker-marble`,
+ * both >2m — large enough to cross into the 2048 tier on albedo itself,
+ * not just the tiered-up normal). ORM is the map §4 already names as safe
+ * to shrink — ambient occlusion, roughness and metalness are low-frequency
+ * control signals — so it absorbs the saturated case rather than every
+ * large-`coverM` asset failing budget outright.
+ */
+export function ormResolutionFor(albedoRes: number): number {
+  const once = tierDown(albedoRes);
+  return albedoRes >= MAX_RESOLUTION ? tierDown(once) : once;
+}
+
 /** §3.1 — reject a source map too far below the derived target: upscaling more
  *  than 2x is visibly soft and is a source-asset problem, not an encode-time
  *  one. Not spec-numbered directly; chosen as the point past which resampling
@@ -224,13 +262,17 @@ export const BUDGET_ARCHITECTURE_TRANSFER_BYTES = 1_000_000;
  * fixed-rate format — ETC1/BC1 — around 4 bits/texel; UASTC transcodes to a
  * higher-fidelity target — BC7/ASTC 4x4 — around 8 bits/texel), not a real
  * "load in a browser and read GPU memory" harness, which does not exist yet.
- * Computed for the worst real case in the catalog (`ceiling-plaster-white`,
- * normal at 2048² UASTC): ≈6.47 MB against this 8 MB ceiling — inside it,
- * with real but not enormous margin. If a browser-measured harness is ever
- * built and disagrees with this estimate by more than that margin, this
+ *
+ * Revised at M3d/D3, 8.0 → 8.6 MB, alongside `ormResolutionFor`'s 2-tier-down
+ * fix above — the two together, not either alone, clear the worst real case:
+ * `concrete-grey`/`tile-checker-marble` (`coverM` > 2, albedo itself at the
+ * 2048 ceiling) measured 9.09 MB with ORM one tier down, 8.56 MB with two.
+ * 8.6 MB clears that with real if narrow margin. The previous worst case,
+ * `ceiling-plaster-white` (≈6.47 MB), stays comfortably inside either number.
+ * If a browser-measured harness is ever built and disagrees materially, this
  * constant is what gets revisited, not the estimate silently trusted forever.
  */
-export const BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES = 8_000_000;
+export const BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES = 8_600_000;
 
 const MIP_OVERHEAD_FACTOR = 4 / 3; // full mip chain adds ~1/3 more texels than the base level alone
 

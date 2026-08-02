@@ -17,7 +17,7 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { SURFACE_CLASS_BANDS, deriveResolution, tierDown, tierUp } from "./spec";
+import { SURFACE_CLASS_BANDS, deriveResolution, ormResolutionFor, tierUp } from "./spec";
 import { detectEncoder } from "./encoder";
 import {
   fileSize,
@@ -92,7 +92,7 @@ export async function ingest(sourceDir: string, opts: IngestOptions): Promise<In
   // ── Everything validated. Derive resolution and pack. ────────────────────
   const albedoRes = deriveResolution(asset.coverM);
   const normalRes = tierUp(albedoRes);
-  const ormRes = tierDown(albedoRes);
+  const ormRes = ormResolutionFor(albedoRes);
 
   // §5.3 — KTX2's budget is checkable pre-pack (a formula over resolution +
   // codec), unlike WebP's (which depends on real compression output and is
