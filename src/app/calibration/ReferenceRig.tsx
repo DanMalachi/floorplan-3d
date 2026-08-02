@@ -16,8 +16,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
+import { useThree } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { applyShadowClass, shadowProps } from "@/render/materialClass";
 import { CANONICAL_HOUR } from "./referenceScene";
 
@@ -298,12 +300,30 @@ export interface MaterialCandidateInfo {
 
 const PANEL = { w: 1.2, h: 1.8, thickness: 0.05 };
 
+// One loader, `detectSupport` called at most once per renderer — mirrors
+// src/materials/loaderKtx2.ts's product-side loader exactly, kept as a
+// separate instance because this file is deliberately self-contained
+// (not in PROTECTED_PATHS.md, but calibration-only — it doesn't import
+// product modules, the same way it has its own GLTFLoader/DRACOLoader
+// rather than reusing the viewer's).
+let ktx2Loader: KTX2Loader | null = null;
+let ktx2DetectedFor: THREE.WebGLRenderer | null = null;
+function getKtx2Loader(gl: THREE.WebGLRenderer): KTX2Loader {
+  ktx2Loader ??= new KTX2Loader().setTranscoderPath("/basis/");
+  if (ktx2DetectedFor !== gl) {
+    ktx2Loader.detectSupport(gl);
+    ktx2DetectedFor = gl;
+  }
+  return ktx2Loader;
+}
+
 function MaterialPanel({ info }: { info: MaterialCandidateInfo }) {
   const [material, setMaterial] = useState<THREE.MeshStandardMaterial | null>(null);
+  const gl = useThree((s) => s.gl);
 
   useEffect(() => {
     let cancelled = false;
-    const loader = new THREE.TextureLoader();
+    const ktx2 = getKtx2Loader(gl);
     const tile = (tex: THREE.Texture) => {
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.RepeatWrapping;
@@ -311,49 +331,76 @@ function MaterialPanel({ info }: { info: MaterialCandidateInfo }) {
       tex.anisotropy = 8;
     };
 
-    // material-spec.md §6 / render-contract.md §1.2: albedo is sRGB, every
-    // other map is data (NoColorSpace) — never tag a data map sRGB, that
-    // bends roughness/AO/metalness by a gamma curve they were never authored
-    // through.
-    const albedo = loader.load(info.albedoUrl);
-    albedo.colorSpace = THREE.SRGBColorSpace;
-    tile(albedo);
+    (async () => {
+      // Found at M3d/D4: KTX2Loader's worker-pool transcoding is not safe to
+      // fire concurrently from one loader instance — three requests in
+      // flight together (via Promise.all) intermittently cross-assigned
+      // results (a normal map's data landing in the albedo slot). Sequential
+      // avoids it. Filed as a real, reproduced finding, not a superstition —
+      // see the M3d/D4 commit for the before/after.
+      //
+      // Colour space is NOT hand-tagged — material-spec.md §5.1 forbids it
+      // by name. KTX2Loader reads each container's own embedded transfer-
+      // function metadata (written by the encoder's `--assign-tf`,
+      // material-spec.md §5.1) and assigns `colorSpace` itself.
+      const albedo = await ktx2.loadAsync(info.albedoUrl);
+      if (cancelled) return;
+      tile(albedo);
 
-    const normal = loader.load(info.normalUrl);
-    normal.colorSpace = THREE.NoColorSpace;
-    tile(normal);
+      const normal = await ktx2.loadAsync(info.normalUrl);
+      if (cancelled) return;
+      tile(normal);
 
-    // ORM packing (material-spec.md §6): one texture, bound three times. Each
-    // slot's own shader chunk samples the channel it's specified to read —
-    // aoMap.r, roughnessMap.g, metalnessMap.b — so no manual channel split is
-    // needed here. roughness/metalness scalars stay at 1.0: the ingest
-    // pipeline always bakes the true value into the map (a flat fill when the
-    // source had no map — §1.2), so a scalar here would be the "scalar tuning
-    // a map" defect §2.1 forbids.
-    const orm = loader.load(info.ormUrl);
-    orm.colorSpace = THREE.NoColorSpace;
-    tile(orm);
+      // ORM packing (material-spec.md §6): one texture, bound three times.
+      // Each slot's own shader chunk samples the channel it's specified to
+      // read — aoMap.r, roughnessMap.g, metalnessMap.b — so no manual
+      // channel split is needed here. roughness/metalness scalars stay at
+      // 1.0: the ingest pipeline always bakes the true value into the map (a
+      // flat fill when the source had no map — §1.2), so a scalar here
+      // would be the "scalar tuning a map" defect §2.1 forbids.
+      const orm = await ktx2.loadAsync(info.ormUrl);
+      if (cancelled) return;
+      tile(orm);
 
-    const mat = new THREE.MeshStandardMaterial({
-      map: albedo,
-      normalMap: normal,
-      aoMap: orm,
-      roughnessMap: orm,
-      metalnessMap: orm,
-      roughness: 1,
-      metalness: 1,
-      aoMapIntensity: 1,
-    });
-    if (!cancelled) setMaterial(mat);
+      gl.initTexture(albedo);
+      gl.initTexture(normal);
+      gl.initTexture(orm);
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: albedo,
+        normalMap: normal,
+        aoMap: orm,
+        roughnessMap: orm,
+        metalnessMap: orm,
+        roughness: 1,
+        metalness: 1,
+        aoMapIntensity: 1,
+      });
+      if (cancelled) {
+        albedo.dispose();
+        normal.dispose();
+        orm.dispose();
+        mat.dispose();
+        return;
+      }
+      setMaterial((prev) => {
+        // A material's own dispose() releases its GPU program only, not the
+        // textures it references — dispose those explicitly or a candidate
+        // swap leaks the previous one's three KTX2 textures.
+        if (prev) {
+          prev.map?.dispose();
+          prev.normalMap?.dispose();
+          prev.aoMap?.dispose();
+          prev.dispose();
+        }
+        return mat;
+      });
+    })();
 
     return () => {
       cancelled = true;
-      albedo.dispose();
-      normal.dispose();
-      orm.dispose();
-      mat.dispose();
     };
-  }, [info.albedoUrl, info.normalUrl, info.ormUrl, info.coverM]);
+  }, [info.albedoUrl, info.normalUrl, info.ormUrl, info.coverM, gl]);
 
   const solid = shadowProps("opaqueArchitecture");
   if (!material) return null;

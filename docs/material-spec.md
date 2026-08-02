@@ -1124,6 +1124,50 @@ not be caught by `conformance.ts`. Not fixed here — recorded so a "render-
 comparison PASS" in a milestone report is read as "the one physically-motivated
 cell passed," not as all nine.
 
+**A second, more serious gap in this same check — found after D4, by looking,
+not by re-running the diff.** The check compares pixels *outside* the
+candidate panel crop to the pre-candidate baseline; that is its entire point
+(§7 step 3, "differ only inside the slot"). It follows directly, and was not
+noticed until Dan asked whether anything in the app was worth a visual check,
+prompting the first time any of the 18 shipped assets was actually looked at
+rather than diffed: **the check has no opinion on whether the panel itself
+shows anything correct.** A candidate that fails to load at all — rendering
+as flat black — passes exactly as cleanly as one that loads perfectly,
+because both leave the region outside the crop untouched.
+
+This was not hypothetical. `ReferenceRig.tsx`'s `MaterialPanel` — the
+component every one of D3's "render-comparison PASS" results actually
+exercised — used `THREE.TextureLoader` on `.ktx2` URLs, not `KTX2Loader`, the
+whole time. `TextureLoader` cannot decode a KTX2 container; the panel had
+been rendering solid black since the day KTX2 output first existed. Every
+"PASS" logged across D3 and the first half of D4 is still true to what it
+actually measured (no leak outside the panel), and every diff percentage
+quoted is still the right number for that question — but none of them are
+evidence any candidate ever looked correct, because the tool couldn't have
+shown otherwise if it hadn't.
+
+**Fixed at M3d/D4, same session.** `MaterialPanel` now uses a real
+`KTX2Loader` (mirroring `src/materials/loaderKtx2.ts`'s product-side loader).
+Fixing it surfaced a second, independent bug underneath the first: firing the
+three `loadAsync` calls concurrently (`Promise.all`) intermittently
+cross-assigned results between them — a normal map's decoded data landing in
+the albedo slot, visually unmistakable (a wood floor rendering as a solid
+blue/magenta mottle, tangent-space normal data shown as if it were colour).
+Sequential loading closes it, reproduced and fixed in both `MaterialPanel`
+and `loaderKtx2.ts`. Re-ran `render-check.mjs` against the fixed panel for
+two assets (`wood-chevron`, `window-aluminium-anodised`) — same ~0.38-0.39%
+outside-crop numbers as before, confirming the fix doesn't touch what the
+check actually measures, only what a person looking at the panel sees.
+
+**What this means for D3's own record.** Nothing in D3's *numeric* claims
+was false — but "conformance PASS" was, in every report this session wrote,
+read as stronger evidence of visual correctness than the check has ever
+been able to provide. The candidate panel's own appearance has still never
+been asserted on automatically; it takes a person looking, which is what
+caught this. Recorded here rather than quietly fixed, because the gap in
+the *check* — not just the two bugs it let through — is the finding worth
+a future session not re-discovering the hard way.
+
 **Rationale.** This is the only test that catches §1's defect, and it catches it
 without anyone having to reason about it. A baked-in light is defined by
 disagreeing with the scene's light, so putting the asset in three scenes with

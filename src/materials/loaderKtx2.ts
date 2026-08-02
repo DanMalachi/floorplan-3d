@@ -66,17 +66,31 @@ export interface Ktx2FloorTex {
   aoMap: THREE.Texture;
 }
 
-/** Loads and tiles the three KTX2 maps for one catalog material. Rejects if
- *  any map fails — the caller's cache is keyed by style, so a failure isn't
- *  retried until the component remounts, matching normal fetch-failure
- *  behaviour elsewhere in the app. */
+/**
+ * Loads and tiles the three KTX2 maps for one catalog material. Rejects if
+ * any map fails — the caller's cache is keyed by style, so a failure isn't
+ * retried until the component remounts, matching normal fetch-failure
+ * behaviour elsewhere in the app.
+ *
+ * Sequential, not `Promise.all` — found and reproduced at M3d/D4, not a
+ * superstition: firing three `loadAsync` calls concurrently against one
+ * `KTX2Loader` intermittently cross-assigned results between them (a normal
+ * map's decoded data landing in the albedo texture object, consistently
+ * enough to catch visually — a wood floor rendered as a solid blue/magenta
+ * mottle, the classic look of tangent-space normal data shown as colour).
+ * `KTX2Loader` dispatches transcoding to a worker pool internally; this
+ * reads as a response-routing race there, not anything wrong with the KTX2
+ * files themselves — decoding the same shipped file directly with `ktx
+ * extract` shows the correct image every time. Sequential loading costs
+ * some wall-clock time (three round trips instead of one parallel batch)
+ * for a per-room, cached-after-first-load material set, which is the right
+ * side to be slow on.
+ */
 export async function loadKtx2FloorTextures(material: Ktx2Material, gl: THREE.WebGLRenderer): Promise<Ktx2FloorTex> {
   const ktx2 = getLoader(gl);
-  const [map, normalMap, orm] = await Promise.all([
-    ktx2.loadAsync(material.maps.albedo),
-    ktx2.loadAsync(material.maps.normal),
-    ktx2.loadAsync(material.maps.orm),
-  ]);
+  const map = await ktx2.loadAsync(material.maps.albedo);
+  const normalMap = await ktx2.loadAsync(material.maps.normal);
+  const orm = await ktx2.loadAsync(material.maps.orm);
 
   for (const tex of [map, normalMap, orm]) applyTiling(tex, material.coverM);
   // Upload to the GPU now rather than waiting for first render — the same
