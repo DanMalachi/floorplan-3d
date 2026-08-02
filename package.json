@@ -30,7 +30,10 @@
     "mat:sheet": "tsx scripts/materials/contact-sheet.ts",
     "mat:ingest": "tsx scripts/materials/ingest/run.ts",
     "mat:ingest:test": "tsx scripts/materials/ingest/ingest.test.ts",
+    "mat:ingest:fetch-m3c": "tsx scripts/materials/ingest/fetch-m3c.ts",
     "mat:conformance": "tsx scripts/materials/conformance.ts",
+    "mat:render-check": "tsx scripts/materials/render-check.mjs",
+    "mat:no-lighting-diff": "tsx scripts/materials/ingest/no-lighting-diff.ts",
     "render:m1c": "node scripts/render/capture-m1c.mjs"
   },
   "dependencies": {

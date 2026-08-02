@@ -10,6 +10,7 @@
  */
 import {
   ALBEDO_BAND,
+  ALBEDO_BAND_METAL,
   ALBEDO_CLIP_FRACTION_LIMIT,
   ALBEDO_DARK_CLIP,
   ALBEDO_LIGHT_CLIP,
@@ -63,14 +64,23 @@ export function validateDescriptor(a: AssetSource): Violation[] {
 }
 
 /** §1.1 — the load-bearing clause. Rejects baked lighting/shadow/AO by its
- *  statistical signature rather than by inspection. */
-export function validateAlbedo(stats: ImageStats): Violation[] {
+ *  statistical signature rather than by inspection.
+ *
+ *  `isConductor` selects the band: a conductor's "albedo" is F0 reflectance,
+ *  not diffuse reflectance, and real metals run far brighter than any real
+ *  paint or wood (aluminium ~0.91, silver/chrome ~0.95) — found against a
+ *  real anodised-aluminium source at M3c ingest, not designed in ahead of
+ *  time. The light-clip check is skipped for conductors: a uniformly bright
+ *  frame is the correct reading of a polished metal, not a baked highlight.
+ *  The dark-clip check still applies to both — a baked shadow reads dark
+ *  regardless of what the surface is made of. */
+export function validateAlbedo(stats: ImageStats, isConductor = false): Violation[] {
   const v: Violation[] = [];
-  const [lo, hi] = ALBEDO_BAND;
+  const [lo, hi] = isConductor ? ALBEDO_BAND_METAL : ALBEDO_BAND;
   if (stats.linearMean < lo || stats.linearMean > hi) {
     v.push({
       clause: "§1.1",
-      message: `mean linear albedo ${stats.linearMean.toFixed(3)} is outside the plausible reflectance band [${lo}, ${hi}]`,
+      message: `mean linear albedo ${stats.linearMean.toFixed(3)} is outside the plausible ${isConductor ? "conductor F0" : "dielectric reflectance"} band [${lo}, ${hi}]`,
     });
   }
   const darkFrac = stats.fractionBelow(ALBEDO_DARK_CLIP);
@@ -82,14 +92,16 @@ export function validateAlbedo(stats: ImageStats): Violation[] {
         `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%) — baked shadow or AO, no real material reads this dark this often`,
     });
   }
-  const lightFrac = stats.fractionAbove(ALBEDO_LIGHT_CLIP);
-  if (lightFrac > ALBEDO_CLIP_FRACTION_LIMIT) {
-    v.push({
-      clause: "§1.1",
-      message:
-        `${(lightFrac * 100).toFixed(1)}% of pixels sit above linear ${ALBEDO_LIGHT_CLIP} ` +
-        `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%) — baked highlight or light, not reflectance`,
-    });
+  if (!isConductor) {
+    const lightFrac = stats.fractionAbove(ALBEDO_LIGHT_CLIP);
+    if (lightFrac > ALBEDO_CLIP_FRACTION_LIMIT) {
+      v.push({
+        clause: "§1.1",
+        message:
+          `${(lightFrac * 100).toFixed(1)}% of pixels sit above linear ${ALBEDO_LIGHT_CLIP} ` +
+          `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%) — baked highlight or light, not reflectance`,
+      });
+    }
   }
   return v;
 }

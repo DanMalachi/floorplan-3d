@@ -49,14 +49,31 @@ resolution is derived.
 No baked direct light, no baked ambient occlusion, no baked shadow, no baked
 gradient, no baked highlight, no baked contact darkening, no vignette.
 
-Diffuse reflectance, expressed as linear albedo, stays inside **0.03–0.90**.
-Nothing in a home is darker than charcoal (~0.03) or brighter than fresh snow
-(~0.90); an albedo pixel outside that band is either baked light or baked
-shadow, since real pigment cannot get there.
+Diffuse reflectance, expressed as linear albedo, stays inside **0.03–0.90** for
+dielectrics — nothing in a home is darker than charcoal (~0.03) or brighter
+than fresh snow (~0.90); an albedo pixel outside that band is either baked
+light or baked shadow, since real pigment cannot get there.
 
 Reference values for the classes this product ships: white painted plaster
 0.75–0.85, off-white 0.70, mid-grey 0.20, oak 0.25–0.35, walnut 0.08–0.12,
 concrete 0.25–0.35, white tile 0.75, terracotta 0.20, black gloss tile 0.04.
+
+**Conductors (metalness 1) use a separate, higher band: 0.5–0.98.** Found at
+M3c ingest, not designed in ahead of time: a real anodised-aluminium albedo
+(ambientCG `Metal049A`) measured mean linear 0.962 and was rejected by the
+0.03–0.90 band and its own light-clip check, and the rejection was wrong, not
+the asset. "Albedo" means a different physical quantity for a conductor than a
+dielectric — it is F0 reflectance at normal incidence, not diffuse
+reflectance, and real metals sit far above 0.90: aluminium ≈0.91, silver
+≈0.95, chrome ≈0.95, iron/steel down around 0.5–0.6. The dielectric band was
+written from paint/wood/tile reference values and never re-derived for
+conductors; §2.2's material-class table already had the right instinct
+(conductors get their own roughness band) and this was the same fix one level
+up. Applies only when the surface class's declared metalness is 1 (§2.2's
+table already carries this); the dark-clip check (baked shadow reads dark
+regardless of what the surface is made of) still applies unchanged, but the
+light-clip check does not — a uniformly-bright frame is the physically
+correct reading of a polished conductor, not evidence of a baked highlight.
 
 **Rationale.** The renderer's whole job is to compute light × reflectance. An
 albedo that already contains light makes the renderer compute light² over part

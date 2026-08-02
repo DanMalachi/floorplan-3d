@@ -17,7 +17,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { deriveResolution, tierDown, tierUp } from "./spec";
+import { SURFACE_CLASS_BANDS, deriveResolution, tierDown, tierUp } from "./spec";
 import { detectEncoder } from "./encoder";
 import { fileSize, writeAlbedo, writeNormal, writeOrm, writeThumb, type ChannelInput } from "./pack";
 import { upsertEntry } from "./manifest";
@@ -60,7 +60,8 @@ export async function ingest(sourceDir: string, opts: IngestOptions): Promise<In
   if (violations.length > 0) return { ok: false, violations };
 
   const [albedo, normal] = await Promise.all([albedoStats(albedoPath), normalMapStats(normalPath)]);
-  violations.push(...validateAlbedo(albedo));
+  const isConductor = SURFACE_CLASS_BANDS[asset.surfaceClass]?.metalness === 1;
+  violations.push(...validateAlbedo(albedo, isConductor));
   violations.push(...validateNormal(normal));
   violations.push(...validateSourceResolution(asset.coverM, albedo.width, albedo.height));
 

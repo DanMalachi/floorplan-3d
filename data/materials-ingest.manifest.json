@@ -1,0 +1,106 @@
+[
+  {
+    "id": "ceiling-plaster-white",
+    "name": "White plaster",
+    "family": "plaster",
+    "class": "ceilings",
+    "surfaceClass": "matte-plaster",
+    "coverM": 2,
+    "roughness": 0.85,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/ceilings/ceiling-plaster-white/albedo.webp",
+      "normal": "/materials/ceilings/ceiling-plaster-white/normal.webp",
+      "orm": "/materials/ceilings/ceiling-plaster-white/orm.webp"
+    },
+    "thumb": "/materials/ceilings/ceiling-plaster-white/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Plaster004",
+    "encoder": null,
+    "transferBytes": 1727602,
+    "ingestedAt": "2026-08-02T12:34:03.566Z"
+  },
+  {
+    "id": "door-walnut-lacquered",
+    "name": "Lacquered dark walnut",
+    "family": "wood",
+    "class": "doors",
+    "surfaceClass": "lacquered-hardwood",
+    "coverM": 0.8,
+    "roughness": 0.25,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 512,
+      "normal": 1024,
+      "orm": 256
+    },
+    "maps": {
+      "albedo": "/materials/doors/door-walnut-lacquered/albedo.webp",
+      "normal": "/materials/doors/door-walnut-lacquered/normal.webp",
+      "orm": "/materials/doors/door-walnut-lacquered/orm.webp"
+    },
+    "thumb": "/materials/doors/door-walnut-lacquered/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Wood051",
+    "encoder": null,
+    "transferBytes": 336636,
+    "ingestedAt": "2026-08-02T12:34:06.070Z"
+  },
+  {
+    "id": "wall-paint-white-clean",
+    "name": "Clean white paint",
+    "family": "paint",
+    "class": "walls",
+    "surfaceClass": "matte-plaster",
+    "coverM": 2,
+    "roughness": 0.88,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/walls/wall-paint-white-clean/albedo.webp",
+      "normal": "/materials/walls/wall-paint-white-clean/normal.webp",
+      "orm": "/materials/walls/wall-paint-white-clean/orm.webp"
+    },
+    "thumb": "/materials/walls/wall-paint-white-clean/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=PaintedPlaster017",
+    "encoder": null,
+    "transferBytes": 1187044,
+    "ingestedAt": "2026-08-02T12:34:00.265Z"
+  },
+  {
+    "id": "window-aluminium-anodised",
+    "name": "Anodised aluminium",
+    "family": "metal",
+    "class": "windows",
+    "surfaceClass": "anodised-aluminium",
+    "coverM": 0.5,
+    "roughness": 0.42,
+    "metalness": 1,
+    "derivedResolution": {
+      "albedo": 256,
+      "normal": 512,
+      "orm": 256
+    },
+    "maps": {
+      "albedo": "/materials/windows/window-aluminium-anodised/albedo.webp",
+      "normal": "/materials/windows/window-aluminium-anodised/normal.webp",
+      "orm": "/materials/windows/window-aluminium-anodised/orm.webp"
+    },
+    "thumb": "/materials/windows/window-aluminium-anodised/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Metal049A",
+    "encoder": null,
+    "transferBytes": 1576,
+    "ingestedAt": "2026-08-02T12:34:08.364Z"
+  }
+]

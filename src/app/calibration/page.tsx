@@ -41,7 +41,7 @@ import { sampleScene } from "@/schema/sampleScene";
 import { useSceneStore, type EnvPreset } from "@/store/useSceneStore";
 import { riserScene } from "./riserScene";
 import { CANONICAL_HOUR, ROOM_CENTRE, referenceScene } from "./referenceScene";
-import { ReferenceRig, type CandidateInfo } from "./ReferenceRig";
+import { ReferenceRig, type CandidateInfo, type MaterialCandidateInfo } from "./ReferenceRig";
 import { Floors, Ceilings } from "@/viewport3d/FloorMesh";
 import { Walls } from "@/viewport3d/WallMesh";
 import { Environment3d } from "@/viewport3d/environment/Environment3d";
@@ -332,6 +332,11 @@ export default function CalibrationPage() {
   const [centre, setCentre] = useState<[number, number, number]>([0, 0, 0]);
   const [candidate, setCandidate] = useState<File | null>(null);
   const [candidateInfo, setCandidateInfo] = useState<CandidateInfo | null>(null);
+  // material-spec.md §7's conformance test: a candidate material's textures,
+  // driven headlessly by scripts/materials/render-check.mjs the same way
+  // capture-m1c.mjs drives __setEnv/__setWallMode — no UI for this one, it has
+  // no interactive use the way the furniture upload slot does.
+  const [materialCandidate, setMaterialCandidate] = useState<MaterialCandidateInfo | null>(null);
 
   const setScene = useSceneStore((s) => s.setScene);
   const setTimeOfDay = useSceneStore((s) => s.setTimeOfDay);
@@ -351,6 +356,7 @@ export default function CalibrationPage() {
     w.__setUi = setUi;
     w.__setEnv = setEnvPreset;
     w.__setWallMode = setWallMode;
+    w.__setMaterialCandidate = setMaterialCandidate;
   }, [setEnvPreset, setWallMode]);
 
   // Fixtures per rig. The riser rig needs its own: risers only appear where a
@@ -444,7 +450,11 @@ export default function CalibrationPage() {
             <ExposureRig />
           ) : mode === "reference" ? (
             <SceneRig off={OFFSETS.reference} span={14}>
-              <ReferenceRig candidate={candidate} onCandidateLoaded={setCandidateInfo} />
+              <ReferenceRig
+                candidate={candidate}
+                onCandidateLoaded={setCandidateInfo}
+                materialCandidate={materialCandidate}
+              />
             </SceneRig>
           ) : (
             <SceneRig off={OFFSETS[mode]} />

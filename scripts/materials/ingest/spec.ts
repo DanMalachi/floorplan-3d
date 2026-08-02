@@ -68,9 +68,15 @@ export const SURFACE_CLASS_BANDS: Record<SurfaceClass, SurfaceClassBand> = {
  *  pass through this range at a handful of texels, not on average. */
 export const METALNESS_MID_BAND: [number, number] = [0.1, 0.9];
 
-/** §1.1 — plausible linear-reflectance band. Nothing in a home is darker than
- *  charcoal or brighter than fresh snow. */
+/** §1.1 — plausible linear-reflectance band for DIELECTRICS. Nothing in a home
+ *  is darker than charcoal or brighter than fresh snow. */
 export const ALBEDO_BAND: [number, number] = [0.03, 0.9];
+
+/** §1.1 — CONDUCTORS (metalness 1) use a separate, higher band: albedo means
+ *  F0 reflectance for a metal, not diffuse reflectance, and real metals run
+ *  far above 0.90 (aluminium ~0.91, silver/chrome ~0.95). Found at M3c ingest
+ *  against a real anodised-aluminium source, not designed in ahead of time. */
+export const ALBEDO_BAND_METAL: [number, number] = [0.5, 0.98];
 
 /** §1.1's own illustrative numbers: "a histogram can say that 8% of pixels sit
  *  below linear 0.02, which no real material does." Used verbatim as the

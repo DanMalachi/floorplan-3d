@@ -276,6 +276,101 @@ export interface CandidateInfo {
   size: [number, number, number];
 }
 
+// ---------------------------------------------------------------------------
+// Material candidate — material-spec.md §7's conformance test.
+//
+// A material isn't object-shaped, so it doesn't go through the GLB `Candidate`
+// loader below. It gets a flat panel standing where the furniture candidate
+// would, at the same authored-scale, judged-in-place principle: it stands in
+// the roofed room, inside the slider's sun patch, half in direct sun and half
+// in ambient — the same reasoning `SlotCage`'s doc comment gives for not
+// flattering a candidate on the open terrace.
+// ---------------------------------------------------------------------------
+
+export interface MaterialCandidateInfo {
+  class: string;
+  albedoUrl: string;
+  normalUrl: string;
+  ormUrl: string;
+  /** Metres one texture repeat spans (material-spec.md §3.1's `coverM`). */
+  coverM: number;
+}
+
+const PANEL = { w: 1.2, h: 1.8, thickness: 0.05 };
+
+function MaterialPanel({ info }: { info: MaterialCandidateInfo }) {
+  const [material, setMaterial] = useState<THREE.MeshStandardMaterial | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    const tile = (tex: THREE.Texture) => {
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(PANEL.w / info.coverM, PANEL.h / info.coverM);
+      tex.anisotropy = 8;
+    };
+
+    // material-spec.md §6 / render-contract.md §1.2: albedo is sRGB, every
+    // other map is data (NoColorSpace) — never tag a data map sRGB, that
+    // bends roughness/AO/metalness by a gamma curve they were never authored
+    // through.
+    const albedo = loader.load(info.albedoUrl);
+    albedo.colorSpace = THREE.SRGBColorSpace;
+    tile(albedo);
+
+    const normal = loader.load(info.normalUrl);
+    normal.colorSpace = THREE.NoColorSpace;
+    tile(normal);
+
+    // ORM packing (material-spec.md §6): one texture, bound three times. Each
+    // slot's own shader chunk samples the channel it's specified to read —
+    // aoMap.r, roughnessMap.g, metalnessMap.b — so no manual channel split is
+    // needed here. roughness/metalness scalars stay at 1.0: the ingest
+    // pipeline always bakes the true value into the map (a flat fill when the
+    // source had no map — §1.2), so a scalar here would be the "scalar tuning
+    // a map" defect §2.1 forbids.
+    const orm = loader.load(info.ormUrl);
+    orm.colorSpace = THREE.NoColorSpace;
+    tile(orm);
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: albedo,
+      normalMap: normal,
+      aoMap: orm,
+      roughnessMap: orm,
+      metalnessMap: orm,
+      roughness: 1,
+      metalness: 1,
+      aoMapIntensity: 1,
+    });
+    if (!cancelled) setMaterial(mat);
+
+    return () => {
+      cancelled = true;
+      albedo.dispose();
+      normal.dispose();
+      orm.dispose();
+      mat.dispose();
+    };
+  }, [info.albedoUrl, info.normalUrl, info.ormUrl, info.coverM]);
+
+  const solid = shadowProps("opaqueArchitecture");
+  if (!material) return null;
+  return (
+    <mesh
+      material={material}
+      position={[CANDIDATE_SLOT.x, PANEL.h / 2, CANDIDATE_SLOT.y]}
+      {...solid}
+    >
+      {/* aoMap reads from BoxGeometry's own `uv` (channel 0) — no second UV
+          set needed. `Texture.channel` defaults to 0 in the pinned three
+          build (material-spec.md §3.2, verified against three.core.js). */}
+      <boxGeometry args={[PANEL.w, PANEL.h, PANEL.thickness]} />
+    </mesh>
+  );
+}
+
 function Candidate({
   file,
   onLoaded,
@@ -342,10 +437,13 @@ function Candidate({
 export function ReferenceRig({
   candidate,
   onCandidateLoaded,
+  materialCandidate,
 }: {
   candidate: File | null;
   onCandidateLoaded: (info: CandidateInfo | null) => void;
+  materialCandidate?: MaterialCandidateInfo | null;
 }) {
+  const occupied = !!candidate || !!materialCandidate;
   return (
     <group>
       <Bench b={BENCH_A} />
@@ -359,12 +457,18 @@ export function ReferenceRig({
       />
       <ChromeSphere />
       <GreyCard />
-      <SlotCage occupied={!!candidate} />
+      <SlotCage occupied={occupied} />
       {candidate && (
         <Candidate
           key={candidate.name + candidate.size}
           file={candidate}
           onLoaded={onCandidateLoaded}
+        />
+      )}
+      {materialCandidate && (
+        <MaterialPanel
+          key={materialCandidate.albedoUrl}
+          info={materialCandidate}
         />
       )}
     </group>
