@@ -7,7 +7,7 @@ Every clause below has three parts: the **decision**, the **rationale**, and wha
 The three clauses that were OPEN before M1b (§2.4 tone-mapping operator, §4/§2.2 the exposure-path conflict, §5 camera-mode presets) are resolved and implemented. M1c's capture opened two more; M1c-R closed one and is working the other:
 
 - **§3.1 — CLOSED at M1c-R, and M1c's reading of it was wrong.** three r182 *absorbed* `PCFSoftShadowMap` into `PCFShadowMap` rather than removing it; `PCFShadowMap` is now the soft filter. The nine M1c candidates are correctly soft-shadowed, verified by measured penumbra width, not by the constant's name. The clause is rewritten and §0.3 pins the versions so the next renamed-behaviour cannot slip through the same gap.
-- **§7.1 — OPEN, still blocks the freeze.** The IBL was never converted to physical units and is the largest single light in the scene.
+- **§7.1 — R2b IMPLEMENTED, awaiting re-capture (R4) before it can close.** The dome partition of §7.2.4 is built: `envIntensityForSky`/`hemisphereLuxForSky` (`src/render/lightPresets.ts`) put the env map and `hemisphereLight` on one shared sky budget instead of two duplicated ones, driven by the single `environmentIntensity` lever. Verified analytically — at hour 10 the two halves sum to `skyLux` exactly and the key rect lands at `skyLux / PI` = 5,840 nits, inside §4.1's clear-sky range — but not yet re-captured against `/calibration`, so M1c's images are stale. §7.2.5's probe bug (sRGB-space averaging) is also fixed. Still open: §1.3/R3 (assertion timing), then R4 (re-capture, freeze).
 
 §9 carries the ledger; `docs/calibration/README.md` carries the account.
 

@@ -9,6 +9,8 @@ import {
   CAMERA_PRESETS,
   STUDIO,
   computeSkyLighting,
+  envIntensityForSky,
+  hemisphereLuxForSky,
   presetFor,
   toRenderIntensity,
 } from "@/render/lightPresets";
@@ -44,6 +46,13 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
   const cam = CAMERA_PRESETS[presetFor(wallMode, false)];
   const fill = toRenderIntensity(cam.interiorFillLux);
 
+  // §7.2.4 dome partition: env map + hemisphere carry one sky, not two. Key
+  // rect's own authored intensity (unscaled by cam.iblScale — that departure
+  // lands on environmentIntensity, the single lever) drives the level.
+  const keyBaseIntensity = outdoor ? 1.2 : 1.6;
+  const environmentIntensity =
+    envIntensityForSky(outdoor ? s.skyLux : STUDIO.fillLux, keyBaseIntensity) * cam.iblScale;
+
   const sunPos = useMemo(
     () => s.dir.clone().multiplyScalar(Math.max(span * 1.2, 8)),
     [s.dir, span],
@@ -73,7 +82,7 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
           <hemisphereLight
             color={s.hemiSky}
             groundColor={s.hemiGround}
-            intensity={toRenderIntensity(s.skyLux * cam.skyScale)}
+            intensity={toRenderIntensity(hemisphereLuxForSky(s.skyLux, "outdoor") * cam.skyScale)}
           />
           {/* Direct sun, lux. */}
           <directionalLight
@@ -95,7 +104,7 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
           <hemisphereLight
             color={STUDIO.fillSky}
             groundColor={STUDIO.fillGround}
-            intensity={toRenderIntensity(STUDIO.fillLux * cam.skyScale)}
+            intensity={toRenderIntensity(hemisphereLuxForSky(STUDIO.fillLux, "studio") * cam.skyScale)}
           />
           <directionalLight
             color={STUDIO.keyColor}
@@ -118,11 +127,13 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
           at. It is 0 in perspective — the physical mode — and RETIRES AT M2. */}
       {fill > 0 && <ambientLight intensity={fill} color="#fff6e8" />}
 
-      {/* Procedural IBL — soft reflections on glass/floors in every preset. */}
-      <Environment resolution={128}>
-        <Lightformer form="rect" intensity={(outdoor ? 1.2 : 1.6) * cam.iblScale} position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[14, 14, 1]} color="#eef3ff" />
-        <Lightformer form="rect" intensity={0.7 * cam.iblScale} position={[-9, 3, -6]} scale={[8, 5, 1]} color="#cfe0ff" />
-        <Lightformer form="rect" intensity={0.55 * cam.iblScale} position={[9, 3, 6]} scale={[8, 5, 1]} color="#ffe6c8" />
+      {/* Procedural IBL — soft reflections on glass/floors in every preset.
+          Rect intensities are the fixed shape of the sky (§7.2.4); the level
+          is `environmentIntensity` alone, computed above from `skyLux`. */}
+      <Environment resolution={128} environmentIntensity={environmentIntensity}>
+        <Lightformer form="rect" intensity={keyBaseIntensity} position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[14, 14, 1]} color="#eef3ff" />
+        <Lightformer form="rect" intensity={0.7} position={[-9, 3, -6]} scale={[8, 5, 1]} color="#cfe0ff" />
+        <Lightformer form="rect" intensity={0.55} position={[9, 3, 6]} scale={[8, 5, 1]} color="#ffe6c8" />
       </Environment>
 
       {/* Ground. Suburb brings its own lawn + neighbourhood; City brings a rooftop

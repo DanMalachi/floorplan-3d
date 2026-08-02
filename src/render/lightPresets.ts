@@ -224,3 +224,50 @@ export function presetFor(wallMode: "full" | "cutaway" | "top", walkthrough: boo
   if (walkthrough) return "perspective";
   return wallMode === "full" ? "perspective" : wallMode;
 }
+
+// ---------------------------------------------------------------------------
+// IBL dome partition (contract §7.2.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * The environment map and `hemisphereLight` represent ONE sky, partitioned by
+ * solid angle rather than duplicated. `IBL_RIG_GAIN` is the Lightformer rig's
+ * geometric gain — irradiance delivered per unit key-rect radiance, with the
+ * key/coolSide/warmSide rects held at their authored ratio (1.2:0.7:0.55
+ * outdoor, 1.6:0.7:0.55 studio) — measured from the rig geometry in
+ * `Environment3d.tsx` by `scripts/render/ibl-audit.mjs` (8M-sample
+ * cosine-weighted Monte Carlo). A full uniform dome is PI sr; this rig covers
+ * ~51%. Re-measure and update these two numbers if the rig's rect geometry
+ * (position/scale/rotation) changes — they are not derivable from the ratio
+ * alone.
+ */
+const IBL_RIG_GAIN: Record<"outdoor" | "studio", number> = {
+  outdoor: 1.603,
+  studio: 1.586,
+};
+
+/** Rec.709 luminance of the key rect's colour (`#eef3ff`), linear working space. */
+const IBL_KEY_LUMINANCE = 0.895;
+
+/**
+ * `scene.environmentIntensity` that puts the key rect's contribution to the
+ * env map at physical `skyTotalLux / PI` nits (§7.2.4) — the single lever, so
+ * the rects' authored intensities keep encoding the sky's shape and only this
+ * one number moves. `keyBaseIntensity` is the key rect's own authored
+ * intensity (1.2 outdoor / 1.6 studio), unscaled by any camera-preset
+ * departure — that departure belongs on the returned value, not baked in here.
+ */
+export function envIntensityForSky(skyTotalLux: number, keyBaseIntensity: number): number {
+  const targetNits = skyTotalLux / Math.PI;
+  const rawKeyRadiance = IBL_KEY_LUMINANCE * keyBaseIntensity;
+  return toRenderIntensity(targetNits) / rawKeyRadiance;
+}
+
+/**
+ * Diffuse-sky lux `hemisphereLight` carries: the slice of the dome the env
+ * map's rig geometry does not cover. `skyTotalLux` is `skyLux` outdoors or
+ * `STUDIO.fillLux` in studio — the same total the env map used to duplicate.
+ */
+export function hemisphereLuxForSky(skyTotalLux: number, mode: "outdoor" | "studio"): number {
+  return skyTotalLux * (1 - IBL_RIG_GAIN[mode] / Math.PI);
+}

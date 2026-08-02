@@ -192,17 +192,27 @@ function Probe({
       const x0 = Math.max(0, Math.round(cx * scale) - px);
       const y0 = Math.max(0, Math.round(cy * scale) - px);
       const d = ctx2.getImageData(x0, y0, px * 2, px * 2).data;
-      const lum = (i: number) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      // §7.2.5: sRGB is a convex transform, so the mean of decoded values sits
+      // below the decoded mean — averaging the raw bytes over any box with
+      // variance overestimates the linear value. Decode each pixel first, sum
+      // in linear, average last.
+      const toLinearByte = (v: number) => {
+        const s = v / 255;
+        return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      };
+      const linLum = (i: number) =>
+        0.2126 * toLinearByte(d[i]) + 0.7152 * toLinearByte(d[i + 1]) + 0.0722 * toLinearByte(d[i + 2]);
       let sum = 0, adj = 0, n = 0, an = 0;
       for (let r = 0; r < px * 2; r++) {
         for (let cc = 0; cc < px * 2; cc++) {
           const i = (r * px * 2 + cc) * 4;
-          sum += lum(i);
+          sum += linLum(i);
           n++;
-          if (cc > 0) { adj += Math.abs(lum(i) - lum(i - 4)); an++; }
+          if (cc > 0) { adj += Math.abs(linLum(i) - linLum(i - 4)); an++; }
         }
       }
-      return { visible: true, mean: sum / n, adjDelta: adj / Math.max(1, an), sx: cx, sy: cy };
+      const linear = sum / n;
+      return { visible: true, mean: linear, linear, adjDelta: adj / Math.max(1, an), sx: cx, sy: cy };
     };
 
     // LIVE renderer state, read off the renderer rather than off the contract.
