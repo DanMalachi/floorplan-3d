@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import type { ThreeEvent } from "@react-three/fiber";
+import { useThree, type ThreeEvent } from "@react-three/fiber";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Node } from "@/schema/scene";
@@ -10,7 +10,7 @@ import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
 import { MIN_CASTER_THICKNESS } from "@/render/contract";
 import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
-import { floorTexture, floorRoughness } from "./textures";
+import { useFloorTexture, floorRoughness } from "./textures";
 import { ACCENT } from "./WallMesh";
 
 /**
@@ -77,9 +77,24 @@ function Floor({ roomId, style, geometry }: {
   const setHover3d = useSceneStore((s) => s.setHover3d);
   const setSel3d = useSceneStore((s) => s.setSel3d);
 
+  const gl = useThree((s) => s.gl);
+  const tex = useFloorTexture(style, gl);
+
   // Per-room material (textures are shared) so the highlight stays per-room.
+  // `tex` is only ever null for the flagged-on KTX2 path mid-load (see
+  // textures.ts's useFloorTexture) — a plain grey placeholder until it
+  // resolves, then this recomputes with the real maps.
   const mat = useMemo(() => {
-    const tex = floorTexture(style);
+    if (!tex) {
+      return new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        roughness: 0.9,
+        metalness: 0,
+        emissive: new THREE.Color(ACCENT),
+        emissiveIntensity: 0,
+        side: THREE.DoubleSide,
+      });
+    }
     return new THREE.MeshStandardMaterial({
       map: tex.map,
       normalMap: tex.normalMap,
@@ -87,13 +102,16 @@ function Floor({ roomId, style, geometry }: {
       // Catalog materials ship a roughness map; procedural styles leave it
       // undefined and rely on the scalar alone.
       roughnessMap: tex.roughnessMap,
+      // KTX2 catalog materials only — material-spec.md §6's packed ORM
+      // texture (undefined for the WebP/procedural paths, same as before).
+      aoMap: tex.aoMap,
       roughness: floorRoughness(style),
       metalness: 0,
       emissive: new THREE.Color(ACCENT),
       emissiveIntensity: 0,
       side: THREE.DoubleSide,
     });
-  }, [style]);
+  }, [style, tex]);
   useEffect(() => () => mat.dispose(), [mat]);
   useEffect(() => {
     mat.emissiveIntensity = selected ? 0.25 : hovered ? 0.1 : 0;

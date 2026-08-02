@@ -1169,3 +1169,80 @@ Recorded so the next milestone does not assume silence means permission.
   contract §6.1's declared limitation stands.
 - **The transient class's shadow behaviour** — still the deferred slot of
   render contract §6.3.
+
+---
+
+## 9. M3d/D4 — merge into the product
+
+The step deferred at M3b: wiring the 18 shipped assets (§2's tables, §5.1's
+KTX2 pipeline) into `src/materials/registry.ts` and the product UI. Detail
+lives in the code (`src/materials/registryKtx2.ts`, `loaderKtx2.ts`,
+`src/lib/featureFlags.ts`, and the two protected-file touches in
+`src/viewport3d/textures.ts`/`FloorMesh.tsx`, all doc-commented in place);
+this section records the decisions, not the mechanics.
+
+**Only 14 of 18 are reachable in the product — by design, not an oversight.**
+Only `floors` has a picker UI today (§8 above: per-surface material
+assignment for walls/ceilings/doors/windows doesn't exist yet). Rather than
+register 14 ids and drop the other 4, all 18 are in a unified registry
+(`registryKtx2.ts`), and reachability is a **derived query** on the real
+`class` field (`consumingUIFor`), never a hardcoded id list — the day
+wall-material UI ships, those 4 assets appear with zero registry changes.
+
+**A real structural risk, found building this, not hypothetical.**
+`Room.floor` (`schema/scene.ts`) is a plain `string`, not an enum — nothing
+at the type level stops it holding a non-floor id. A single flat id→material
+map with no class check would have let a non-floor asset (say, wall paint)
+render as a floor texture if that id ever reached `Room.floor` by any path
+other than the picker. `getKtx2FloorMaterial()` filters by `class ===
+"floors"` at *resolution* time, not just at picker-query time, closing that
+hole structurally — proven, not asserted, by `registryKtx2.test.ts`, which
+confirms all 4 non-floor ids return `undefined` from the floor-rendering
+entrypoint specifically.
+
+**Feature-flagged, `NEXT_PUBLIC_KTX2_FLOORS_ENABLED`, default off.** The
+render path this replaces is protected (`textures.ts`, `FloorMesh.tsx`) and
+calibration baselines are frozen against its current behaviour — the flag
+makes that boundary reversible without a revert. Expiry condition written at
+introduction, per Dan's ruling: removed once all 18 assets pass full
+conformance *and* calibration re-captures zero-diff with the flag on — see
+`featureFlags.ts` for the exact text. Branching is centralized at the loader
+boundary (`textures.ts`'s `useFloorTexture`) — one conditional selecting an
+implementation, both behind the same `FloorTex | null` shape — not scattered
+through the protected files.
+
+**Per-asset fallback, not an all-or-nothing cutover.** The floor picker's
+list (`registry.ts`'s legacy `FLOOR_MATERIALS`, still all 16 original ids)
+is unchanged. `useFloorTexture` checks per-id whether a KTX2 registry entry
+exists; `stone-travertine` and `tile-white-large` (§2.2b — dropped, not in
+the 18) fall through to the untouched legacy WebP loader exactly like an
+unrecognised id always has, regardless of the flag. Nobody has to keep two
+picker lists in sync for this to be correct.
+
+**Calibration re-capture with the flag ON — investigated, not just run.**
+Two of the three frozen `perspective` cells (`none-full`, `city-full`)
+re-captured at exact 0.0000% diff. The third, `suburb-full`, differed by
+0.32% — not literally zero. Traced before accepting it: the calibration
+room's own floor is `"concrete"`, a legacy procedural style that structurally
+never resolves via the KTX2 registry (confirmed — the code cannot affect it),
+and a **second** capture under the identical flag-on code differed from the
+first by 0.21%, comparable magnitude, which is ordinary SwiftShader
+recapture noise (render-contract.md §10's own documented 0.37-0.57% floor),
+not a regression from the flag. `no-lighting-diff.ts` passes against the
+full changeset regardless of the flag's runtime value, since the check is
+git-diff-based (which files changed) and the flag only changes runtime
+behaviour, not which files were edited.
+
+**Exit criteria.**
+- 18 assets live in a unified registry; 14 are reachable via the existing
+  floor picker (flag-gated), 4 are registered for class coverage with no
+  consuming UI yet, both facts derived from data, not hardcoded — done,
+  verified by `registryKtx2.test.ts`.
+- Post-merge, a non-floor material touches no lighting code — verified two
+  ways: `no-lighting-diff.ts` against the full changeset, and structurally,
+  by proving a non-floor id cannot reach the floor-rendering entrypoint at
+  all (the stronger guarantee — it doesn't merely *not touch* lighting code
+  today, it structurally *cannot*).
+- Calibration baselines unchanged on disk; re-captured separately under the
+  flag to confirm no visual regression, investigated rather than
+  hand-waved where the re-capture wasn't literally zero.
