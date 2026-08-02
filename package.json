@@ -28,6 +28,9 @@
     "mat:fetch": "tsx scripts/materials/fetch-materials.ts",
     "mat:repack": "tsx scripts/materials/repack.ts",
     "mat:sheet": "tsx scripts/materials/contact-sheet.ts",
+    "mat:ingest": "tsx scripts/materials/ingest/run.ts",
+    "mat:ingest:test": "tsx scripts/materials/ingest/ingest.test.ts",
+    "mat:conformance": "tsx scripts/materials/conformance.ts",
     "render:m1c": "node scripts/render/capture-m1c.mjs"
   },
   "dependencies": {

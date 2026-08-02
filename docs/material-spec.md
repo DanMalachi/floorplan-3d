@@ -418,9 +418,26 @@ paying while 400 KB is not.
 **Cost, stated plainly: KTX2 needs the external `toktx` binary** (KTX-Software),
 which is why `scripts/blenderkit/optimize.ts` explicitly chose WebP over it and
 recorded "revisit if GPU memory ever beats download size as the constraint."
-This clause is that revisit. Installing the binary is M3b's first task, and if
-it cannot be installed, M3b stops and says so rather than quietly shipping WebP
-under a spec that says KTX2.
+This clause is that revisit.
+
+**Deferred at M3b — Dan's ruling, 2026-08-02: install nothing.** The only
+paths that get `toktx` onto this machine right now are a system-wide Windows
+installer (writes Program Files + registry, hard to reverse) or an
+unofficial npm package that re-bundles the official binaries (no registry
+writes, but not Khronos-published — a supply-chain trust step this spec
+shouldn't take on quietly). Neither is worth taking to unblock one milestone.
+`scripts/materials/ingest/encoder.ts` implements the KTX2 step as pluggable
+and detects a real `toktx` on PATH if one is ever present, but every asset
+ingested today gets `encoder: null` on the record — not a silent WebP
+substitution, an explicit, machine-readable deferral (§7's conformance test
+fails closed on exactly that field).
+
+Two paths give official provenance with no registry writes, and are the ones
+to take when this is revisited: **build `toktx` from Khronos source** (CMake,
+no installer), or **run it containerised** (a Docker image invoked per-encode,
+nothing installed on the host). Recorded here so the next attempt starts from
+one of these two, not from re-litigating the installer-vs-npm-package choice
+this ruling already closed.
 
 **Transfer sizes for our set under KTX2 are NOT MEASURED.** Every byte figure in
 this document is a WebP measurement of what currently ships.
