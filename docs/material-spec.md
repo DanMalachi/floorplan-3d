@@ -1168,6 +1168,39 @@ caught this. Recorded here rather than quietly fixed, because the gap in
 the *check* — not just the two bugs it let through — is the finding worth
 a future session not re-discovering the hard way.
 
+**A third bug, found the same way, in the shipped files themselves — not a
+loader bug this time.** Fixing the first two surfaced enough real texture
+content on screen for Dan to actually look at a floor in the product (not
+the calibration rig) and report "black stripes... appear all over." Decoding
+a shipped `normal.ktx2` directly (`ktx extract`, no app code involved at
+all) showed why: every one of the 18 assets' normal maps had been encoded to
+a flat olive/yellow-green image, not the source's correct blue-dominant
+tangent-space data. The cause was `encoder.ts`'s `NORMAL_PROFILE`, which
+carried `--normal-mode` since D2. `ktx create --help`'s own text explains
+it: the flag "converts to a two component X+Y normal map stored as (RGB=X,
+A=Y)" before encoding — a packing this codebase's runtime never decodes
+(`MeshStandardMaterial.normalMap` expects a standard tangent-space RGB map).
+Reproduced with both the 3-channel format already in use and
+`R8G8B8A8_UNORM` (which the flag's own packing scheme needs an alpha channel
+for) — both come out wrong; dropping the flag entirely and encoding the
+source as plain UASTC colour data decodes correctly. All 18 assets'
+`normal.ktx2` files were re-encoded and re-verified (`render-check.mjs`
+unchanged outside the panel crop, as expected; both floors visually
+re-checked in the running app and the calibration panel).
+
+**Why three separate real bugs shipped past every check across D2-D4.**
+None of the automated checks this whole arc relied on — `no-lighting-diff`,
+`conformance.ts`'s encoder gate, `render-check.mjs`'s outside-crop diff, the
+GPU-resident budget estimate — were ever designed to look at what a decoded
+texture or a rendered material actually looks like. Each did exactly what it
+was built to do. The gap was that nothing in the pipeline ever did the one
+check all three bugs were visible to immediately: decode the file, or look
+at the screen. That is now part of this document's own record, not just a
+lesson — §7's conformance gate remains encoder-identity plus outside-crop
+isolation only, deliberately not expanded here to also assert on decoded
+pixel content, because turning "a person looked and it was right" into a
+reliable automated check is real, separate work, not a one-line addition.
+
 **Rationale.** This is the only test that catches §1's defect, and it catches it
 without anyone having to reason about it. A baked-in light is defined by
 disagreeing with the scene's light, so putting the asset in three scenes with

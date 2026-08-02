@@ -74,14 +74,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 4503604,
-    "ingestedAt": "2026-08-02T18:26:38.426Z"
+    "transferBytes": 4500962,
+    "ingestedAt": "2026-08-02T20:37:36.564Z"
   },
   {
     "id": "carpet-navy",
@@ -158,14 +157,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 5192029,
-    "ingestedAt": "2026-08-02T17:19:30.558Z"
+    "transferBytes": 5327123,
+    "ingestedAt": "2026-08-02T20:38:01.268Z"
   },
   {
     "id": "ceiling-plaster-white",
@@ -242,14 +240,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 4834738,
-    "ingestedAt": "2026-08-02T16:14:46.701Z"
+    "transferBytes": 5027565,
+    "ingestedAt": "2026-08-02T20:36:33.641Z"
   },
   {
     "id": "concrete-grey",
@@ -326,14 +323,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 4981019,
-    "ingestedAt": "2026-08-02T18:28:48.685Z"
+    "transferBytes": 5199768,
+    "ingestedAt": "2026-08-02T20:38:34.007Z"
   },
   {
     "id": "concrete-light",
@@ -410,14 +406,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 3747307,
-    "ingestedAt": "2026-08-02T17:19:59.245Z"
+    "transferBytes": 3450639,
+    "ingestedAt": "2026-08-02T20:38:56.979Z"
   },
   {
     "id": "door-walnut-lacquered",
@@ -494,14 +489,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 1118399,
-    "ingestedAt": "2026-08-02T16:14:55.713Z"
+    "transferBytes": 1064516,
+    "ingestedAt": "2026-08-02T20:36:52.776Z"
   },
   {
     "id": "stone-terrazzo",
@@ -578,14 +572,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 1801426,
-    "ingestedAt": "2026-08-02T18:27:03.530Z"
+    "transferBytes": 1549010,
+    "ingestedAt": "2026-08-02T20:39:23.904Z"
   },
   {
     "id": "tile-black-gloss",
@@ -662,14 +655,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 415644,
-    "ingestedAt": "2026-08-02T17:20:05.973Z"
+    "transferBytes": 376570,
+    "ingestedAt": "2026-08-02T20:39:30.836Z"
   },
   {
     "id": "tile-checker-marble",
@@ -746,14 +738,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 1167749,
-    "ingestedAt": "2026-08-02T18:29:20.251Z"
+    "transferBytes": 1565352,
+    "ingestedAt": "2026-08-02T20:39:54.738Z"
   },
   {
     "id": "tile-hex-white",
@@ -830,14 +821,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 308148,
-    "ingestedAt": "2026-08-02T18:27:15.485Z"
+    "transferBytes": 293656,
+    "ingestedAt": "2026-08-02T20:39:59.312Z"
   },
   {
     "id": "wall-paint-white-clean",
@@ -914,14 +904,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 3669696,
-    "ingestedAt": "2026-08-02T16:14:19.015Z"
+    "transferBytes": 3723071,
+    "ingestedAt": "2026-08-02T20:36:05.303Z"
   },
   {
     "id": "window-aluminium-anodised",
@@ -998,14 +987,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 22642,
-    "ingestedAt": "2026-08-02T16:14:59.446Z"
+    "transferBytes": 80026,
+    "ingestedAt": "2026-08-02T20:36:56.814Z"
   },
   {
     "id": "wood-basketweave",
@@ -1082,14 +1070,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 2623623,
-    "ingestedAt": "2026-08-02T17:20:31.366Z"
+    "transferBytes": 2366988,
+    "ingestedAt": "2026-08-02T20:40:29.309Z"
   },
   {
     "id": "wood-chevron",
@@ -1166,14 +1153,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 2161852,
-    "ingestedAt": "2026-08-02T18:27:40.627Z"
+    "transferBytes": 1965769,
+    "ingestedAt": "2026-08-02T20:40:49.529Z"
   },
   {
     "id": "wood-grey-weathered",
@@ -1250,14 +1236,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 2838252,
-    "ingestedAt": "2026-08-02T17:22:07.191Z"
+    "transferBytes": 2476333,
+    "ingestedAt": "2026-08-02T20:42:14.129Z"
   },
   {
     "id": "wood-oak-natural",
@@ -1334,14 +1319,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 1796840,
-    "ingestedAt": "2026-08-02T18:28:13.482Z"
+    "transferBytes": 1625197,
+    "ingestedAt": "2026-08-02T20:41:23.589Z"
   },
   {
     "id": "wood-plank-pale",
@@ -1418,14 +1402,13 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 2702695,
-    "ingestedAt": "2026-08-02T17:21:41.499Z"
+    "transferBytes": 2340719,
+    "ingestedAt": "2026-08-02T20:41:52.265Z"
   },
   {
     "id": "wood-walnut-dark",
@@ -1502,13 +1485,12 @@
             "0.5",
             "--zstd",
             "19",
-            "--normal-mode",
             "--generate-mipmap"
           ]
         }
       }
     },
-    "transferBytes": 1533963,
-    "ingestedAt": "2026-08-02T17:20:56.160Z"
+    "transferBytes": 1289472,
+    "ingestedAt": "2026-08-02T20:41:05.916Z"
   }
 ]

@@ -89,10 +89,27 @@ const NORMAL_PROFILE: EncoderProfile = {
     "--uastc-rdo",
     "--uastc-rdo-l", "0.5", // §5.1: "for normal maps a good range is [.25,.75]" — mid-range default
     "--zstd", "19",
-    "--normal-mode",
     "--generate-mipmap",
   ],
 };
+
+// `--normal-mode` was here through the first two D3/D4 sessions and is
+// deliberately NOT in the flags above. Found by actually decoding a shipped
+// normal.ktx2 and looking at it (prompted by a real "black stripes on the
+// floor" bug report): every one of the 18 assets' normal maps had been
+// encoding to a uniform olive/yellow-green image, not the source's correct
+// blue-dominant tangent-space data. `ktx create --help`'s own text explains
+// why — `--normal-mode` "converts to a two component X+Y normal map stored
+// as (RGB=X, A=Y)" before encoding, a packing this codebase's runtime code
+// never decodes (`MeshStandardMaterial.normalMap` expects a standard
+// tangent-space RGB map, nothing here reconstructs Z from a packed X+Y).
+// Reproduced with both the 3-channel format above and R8G8B8A8_UNORM (which
+// `--normal-mode`'s own packing scheme actually needs an alpha channel
+// for) — both come out wrong; only dropping the flag entirely, encoding the
+// source RGB normal map as plain UASTC color data, gives a correct decode.
+// Left as a comment, not silently removed, because it is exactly the kind
+// of flag that looks like the obviously-correct choice for "encoding a
+// normal map" and will look attractive to add back without this context.
 
 function parseKtxVersion(raw: string): { version: string; commit: string | null } {
   // Observed: "ktx version: v5.0.0-rc1-36-ge2f94806-dirty". Strip the label
