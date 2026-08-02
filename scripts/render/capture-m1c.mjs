@@ -2,7 +2,13 @@
 // crossed with every camera mode.
 //
 //   npm run dev            (in another terminal)
-//   node scripts/render/capture-m1c.mjs [outDir]      default: docs/calibration
+//   node scripts/render/capture-m1c.mjs [outDir] [presets]
+//     outDir    default: docs/calibration
+//     presets   comma-separated subset of none,suburb,city; default: all three.
+//               Manifest cells for presets NOT in this run are carried over
+//               from the existing manifest.json rather than dropped, so a
+//               single crashed preset can be redone without re-running the
+//               ones that already succeeded.
 //
 // Writes one PNG per cell plus manifest.json, which records the contract values
 // in force at capture time. Without that record a future session cannot tell a
@@ -13,7 +19,7 @@
 // (minutes, not seconds). That is the price of a capture that does not depend
 // on whose GPU it ran on.
 import { chromium } from "playwright";
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 
 const OUT = process.argv[2] ?? "docs/calibration";
 const URL = "http://localhost:3000/calibration";
@@ -23,7 +29,8 @@ const URL = "http://localhost:3000/calibration";
 // enough to read roughness at.
 const VIEWPORT = { width: 1600, height: 1000 };
 
-const ENV_PRESETS = ["none", "suburb", "city"];
+const ALL_PRESETS = ["none", "suburb", "city"];
+const ENV_PRESETS = process.argv[3] ? process.argv[3].split(",") : ALL_PRESETS;
 const WALL_MODES = ["full", "cutaway", "top"];
 
 mkdirSync(OUT, { recursive: true });
@@ -84,7 +91,10 @@ async function capturePreset(env) {
       const file = `${env}-${wallMode}.png`;
       await page.screenshot({ path: `${OUT}/${file}`, timeout: 240_000 });
       const cell = await page.evaluate(() => window.__calibrationManifest());
-      cells.push({ file, ...cell });
+      // Explicit top-level marker, not just cameraPresetValues.physical buried
+      // in the cell: cutaway/top depart from the physical model (§5.4), so
+      // their baselines are reference-quality, not correctness-verified.
+      cells.push({ file, provisional: !cell.cameraPresetValues.physical, ...cell });
       console.log(`  captured ${file}`);
     }
   } finally {
@@ -97,14 +107,31 @@ for (const env of ENV_PRESETS) {
   await capturePreset(env);
 }
 
+// Carry over cells for presets this run skipped, so a single crashed preset
+// can be redone without discarding the others' already-verified manifest rows.
+const skipped = ALL_PRESETS.filter((p) => !ENV_PRESETS.includes(p));
+if (skipped.length) {
+  const manifestPath = `${OUT}/manifest.json`;
+  if (existsSync(manifestPath)) {
+    const prior = JSON.parse(readFileSync(manifestPath, "utf8"));
+    for (const cell of prior.cells ?? []) {
+      if (skipped.some((p) => cell.file.startsWith(`${p}-`))) cells.push(cell);
+    }
+    log.push(...(prior.log ?? []));
+  } else {
+    console.log(`WARNING: no existing manifest.json to carry over cells for [${skipped.join(", ")}]`);
+  }
+}
+
 const manifest = {
   milestone: "M1c",
-  // NOT FROZEN. §7 is still open: the environment map is in pre-§4 unitless
-  // intensities and is the largest single light in the scene, so freezing would
-  // ratify it. (§3.1 was the other blocker and is closed — r182 absorbed
-  // PCFSoftShadowMap into PCFShadowMap, which is the soft filter; these frames
-  // were never hard-shadowed.) See docs/calibration/README.md.
-  status: "PROVISIONAL — §7 (IBL units) open; §3.1 closed at M1c-R",
+  // `perspective` cells are frozen (physical: true, provisional: false) — §7
+  // (IBL dome partition, R2b) and §3.1 (shadow filter naming, M1c-R) are both
+  // closed, and §1.3 (assertion timing, R3) no longer risks a false pass.
+  // `cutaway`/`top` cells stay provisional: they are legibility-first
+  // departures from the physical model (§5.4), not correctness baselines. See
+  // docs/calibration/README.md.
+  status: "perspective FROZEN; cutaway/top PROVISIONAL by design (§5.4)",
   capturedAt: new Date().toISOString(),
   viewport: VIEWPORT,
   renderer: "headless chromium + swiftshader",

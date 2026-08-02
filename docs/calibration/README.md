@@ -1,22 +1,30 @@
 # M1c — the calibration baselines
 
-Status: **PROVISIONAL. The lighting model is NOT frozen.**
+Status: **`perspective` cells FROZEN. `cutaway`/`top` cells PROVISIONAL by design.**
 
-Capture is complete and the images in this directory are real, but freezing them
-would freeze two contract violations with them:
+Capture found two contract violations, both now closed, plus one timing gap in
+the mechanism that would have caught the next one:
 
-- **§7 — OPEN.** The environment map was never converted to physical units and
-  supplies 53% of a lit horizontal surface, 83% of a shaded interior, and 100%
-  of the light at midnight.
+- **§7 — RESOLVED at R2b.** The environment map was never converted to physical
+  units and supplied 53% of a lit horizontal surface, 83% of a shaded interior,
+  and 100% of the light at midnight. `envIntensityForSky`/`hemisphereLuxForSky`
+  (`src/render/lightPresets.ts`) now partition the dome instead of duplicating
+  it: env key radiance = `skyLux/PI`, hemisphere carries the rest.
 - **§3.1 — CLOSED at M1c-R, and M1c's reading of it was wrong.** three r182
   *absorbed* `PCFSoftShadowMap` into `PCFShadowMap` rather than removing it;
   `PCFShadowMap` is now the soft filter. These images are correctly
   soft-shadowed — verified by measured penumbra width, not by the constant's
   name — and are salvageable on shadow grounds.
+- **§1.3 — RESOLVED at R3.** The startup assertion ran one frame too early to
+  see a value `WebGLShadowMap`'s first shadow pass can overwrite. It now
+  asserts after that pass completes (`src/render/RenderContractCheck.tsx`).
 
-Both were found *by* capturing, which is what M1c is for. One of the two did not
-survive being checked, which is what R1 is for. Nothing here is a reference set
-until §7 is settled.
+This directory was re-captured after all three fixes. **`perspective` is the
+only physically motivated mode (§5.4)** — its three cells (`*-full.png`) are the
+baseline any correctness claim covers, `manifest.json`'s `provisional: false`.
+`cutaway` and `top` depart from the physical model on purpose (`iblScale`
+1.15/1.3, interim `interiorFillLux`) and stay `provisional: true` — captured so
+a regression in them is visible, never treated as correctness-verified.
 
 ---
 
@@ -105,7 +113,7 @@ The hour is part of the baseline. A different sun angle is a different image.
 
 ---
 
-## What capture found — §7 is unresolved, and it is load-bearing
+## What capture found — §7, RESOLVED at R2b (historical record below)
 
 **The environment map is still authored in the pre-§4 unitless intensities, and
 it is one of the largest light sources in the scene.**
@@ -171,18 +179,21 @@ mounts no `<Environment>` at all. The roof-acne and interior-leak results were
 differential (`adjDelta`, and deep-vs-patch), so a constant ambient floor does
 not move them. This is a new finding, not a retraction.
 
-### The proposal, sized
+### The fix that shipped (R2b)
 
-Author the lightformers in nits and convert them through `toRenderIntensity`,
-the same path every other light already takes — the key rect from the sky
-model's diffuse luminance so it tracks the hour, the two side rects from
-ground-bounce luminance, and studio from its own stated instrument values. It is
-a change to one file (`Environment3d.tsx`, protected — already covered by the
-workstream exemption) plus a value table in `src/render/lightPresets.ts`, and it
-invalidates nothing that has been ratified, because nothing has.
+Dome partition, not the originally sketched "author the lightformers in nits"
+proposal: env key radiance = `skyLux/PI`, hemisphere carries
+`skyLux * (1 - IBL_RIG_GAIN/PI)` — one `environmentIntensity` drives the level,
+the rects keep their authored ratios. `IBL_RIG_GAIN` (1.603 outdoor / 1.586
+studio) is the rig's measured geometric gain, re-measured at N=8M samples via
+`scripts/render/ibl-audit.mjs`. Verified analytically (env+hemisphere sum to
+`skyLux` exactly) and via `verify-m1b.mjs` (zero acne, zero leak, no regression
+on the exposure grey-card). `src/render/lightPresets.ts` (`envIntensityForSky`,
+`hemisphereLuxForSky`), wired into `Environment3d.tsx` (protected — covered by
+the workstream exemption).
 
-**It does invalidate all nine images here**, which is exactly why the ruling
-comes first and the re-capture second.
+**This invalidated all nine images that existed at the time**, which is why the
+ruling came first and the re-capture in this directory second.
 
 ---
 

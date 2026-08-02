@@ -1,13 +1,14 @@
 # Render Contract
 
-Status: **M1b implemented; M1c captured PROVISIONALLY — the lighting model is NOT frozen.** Successor to `docs/render-diagnostic.md` (M0 findings), which this document turns into law.
+Status: **M1b implemented; M1c-R closed all three capture findings; `perspective` baselines FROZEN, `cutaway`/`top` PROVISIONAL by design.** Successor to `docs/render-diagnostic.md` (M0 findings), which this document turns into law.
 
 Every clause below has three parts: the **decision**, the **rationale**, and what it **forbids**. The forbidding half is the point — a clause with no prohibition is a note, not a contract.
 
-The three clauses that were OPEN before M1b (§2.4 tone-mapping operator, §4/§2.2 the exposure-path conflict, §5 camera-mode presets) are resolved and implemented. M1c's capture opened two more; M1c-R closed one and is working the other:
+The three clauses that were OPEN before M1b (§2.4 tone-mapping operator, §4/§2.2 the exposure-path conflict, §5 camera-mode presets) are resolved and implemented. M1c's capture opened two more, both now closed, and a related timing gap in §1.3 is also closed:
 
 - **§3.1 — CLOSED at M1c-R, and M1c's reading of it was wrong.** three r182 *absorbed* `PCFSoftShadowMap` into `PCFShadowMap` rather than removing it; `PCFShadowMap` is now the soft filter. The nine M1c candidates are correctly soft-shadowed, verified by measured penumbra width, not by the constant's name. The clause is rewritten and §0.3 pins the versions so the next renamed-behaviour cannot slip through the same gap.
-- **§7.1 — R2b IMPLEMENTED, awaiting re-capture (R4) before it can close.** The dome partition of §7.2.4 is built: `envIntensityForSky`/`hemisphereLuxForSky` (`src/render/lightPresets.ts`) put the env map and `hemisphereLight` on one shared sky budget instead of two duplicated ones, driven by the single `environmentIntensity` lever. Verified analytically — at hour 10 the two halves sum to `skyLux` exactly and the key rect lands at `skyLux / PI` = 5,840 nits, inside §4.1's clear-sky range — but not yet re-captured against `/calibration`, so M1c's images are stale. §7.2.5's probe bug (sRGB-space averaging) is also fixed. Still open: §1.3/R3 (assertion timing), then R4 (re-capture, freeze).
+- **§7.1 — CLOSED at R2b + R4.** The dome partition of §7.2.4 is built: `envIntensityForSky`/`hemisphereLuxForSky` (`src/render/lightPresets.ts`) put the env map and `hemisphereLight` on one shared sky budget instead of two duplicated ones, driven by the single `environmentIntensity` lever. Verified analytically — at hour 10 the two halves sum to `skyLux` exactly and the key rect lands at `skyLux / PI` = 5,840 nits, inside §4.1's clear-sky range — and via `verify-m1b.mjs` (clean run, no regression). `docs/calibration/` is re-captured against it; `manifest.json` marks the three `perspective` cells `provisional: false` (frozen) and the six `cutaway`/`top` cells `provisional: true` (legibility departures, §5.4, never a correctness claim).
+- **§1.3 — CLOSED at R3.** The startup assertion ran one frame too early to see a value `WebGLShadowMap`'s first shadow pass can overwrite; `RenderContractCheck` now asserts after that pass completes, and `src/render/contract.test.ts` proves the assertion throws on a corrupted value.
 
 §9 carries the ledger; `docs/calibration/README.md` carries the account.
 
@@ -376,7 +377,7 @@ The 128px resolution is a deliberate cost decision: it is regenerated when the p
 
 **Forbids.** Disabling the environment map in any preset — a preset that needs no IBL should set a low physical value, not switch the rig off, so materials keep behaving consistently. Forbids IBL intensity as an untracked look knob once §4 lands: it is a light with a unit like any other. Forbids per-material `envMapIntensity` overrides used to compensate for a preset's IBL level — that is the same drift §2.4 forbids, one level down. Forbids raising `resolution` without recording the frame-cost measurement.
 
-### 7.1 The clause is UNMET — measured at M1c capture (OPEN)
+### 7.1 The clause was UNMET, measured at M1c capture — CLOSED at R2b/R4
 
 **M1b converted the sun, the sky and the studio instruments to physical units and left the three `<Lightformer>` rects at their eye-tuned values** (1.2 / 0.7 / 0.55 outdoors, 1.6 in studio — `Environment3d.tsx:123-125`). The "once §4 lands" condition above landed; the conversion did not happen. Nothing failed loudly because the assertion in §1.3 covers renderer state, not light values.
 
@@ -395,6 +396,8 @@ Linear scene-referred, recovered by inverting Neutral's black-point term; approx
 **M1b's results are unaffected.** The exposure calibration ran in the `exposure` rig, which mounts no `<Environment>`; the roof-acne and interior-leak results were differential. This is new, not a retraction.
 
 **Proposed fix: superseded by §7.2.** The first proposal here was "author the rects in nits and rescale". R2a audited the rig before doing that and found the magnitude was only half the defect — see §7.2 for the roles, the double-counting audit, and the disposition that replaces it.
+
+**Closed.** §7.2.4's dome partition shipped at R2b and `docs/calibration/` was re-captured against it at R4 — see the status block at the top of this document and `docs/calibration/README.md`.
 
 ---
 
@@ -544,7 +547,7 @@ The failure mode is specific. If M2 derives per-room lighting by checking whethe
 | 3 | §2.4 | Tone-mapping operator — confirm ACES or change | **IMPLEMENTED as Khronos Neutral.** Landed before any M1c baseline was captured, as required |
 | 4 | §5 | Camera-mode presets vs depth-only ceiling proxy | **IMPLEMENTED as proxy + interim fill.** Verified: at noon in cutaway the interior stays dim while the lawn outside stays fully sunlit — the outcome the sun-suppression preset would have destroyed |
 | 5 | §3.4 | Ceiling thickness — real slab, or documented zero-thickness exemption | **IMPLEMENTED as a real slab** (`MIN_CASTER_THICKNESS`, 0.12 m) after acne appeared exactly as predicted the moment the ceiling started casting. Acne signal 6.434 → 0.000 across the sweep |
-| 6 | §7 | **Opened by M1c capture.** The IBL is still authored in the pre-§4 unitless intensities and measures as one of the largest lights in the scene | **OPEN — blocks the M1c freeze.** See §7.1 |
+| 6 | §7 | **Opened by M1c capture.** The IBL is still authored in the pre-§4 unitless intensities and measures as one of the largest lights in the scene | **RESOLVED at R2b/R4.** Dome partition (`envIntensityForSky`/`hemisphereLuxForSky`) replaces duplication; `docs/calibration/` re-captured against it, `perspective` cells frozen. See §7.1/§7.2 |
 | 7 | §3.1 | **Opened by M1c capture, CLOSED at M1c-R — and M1c had it wrong.** r182 absorbed `PCFSoftShadowMap` into `PCFShadowMap`, which is now the soft filter; the candidates were never hard-shadowed | **RESOLVED.** §3.1 rewritten to name `PCFShadowMap`, with the migration-guide quote, the #32591/#32593 history, and measured penumbra widths (3.6 px against ~1.3 px for a hard step). Candidates salvageable on shadow grounds. New §0.3 pins the render-stack versions — the general fix for a contract that records names for behaviour |
 | 8 | §1.3 | The assertion checks the right values one frame too early to see a value the renderer overwrites during its first shadow pass | **RESOLVED.** `RenderContractCheck` now asserts from the second `useFrame` call instead of a post-mount `requestAnimationFrame`, so the check runs after the first `gl.render` (and its shadow pass) has completed. `src/render/contract.test.ts` corrupts `gl.shadowMap.type`/`gl.toneMapping` and proves `assertRenderContract` throws in development |
 
