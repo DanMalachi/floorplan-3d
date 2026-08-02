@@ -618,3 +618,31 @@ Both the representative 6-room case and the 16-room stress case stay under the 1
 - Frame time within budget on a representative multi-room plan — yes, 6.79 ms avg / 8.80 ms p95 on a 6-room plan, well under 16.6 ms.
 
 **Known, out-of-scope limitation.** A room lit only to ~150-300 lx by its own fixture, with no window and no other light source, renders very dark under this contract's single global exposure (calibrated to a ~100,000 lx noon sun, §2.2) — roughly 300-600x dimmer in absolute physical terms, and that ratio is real, not a bug in this milestone's formula (verified: the pre-M2 interim ambient fill at the same physical magnitude produced the same near-black result in the existing M1c `cutaway` baseline). Fixing the *look* would mean either a second, interior-scaled exposure regime or brighter-than-realistic fixtures tuned to compensate — both are §2.2/§2.4-level decisions this milestone does not have standing to make unilaterally. Recorded here as the next thing worth Dan's ruling if lit interiors need to read as "well lit" on screen rather than merely correctly dim.
+
+---
+
+## 11. M3 — materials. Spec lives in `docs/material-spec.md`.
+
+The asset side of this contract is specified separately, because it governs what
+gets *made* rather than what the renderer *does*. `docs/material-spec.md` (M3a)
+is subordinate to this document and does not reopen any clause in it.
+
+Two clauses here are discharged there rather than in this file:
+
+- **§1.4** — GLB texture colour-space correctness, deferred to "the M3b
+  validator". Material spec §5.1 carries the KTX2 decision the deferral was
+  conditioned on, and names the cost (`toktx` must be installed) rather than
+  letting it quietly become another WebP milestone.
+- **§7 / §2.4's family of forbids** — the material spec's conformance test
+  (§7 there) is what enforces them from the asset side: an asset is accepted
+  only if the nine calibration cells differ inside the candidate slot and
+  nowhere else, with a `git diff` proving no lighting file was touched.
+
+One pre-existing violation of **§7** was found while writing the spec and is
+**not fixed here**: the glass material in `WallMesh.tsx` carries
+`envMapIntensity: 1.4`, a per-material env-map override this section forbids by
+name. It predates the clause. It is scheduled into M3c because removing it
+changes every captured cell containing the slider, and that is a deliberate
+re-capture, not a drive-by edit.
+
+**Known, out-of-scope limitation (M2).** A room lit only to ~150-300 lx by its own fixture, with no window and no other light source, renders very dark under this contract's single global exposure (calibrated to a ~100,000 lx noon sun, §2.2) — roughly 300-600x dimmer in absolute physical terms, and that ratio is real, not a bug in this milestone's formula (verified: the pre-M2 interim ambient fill at the same physical magnitude produced the same near-black result in the existing M1c `cutaway` baseline). Fixing the *look* would mean either a second, interior-scaled exposure regime or brighter-than-realistic fixtures tuned to compensate — both are §2.2/§2.4-level decisions this milestone does not have standing to make unilaterally. Recorded here as the next thing worth Dan's ruling if lit interiors need to read as "well lit" on screen rather than merely correctly dim.
