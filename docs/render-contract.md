@@ -98,7 +98,7 @@ Every texture in the codebase already complies (M0 §2 — `materials/loader.ts:
 
 ### 1.3 Startup assertion, dev-only, fails loudly
 
-**Decision.** `src/render/contract.ts` exports `assertRenderContract(gl)`, called once from the Canvas `onCreated`. It compares live renderer state against the recorded contract and **throws** on mismatch in development. In production it logs one `console.error` and continues.
+**Decision.** `src/render/contract.ts` exports `assertRenderContract(gl)`, called once from `RenderContractCheck` (mounted as the last child of the Canvas, after `<EffectComposer>`), on the second `useFrame` call — after the first `gl.render`, including its shadow pass, has completed. It compares live renderer state against the recorded contract and **throws** on mismatch in development. In production it logs one `console.error` and continues.
 
 Asserted: `ColorManagement.enabled`, `gl.outputColorSpace`, `gl.toneMapping === NoToneMapping` (§2.2), `gl.shadowMap.type`, `gl.shadowMap.enabled`.
 
@@ -546,7 +546,7 @@ The failure mode is specific. If M2 derives per-room lighting by checking whethe
 | 5 | §3.4 | Ceiling thickness — real slab, or documented zero-thickness exemption | **IMPLEMENTED as a real slab** (`MIN_CASTER_THICKNESS`, 0.12 m) after acne appeared exactly as predicted the moment the ceiling started casting. Acne signal 6.434 → 0.000 across the sweep |
 | 6 | §7 | **Opened by M1c capture.** The IBL is still authored in the pre-§4 unitless intensities and measures as one of the largest lights in the scene | **OPEN — blocks the M1c freeze.** See §7.1 |
 | 7 | §3.1 | **Opened by M1c capture, CLOSED at M1c-R — and M1c had it wrong.** r182 absorbed `PCFSoftShadowMap` into `PCFShadowMap`, which is now the soft filter; the candidates were never hard-shadowed | **RESOLVED.** §3.1 rewritten to name `PCFShadowMap`, with the migration-guide quote, the #32591/#32593 history, and measured penumbra widths (3.6 px against ~1.3 px for a hard step). Candidates salvageable on shadow grounds. New §0.3 pins the render-stack versions — the general fix for a contract that records names for behaviour |
-| 8 | §1.3 | The assertion checks the right values one frame too early to see a value the renderer overwrites during its first shadow pass | **OPEN — R3.** Timing and scope repair, plus a test that deliberately corrupts a value and proves the assertion throws |
+| 8 | §1.3 | The assertion checks the right values one frame too early to see a value the renderer overwrites during its first shadow pass | **RESOLVED.** `RenderContractCheck` now asserts from the second `useFrame` call instead of a post-mount `requestAnimationFrame`, so the check runs after the first `gl.render` (and its shadow pass) has completed. `src/render/contract.test.ts` corrupts `gl.shadowMap.type`/`gl.toneMapping` and proves `assertRenderContract` throws in development |
 
 **Riser panels — CLOSED.** `buildRiserGeometry` now produces a solid as thick as
 the wall it continues, verified acne-free across the sun sweep against a purpose-

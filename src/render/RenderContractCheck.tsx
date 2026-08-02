@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { assertRenderContract } from "./contract";
 
 /**
@@ -13,15 +13,27 @@ import { assertRenderContract } from "./contract";
  * `onCreated` would run before any child mounted and would fail on a renderer
  * that is about to be configured correctly.
  *
- * The extra rAF hop makes the ordering explicit rather than relying on React's
- * sibling effect order staying what it is today — the check costs one frame,
- * once, and a false throw here would be worse than a late one.
+ * Asserts from the SECOND `useFrame` call, not a post-mount rAF. R3F runs every
+ * subscribed `useFrame` callback before that frame's `gl.render`, so the first
+ * call still precedes the scene's first render. `WebGLShadowMap.render` can
+ * rewrite `gl.shadowMap.type` during that first shadow pass (it coerces the
+ * deprecated `PCFSoftShadowMap` alias back to `PCFShadowMap` — three's own
+ * `WebGLShadowMap.js`, the render method), so a check that runs before any
+ * render has happened cannot see a value the renderer overwrites in it. By the
+ * second `useFrame` call the first frame's render has already completed.
  */
 export function RenderContractCheck() {
   const gl = useThree((s) => s.gl);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => assertRenderContract(gl));
-    return () => cancelAnimationFrame(id);
-  }, [gl]);
+  const frame = useRef(0);
+  const checked = useRef(false);
+  useFrame(() => {
+    if (checked.current) return;
+    if (frame.current < 1) {
+      frame.current++;
+      return;
+    }
+    checked.current = true;
+    assertRenderContract(gl);
+  });
   return null;
 }
