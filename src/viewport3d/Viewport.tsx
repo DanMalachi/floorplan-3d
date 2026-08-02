@@ -7,6 +7,7 @@ import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postproces
 import * as THREE from "three";
 import { DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
 import { RenderContractCheck } from "@/render/RenderContractCheck";
+import { RoomLights } from "@/render/RoomLights";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import type { FloorStyle, Opening, SlideSpec, Wall } from "@/schema/scene";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
@@ -1258,6 +1259,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         <group position={[-cx, 0, -cz]}>
           <Floors scene={scene} />
           <Ceilings scene={scene} />
+          <RoomLights scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
           <StairLayer scene={scene} />

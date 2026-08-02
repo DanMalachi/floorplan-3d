@@ -120,11 +120,14 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
         </>
       )}
 
-      {/* INTERIM interior fill (contract §5.4). The ceiling now correctly
-          occludes the sun, so a roofed interior is genuinely dark in the modes
-          that exist to look inside it. This stands in for the per-room fixtures
-          M2 adds, at roughly the illuminance a lit living space actually sits
-          at. It is 0 in perspective — the physical mode — and RETIRES AT M2. */}
+      {/* Interior fill (contract §5.4) — RETIRED at M2. It stood in for the
+          per-room fixtures `RoomLights` now provides while the ceiling
+          correctly occluded the sun but nothing lit the rooms it revealed.
+          `CAMERA_PRESETS.cutaway`/`.top` now author `interiorFillLux: 0`
+          (`lightPresets.ts`), so `fill` is always 0 and this never mounts;
+          kept rather than deleted so a preset value change is still the only
+          lever, per §5.4's "camera-mode lighting is the three named presets,
+          nothing else" rule — not a second code path to re-enable by hand. */}
       {fill > 0 && <ambientLight intensity={fill} color="#fff6e8" />}
 
       {/* Procedural IBL — soft reflections on glass/floors in every preset.

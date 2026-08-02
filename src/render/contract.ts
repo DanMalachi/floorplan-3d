@@ -109,6 +109,49 @@ export const SHADOW = {
 export const MIN_CASTER_THICKNESS = 0.12;
 
 /**
+ * Interior room lights (M2). One ceiling-mounted point light per detected
+ * room (`src/render/roomLighting.ts`), sized by floor area against
+ * `targetLux` rather than tuned per room — see that file for the derivation.
+ */
+export const ROOM_LIGHT = {
+  /** Average horizontal illuminance a lit living space sits at. Mid-range of
+   *  the same 150-300 lx residential-ambient band the M1 interim interior
+   *  fill was already stated in terms of (`lightPresets.ts`), so this is not
+   *  a new number invented for M2 — it is the number that fill was always
+   *  standing in for. */
+  targetLux: 300,
+  /** Rooms smaller than this (m²) get no fixture at all — closets, shafts,
+   *  and sliver loops from a bad trace, where a single ceiling fixture reads
+   *  as absurd and the loop itself is closer to noise than a room. */
+  minAreaM2: 1.5,
+  /**
+   * Point-light shadow budget. A point light's shadow is a 6-face cube map —
+   * 6x the depth-pass cost of the single directional sun light. `maxCasters`
+   * concurrent room lights cast, ranked by distance to camera and re-ranked
+   * periodically rather than every frame (`src/render/RoomLights.tsx`):
+   * toggling `castShadow` forces three to recompile the affected materials'
+   * shadow variant, and doing that every frame for a light sitting near a
+   * rank boundary is worse than the rank being a few hundred ms stale.
+   *
+   * 3 casters x 6 faces x 512^2 = ~4.7M shadow-map texels/frame, the same
+   * order as the existing single 2048^2 directional pass (~4.2M) — a second
+   * shadow pass of comparable cost, not a new dominant one.
+   */
+  shadow: {
+    maxCasters: 3,
+    mapSize: 512,
+    /** Cube shadow-camera far plane. A point light's own inverse-square decay
+     *  already makes anything past typical residential room scale
+     *  negligible; this just bounds the depth range, generously, rather than
+     *  chasing per-room size for a shadow pass this cheap to over-provision. */
+    farM: 12,
+  },
+  /** How far below the ceiling surface the fixture sits — a flush-mount
+   *  residential ceiling light, not a bare bulb scraping the slab. */
+  dropBelowCeilingM: 0.15,
+} as const;
+
+/**
  * §0.3 — the render stack this contract was verified against.
  *
  * Every clause here describes behaviour, but records a NAME. `PCFSoftShadowMap`

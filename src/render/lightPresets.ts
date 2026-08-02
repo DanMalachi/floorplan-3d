@@ -62,6 +62,27 @@ export const RENDER_EXPOSURE = Math.PI / REFERENCE_SUN_LUX;
 /** Convert an authored physical value (lux / candela / nits) to a three intensity. */
 export const toRenderIntensity = (physical: number): number => physical * RENDER_EXPOSURE;
 
+/**
+ * Candela for a single ceiling-mounted, isotropic point fixture whose
+ * downward hemisphere (2π sr — the ceiling above blocks the rest) delivers an
+ * average `targetLux` across a room of `areaM2`. Derived, not tuned: incident
+ * flux is `E_avg * area`, and an isotropic source spreads that flux over 2π sr
+ * into the room, so `intensity = flux / (2 * PI)`. This is the same
+ * flux-over-solid-angle relationship §4.1 already states for a point light's
+ * full-4π conversion (candela = lumens / 4π), restricted to the downward half
+ * because the other half lights the inside of the ceiling slab, not the room.
+ *
+ * Real distribution under a single point source is not perfectly even —
+ * brighter directly below the fixture, dimmer at a room's far corners,
+ * especially in an elongated or L-shaped one — and that is not modelled here.
+ * This sizes ONE fixture per room (`docs render-contract.md` M2), not a
+ * multi-source lighting simulation; large or oddly-shaped rooms underlighting
+ * at the edges is a known limitation of that scope, not a bug in this formula.
+ */
+export function roomFixtureCandela(areaM2: number, targetLux: number): number {
+  return (targetLux * areaM2) / (2 * Math.PI);
+}
+
 // ---------------------------------------------------------------------------
 // Physical sky model
 // ---------------------------------------------------------------------------
@@ -155,6 +176,14 @@ export const STUDIO = {
   fillGround: "#4a4438",
 } as const;
 
+/**
+ * M2 room fixtures. ~2700K warm white, the standard colour temperature of a
+ * domestic LED ceiling fixture — not tuned to taste, stated as what the
+ * fixture physically is (same convention as `STUDIO.keyColor` for a
+ * photographer's key lamp).
+ */
+export const ROOM_FIXTURE_COLOR = "#ffddb0";
+
 // ---------------------------------------------------------------------------
 // Camera-mode presets
 // ---------------------------------------------------------------------------
@@ -169,11 +198,12 @@ export interface CameraPresetValues {
   /** Multiplier on image-based lighting. 1 = physical. */
   iblScale: number;
   /**
-   * INTERIM interior fill, lux. Stands in for the per-room fixtures M2 adds —
-   * roughly the 150-300 lx a lit living space actually sits at. RETIRES AT M2:
-   * once rooms carry real lights, this drops to 0 and the modes converge on
-   * physical. It exists because the ceiling now correctly occludes the sun, so
-   * a roofed interior is genuinely dark until something lights it.
+   * Interim interior fill, lux — RETIRED at M2. Stood in for the per-room
+   * fixtures `RoomLights` (`src/render/roomLighting.ts`) now provides, at
+   * roughly the 150-300 lx a lit living space actually sits at. Both
+   * non-physical presets author this as 0 now that rooms carry real lights;
+   * kept as a field (rather than deleted) so a future mode that genuinely
+   * needs a flat fill has somewhere to put it without a new code path.
    */
   interiorFillLux: number;
   /** Whether this preset makes a physical-correctness claim. */
@@ -207,14 +237,14 @@ export const CAMERA_PRESETS: Record<CameraPreset, CameraPresetValues> = {
     sunScale: 1, // the world outside the cut stays sunlit — see note above
     skyScale: 1,
     iblScale: 1.15, // DEPARTURE: lifts material read on the exposed interior
-    interiorFillLux: 200, // INTERIM, retires at M2
+    interiorFillLux: 0, // RETIRED at M2 — rooms carry real fixtures now (RoomLights)
     physical: false,
   },
   top: {
     sunScale: 1,
     skyScale: 1,
     iblScale: 1.3, // DEPARTURE: plan legibility beats directional modelling here
-    interiorFillLux: 300, // INTERIM, retires at M2
+    interiorFillLux: 0, // RETIRED at M2 — rooms carry real fixtures now (RoomLights)
     physical: false,
   },
 };

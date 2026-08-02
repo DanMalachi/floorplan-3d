@@ -182,12 +182,14 @@ export interface Room {
   loop: Id[]; // ordered node ids; closure is implied (last connects to first)
   floor?: FloorStyle; // defaults to "wood"
   semantics?: RoomSemantics; // Building Knowledge Layer — additive, recomputable
-  // TODO(M2 lighting): authored ceiling state — a room is roofed by design or
-  // open to the sky by design. Must be a schema field, never inferred from
-  // whether the ceiling mesh is mounted (that also goes false in cutaway) or
-  // from rail adjacency (that misses covered balconies: roofed but open-sided,
-  // and near-universal in the target market). Lighting derivation reads schema,
-  // never runtime mesh mount state. See docs/render-contract.md §8.
+  // Authored ceiling state (M2 lighting, render-contract.md §8.3) — a room is
+  // roofed by design or open to the sky by design. Undefined means unauthored
+  // (no authoring UI ships in M2 yet): src/lib/rooms/roomCeiling.ts is the one
+  // place allowed to fall back to a geometric guess (rail adjacency) when this
+  // is absent. Lighting code itself must only ever read this field — never
+  // mesh mount state (`visible`/`wallMode`) or rail edges directly, since that
+  // is the render layer's own inference and it will diverge (§8.3).
+  ceiling?: "roofed" | "open";
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene

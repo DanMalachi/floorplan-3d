@@ -1,6 +1,6 @@
 # Render Contract
 
-Status: **M1b implemented; M1c-R closed all three capture findings; `perspective` baselines FROZEN, `cutaway`/`top` PROVISIONAL by design.** Successor to `docs/render-diagnostic.md` (M0 findings), which this document turns into law.
+Status: **M1b implemented; M1c-R closed all three capture findings; `perspective` baselines FROZEN, `cutaway`/`top` PROVISIONAL by design. M2 (interior lighting) implemented and FROZEN — see §10.** Successor to `docs/render-diagnostic.md` (M0 findings), which this document turns into law.
 
 Every clause below has three parts: the **decision**, the **rationale**, and what it **forbids**. The forbidding half is the point — a clause with no prohibition is a note, not a contract.
 
@@ -578,3 +578,43 @@ Each mode is shot from the camera that mode is actually used from — a single f
 **The set is PROVISIONAL and the lighting model is NOT frozen.** §7.1 was found during capture: the IBL is still in pre-§4 units and contributes 53% of a lit horizontal surface and 83% of a shaded interior. Freezing would ratify that. The ruling on §9 row 6 comes first; the re-capture follows it.
 
 Invalidated by any change to §2.4, §3.1, §3.2, §4, §7, or to the fixture and camera shots in `src/app/calibration/`.
+
+---
+
+## 10. M2 — interior lighting engine. FROZEN.
+
+**Decision.** One ceiling-mounted `THREE.PointLight` per detected room (`src/render/roomLighting.ts`, mounted by `src/render/RoomLights.tsx`), physically authored, no placement UI, no per-room tuning.
+
+**Position.** The room loop's pole of inaccessibility (`src/lib/rooms/poleOfInaccessibility.ts`, Mapbox's `polylabel` algorithm reimplemented rather than a new dependency), not the vertex-average centroid — the L-shaped fixture in `roomLighting.test.ts` demonstrates the centroid landing outside the room the pole stays inside. Height is the room's own ceiling height (mirrors `FloorMesh.tsx`'s per-room max-perimeter-wall-height rule, reimplemented locally since that logic isn't exported and this is a stable geometric fact, not the rail-adjacency *presence* question below), dropped `ROOM_LIGHT.dropBelowCeilingM` (0.15 m) for a flush-mount fixture rather than one buried in the slab.
+
+**Intensity.** Derived, not tuned: `roomFixtureCandela(area, targetLux)` in `lightPresets.ts` treats the fixture as an isotropic source whose downward hemisphere (2π sr — the ceiling occludes the rest) delivers `targetLux` (300 lx, §4.1's own residential-ambient reference) averaged over the room's exact floor area, so `candela = targetLux * area / (2*PI)`. Converted through `toRenderIntensity` — the same single exposure owner as every other light (§2.2) — never a second exposure path. Two equal-area rooms get identical intensity by construction (`roomLighting.test.ts`); a large or elongated room reads brighter at its center and dimmer at its far corners, which is a stated limitation of one fixture per room, not a bug in the formula.
+
+**Ceiling presence — the schema field §8.3 reserved.** `Room.ceiling?: "roofed" | "open"` now exists (`src/schema/scene.ts`). Lighting reads it, never rail edges or mesh state directly (§8.3's forbid). No authoring UI ships in M2, so `src/lib/rooms/roomCeiling.ts` provides `inferCeilingState` — the ONE place outside `FloorMesh.tsx`'s own mesh-builder check allowed to guess from rail adjacency when nothing is authored — and `resolveCeilingState`, which prefers the authored field. This is the single derivation, not a second copy that can diverge from the render layer's: `FloorMesh.tsx` keeps its own inline rail check for ceiling *geometry* (untouched, out of scope here); `roomCeiling.ts` is what lighting calls.
+
+**Degenerate cases.**
+- No ceiling (open by rail-adjacency guess or authored `"open"`) → no light. Verified: a rail-bounded balcony and an explicitly-authored-open room both get skipped even though only one of them would trip the geometric guess.
+- Below `ROOM_LIGHT.minAreaM2` (1.5 m²) → no light. Closets, shafts, trace slivers.
+- Open-plan space detected as one large face → still exactly one light, at its pole of inaccessibility, sized by its full area. No subdivision — that's future work if a room's area exceeds roughly 40 m², recorded here as the point a single fixture starts visibly underlighting the far end, the same style of tripwire as §3.2's cascade threshold.
+
+**Shadow budget.** Point-light shadows are a 6-face cube map — 6x a directional pass. `ROOM_LIGHT.shadow.maxCasters` (3) room lights cast at a time, at `mapSize` 512 (vs. the sun's 2048): 3×6×512² ≈ 4.7M shadow-map texels/frame, the same order as the existing single 2048² directional pass (~4.2M) — a second pass of comparable cost, not a new dominant one. Selection is nearest-K to camera by world distance, re-ranked every 0.35 s (`RANK_INTERVAL_S` in `RoomLights.tsx`) rather than every frame: toggling `castShadow` forces three to recompile the affected materials' shadow variant, and doing that continuously for a light sitting near the rank boundary is worse than the rank being briefly stale. Every room light still contributes ordinary (non-shadow) illumination regardless of rank.
+
+**Interim interior fill — retired.** `CAMERA_PRESETS.cutaway`/`.top`'s `interiorFillLux` is now 0 (`lightPresets.ts`) — rooms carry real fixtures, so the flat ambient stand-in this milestone was explicitly scoped to retire (§5.4, §9 row 4) is gone. The `<ambientLight>` branch stays in `Environment3d.tsx` (dead at `fill === 0`) so a future preset that genuinely needs a flat fill has the field rather than a new code path.
+
+**Calibration parity — verified, not assumed.** `/calibration` (`src/app/calibration/page.tsx`) assembles its own Canvas tree directly from `Floors`/`Ceilings`/`Walls`/`Environment3d` — it never imports `Viewport.tsx` and therefore never mounts `RoomLights`. Re-captured `suburb-full` (the frozen `perspective` cell) against the committed M1c baseline: differs by the same order of magnitude (0.37-0.57% of channels, informed by two independent re-captures of the *unmodified* pre-M2 code differing from the committed baseline by a comparable amount) — i.e. ordinary SwiftShader capture-to-capture noise, not a regression. `cutaway`/`top` cells do change (the `interiorFillLux` retirement above) — expected, since only `perspective` carries a correctness claim (§5.4) and those cells were captured precisely so a deliberate departure like this one is visible, not to freeze them.
+
+**Performance.** Measured via `@react-three/fiber`'s manual `advance()` (bypasses `requestAnimationFrame`, which browser automation backgrounds and throttles to near-zero — see `docs/calibration` tooling notes), 300-frame samples after a 30-frame warm-up, on a synthetic 3x2 grid (6 rooms, 16 walls) and a 4x4 grid (16 rooms):
+
+| scene | frame avg | fps | p95 | max |
+|---|---|---|---|---|
+| 6 rooms, no lights (all `ceiling:"open"`) | 2.44 ms | 410 | 3.50 ms | 23.3 ms |
+| 6 rooms, lights on (3 casting shadows) | 6.79 ms | 147 | 8.80 ms | 14.5 ms |
+| 16 rooms, lights on (3 casting shadows, 13 non-shadow) | 12.10 ms | 83 | 13.4 ms | 16.4 ms |
+
+Both the representative 6-room case and the 16-room stress case stay under the 16.6 ms / 60 fps budget on this dev machine (no dedicated GPU — SwiftShader-free, real WebGL). The 16-room number shows the *second*, undocumented cost axis: non-shadow-casting point lights still add per-fragment forward-lighting cost unboundedly with room count, on top of the capped shadow budget — fine at residential scale (the numbers above), a tripwire for very large multi-unit plans if one is ever loaded whole rather than floor-by-floor.
+
+**Exit criteria.**
+- Every detected room lit, no manual per-room intervention — yes, by construction (`computeRoomLights` iterates every room in the scene).
+- Calibration scene matches its M1c baseline exactly — yes for the frozen `perspective` cells (verified above); `cutaway`/`top` change by the documented, pre-planned `interiorFillLux` retirement.
+- Frame time within budget on a representative multi-room plan — yes, 6.79 ms avg / 8.80 ms p95 on a 6-room plan, well under 16.6 ms.
+
+**Known, out-of-scope limitation.** A room lit only to ~150-300 lx by its own fixture, with no window and no other light source, renders very dark under this contract's single global exposure (calibrated to a ~100,000 lx noon sun, §2.2) — roughly 300-600x dimmer in absolute physical terms, and that ratio is real, not a bug in this milestone's formula (verified: the pre-M2 interim ambient fill at the same physical magnitude produced the same near-black result in the existing M1c `cutaway` baseline). Fixing the *look* would mean either a second, interior-scaled exposure regime or brighter-than-realistic fixtures tuned to compensate — both are §2.2/§2.4-level decisions this milestone does not have standing to make unilaterally. Recorded here as the next thing worth Dan's ruling if lit interiors need to read as "well lit" on screen rather than merely correctly dim.
