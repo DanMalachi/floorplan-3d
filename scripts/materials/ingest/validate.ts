@@ -14,15 +14,20 @@ import {
   ALBEDO_CLIP_FRACTION_LIMIT,
   ALBEDO_DARK_CLIP,
   ALBEDO_LIGHT_CLIP,
+  BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES,
+  BUDGET_ARCHITECTURE_TRANSFER_BYTES,
+  GRADIENT_MIN_BLOCK_VARIANCE,
+  GRADIENT_R2_THRESHOLD,
   ID_PATTERN,
   METALNESS_MID_BAND,
   MIN_SOURCE_RESOLUTION_RATIO,
   RENDER_CLASSES,
   SURFACE_CLASS_BANDS,
   deriveResolution,
+  estimateGpuResidentBytes,
   type SurfaceClass,
 } from "./spec";
-import type { AssetSource, Violation } from "./types";
+import type { AssetSource, EncoderProfile, Violation } from "./types";
 import type { ImageStats, ScalarMapStats } from "./stats";
 
 /** §6 — naming and required fields, checkable before any pixel is decoded. */
@@ -83,23 +88,34 @@ export function validateAlbedo(stats: ImageStats, isConductor = false): Violatio
       message: `mean linear albedo ${stats.linearMean.toFixed(3)} is outside the plausible ${isConductor ? "conductor F0" : "dielectric reflectance"} band [${lo}, ${hi}]`,
     });
   }
+  // §1.1b (M3d audit) — a flat clip-fraction count can't tell a legitimately
+  // uniform or patterned dark/bright material (near-black gloss tile, a
+  // checker or grout pattern) from a baked-light gradient; both can put >8%
+  // of pixels past the threshold. Escalate to a violation only when the
+  // breach is ALSO spatially gradient-correlated (`gradientR2` — a smooth
+  // edge/corner falloff, the actual shape of a bake), and only when the block
+  // grid has enough variance for that fit to mean anything — a near-uniform
+  // material has nothing for a gradient to be a gradient OF.
+  const hasGradientShape = stats.blockVariance > GRADIENT_MIN_BLOCK_VARIANCE && stats.gradientR2 > GRADIENT_R2_THRESHOLD;
   const darkFrac = stats.fractionBelow(ALBEDO_DARK_CLIP);
-  if (darkFrac > ALBEDO_CLIP_FRACTION_LIMIT) {
+  if (darkFrac > ALBEDO_CLIP_FRACTION_LIMIT && hasGradientShape) {
     v.push({
       clause: "§1.1",
       message:
         `${(darkFrac * 100).toFixed(1)}% of pixels sit below linear ${ALBEDO_DARK_CLIP} ` +
-        `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%) — baked shadow or AO, no real material reads this dark this often`,
+        `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%), and it is a smooth spatial gradient ` +
+        `(R²=${stats.gradientR2.toFixed(2)} against position) rather than uniform or patterned darkness — baked shadow or AO`,
     });
   }
   if (!isConductor) {
     const lightFrac = stats.fractionAbove(ALBEDO_LIGHT_CLIP);
-    if (lightFrac > ALBEDO_CLIP_FRACTION_LIMIT) {
+    if (lightFrac > ALBEDO_CLIP_FRACTION_LIMIT && hasGradientShape) {
       v.push({
         clause: "§1.1",
         message:
           `${(lightFrac * 100).toFixed(1)}% of pixels sit above linear ${ALBEDO_LIGHT_CLIP} ` +
-          `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%) — baked highlight or light, not reflectance`,
+          `(limit ${(ALBEDO_CLIP_FRACTION_LIMIT * 100).toFixed(0)}%), and it is a smooth spatial gradient ` +
+          `(R²=${stats.gradientR2.toFixed(2)} against position) rather than uniform or patterned brightness — baked highlight or light`,
       });
     }
   }
@@ -183,4 +199,59 @@ export function validateNormal(stats: { blueMean: number }): Violation[] {
 
 export function scalarMean(stats: ScalarMapStats): number {
   return stats.mean;
+}
+
+/**
+ * §5.3 — KTX2 output budget. Gates on ESTIMATED GPU-resident bytes (see
+ * `spec.ts`'s `BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES` doc comment for why
+ * GPU-resident rather than transfer for this codec, and why estimated
+ * rather than measured). Pure and pre-pack, like every other validator here
+ * — it only needs the derived resolutions and the encoder's per-map
+ * profiles, both known before any encoding happens, so a dry run predicts
+ * this the same as every other check.
+ */
+export function validateGpuResidentBudget(
+  albedoRes: number,
+  normalRes: number,
+  ormRes: number,
+  profiles: { albedo: EncoderProfile; normal: EncoderProfile; orm: EncoderProfile },
+): Violation[] {
+  const total =
+    estimateGpuResidentBytes(albedoRes, profiles.albedo.codec) +
+    estimateGpuResidentBytes(normalRes, profiles.normal.codec) +
+    estimateGpuResidentBytes(ormRes, profiles.orm.codec);
+  if (total > BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES) {
+    return [
+      {
+        clause: "§5.3",
+        message:
+          `estimated GPU-resident ${(total / 1_000_000).toFixed(2)} MB exceeds the ` +
+          `${(BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES / 1_000_000).toFixed(1)} MB architectural-set ceiling`,
+      },
+    ];
+  }
+  return [];
+}
+
+/**
+ * §5.3 — WebP fallback budget. This is the ceiling's original, actually-
+ * measured case (material-spec.md §5.3: "measured against what ships today
+ * (WebP, no ORM packing)"). Unlike the KTX2 check, this can't be predicted
+ * from resolution alone — WebP's lossy size depends on real content, not a
+ * fixed bits/texel rate — so it runs post-pack against the bytes actually
+ * written, not pre-pack like every other validator. `run.ts` is what makes
+ * that exception, not this function.
+ */
+export function validateTransferBudget(transferBytes: number): Violation[] {
+  if (transferBytes > BUDGET_ARCHITECTURE_TRANSFER_BYTES) {
+    return [
+      {
+        clause: "§5.3",
+        message:
+          `transfer ${(transferBytes / 1_000_000).toFixed(2)} MB exceeds the ` +
+          `${(BUDGET_ARCHITECTURE_TRANSFER_BYTES / 1_000_000).toFixed(1)} MB WebP-fallback ceiling`,
+      },
+    ];
+  }
+  return [];
 }

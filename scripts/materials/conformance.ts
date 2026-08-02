@@ -6,19 +6,31 @@
  * the pipeline §7 is actually verifying.
  *
  * The render-comparison half of §7 (mount candidate in the calibration empty
- * slot, capture all nine cells, diff everywhere-but-the-slot against
- * `docs/calibration/`) is NOT IMPLEMENTED. Nothing in this codebase has an
- * encoder identity yet (see `ingest/encoder.ts`), so there is nothing to
- * exercise that path against, and stubbing it out today would be exactly the
- * unverified claim CLAUDE.md rule 7 forbids. This script implements the part
- * that IS reachable now — the fail-closed gate — and throws rather than
- * pretending past it.
+ * slot, capture the physically-motivated cell, diff everywhere-but-the-slot
+ * against `docs/calibration/`) is now wired for real (M3d/D3) — it shells
+ * out to `render-check.mjs`, which does the actual browser capture and
+ * diffing, rather than reimplementing that here. This gate's own job stays
+ * narrow: the encoder-identity fail-closed check, plus interpreting
+ * render-check.mjs's result.
+ *
+ * `render-check.mjs` always reads the DEFAULT manifest
+ * (`data/materials-ingest.manifest.json`) and hits a live dev server at
+ * localhost:3000 — it has no notion of a custom `manifestPath`. So this
+ * function's render-comparison step is only meaningful against the real
+ * catalog. Against a scratch/test manifest, `render-check.mjs` fails at its
+ * own `findEntry` lookup (asset not in the default manifest) before ever
+ * touching a browser or the network — which is exactly the right, honest
+ * failure for that case, not a special-cased skip.
  *
  * Run:
  *   npx tsx scripts/materials/conformance.ts <assetId>
  */
-import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import path from "node:path";
 import { findEntry, MANIFEST_PATH } from "./ingest/manifest";
+
+const RENDER_CHECK_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "render-check.mjs");
 
 export function checkConformance(id: string, manifestPath: string = MANIFEST_PATH): { ok: boolean; reason: string } {
   const entry = findEntry(id, manifestPath);
@@ -33,10 +45,24 @@ export function checkConformance(id: string, manifestPath: string = MANIFEST_PAT
         "An asset cannot pass conformance without one; the gate fails closed rather than treating an unencoded WebP fallback as shippable.",
     };
   }
-  throw new Error(
-    `§7: encoder identity present for "${id}" (${entry.encoder.tool} ${entry.encoder.version}) but the ` +
-      "render-comparison half of the conformance test is NOT IMPLEMENTED — see this file's docstring.",
-  );
+
+  try {
+    const out = execFileSync("npx", ["tsx", RENDER_CHECK_PATH, id], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: true,
+    });
+    const diffMatch = out.match(/outside-crop diff = ([\d.]+)% of pixels/);
+    return {
+      ok: true,
+      reason: `§7 PASS — render-comparison diff ${diffMatch ? diffMatch[1] + "%" : "(unparsed)"} against docs/calibration/suburb-full.png, outside the candidate panel`,
+    };
+  } catch (e) {
+    const err = e as { stdout?: string; stderr?: string; message?: string };
+    const output = `${err.stdout ?? ""}${err.stderr ?? ""}`.trim();
+    const lastLine = output.split("\n").filter(Boolean).pop() ?? err.message ?? "unknown error";
+    return { ok: false, reason: `§7: render-comparison FAILED for "${id}" — ${lastLine}` };
+  }
 }
 
 function main() {
@@ -46,7 +72,7 @@ function main() {
     process.exit(2);
   }
   const result = checkConformance(id);
-  console.log(result.ok ? `PASS: ${id}` : `FAIL: ${result.reason}`);
+  console.log(result.ok ? `PASS: ${result.reason}` : `FAIL: ${result.reason}`);
   process.exit(result.ok ? 0 : 1);
 }
 

@@ -1,5 +1,89 @@
 [
   {
+    "id": "carpet-navy",
+    "name": "Navy cut pile",
+    "family": "carpet",
+    "class": "floors",
+    "surfaceClass": "textile",
+    "coverM": 2,
+    "roughness": 0.8789671767113351,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/carpet-navy/albedo.ktx2",
+      "normal": "/materials/floors/carpet-navy/normal.ktx2",
+      "orm": "/materials/floors/carpet-navy/orm.ktx2"
+    },
+    "thumb": "/materials/floors/carpet-navy/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Carpet012",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 5192029,
+    "ingestedAt": "2026-08-02T17:19:30.558Z"
+  },
+  {
     "id": "ceiling-plaster-white",
     "name": "White plaster",
     "family": "plaster",
@@ -14,16 +98,158 @@
       "orm": 512
     },
     "maps": {
-      "albedo": "/materials/ceilings/ceiling-plaster-white/albedo.webp",
-      "normal": "/materials/ceilings/ceiling-plaster-white/normal.webp",
-      "orm": "/materials/ceilings/ceiling-plaster-white/orm.webp"
+      "albedo": "/materials/ceilings/ceiling-plaster-white/albedo.ktx2",
+      "normal": "/materials/ceilings/ceiling-plaster-white/normal.ktx2",
+      "orm": "/materials/ceilings/ceiling-plaster-white/orm.ktx2"
     },
     "thumb": "/materials/ceilings/ceiling-plaster-white/thumb.webp",
     "license": "CC0 1.0 Universal (public domain dedication)",
     "source": "https://ambientcg.com/view?id=Plaster004",
-    "encoder": null,
-    "transferBytes": 1727602,
-    "ingestedAt": "2026-08-02T12:34:03.566Z"
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 4834738,
+    "ingestedAt": "2026-08-02T16:14:46.701Z"
+  },
+  {
+    "id": "concrete-light",
+    "name": "Polished concrete",
+    "family": "concrete",
+    "class": "floors",
+    "surfaceClass": "stone-honed",
+    "coverM": 1.1,
+    "roughness": 0.516137972063719,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/concrete-light/albedo.ktx2",
+      "normal": "/materials/floors/concrete-light/normal.ktx2",
+      "orm": "/materials/floors/concrete-light/orm.ktx2"
+    },
+    "thumb": "/materials/floors/concrete-light/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Concrete034",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 3747307,
+    "ingestedAt": "2026-08-02T17:19:59.245Z"
   },
   {
     "id": "door-walnut-lacquered",
@@ -40,16 +266,158 @@
       "orm": 256
     },
     "maps": {
-      "albedo": "/materials/doors/door-walnut-lacquered/albedo.webp",
-      "normal": "/materials/doors/door-walnut-lacquered/normal.webp",
-      "orm": "/materials/doors/door-walnut-lacquered/orm.webp"
+      "albedo": "/materials/doors/door-walnut-lacquered/albedo.ktx2",
+      "normal": "/materials/doors/door-walnut-lacquered/normal.ktx2",
+      "orm": "/materials/doors/door-walnut-lacquered/orm.ktx2"
     },
     "thumb": "/materials/doors/door-walnut-lacquered/thumb.webp",
     "license": "CC0 1.0 Universal (public domain dedication)",
     "source": "https://ambientcg.com/view?id=Wood051",
-    "encoder": null,
-    "transferBytes": 336636,
-    "ingestedAt": "2026-08-02T12:34:06.070Z"
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 1118399,
+    "ingestedAt": "2026-08-02T16:14:55.713Z"
+  },
+  {
+    "id": "tile-black-gloss",
+    "name": "Black gloss",
+    "family": "tile",
+    "class": "floors",
+    "surfaceClass": "polished-tile",
+    "coverM": 1,
+    "roughness": 0.050379128550534204,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 512,
+      "normal": 1024,
+      "orm": 256
+    },
+    "maps": {
+      "albedo": "/materials/floors/tile-black-gloss/albedo.ktx2",
+      "normal": "/materials/floors/tile-black-gloss/normal.ktx2",
+      "orm": "/materials/floors/tile-black-gloss/orm.ktx2"
+    },
+    "thumb": "/materials/floors/tile-black-gloss/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=Tiles108",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 415644,
+    "ingestedAt": "2026-08-02T17:20:05.973Z"
   },
   {
     "id": "wall-paint-white-clean",
@@ -66,16 +434,74 @@
       "orm": 512
     },
     "maps": {
-      "albedo": "/materials/walls/wall-paint-white-clean/albedo.webp",
-      "normal": "/materials/walls/wall-paint-white-clean/normal.webp",
-      "orm": "/materials/walls/wall-paint-white-clean/orm.webp"
+      "albedo": "/materials/walls/wall-paint-white-clean/albedo.ktx2",
+      "normal": "/materials/walls/wall-paint-white-clean/normal.ktx2",
+      "orm": "/materials/walls/wall-paint-white-clean/orm.ktx2"
     },
     "thumb": "/materials/walls/wall-paint-white-clean/thumb.webp",
     "license": "CC0 1.0 Universal (public domain dedication)",
     "source": "https://ambientcg.com/view?id=PaintedPlaster017",
-    "encoder": null,
-    "transferBytes": 1187044,
-    "ingestedAt": "2026-08-02T12:34:00.265Z"
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 3669696,
+    "ingestedAt": "2026-08-02T16:14:19.015Z"
   },
   {
     "id": "window-aluminium-anodised",
@@ -92,15 +518,409 @@
       "orm": 256
     },
     "maps": {
-      "albedo": "/materials/windows/window-aluminium-anodised/albedo.webp",
-      "normal": "/materials/windows/window-aluminium-anodised/normal.webp",
-      "orm": "/materials/windows/window-aluminium-anodised/orm.webp"
+      "albedo": "/materials/windows/window-aluminium-anodised/albedo.ktx2",
+      "normal": "/materials/windows/window-aluminium-anodised/normal.ktx2",
+      "orm": "/materials/windows/window-aluminium-anodised/orm.ktx2"
     },
     "thumb": "/materials/windows/window-aluminium-anodised/thumb.webp",
     "license": "CC0 1.0 Universal (public domain dedication)",
     "source": "https://ambientcg.com/view?id=Metal049A",
-    "encoder": null,
-    "transferBytes": 1576,
-    "ingestedAt": "2026-08-02T12:34:08.364Z"
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 22642,
+    "ingestedAt": "2026-08-02T16:14:59.446Z"
+  },
+  {
+    "id": "wood-basketweave",
+    "name": "Basketweave parquet",
+    "family": "wood",
+    "class": "floors",
+    "surfaceClass": "oiled-hardwood",
+    "coverM": 1.9,
+    "roughness": 0.569313232564138,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/wood-basketweave/albedo.ktx2",
+      "normal": "/materials/floors/wood-basketweave/normal.ktx2",
+      "orm": "/materials/floors/wood-basketweave/orm.ktx2"
+    },
+    "thumb": "/materials/floors/wood-basketweave/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor034",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 2623623,
+    "ingestedAt": "2026-08-02T17:20:31.366Z"
+  },
+  {
+    "id": "wood-grey-weathered",
+    "name": "Weathered grey",
+    "family": "wood",
+    "class": "floors",
+    "surfaceClass": "oiled-hardwood",
+    "coverM": 1.9,
+    "roughness": 0.603673325321481,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/wood-grey-weathered/albedo.ktx2",
+      "normal": "/materials/floors/wood-grey-weathered/normal.ktx2",
+      "orm": "/materials/floors/wood-grey-weathered/orm.ktx2"
+    },
+    "thumb": "/materials/floors/wood-grey-weathered/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor041",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 2838252,
+    "ingestedAt": "2026-08-02T17:22:07.191Z"
+  },
+  {
+    "id": "wood-plank-pale",
+    "name": "Pale wide plank",
+    "family": "wood",
+    "class": "floors",
+    "surfaceClass": "oiled-hardwood",
+    "coverM": 1.9,
+    "roughness": 0.6031776876897182,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/wood-plank-pale/albedo.ktx2",
+      "normal": "/materials/floors/wood-plank-pale/normal.ktx2",
+      "orm": "/materials/floors/wood-plank-pale/orm.ktx2"
+    },
+    "thumb": "/materials/floors/wood-plank-pale/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor039",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 2702695,
+    "ingestedAt": "2026-08-02T17:21:41.499Z"
+  },
+  {
+    "id": "wood-walnut-dark",
+    "name": "Dark walnut",
+    "family": "wood",
+    "class": "floors",
+    "surfaceClass": "lacquered-hardwood",
+    "coverM": 1.3,
+    "roughness": 0.32802802067011433,
+    "metalness": 0,
+    "derivedResolution": {
+      "albedo": 1024,
+      "normal": 2048,
+      "orm": 512
+    },
+    "maps": {
+      "albedo": "/materials/floors/wood-walnut-dark/albedo.ktx2",
+      "normal": "/materials/floors/wood-walnut-dark/normal.ktx2",
+      "orm": "/materials/floors/wood-walnut-dark/orm.ktx2"
+    },
+    "thumb": "/materials/floors/wood-walnut-dark/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://ambientcg.com/view?id=WoodFloor048",
+    "encoder": {
+      "tool": "ktx",
+      "version": "v5.0.0-rc1-36-ge2f94806-dirty",
+      "provenance": "https://github.com/KhronosGroup/KTX-Software.git @ e2f94806",
+      "profiles": {
+        "albedo": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_SRGB",
+            "--assign-tf",
+            "srgb",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "orm": {
+          "codec": "basis-lz",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "basis-lz",
+            "--clevel",
+            "2",
+            "--qlevel",
+            "200",
+            "--generate-mipmap"
+          ]
+        },
+        "normal": {
+          "codec": "uastc",
+          "flags": [
+            "--format",
+            "R8G8B8_UNORM",
+            "--assign-tf",
+            "linear",
+            "--encode",
+            "uastc",
+            "--uastc-quality",
+            "2",
+            "--uastc-rdo",
+            "--uastc-rdo-l",
+            "0.5",
+            "--zstd",
+            "19",
+            "--normal-mode",
+            "--generate-mipmap"
+          ]
+        }
+      }
+    },
+    "transferBytes": 1533963,
+    "ingestedAt": "2026-08-02T17:20:56.160Z"
   }
 ]

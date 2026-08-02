@@ -54,14 +54,35 @@ export interface Violation {
   message: string;
 }
 
+/** material-spec.md §5.1 — ETC1S/BasisLZ and UASTC are not interchangeable,
+ *  so "the flags used" is per map type, not one shared list. `codec` is the
+ *  spec-level decision (§5.1's table); `flags` is the literal `ktx create`
+ *  argument list that realises it — kept together so the two can never drift
+ *  apart silently. */
+export interface EncoderProfile {
+  codec: "basis-lz" | "uastc";
+  flags: string[];
+}
+
 /** Recorded per asset, alongside the manifest entry (M3b's answer to "if the
  *  encoder can't be installed, record the deferral, don't fabricate a pass").
  *  `null` is a real, persisted value — not an omitted field — so §7's
- *  conformance gate has something to fail closed against. */
+ *  conformance gate has something to fail closed against.
+ *
+ *  D2 (M3d) note: upstream KTX-Software dropped the standalone `toktx`
+ *  binary this spec was written against, unifying every CLI tool
+ *  (`toktx`/`ktx2ktx2`/`ktxsc`/...) into one `ktx` executable with
+ *  subcommands (`ktx create`, `ktx encode`, ...) — found while building from
+ *  source, not assumed. `tool` records the binary actually invoked. */
 export type EncoderIdentity = {
   tool: string;
   version: string;
-  flags: string[];
+  /** Build provenance — for a from-source build, `<repo url> @ <commit>`,
+   *  derived from the binary's own `--version` output (which embeds a
+   *  `git describe`), not hardcoded to any one build session. For a
+   *  container build (not yet exercised), this would be the image digest. */
+  provenance: string;
+  profiles: { albedo: EncoderProfile; orm: EncoderProfile; normal: EncoderProfile };
 } | null;
 
 export interface IngestedMaterial {

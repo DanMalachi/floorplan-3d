@@ -14,19 +14,31 @@
  * `<sourceDir>` must contain `asset.json` (see `types.ts`'s `AssetSource`) and
  * the map files it references, as relative paths.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { SURFACE_CLASS_BANDS, deriveResolution, tierDown, tierUp } from "./spec";
 import { detectEncoder } from "./encoder";
-import { fileSize, writeAlbedo, writeNormal, writeOrm, writeThumb, type ChannelInput } from "./pack";
+import {
+  fileSize,
+  writeAlbedo,
+  writeAlbedoKtx2,
+  writeNormal,
+  writeNormalKtx2,
+  writeOrm,
+  writeOrmKtx2,
+  writeThumb,
+  type ChannelInput,
+} from "./pack";
 import { upsertEntry } from "./manifest";
 import {
   validateAlbedo,
   validateDescriptor,
+  validateGpuResidentBudget,
   validateNormal,
   validateRoughnessMetalness,
   validateSourceResolution,
+  validateTransferBudget,
 } from "./validate";
 import { albedoStats, normalMapStats, scalarMapStats } from "./stats";
 import type { AssetSource, IngestedMaterial, Violation } from "./types";
@@ -82,6 +94,16 @@ export async function ingest(sourceDir: string, opts: IngestOptions): Promise<In
   const normalRes = tierUp(albedoRes);
   const ormRes = tierDown(albedoRes);
 
+  // §5.3 — KTX2's budget is checkable pre-pack (a formula over resolution +
+  // codec), unlike WebP's (which depends on real compression output and is
+  // checked post-pack below). Detecting the encoder here, before the
+  // dry-run return, is what lets a dry run predict this violation too.
+  const encoder = detectEncoder();
+  if (encoder) {
+    violations.push(...validateGpuResidentBudget(albedoRes, normalRes, ormRes, encoder.profiles));
+    if (violations.length > 0) return { ok: false, violations };
+  }
+
   if (!opts.write) {
     return {
       ok: true,
@@ -90,16 +112,16 @@ export async function ingest(sourceDir: string, opts: IngestOptions): Promise<In
     };
   }
 
-  const encoder = detectEncoder();
+  // material-spec.md §5.1: KTX2 when a real encoder is present, WebP fallback
+  // (recorded as data via `encoder: null`, not a silent substitution)
+  // otherwise. Picker thumbnails are always WebP — §5.1 names them as UI
+  // images, never sampled by a shader.
+  const ext = encoder ? "ktx2" : "webp";
   const outDir = path.join(opts.publicRoot, "materials", asset.class, asset.id);
-  const ext = "webp"; // KTX2 path not implemented (encoder.ts) — see manifest's `encoder: null`
   const albedoOut = path.join(outDir, `albedo.${ext}`);
   const normalOut = path.join(outDir, `normal.${ext}`);
   const ormOut = path.join(outDir, `orm.${ext}`);
   const thumbOut = path.join(outDir, "thumb.webp");
-
-  await writeAlbedo(albedoPath, albedoOut, albedoRes);
-  await writeNormal(normalPath, normalOut, normalRes);
 
   const aoInput: ChannelInput = asset.maps.ao ? { path: mapPath(asset.maps.ao) } : { scalar: 1 };
   const roughnessInput: ChannelInput = asset.maps.roughness
@@ -108,10 +130,33 @@ export async function ingest(sourceDir: string, opts: IngestOptions): Promise<In
   const metalnessInput: ChannelInput = asset.maps.metalness
     ? { path: mapPath(asset.maps.metalness) }
     : { scalar: asset.metalnessScalar ?? 0 };
-  await writeOrm(aoInput, roughnessInput, metalnessInput, ormOut, ormRes);
+
+  if (encoder) {
+    await writeAlbedoKtx2(albedoPath, albedoOut, albedoRes, encoder.profiles.albedo);
+    await writeNormalKtx2(normalPath, normalOut, normalRes, encoder.profiles.normal);
+    await writeOrmKtx2(aoInput, roughnessInput, metalnessInput, ormOut, ormRes, encoder.profiles.orm);
+  } else {
+    await writeAlbedo(albedoPath, albedoOut, albedoRes);
+    await writeNormal(normalPath, normalOut, normalRes);
+    await writeOrm(aoInput, roughnessInput, metalnessInput, ormOut, ormRes);
+  }
   await writeThumb(albedoPath, thumbOut);
 
   const transferBytes = fileSize(albedoOut) + fileSize(normalOut) + fileSize(ormOut);
+
+  // §5.3 — the WebP-fallback ceiling, checked post-pack (see
+  // `validateTransferBudget`'s doc comment for why this one can't be
+  // pre-pack like the KTX2 check above). Rejecting after writing is the one
+  // exception to "nothing partial is ever written" in this file's own
+  // docstring, so the exception cleans up after itself rather than leaving
+  // orphaned output.
+  if (!encoder) {
+    const budgetViolations = validateTransferBudget(transferBytes);
+    if (budgetViolations.length > 0) {
+      rmSync(outDir, { recursive: true, force: true });
+      return { ok: false, violations: budgetViolations };
+    }
+  }
 
   const publicPath = (p: string) => "/" + path.relative(opts.publicRoot, p).split(path.sep).join("/");
 

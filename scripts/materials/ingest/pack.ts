@@ -1,12 +1,18 @@
 /**
- * Resize-to-derived-density, ORM channel packing, and the WebP fallback
- * encode. The per-map WebP codec choices mirror `scripts/materials/repack.ts`
- * exactly (colour vs. data-channel tradeoffs already measured there); this
- * file doesn't re-derive them, it reuses them.
+ * Resize-to-derived-density, ORM channel packing, and the output encode —
+ * WebP fallback (§5.1's recorded deferral) or real KTX2 (M3d/D2 onward, once
+ * `encoder.ts` finds `ktx` on PATH). The per-map WebP codec choices mirror
+ * `scripts/materials/repack.ts` exactly (colour vs. data-channel tradeoffs
+ * already measured there); this file doesn't re-derive them, it reuses them.
+ * The KTX2 codec choices come from `encoder.ts`'s `EncoderProfile`s, which
+ * carry material-spec.md §5.1's decision as literal `ktx create` flags.
  */
-import { mkdirSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
+import type { EncoderProfile } from "./types";
 
 /** Colour map (albedo): lossy WebP is fine, nobody views it as raw data. */
 export async function writeAlbedo(srcPath: string, dstPath: string, resolution: number): Promise<void> {
@@ -44,14 +50,7 @@ async function channelBuffer(input: ChannelInput, resolution: number): Promise<B
   return sharp(input.path).resize(resolution, resolution, { fit: "fill" }).greyscale().raw().toBuffer();
 }
 
-export async function writeOrm(
-  ao: ChannelInput,
-  roughness: ChannelInput,
-  metalness: ChannelInput,
-  dstPath: string,
-  resolution: number,
-): Promise<void> {
-  mkdirSync(path.dirname(dstPath), { recursive: true });
+async function ormBuffer(ao: ChannelInput, roughness: ChannelInput, metalness: ChannelInput, resolution: number): Promise<Buffer> {
   const [r, g, b] = await Promise.all([
     channelBuffer(ao, resolution),
     channelBuffer(roughness, resolution),
@@ -64,6 +63,18 @@ export async function writeOrm(
     rgb[i * 3 + 1] = g[i];
     rgb[i * 3 + 2] = b[i];
   }
+  return rgb;
+}
+
+export async function writeOrm(
+  ao: ChannelInput,
+  roughness: ChannelInput,
+  metalness: ChannelInput,
+  dstPath: string,
+  resolution: number,
+): Promise<void> {
+  mkdirSync(path.dirname(dstPath), { recursive: true });
+  const rgb = await ormBuffer(ao, roughness, metalness, resolution);
   await sharp(rgb, { raw: { width: resolution, height: resolution, channels: 3 } })
     .webp({ quality: 84, effort: 5 })
     .toFile(dstPath);
@@ -76,4 +87,46 @@ export async function writeThumb(srcPath: string, dstPath: string, size = 128): 
 
 export function fileSize(p: string): number {
   return statSync(p).size;
+}
+
+/**
+ * Resize to the derived resolution (identical resampling to the WebP path —
+ * only the final compression differs) into a lossless PNG intermediate, then
+ * hand it to `ktx create` with the map's `EncoderProfile`. The intermediate
+ * is a scratch temp file, deleted immediately after — it never ships and
+ * never appears in the manifest.
+ */
+async function encodeKtx2(pngBuffer: Buffer, dstPath: string, profile: EncoderProfile): Promise<void> {
+  mkdirSync(path.dirname(dstPath), { recursive: true });
+  const scratch = mkdtempSync(path.join(tmpdir(), "ktx2-encode-"));
+  const tmpPng = path.join(scratch, "src.png");
+  try {
+    writeFileSync(tmpPng, pngBuffer);
+    execFileSync("ktx", ["create", ...profile.flags, tmpPng, dstPath], { stdio: ["ignore", "pipe", "pipe"] });
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+export async function writeAlbedoKtx2(srcPath: string, dstPath: string, resolution: number, profile: EncoderProfile): Promise<void> {
+  const png = await sharp(srcPath).resize(resolution, resolution, { fit: "fill" }).png().toBuffer();
+  await encodeKtx2(png, dstPath, profile);
+}
+
+export async function writeNormalKtx2(srcPath: string, dstPath: string, resolution: number, profile: EncoderProfile): Promise<void> {
+  const png = await sharp(srcPath).resize(resolution, resolution, { fit: "fill" }).png().toBuffer();
+  await encodeKtx2(png, dstPath, profile);
+}
+
+export async function writeOrmKtx2(
+  ao: ChannelInput,
+  roughness: ChannelInput,
+  metalness: ChannelInput,
+  dstPath: string,
+  resolution: number,
+  profile: EncoderProfile,
+): Promise<void> {
+  const rgb = await ormBuffer(ao, roughness, metalness, resolution);
+  const png = await sharp(rgb, { raw: { width: resolution, height: resolution, channels: 3 } }).png().toBuffer();
+  await encodeKtx2(png, dstPath, profile);
 }

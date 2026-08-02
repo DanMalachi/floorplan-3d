@@ -68,9 +68,31 @@ export const SURFACE_CLASS_BANDS: Record<SurfaceClass, SurfaceClassBand> = {
  *  pass through this range at a handful of texels, not on average. */
 export const METALNESS_MID_BAND: [number, number] = [0.1, 0.9];
 
-/** §1.1 — plausible linear-reflectance band for DIELECTRICS. Nothing in a home
- *  is darker than charcoal or brighter than fresh snow. */
-export const ALBEDO_BAND: [number, number] = [0.03, 0.9];
+/**
+ * §1.1 — plausible linear-reflectance band for DIELECTRICS.
+ *
+ * Floor widened at M3d/D3, 2026-08-02 (Dan's ruling, asymmetric — not a
+ * symmetric loosening): 0.03 → 0.015. Two real shipped floor materials
+ * measure below the old floor — `tile-black-gloss` 0.023, `wood-walnut-dark`
+ * 0.022 — and both are legitimate: a black gloss surface's *diffuse* lobe is
+ * genuinely near-zero, because its appearance comes from the specular
+ * response, not the diffuse one. The old 0.03 floor was mid-tone intuition,
+ * same shape as the conductor-band bug, never re-derived against a real
+ * near-black asset. 0.015 stays above zero deliberately: an exact 0.0 is
+ * physically impossible and still indicates an authoring error, so the check
+ * keeps something to catch.
+ *
+ * Ceiling investigated, NOT widened: a third asset (`tile-white-large`, mean
+ * 0.942) also failed, but its histogram shows a hard pileup — 87% of pixels
+ * crammed into a 0.95-0.98 window — against a control asset
+ * (`tile-hex-white`, itself near the ceiling at points) showing a smooth
+ * 2-6%-per-bucket spread across the same range. That shape, plus a mean 25%
+ * above this document's own "white tile 0.75" reference, reads as a blown
+ * highlight / exposure defect in the source asset, not a legitimately bright
+ * material — widening the ceiling to fit it would delete the exact catch
+ * §1.1 exists for. `tile-white-large` needs re-sourcing, not a wider band.
+ */
+export const ALBEDO_BAND: [number, number] = [0.015, 0.9];
 
 /** §1.1 — CONDUCTORS (metalness 1) use a separate, higher band: albedo means
  *  F0 reflectance for a metal, not diffuse reflectance, and real metals run
@@ -86,6 +108,51 @@ export const ALBEDO_BAND_METAL: [number, number] = [0.5, 0.98];
 export const ALBEDO_DARK_CLIP = 0.02;
 export const ALBEDO_LIGHT_CLIP = 0.98;
 export const ALBEDO_CLIP_FRACTION_LIMIT = 0.08;
+
+/** §1.1b (M3d audit) — the clip-fraction check above cannot tell a legitimately
+ *  dark/bright material (uniform near-black gloss, a checker or grout pattern)
+ *  from a baked-light gradient; both can put >8% of pixels past the clip
+ *  threshold. Gate the fraction check on a gradient test: only a fraction
+ *  breach that is ALSO spatially correlated with position (a smooth
+ *  edge/corner falloff, the actual shape of a bake) is rejected.
+ *
+ *  `GRADIENT_GRID_SIZE` — side length of the block grid `stats.ts` reduces the
+ *  image to before fitting a plane. 8x8 is coarse enough to average out
+ *  texture-scale noise (fibres, grout lines, mineral speckle) while still
+ *  resolving a corner-to-corner or edge falloff, which is the spatial scale a
+ *  bake actually operates at.
+ *
+ *  `GRADIENT_R2_THRESHOLD` — measured against real data at M3d, not designed in
+ *  ahead of time. `fixtures.ts`'s synthetic baked-shadow fixture (a sharp dark
+ *  band across 20% of the image) scores R²=0.57. Every real floor material
+ *  that failed the raw fraction check scores far lower: `tile-checker-marble`
+ *  0.0002, `wood-walnut-dark` 0.014, `carpet-navy` 0.043, `tile-black-gloss`
+ *  0.126 (also independently excluded by the variance gate below). 0.3 sits
+ *  above all four with a ≥2.4x margin and below the fixture with a ~1.9x
+ *  margin. Also checked against synthetic radial vignettes at several
+ *  strengths, because a linear-plane fit is a poor model for a *radial*
+ *  falloff and gets worse as one saturates: a moderate vignette (36-58% of
+ *  pixels clipped) scores R² 0.61-0.73, comfortably caught; a severe,
+ *  saturating one (73%+ clipped, mostly flat black with a small bright
+ *  corner) drops to R² 0.27-0.47 and can slip under even this lower
+ *  threshold. Recorded as a real, known limitation rather than hidden by a
+ *  threshold that would also reject `tile-black-gloss`: the check is
+ *  calibrated for §1.1's own stated threat model — "an 8% bake is 20% of the
+ *  defect and it is not detectable by eye at review time" — i.e. subtle
+ *  bakes, not a near-total black-out, which would be visually obvious in
+ *  review regardless of any histogram check.
+ *
+ *  `GRADIENT_MIN_BLOCK_VARIANCE` — below this, the block grid is close enough
+ *  to flat that a plane fit's R² is numerically meaningless (near-zero
+ *  variance to explain either way); treat as uniform and skip the gradient
+ *  gate rather than divide by ~0. Measured `tile-black-gloss` at 6.9×10⁻⁷
+ *  linear-luma² (a near-uniform near-black tile); this constant sits well
+ *  above it as a floor, not at it, since a genuine uniform material is
+ *  expected to be near the noise floor, not just below this one asset's
+ *  reading. */
+export const GRADIENT_GRID_SIZE = 8;
+export const GRADIENT_R2_THRESHOLD = 0.3;
+export const GRADIENT_MIN_BLOCK_VARIANCE = 1e-5;
 
 /** §3.1 — texel density target and the derivation formula, implemented
  *  exactly as written: `clampPow2(ceilPow2(coverM * 512), 256, 2048)`. */
@@ -124,12 +191,61 @@ export const MIN_SOURCE_RESOLUTION_RATIO = 0.5;
  *  convention `data/materials-floors.manifest.json` already uses. */
 export const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)+$/;
 
-/** §5.3 — hard ceilings, enforced only once an asset is actually KTX2-encoded
- *  (see `encoder.ts`). An unencoded WebP fallback is measured but not gated
- *  against this table, because §5.1 is explicit that WebP's problem is GPU
- *  memory, not transfer size, and a byte comparison against a table sized for
- *  KTX2 would be comparing the wrong axis. */
+/**
+ * §5.3 — hard ceilings. Corrected at M3d/D3: the comment this constant used
+ * to carry had the axis backwards. It said the transfer ceiling was "sized
+ * for KTX2" and WebP shouldn't be held to it. §5.3's own rationale says the
+ * opposite — this number was "set just above what the compliant part of the
+ * current catalog already achieves," and that catalog was the WebP one
+ * (369 KB average, measured). Confirmed by actually encoding real assets at
+ * D3: every KTX2 normal map at §4's tiered-up resolution exceeds this by
+ * 3-4x, universally, not as an outlier — `ceiling-plaster-white` measured
+ * 4.72 MB against this 1.0 MB ceiling. Tuning (max quality, max RDO, max
+ * zstd) does not close the gap; UASTC is a ~8-bit/texel format regardless of
+ * quality settings, and §5.1 already says outright that "WebP is smaller on
+ * the wire than KTX2 will be... the reason to switch is GPU memory, not
+ * download size." Holding KTX2 output to a WebP-calibrated transfer number
+ * was checking the wrong axis for the wrong format.
+ *
+ * So: this constant gates the **WebP fallback path only** (`encoder ===
+ * null`) — the case it was actually measured against.
+ * `BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES` below gates KTX2 output instead,
+ * which is the metric §5.1 was chosen to optimize in the first place.
+ */
 export const BUDGET_ARCHITECTURE_TRANSFER_BYTES = 1_000_000;
+
+/**
+ * §5.3's existing GPU-resident ceiling, now actually enforced. Unlike the
+ * transfer number, this one was never measured against real encoded output
+ * before D3 either — filled in here with the same rigor.
+ *
+ * `estimateGpuResidentBytes` is an ESTIMATE, not a measurement: it uses each
+ * codec's typical transcode bit-rate (BasisLZ/ETC1S transcodes to a
+ * fixed-rate format — ETC1/BC1 — around 4 bits/texel; UASTC transcodes to a
+ * higher-fidelity target — BC7/ASTC 4x4 — around 8 bits/texel), not a real
+ * "load in a browser and read GPU memory" harness, which does not exist yet.
+ * Computed for the worst real case in the catalog (`ceiling-plaster-white`,
+ * normal at 2048² UASTC): ≈6.47 MB against this 8 MB ceiling — inside it,
+ * with real but not enormous margin. If a browser-measured harness is ever
+ * built and disagrees with this estimate by more than that margin, this
+ * constant is what gets revisited, not the estimate silently trusted forever.
+ */
+export const BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES = 8_000_000;
+
+const MIP_OVERHEAD_FACTOR = 4 / 3; // full mip chain adds ~1/3 more texels than the base level alone
+
+/** Bits per texel a codec's typical transcode target costs in VRAM — see
+ *  `BUDGET_ARCHITECTURE_GPU_RESIDENT_BYTES`'s doc comment for the codecs
+ *  behind these numbers. Not a real per-GPU measurement; a stated estimate. */
+const GPU_RESIDENT_BITS_PER_TEXEL: Record<"basis-lz" | "uastc", number> = {
+  "basis-lz": 4,
+  uastc: 8,
+};
+
+export function estimateGpuResidentBytes(resolution: number, codec: "basis-lz" | "uastc"): number {
+  const baseBytes = (resolution * resolution * GPU_RESIDENT_BITS_PER_TEXEL[codec]) / 8;
+  return Math.round(baseBytes * MIP_OVERHEAD_FACTOR);
+}
 
 /** §6 — output path convention. */
 export function outputDir(publicRoot: string, cls: RenderClass, id: string): string {
