@@ -18,7 +18,7 @@ import {
   DEFAULT_WINDOW,
 } from "@/schema/constants";
 import type { OpeningType, FixtureItem } from "@/schema/scene";
-import { DEFAULT_FIXTURE_COLOR_K, DEFAULT_FIXTURE_LUX } from "@/render/lightPresets";
+import { DEFAULT_FIXTURE_COLOR_K, DEFAULT_FIXTURE_LUX, FIXTURE_LUX_MAX, FIXTURE_LUX_MIN } from "@/render/lightPresets";
 import { CATALOG_BY_ID, ROOMS } from "@/furniture/catalog";
 import { FIXTURE_CATALOG_BY_ID } from "@/fixtures/catalog";
 import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
@@ -555,8 +555,8 @@ function MiniInspector() {
           <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <input
               type="range"
-              min={200}
-              max={20000}
+              min={FIXTURE_LUX_MIN}
+              max={FIXTURE_LUX_MAX}
               step={200}
               value={lux}
               onChange={(e) => patch("Fixture strength", { targetLux: Number(e.target.value) })}

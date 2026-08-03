@@ -42,6 +42,8 @@ const edited = scene({
   stairs: [
     { id: "st0", flights: [{ x0: 0, y0: 0, x1: 3, y1: 0 }], width: 0.9, rise: 2.4, style: "open" },
   ],
+  // (3,1) sits inside room0's triangle (0,0)-(4,0)-(4,3).
+  fixtures: [{ id: "fx0", assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x: 3, y: 1 } }],
 });
 
 // 1. A regenerate that changed only trace-owned values.
@@ -67,6 +69,7 @@ const edited = scene({
   ok(out.furniture.length === 1, "3D wins: furniture is not wiped");
   ok(out.stairs?.[0].style === "open", "3D wins: stair style survives");
   ok(out.stairs?.[0].steps === 12 && out.stairs?.[0].width === 1.1, "trace wins: stair steps/width");
+  ok((out.fixtures ?? []).length === 1, "3D wins: fixture survives an in-place trace correction");
 }
 
 // 2. Rooms renumber when the wall graph changes; the floor follows the LOOP.
@@ -80,6 +83,34 @@ const edited = scene({
   const out = preserveSceneEdits(edited, regenerated);
   ok(out.rooms[0].floor === undefined, "a genuinely new room keeps the default floor");
   ok(out.rooms[1].floor === "tile-hex-white", "the same floor keeps its material after renumbering");
+  ok((out.fixtures ?? []).length === 1, "the fixture survives room renumbering (same triangle, new room id)");
+}
+
+// 2b. A from-scratch retrace with geometry unrelated to anything before it
+// (a brand new plan, or a totally different house traced over an old one):
+// the old fixture can't possibly land inside any new room, and the bug this
+// guards is that `fixtures` used to still come back as `[]` (defined), which
+// silently blocked `seedRoomFixtures` from ever giving the new rooms lights.
+{
+  const unrelated = scene({
+    nodes: [
+      { id: "z0", x: 100, y: 100 },
+      { id: "z1", x: 106, y: 100 },
+      { id: "z2", x: 106, y: 106 },
+      { id: "z3", x: 100, y: 106 },
+    ],
+    walls: [
+      { id: "zw0", a: "z0", b: "z1", thickness: 0.1 },
+      { id: "zw1", a: "z1", b: "z2", thickness: 0.1 },
+      { id: "zw2", a: "z2", b: "z3", thickness: 0.1 },
+      { id: "zw3", a: "z3", b: "z0", thickness: 0.1 },
+    ],
+    openings: [],
+    rooms: [{ id: "roomZ", loop: ["z0", "z1", "z2", "z3"] }],
+  });
+  const out = preserveSceneEdits(edited, unrelated);
+  ok(out.fixtures === undefined,
+    "an unrelated retrace leaves fixtures undefined (not []), so the new rooms get seeded, not left dark");
 }
 
 // 3. Things that no longer exist, or changed identity, don't come back.

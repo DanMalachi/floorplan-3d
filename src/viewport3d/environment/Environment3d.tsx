@@ -7,6 +7,7 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { SHADOW } from "@/render/contract";
 import {
   CAMERA_PRESETS,
+  OUTDOOR_SHADOW_FILL_BOOST,
   STUDIO,
   computeSkyLighting,
   envIntensityForSky,
@@ -78,11 +79,17 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
             distance={45000}
           />
           {weather === "rain" && <Rain span={span} />}
-          {/* Diffuse sky, lux. */}
+          {/* Diffuse sky, lux. OUTDOOR_SHADOW_FILL_BOOST compensates for this
+              renderer having no real ground-bounce/GI — see its own doc
+              comment (lightPresets.ts): a shadow-side wall gets ONLY this
+              light, so at the physically-measured split alone it read much
+              darker than a real bounce-lit wall would (Dan's ruling). */}
           <hemisphereLight
             color={s.hemiSky}
             groundColor={s.hemiGround}
-            intensity={toRenderIntensity(hemisphereLuxForSky(s.skyLux, "outdoor") * cam.skyScale)}
+            intensity={toRenderIntensity(
+              hemisphereLuxForSky(s.skyLux, "outdoor") * cam.skyScale * OUTDOOR_SHADOW_FILL_BOOST,
+            )}
           />
           {/* Direct sun, lux. */}
           <directionalLight

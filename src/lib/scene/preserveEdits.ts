@@ -14,6 +14,8 @@
 // numbered this time.
 
 import type { Opening, Room, Scene, Stair, Wall } from "@/schema/scene";
+import { eligibleLitRooms, resolveFixtureWorldXY } from "@/render/roomLighting";
+import { pointInPolygon } from "@/lib/rooms/roomArea";
 
 /** A room's identity that survives renumbering: the node set of its loop. */
 const loopKey = (room: Room) => [...room.loop].sort().join("|");
@@ -85,9 +87,29 @@ export function preserveSceneEdits(prev: Scene | null | undefined, next: Scene):
     // way a plan correction doesn't clear the room.
     furniture: next.furniture.length > 0 ? next.furniture : prev.furniture,
     ...(nextStairs.length > 0 ? { stairs } : {}),
-    // Fixtures: same story as furniture — the trace has no lighting concept at
-    // all, so a regenerate's `next.fixtures` is always empty (or undefined, for
-    // a scene that's never been through the seeder). Carry `prev`'s forward.
-    fixtures: (next.fixtures?.length ?? 0) > 0 ? next.fixtures! : (prev.fixtures ?? []),
+    // Fixtures: the trace has no lighting concept at all, same as furniture —
+    // but UNLIKE furniture, a fixture that doesn't land inside any of the
+    // regenerated rooms isn't just cosmetically stale, it's actively harmful:
+    // `seedRoomFixtures` only seeds when `fixtures` is undefined, so blindly
+    // carrying `prev.fixtures` forward (as furniture does) left a from-scratch
+    // retrace — a brand new plan, or a totally different house re-traced over
+    // an old one — with a defined-but-geometrically-irrelevant fixtures array
+    // and therefore NO seeding and NO lights at all. Only fixtures that still
+    // resolve inside one of `next`'s own eligible rooms survive; if none do
+    // (nothing to carry, or this is unrelated geometry), `fixtures` is left
+    // OFF the result entirely (not set to `[]`) so it reads as undefined and
+    // `setScene`'s seedRoomFixtures treats this exactly like a first-ever
+    // generate. Narrow accepted tradeoff: a plan where every fixture was
+    // deliberately cleared, then given a small in-place trace correction,
+    // gets reseeded rather than staying dark — better than the alternative of
+    // a regenerated house silently getting no lights at all.
+    ...((): { fixtures?: Scene["fixtures"] } => {
+      const nextRooms = eligibleLitRooms(next);
+      const surviving = (prev.fixtures ?? []).filter((f) => {
+        const world = resolveFixtureWorldXY(f, next);
+        return world != null && nextRooms.some((er) => pointInPolygon(world.x, world.y, er.loop));
+      });
+      return surviving.length > 0 ? { fixtures: surviving } : {};
+    })(),
   };
 }

@@ -167,10 +167,31 @@ export function computeSkyLighting(t: number, overcast: number): SkyLighting {
  * Studio ("none") preset. Not a sky — a lighting instrument set, so its values
  * are stated as the illuminance a photographer's key and fill would actually
  * produce rather than derived from an hour of the day.
+ *
+ * `fillLux`: 6,000 -> 20,000 -> 80,000, in two passes (Dan: first "completely
+ * dark, needs a light source", then after the first bump, still "super dark
+ * — bump that up A LOT"). `fillLux` drives the `hemisphereLight` in
+ * `Environment3d.tsx` — the one light in this rig with no shadow/occlusion
+ * at all, so it's the only thing guaranteed to reach an enclosed interior
+ * regardless of windows or fixtures; the first bump (3x) still wasn't
+ * enough on screen, so the second pass went much further — 80,000 sits
+ * close to `REFERENCE_SUN_LUX` (100,000) itself, deliberately: Studio isn't
+ * trying to look like a physically modest fill anymore, it's meant to read
+ * as generously, evenly lit no matter what's in the scene. `keyLux`
+ * 20,000 -> 40,000 -> 100,000 alongside it for the exterior/facade look —
+ * its practical effect indoors stays smaller (a directional light, blocked
+ * by walls like the sun).
+ *
+ * Caveat, not a full re-verification: `/calibration`'s "none" baseline cells
+ * (`docs/render-contract.md`, M1c appendix) use these same constants and are
+ * now stale — the appendix already states that whole 9-cell set is
+ * "PROVISIONAL... NOT frozen" (unlike the M2 lighting formula), so this
+ * isn't reopening a frozen clause, but a recapture is still owed next time
+ * someone does a calibration pass.
  */
 export const STUDIO = {
-  keyLux: 20_000,
-  fillLux: 6_000,
+  keyLux: 100_000,
+  fillLux: 80_000,
   keyColor: "#fff1dd",
   fillSky: "#dfe9ff",
   fillGround: "#4a4438",
@@ -212,6 +233,20 @@ export const DEFAULT_FIXTURE_LUX = 3000;
  *  rather than fixed (`ROOM_FIXTURE_COLOR` above is the M2-era fixed value;
  *  `kelvinToColor` below supersedes it for anything going through a fixture). */
 export const DEFAULT_FIXTURE_COLOR_K = 2700;
+
+/** Strength slider bounds (Viewport.tsx's MiniInspector) — named so
+ *  `seedRoomFixtures.ts` can seed a generated fixture at exactly "the max
+ *  the slider allows" without a second, driftable copy of that number. */
+export const FIXTURE_LUX_MIN = 200;
+export const FIXTURE_LUX_MAX = 20_000;
+
+/** What `seedRoomFixtures` gives every generated room: peak brightness
+ *  (`FIXTURE_LUX_MAX`) at a neutral-white 4000K, per Dan's explicit ruling —
+ *  deliberately NOT `DEFAULT_FIXTURE_LUX`/`DEFAULT_FIXTURE_COLOR_K` (a
+ *  fixture a user drags in from the catalog by hand still starts at the
+ *  cozier, dimmer general default; only a freshly generated room starts
+ *  maxed). */
+export const GENERATED_FIXTURE_COLOR_K = 4000;
 
 /**
  * Kelvin -> sRGB hex, the standard Tanner Helland black-body approximation
@@ -351,3 +386,21 @@ export function envIntensityForSky(skyTotalLux: number, keyBaseIntensity: number
 export function hemisphereLuxForSky(skyTotalLux: number, mode: "outdoor" | "studio"): number {
   return skyTotalLux * (1 - IBL_RIG_GAIN[mode] / Math.PI);
 }
+
+/**
+ * Ground-bounce compensation, outdoor hemisphere light only. This renderer
+ * has no real bounce/GI: a wall angled away from the sun gets ONLY this
+ * hemisphere contribution (the sun's direct light and the measured IBL rig,
+ * §7.2.4, never reach it), so at the physically-measured dome-partition
+ * split alone a shadow-side wall reads far darker than reality — where light
+ * bounces off the ground and everything around it back onto it. Dan's
+ * ruling, after a screenshot: the sun "fills the whole environment and
+ * reflects off the ground", so a wall not facing it directly should still
+ * read "quite bright", not deep-shadowed. A blunt multiplier on the
+ * hemisphere light's own intensity, applied at its call site
+ * (`Environment3d.tsx`) alongside `cam.skyScale` — deliberately NOT touching
+ * `IBL_RIG_GAIN`/`envIntensityForSky` (the measured, audited reflections
+ * math), so this brightens diffuse wall/floor shading only, not material
+ * reflections.
+ */
+export const OUTDOOR_SHADOW_FILL_BOOST = 4;

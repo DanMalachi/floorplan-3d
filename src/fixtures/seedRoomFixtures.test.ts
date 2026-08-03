@@ -1,6 +1,8 @@
 // Headless: default ceiling-fixture seeding. Run: npx tsx src/fixtures/seedRoomFixtures.test.ts
 
 import type { Node, Room, Scene, Wall } from "@/schema/scene";
+import { pointInPolygon } from "@/lib/rooms/roomArea";
+import { FIXTURE_LUX_MAX, GENERATED_FIXTURE_COLOR_K } from "@/render/lightPresets";
 import { seedRoomFixtures } from "./seedRoomFixtures";
 import { DEFAULT_FIXTURE_ASSET_ID } from "./catalog";
 
@@ -59,12 +61,16 @@ console.log("\nseedRoomFixtures");
 
   check("only the two eligible rooms get seeded (2 fixtures total)", (seeded.fixtures ?? []).length === 2,
     `got ${(seeded.fixtures ?? []).length}`);
-  check("room A got a default fixture", byRoom.has("fx-seed-A"));
-  check("room B got a default fixture", byRoom.has("fx-seed-B"));
+  check("room A got a default fixture", byRoom.has("fx-seed-A-0"));
+  check("room B got a default fixture", byRoom.has("fx-seed-B-0"));
   check("the rail-bounded/sliver/authored-open rooms got nothing",
-    !byRoom.has("fx-seed-balcony") && !byRoom.has("fx-seed-sliver") && !byRoom.has("fx-seed-authoredOpen"));
+    !byRoom.has("fx-seed-balcony-0") && !byRoom.has("fx-seed-sliver-0") && !byRoom.has("fx-seed-authoredOpen-0"));
   check("every seeded fixture uses the default asset",
     [...byRoom.values()].every((f) => f.assetId === DEFAULT_FIXTURE_ASSET_ID));
+  check("generated fixtures start at peak brightness (Dan's ruling)",
+    [...byRoom.values()].every((f) => f.targetLux === FIXTURE_LUX_MAX));
+  check("generated fixtures start at 4000K, not the general hand-placed default",
+    [...byRoom.values()].every((f) => f.colorK === GENERATED_FIXTURE_COLOR_K));
 
   const second = seedRoomFixtures(seeded);
   check("calling it again on an already-seeded scene is a no-op (same array reference)",
@@ -76,6 +82,44 @@ console.log("\nseedRoomFixtures");
   check("a scene a user has explicitly cleared to [] is NEVER reseeded",
     (reseeded.fixtures ?? []).length === 0, `got ${(reseeded.fixtures ?? []).length}`);
   check("clearing returns the same (unmodified) scene, not a new object", reseeded === cleared);
+}
+
+console.log("\nlarge rooms get more than one lamp");
+{
+  // A 10x8 = 80 m2 open-plan room — twice LARGE_ROOM_SPLIT_M2 (40), so
+  // round(80/40)=2 fixtures expected, spread along the longer (10m) axis
+  // rather than stacked at the same pole point.
+  const bigNodes: Node[] = [n("g0", 0, 0), n("g1", 10, 0), n("g2", 10, 8), n("g3", 0, 8)];
+  const bigWalls: Wall[] = [
+    wall("wg0", "g0", "g1"), wall("wg1", "g1", "g2"), wall("wg2", "g2", "g3"), wall("wg3", "g3", "g0"),
+  ];
+  const bigRoom: Room = { id: "G", loop: ["g0", "g1", "g2", "g3"] };
+  const bigScene: Scene = {
+    schemaVersion: 2, units: "meters", nodes: bigNodes, walls: bigWalls, openings: [], rooms: [bigRoom], furniture: [],
+  };
+  const seededBig = seedRoomFixtures(bigScene).fixtures ?? [];
+  check("an 80 m2 room gets 2 fixtures, not 1", seededBig.length === 2, `got ${seededBig.length}`);
+  check("both are unique positions, not stacked on the same point",
+    seededBig.length === 2 &&
+      seededBig[0].mount.kind === "ceiling" &&
+      seededBig[1].mount.kind === "ceiling" &&
+      Math.hypot(seededBig[0].mount.x - seededBig[1].mount.x, seededBig[0].mount.y - seededBig[1].mount.y) > 1,
+  );
+  check("both land inside the room polygon",
+    seededBig.every((f) => f.mount.kind === "ceiling" && pointInPolygon(f.mount.x, f.mount.y, [
+      { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 8 }, { x: 0, y: 8 },
+    ])));
+
+  // A normal 16 m2 room (well under the 40 m2 split threshold) still gets
+  // exactly one, at the pole — regression guard against over-splitting.
+  const normalScene: Scene = {
+    schemaVersion: 2, units: "meters",
+    nodes: [n("h0", 0, 0), n("h1", 4, 0), n("h2", 4, 4), n("h3", 0, 4)],
+    walls: [wall("wh0", "h0", "h1"), wall("wh1", "h1", "h2"), wall("wh2", "h2", "h3"), wall("wh3", "h3", "h0")],
+    openings: [], rooms: [{ id: "H", loop: ["h0", "h1", "h2", "h3"] }], furniture: [],
+  };
+  check("a normal-sized room still gets exactly one lamp",
+    (seedRoomFixtures(normalScene).fixtures ?? []).length === 1);
 }
 
 console.log(failures === 0 ? "\nall seedRoomFixtures checks passed\n" : `\n${failures} FAILED\n`);
