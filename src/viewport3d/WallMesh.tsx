@@ -99,6 +99,35 @@ interface DragState {
   base: Scene;
 }
 
+/**
+ * Do two openings agree on everything `buildWallSegments`/
+ * `buildOpeningVolumes`/`buildBaseboards` actually read? Deliberately
+ * excludes `swingDeg`/`slide.open` — a door leaf's live swing angle, which
+ * only the leaf itself (`OpeningPick`, below, via its own `opening` prop)
+ * needs every frame. The wall BODY's gap/volume/baseboard cuts are purely
+ * position/dimension driven and never look at swing state.
+ */
+function wallBodyGeomEqual(a: Opening, b: Opening): boolean {
+  if (a === b) return true;
+  return (
+    a.id === b.id &&
+    a.type === b.type &&
+    a.wallId === b.wallId &&
+    a.offset === b.offset &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.sill === b.sill &&
+    a.hinge === b.hinge &&
+    a.lining === b.lining &&
+    a.mullions?.cols === b.mullions?.cols &&
+    a.mullions?.rows === b.mullions?.rows &&
+    a.slide?.style === b.slide?.style &&
+    a.slide?.panels === b.slide?.panels &&
+    a.slide?.glazed === b.slide?.glazed &&
+    a.slide?.side === b.slide?.side
+  );
+}
+
 function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   wall: Wall;
   a: Node;
@@ -116,6 +145,24 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<DragState | null>(null);
 
+  // A walkthrough door swinging open re-writes its Opening every animation
+  // frame (WalkthroughMode.tsx), so `ops` itself changes reference ~60x/sec
+  // while it's mid-swing. The wall BODY (gap cuts, sill/lintel volumes,
+  // baseboard band) never depends on swing state at all — only the leaf
+  // does (OpeningPick, via its own `opening` prop below, still fed the live
+  // `ops`) — so stabilize the array the body geometry actually memoizes on,
+  // reusing the previous reference whenever nothing geometry-relevant
+  // changed. Without this, every wall a door swings on rebuilt its entire
+  // real BufferGeometry every frame for the ~1-2s of the animation.
+  const geomOpsCache = useRef<Opening[]>([]);
+  const geomOps = useMemo(() => {
+    const prev = geomOpsCache.current;
+    const same = prev.length === ops.length && prev.every((o, i) => wallBodyGeomEqual(o, ops[i]));
+    const next = same ? prev : ops;
+    geomOpsCache.current = next;
+    return next;
+  }, [ops]);
+
   const { pieces, volumes, baseboards, mid, len, normal, frame } = useMemo(() => {
     const nodes = new Map<string, Node>([[a.id, a], [b.id, b]]);
     // Sims top-down view: walls drop to knee-high stubs.
@@ -126,9 +173,9 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
     const ux = dx / L;
     const uy = dy / L;
     return {
-      pieces: buildWallSegments(eff, ops, nodes, ends),
-      volumes: buildOpeningVolumes(eff, ops, nodes),
-      baseboards: buildBaseboards(wall, ops, nodes, bbEnds),
+      pieces: buildWallSegments(eff, geomOps, nodes, ends),
+      volumes: buildOpeningVolumes(eff, geomOps, nodes),
+      baseboards: buildBaseboards(wall, geomOps, nodes, bbEnds),
       mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       len: Math.hypot(dx, dy),
       normal: { x: -uy, y: ux },
@@ -140,7 +187,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
         rotationY: -Math.atan2(uy, ux),
       } satisfies WallFrame,
     };
-  }, [wall, ops, a, b, wallMode, ends, bbEnds]);
+  }, [wall, geomOps, a, b, wallMode, ends, bbEnds]);
 
   // Real meshes for the jointed bodies. Unlike <boxGeometry> these are ours to
   // free, so they're disposed whenever the wall reshapes.
