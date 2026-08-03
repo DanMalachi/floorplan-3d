@@ -62,18 +62,19 @@ export function RoomLights({ scene }: { scene: Scene }) {
     <group>
       {lights.map((l, i) => (
         <pointLight
-          key={l.roomId}
+          key={l.id}
           ref={(el) => { refs.current[i] = el; }}
           position={l.position}
           color={l.color}
           intensity={l.intensity}
-          decay={2}
+          decay={ROOM_LIGHT.decay}
           distance={0}
           shadow-mapSize={[ROOM_LIGHT.shadow.mapSize, ROOM_LIGHT.shadow.mapSize]}
           shadow-camera-near={0.1}
           shadow-camera-far={ROOM_LIGHT.shadow.farM}
           shadow-bias={SHADOW.bias}
           shadow-normalBias={SHADOW.normalBias}
+          shadow-radius={ROOM_LIGHT.shadow.radius}
         />
       ))}
     </group>

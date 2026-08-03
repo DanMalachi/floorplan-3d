@@ -85,5 +85,9 @@ export function preserveSceneEdits(prev: Scene | null | undefined, next: Scene):
     // way a plan correction doesn't clear the room.
     furniture: next.furniture.length > 0 ? next.furniture : prev.furniture,
     ...(nextStairs.length > 0 ? { stairs } : {}),
+    // Fixtures: same story as furniture — the trace has no lighting concept at
+    // all, so a regenerate's `next.fixtures` is always empty (or undefined, for
+    // a scene that's never been through the seeder). Carry `prev`'s forward.
+    fixtures: (next.fixtures?.length ?? 0) > 0 ? next.fixtures! : (prev.fixtures ?? []),
   };
 }

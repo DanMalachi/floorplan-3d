@@ -184,6 +184,56 @@ export const STUDIO = {
  */
 export const ROOM_FIXTURE_COLOR = "#ffddb0";
 
+/**
+ * Interactive per-fixture defaults (placement UI, post-M2). `ROOM_LIGHT.
+ * targetLux` (contract.ts, 300 lx) stays FROZEN as the physically-derived M2
+ * reference — this is a deliberate, separate departure for user-placed
+ * fixtures, ruled on by Dan after seeing a seeded scene on screen: the single
+ * global sun-calibrated exposure (§2.2) reads a correctly-physical single-
+ * fixture room as very dark (§10's own documented, previously-deferred
+ * caveat).
+ *
+ * First pass (5x, 1500) still wasn't enough on screen — a second look made
+ * clear intensity alone can't fix it: `ROOM_LIGHT.decay`'s inverse-square
+ * falloff (contract.ts) means the near-fixture/far-corner brightness RATIO
+ * is fixed by distance regardless of how high this number goes, so a value
+ * that made the far corner acceptable was blowing out the fixture itself.
+ * Decay dropped to 1 alongside this second bump (10x the frozen reference)
+ * — the two together are the actual fix; this number alone is not.
+ * Fixing the underlying 300-600x gap to the sun-calibrated exposure for
+ * real is still the §2.2/§2.4-level decision §10 reserves — this, and the
+ * per-fixture slider (Viewport.tsx's MiniInspector, range now to 20000),
+ * are both scoped to "make a maxed-out fixture flood the room" only.
+ */
+export const DEFAULT_FIXTURE_LUX = 3000;
+
+/** Default color temperature for a newly placed fixture — same 2700K a
+ *  domestic LED ceiling fixture actually is, now user-adjustable per fixture
+ *  rather than fixed (`ROOM_FIXTURE_COLOR` above is the M2-era fixed value;
+ *  `kelvinToColor` below supersedes it for anything going through a fixture). */
+export const DEFAULT_FIXTURE_COLOR_K = 2700;
+
+/**
+ * Kelvin -> sRGB hex, the standard Tanner Helland black-body approximation
+ * (valid ~1000-40000K; residential fixtures live in the ~2000-6500K slice of
+ * that). Good enough for "what color does a light this warm/cool actually
+ * look like" — not a spectral render, just the same approximation every
+ * lighting-design tool uses for a color-temperature slider.
+ */
+export function kelvinToColor(kelvin: number): string {
+  const temp = Math.min(Math.max(kelvin, 1000), 40000) / 100;
+
+  const r = temp <= 66 ? 255 : 329.698727446 * Math.pow(temp - 60, -0.1332047592);
+  const g =
+    temp <= 66
+      ? 99.4708025861 * Math.log(temp) - 161.1195681661
+      : 288.1221695283 * Math.pow(temp - 60, -0.0755148492);
+  const b = temp >= 66 ? 255 : temp <= 19 ? 0 : 138.5177312231 * Math.log(temp - 10) - 305.0447927307;
+
+  const toHex = (v: number) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 // ---------------------------------------------------------------------------
 // Camera-mode presets
 // ---------------------------------------------------------------------------

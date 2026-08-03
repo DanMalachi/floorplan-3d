@@ -25,11 +25,11 @@ export interface Presentation {
 }
 
 const ROOT = "scene";
-// `stairs` is OPTIONAL on Scene — every project made before stairs existed has
-// no such key at runtime — so every read of `scene[coll]` in this file and in
-// sceneDiff.ts must fall back to []. Adding the collection without those guards
-// crashes live collaboration on the next edit of any older project.
-export const COLLECTIONS = ["nodes", "walls", "openings", "rooms", "furniture", "stairs"] as const;
+// `stairs`/`fixtures` are OPTIONAL on Scene — every project made before they
+// existed has no such key at runtime — so every read of `scene[coll]` in this
+// file and in sceneDiff.ts must fall back to []. Adding a collection without
+// those guards crashes live collaboration on the next edit of any older project.
+export const COLLECTIONS = ["nodes", "walls", "openings", "rooms", "furniture", "stairs", "fixtures"] as const;
 type Collection = (typeof COLLECTIONS)[number];
 
 export const sceneRoot = (doc: Y.Doc): Y.Map<unknown> => doc.getMap(ROOT);
@@ -102,6 +102,7 @@ export function readScene(doc: Y.Doc): Scene {
     rooms: readCollection(root, "rooms"),
     furniture: readCollection(root, "furniture"),
     stairs: readCollection(root, "stairs"),
+    fixtures: readCollection(root, "fixtures"),
     building: (root.get("building") as Scene["building"]) ?? undefined,
   };
 }

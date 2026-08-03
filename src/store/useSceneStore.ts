@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene, FloorStyle } from "@/schema/scene";
+import type { Scene, FloorStyle, FixtureMount } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import {
   DEFAULT_DOOR,
@@ -9,6 +9,7 @@ import {
   WALL_HEIGHT,
 } from "@/schema/constants";
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
+import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -93,6 +94,7 @@ export function* sceneIds(scene: Scene): Generator<string> {
   for (const r of scene.rooms ?? []) yield r.id;
   for (const f of scene.furniture ?? []) yield f.id;
   for (const s of scene.stairs ?? []) yield s.id;
+  for (const fx of scene.fixtures ?? []) yield fx.id;
 }
 
 // When a wall is split at parameter ts, move an opening onto the sub-wall that
@@ -130,7 +132,7 @@ function remapOpening(
 
 /** What a 3D pointer event resolved to (raycast pick contract). */
 export interface PickRef {
-  kind: "wall" | "opening" | "room" | "furniture" | "stair";
+  kind: "wall" | "opening" | "room" | "furniture" | "stair" | "fixture";
   id: string;
   // For wall picks: which face the pointer landed on / is targeted for paint.
   // "a" = wall-local +Z face, "b" = -Z face. Absent for non-wall picks.
@@ -190,6 +192,7 @@ export function pickExists(scene: Scene, pick: PickRef | null): boolean {
     case "room": return scene.rooms.some((r) => r.id === pick.id);
     case "furniture": return scene.furniture.some((f) => f.id === pick.id);
     case "stair": return (scene.stairs ?? []).some((s) => s.id === pick.id);
+    case "fixture": return (scene.fixtures ?? []).some((f) => f.id === pick.id);
   }
 }
 
@@ -246,6 +249,12 @@ export interface StoreState {
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
+
+  // --- fixtures (lighting) --- placing state is SHARED with furniture above
+  // (assetId is enough to tell the catalogs apart) — only the commit/rotate
+  // actions are fixture-specific.
+  placeFixture: (mount: FixtureMount, rotation: number) => void;
+  rotateSelectedFixture: (deltaRad: number) => void;
 
   // --- materials brush (Decorate mode) ---
   /** Active paint/floor applicator: click surfaces to apply, Esc to stop. */
@@ -417,11 +426,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
 
   return {
-    scene: sampleScene,
+    scene: seedRoomFixtures(sampleScene),
     // Loading/generating a whole scene is itself an undoable command; it is
-    // also the only thing that reframes the 3D camera (frameToken).
+    // also the only thing that reframes the 3D camera (frameToken). Every
+    // whole-scene replacement funnels through here, so this is the one place
+    // `seedRoomFixtures` needs to run — it's a no-op past the first time.
     setScene: (scene) => {
-      get().commitScene("Replace scene", scene);
+      get().commitScene("Replace scene", seedRoomFixtures(scene));
       set((s) => ({ frameToken: s.frameToken + 1 }));
     },
 
@@ -697,6 +708,27 @@ export const useSceneStore = create<StoreState>((set, get) => {
       });
     },
 
+    placeFixture: (mount, rotation) => {
+      const { placing, scene, commitScene } = get();
+      if (!placing) return;
+      const id = `fx${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      commitScene("Place fixture", {
+        ...scene,
+        fixtures: [...(scene.fixtures ?? []), { id, assetId: placing.assetId, rotation, mount }],
+      });
+      // Stay in placing mode - Sims-style repeat placement; Esc exits.
+    },
+    rotateSelectedFixture: (deltaRad) => {
+      const { sel3d, scene, commitScene } = get();
+      if (sel3d?.kind !== "fixture") return;
+      commitScene("Rotate fixture", {
+        ...scene,
+        fixtures: (scene.fixtures ?? []).map((f) =>
+          f.id === sel3d.id ? { ...f, rotation: f.rotation + deltaRad } : f,
+        ),
+      });
+    },
+
     deleteSelected3d: () => {
       const { sel3d, scene, commitScene } = get();
       if (!sel3d) return;
@@ -710,6 +742,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
           ...scene,
           walls: scene.walls.filter((w) => w.id !== sel3d.id),
           openings: scene.openings.filter((o) => o.wallId !== sel3d.id),
+          fixtures: (scene.fixtures ?? []).filter(
+            (f) => f.mount.kind !== "wall" || f.mount.wallId !== sel3d.id,
+          ),
+        });
+      } else if (sel3d.kind === "fixture") {
+        commitScene("Delete fixture", {
+          ...scene,
+          fixtures: (scene.fixtures ?? []).filter((f) => f.id !== sel3d.id),
         });
       } else if (sel3d.kind === "opening") {
         commitScene("Delete opening", {

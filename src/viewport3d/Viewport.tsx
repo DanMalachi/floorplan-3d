@@ -17,8 +17,10 @@ import {
   DEFAULT_DOOR,
   DEFAULT_WINDOW,
 } from "@/schema/constants";
-import type { OpeningType } from "@/schema/scene";
+import type { OpeningType, FixtureItem } from "@/schema/scene";
+import { DEFAULT_FIXTURE_COLOR_K, DEFAULT_FIXTURE_LUX } from "@/render/lightPresets";
 import { CATALOG_BY_ID, ROOMS } from "@/furniture/catalog";
+import { FIXTURE_CATALOG_BY_ID } from "@/fixtures/catalog";
 import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
 import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
 import { useThumbnail } from "@/furniture/thumbnails";
@@ -34,6 +36,8 @@ import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
+import { FixtureLayer } from "./FixtureLayer";
+import { FixtureCatalog } from "./FixtureCatalog";
 import { StairLayer } from "./StairMesh";
 import { StairInspector } from "./StairInspector";
 import { registerViewportCanvas } from "./viewportCapture";
@@ -526,6 +530,63 @@ function MiniInspector() {
     );
   }
 
+  if (sel3d?.kind === "fixture") {
+    const item = (scene.fixtures ?? []).find((f) => f.id === sel3d.id);
+    if (!item) return null;
+    const spec = FIXTURE_CATALOG_BY_ID.get(item.assetId);
+    const deg = ((item.rotation * 180) / Math.PI) % 360;
+    const lux = item.targetLux ?? DEFAULT_FIXTURE_LUX;
+    const colorK = item.colorK ?? DEFAULT_FIXTURE_COLOR_K;
+    // Plain range inputs, same pattern as the door-swing slider above — this
+    // UI is getting an overhaul soon, not worth more than that here.
+    const patch = (label: string, p: Partial<FixtureItem>) => {
+      const s = useSceneStore.getState();
+      s.commitScene(label, {
+        ...s.scene,
+        fixtures: (s.scene.fixtures ?? []).map((f) => (f.id === item.id ? { ...f, ...p } : f)),
+      });
+    };
+    return (
+      <div style={inspectorPanel}>
+        <div style={{ fontWeight: 600 }}>{spec?.name ?? item.assetId}</div>
+        <div style={{ color: T.textDim }}>{Math.round(deg)}°</div>
+        <label style={inspectorRow}>
+          <span style={{ color: T.textDim }}>Strength</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="range"
+              min={200}
+              max={20000}
+              step={200}
+              value={lux}
+              onChange={(e) => patch("Fixture strength", { targetLux: Number(e.target.value) })}
+              onKeyDown={(e) => e.stopPropagation()}
+              style={{ width: 90 }}
+            />
+            <span style={{ color: T.textFaint, minWidth: 46 }}>{lux} lx</span>
+          </span>
+        </label>
+        <label style={inspectorRow}>
+          <span style={{ color: T.textDim }}>Color</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="range"
+              min={2000}
+              max={6500}
+              step={100}
+              value={colorK}
+              onChange={(e) => patch("Fixture color", { colorK: Number(e.target.value) })}
+              onKeyDown={(e) => e.stopPropagation()}
+              style={{ width: 90 }}
+            />
+            <span style={{ color: T.textFaint, minWidth: 46 }}>{colorK}K</span>
+          </span>
+        </label>
+        <div style={{ color: T.textFaint }}>drag to move · R rotates · Delete removes</div>
+      </div>
+    );
+  }
+
   if (sel3d?.kind === "room") {
     const room = scene.rooms.find((r) => r.id === sel3d.id);
     if (!room) return null;
@@ -938,9 +999,10 @@ function FloorCatalog() {
   );
 }
 
-type CatTab = "furniture" | "paint" | "floors";
+type CatTab = "furniture" | "fixtures" | "paint" | "floors";
 const CAT_TABS: { id: CatTab; label: string }[] = [
   { id: "furniture", label: "Furniture" },
+  { id: "fixtures", label: "Lighting" },
   { id: "paint", label: "Paint" },
   { id: "floors", label: "Floors" },
 ];
@@ -978,6 +1040,7 @@ function CatalogPanel() {
         ))}
       </div>
       {tab === "furniture" && <FurnitureCatalog />}
+      {tab === "fixtures" && <FixtureCatalog />}
       {tab === "paint" && <PaintCatalog />}
       {tab === "floors" && <FloorCatalog />}
       {brush && (
@@ -1205,6 +1268,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       const step = (Math.PI / 12) * (e.shiftKey ? -1 : 1); // 15° per tap
       if (s.placing) s.rotatePlacing(step);
       else if (s.sel3d?.kind === "furniture") s.rotateSelectedFurniture(step);
+      else if (s.sel3d?.kind === "fixture") s.rotateSelectedFixture(step);
       else return;
     } else if (e.key === "Escape") {
       if (s.brush) s.setBrush(null);
@@ -1262,6 +1326,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <RoomLights scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
+          <FixtureLayer scene={scene} offset={offset} />
           <StairLayer scene={scene} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
           {/* Collaborators' selection markers (plan coords, inside the group). */}

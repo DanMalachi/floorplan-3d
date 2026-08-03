@@ -1,11 +1,13 @@
-// Headless: pole-of-inaccessibility placement + room-light derivation.
-// Run: npx tsx src/render/roomLighting.test.ts
+// Headless: pole-of-inaccessibility placement + fixture-driven room-light
+// derivation. Run: npx tsx src/render/roomLighting.test.ts
 
-import type { Node, Room, Scene, Wall } from "@/schema/scene";
+import type { FixtureItem, Node, Room, Scene, Wall } from "@/schema/scene";
 import { poleOfInaccessibility } from "@/lib/rooms/poleOfInaccessibility";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
 import { computeRoomLights } from "./roomLighting";
 import { ROOM_LIGHT } from "./contract";
+import { DEFAULT_FIXTURE_LUX, roomFixtureCandela, toRenderIntensity } from "./lightPresets";
+import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -19,6 +21,9 @@ const check = (name: string, cond: boolean, detail = "") => {
 const n = (id: string, x: number, y: number): Node => ({ id, x, y });
 const wall = (id: string, a: string, b: string, extra: Partial<Wall> = {}): Wall => ({
   id, a, b, thickness: 0.1, ...extra,
+});
+const ceilingFixture = (id: string, x: number, y: number): FixtureItem => ({
+  id, assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x, y },
 });
 
 // ---------------------------------------------------------------------------
@@ -45,17 +50,19 @@ console.log("\npole of inaccessibility");
 }
 
 // ---------------------------------------------------------------------------
-console.log("\ncomputeRoomLights");
+console.log("\ncomputeRoomLights — driven by fixtures, no built-in fallback");
 {
   // Two 4x4 rooms sharing an edge; a third, rail-bounded (balcony) room; a
   // fourth, tiny sliver under the area floor; a fifth, normal-sized but
-  // explicitly authored ceiling:"open".
+  // explicitly authored ceiling:"open". Same fixture as the L above, folded
+  // in as room F, to exercise a fixture placed away from the pole.
   const nodes: Node[] = [
     n("a0", 0, 0), n("a1", 4, 0), n("a2", 4, 4), n("a3", 0, 4), // room A
     n("b2", 8, 4), n("b1", 8, 0), // room B (shares a1-a2 edge conceptually via own loop)
     n("c0", 0, -4), n("c1", 4, -4), // rail-bounded balcony, shares a0-a1
     n("d0", 20, 20), n("d1", 20.6, 20), n("d2", 20.6, 20.6), n("d3", 20, 20.6), // sliver
     n("e0", 30, 0), n("e1", 34, 0), n("e2", 34, 4), n("e3", 30, 4), // authored-open
+    n("f0", 40, 0), n("f1", 46, 0), n("f2", 46, 3), n("f3", 43, 3), n("f4", 43, 6), n("f5", 40, 6), // L room
   ];
   const walls: Wall[] = [
     wall("wa0", "a0", "a1"), wall("wa1", "a1", "a2"), wall("wa2", "a2", "a3"), wall("wa3", "a3", "a0"),
@@ -63,6 +70,8 @@ console.log("\ncomputeRoomLights");
     wall("wc0", "a0", "c0"), wall("wc1", "c0", "c1"), wall("wc2", "c1", "a1", { kind: "rail" }),
     wall("wd0", "d0", "d1"), wall("wd1", "d1", "d2"), wall("wd2", "d2", "d3"), wall("wd3", "d3", "d0"),
     wall("we0", "e0", "e1"), wall("we1", "e1", "e2"), wall("we2", "e2", "e3"), wall("we3", "e3", "e0"),
+    wall("wf0", "f0", "f1"), wall("wf1", "f1", "f2"), wall("wf2", "f2", "f3"),
+    wall("wf3", "f3", "f4"), wall("wf4", "f4", "f5"), wall("wf5", "f5", "f0"),
   ];
   const rooms: Room[] = [
     { id: "A", loop: ["a0", "a1", "a2", "a3"] },
@@ -70,20 +79,26 @@ console.log("\ncomputeRoomLights");
     { id: "balcony", loop: ["a0", "c0", "c1", "a1"] }, // bounded by a rail edge (c1-a1)
     { id: "sliver", loop: ["d0", "d1", "d2", "d3"] },
     { id: "authoredOpen", loop: ["e0", "e1", "e2", "e3"], ceiling: "open" },
+    { id: "F", loop: ["f0", "f1", "f2", "f3", "f4", "f5"] }, // L-shaped, 6x6 minus 3x3 bite, offset +40
   ];
-  const scene: Scene = { schemaVersion: 2, units: "meters", nodes, walls, openings: [], rooms, furniture: [] };
+  const baseScene: Scene = {
+    schemaVersion: 2, units: "meters", nodes, walls, openings: [], rooms, furniture: [],
+  };
 
-  const lights = computeRoomLights(scene);
+  // --- default (seeded) behavior: matches the old M2 always-lit guarantee,
+  // but now via seedRoomFixtures rather than a fallback inside computeRoomLights.
+  const seeded = seedRoomFixtures(baseScene);
+  const lights = computeRoomLights(seeded);
   const byRoom = new Map(lights.map((l) => [l.roomId, l]));
 
-  check("room A gets a light", byRoom.has("A"));
-  check("room B gets a light", byRoom.has("B"));
-  check("rail-bounded balcony gets no light", !byRoom.has("balcony"));
+  check("room A gets a light once seeded", byRoom.has("A"));
+  check("room B gets a light once seeded", byRoom.has("B"));
+  check("rail-bounded balcony never gets seeded a light", !byRoom.has("balcony"));
   check(
-    `sliver room (${(0.6 * 0.6).toFixed(2)} m2 < ${ROOM_LIGHT.minAreaM2} m2 min) gets no light`,
+    `sliver room (${(0.6 * 0.6).toFixed(2)} m2 < ${ROOM_LIGHT.minAreaM2} m2 min) never gets seeded a light`,
     !byRoom.has("sliver"),
   );
-  check("authored ceiling:\"open\" room gets no light even though it's not rail-bounded", !byRoom.has("authoredOpen"));
+  check("authored ceiling:\"open\" room never gets seeded a light even though it's not rail-bounded", !byRoom.has("authoredOpen"));
 
   // B is a 4x4 room too (8-4=4 wide, 0-4 tall) — same area as A, so same intensity.
   const a = byRoom.get("A")!;
@@ -95,17 +110,121 @@ console.log("\ncomputeRoomLights");
 
   // Double the floor area (8x4=32 vs 4x4=16) and check intensity scales
   // linearly with it, per the documented flux/area derivation.
-  const bigRoom: Scene = {
-    ...scene,
+  const bigRoomScene = seedRoomFixtures({
+    ...baseScene,
     rooms: [{ id: "big", loop: ["a0", "a1", "b1", "b2", "a2", "a3"] }],
-  };
-  // a0..a1..b1..b2..a2..a3 traces A+B combined (8x4 rectangle minus nothing,
-  // since a1-a2 was the internal shared edge) — area 32 m2, double A's 16...
-  // actually A is 4x4=16, combined rectangle is 8x4=32. Exactly 2x.
-  const combined = computeRoomLights(bigRoom)[0];
+  });
+  const combined = computeRoomLights(bigRoomScene)[0];
   check("intensity scales linearly with area (2x area -> 2x intensity)",
     Math.abs(combined.intensity / a.intensity - 2) < 1e-6,
     `ratio=${combined.intensity / a.intensity}`);
+
+  // --- fixture-driven positioning: a fixture off the pole is what renders,
+  // not the pole itself.
+  const offPole = { x: 41, y: 5.5 }; // inside the L's lower-left leg, away from the pole
+  const withOffPoleFixture: Scene = {
+    ...baseScene,
+    fixtures: [ceilingFixture("fx1", offPole.x, offPole.y)],
+  };
+  const fLight = computeRoomLights(withOffPoleFixture).find((l) => l.roomId === "F");
+  check("a fixture placed off the pole is what actually lights the room", !!fLight);
+  check("that light sits at the fixture's own position, not the pole",
+    fLight != null && Math.abs(fLight.position[0] - offPole.x) < 1e-9 && Math.abs(fLight.position[2] - offPole.y) < 1e-9,
+    fLight ? `got (${fLight.position[0]},${fLight.position[2]})` : "no light");
+
+  // --- multiple fixtures in one room: one RoomLight per fixture, each at
+  // full candela (locked-in decision: brightness scales with fixture count,
+  // not split across them).
+  const pole = poleOfInaccessibility([
+    { x: 40, y: 0 }, { x: 46, y: 0 }, { x: 46, y: 3 }, { x: 43, y: 3 }, { x: 43, y: 6 }, { x: 40, y: 6 },
+  ]);
+  const twoFixtures: Scene = {
+    ...baseScene,
+    fixtures: [ceilingFixture("fx1", offPole.x, offPole.y), ceilingFixture("fx2", pole.x, pole.y)],
+  };
+  const fLights = computeRoomLights(twoFixtures).filter((l) => l.roomId === "F");
+  check("two fixtures in one room produce two lights", fLights.length === 2, `got ${fLights.length}`);
+  check("both lights have unique ids", fLights[0]?.id !== fLights[1]?.id);
+  const soloCandela = computeRoomLights(withOffPoleFixture).find((l) => l.roomId === "F")!.intensity;
+  check("each fixture is independently at full candela (scales up, not split)",
+    fLights.every((l) => Math.abs(l.intensity - soloCandela) < 1e-9));
+
+  // --- a fixture whose point falls outside every room polygon (e.g. dropped
+  // in wall thickness or open space) contributes nothing and doesn't crash.
+  const orphan: Scene = { ...baseScene, fixtures: [ceilingFixture("fxOrphan", 1000, 1000)] };
+  check("a fixture outside every room polygon contributes no light, no crash",
+    computeRoomLights(orphan).length === 0);
+
+  // --- the actual behavior change this milestone makes: zero fixtures means
+  // zero light, full stop — no silent pole-of-inaccessibility fallback.
+  // (Locked-in product decision: an emptied room stays dark, "just like
+  // furniture" — the always-lit guarantee now lives in seedRoomFixtures, not
+  // here.)
+  const noFixtures: Scene = { ...baseScene, fixtures: [] };
+  check("a scene with fixtures explicitly cleared to [] has no lights at all",
+    computeRoomLights(noFixtures).length === 0);
+
+  // -------------------------------------------------------------------------
+  console.log("\nwall-mounted fixtures");
+  {
+    // wa1 (a1->a2, x=4 from y=0 to y=4) is the shared wall between room A
+    // (x<4, west) and room B (x>4, east) — its outward normal (-uy,ux) with
+    // dx=0,dy=4 is (-1,0), pointing INTO A. Side "a" (sign +1) should
+    // therefore light A; side "b" (sign -1) should light B instead.
+    const onSideA: FixtureItem = {
+      id: "wallA", assetId: "fx:sconce", rotation: 0,
+      mount: { kind: "wall", wallId: "wa1", offset: 2, sill: 1.8, side: "a" },
+    };
+    const onSideB: FixtureItem = {
+      id: "wallB", assetId: "fx:sconce", rotation: 0,
+      mount: { kind: "wall", wallId: "wa1", offset: 2, sill: 1.8, side: "b" },
+    };
+
+    const litA = computeRoomLights({ ...baseScene, fixtures: [onSideA] });
+    check("a wall fixture on side 'a' lights room A", litA.some((l) => l.id === "wallA" && l.roomId === "A"));
+    check("wall fixture render height is its own sill, not a ceiling height",
+      Math.abs(litA.find((l) => l.id === "wallA")!.position[1] - 1.8) < 1e-9);
+
+    const litB = computeRoomLights({ ...baseScene, fixtures: [onSideB] });
+    check("the SAME wall, side 'b', lights room B instead", litB.some((l) => l.id === "wallB" && l.roomId === "B"));
+    check("side 'b' does not also light room A", !litB.some((l) => l.roomId === "A"));
+  }
+
+  // -------------------------------------------------------------------------
+  console.log("\nper-fixture brightness/color overrides");
+  {
+    const scene: Scene = {
+      ...baseScene,
+      fixtures: [
+        ceilingFixture("fxDefault", 2, 2),
+        { id: "fxBright", assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x: 2, y: 2 }, targetLux: 3000 },
+        { id: "fxWarm", assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x: 2, y: 2 }, colorK: 2000 },
+        { id: "fxCool", assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x: 2, y: 2 }, colorK: 6500 },
+      ],
+    };
+    const byId = new Map(computeRoomLights(scene).map((l) => [l.id, l]));
+    const areaA = 16; // room A, 4x4
+
+    const oldBaselineIntensity = toRenderIntensity(roomFixtureCandela(areaA, 300)); // the old frozen M2 default
+    const newDefaultIntensity = toRenderIntensity(roomFixtureCandela(areaA, DEFAULT_FIXTURE_LUX));
+    check("a fixture with no targetLux override uses DEFAULT_FIXTURE_LUX",
+      Math.abs(byId.get("fxDefault")!.intensity - newDefaultIntensity) < 1e-9);
+    check("that default is meaningfully brighter than the old frozen 300lx baseline (\"much brighter\", as asked)",
+      newDefaultIntensity / oldBaselineIntensity >= 4,
+      `ratio=${(newDefaultIntensity / oldBaselineIntensity).toFixed(2)}`);
+
+    check("a targetLux override scales intensity proportionally to the default",
+      Math.abs(byId.get("fxBright")!.intensity / byId.get("fxDefault")!.intensity - 3000 / DEFAULT_FIXTURE_LUX) < 1e-6);
+
+    const warmHex = byId.get("fxWarm")!.color;
+    const coolHex = byId.get("fxCool")!.color;
+    check("different colorK overrides produce different colors", warmHex !== coolHex);
+    const redOf = (hex: string) => parseInt(hex.slice(1, 3), 16);
+    const blueOf = (hex: string) => parseInt(hex.slice(5, 7), 16);
+    check("2000K reads warmer (more red, less blue) than 6500K",
+      redOf(warmHex) - blueOf(warmHex) > redOf(coolHex) - blueOf(coolHex),
+      `warm=${warmHex} cool=${coolHex}`);
+  }
 }
 
 console.log(failures === 0 ? "\nall room-lighting checks passed\n" : `\n${failures} FAILED\n`);

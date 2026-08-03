@@ -334,7 +334,11 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
     rotation: 0,
     colliding: false,
   });
-  if (!placing) return null;
+  // `placing` is shared with FixtureLayer's own ghost (kind-less {assetId,
+  // rotation}) — without this check, picking a fixture from the Lighting
+  // catalog also triggers this ghost, which resolves the unknown assetId to
+  // a floor-level PlaceholderBox alongside the real ceiling-height ghost.
+  if (!placing || !CATALOG_BY_ID.has(placing.assetId)) return null;
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     const p = rayToPlan(e, offset);

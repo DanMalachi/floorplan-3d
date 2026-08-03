@@ -203,6 +203,35 @@ export interface FurnitureItem {
   elevation?: number; // meters above floor (default 0)
 }
 
+/**
+ * A placed lighting fixture. Ceiling fixtures store raw plan coordinates,
+ * same as furniture; which room's light they drive is derived at read time
+ * via point-in-polygon against `scene.rooms` (`src/render/roomLighting.ts`),
+ * never stored, so it can't desync when a room's loop changes. Wall fixtures
+ * anchor the same way `Opening` does (`wallId` + `offset`) rather than raw
+ * xy, since they need to stay glued to a wall face.
+ */
+export type FixtureMount =
+  | { kind: "ceiling"; x: number; y: number }
+  // `side` picks which of the wall's two faces the fixture is mounted on and
+  // therefore which room it lights — mirrors `Wall.paintA`/`paintB`'s "a" =
+  // wall-local +Z face, "b" = -Z face convention, so a shared wall between
+  // two rooms can carry a light on either side unambiguously.
+  | { kind: "wall"; wallId: Id; offset: number; sill: number; side: "a" | "b" };
+
+export interface FixtureItem {
+  id: Id;
+  assetId: string; // catalog key, e.g. "fx:flushDisc"
+  rotation: number; // radians about world up
+  mount: FixtureMount;
+  // Per-fixture brightness/color overrides (undefined = the catalog default —
+  // see DEFAULT_FIXTURE_LUX/DEFAULT_FIXTURE_COLOR_K in render/lightPresets.ts).
+  // Physical units, same convention as every other light in this renderer:
+  // lux, not an eyeballed 0-1 "strength".
+  targetLux?: number;
+  colorK?: number; // color temperature, Kelvin
+}
+
 /** One straight flight within a staircase. Centerline, plan meters. */
 export interface StairFlight {
   x0: number;
@@ -261,5 +290,10 @@ export interface Scene {
   // Optional forever: every project saved before stairs existed has no such key
   // at runtime, whatever the type says. Consumers read `scene.stairs ?? []`.
   stairs?: Stair[];
+  // Optional forever, same convention as stairs: every project saved before
+  // fixtures existed has no such key. `undefined` (never seeded) is distinct
+  // from `[]` (seeded, then user cleared it) — `seedRoomFixtures` only ever
+  // acts on the former. Consumers read `scene.fixtures ?? []`.
+  fixtures?: FixtureItem[];
   building?: BuildingSemantics; // Building Knowledge Layer — house-level verdict
 }

@@ -133,22 +133,57 @@ export const ROOM_LIGHT = {
    * shadow variant, and doing that every frame for a light sitting near a
    * rank boundary is worse than the rank being a few hundred ms stale.
    *
-   * 3 casters x 6 faces x 512^2 = ~4.7M shadow-map texels/frame, the same
-   * order as the existing single 2048^2 directional pass (~4.2M) — a second
-   * shadow pass of comparable cost, not a new dominant one.
+   * `maxCasters` dropped from 3 to 1 post-M2 (§12): with 2-3 nearby lamps
+   * each casting their own shadow off the same object, the result was
+   * multiple hard-edged shadows fanning out in different directions off one
+   * piece of furniture — the "spikey" look Dan flagged from a screenshot,
+   * not a bug in the ranking logic, an inherent artifact of overlapping
+   * cube-map shadows from close-together sources. One caster gives every
+   * object one clean shadow instead. `mapSize` up to 1024 and `radius` added
+   * for a soft PCF-blurred edge instead of a hard low-res one, so a lamp's
+   * shadow reads as gentle fill rather than a second competing hard shadow
+   * next to the sun's — it still won't (and physically shouldn't) point the
+   * same direction as the sun's shadow; softening it is what lets the two
+   * coexist without visually fighting, not a claim they now merge into one.
+   *
+   * 1 caster x 6 faces x 1024^2 = ~6.3M shadow-map texels/frame — more than
+   * the old 3x512^2 budget (~4.7M) per texel, but a THIRD of the draw calls
+   * (6 faces rendered instead of 18), and still the same order of magnitude
+   * as the sun's single 2048^2 pass (~4.2M), not a new dominant cost.
    */
   shadow: {
-    maxCasters: 3,
-    mapSize: 512,
-    /** Cube shadow-camera far plane. A point light's own inverse-square decay
-     *  already makes anything past typical residential room scale
-     *  negligible; this just bounds the depth range, generously, rather than
-     *  chasing per-room size for a shadow pass this cheap to over-provision. */
+    maxCasters: 1,
+    mapSize: 1024,
+    /** PCF blur radius (three.js `LightShadow.radius`) — the actual lever
+     *  for "soft, not spikey": wider jittered sampling feathers the edge
+     *  instead of the hard-edged default. */
+    radius: 6,
+    /** Cube shadow-camera far plane. Decay dropped to 1 (below) means this
+     *  budget-driven bound now genuinely matters past a few metres, unlike
+     *  the old decay=2 assumption this comment used to state — kept
+     *  generous rather than chased per-room, since the pass stays cheap
+     *  either way. */
     farM: 12,
   },
   /** How far below the ceiling surface the fixture sits — a flush-mount
    *  residential ceiling light, not a bare bulb scraping the slab. */
   dropBelowCeilingM: 0.15,
+  /**
+   * `THREE.PointLight.decay`. Physically correct inverse-square (2) was the
+   * M2 choice — see the note on `shadow.farM` above. Post-M2 (§12), Dan
+   * ruled a maxed-out fixture should read as flooding the room, close to
+   * cancelling shadows, after seeing decay=2 leave anything more than ~1-2m
+   * from a fixture essentially black regardless of intensity (raising
+   * intensity alone can't fix that: inverse-square means the near/far RATIO
+   * is fixed by distance, not by intensity — you either blow out the fixture
+   * or leave the far corner dark). 1 (inverse-linear) is the lever that
+   * actually addresses "far corner too dark" rather than fighting it with a
+   * bigger number — one exposure/falloff constant intentionally NOT
+   * physically pure, same spirit as `DEFAULT_FIXTURE_LUX` in
+   * lightPresets.ts, scoped only to interior fixtures, nothing else in this
+   * contract (sun, sky, IBL, shadow type) changes.
+   */
+  decay: 1,
 } as const;
 
 /**
