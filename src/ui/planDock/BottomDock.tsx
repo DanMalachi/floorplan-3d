@@ -106,6 +106,80 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   outdoors: OUTDOORS_HOTSPOTS,
 };
 
+// Item dock resize (Plan Dock P9). Default is sized to comfortably fit 2 full
+// rows of ItemCard out of the box: card ≈ 4(pad-top) + 48(thumb) + 3(gap) +
+// ~11.4(name line, 9.5px/1.2) + 3(gap) + ~9.6(kind line, 8px/1.2) + 4(pad-bottom)
+// ≈ 83px, × 2 rows + 6px row gap ≈ 172px item-grid area; plus the resize
+// handle (12) + gap (6) + tab-icon row (28) + gap (6) + category/search row
+// (22) + inner gap (4) + outer padding (16) ≈ 268px total.
+const DOCK_HEIGHT_KEY = "planDock:dockHeight";
+const DOCK_HEIGHT_DEFAULT = 268;
+const DOCK_HEIGHT_MIN = 150; // old single-row height — still collapsible to compact
+const DOCK_HEIGHT_MAX_CAP = 560;
+
+function clampDockHeight(h: number): number {
+  const max = typeof window !== "undefined" ? Math.min(DOCK_HEIGHT_MAX_CAP, window.innerHeight * 0.7) : DOCK_HEIGHT_MAX_CAP;
+  return Math.min(max, Math.max(DOCK_HEIGHT_MIN, h));
+}
+
+/** Lazy-init-from-localStorage, mirroring theme.tsx's usePdTheme() pattern:
+ *  default state up front (SSR-safe), then read + apply the stored value in
+ *  an effect so there's no server/client markup mismatch. */
+function useDockHeight(): [number, (h: number) => void] {
+  const [height, setHeightState] = useState(DOCK_HEIGHT_DEFAULT);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(DOCK_HEIGHT_KEY);
+    const parsed = stored ? Number(stored) : NaN;
+    setHeightState(Number.isFinite(parsed) ? clampDockHeight(parsed) : DOCK_HEIGHT_DEFAULT);
+  }, []);
+
+  const setHeight = (h: number) => {
+    const clamped = clampDockHeight(h);
+    setHeightState(clamped);
+    window.localStorage.setItem(DOCK_HEIGHT_KEY, String(clamped));
+  };
+
+  return [height, setHeight];
+}
+
+/** Thin full-width strip pinned above the tab-icon row. Dragging it up grows
+ *  the panel (the panel's `bottom` is pinned, so the top edge must move up as
+ *  the mouse moves up — hence `startHeight + (startY - clientY)`). Plain DOM
+ *  pointermove/pointerup listeners, not R3F — this is regular HTML, no
+ *  Three.js raycasting involved. */
+function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; setDockHeight: (h: number) => void }) {
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = dockHeight;
+    const onMove = (ev: PointerEvent) => setDockHeight(startHeight + (startY - ev.clientY));
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+  return (
+    <div
+      onPointerDown={onPointerDown}
+      title="Drag to resize"
+      style={{
+        flex: "0 0 auto",
+        height: 13,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "ns-resize",
+        touchAction: "none",
+      }}
+    >
+      <div style={{ width: 32, height: 3, borderRadius: 999, background: PD.textTertiary, opacity: 0.6 }} />
+    </div>
+  );
+}
+
 const DOCK_TABS: { id: DockTab; label: string }[] = [
   { id: "furniture", label: "Furniture" },
   { id: "lighting", label: "Lighting" },
@@ -515,7 +589,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
           <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{items.length}</span>
         </div>
       )}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 6, overflowX: "auto", alignItems: "flex-start" }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start" }}>
         {items.length === 0 ? (
           <div style={{ padding: "8px 4px", fontSize: 11, color: PD.textTertiary }}>Nothing here yet.</div>
         ) : (
@@ -530,6 +604,7 @@ export function BottomDock() {
   const [tab, setTab] = useState<DockTab>("furniture");
   const [room, setRoom] = useState<RoomType>("kitchen");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
+  const [dockHeight, setDockHeight] = useDockHeight();
   const brush = useSceneStore((s) => s.brush);
   const dockRequest = useSceneStore((s) => s.dockRequest);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
@@ -555,7 +630,7 @@ export function BottomDock() {
           left: 240,
           right: 16,
           bottom: 16,
-          height: 150,
+          height: dockHeight,
           display: "flex",
           flexDirection: "column",
           padding: "8px 12px",
@@ -563,6 +638,7 @@ export function BottomDock() {
           ...pdGlass(),
         }}
       >
+        <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
         <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
           {DOCK_TABS.map((t) => {
             const Icon = SECTION_ICON[t.id];
