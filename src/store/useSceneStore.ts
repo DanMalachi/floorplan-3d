@@ -283,6 +283,14 @@ export interface StoreState {
   brush: Brush | null;
   setBrush: (b: Brush | null) => void;
 
+  // --- eyedropper (Plan Dock P7) ---
+  /** Armed = the next click on furniture/a fixture/a painted wall face/a
+   *  floor samples it instead of selecting it — see src/decorate/eyedropper.ts
+   *  for what "samples" means per target kind. Mutually exclusive with
+   *  placing/brush (arming any of the three clears the other two). */
+  eyedropper: boolean;
+  setEyedropper: (v: boolean) => void;
+
   // --- app shell (Phase 4 M5) ---
   appMode: AppMode;
   wallMode: WallViewMode;
@@ -583,7 +591,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null });
+      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -731,9 +739,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     placing: null,
     setPlacing: (assetId) =>
-      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null }),
+      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null, eyedropper: false }),
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, sel3d: null }),
+    setBrush: (brush) => set({ brush, placing: null, sel3d: null, eyedropper: false }),
+    eyedropper: false,
+    setEyedropper: (eyedropper) => set({ eyedropper, ...(eyedropper ? { placing: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing

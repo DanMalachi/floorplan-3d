@@ -15,6 +15,7 @@ import { pointInPolygon } from "@/lib/rooms/roomArea";
 import { FIXTURE_CATALOG_BY_ID, WALL_FIXTURE_SILL_M, type FixtureShape } from "@/fixtures/catalog";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
+import { sampleFixture } from "@/decorate/eyedropper";
 
 // Structurally a duplicate of FurnitureLayer.tsx's FLOOR_PLANE/rayToPlan/snap
 // (~10 stable lines, a physical constant + a raycast) — accepted rather than
@@ -197,6 +198,7 @@ function FixtureItemView({ item, offset, rooms }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.placing) return; // fixture edits in Furnish only, same as furniture
     e.stopPropagation();
+    if (sampleFixture(item)) return; // eyedropper (Plan Dock P7): sample instead of select
     const wasSelected = s.sel3d?.kind === "fixture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "fixture", id: item.id });
     // First click only selects (see FurnitureLayer's onPointerDown for why).

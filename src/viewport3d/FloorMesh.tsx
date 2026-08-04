@@ -12,6 +12,7 @@ import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
 import { useFloorTexture, floorRoughness } from "./textures";
 import { ACCENT } from "./WallMesh";
+import { sampleFloor } from "@/decorate/eyedropper";
 
 /**
  * A ceiling SLAB from a room loop: the polygon extruded upward by `thickness`,
@@ -128,7 +129,7 @@ function Floor({ roomId, style, geometry }: {
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         const s = useSceneStore.getState();
         const paintable = s.appMode === "furnish" && s.brush?.kind === "floor";
-        if (!((s.appMode === "build" && !s.placing) || paintable)) return;
+        if (!((s.appMode === "build" && !s.placing) || paintable || s.eyedropper)) return;
         e.stopPropagation();
         setHover3d({ kind: "room", id: roomId });
       }}
@@ -139,6 +140,11 @@ function Floor({ roomId, style, geometry }: {
       }}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         const s = useSceneStore.getState();
+        if (s.eyedropper) {
+          e.stopPropagation();
+          sampleFloor(style);
+          return;
+        }
         // Floor brush (Decorate mode): click sets this room's floor material.
         if (s.appMode === "furnish" && s.brush?.kind === "floor") {
           e.stopPropagation();

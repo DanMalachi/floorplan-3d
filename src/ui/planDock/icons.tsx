@@ -228,6 +228,16 @@ export function SearchIcon(p: IconProps) {
   );
 }
 
+export function EyedropperIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="m19 3-4.5 4.5" />
+      <path d="M16.5 5.5a2.4 2.4 0 0 1 0 3.4L8 17.4l-4.5 1.1 1.1-4.5 8.5-8.5a2.4 2.4 0 0 1 3.4 0Z" />
+      <path d="m13 8 3 3" />
+    </Base>
+  );
+}
+
 export function CloseIcon(p: IconProps) {
   return (
     <Base {...p}>

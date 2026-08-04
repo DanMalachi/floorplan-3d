@@ -12,6 +12,7 @@ import { CATALOG_BY_ID } from "@/furniture/catalog";
 import { placementCollides, snapToWall, wallOBBs, type OBB } from "./collision";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
+import { sampleFurniture } from "@/decorate/eyedropper";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -243,6 +244,7 @@ function FurnitureItemView({ item, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.placing) return; // furniture edits in Furnish only
     e.stopPropagation();
+    if (sampleFurniture(item)) return; // eyedropper (Plan Dock P7): sample instead of select
     const wasSelected = s.sel3d?.kind === "furniture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "furniture", id: item.id });
     // First click only selects (confirms the pick) so a click doesn't also

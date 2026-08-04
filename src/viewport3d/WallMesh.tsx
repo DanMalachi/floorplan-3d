@@ -25,6 +25,7 @@ import { buildWallGeometry } from "./geometry/wallGeometry";
 import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
 import { buildToolBlocksSelect } from "./buildTools/gate";
+import { sampleWallFace } from "@/decorate/eyedropper";
 
 // Apple-blue accent shared by all 3D selection feedback.
 export const ACCENT = "#0a84ff";
@@ -359,6 +360,11 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   };
   const onClickWall = (e: ThreeEvent<MouseEvent>) => {
     const s = useSceneStore.getState();
+    if (s.eyedropper) {
+      e.stopPropagation();
+      sampleWallFace(wall, faceSide(e) ?? "a");
+      return;
+    }
     if (s.appMode === "furnish" && s.brush?.kind === "paint") {
       e.stopPropagation();
       paintFace(e);
@@ -371,7 +377,8 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   /** Wall reacts to the pointer when editable (Build) or paintable (Decorate). */
   const wallInteractive = (s = useSceneStore.getState()) =>
     (s.appMode === "build" && !s.placing && !buildToolBlocksSelect(s)) ||
-    (s.appMode === "furnish" && s.brush?.kind === "paint");
+    (s.appMode === "furnish" && s.brush?.kind === "paint") ||
+    s.eyedropper;
 
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {

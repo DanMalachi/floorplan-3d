@@ -73,7 +73,8 @@ import { KidsScene, KIDS_HOTSPOTS } from "./KidsScene";
 import { GarageScene, GARAGE_HOTSPOTS } from "./GarageScene";
 import { OutdoorsScene, OUTDOORS_HOTSPOTS } from "./OutdoorsScene";
 import { Tooltip } from "./Tooltip";
-import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon } from "./icons";
+import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "./icons";
+import { EyedropperController } from "@/decorate/EyedropperController";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
 
@@ -495,6 +496,7 @@ export function BottomDock() {
   const brush = useSceneStore((s) => s.brush);
   const dockRequest = useSceneStore((s) => s.dockRequest);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
+  const eyedropper = useSceneStore((s) => s.eyedropper);
 
   // Deep-link from the Build-tab house-cutaway navigator (Plan Dock P4): its
   // Floors/Paint hotspots have no build-mode tool, so "arming" them means
@@ -509,6 +511,7 @@ export function BottomDock() {
   return (
     <>
       <NavigatorPanel room={room} setRoom={setRoom} activeHotspot={activeHotspot} setActiveHotspot={setActiveHotspot} onFloorClick={() => setTab("floors")} />
+      <EyedropperController />
       <div
         style={{
           position: "absolute",
@@ -534,6 +537,11 @@ export function BottomDock() {
               </Tooltip>
             );
           })}
+          <Tooltip label={eyedropper ? "Eyedropper armed (E)" : "Eyedropper (E)"}>
+            <button onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} style={pdIconBtn(eyedropper)}>
+              <EyedropperIcon size={14} />
+            </button>
+          </Tooltip>
           {brush && (
             <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               {brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop
