@@ -391,7 +391,10 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {pos && (
-        <group position={[pos.x, 0, pos.y]} rotation={[0, yawOf(state.rotation), 0]}>
+        <group
+          position={[pos.x, CATALOG_BY_ID.get(placing.assetId)?.defaultElevation ?? 0, pos.y]}
+          rotation={[0, yawOf(state.rotation), 0]}
+        >
           <Suspense fallback={null}>
             <AssetModel
               assetId={placing.assetId}
