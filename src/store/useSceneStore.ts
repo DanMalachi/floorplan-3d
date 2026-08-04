@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene, FloorStyle, FixtureMount } from "@/schema/scene";
+import type { Scene, FloorStyle, FixtureMount, OpeningType } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import {
   DEFAULT_DOOR,
@@ -285,6 +285,11 @@ export interface StoreState {
    *  comment for why they're deferred rather than half-built. */
   buildTool: BuildTool;
   setBuildTool: (t: BuildTool) => void;
+  /** Which kind the Opening tool (Plan Dock P3) drops on click. Reset to
+   *  "door" on mode change like `buildTool`, so switching away and back
+   *  never leaves a stale armed type from a previous session. */
+  openingType: OpeningType;
+  setOpeningType: (t: OpeningType) => void;
 
   // --- first-person walkthrough mode ---
   /** Only meaningful while appMode === "view"; layered on top rather than a
@@ -550,12 +555,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select" });
+      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door" });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
     buildTool: "select",
     setBuildTool: (buildTool) => set({ buildTool }),
+    openingType: "door",
+    setOpeningType: (openingType) => set({ openingType }),
     envPreset: "none",
     timeOfDay: 13,
     weather: "clear",

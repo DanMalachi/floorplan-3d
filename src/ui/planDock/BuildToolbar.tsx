@@ -4,29 +4,36 @@
 // Opening / Measure, top-center, Build-tab only.
 //
 // Scope call: "Select" IS the existing click/drag-to-edit behavior (no new
-// code — it's what Build mode already does). "Measure" (MeasureTool.tsx)
-// and "Wall" (WallTool.tsx, Plan Dock P2) are both real, additive Canvas
-// children. "Opening" (drop a new door/window by clicking a wall) is still
-// real new 3D-editing work — not a toolbar reskin — so it stays
-// visible-but-inert per Dan's "no half-finished implementations" rule until
-// its own phase lands. Clicking an unbuilt tool shows what it'll do instead
-// of pretending it already does it.
+// code — it's what Build mode already does). "Measure" (MeasureTool.tsx),
+// "Wall" (WallTool.tsx, Plan Dock P2) and "Opening" (OpeningTool.tsx, Plan
+// Dock P3) are all real, additive Canvas children now. Clicking an unbuilt
+// tool (none left as of P3, kept generic for any future addition) shows
+// what it'll do instead of pretending it already does it.
 
 import { useSceneStore, type BuildTool } from "@/store/useSceneStore";
-import { PD, pdGlass } from "./tokens";
+import type { OpeningType } from "@/schema/scene";
+import { PD, pdGlass, pdChip } from "./tokens";
 import { Tooltip } from "./Tooltip";
 import { pdToast } from "./toast";
 
 const TOOLS: { id: BuildTool; label: string; glyph: string; built: boolean }[] = [
   { id: "select", label: "Select", glyph: "◇", built: true },
   { id: "wall", label: "Wall", glyph: "▤", built: true },
-  { id: "opening", label: "Opening", glyph: "⬓", built: false },
+  { id: "opening", label: "Opening", glyph: "⬓", built: true },
   { id: "measure", label: "Measure", glyph: "↔", built: true },
+];
+
+const OPENING_TYPES: { id: OpeningType; label: string; glyph: string }[] = [
+  { id: "door", label: "Door", glyph: "🚪" },
+  { id: "window", label: "Window", glyph: "🪟" },
+  { id: "passage", label: "Passage", glyph: "⌷" },
 ];
 
 export function BuildToolbar() {
   const buildTool = useSceneStore((s) => s.buildTool);
   const setBuildTool = useSceneStore((s) => s.setBuildTool);
+  const openingType = useSceneStore((s) => s.openingType);
+  const setOpeningType = useSceneStore((s) => s.setOpeningType);
 
   const pick = (t: (typeof TOOLS)[number]) => {
     if (!t.built) {
@@ -84,6 +91,21 @@ export function BuildToolbar() {
       {buildTool === "measure" && (
         <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
           Click two points on the floor · Esc clears
+        </div>
+      )}
+      {buildTool === "wall" && (
+        <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
+          Click to start, click to draw · Esc ends the chain, Esc again to stop
+        </div>
+      )}
+      {buildTool === "opening" && (
+        <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+          {OPENING_TYPES.map((t) => (
+            <button key={t.id} onClick={() => setOpeningType(t.id)} style={pdChip(openingType === t.id, { display: "flex", alignItems: "center", gap: 5 })}>
+              <span>{t.glyph}</span>
+              {t.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

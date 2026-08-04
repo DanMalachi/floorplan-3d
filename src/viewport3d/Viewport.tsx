@@ -40,6 +40,7 @@ import { FixtureLayer } from "./FixtureLayer";
 import { FixtureCatalog } from "./FixtureCatalog";
 import { MeasureTool } from "./MeasureTool";
 import { WallTool } from "./buildTools/WallTool";
+import { OpeningTool } from "./buildTools/OpeningTool";
 import { BottomDock } from "@/ui/planDock/BottomDock";
 import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
 import { PdToastHost } from "@/ui/planDock/toast";
@@ -1334,6 +1335,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <FixtureLayer scene={scene} offset={offset} />
           <MeasureTool offset={offset} />
           <WallTool offset={offset} />
+          <OpeningTool offset={offset} />
           <StairLayer scene={scene} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
           {/* Collaborators' selection markers (plan coords, inside the group). */}
