@@ -16,6 +16,7 @@
     "ikea:thumbnails": "tsx scripts/ikea/fetch-thumbnails.ts",
     "ikea:catalog": "tsx scripts/ikea/build-catalog.ts",
     "ikea:upload": "tsx scripts/ikea/upload-blob.ts",
+    "furniture:enrich": "tsx scripts/ikea/enrich-catalog.ts",
     "bk:index": "tsx scripts/blenderkit/fetch-index.ts",
     "bk:select": "tsx scripts/blenderkit/select.ts",
     "bk:models": "tsx scripts/blenderkit/fetch-models.ts",

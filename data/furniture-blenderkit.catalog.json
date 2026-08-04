@@ -14,7 +14,16 @@
     "subtitle": "bed",
     "rooms": [
       "bedroom"
-    ]
+    ],
+    "kind": "bed",
+    "typeTags": [
+      "bed",
+      "masterbed",
+      "bed",
+      "furniture"
+    ],
+    "colors": [],
+    "variantKey": "Master bed|bed|2x2x0"
   },
   {
     "assetId": "blenderkit:cd259516-4f81-48a5-9097-77789637cbf4",
@@ -31,7 +40,23 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "lamp",
+    "typeTags": [
+      "table-lamps",
+      "Floor",
+      "lamp",
+      "Ikea",
+      "LED",
+      "Light",
+      "arstid",
+      "cozy",
+      "timeless",
+      "decoration",
+      "diffuse"
+    ],
+    "colors": [],
+    "variantKey": "ÅRSTID Floor lamp|lamp|0x0x0"
   },
   {
     "assetId": "blenderkit:008228fc-e83c-4b13-8b2d-d27e36be1b3e",
@@ -48,7 +73,23 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "lamp",
+    "typeTags": [
+      "table-lamps",
+      "Table",
+      "lamp",
+      "Ikea",
+      "LED",
+      "Light",
+      "arstid",
+      "cozy",
+      "timeless",
+      "decoration",
+      "diffuse"
+    ],
+    "colors": [],
+    "variantKey": "ÅRSTID Table lamp|lamp|0x0x0"
   },
   {
     "assetId": "blenderkit:4db7593a-c7c0-4517-82e6-6f5be2c865cc",
@@ -65,7 +106,17 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "lamp",
+    "typeTags": [
+      "floor-lamp",
+      "Modern",
+      "Bauhaus",
+      "MCM",
+      "industrial"
+    ],
+    "colors": [],
+    "variantKey": "Floor Lamp|lamp|1x1x0"
   },
   {
     "assetId": "blenderkit:dc252bcb-1465-4c65-a03b-9e564204eae0",
@@ -82,7 +133,16 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "lamp",
+    "typeTags": [
+      "ceiling-light",
+      "celing_light",
+      "light",
+      "white"
+    ],
+    "colors": [],
+    "variantKey": "Light Kinkiet|lamp|0x0x0"
   },
   {
     "assetId": "blenderkit:c0997e86-cb55-4607-a4fe-1b855c957ac0",
@@ -98,7 +158,19 @@
     "subtitle": "decor",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "decor",
+    "typeTags": [
+      "office-chair",
+      "tripod",
+      "film",
+      "presentation",
+      "projection",
+      "rollup",
+      "conference"
+    ],
+    "colors": [],
+    "variantKey": "Projector Screen|decor|1x1x0"
   },
   {
     "assetId": "blenderkit:f4b1081f-6d3e-4b06-b55e-8fc2f80de17a",
@@ -115,7 +187,23 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "lamp",
+    "typeTags": [
+      "wall-light",
+      "wall_light",
+      "interior_light",
+      "light",
+      "gold_lamp",
+      "luxury_lighting",
+      "walllamp",
+      "walllight",
+      "lamp",
+      "home",
+      "archviz"
+    ],
+    "colors": [],
+    "variantKey": "Wall light|lamp|0x0x0"
   },
   {
     "assetId": "blenderkit:0d8f6d0a-a383-4476-bc1b-a8ae8ff22135",
@@ -132,7 +220,20 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "lamp",
+    "typeTags": [
+      "wall-light",
+      "wall_light",
+      "wall_lamp",
+      "lamp",
+      "light",
+      "modern_light",
+      "warm_light",
+      "decor"
+    ],
+    "colors": [],
+    "variantKey": "Wall Light|lamp|0x0x0"
   },
   {
     "assetId": "blenderkit:b8b951c4-1600-40f0-ba23-36ff3f5e86bb",
@@ -148,7 +249,22 @@
     "subtitle": "decor",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "decor",
+    "typeTags": [
+      "office",
+      "trash",
+      "can",
+      "waste",
+      "paper",
+      "basket",
+      "can",
+      "bucket",
+      "plastic",
+      "office"
+    ],
+    "colors": [],
+    "variantKey": "Waste Paper Basket|decor|0x0x0"
   },
   {
     "assetId": "blenderkit:76e31f48-a0f7-4854-868a-c2f692b68f67",
@@ -165,7 +281,22 @@
     "subtitle": "appliance",
     "rooms": [
       "kitchen"
-    ]
+    ],
+    "kind": "appliance",
+    "typeTags": [
+      "kitchen-appliance",
+      "kitchen_appliance",
+      "cooking_equipment",
+      "stovetop",
+      "oven",
+      "cooktop",
+      "simple",
+      "white",
+      "cooking",
+      "kitchen"
+    ],
+    "colors": [],
+    "variantKey": "Electric Stove|appliance|1x1x0"
   },
   {
     "assetId": "blenderkit:d889e3b1-6e86-48c6-bc5e-c6beeae322fc",
@@ -182,7 +313,16 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "bar-chair",
+      "bar",
+      "relax",
+      "drink"
+    ],
+    "colors": [],
+    "variantKey": "Bar Stool|stool|0x0x0"
   },
   {
     "assetId": "blenderkit:c07eef6b-349e-487a-8315-c58fe9aa1d44",
@@ -200,7 +340,21 @@
     "rooms": [
       "living",
       "dining"
-    ]
+    ],
+    "kind": "bench",
+    "typeTags": [
+      "outdoor-furniture",
+      "Modern",
+      "Furniture",
+      "Contemporary",
+      "Design",
+      "Outdoor",
+      "Industrial",
+      "Urban",
+      "Style"
+    ],
+    "colors": [],
+    "variantKey": "Bench Alley Loft Classic|bench|1x0x0"
   },
   {
     "assetId": "blenderkit:0bfe4a6a-7c4a-49de-9b6b-a4e855dde193",
@@ -217,7 +371,23 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "armchair",
+    "typeTags": [
+      "furniture",
+      "chair",
+      "lounge",
+      "wood",
+      "woven",
+      "strap",
+      "modern",
+      "scandinavian",
+      "folding",
+      "minimal",
+      "archviz"
+    ],
+    "colors": [],
+    "variantKey": "Carl-hansen-son 501|armchair|1x1x0"
   },
   {
     "assetId": "blenderkit:dfdffe2b-4c26-4c33-9f13-784fe54c5570",
@@ -234,7 +404,23 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "chair",
+      "chair",
+      "wood",
+      "leather",
+      "modern",
+      "scandinavian",
+      "dining",
+      "minimal",
+      "oak",
+      "archviz",
+      "pbr"
+    ],
+    "colors": [],
+    "variantKey": "Carl-hansen-son CHAIR 29|chair|1x0x0"
   },
   {
     "assetId": "blenderkit:498c5874-53ea-4706-8603-5face9777157",
@@ -251,7 +437,17 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "bar-chair",
+      "Chair",
+      "meatal",
+      "brown",
+      "lether"
+    ],
+    "colors": [],
+    "variantKey": "Chair|chair|0x0x0"
   },
   {
     "assetId": "blenderkit:703fe964-84bb-4468-84bd-f6aa3fb337b4",
@@ -268,7 +464,18 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "chair",
+      "Old",
+      "Wood",
+      "Chair",
+      "4k",
+      "tex"
+    ],
+    "colors": [],
+    "variantKey": "Chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:1fa0bc00-505a-40cb-bcc4-19f237e041d4",
@@ -285,7 +492,19 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "sofa",
+      "wood_sofa",
+      "chaise_lounge",
+      "stool",
+      "round_ottoman",
+      "pouf"
+    ],
+    "colors": [],
+    "variantKey": "Chaise lounge (Sofa)|sofa|3x2x0"
   },
   {
     "assetId": "blenderkit:0716c650-c735-493b-8f3a-3be2edfd3115",
@@ -302,7 +521,18 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "chair",
+      "old",
+      "wooden",
+      "with_armrests",
+      "rough",
+      "worn"
+    ],
+    "colors": [],
+    "variantKey": "China Chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6",
@@ -319,7 +549,22 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "armchair",
+    "typeTags": [
+      "furniture",
+      "vintage",
+      "antique",
+      "ornate",
+      "chinese",
+      "asian",
+      "varnished",
+      "elegant",
+      "wooden",
+      "traditional"
+    ],
+    "colors": [],
+    "variantKey": "Chinese Armchair|armchair|1x1x0"
   },
   {
     "assetId": "blenderkit:d4e83285-807e-4bcf-8d84-3dd83cb44da5",
@@ -336,7 +581,19 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "vintage",
+      "antique",
+      "wooden",
+      "ornate",
+      "traditional",
+      "fancy"
+    ],
+    "colors": [],
+    "variantKey": "Chinese Sofa|sofa|2x1x0"
   },
   {
     "assetId": "blenderkit:11adaf6f-177b-4301-82a8-8030ea31c421",
@@ -353,7 +610,19 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "chair",
+      "vintage",
+      "antique",
+      "wooden",
+      "ornate",
+      "traditional",
+      "asian"
+    ],
+    "colors": [],
+    "variantKey": "Chinese Stool|stool|1x1x0"
   },
   {
     "assetId": "blenderkit:d19dd7b1-6573-41c7-b12c-b3eccdb7047d",
@@ -370,7 +639,23 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "interior",
+      "architecture",
+      "pbr",
+      "sofa",
+      "couch",
+      "leather",
+      "furniture",
+      "room",
+      "fabric",
+      "gameready"
+    ],
+    "colors": [],
+    "variantKey": "Cotton Mini Sofa|sofa|3x1x0"
   },
   {
     "assetId": "blenderkit:ecba830a-8df6-4375-b59c-a10a18f947f0",
@@ -387,7 +672,23 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "interior",
+      "architecture",
+      "pbr",
+      "sofa",
+      "couch",
+      "leather",
+      "furniture",
+      "room",
+      "fabric",
+      "gameready"
+    ],
+    "colors": [],
+    "variantKey": "Cotton Mini Sofa|sofa|3x1x0"
   },
   {
     "assetId": "blenderkit:2d312a73-fa7c-4a42-8b97-fb432e9275b6",
@@ -404,7 +705,21 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "sofa",
+      "daybed",
+      "bed",
+      "couch",
+      "pillow",
+      "soft",
+      "seat",
+      "seating"
+    ],
+    "colors": [],
+    "variantKey": "Ditre Italia Arlott High Sofa|sofa|1x1x0"
   },
   {
     "assetId": "blenderkit:e663848a-ed62-40a2-ae71-a56a34d7d443",
@@ -421,7 +736,22 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "chair",
+      "workshop",
+      "garage",
+      "woodwork",
+      "camping",
+      "folding_stool",
+      "portable",
+      "compact",
+      "outdoor",
+      "garden"
+    ],
+    "colors": [],
+    "variantKey": "Folding Wooden Stool|stool|1x1x0"
   },
   {
     "assetId": "blenderkit:b32f180a-a041-4b01-bcfb-5ff8e6794699",
@@ -438,7 +768,19 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "furniture",
+      "vintage",
+      "antique",
+      "philippines",
+      "traditional",
+      "old",
+      "wooden"
+    ],
+    "colors": [],
+    "variantKey": "Gallinera Chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:246cc152-48b6-46a9-b4c1-7f7f299d0148",
@@ -455,7 +797,20 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "chair",
+      "chair",
+      "metalic",
+      "simple",
+      "high",
+      "kids",
+      "children",
+      "booster"
+    ],
+    "colors": [],
+    "variantKey": "High Chair for Little Ones|chair|0x0x0"
   },
   {
     "assetId": "blenderkit:d85ae05e-ac69-425d-8b2a-693851a9ba6d",
@@ -472,7 +827,20 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "chair",
+      "ikea",
+      "chair",
+      "black",
+      "modern",
+      "small",
+      "soft",
+      "fabric"
+    ],
+    "colors": [],
+    "variantKey": "Ikea modern chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:6122afb7-3fb5-441e-9fa3-f57de7ebed93",
@@ -489,7 +857,17 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "armchair",
+    "typeTags": [
+      "regular-chair",
+      "Ikea",
+      "Onnestad",
+      "Red",
+      "Armchair"
+    ],
+    "colors": [],
+    "variantKey": "Ikea Onnestad Red Armchair|armchair|1x1x0"
   },
   {
     "assetId": "blenderkit:6c59319d-a7b6-470b-a0f9-981083a415ae",
@@ -506,7 +884,23 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "interior",
+      "architecture",
+      "pbr",
+      "sofa",
+      "couch",
+      "leather",
+      "furniture",
+      "room",
+      "fabric",
+      "gameready"
+    ],
+    "colors": [],
+    "variantKey": "Leather Sofa|sofa|3x1x0"
   },
   {
     "assetId": "blenderkit:4faac4b8-cc88-4ff2-b7fd-a7edf46d3518",
@@ -523,7 +917,23 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "interior",
+      "architecture",
+      "pbr",
+      "sofa",
+      "couch",
+      "leather",
+      "furniture",
+      "room",
+      "fabric",
+      "gameready"
+    ],
+    "colors": [],
+    "variantKey": "Leather Sofa|sofa|3x1x0"
   },
   {
     "assetId": "blenderkit:722988c3-67ad-497d-84ea-7b5408b05d38",
@@ -541,7 +951,21 @@
     "rooms": [
       "living",
       "dining"
-    ]
+    ],
+    "kind": "bench",
+    "typeTags": [
+      "chair",
+      "alcove",
+      "garden",
+      "country",
+      "house",
+      "park",
+      "barbecue",
+      "pergola",
+      "forging"
+    ],
+    "colors": [],
+    "variantKey": "Marina Bench without Backrest|bench|0x2x0"
   },
   {
     "assetId": "blenderkit:17208e80-4a12-4509-ac48-ed20ea923f87",
@@ -559,7 +983,20 @@
     "rooms": [
       "living",
       "dining"
-    ]
+    ],
+    "kind": "bench",
+    "typeTags": [
+      "outdoor-furniture",
+      "bench",
+      "chair",
+      "industrial",
+      "metal",
+      "city",
+      "park",
+      "street"
+    ],
+    "colors": [],
+    "variantKey": "Metal Bench|bench|3x1x0"
   },
   {
     "assetId": "blenderkit:2e1631c7-96ab-45c0-b822-4b4868b8d83e",
@@ -576,7 +1013,21 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "furniture",
+      "vintage",
+      "antique",
+      "old",
+      "leather",
+      "round",
+      "metal",
+      "industrial",
+      "barstool"
+    ],
+    "colors": [],
+    "variantKey": "Metal Stool 01|stool|0x0x0"
   },
   {
     "assetId": "blenderkit:5670b13c-e817-48a8-a78e-4dcfc2e4ec89",
@@ -593,7 +1044,21 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "furniture",
+      "old",
+      "metal",
+      "barstool",
+      "backrest",
+      "heavyduty",
+      "weathered",
+      "rusted",
+      "workshop"
+    ],
+    "colors": [],
+    "variantKey": "Metal Stool 03|stool|0x0x0"
   },
   {
     "assetId": "blenderkit:f5f8aa7e-aa53-4c35-abb2-6c6c81b30604",
@@ -610,7 +1075,23 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "armchair",
+    "typeTags": [
+      "furniture",
+      "wooden",
+      "leather",
+      "couch",
+      "lounge",
+      "architecture",
+      "modern",
+      "interior_design",
+      "home_decor",
+      "living_room",
+      "comfort"
+    ],
+    "colors": [],
+    "variantKey": "Mid Century Lounge Chair|armchair|1x1x0"
   },
   {
     "assetId": "blenderkit:c0afe8be-94f7-4c7d-929c-8d8d0a36d7de",
@@ -627,7 +1108,22 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "pouf",
+    "typeTags": [
+      "pouf",
+      "pouf",
+      "fabric",
+      "modern",
+      "soft",
+      "seat",
+      "home",
+      "furniture",
+      "realistic",
+      "cozy"
+    ],
+    "colors": [],
+    "variantKey": "Modern Fabric Pouf|pouf|1x0x0"
   },
   {
     "assetId": "blenderkit:eaeba31c-8d32-4d47-b3ce-2a494ce2b17f",
@@ -644,7 +1140,19 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "regular-chair",
+      "chair",
+      "office_chair",
+      "new_chair",
+      "metal_chair",
+      "modern_chair",
+      "minimalistic_chair"
+    ],
+    "colors": [],
+    "variantKey": "Office Chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:8e9f05a2-8a6b-4bcf-a10c-3b30756d3892",
@@ -662,7 +1170,23 @@
     "rooms": [
       "living",
       "dining"
-    ]
+    ],
+    "kind": "bench",
+    "typeTags": [
+      "interior",
+      "vintage",
+      "old",
+      "wooden",
+      "worn",
+      "antique",
+      "farmhouse",
+      "aged",
+      "rustic",
+      "small",
+      "seat"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Bench|bench|1x0x0"
   },
   {
     "assetId": "blenderkit:ac92d62f-df99-4af2-89ac-be9549c268a6",
@@ -679,7 +1203,21 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "regular-chair",
+      "old",
+      "wooden",
+      "vintage",
+      "antique",
+      "farmhouse",
+      "seat",
+      "dining",
+      "chair"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Chair 02|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:331afbd0-0322-423e-8967-d41257b93b62",
@@ -696,7 +1234,19 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "chair",
+      "outdoor",
+      "couch",
+      "wooden",
+      "vintage",
+      "aged"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Sofa|sofa|2x1x0"
   },
   {
     "assetId": "blenderkit:aad78f1d-ca8a-4def-bee7-836207e91484",
@@ -713,7 +1263,23 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "chair",
+      "painted",
+      "worn",
+      "old",
+      "antique",
+      "vintage",
+      "farmhouse",
+      "rustic",
+      "carpentry",
+      "aged",
+      "chair"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Stool|stool|0x0x0"
   },
   {
     "assetId": "blenderkit:0e9aa213-afd4-4b45-ba88-d3b76bcef9ce",
@@ -730,7 +1296,19 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "regular-chair",
+      "chair",
+      "plastic_chair",
+      "plastic",
+      "organic_chair",
+      "morden_chair",
+      "single_chair"
+    ],
+    "colors": [],
+    "variantKey": "Plastic chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:a48fb06f-f8d1-4936-82d1-053e6f0c372a",
@@ -747,7 +1325,16 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "regular-chair",
+      "rustic",
+      "comfortable",
+      "wood"
+    ],
+    "colors": [],
+    "variantKey": "Rustic chair|chair|0x1x0"
   },
   {
     "assetId": "blenderkit:2762707d-892d-4fd1-8ce6-5460da1f0b5a",
@@ -764,7 +1351,23 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "armchair",
+    "typeTags": [
+      "furniture",
+      "chair",
+      "lounge",
+      "leather",
+      "curved",
+      "round",
+      "modern",
+      "wood",
+      "minimal",
+      "red",
+      "archviz"
+    ],
+    "colors": [],
+    "variantKey": "Trecento Sessanta|armchair|1x1x0"
   },
   {
     "assetId": "blenderkit:9df5c46e-cadf-4c15-816c-31ef905892ee",
@@ -781,7 +1384,23 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "chair",
+      "chair",
+      "wood",
+      "black",
+      "minimal",
+      "dining",
+      "modern",
+      "scandinavian",
+      "pbr",
+      "furniture",
+      "archviz"
+    ],
+    "colors": [],
+    "variantKey": "Vincent shepard Teo|chair|0x0x0"
   },
   {
     "assetId": "blenderkit:bf356937-e6e7-4a2e-91c7-c1251d1a406b",
@@ -798,7 +1417,16 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "armchair",
+    "typeTags": [
+      "furniture",
+      "armchair",
+      "furniture",
+      "sofa"
+    ],
+    "colors": [],
+    "variantKey": "Vintage Armchair|armchair|1x1x0"
   },
   {
     "assetId": "blenderkit:a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae",
@@ -815,7 +1443,22 @@
     "subtitle": "sofa",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "furniture",
+      "old",
+      "vintage",
+      "antique",
+      "wooden",
+      "couch",
+      "bench",
+      "sofabed",
+      "matress",
+      "chaise"
+    ],
+    "colors": [],
+    "variantKey": "Vintage Day Bed|sofa|2x1x0"
   },
   {
     "assetId": "blenderkit:a31c827d-81e6-4d1a-ba5a-1a6c5ea5459a",
@@ -832,7 +1475,17 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "regular-chair",
+      "wooden_chair",
+      "chair",
+      "simple_chair",
+      "simple"
+    ],
+    "colors": [],
+    "variantKey": "Wodden chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:9bff6a18-14e1-4442-aa22-6d7bb686d776",
@@ -850,7 +1503,23 @@
     "rooms": [
       "living",
       "dining"
-    ]
+    ],
+    "kind": "bench",
+    "typeTags": [
+      "sofa",
+      "bench",
+      "wood",
+      "rustic",
+      "furniture",
+      "seating",
+      "long",
+      "farmhouse",
+      "indoor",
+      "sturdy",
+      "decor"
+    ],
+    "colors": [],
+    "variantKey": "Wooden Bench|bench|1x0x0"
   },
   {
     "assetId": "blenderkit:0d05c301-90b9-469a-8d52-91f9e9010244",
@@ -867,7 +1536,19 @@
     "rooms": [
       "dining",
       "office"
-    ]
+    ],
+    "kind": "chair",
+    "typeTags": [
+      "regular-chair",
+      "chair",
+      "wooden_chair",
+      "old_chair",
+      "old",
+      "old_woodenchair",
+      "old_wood"
+    ],
+    "colors": [],
+    "variantKey": "Wooden Chair|chair|1x1x0"
   },
   {
     "assetId": "blenderkit:1890dedc-c249-40b7-947a-296ee154df2b",
@@ -885,7 +1566,22 @@
     "rooms": [
       "living",
       "dining"
-    ]
+    ],
+    "kind": "bench",
+    "typeTags": [
+      "outdoor-furniture",
+      "vintage",
+      "old",
+      "worn",
+      "park",
+      "bench",
+      "outdoor",
+      "weathered",
+      "countryside",
+      "outdoor_seating"
+    ],
+    "colors": [],
+    "variantKey": "Wooden Picnic Table|bench|2x3x0"
   },
   {
     "assetId": "blenderkit:eb82ecf0-7240-4e91-a699-ed8f28cae459",
@@ -902,7 +1598,22 @@
     "rooms": [
       "kitchen",
       "dining"
-    ]
+    ],
+    "kind": "stool",
+    "typeTags": [
+      "chair",
+      "old",
+      "wooden",
+      "vintage",
+      "antique",
+      "wood",
+      "farmhouse",
+      "carpentry",
+      "handcrafted",
+      "footstool"
+    ],
+    "colors": [],
+    "variantKey": "Wooden Stool 02|stool|0x0x0"
   },
   {
     "assetId": "blenderkit:2b43761f-123c-4017-b706-ebef91754456",
@@ -921,7 +1632,22 @@
       "living",
       "bedroom",
       "kitchen"
-    ]
+    ],
+    "kind": "cabinet",
+    "typeTags": [
+      "shelving",
+      "old",
+      "wooden",
+      "vintage",
+      "antique",
+      "ornate",
+      "traditional",
+      "asian",
+      "elegant",
+      "ornamental"
+    ],
+    "colors": [],
+    "variantKey": "Chinese Cabinet|cabinet|1x1x0"
   },
   {
     "assetId": "blenderkit:b529df0c-671b-4589-bc1c-367fda168cc4",
@@ -939,7 +1665,18 @@
     "rooms": [
       "living",
       "office"
-    ]
+    ],
+    "kind": "shelving",
+    "typeTags": [
+      "shelving",
+      "corner",
+      "furniture",
+      "shelf",
+      "shelving",
+      "walnut"
+    ],
+    "colors": [],
+    "variantKey": "Corner Shelf|shelving|0x0x0"
   },
   {
     "assetId": "blenderkit:d69acfaa-14da-4513-8026-3887bfd3125b",
@@ -957,7 +1694,19 @@
     "rooms": [
       "living",
       "office"
-    ]
+    ],
+    "kind": "shelving",
+    "typeTags": [
+      "bathroomfurniture-furniture-set",
+      "miomare",
+      "bathroom",
+      "bathroom_shelf",
+      "shelf",
+      "shelving",
+      "furniture"
+    ],
+    "colors": [],
+    "variantKey": "Miomare bathroom shelf|shelving|1x0x0"
   },
   {
     "assetId": "blenderkit:89df3e31-303c-4401-a54f-ec834e46e180",
@@ -976,7 +1725,21 @@
       "living",
       "bedroom",
       "kitchen"
-    ]
+    ],
+    "kind": "cabinet",
+    "typeTags": [
+      "cabinets",
+      "cabinet",
+      "wood",
+      "modern",
+      "minimalist",
+      "interrior",
+      "living_room",
+      "contemporary",
+      "design"
+    ],
+    "colors": [],
+    "variantKey": "Modern Wooden Cabinet|cabinet|2x1x0"
   },
   {
     "assetId": "blenderkit:30a3d1c5-6554-42fd-a8d0-a1efdff162b3",
@@ -995,7 +1758,23 @@
       "living",
       "bedroom",
       "kitchen"
-    ]
+    ],
+    "kind": "cabinet",
+    "typeTags": [
+      "cabinets",
+      "old",
+      "worn",
+      "antique",
+      "wooden",
+      "vintage",
+      "colonial",
+      "farmhouse",
+      "storage",
+      "aged",
+      "rustic"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Cabinet|cabinet|1x1x0"
   },
   {
     "assetId": "blenderkit:9c201695-6847-410f-89df-7cdc0ec14f23",
@@ -1012,7 +1791,23 @@
     "subtitle": "nightstand",
     "rooms": [
       "bedroom"
-    ]
+    ],
+    "kind": "nightstand",
+    "typeTags": [
+      "hall",
+      "old",
+      "wooden",
+      "worn",
+      "vintage",
+      "antique",
+      "aged",
+      "bedside",
+      "bedroom",
+      "night",
+      "table"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Nightstand|nightstand|1x1x0"
   },
   {
     "assetId": "blenderkit:830e4547-ad81-48cb-b61d-d387d046a449",
@@ -1030,7 +1825,19 @@
     "rooms": [
       "living",
       "office"
-    ]
+    ],
+    "kind": "shelving",
+    "typeTags": [
+      "cabinets",
+      "old",
+      "wooden",
+      "worn",
+      "vintage",
+      "farmhouse",
+      "aged"
+    ],
+    "colors": [],
+    "variantKey": "Painted Wooden Shelves|shelving|1x0x0"
   },
   {
     "assetId": "blenderkit:2747a371-7a7e-4b76-be24-7660093c0b84",
@@ -1048,7 +1855,19 @@
     "rooms": [
       "living",
       "office"
-    ]
+    ],
+    "kind": "shelving",
+    "typeTags": [
+      "shelving",
+      "storage",
+      "home_decor",
+      "contemporary",
+      "minimalist",
+      "display",
+      "frame"
+    ],
+    "colors": [],
+    "variantKey": "Steel Frame Shelves 03|shelving|2x1x0"
   },
   {
     "assetId": "blenderkit:4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e",
@@ -1066,7 +1885,22 @@
     "rooms": [
       "living",
       "office"
-    ]
+    ],
+    "kind": "rack",
+    "typeTags": [
+      "furniture",
+      "shelves",
+      "storage",
+      "metal",
+      "rusted",
+      "old",
+      "worn",
+      "workshop",
+      "garage",
+      "shed"
+    ],
+    "colors": [],
+    "variantKey": "Worn Metal Rack|rack|1x1x0"
   },
   {
     "assetId": "blenderkit:294c2ee9-a12f-4b8c-a5c5-f7178326cb75",
@@ -1083,7 +1917,19 @@
     "subtitle": "console",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "console",
+    "typeTags": [
+      "bedroom",
+      "vintage",
+      "antique",
+      "wooden",
+      "ornate",
+      "traditional",
+      "asian"
+    ],
+    "colors": [],
+    "variantKey": "Chinese Console Table|console|2x0x0"
   },
   {
     "assetId": "blenderkit:4db96473-72ed-4947-80d8-af6dc1c4dee8",
@@ -1099,7 +1945,19 @@
     "subtitle": "coffee table",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "coffee table",
+    "typeTags": [
+      "table",
+      "table",
+      "coffee_table",
+      "wood_table",
+      "glass_table",
+      "interior",
+      "sofa_table"
+    ],
+    "colors": [],
+    "variantKey": "Coffee Table|coffee table|1x1x0"
   },
   {
     "assetId": "blenderkit:a85d4f2f-b1d6-4a05-8e54-a3ba0b7efe9f",
@@ -1115,7 +1973,18 @@
     "subtitle": "dining table",
     "rooms": [
       "dining"
-    ]
+    ],
+    "kind": "dining table",
+    "typeTags": [
+      "table",
+      "dining_table",
+      "table",
+      "wood_table",
+      "wood",
+      "vase"
+    ],
+    "colors": [],
+    "variantKey": "Dining table|dining table|2x1x0"
   },
   {
     "assetId": "blenderkit:8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45",
@@ -1131,7 +2000,20 @@
     "subtitle": "dining table",
     "rooms": [
       "dining"
-    ]
+    ],
+    "kind": "dining table",
+    "typeTags": [
+      "furniture",
+      "old",
+      "scratched",
+      "clothcovered",
+      "rectangular",
+      "checkeredtablecloth",
+      "taperedlegs",
+      "worn"
+    ],
+    "colors": [],
+    "variantKey": "Dining Table|dining table|2x1x0"
   },
   {
     "assetId": "blenderkit:1057fdd0-a688-4ba1-b624-94f8466ce6c8",
@@ -1147,7 +2029,19 @@
     "subtitle": "dining table",
     "rooms": [
       "dining"
-    ]
+    ],
+    "kind": "dining table",
+    "typeTags": [
+      "living-room",
+      "vintage",
+      "antique",
+      "philippines",
+      "traditional",
+      "old",
+      "wooden"
+    ],
+    "colors": [],
+    "variantKey": "Gallinera Table|dining table|1x1x0"
   },
   {
     "assetId": "blenderkit:1a2474e6-2fce-480a-be98-0b12c6b696ab",
@@ -1163,7 +2057,21 @@
     "subtitle": "coffee table",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "coffee table",
+    "typeTags": [
+      "table",
+      "metal",
+      "industrial",
+      "steel",
+      "rustic",
+      "workshop",
+      "metal_frame",
+      "garage",
+      "urban_loft"
+    ],
+    "colors": [],
+    "variantKey": "Industrial Coffee Table|coffee table|1x1x0"
   },
   {
     "assetId": "blenderkit:8a90d1ac-eefb-45ff-b854-e0d66b067d39",
@@ -1180,7 +2088,16 @@
     "subtitle": "desk",
     "rooms": [
       "office"
-    ]
+    ],
+    "kind": "desk",
+    "typeTags": [
+      "desk",
+      "Desk",
+      "furniture",
+      "glass"
+    ],
+    "colors": [],
+    "variantKey": "L Shape Glass Desk|desk|1x1x0"
   },
   {
     "assetId": "blenderkit:d4de2ba6-412d-4e23-8cbc-50f5ee7cfa4e",
@@ -1196,7 +2113,19 @@
     "subtitle": "coffee table",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "coffee table",
+    "typeTags": [
+      "table",
+      "coffee",
+      "table",
+      "wood",
+      "metal",
+      "modern",
+      "minimalist"
+    ],
+    "colors": [],
+    "variantKey": "Luxury Coffee Table|coffee table|1x1x0"
   },
   {
     "assetId": "blenderkit:0ab00d3f-db59-42cf-b000-e8a3ce25b12c",
@@ -1213,7 +2142,20 @@
     "subtitle": "desk",
     "rooms": [
       "office"
-    ]
+    ],
+    "kind": "desk",
+    "typeTags": [
+      "furniture",
+      "old",
+      "vintage",
+      "metal",
+      "dirty",
+      "scratched",
+      "industrial",
+      "rectangular"
+    ],
+    "colors": [],
+    "variantKey": "Metal Office Desk|desk|2x1x0"
   },
   {
     "assetId": "blenderkit:b6bdc26a-36bb-4be3-8f64-312836aae79b",
@@ -1229,7 +2171,19 @@
     "subtitle": "coffee table",
     "rooms": [
       "living"
-    ]
+    ],
+    "kind": "coffee table",
+    "typeTags": [
+      "outdoor-furniture",
+      "coffee",
+      "table",
+      "wood",
+      "metal",
+      "modern",
+      "minimalist"
+    ],
+    "colors": [],
+    "variantKey": "Modern Coffee Table|coffee table|1x1x0"
   },
   {
     "assetId": "blenderkit:c56d5811-f7c7-42a0-b007-11547d50f798",
@@ -1245,7 +2199,18 @@
     "subtitle": "dining table",
     "rooms": [
       "dining"
-    ]
+    ],
+    "kind": "dining table",
+    "typeTags": [
+      "table",
+      "table",
+      "glass",
+      "modern",
+      "interior",
+      "furniture"
+    ],
+    "colors": [],
+    "variantKey": "Modern Glass Table|dining table|1x1x0"
   },
   {
     "assetId": "blenderkit:4fd0b237-9527-45d5-b82a-4cfec427f673",
@@ -1261,7 +2226,20 @@
     "subtitle": "dining table",
     "rooms": [
       "dining"
-    ]
+    ],
+    "kind": "dining table",
+    "typeTags": [
+      "table",
+      "antique",
+      "vintage",
+      "wooden",
+      "traditional",
+      "circle",
+      "lounge",
+      "dining"
+    ],
+    "colors": [],
+    "variantKey": "Round Wooden Table 02|dining table|1x1x0"
   },
   {
     "assetId": "blenderkit:0dd6f649-dbef-4c78-a8ae-574bcc9cad64",
@@ -1278,6 +2256,21 @@
     "rooms": [
       "living",
       "bedroom"
-    ]
+    ],
+    "kind": "side table",
+    "typeTags": [
+      "table",
+      "wood",
+      "corner",
+      "table",
+      "small",
+      "interior",
+      "decor",
+      "furniture",
+      "modern",
+      "rustic"
+    ],
+    "colors": [],
+    "variantKey": "Wooden Corner Table|side table|0x0x0"
   }
 ]

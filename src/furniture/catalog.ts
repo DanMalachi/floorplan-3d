@@ -76,7 +76,30 @@ export interface FurnitureAsset {
   /** Secondary caption (e.g. Hebrew product type). */
   subtitle?: string;
   price?: { value: number | null; currency: string };
+
+  // ── Added by scripts/ikea/enrich-catalog.ts (Plan Dock P1) ───────────────
+  /** Normalized English item-type ("3-seat sofa", "bookcase", ...) — what
+   *  `searchText` actually keys on. `name` alone is a brand word (BILLY,
+   *  KIVIK) that says nothing about what the item IS, which is why the
+   *  hotspot/search match used to miss every imported IKEA/BlenderKit item. */
+  kind?: string;
+  /** Extra English search terms (raw category + BlenderKit tags) folded
+   *  into `searchText`. No UI surfaces this list directly. */
+  typeTags?: string[];
+  /** True color/finish variants — IKEA only (BlenderKit's schema carries no
+   *  colour data). Feeds the Phase 6 swatch row. */
+  colors?: { name: string; hex: string }[];
+  /** Groups literal color/finish variants of the same physical item
+   *  (name + kind + exact W×D×H from the raw source) without merging
+   *  genuine size variants (BILLY's 13 sizes each get their own key). */
+  variantKey?: string;
 }
+
+/** Every English word `matchesHotspot`/search can match against — `name` is
+ *  a brand word for imported catalogs (BILLY, KIVIK), so it's never enough
+ *  on its own. Lowercased; callers do their own substring/keyword check. */
+export const searchText = (a: FurnitureAsset): string =>
+  [a.name, a.kind, ...(a.typeTags ?? [])].filter(Boolean).join(" ").toLowerCase();
 
 export const CATALOG: FurnitureAsset[] = [
   // --- Seating ---

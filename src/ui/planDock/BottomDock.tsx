@@ -49,6 +49,7 @@ import { useSceneStore } from "@/store/useSceneStore";
 import {
   CATEGORIES,
   getItemsForRoom,
+  searchText,
   type FurnitureAsset,
   type FurnitureCategory,
   type RoomType,
@@ -129,9 +130,13 @@ const ROOM_SCENES: { id: RoomType; label: string }[] = [
 ];
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
-  const name = item.name.toLowerCase();
-  return hotspot.keywords.some((k) => name.includes(k));
+  const text = searchText(item);
+  return hotspot.keywords.some((k) => text.includes(k));
 }
+
+/** Hebrew text isn't useful to show as a caption — fall back to `kind`
+ *  (English, normalized by enrich-catalog.ts) instead. */
+const isHebrew = (s: string) => /[֐-׿]/.test(s);
 
 /** Separate floating panel: room-icon switcher on top, illustrated scene
  *  below. No longer the left column of the item dock, so its height isn't
@@ -231,6 +236,14 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
       <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
         {item.name}
       </span>
+      {/* Imported catalogs' `subtitle` is the raw Hebrew product type — not
+          useful as a caption for an English-reading picker. `kind` (added by
+          enrich-catalog.ts) is the same information, normalized to English. */}
+      {item.kind && (!item.subtitle || isHebrew(item.subtitle)) && (
+        <span style={{ fontSize: 8, color: PD.textTertiary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+          {item.kind}
+        </span>
+      )}
     </button>
   );
 }
@@ -351,7 +364,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
     if (hotspot) out = out.filter((i) => matchesHotspot(i, hotspot));
     if (activeCategory) out = out.filter((i) => i.category === activeCategory);
     const q = query.trim().toLowerCase();
-    if (q) out = out.filter((i) => i.name.toLowerCase().includes(q));
+    if (q) out = out.filter((i) => searchText(i).includes(q));
     return out;
   }, [roomItems, hotspot, activeCategory, query]);
 
