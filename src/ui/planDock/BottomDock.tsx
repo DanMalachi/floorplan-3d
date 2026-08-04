@@ -65,6 +65,11 @@ import { BedroomScene, BEDROOM_HOTSPOTS } from "./BedroomScene";
 import { LivingScene, LIVING_HOTSPOTS } from "./LivingScene";
 import { DiningScene, DINING_HOTSPOTS } from "./DiningScene";
 import { StudyScene, STUDY_HOTSPOTS } from "./StudyScene";
+import { LaundryScene, LAUNDRY_HOTSPOTS } from "./LaundryScene";
+import { ClosetScene, CLOSET_HOTSPOTS } from "./ClosetScene";
+import { KidsScene, KIDS_HOTSPOTS } from "./KidsScene";
+import { GarageScene, GARAGE_HOTSPOTS } from "./GarageScene";
+import { OutdoorsScene, OUTDOORS_HOTSPOTS } from "./OutdoorsScene";
 import { Tooltip } from "./Tooltip";
 import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon } from "./icons";
 
@@ -77,6 +82,11 @@ const ROOM_SCENE_COMPONENT: Partial<Record<RoomType, ComponentType<RoomSceneProp
   living: LivingScene,
   dining: DiningScene,
   study: StudyScene,
+  laundry: LaundryScene,
+  closet: ClosetScene,
+  kids: KidsScene,
+  garage: GarageScene,
+  outdoors: OutdoorsScene,
 };
 
 const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
@@ -86,6 +96,11 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   living: LIVING_HOTSPOTS,
   dining: DINING_HOTSPOTS,
   study: STUDY_HOTSPOTS,
+  laundry: LAUNDRY_HOTSPOTS,
+  closet: CLOSET_HOTSPOTS,
+  kids: KIDS_HOTSPOTS,
+  garage: GARAGE_HOTSPOTS,
+  outdoors: OUTDOORS_HOTSPOTS,
 };
 
 type DockTab = "furniture" | "lighting" | "paint" | "floors";
@@ -96,7 +111,9 @@ const DOCK_TABS: { id: DockTab; label: string }[] = [
   { id: "floors", label: "Floors" },
 ];
 
-// v2 doc's 7 room scenes; only "kitchen" has hotspot art this round.
+// Every browsable room tab, all 11 with illustrated hotspot art in
+// ROOM_SCENE_COMPONENT. NavigatorPanel's "scene not built yet" fallback stays
+// in place for any future RoomType added without a Scene yet.
 const ROOM_SCENES: { id: RoomType; label: string }[] = [
   { id: "kitchen", label: "Kitchen" },
   { id: "bathroom", label: "Bathroom" },
@@ -104,6 +121,11 @@ const ROOM_SCENES: { id: RoomType; label: string }[] = [
   { id: "living", label: "Living" },
   { id: "dining", label: "Dining" },
   { id: "study", label: "Study" },
+  { id: "laundry", label: "Laundry" },
+  { id: "closet", label: "Closet" },
+  { id: "kids", label: "Kids" },
+  { id: "garage", label: "Garage" },
+  { id: "outdoors", label: "Outdoors" },
 ];
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
@@ -435,15 +457,7 @@ export function BottomDock() {
           )}
         </div>
         {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
-        {tab === "lighting" && (
-          // FixtureCatalog is unrestyled — it's built against the app's
-          // opaque dark token set (src/ui/tokens.ts). Its own colors already
-          // read fine against this dock's dark glass, unlike the old light
-          // theme, so no backdrop wrapper is needed anymore.
-          <div style={{ flex: 1, minHeight: 0, display: "flex", overflowX: "auto" }}>
-            <FixtureCatalog />
-          </div>
-        )}
+        {tab === "lighting" && <FixtureCatalog />}
         {tab === "paint" && <PaintTab />}
         {tab === "floors" && <FloorsTab />}
       </div>

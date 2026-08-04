@@ -38,7 +38,9 @@ import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
 import { FixtureLayer } from "./FixtureLayer";
 import { FixtureCatalog } from "./FixtureCatalog";
+import { MeasureTool } from "./MeasureTool";
 import { BottomDock } from "@/ui/planDock/BottomDock";
+import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
 import { StairLayer } from "./StairMesh";
 import { StairInspector } from "./StairInspector";
 import { registerViewportCanvas } from "./viewportCapture";
@@ -1328,6 +1330,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
           <FixtureLayer scene={scene} offset={offset} />
+          <MeasureTool offset={offset} />
           <StairLayer scene={scene} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
           {/* Collaborators' selection markers (plan coords, inside the group). */}
@@ -1390,6 +1393,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       </Canvas>
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
       {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
+      {appMode === "build" && <BuildToolbar />}
       {appMode === "furnish" && <BottomDock />}
       {appMode === "view" && <ScenePanel />}
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />

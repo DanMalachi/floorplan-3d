@@ -197,7 +197,10 @@ function FixtureItemView({ item, offset, rooms }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.placing) return; // fixture edits in Furnish only, same as furniture
     e.stopPropagation();
+    const wasSelected = s.sel3d?.kind === "fixture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "fixture", id: item.id });
+    // First click only selects (see FurnitureLayer's onPointerDown for why).
+    if (!wasSelected) return;
     const p = rayToPlan(e, offset);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);

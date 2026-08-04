@@ -16,7 +16,11 @@ export type FurnitureCategory =
 
 /** Illustrated-scene room types (Plan Dock v2). "study" is the renamed
  *  successor of the older "office" RoomSection id — both ids resolve to the
- *  same tag via `resolveRoomType` below. "outdoors" has no items yet. */
+ *  same tag via `resolveRoomType` below. "laundry"/"closet"/"kids"/"garage"/
+ *  "outdoors" are taxonomy-only: tagged with catalog items (real or
+ *  placeholder-rendered) so the room exists as a browsable tab, but none has
+ *  hotspot scene art yet — `BottomDock`'s `ROOM_SCENE_COMPONENT` falls back
+ *  to "scene not built yet" for any RoomType missing a Scene component. */
 export type RoomType =
   | "kitchen"
   | "bathroom"
@@ -24,6 +28,10 @@ export type RoomType =
   | "living"
   | "dining"
   | "study"
+  | "laundry"
+  | "closet"
+  | "kids"
+  | "garage"
   | "outdoors";
 
 export interface FurnitureAsset {
@@ -43,6 +51,12 @@ export interface FurnitureAsset {
   /** Reserved for the fire-alarm/smoke-detector/misc-catchall phase (Plan Dock
    *  v2 Phase E, not yet scoped). No UI reads this field this round. */
   overflowCategory?: string;
+  /** Meters above floor a fresh placement starts at, for items that mount high
+   *  on a wall (shower head, range hood, towel rack) rather than sitting on
+   *  the floor. Read once by `placeFurniture` at click-to-place time; the
+   *  placed item then carries it as `FurnitureItem.elevation` like any other
+   *  item — there's no separate wall-mount concept in the scene schema. */
+  defaultElevation?: number;
 
   // ── Optional, used by imported brand catalogs (e.g. IKEA) ────────────────
   /** GLB basename to render, when it differs from `assetId`. Lets a real branded
@@ -101,6 +115,51 @@ export const CATALOG: FurnitureAsset[] = [
   { assetId: "pottedPlant", name: "Potted plant", category: "Decor", footprint: { w: 0.4, d: 0.4 } },
   { assetId: "lampRoundFloor", name: "Floor lamp", category: "Decor", footprint: { w: 0.4, d: 0.4 } },
   { assetId: "rugRectangle", name: "Rug", category: "Decor", footprint: { w: 2.0, d: 1.4 }, noCollide: true },
+
+  // --- Bathroom extras (no shipped model yet — render as a neutral
+  // placeholder box until one is sourced; see PlaceholderBox in
+  // FurnitureLayer.tsx. Wall-mounted items get a defaultElevation so a fresh
+  // placement starts at a believable height instead of on the floor. ---
+  { assetId: "showerHead", name: "Shower head", category: "Bathroom", footprint: { w: 0.12, d: 0.12 }, wallSnap: true, defaultElevation: 1.95, roomTags: ["bathroom"] },
+  { assetId: "towelRack", name: "Towel rack", category: "Bathroom", footprint: { w: 0.5, d: 0.08 }, wallSnap: true, defaultElevation: 1.1, roomTags: ["bathroom"] },
+  { assetId: "bathroomMirror", name: "Bathroom mirror", category: "Bathroom", footprint: { w: 0.6, d: 0.05 }, wallSnap: true, defaultElevation: 1.2, roomTags: ["bathroom"] },
+  { assetId: "bathroomTrashBin", name: "Trash bin", category: "Bathroom", footprint: { w: 0.25, d: 0.25 }, roomTags: ["bathroom"] },
+
+  // --- Kitchen extras ---
+  { assetId: "kitchenDishwasher", name: "Dishwasher", category: "Kitchen", footprint: { w: 0.6, d: 0.6 }, wallSnap: true, roomTags: ["kitchen"] },
+  { assetId: "kitchenRangeHood", name: "Range hood", category: "Kitchen", footprint: { w: 0.6, d: 0.5 }, wallSnap: true, defaultElevation: 1.6, roomTags: ["kitchen"] },
+  { assetId: "kitchenIsland", name: "Kitchen island", category: "Kitchen", footprint: { w: 1.2, d: 0.8 }, roomTags: ["kitchen"] },
+  { assetId: "kitchenMicrowave", name: "Microwave", category: "Kitchen", footprint: { w: 0.5, d: 0.35 }, wallSnap: true, roomTags: ["kitchen"] },
+  { assetId: "kitchenTrashBin", name: "Trash bin", category: "Kitchen", footprint: { w: 0.3, d: 0.3 }, roomTags: ["kitchen"] },
+
+  // --- Bedroom extras ---
+  { assetId: "wardrobe", name: "Wardrobe", category: "Storage", footprint: { w: 1.0, d: 0.6 }, wallSnap: true, roomTags: ["bedroom", "closet"] },
+
+  // --- Laundry (taxonomy-only: no scene art yet, see RoomType comment) ---
+  { assetId: "dryer", name: "Dryer", category: "Bathroom", footprint: { w: 0.65, d: 0.65 }, wallSnap: true, roomTags: ["laundry"] },
+  { assetId: "laundrySink", name: "Laundry sink", category: "Bathroom", footprint: { w: 0.55, d: 0.5 }, wallSnap: true, roomTags: ["laundry"] },
+  { assetId: "dryingRack", name: "Drying rack", category: "Storage", footprint: { w: 0.6, d: 0.5 }, roomTags: ["laundry"] },
+  { assetId: "ironingBoard", name: "Ironing board", category: "Storage", footprint: { w: 1.2, d: 0.4 }, roomTags: ["laundry"] },
+
+  // --- Closet ---
+  { assetId: "shoeRack", name: "Shoe rack", category: "Storage", footprint: { w: 0.8, d: 0.3 }, wallSnap: true, roomTags: ["closet"] },
+
+  // --- Kids room ---
+  { assetId: "crib", name: "Crib", category: "Beds", footprint: { w: 0.7, d: 1.3 }, wallSnap: true, roomTags: ["kids"] },
+  { assetId: "toyStorage", name: "Toy storage", category: "Storage", footprint: { w: 0.9, d: 0.4 }, wallSnap: true, roomTags: ["kids"] },
+  { assetId: "changingTable", name: "Changing table", category: "Storage", footprint: { w: 0.8, d: 0.5 }, wallSnap: true, roomTags: ["kids"] },
+
+  // --- Garage ---
+  { assetId: "workbench", name: "Workbench", category: "Tables", footprint: { w: 1.4, d: 0.6 }, wallSnap: true, roomTags: ["garage"] },
+  { assetId: "toolRack", name: "Tool rack", category: "Storage", footprint: { w: 1.0, d: 0.15 }, wallSnap: true, roomTags: ["garage"] },
+  { assetId: "garageShelf", name: "Garage shelving", category: "Storage", footprint: { w: 0.9, d: 0.45 }, wallSnap: true, roomTags: ["garage"] },
+
+  // --- Outdoors ---
+  { assetId: "patioTable", name: "Patio table", category: "Tables", footprint: { w: 1.2, d: 0.8 }, roomTags: ["outdoors"] },
+  { assetId: "patioChair", name: "Patio chair", category: "Seating", footprint: { w: 0.55, d: 0.55 }, roomTags: ["outdoors"] },
+  { assetId: "bbqGrill", name: "BBQ grill", category: "Kitchen", footprint: { w: 0.6, d: 0.5 }, roomTags: ["outdoors"] },
+  { assetId: "outdoorBench", name: "Outdoor bench", category: "Seating", footprint: { w: 1.3, d: 0.45 }, roomTags: ["outdoors"] },
+  { assetId: "planterBox", name: "Planter box", category: "Decor", footprint: { w: 0.6, d: 0.3 }, roomTags: ["outdoors"] },
 ];
 
 // IKEA placement catalog (IL market) — every item ships a real, downloaded IKEA
@@ -213,9 +272,12 @@ export const ROOMS: RoomSection[] = BASE_ROOMS.map((r) => ({
 const resolveRoomType = (id: string): RoomType | null =>
   id === "office"
     ? "study"
-    : (["kitchen", "bathroom", "bedroom", "living", "dining", "study", "outdoors"] as const).includes(
-          id as RoomType,
-        )
+    : (
+          [
+            "kitchen", "bathroom", "bedroom", "living", "dining", "study",
+            "laundry", "closet", "kids", "garage", "outdoors",
+          ] as const
+        ).includes(id as RoomType)
       ? (id as RoomType)
       : null;
 

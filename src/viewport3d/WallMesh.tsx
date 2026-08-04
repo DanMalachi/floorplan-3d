@@ -292,9 +292,14 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
     e.stopPropagation();
     // Which face did the pointer land on? End caps / top keep the current side.
     // This is what makes "click the face you want to paint" work.
+    const wasSelected = isPick(s.sel3d, "wall", wall.id);
     let side = faceSide(e);
     if (!side && s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
     s.setSel3d({ kind: "wall", id: wall.id, side: side ?? "a" });
+    // First click on an unselected wall only selects it - confirms the pick
+    // before anything can be dragged by accident. A second click, now that
+    // it's selected, arms the move as before.
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -634,7 +639,10 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "build" || s.placing) return; // openings edit in Build only
     e.stopPropagation();
+    const wasSelected = isPick(s.sel3d, "opening", opening.id);
     s.setSel3d({ kind: "opening", id: opening.id });
+    // First click only selects (see WallGroup's onPointerDown for why).
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -922,7 +930,10 @@ function RailGroup({ wall, a, b, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "build" || s.placing) return;
     e.stopPropagation();
+    const wasSelected = isPick(s.sel3d, "wall", wall.id);
     s.setSel3d({ kind: "wall", id: wall.id });
+    // First click only selects (see WallGroup's onPointerDown for why).
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -1094,7 +1105,10 @@ function PortalGroup({ wall, a, b, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "build" || s.placing) return;
     e.stopPropagation();
+    const wasSelected = isPick(s.sel3d, "wall", wall.id);
     s.setSel3d({ kind: "wall", id: wall.id });
+    // First click only selects (see WallGroup's onPointerDown for why).
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);

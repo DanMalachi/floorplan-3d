@@ -7,8 +7,15 @@
 // Post-review change: flipped from the README's literal warm-light recipe to
 // dark + more transparent, per Dan's call ("liquid glass more transparent
 // and in dark mode and not light mode — may add a switch for both later").
-// The switch itself isn't built — these are the only values that would need
-// a light variant if/when that happens.
+//
+// Light switch (added): every color value below is a CSS custom property
+// with the dark value as its fallback, e.g. `var(--pd-text-primary, oklch(...))`.
+// theme.ts defines both variable sets and a <PdThemeStyle> that injects them
+// at :root, toggled by `[data-pd-theme="light"]`. This means NONE of the ~15
+// files that import `PD.textPrimary` etc. needed to change — the CSS
+// variable cascades and updates live without a React re-render, since these
+// are plain inline-style strings, not computed once. Only `theme.ts` (new)
+// and page.tsx (mounts <PdThemeStyle> + the toggle button) touch theme state.
 //
 // Manrope / IBM Plex Mono are NOT loaded (no next/font network fetch in this
 // environment) — font-family stacks name them first so they pick up
@@ -17,34 +24,36 @@
 
 import type React from "react";
 
+const v = (name: string, dark: string) => `var(--pd-${name}, ${dark})`;
+
 export const PD = {
   fontUi: `Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
   fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace`,
 
-  accent: "oklch(0.62 0.15 258)",
-  accentText: "oklch(0.78 0.12 258)",
-  accentTint: "oklch(0.62 0.15 258 / 0.22)",
+  accent: v("accent", "oklch(0.62 0.15 258)"),
+  accentText: v("accent-text", "oklch(0.78 0.12 258)"),
+  accentTint: v("accent-tint", "oklch(0.62 0.15 258 / 0.22)"),
 
-  textPrimary: "oklch(0.95 0.006 90)",
-  textSecondary: "oklch(0.72 0.012 90)",
-  textTertiary: "oklch(0.55 0.014 90)",
+  textPrimary: v("text-primary", "oklch(0.95 0.006 90)"),
+  textSecondary: v("text-secondary", "oklch(0.72 0.012 90)"),
+  textTertiary: v("text-tertiary", "oklch(0.55 0.014 90)"),
 
-  warnBg: "oklch(0.32 0.05 75 / 0.55)",
-  warnText: "oklch(0.82 0.13 75)",
-  ok: "oklch(0.7 0.16 150)",
+  warnBg: v("warn-bg", "oklch(0.32 0.05 75 / 0.55)"),
+  warnText: v("warn-text", "oklch(0.82 0.13 75)"),
+  ok: v("ok", "oklch(0.7 0.16 150)"),
 
   // Deliberately low-opacity — "more transparent" per review. The scene
   // behind should read through clearly, not just tint.
-  glassBg: "oklch(0.2 0.014 260 / 0.38)",
-  glassBlur: "blur(20px) saturate(1.3)",
-  glassBorder: "1px solid oklch(1 0 0 / 0.09)",
-  glassInset: "inset 0 1px 0 oklch(1 0 0 / 0.07)",
-  glassShadow: "0 14px 34px -14px oklch(0 0 0 / 0.55)",
+  glassBg: v("glass-bg", "oklch(0.2 0.014 260 / 0.38)"),
+  glassBlur: v("glass-blur", "blur(20px) saturate(1.3)"),
+  glassBorder: v("glass-border", "1px solid oklch(1 0 0 / 0.09)"),
+  glassInset: v("glass-inset", "inset 0 1px 0 oklch(1 0 0 / 0.07)"),
+  glassShadow: v("glass-shadow", "0 14px 34px -14px oklch(0 0 0 / 0.55)"),
 
-  hairline: "oklch(1 0 0 / 0.09)",
-  surfaceMuted: "oklch(1 0 0 / 0.05)",
-  surfaceMutedHover: "oklch(1 0 0 / 0.09)",
-  inputBg: "oklch(1 0 0 / 0.07)",
+  hairline: v("hairline", "oklch(1 0 0 / 0.09)"),
+  surfaceMuted: v("surface-muted", "oklch(1 0 0 / 0.05)"),
+  surfaceMutedHover: v("surface-muted-hover", "oklch(1 0 0 / 0.09)"),
+  inputBg: v("input-bg", "oklch(1 0 0 / 0.07)"),
 
   radiusS: 10,
   radiusM: 14,

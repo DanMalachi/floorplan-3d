@@ -10,6 +10,7 @@ import {
 } from "@/schema/constants";
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
+import { CATALOG_BY_ID } from "@/furniture/catalog";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -142,6 +143,7 @@ export interface PickRef {
 /** The app's top-level modes (Phase 4 M5): what the main stage shows and
  *  which family of objects responds to the pointer. */
 export type AppMode = "trace" | "build" | "furnish" | "view";
+export type BuildTool = "select" | "wall" | "opening" | "measure";
 
 /** How walls render in 3D: solid, camera-facing faded, or Sims top-down stubs. */
 export type WallViewMode = "full" | "cutaway" | "top";
@@ -274,6 +276,15 @@ export interface StoreState {
   setEnvPreset: (p: EnvPreset) => void;
   setTimeOfDay: (t: number) => void;
   setWeather: (w: Weather) => void;
+
+  // --- Build-mode toolbar tool ---
+  /** Only "select" changes existing pointer behavior (it IS the existing
+   *  behavior). "measure" arms MeasureTool.tsx. "wall"/"opening" are UI-only
+   *  placeholders for now — real draw-a-new-wall / drop-a-new-opening tools
+   *  are new 3D-interaction features, not a toolbar reskin; see BuildToolbar's
+   *  comment for why they're deferred rather than half-built. */
+  buildTool: BuildTool;
+  setBuildTool: (t: BuildTool) => void;
 
   // --- first-person walkthrough mode ---
   /** Only meaningful while appMode === "view"; layered on top rather than a
@@ -539,10 +550,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null });
+      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select" });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
+    buildTool: "select",
+    setBuildTool: (buildTool) => set({ buildTool }),
     envPreset: "none",
     timeOfDay: 13,
     weather: "clear",
@@ -691,9 +704,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { placing, scene, commitScene } = get();
       if (!placing) return;
       const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const elevation = CATALOG_BY_ID.get(placing.assetId)?.defaultElevation;
       commitScene("Place furniture", {
         ...scene,
-        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation }],
+        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) }],
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
     },

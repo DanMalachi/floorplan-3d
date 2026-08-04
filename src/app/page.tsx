@@ -9,7 +9,9 @@ import { legacyExtractionEnabled } from "@/lib/featureFlags";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
 import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectLiveRole } from "@/store/projectPersistence";
 import { enterLiveRoom } from "@/collab/enterLive";
-import { T, glass, chip } from "@/ui/tokens";
+import { T } from "@/ui/tokens";
+import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
+import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
  *  button into the Projects gallery. State is persisted to IndexedDB, so a
@@ -30,8 +32,7 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
         alignItems: "center",
         gap: 8,
         padding: 4,
-        fontFamily: T.font,
-        ...glass({ borderRadius: 999 }),
+        ...pdGlass({ borderRadius: 999 }),
       }}
     >
       <button
@@ -43,21 +44,21 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
           gap: 7,
           border: "none",
           background: "transparent",
-          color: T.text,
+          color: PD.textPrimary,
           cursor: "pointer",
           fontSize: 13,
-          fontFamily: T.font,
+          fontFamily: PD.fontUi,
           padding: "4px 10px",
           borderRadius: 999,
         }}
       >
-        <span style={{ fontSize: 14, color: T.textDim }}>▚</span>
+        <span style={{ fontSize: 14, color: PD.textTertiary }}>▚</span>
         <span style={{ fontWeight: 500, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {name}
         </span>
       </button>
-      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: T.textDim, paddingRight: 10 }}>
-        <span style={{ color: T.accent }}>●</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}>
+        <span style={{ color: PD.accentText }}>●</span>
         {status}
       </span>
     </div>
@@ -99,7 +100,23 @@ function GoLiveButton() {
       onClick={goLive}
       disabled={busy}
       title={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
-      style={{ position: "absolute", top: 14, right: 14, zIndex: 30, ...chip(true, { padding: "8px 16px", fontSize: 13, opacity: busy ? 0.6 : 1 }) }}
+      style={{
+        position: "absolute",
+        top: 14,
+        right: 14,
+        zIndex: 30,
+        padding: "8px 16px",
+        fontSize: 13,
+        fontWeight: 600,
+        fontFamily: PD.fontUi,
+        borderRadius: 999,
+        border: "none",
+        background: PD.accent,
+        color: "#fff",
+        cursor: "pointer",
+        opacity: busy ? 0.6 : 1,
+        boxShadow: "0 8px 20px -10px oklch(0.62 0.15 258 / 0.6)",
+      }}
     >
       {label}
     </button>
@@ -136,7 +153,7 @@ function ModeSwitcher() {
         alignItems: "center",
         gap: 3,
         padding: 4,
-        ...glass({ borderRadius: 999 }),
+        ...pdGlass({ borderRadius: 999 }),
       }}
     >
       {MODES.map((m) => {
@@ -146,18 +163,7 @@ function ModeSwitcher() {
             key={m.id}
             onClick={() => setAppMode(m.id)}
             title={`${m.label} (${m.key})`}
-            style={{
-              padding: "6px 18px",
-              fontSize: 13,
-              fontWeight: active ? 600 : 400,
-              fontFamily: T.font,
-              borderRadius: 999,
-              border: "none",
-              background: active ? T.accent : "transparent",
-              color: active ? "#fff" : T.textDim,
-              cursor: "pointer",
-              transition: `background ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
-            }}
+            style={pdChip(active, { padding: "6px 18px", fontSize: 13 })}
           >
             {m.label}
           </button>
@@ -244,8 +250,12 @@ export default function Home() {
         overflow: "hidden",
       }}
     >
+      <PdThemeStyle />
       <ModeSwitcher />
       <ProjectBar onOpenProjects={() => setProjectsOpen(true)} />
+      <div style={{ position: "absolute", top: 14, right: showTrace ? 14 : 132, zIndex: 30 }}>
+        <ThemeToggle />
+      </div>
       {!showTrace && <GoLiveButton />}
       {/* Trace keeps its own pane; the three 3D modes share one live viewport
           so the camera never resets between Build / Furnish / View. */}

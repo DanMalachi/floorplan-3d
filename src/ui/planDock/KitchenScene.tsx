@@ -15,14 +15,17 @@ export interface RoomHotspot {
 
 export const KITCHEN_HOTSPOTS: RoomHotspot[] = [
   { id: "fridge", label: "Fridge", keywords: ["fridge", "refrigerator"] },
-  { id: "cabinets", label: "Cabinets", keywords: ["cabinet"] },
+  // Dishwasher sits alongside cabinets height-wise — no separate hotspot.
+  { id: "cabinets", label: "Cabinets", keywords: ["cabinet", "dishwasher"] },
   { id: "sink", label: "Sink", keywords: ["sink"] },
-  { id: "stove", label: "Stove", keywords: ["stove", "oven", "cooktop"] },
-  { id: "counter", label: "Counter & bar", keywords: ["counter", "bar", "stool"] },
+  // Range hood mounts above the stove — no separate hotspot.
+  { id: "stove", label: "Stove", keywords: ["stove", "oven", "cooktop", "range hood"] },
+  { id: "counter", label: "Counter & bar", keywords: ["counter", "bar", "stool", "island"] },
+  { id: "extras", label: "Trash & microwave", keywords: ["trash", "bin", "microwave"] },
 ];
 
 export const KITCHEN_X0 = 20;
-export const KITCHEN_WIDTH = 180;
+export const KITCHEN_WIDTH = 188;
 
 function KitchenItems(): RoomItem[] {
   const fridge = isoBox(20, ITEMS_Y, 26, 56, 16);
@@ -31,6 +34,8 @@ function KitchenItems(): RoomItem[] {
   const stove = isoBox(112, ITEMS_Y, 26, 26, 16);
   const counter = isoBox(140, ITEMS_Y, 26, 40, 16);
   const stool = isoCylinder(178, ITEMS_Y + 4, 5, 20);
+  const microwave = isoBox(184, ITEMS_Y - 14, 14, 10, 12);
+  const trashBin = isoCylinder(190, ITEMS_Y + 2, 3.5, 10);
 
   return [
     {
@@ -93,6 +98,19 @@ function KitchenItems(): RoomItem[] {
         <>
           <Extrusion box={counter} />
           <Cylinder c={stool} />
+        </>
+      ),
+    },
+    {
+      id: "extras",
+      label: "Trash & microwave",
+      keywords: KITCHEN_HOTSPOTS[5].keywords,
+      box: { ...microwave, bbox: { x0: microwave.bbox.x0, y0: microwave.bbox.y0, x1: trashBin.cx + trashBin.r, y1: ITEMS_Y } },
+      art: (
+        <>
+          <Extrusion box={microwave} />
+          <DoorSeam box={microwave} at={0.5} />
+          <Cylinder c={trashBin} />
         </>
       ),
     },

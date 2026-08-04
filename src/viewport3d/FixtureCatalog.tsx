@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { T } from "@/ui/tokens";
+import { useMemo, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
-import { FIXTURE_CATALOG, type FixtureAsset } from "@/fixtures/catalog";
+import { FIXTURE_CATALOG, type FixtureAsset, type FixtureCategory } from "@/fixtures/catalog";
+import { PD, pdChip } from "@/ui/planDock/tokens";
 
 /** A flat icon per shape — no GLB thumbnail machinery here (that's furniture-
  *  specific, coupled to CATALOG_BY_ID/spec.model): these are procedural
@@ -14,55 +14,56 @@ const SHAPE_ICON: Record<FixtureAsset["shape"], string> = {
   sconce: "◨",    // ◨ — a plate on a wall
 };
 
+const CATEGORIES: FixtureCategory[] = ["Ceiling", "Wall"];
+
+/** Same 68px item-card shape as Plan Dock's furniture `ItemCard`, so Lighting
+ *  reads as one system with Furniture/Paint/Floors instead of a leftover
+ *  pre-overhaul component. */
 function FixtureTile({ asset }: { asset: FixtureAsset }) {
   const placing = useSceneStore((s) => s.placing);
-  const [hover, setHover] = useState(false);
   const active = placing?.assetId === asset.assetId;
   return (
     <button
-      title={asset.name}
       onClick={() => useSceneStore.getState().setPlacing(active ? null : asset.assetId)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      title={asset.name}
       style={{
+        flex: "0 0 auto",
+        width: 68,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: 3,
-        padding: "6px 3px 5px",
-        borderRadius: T.radiusS + 2,
-        border: `1.5px solid ${active ? T.accent : "transparent"}`,
-        background: active ? T.accentSoft : hover ? "rgba(255,255,255,0.07)" : "transparent",
+        padding: 4,
+        borderRadius: PD.radiusS,
+        border: `1.5px solid ${active ? PD.accent : "transparent"}`,
+        background: active ? PD.accentTint : PD.surfaceMuted,
         cursor: "pointer",
-        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}`,
-        transform: hover && !active ? "translateY(-1px)" : "none",
+        fontFamily: PD.fontUi,
       }}
     >
       <div
         style={{
-          width: 58,
-          height: 58,
-          borderRadius: T.radiusS,
-          background: "rgba(255,255,255,0.05)",
+          width: 48,
+          height: 48,
+          borderRadius: 7,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 22,
-          color: "#ffddb0",
+          fontSize: 20,
+          color: active ? PD.accentText : "oklch(0.82 0.1 75)",
         }}
       >
         {SHAPE_ICON[asset.shape]}
       </div>
       <span
         style={{
-          fontSize: 10,
-          lineHeight: 1.15,
-          color: active ? T.text : T.textDim,
-          textAlign: "center",
-          maxWidth: 62,
+          fontSize: 9.5,
+          fontWeight: 600,
+          color: PD.textPrimary,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
+          maxWidth: "100%",
         }}
       >
         {asset.name}
@@ -71,33 +72,40 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
   );
 }
 
-/** Lighting sub-catalog for the Decorate "Lighting" tab — mirrors
- *  FurnitureCatalog's tile grid, without the room-section chips (there's only
- *  one section worth of assets so far). */
+/** Lighting sub-catalog for the Decorate "Lighting" tab. Restyled onto Plan
+ *  Dock's dark-glass tokens/ItemCard shape (Phase D) — was still the old
+ *  pre-overhaul component (T tokens, vertical 3-col grid) until now; it read
+ *  fine against the new dark backdrop but didn't match Furniture/Paint/Floors
+ *  as one system. */
 export function FixtureCatalog() {
   const placing = useSceneStore((s) => s.placing);
+  const [activeCategory, setActiveCategory] = useState<FixtureCategory | null>(null);
+  const items = useMemo(
+    () => (activeCategory ? FIXTURE_CATALOG.filter((a) => a.category === activeCategory) : FIXTURE_CATALOG),
+    [activeCategory],
+  );
   return (
-    <>
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: 10,
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 4,
-          alignContent: "start",
-        }}
-      >
-        {FIXTURE_CATALOG.map((asset) => (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+        <button onClick={() => setActiveCategory(null)} style={pdChip(activeCategory === null, { padding: "3px 8px", fontSize: 10.5 })}>
+          All
+        </button>
+        {CATEGORIES.map((c) => (
+          <button key={c} onClick={() => setActiveCategory(c)} style={pdChip(activeCategory === c, { padding: "3px 8px", fontSize: 10.5 })}>
+            {c}
+          </button>
+        ))}
+        {placing && (
+          <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            Click to place · R rotates · Esc done
+          </span>
+        )}
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 6, overflowX: "auto", alignItems: "flex-start" }}>
+        {items.map((asset) => (
           <FixtureTile key={asset.assetId} asset={asset} />
         ))}
       </div>
-      {placing && (
-        <div style={{ padding: "8px 14px 12px", color: T.textFaint, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
-          click to place · R rotates · Esc done
-        </div>
-      )}
-    </>
+    </div>
   );
 }

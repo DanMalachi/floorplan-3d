@@ -114,6 +114,50 @@ export function OutdoorsIcon(p: IconProps) {
   );
 }
 
+export function LaundryIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <rect x={4} y={3.5} width={16} height={17} rx={1.5} />
+      <circle cx={12} cy={13} r={5} />
+      <circle cx={12} cy={13} r={2.3} />
+      <path d="M7 6.5h1.5M11 6.5h1.5" />
+    </Base>
+  );
+}
+
+export function ClosetIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <rect x={4} y={3} width={16} height={18} rx={1} />
+      <path d="M12 3v18" />
+      <circle cx={9.5} cy={12} r={0.6} fill="currentColor" stroke="none" />
+      <circle cx={14.5} cy={12} r={0.6} fill="currentColor" stroke="none" />
+    </Base>
+  );
+}
+
+export function KidsIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <rect x={3.5} y={4} width={7} height={7} rx={1} />
+      <circle cx={16.5} cy={7.5} r={3.5} />
+      <path d="M4 20v-4a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v4" />
+      <path d="M14.5 20v-2.5a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3V20" />
+    </Base>
+  );
+}
+
+export function GarageIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3 20V9.5L12 4l9 5.5V20" />
+      <path d="M3 20h18" />
+      <path d="M5.5 20v-8h13v8" />
+      <path d="M5.5 15h13M5.5 17.5h13" />
+    </Base>
+  );
+}
+
 export const ROOM_ICON = {
   kitchen: KitchenIcon,
   bathroom: BathroomIcon,
@@ -121,6 +165,10 @@ export const ROOM_ICON = {
   living: LivingIcon,
   dining: DiningIcon,
   study: StudyIcon,
+  laundry: LaundryIcon,
+  closet: ClosetIcon,
+  kids: KidsIcon,
+  garage: GarageIcon,
   outdoors: OutdoorsIcon,
 } as const;
 

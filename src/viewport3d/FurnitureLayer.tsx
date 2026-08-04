@@ -243,7 +243,11 @@ function FurnitureItemView({ item, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.placing) return; // furniture edits in Furnish only
     e.stopPropagation();
+    const wasSelected = s.sel3d?.kind === "furniture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "furniture", id: item.id });
+    // First click only selects (confirms the pick) so a click doesn't also
+    // nudge the item; a second click, now that it's selected, arms the drag.
+    if (!wasSelected) return;
     const p = rayToPlan(e, offset);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
