@@ -300,6 +300,17 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
   const dragging = useSceneStore((s) => s.gestureBase !== null);
+  // Camera should be locked for the ENTIRE time a click-based build/decorate
+  // tool is armed (not just once a drag gesture is already in flight) — see
+  // Plan Dock P9 camera-lock fix. `dragging` above stays as-is (used for
+  // cursor styling elsewhere in this file); this is a separate, broader gate.
+  const toolBusy = useSceneStore((s) =>
+    s.gestureBase !== null ||
+    (s.appMode === "build" && s.buildTool !== "select") ||
+    s.placing !== null ||
+    s.brush !== null ||
+    s.eyedropper,
+  );
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
   const envPreset = useSceneStore((s) => s.envPreset);
@@ -413,7 +424,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         )}
         <CameraControls
           makeDefault
-          enabled={!dragging && !walkthroughActive}
+          enabled={!toolBusy && !walkthroughActive}
           smoothTime={0.18}
           draggingSmoothTime={0.06}
         />
