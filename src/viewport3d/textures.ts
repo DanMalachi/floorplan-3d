@@ -5,9 +5,13 @@
 // light. No image assets, no network, deterministic across sessions. Floors
 // carry meter-scale UVs, so texture.repeat is set from the physical cover size.
 
+import { useEffect, useState } from "react";
 import * as THREE from "three";
 import type { FloorStyle } from "@/schema/scene";
 import { loadFloorTextures, floorMaterialRoughness } from "@/materials/loader";
+import { ktx2FloorsEnabled } from "@/lib/featureFlags";
+import { getKtx2FloorMaterial } from "@/materials/registryKtx2";
+import { loadKtx2FloorTextures } from "@/materials/loaderKtx2";
 
 interface FloorTex {
   map: THREE.Texture;
@@ -15,6 +19,10 @@ interface FloorTex {
   /** Only image-based catalog materials ship one; procedural styles use the
    *  scalar from floorRoughness() alone. */
   roughnessMap?: THREE.Texture;
+  /** KTX2 catalog materials only — material-spec.md §6's packed ORM texture,
+   *  same object as `roughnessMap`. See `loaderKtx2.ts` for why metalness
+   *  isn't wired (every floor is dielectric). */
+  aoMap?: THREE.Texture;
 }
 const cache = new Map<FloorStyle, FloorTex>();
 
@@ -195,6 +203,58 @@ export function floorTexture(style: FloorStyle): FloorTex {
   tex = { map, normalMap };
   cache.set(style, tex);
   return tex;
+}
+
+const ktx2Cache = new Map<FloorStyle, FloorTex>();
+
+/**
+ * The loader boundary — M3d/D4. One conditional selecting an implementation,
+ * both behind this same `FloorTex | null` shape, so the flag's eventual
+ * removal is deleting the KTX2 branch and this wrapper, not untangling
+ * `floorTexture` itself (unchanged above, still the WebP/procedural path).
+ *
+ * A hook, not a plain function — unlike `floorTexture`, the KTX2 branch is
+ * genuinely async (`loaderKtx2.ts`'s header explains why the old
+ * synchronous-placeholder trick doesn't apply to compressed textures), so
+ * the "nothing to show yet" state has to be real React state, not a
+ * borrowed reference. Returns `null` only during that window; the caller
+ * (`FloorMesh.tsx`) renders a neutral placeholder material until it resolves.
+ * When `ktx2FloorsEnabled` is off, or the style has no KTX2 registry entry
+ * (the two floors dropped from that catalog — material-spec.md §2.2b — fall
+ * through here exactly like an unrecognised id always has), this returns
+ * `floorTexture(style)` directly: same function, same object, same
+ * synchronous behaviour as before this flag existed.
+ */
+export function useFloorTexture(style: FloorStyle, gl: THREE.WebGLRenderer): FloorTex | null {
+  const ktx2Material = ktx2FloorsEnabled ? getKtx2FloorMaterial(style) : undefined;
+  // Tagged with the style it was resolved for, checked on read below — not
+  // just set-and-trust. React runs this function body (with the previous
+  // render's state) before the effect below has a chance to fire, so on the
+  // very first render after `style` changes, naively returning the old
+  // state would hand back one style's material with another's textures for
+  // a frame. Tagging closes that window instead of accepting it.
+  const [ktx2State, setKtx2State] = useState<{ style: FloorStyle; tex: FloorTex } | null>(null);
+
+  useEffect(() => {
+    if (!ktx2Material) return;
+    const cached = ktx2Cache.get(style);
+    if (cached) {
+      setKtx2State({ style, tex: cached });
+      return;
+    }
+    let cancelled = false;
+    loadKtx2FloorTextures(ktx2Material, gl).then((set) => {
+      if (cancelled) return;
+      ktx2Cache.set(style, set);
+      setKtx2State({ style, tex: set });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [style, ktx2Material, gl]);
+
+  if (ktx2Material) return ktx2State?.style === style ? ktx2State.tex : null;
+  return floorTexture(style);
 }
 
 /** Surface response for the procedural styles — tile is glossier than wood. */

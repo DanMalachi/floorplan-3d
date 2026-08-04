@@ -7,6 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS, RAIL_HEIGHT } from "@/schema/constants";
+import { shadowProps } from "@/render/materialClass";
 import {
   useSceneStore,
   type DimLabel,
@@ -23,6 +24,8 @@ import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./geometry/wallJunct
 import { buildWallGeometry } from "./geometry/wallGeometry";
 import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
+import { buildToolBlocksSelect } from "./buildTools/gate";
+import { sampleWallFace } from "@/decorate/eyedropper";
 
 // Apple-blue accent shared by all 3D selection feedback.
 export const ACCENT = "#0a84ff";
@@ -98,6 +101,35 @@ interface DragState {
   base: Scene;
 }
 
+/**
+ * Do two openings agree on everything `buildWallSegments`/
+ * `buildOpeningVolumes`/`buildBaseboards` actually read? Deliberately
+ * excludes `swingDeg`/`slide.open` — a door leaf's live swing angle, which
+ * only the leaf itself (`OpeningPick`, below, via its own `opening` prop)
+ * needs every frame. The wall BODY's gap/volume/baseboard cuts are purely
+ * position/dimension driven and never look at swing state.
+ */
+function wallBodyGeomEqual(a: Opening, b: Opening): boolean {
+  if (a === b) return true;
+  return (
+    a.id === b.id &&
+    a.type === b.type &&
+    a.wallId === b.wallId &&
+    a.offset === b.offset &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.sill === b.sill &&
+    a.hinge === b.hinge &&
+    a.lining === b.lining &&
+    a.mullions?.cols === b.mullions?.cols &&
+    a.mullions?.rows === b.mullions?.rows &&
+    a.slide?.style === b.slide?.style &&
+    a.slide?.panels === b.slide?.panels &&
+    a.slide?.glazed === b.slide?.glazed &&
+    a.slide?.side === b.slide?.side
+  );
+}
+
 function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   wall: Wall;
   a: Node;
@@ -115,6 +147,24 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<DragState | null>(null);
 
+  // A walkthrough door swinging open re-writes its Opening every animation
+  // frame (WalkthroughMode.tsx), so `ops` itself changes reference ~60x/sec
+  // while it's mid-swing. The wall BODY (gap cuts, sill/lintel volumes,
+  // baseboard band) never depends on swing state at all — only the leaf
+  // does (OpeningPick, via its own `opening` prop below, still fed the live
+  // `ops`) — so stabilize the array the body geometry actually memoizes on,
+  // reusing the previous reference whenever nothing geometry-relevant
+  // changed. Without this, every wall a door swings on rebuilt its entire
+  // real BufferGeometry every frame for the ~1-2s of the animation.
+  const geomOpsCache = useRef<Opening[]>([]);
+  const geomOps = useMemo(() => {
+    const prev = geomOpsCache.current;
+    const same = prev.length === ops.length && prev.every((o, i) => wallBodyGeomEqual(o, ops[i]));
+    const next = same ? prev : ops;
+    geomOpsCache.current = next;
+    return next;
+  }, [ops]);
+
   const { pieces, volumes, baseboards, mid, len, normal, frame } = useMemo(() => {
     const nodes = new Map<string, Node>([[a.id, a], [b.id, b]]);
     // Sims top-down view: walls drop to knee-high stubs.
@@ -125,9 +175,9 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
     const ux = dx / L;
     const uy = dy / L;
     return {
-      pieces: buildWallSegments(eff, ops, nodes, ends),
-      volumes: buildOpeningVolumes(eff, ops, nodes),
-      baseboards: buildBaseboards(wall, ops, nodes, bbEnds),
+      pieces: buildWallSegments(eff, geomOps, nodes, ends),
+      volumes: buildOpeningVolumes(eff, geomOps, nodes),
+      baseboards: buildBaseboards(wall, geomOps, nodes, bbEnds),
       mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       len: Math.hypot(dx, dy),
       normal: { x: -uy, y: ux },
@@ -139,7 +189,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
         rotationY: -Math.atan2(uy, ux),
       } satisfies WallFrame,
     };
-  }, [wall, ops, a, b, wallMode, ends, bbEnds]);
+  }, [wall, geomOps, a, b, wallMode, ends, bbEnds]);
 
   // Real meshes for the jointed bodies. Unlike <boxGeometry> these are ours to
   // free, so they're disposed whenever the wall reshapes.
@@ -240,13 +290,18 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return; // walls edit in Build only
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return; // walls edit in Build only
     e.stopPropagation();
     // Which face did the pointer land on? End caps / top keep the current side.
     // This is what makes "click the face you want to paint" work.
+    const wasSelected = isPick(s.sel3d, "wall", wall.id);
     let side = faceSide(e);
     if (!side && s.sel3d?.kind === "wall" && s.sel3d.id === wall.id) side = s.sel3d.side;
     s.setSel3d({ kind: "wall", id: wall.id, side: side ?? "a" });
+    // First click on an unselected wall only selects it - confirms the pick
+    // before anything can be dragged by accident. A second click, now that
+    // it's selected, arms the move as before.
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -305,10 +360,15 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   };
   const onClickWall = (e: ThreeEvent<MouseEvent>) => {
     const s = useSceneStore.getState();
+    if (s.eyedropper) {
+      e.stopPropagation();
+      sampleWallFace(wall, faceSide(e) ?? "a");
+      return;
+    }
     if (s.appMode === "furnish" && s.brush?.kind === "paint") {
       e.stopPropagation();
       paintFace(e);
-    } else if (s.appMode === "build" && !s.placing) {
+    } else if (s.appMode === "build" && !s.placing && !buildToolBlocksSelect(s)) {
       e.stopPropagation(); // keep floor behind from stealing the selection
     }
     // else (e.g. placing furniture): fall through to the plane/floor behind
@@ -316,8 +376,9 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
 
   /** Wall reacts to the pointer when editable (Build) or paintable (Decorate). */
   const wallInteractive = (s = useSceneStore.getState()) =>
-    (s.appMode === "build" && !s.placing) ||
-    (s.appMode === "furnish" && s.brush?.kind === "paint");
+    (s.appMode === "build" && !s.placing && !buildToolBlocksSelect(s)) ||
+    (s.appMode === "furnish" && s.brush?.kind === "paint") ||
+    s.eyedropper;
 
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
@@ -340,8 +401,10 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
           position={p.position}
           rotation={[0, p.rotationY, 0]}
           geometry={geoms[i]}
-          castShadow
-          receiveShadow
+          // Opaque architecture even while a cutaway fade has it at opacity
+          // 0.13 — see the `transient` class note in src/render/materialClass.ts
+          // for why that mismatch is a known, deliberately deferred defect.
+          {...shadowProps("opaqueArchitecture")}
           userData={{ pick: { kind: "wall", id: wall.id } }}
           material={mats}
           {...hoverHandlers}
@@ -361,8 +424,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
           geometry={bbGeoms[i]}
           material={baseboardMat}
           raycast={() => null} // visual trim — clicks fall through to the wall body
-          castShadow
-          receiveShadow
+          {...shadowProps("opaqueArchitecture")}
         />
       ))}
       {volumes.map((v) => {
@@ -583,9 +645,12 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return; // openings edit in Build only
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return; // openings edit in Build only
     e.stopPropagation();
+    const wasSelected = isPick(s.sel3d, "opening", opening.id);
     s.setSel3d({ kind: "opening", id: opening.id });
+    // First click only selects (see WallGroup's onPointerDown for why).
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -638,7 +703,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         userData={{ pick: { kind: "opening", id: opening.id } }}
         onPointerOver={(e) => {
           const s = useSceneStore.getState();
-          if (s.appMode !== "build" || s.placing) return;
+          if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
           e.stopPropagation();
           s.setHover3d({ kind: "opening", id: opening.id });
         }}
@@ -671,8 +736,10 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
             rotation={[0, p.rotationY, 0]}
             material={mats[p.role]}
             raycast={() => null} // visual only — the pick box above handles input
-            castShadow={p.role !== "glass"}
-            receiveShadow={p.role !== "glass"}
+            // Glass is its own class and does not cast: three's shadow maps are
+            // depth-only, so a casting pane throws a solid black rectangle
+            // across the floor it is meant to be lighting.
+            {...shadowProps(p.role === "glass" ? "glass" : "opaqueArchitecture")}
           >
             <boxGeometry args={p.size} />
           </mesh>
@@ -869,9 +936,12 @@ function RailGroup({ wall, a, b, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return;
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
     e.stopPropagation();
+    const wasSelected = isPick(s.sel3d, "wall", wall.id);
     s.setSel3d({ kind: "wall", id: wall.id });
+    // First click only selects (see WallGroup's onPointerDown for why).
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -912,7 +982,7 @@ function RailGroup({ wall, a, b, offset }: {
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
       const s = useSceneStore.getState();
-      if (s.appMode !== "build" || s.placing) return;
+      if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
       e.stopPropagation();
       s.setHover3d({ kind: "wall", id: wall.id });
     },
@@ -936,12 +1006,17 @@ function RailGroup({ wall, a, b, offset }: {
 
   return (
     <group>
-      {/* glass balustrade panel — no shadow (Three casts opaque shadows for glass) */}
-      <mesh {...meshProps} position={[mid.x, panelH / 2, mid.y]} material={glass}>
+      {/* glass balustrade panel — the glass class, so it does not cast */}
+      <mesh {...meshProps} position={[mid.x, panelH / 2, mid.y]} material={glass} {...shadowProps("glass")}>
         <boxGeometry args={[len, panelH, RAIL_PANEL_THK]} />
       </mesh>
       {/* handrail cap */}
-      <mesh {...meshProps} position={[mid.x, height - RAIL_CAP_H / 2, mid.y]} material={cap} castShadow>
+      <mesh
+        {...meshProps}
+        position={[mid.x, height - RAIL_CAP_H / 2, mid.y]}
+        material={cap}
+        {...shadowProps("opaqueArchitecture")}
+      >
         <boxGeometry args={[len, RAIL_CAP_H, RAIL_CAP_THK]} />
       </mesh>
       {selected && (
@@ -1036,9 +1111,12 @@ function PortalGroup({ wall, a, b, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return;
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
     e.stopPropagation();
+    const wasSelected = isPick(s.sel3d, "wall", wall.id);
     s.setSel3d({ kind: "wall", id: wall.id });
+    // First click only selects (see WallGroup's onPointerDown for why).
+    if (!wasSelected) return;
     const start = rayToPlan(e, offset);
     if (!start) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -1096,7 +1174,7 @@ function PortalGroup({ wall, a, b, offset }: {
         userData={{ pick: { kind: "wall", id: wall.id } }}
         onPointerOver={(e) => {
           const s = useSceneStore.getState();
-          if (s.appMode !== "build" || s.placing) return;
+          if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
           e.stopPropagation();
           s.setHover3d({ kind: "wall", id: wall.id });
         }}

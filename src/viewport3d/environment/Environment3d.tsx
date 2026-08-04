@@ -4,6 +4,17 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { Sky, Environment, Lightformer } from "@react-three/drei";
 import { useSceneStore } from "@/store/useSceneStore";
+import { SHADOW } from "@/render/contract";
+import {
+  CAMERA_PRESETS,
+  OUTDOOR_SHADOW_FILL_BOOST,
+  STUDIO,
+  computeSkyLighting,
+  envIntensityForSky,
+  hemisphereLuxForSky,
+  presetFor,
+  toRenderIntensity,
+} from "@/render/lightPresets";
 import { Suburb } from "./Suburb";
 import { City } from "./City";
 import { Rain } from "./Rain";
@@ -15,76 +26,47 @@ import { Rain } from "./Rain";
 
 const col = (hex: string) => new THREE.Color(hex);
 
-/** Sun direction + lighting/sky colours for a given hour (0..24). */
-function computeSky(t: number) {
-  // 6h → horizon (east), 12h → overhead, 18h → horizon (west); night below.
-  const phi = ((t - 6) / 12) * Math.PI;
-  const sunY = Math.sin(phi);
-  const dir = new THREE.Vector3(Math.cos(phi), Math.max(sunY, -0.15), 0.35).normalize();
-
-  const day = Math.max(0, sunY); // 0 at/below horizon → 1 at noon
-  const lowSun = 1 - Math.min(1, day / 0.28); // 1 near sunrise/sunset
-  const night = sunY < 0 ? Math.min(1, -sunY / 0.35) : 0;
-
-  const sunColor = col("#fff2df")
-    .lerp(col("#ff7d33"), lowSun * (1 - night)) // warm at the horizon
-    .lerp(col("#8fa6db"), night); // cool moonlight
-  const sunIntensity = night > 0.5 ? 0.3 : 0.4 + 2.0 * day;
-
-  const sky = col("#0a0e1c")
-    .lerp(col("#bcd6ff"), day)
-    .lerp(col("#ffb066"), lowSun * (1 - night) * 0.7);
-  const hemiSky = col("#0c1020").lerp(col("#dce9ff"), day);
-  const hemiGround = col("#0a0a10").lerp(col("#6b5a44"), day);
-  const hemiIntensity = 0.16 + 0.5 * day;
-
-  return { dir, sunColor, sunIntensity, sky, hemiSky, hemiGround, hemiIntensity };
-}
+// Lighting is authored in physical units (lux) and converted to three
+// intensities by the single global exposure in src/render/lightPresets.ts.
+// The old eye-tuned intensities are gone, not converted — see contract §4.2.
 
 export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: number; halfZ: number }) {
   const preset = useSceneStore((s) => s.envPreset);
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
   const weather = useSceneStore((s) => s.weather);
+  const wallMode = useSceneStore((s) => s.wallMode);
   const outdoor = preset !== "none";
-  const base = useMemo(() => computeSky(timeOfDay), [timeOfDay]);
-
-  // Weather layers on top of the time-of-day rig: cloud cover greys the sky,
-  // dims + cools the sun, thickens the haze; rain does the same, a touch darker,
-  // plus a falling particle layer. Only meaningful outdoors.
-  const s = useMemo(() => {
-    const w = outdoor ? weather : "clear";
-    const overcast = w === "clear" ? 0 : w === "cloudy" ? 0.8 : 1;
-    const rain = w === "rain" ? 1 : 0;
-    if (overcast === 0) return base;
-    const day = Math.max(0, base.dir.y);
-    const grey = col("#c4c9ce").multiplyScalar(0.18 + 0.72 * day); // stays dark at night
-    const darken = 1 - 0.22 * rain;
-    return {
-      dir: base.dir,
-      sunColor: base.sunColor.clone().lerp(grey, 0.5 * overcast),
-      sunIntensity: base.sunIntensity * (1 - 0.62 * overcast),
-      sky: base.sky.clone().lerp(grey, 0.55 * overcast).multiplyScalar(darken),
-      hemiSky: base.hemiSky.clone().lerp(grey, 0.5 * overcast),
-      hemiGround: base.hemiGround.clone().lerp(grey, 0.35 * overcast),
-      hemiIntensity: base.hemiIntensity * (1 + 0.15 * overcast),
-    };
-  }, [base, weather, outdoor]);
 
   const overcast = outdoor ? (weather === "clear" ? 0 : weather === "cloudy" ? 0.8 : 1) : 0;
+  const s = useMemo(() => computeSkyLighting(timeOfDay, overcast), [timeOfDay, overcast]);
+
+  // Camera-mode preset. Only `perspective` claims physical correctness; cutaway
+  // and top carry recorded departures for legibility (contract §5.4). None of
+  // them touch the sun — the ceiling proxy in FloorMesh handles interior
+  // occlusion, so the world outside a cutaway stays correctly sunlit.
+  const cam = CAMERA_PRESETS[presetFor(wallMode, false)];
+  const fill = toRenderIntensity(cam.interiorFillLux);
+
+  // §7.2.4 dome partition: env map + hemisphere carry one sky, not two. Key
+  // rect's own authored intensity (unscaled by cam.iblScale — that departure
+  // lands on environmentIntensity, the single lever) drives the level.
+  const keyBaseIntensity = outdoor ? 1.2 : 1.6;
+  const environmentIntensity =
+    envIntensityForSky(outdoor ? s.skyLux : STUDIO.fillLux, keyBaseIntensity) * cam.iblScale;
 
   const sunPos = useMemo(
     () => s.dir.clone().multiplyScalar(Math.max(span * 1.2, 8)),
     [s.dir, span],
   );
   const skyDir: [number, number, number] = [s.dir.x, s.dir.y, s.dir.z];
-  const shadow = span * 0.9 + 4;
+  const shadow = SHADOW.frustumHalfExtent(span);
   const studioBg = useMemo(() => col("#101014"), []);
   const fogFar = span * (outdoor ? 16 : 11) * (1 - 0.42 * overcast); // haze thickens
 
   return (
     <>
-      <color attach="background" args={[outdoor ? s.sky : studioBg]} />
-      <fog attach="fog" args={[outdoor ? s.sky : studioBg, span * 3.5, fogFar]} />
+      <color attach="background" args={[outdoor ? s.skyColor : studioBg]} />
+      <fog attach="fog" args={[outdoor ? s.skyColor : studioBg, span * 3.5, fogFar]} />
 
       {outdoor ? (
         <>
@@ -97,39 +79,69 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
             distance={45000}
           />
           {weather === "rain" && <Rain span={span} />}
-          <hemisphereLight color={s.hemiSky} groundColor={s.hemiGround} intensity={s.hemiIntensity} />
+          {/* Diffuse sky, lux. OUTDOOR_SHADOW_FILL_BOOST compensates for this
+              renderer having no real ground-bounce/GI — see its own doc
+              comment (lightPresets.ts): a shadow-side wall gets ONLY this
+              light, so at the physically-measured split alone it read much
+              darker than a real bounce-lit wall would (Dan's ruling). */}
+          <hemisphereLight
+            color={s.hemiSky}
+            groundColor={s.hemiGround}
+            intensity={toRenderIntensity(
+              hemisphereLuxForSky(s.skyLux, "outdoor") * cam.skyScale * OUTDOOR_SHADOW_FILL_BOOST,
+            )}
+          />
+          {/* Direct sun, lux. */}
           <directionalLight
             color={s.sunColor}
             position={sunPos}
-            intensity={s.sunIntensity}
+            intensity={toRenderIntensity(s.sunLux * cam.sunScale)}
             castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-bias={-0.0002}
-            shadow-normalBias={0.02}
+            shadow-mapSize={[SHADOW.mapSize, SHADOW.mapSize]}
+            shadow-bias={SHADOW.bias}
+            shadow-normalBias={SHADOW.normalBias}
           >
             <orthographicCamera attach="shadow-camera" args={[-shadow, shadow, shadow, -shadow, 0.5, span * 6]} />
           </directionalLight>
         </>
       ) : (
         <>
-          <hemisphereLight args={["#dfe9ff", "#4a4438", 0.55]} />
+          {/* Studio: a key/fill instrument set, stated as the illuminance real
+              lamps would produce rather than derived from an hour. */}
+          <hemisphereLight
+            color={STUDIO.fillSky}
+            groundColor={STUDIO.fillGround}
+            intensity={toRenderIntensity(hemisphereLuxForSky(STUDIO.fillLux, "studio") * cam.skyScale)}
+          />
           <directionalLight
-            color="#fff1dd"
+            color={STUDIO.keyColor}
             position={[span * 0.8, span * 1.1, span * 0.55]}
-            intensity={2.1}
+            intensity={toRenderIntensity(STUDIO.keyLux * cam.sunScale)}
             castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-bias={-0.0002}
-            shadow-normalBias={0.02}
+            shadow-mapSize={[SHADOW.mapSize, SHADOW.mapSize]}
+            shadow-bias={SHADOW.bias}
+            shadow-normalBias={SHADOW.normalBias}
           >
             <orthographicCamera attach="shadow-camera" args={[-shadow, shadow, shadow, -shadow, 0.5, span * 6]} />
           </directionalLight>
         </>
       )}
 
-      {/* Procedural IBL — soft reflections on glass/floors in every preset. */}
-      <Environment resolution={128}>
-        <Lightformer form="rect" intensity={outdoor ? 1.2 : 1.6} position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[14, 14, 1]} color="#eef3ff" />
+      {/* Interior fill (contract §5.4) — RETIRED at M2. It stood in for the
+          per-room fixtures `RoomLights` now provides while the ceiling
+          correctly occluded the sun but nothing lit the rooms it revealed.
+          `CAMERA_PRESETS.cutaway`/`.top` now author `interiorFillLux: 0`
+          (`lightPresets.ts`), so `fill` is always 0 and this never mounts;
+          kept rather than deleted so a preset value change is still the only
+          lever, per §5.4's "camera-mode lighting is the three named presets,
+          nothing else" rule — not a second code path to re-enable by hand. */}
+      {fill > 0 && <ambientLight intensity={fill} color="#fff6e8" />}
+
+      {/* Procedural IBL — soft reflections on glass/floors in every preset.
+          Rect intensities are the fixed shape of the sky (§7.2.4); the level
+          is `environmentIntensity` alone, computed above from `skyLux`. */}
+      <Environment resolution={128} environmentIntensity={environmentIntensity}>
+        <Lightformer form="rect" intensity={keyBaseIntensity} position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[14, 14, 1]} color="#eef3ff" />
         <Lightformer form="rect" intensity={0.7} position={[-9, 3, -6]} scale={[8, 5, 1]} color="#cfe0ff" />
         <Lightformer form="rect" intensity={0.55} position={[9, 3, 6]} scale={[8, 5, 1]} color="#ffe6c8" />
       </Environment>

@@ -2,30 +2,65 @@
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import type { ThreeEvent } from "@react-three/fiber";
+import { useThree, type ThreeEvent } from "@react-three/fiber";
 import type { Scene, FloorStyle } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
-import { WALL_HEIGHT } from "@/schema/constants";
+import type { Node } from "@/schema/scene";
+import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
+import { MIN_CASTER_THICKNESS } from "@/render/contract";
+import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
-import { floorTexture, floorRoughness } from "./textures";
+import { useFloorTexture, floorRoughness } from "./textures";
 import { ACCENT } from "./WallMesh";
+import { sampleFloor } from "@/decorate/eyedropper";
 
-/** A flat vertical quad from (ax,ay)-(bx,by) in plan, spanning y0 to y1 —
- *  the riser panel that closes the gap above a shorter room's ceiling where
- *  a taller neighbor's shared wall would otherwise leave it open. */
-function buildRiserGeometry(ax: number, ay: number, bx: number, by: number, y0: number, y1: number): THREE.BufferGeometry {
-  const geo = new THREE.BufferGeometry();
-  const positions = new Float32Array([
-    ax, y0, ay,
-    bx, y0, by,
-    bx, y1, by,
-
-    ax, y0, ay,
-    bx, y1, by,
-    ax, y1, ay,
-  ]);
-  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+/**
+ * A ceiling SLAB from a room loop: the polygon extruded upward by `thickness`,
+ * with its underside at y = 0 so the interior ceiling surface stays exactly
+ * where the old flat plane was.
+ *
+ * It is a solid rather than a plane because a shadow caster must have thickness
+ * (contract §3.4). As a flat plane the ceiling shadowed itself — front and back
+ * faces land on the same shadow-map depth — and the roof acned visibly at every
+ * sun angle. A closed solid also lets the material be FrontSide, which makes
+ * three render BACK faces into the shadow map: the stored depth is then the far
+ * side of the slab, a full thickness behind the lit surface.
+ */
+function buildCeilingSlab(loop: Node[], thickness: number): THREE.BufferGeometry {
+  const shape = new THREE.Shape(loop.map((n) => new THREE.Vector2(n.x, n.y)));
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+  // Shape is authored in XY and extruded along +Z. rotateX(+90°) maps
+  // (x, y, 0) -> (x, 0, y), matching buildFloorGeometry's plan->world mapping,
+  // and sends the extrusion to -Y; the translate lifts it back so the slab
+  // spans [0, thickness] above the mesh origin.
+  geo.rotateX(Math.PI / 2);
+  geo.translate(0, thickness, 0);
   geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * The riser panel that closes the gap above a shorter room's ceiling where a
+ * taller neighbor's shared wall would otherwise leave it open: a solid from
+ * (ax,ay)-(bx,by) in plan, spanning y0 to y1, as thick as the wall it continues.
+ *
+ * A box rather than the flat quad this used to be. The riser casts shadows —
+ * it has to, since it is the only thing sealing that strip of airspace — and a
+ * zero-thickness caster shadows itself (contract §3.4). Same defect the ceiling
+ * had, same fix: give it the thickness it physically has.
+ */
+function buildRiserGeometry(
+  ax: number, ay: number, bx: number, by: number,
+  y0: number, y1: number, thickness: number,
+): THREE.BufferGeometry {
+  const dx = bx - ax;
+  const dz = by - ay;
+  const len = Math.hypot(dx, dz);
+  const geo = new THREE.BoxGeometry(len, y1 - y0, thickness);
+  // Box length runs along local +X; rotating by -atan2 aligns it with the
+  // plan segment, matching how WallMesh orients its own wall bodies.
+  geo.rotateY(-Math.atan2(dz, dx));
+  geo.translate((ax + bx) / 2, (y0 + y1) / 2, (ay + by) / 2);
   return geo;
 }
 
@@ -43,9 +78,24 @@ function Floor({ roomId, style, geometry }: {
   const setHover3d = useSceneStore((s) => s.setHover3d);
   const setSel3d = useSceneStore((s) => s.setSel3d);
 
+  const gl = useThree((s) => s.gl);
+  const tex = useFloorTexture(style, gl);
+
   // Per-room material (textures are shared) so the highlight stays per-room.
+  // `tex` is only ever null for the flagged-on KTX2 path mid-load (see
+  // textures.ts's useFloorTexture) — a plain grey placeholder until it
+  // resolves, then this recomputes with the real maps.
   const mat = useMemo(() => {
-    const tex = floorTexture(style);
+    if (!tex) {
+      return new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        roughness: 0.9,
+        metalness: 0,
+        emissive: new THREE.Color(ACCENT),
+        emissiveIntensity: 0,
+        side: THREE.DoubleSide,
+      });
+    }
     return new THREE.MeshStandardMaterial({
       map: tex.map,
       normalMap: tex.normalMap,
@@ -53,13 +103,16 @@ function Floor({ roomId, style, geometry }: {
       // Catalog materials ship a roughness map; procedural styles leave it
       // undefined and rely on the scalar alone.
       roughnessMap: tex.roughnessMap,
+      // KTX2 catalog materials only — material-spec.md §6's packed ORM
+      // texture (undefined for the WebP/procedural paths, same as before).
+      aoMap: tex.aoMap,
       roughness: floorRoughness(style),
       metalness: 0,
       emissive: new THREE.Color(ACCENT),
       emissiveIntensity: 0,
       side: THREE.DoubleSide,
     });
-  }, [style]);
+  }, [style, tex]);
   useEffect(() => () => mat.dispose(), [mat]);
   useEffect(() => {
     mat.emissiveIntensity = selected ? 0.25 : hovered ? 0.1 : 0;
@@ -69,12 +122,14 @@ function Floor({ roomId, style, geometry }: {
     <mesh
       geometry={geometry}
       material={mat}
-      receiveShadow
+      // A floor is opaque architecture, but a flat slab at y=0 has nothing
+      // below it to shade, so it only receives.
+      receiveShadow={shadowProps("opaqueArchitecture").receiveShadow}
       userData={{ pick: { kind: "room", id: roomId } }}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         const s = useSceneStore.getState();
         const paintable = s.appMode === "furnish" && s.brush?.kind === "floor";
-        if (!((s.appMode === "build" && !s.placing) || paintable)) return;
+        if (!((s.appMode === "build" && !s.placing) || paintable || s.eyedropper)) return;
         e.stopPropagation();
         setHover3d({ kind: "room", id: roomId });
       }}
@@ -85,6 +140,11 @@ function Floor({ roomId, style, geometry }: {
       }}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         const s = useSceneStore.getState();
+        if (s.eyedropper) {
+          e.stopPropagation();
+          sampleFloor(style);
+          return;
+        }
         // Floor brush (Decorate mode): click sets this room's floor material.
         if (s.appMode === "furnish" && s.brush?.kind === "floor") {
           e.stopPropagation();
@@ -196,7 +256,7 @@ export function Ceilings({ scene }: { scene: Scene }) {
         }
       }
       const height = perimeterHeight ?? anyHeight ?? WALL_HEIGHT;
-      out.push({ id: room.id, geometry: buildFloorGeometry(loop), height });
+      out.push({ id: room.id, geometry: buildCeilingSlab(loop, MIN_CASTER_THICKNESS), height });
 
       // A bounding wall taller than THIS room's own ceiling (a neighbor's
       // shared wall, excluded from the max above) would otherwise leave the
@@ -211,7 +271,13 @@ export function Ceilings({ scene }: { scene: Scene }) {
         if (!wall) continue;
         const wallH = wall.height ?? WALL_HEIGHT;
         if (wallH <= height) continue;
-        risers.push({ id: `${room.id}:${wall.id}`, geometry: buildRiserGeometry(a.x, a.y, b.x, b.y, height, wallH) });
+        // As thick as the wall it continues upward — the riser reads as that
+        // wall carrying on, and shares its shadow footprint.
+        const t = wall.thickness ?? DEFAULT_THICKNESS;
+        risers.push({
+          id: `${room.id}:${wall.id}`,
+          geometry: buildRiserGeometry(a.x, a.y, b.x, b.y, height, wallH, t),
+        });
       }
     }
     return { out, risers };
@@ -224,7 +290,11 @@ export function Ceilings({ scene }: { scene: Scene }) {
         color: "#ededed",
         roughness: 0.95,
         metalness: 0,
-        side: THREE.DoubleSide,
+        // FrontSide, not DoubleSide: the ceiling is a closed solid now, so
+        // there is no back face to see, and FrontSide resolves shadowSide to
+        // BackSide — the shadow map stores the slab's far side rather than the
+        // surface being lit, which is what removes the self-shadow acne.
+        side: THREE.FrontSide,
       }),
     [],
   );
@@ -236,23 +306,61 @@ export function Ceilings({ scene }: { scene: Scene }) {
         color: "#d8d2c4",
         roughness: 0.95,
         metalness: 0,
-        side: THREE.DoubleSide,
+        // FrontSide for the same reason as the ceiling: the riser is a closed
+        // solid now, and FrontSide resolves shadowSide to BackSide so the
+        // shadow map stores its far face instead of the lit one.
+        side: THREE.FrontSide,
       }),
+    [],
+  );
+  // Depth-only proxy material. When the ceiling is hidden for viewing, the mesh
+  // stays in the scene as an invisible shadow caster: `colorWrite` off so it
+  // draws nothing, `depthWrite` off so it cannot occlude what is behind it in
+  // the colour pass. The shadow pass builds its own depth material and ignores
+  // both, so the roof still blocks the sun.
+  //
+  // This is what fixes sun-through-ceiling in cutaway and top (contract §5).
+  // The alternative — cutting the sun in those modes — would have darkened the
+  // entire visible outdoors, since the sun is one scene-wide light and cutaway
+  // fades only the walls facing the camera.
+  const proxyMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }),
     [],
   );
   useEffect(() => () => mat.dispose(), [mat]);
   useEffect(() => () => riserMat.dispose(), [riserMat]);
+  useEffect(() => () => proxyMat.dispose(), [proxyMat]);
   useEffect(() => () => ceilings.forEach((c) => c.geometry.dispose()), [ceilings]);
   useEffect(() => () => risers.forEach((r) => r.geometry.dispose()), [risers]);
 
-  if (!show || wallMode !== "full") return null;
+  // Hidden for VIEWING is not the same as absent by DESIGN. A room with no
+  // ceiling geometry at all (balcony — bounded by a rail, skipped above) is
+  // open to the sky and correctly takes direct sun. A room whose ceiling is
+  // merely hidden so the camera can see in still has a roof, and the sun must
+  // still stop at it. Only the second case gets a proxy.
+  const hidden = !show || wallMode !== "full";
+  const solid = shadowProps("opaqueArchitecture");
+
   return (
     <group>
       {ceilings.map((c) => (
-        <mesh key={c.id} position={[0, c.height, 0]} geometry={c.geometry} material={mat} receiveShadow />
+        <mesh
+          key={c.id}
+          position={[0, c.height, 0]}
+          geometry={c.geometry}
+          material={hidden ? proxyMat : mat}
+          castShadow
+          receiveShadow={!hidden && solid.receiveShadow}
+        />
       ))}
       {risers.map((r) => (
-        <mesh key={r.id} geometry={r.geometry} material={riserMat} receiveShadow />
+        <mesh
+          key={r.id}
+          geometry={r.geometry}
+          material={hidden ? proxyMat : riserMat}
+          castShadow
+          receiveShadow={!hidden && solid.receiveShadow}
+        />
       ))}
     </group>
   );

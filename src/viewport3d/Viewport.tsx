@@ -4,36 +4,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postprocessing";
-import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
+import { DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
+import { RenderContractCheck } from "@/render/RenderContractCheck";
+import { RoomLights } from "@/render/RoomLights";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
-import type { FloorStyle, Opening, SlideSpec, Wall } from "@/schema/scene";
-import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
-import {
-  WALL_HEIGHT,
-  DEFAULT_THICKNESS,
-  DEFAULT_DOOR,
-  DEFAULT_WINDOW,
-} from "@/schema/constants";
-import type { OpeningType } from "@/schema/scene";
-import { CATALOG_BY_ID, ROOMS } from "@/furniture/catalog";
-import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
-import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
-import { useThumbnail } from "@/furniture/thumbnails";
-import { T, glass, chip, field, microLabel } from "@/ui/tokens";
-import { NumField } from "@/ui/NumField";
-import {
-  loadTambourColors,
-  groupByFamily,
-  type TambourColor,
-  type TambourFamily,
-} from "@/lib/tambourColors";
+import { T, glass, chip } from "@/ui/tokens";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
+import { FixtureLayer } from "./FixtureLayer";
+import { MeasureTool } from "./MeasureTool";
+import { WallTool } from "./buildTools/WallTool";
+import { OpeningTool } from "./buildTools/OpeningTool";
+import { BottomDock } from "@/ui/planDock/BottomDock";
+import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
+import { BuildNavigator } from "@/ui/planDock/BuildNavigator";
+import { Inspector } from "@/ui/planDock/inspector/Inspector";
+import { PdToastHost } from "@/ui/planDock/toast";
 import { StairLayer } from "./StairMesh";
-import { StairInspector } from "./StairInspector";
+import { CameraFocusRig } from "./CameraFocusRig";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
 import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
@@ -118,872 +109,6 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
         </Html>
       ))}
     </>
-  );
-}
-
-const inspectorPanel: React.CSSProperties = {
-  position: "absolute",
-  right: 14,
-  top: 64,
-  padding: "12px 14px",
-  fontSize: 12.5,
-  display: "flex",
-  flexDirection: "column",
-  gap: 9,
-  minWidth: 170,
-  ...glass(),
-};
-const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" };
-
-/** Numeric field that commits on Enter/blur and never leaks keys to the pane.
- *  Most dimensions are metres; `unit` covers the ones that aren't. */
-/** Small integer +/- stepper for the inspector (mullion grid). */
-function Stepper({ label, value, min = 1, max = 6, onSet }: {
-  label: string;
-  value: number;
-  min?: number;
-  max?: number;
-  onSet: (v: number) => void;
-}) {
-  const clamp = (v: number) => Math.min(max, Math.max(min, v));
-  const btn: React.CSSProperties = {
-    ...chip(false),
-    padding: "1px 9px",
-    fontSize: 14,
-    lineHeight: 1.2,
-  };
-  return (
-    <label style={inspectorRow}>
-      <span style={{ color: T.textDim }}>{label}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button style={btn} onClick={() => onSet(clamp(value - 1))}>–</button>
-        <span style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
-          {value}
-        </span>
-        <button style={btn} onClick={() => onSet(clamp(value + 1))}>+</button>
-      </span>
-    </label>
-  );
-}
-
-/** Building Knowledge Layer trigger — escalates undecided rooms to the VLM.
- *  Free rule verdicts are already on the scene; this button spends API budget,
- *  so it is an explicit user action (mirrors "AI classify" in the trace rail). */
-function UnderstandRoomsButton() {
-  const busy = useSceneStore((s) => s.understandBusy);
-  const [msg, setMsg] = useState<string | null>(null);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <button
-        style={chip(false, { opacity: busy ? 0.6 : 1 })}
-        disabled={busy}
-        onClick={async () => {
-          setMsg(null);
-          setMsg(await useSceneStore.getState().understandRooms());
-        }}
-      >
-        {busy ? "🧠 Understanding…" : "🧠 Understand rooms (AI)"}
-      </button>
-      {msg && <div style={{ color: T.textFaint, fontSize: 10.5 }}>{msg}</div>}
-    </div>
-  );
-}
-
-const KIND_LABEL = { wall: "Wall", rail: "Rail", portal: "Open boundary" } as const;
-
-/** Wall inspector: what KIND of boundary this edge is, plus its dimensions.
- *  Paint lives in the Decorate catalog brush (pick a colour, click faces), so
- *  structure and finishes stay separate. */
-function WallInspector({ wall }: { wall: Wall }) {
-  const scene = useSceneStore((s) => s.scene);
-  const a = scene.nodes.find((n) => n.id === wall.a);
-  const b = scene.nodes.find((n) => n.id === wall.b);
-  const len = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : 0;
-  const kind = wall.kind ?? "wall";
-  const isPortal = kind === "portal";
-
-  const patch = (label: string, p: Partial<Wall>) => {
-    const s = useSceneStore.getState();
-    s.commitScene(label, {
-      ...s.scene,
-      walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, ...p } : w)),
-    });
-  };
-  // Converting DROPS the openings on this edge: a rail or an open boundary has
-  // nothing to cut a hole in, so leaving them would strand doors in mid-air.
-  const setKind = (next: "wall" | "rail" | "portal") => {
-    if (next === kind) return;
-    const s = useSceneStore.getState();
-    s.commitScene(`Make ${KIND_LABEL[next].toLowerCase()}`, {
-      ...s.scene,
-      walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, kind: next } : w)),
-      openings:
-        next === "wall" ? s.scene.openings : s.scene.openings.filter((o) => o.wallId !== wall.id),
-    });
-  };
-
-  return (
-    <div style={inspectorPanel}>
-      <div style={{ fontWeight: 600 }}>
-        {KIND_LABEL[kind]}{" "}
-        <span style={{ color: T.textDim, fontWeight: 400 }}>· {len.toFixed(2)} m</span>
-      </div>
-      <div style={{ display: "flex", gap: 4 }}>
-        {(["wall", "rail", "portal"] as const).map((k) => (
-          <button
-            key={k}
-            style={chip(kind === k, { flex: 1, textAlign: "center" })}
-            onClick={() => setKind(k)}
-            title={
-              k === "portal"
-                ? "No barrier at all — the room still closes, nothing gets built. For a space that simply gives onto the next."
-                : k === "rail"
-                  ? "Low, see-through barrier — balcony or terrace railing."
-                  : "Full-height solid wall."
-            }
-          >
-            {k === "portal" ? "⇿ Open" : k === "rail" ? "▭ Rail" : "▉ Wall"}
-          </button>
-        ))}
-      </div>
-      {isPortal ? (
-        <div style={{ fontSize: 10.5, color: T.textFaint }}>
-          Nothing is built here — the rooms on each side stay separate but flow together.
-        </div>
-      ) : (
-        <>
-          <NumField
-            label="Height"
-            value={wall.height ?? WALL_HEIGHT}
-            onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
-            displayScale={100}
-            unit="cm"
-          />
-          <NumField
-            label="Thickness"
-            value={wall.thickness ?? DEFAULT_THICKNESS}
-            onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
-            displayScale={100}
-            unit="cm"
-          />
-          {kind === "wall" && (
-            <div style={{ fontSize: 10.5, color: T.textFaint }}>
-              Paint in <b style={{ color: T.textDim, fontWeight: 600 }}>Decorate</b>: pick a colour, click faces.
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-// The sliding presets, as the product thinks of them. Each is just a point in
-// the one SlideSpec parameterisation — see buildJoinery.
-const SLIDE_PRESETS: { key: string; label: string; title: string; spec: SlideSpec }[] = [
-  {
-    key: "patio",
-    label: "Patio",
-    title: "Two glazed panels sliding past each other — the balcony door",
-    spec: { style: "bypass", panels: 2, glazed: true, open: 0, side: "end" },
-  },
-  {
-    key: "closet",
-    label: "Closet",
-    title: "Solid panels sliding past each other — wardrobe bypass doors",
-    spec: { style: "bypass", panels: 2, glazed: false, open: 0, side: "end" },
-  },
-  {
-    key: "barn",
-    label: "Barn",
-    title: "One leaf sliding along the face of the wall",
-    spec: { style: "surface", panels: 1, glazed: false, open: 0, side: "end" },
-  },
-];
-
-const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
-  s.style === p.style && s.panels === p.panels && (s.glazed ?? false) === (p.glazed ?? false);
-
-/** Opening inspector: what this hole in the wall IS, and what hangs in it. */
-function OpeningInspector({ opening }: { opening: Opening }) {
-  const patch = (label: string, p: Partial<Opening>) => {
-    const s = useSceneStore.getState();
-    s.commitScene(label, {
-      ...s.scene,
-      openings: s.scene.openings.map((o) => (o.id === opening.id ? { ...o, ...p } : o)),
-    });
-  };
-  // Switching type strips the joinery that no longer applies, so a passage
-  // can't keep a stale swing angle or a window a door's slide gear.
-  const setType = (type: OpeningType) => {
-    if (type === opening.type) return;
-    const base = { type, slide: undefined, swingDeg: undefined, hinge: undefined };
-    patch(
-      type === "passage" ? "Remove door" : `Make ${type}`,
-      type === "window"
-        ? { ...base, sill: opening.sill > 0 ? opening.sill : DEFAULT_WINDOW.sill }
-        : { ...base, sill: 0, mullions: undefined },
-    );
-  };
-  const slide = opening.slide;
-  const isDoor = opening.type === "door";
-
-  return (
-    <div style={inspectorPanel}>
-      <div style={{ fontWeight: 600, textTransform: "capitalize" }}>
-        {opening.type}{" "}
-        <span style={{ color: T.textDim, fontWeight: 400 }}>
-          · {opening.width.toFixed(2)} × {opening.height.toFixed(2)} m
-        </span>
-      </div>
-
-      <div style={{ display: "flex", gap: 4 }}>
-        {(["door", "passage", "window"] as const).map((t) => (
-          <button
-            key={t}
-            style={chip(opening.type === t, { flex: 1, textAlign: "center" })}
-            onClick={() => setType(t)}
-            title={
-              t === "passage"
-                ? "Keep the opening, lose the door — an open way through a wall"
-                : undefined
-            }
-          >
-            {t === "door" ? "🚪 Door" : t === "passage" ? "⌷ Open" : "🪟 Window"}
-          </button>
-        ))}
-      </div>
-
-      {isDoor && (
-        <>
-          <div style={microLabel()}>How it opens</div>
-          <div style={{ display: "flex", gap: 4 }}>
-            <button
-              style={chip(!slide, { flex: 1, textAlign: "center" })}
-              onClick={() => patch("Swing door", { slide: undefined })}
-            >
-              ↷ Swing
-            </button>
-            {SLIDE_PRESETS.map((p) => (
-              <button
-                key={p.key}
-                style={chip(!!slide && matchesPreset(slide, p.spec), { flex: 1, textAlign: "center" })}
-                onClick={() =>
-                  patch(`${p.label} slider`, {
-                    slide: { ...p.spec, open: slide?.open ?? 0, side: slide?.side ?? "end" },
-                    swingDeg: undefined,
-                    hinge: undefined,
-                  })
-                }
-                title={p.title}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {isDoor && !slide && (
-        <>
-          <NumField
-            label="Swing"
-            unit="°"
-            value={opening.swingDeg ?? 0}
-            onCommit={(v) => patch("Door swing", { swingDeg: Math.min(120, Math.max(0, v)) })}
-          />
-          <div style={{ display: "flex", gap: 4 }}>
-            {(["start", "end"] as const).map((h) => (
-              <button
-                key={h}
-                style={chip((opening.hinge ?? "start") === h, { flex: 1, textAlign: "center" })}
-                onClick={() => patch("Door hinge", { hinge: h })}
-              >
-                Hinge {h}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {isDoor && slide && (
-        <>
-          <NumField
-            label="Open"
-            unit="%"
-            value={Math.round((slide.open ?? 0) * 100)}
-            onCommit={(v) =>
-              patch("Slide open", { slide: { ...slide, open: Math.min(1, Math.max(0, v / 100)) } })
-            }
-          />
-          {slide.style === "bypass" && (
-            <Stepper
-              label="Panels"
-              value={slide.panels}
-              min={2}
-              max={3}
-              onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })}
-            />
-          )}
-          <div style={{ display: "flex", gap: 4 }}>
-            {(["start", "end"] as const).map((sd) => (
-              <button
-                key={sd}
-                style={chip((slide.side ?? "end") === sd, { flex: 1, textAlign: "center" })}
-                onClick={() => patch("Slide side", { slide: { ...slide, side: sd } })}
-                title="Which jamb the panels stack at"
-              >
-                Slides {sd}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {opening.type === "passage" && (
-        <div style={{ display: "flex", gap: 4 }}>
-          {([true, false] as const).map((l) => (
-            <button
-              key={String(l)}
-              style={chip((opening.lining ?? true) === l, { flex: 1, textAlign: "center" })}
-              onClick={() => patch("Passage lining", { lining: l })}
-              title={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
-            >
-              {l ? "Cased" : "Bare"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <NumField
-        label="Width"
-        value={opening.width}
-        onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })}
-        displayScale={100}
-        unit="cm"
-      />
-      <NumField
-        label="Height"
-        value={opening.height}
-        onCommit={(v) => patch("Opening height", { height: Math.max(0.4, v) })}
-        displayScale={100}
-        unit="cm"
-      />
-      {opening.type === "window" && (
-        <NumField
-          label="Sill"
-          value={opening.sill}
-          onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })}
-          displayScale={100}
-          unit="cm"
-        />
-      )}
-      <div style={{ fontSize: 10.5, color: T.textFaint }}>
-        Drag to slide it along the wall · Delete fills the wall back in.
-      </div>
-    </div>
-  );
-}
-
-/** Contextual inspector, docked top-right when something is selected. */
-function MiniInspector() {
-  const sel3d = useSceneStore((s) => s.sel3d);
-  const scene = useSceneStore((s) => s.scene);
-
-  if (sel3d?.kind === "wall") {
-    const wall = scene.walls.find((w) => w.id === sel3d.id);
-    if (!wall) return null;
-    return <WallInspector wall={wall} />;
-  }
-
-  if (sel3d?.kind === "opening") {
-    const opening = scene.openings.find((o) => o.id === sel3d.id);
-    if (!opening) return null;
-    return <OpeningInspector opening={opening} />;
-  }
-
-  if (sel3d?.kind === "stair") {
-    const stair = (scene.stairs ?? []).find((s) => s.id === sel3d.id);
-    if (!stair) return null;
-    return <StairInspector stair={stair} />;
-  }
-
-  if (sel3d?.kind === "furniture") {
-    const item = scene.furniture.find((f) => f.id === sel3d.id);
-    if (!item) return null;
-    const spec = CATALOG_BY_ID.get(item.assetId);
-    const deg = ((item.rotation * 180) / Math.PI) % 360;
-    return (
-      <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600 }}>{spec?.name ?? item.assetId}</div>
-        <div style={{ color: T.textDim }}>
-          {spec ? `${spec.footprint.w} × ${spec.footprint.d} m · ` : ""}
-          {Math.round(deg)}°
-        </div>
-        <div style={{ color: T.textFaint }}>drag to move · R rotates · Delete removes</div>
-      </div>
-    );
-  }
-
-  if (sel3d?.kind === "room") {
-    const room = scene.rooms.find((r) => r.id === sel3d.id);
-    if (!room) return null;
-    const area = roomArea(room.loop, nodeMap(scene.nodes));
-    const sem = room.semantics;
-    return (
-      <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600 }}>
-          {room.name ?? "Room"}{" "}
-          <span style={{ color: T.textDim, fontWeight: 400 }}>· {area.toFixed(1)} m²</span>
-        </div>
-        {sem && (
-          <>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              <span style={chip(true, { textTransform: "capitalize" })}>
-                {displayRoomType(sem.type)}
-              </span>
-              <span style={{ color: T.textDim, fontSize: 11 }}>
-                {Math.round(sem.confidence * 100)}% · {sem.source}
-                {sem.function ? ` · ${sem.function.replace(/_/g, " ")}` : ""}
-              </span>
-            </div>
-            {sem.evidence.length > 0 && (
-              <div style={{ color: T.textFaint, fontSize: 11, lineHeight: 1.5 }}>
-                {sem.evidence.slice(0, 4).map((e, i) => (
-                  <div key={i}>
-                    · {e.feature}
-                    {e.value !== undefined && e.value !== true ? `: ${e.value}` : ""}
-                    <span style={{ opacity: 0.6 }}> ({e.source})</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ color: T.textFaint, fontSize: 11 }}>
-              {sem.features.doorCount} door{sem.features.doorCount === 1 ? "" : "s"} ·{" "}
-              {sem.features.windowCount} window{sem.features.windowCount === 1 ? "" : "s"} ·{" "}
-              {sem.features.exteriorWallCount} ext wall
-              {sem.features.exteriorWallCount === 1 ? "" : "s"}
-              {sem.features.hasCloset ? " · closet" : ""}
-            </div>
-          </>
-        )}
-        <UnderstandRoomsButton />
-        <div style={{ fontSize: 10.5, color: T.textFaint }}>
-          Change the floor in <b style={{ color: T.textDim, fontWeight: 600 }}>Decorate</b>: pick a material, click the floor.
-        </div>
-      </div>
-    );
-  }
-
-  if (sel3d?.kind === "opening") {
-    const op = scene.openings.find((o) => o.id === sel3d.id);
-    if (!op) return null;
-    const wall = scene.walls.find((w) => w.id === op.wallId);
-    const wallH = wall?.height ?? WALL_HEIGHT;
-    const patch = (label: string, p: Partial<typeof op>) => {
-      const s = useSceneStore.getState();
-      s.commitScene(label, {
-        ...s.scene,
-        openings: s.scene.openings.map((o) => (o.id === op.id ? { ...o, ...p } : o)),
-      });
-    };
-    const swapTo = (type: OpeningType) => {
-      if (type === op.type) return;
-      const d = type === "door" ? DEFAULT_DOOR : DEFAULT_WINDOW;
-      patch(`Convert to ${type}`, { type, sill: d.sill, height: d.height });
-    };
-    return (
-      <div style={inspectorPanel}>
-        <div style={{ fontWeight: 600, textTransform: "capitalize" }}>{op.type}</div>
-        <div style={{ display: "flex", gap: 5 }}>
-          <button style={chip(op.type === "door")} onClick={() => swapTo("door")}>Door</button>
-          <button style={chip(op.type === "window")} onClick={() => swapTo("window")}>Window</button>
-        </div>
-        <NumField
-          label="Width"
-          value={op.width}
-          onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })}
-        />
-        <NumField
-          label="Height"
-          value={op.height}
-          onCommit={(v) =>
-            patch("Opening height", { height: Math.min(wallH - op.sill, Math.max(0.3, v)) })
-          }
-        />
-        <NumField
-          label="Sill"
-          value={op.sill}
-          disabled={op.type === "door"}
-          onCommit={(v) =>
-            patch("Opening sill", { sill: Math.min(wallH - op.height, Math.max(0, v)) })
-          }
-        />
-        {op.type === "door" ? (
-          <>
-            <div style={{ ...microLabel(), marginTop: 2 }}>Door</div>
-            <label style={inspectorRow}>
-              <span style={{ color: T.textDim }}>Open</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <input
-                  type="range"
-                  min={0}
-                  max={110}
-                  step={5}
-                  value={op.swingDeg ?? 0}
-                  onChange={(e) => patch("Door swing", { swingDeg: Number(e.target.value) })}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  style={{ width: 90 }}
-                />
-                <span style={{ color: T.textFaint, minWidth: 30 }}>{op.swingDeg ?? 0}°</span>
-              </span>
-            </label>
-            <div style={{ display: "flex", gap: 5 }}>
-              <button
-                style={chip((op.hinge ?? "start") === "start")}
-                onClick={() => patch("Hinge left", { hinge: "start" })}
-              >
-                Hinge ◄
-              </button>
-              <button style={chip(op.hinge === "end")} onClick={() => patch("Hinge right", { hinge: "end" })}>
-                Hinge ►
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ ...microLabel(), marginTop: 2 }}>Glazing bars</div>
-            <Stepper
-              label="Columns"
-              value={op.mullions?.cols ?? 2}
-              onSet={(n) => patch("Mullion columns", { mullions: { cols: n, rows: op.mullions?.rows ?? 1 } })}
-            />
-            <Stepper
-              label="Rows"
-              value={op.mullions?.rows ?? 1}
-              onSet={(n) => patch("Mullion rows", { mullions: { cols: op.mullions?.cols ?? 2, rows: n } })}
-            />
-          </>
-        )}
-      </div>
-    );
-  }
-
-  return null;
-}
-
-/** One catalog tile: a rendered 3D thumbnail with a caption, IKEA-style. */
-function CatalogTile({ assetId }: { assetId: string }) {
-  const spec = CATALOG_BY_ID.get(assetId);
-  const placing = useSceneStore((s) => s.placing);
-  // Branded items ship a real photo; only render a GLB thumbnail when they don't.
-  const rendered = useThumbnail(spec?.thumbnail ? "" : spec?.model ?? assetId);
-  const thumb = spec?.thumbnail ?? rendered;
-  const [hover, setHover] = useState(false);
-  const active = placing?.assetId === assetId;
-  if (!spec) return null;
-  const priceStr = spec.price?.value != null ? ` · ₪${spec.price.value.toLocaleString()}` : "";
-  return (
-    <button
-      title={`${spec.name}${spec.subtitle ? ` · ${spec.subtitle}` : ""} · ${spec.footprint.w}×${spec.footprint.d} m${priceStr}`}
-      onClick={() => useSceneStore.getState().setPlacing(active ? null : assetId)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 3,
-        padding: "6px 3px 5px",
-        borderRadius: T.radiusS + 2,
-        border: `1.5px solid ${active ? T.accent : "transparent"}`,
-        background: active ? T.accentSoft : hover ? "rgba(255,255,255,0.07)" : "transparent",
-        cursor: "pointer",
-        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}`,
-        transform: hover && !active ? "translateY(-1px)" : "none",
-      }}
-    >
-      <div
-        style={{
-          width: 58,
-          height: 58,
-          borderRadius: T.radiusS,
-          background: "rgba(255,255,255,0.05)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-        }}
-      >
-        {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumb}
-            alt={spec.name}
-            width={56}
-            height={56}
-            style={{ objectFit: "contain" }}
-            draggable={false}
-          />
-        ) : (
-          <span style={{ color: T.textFaint, fontSize: 10 }}>…</span>
-        )}
-      </div>
-      <span
-        style={{
-          fontSize: 10,
-          lineHeight: 1.15,
-          color: active ? T.text : T.textDim,
-          textAlign: "center",
-          maxWidth: 62,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {spec.name}
-      </span>
-    </button>
-  );
-}
-
-/** Furniture sub-catalog — browse by room, pick by picture. */
-function FurnitureCatalog() {
-  const placing = useSceneStore((s) => s.placing);
-  const [roomId, setRoomId] = useState(ROOMS[0].id);
-  const room = ROOMS.find((r) => r.id === roomId) ?? ROOMS[0];
-  return (
-    <>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 3,
-          padding: "0 10px 10px",
-          borderBottom: `1px solid ${T.panelBorder}`,
-        }}
-      >
-        {ROOMS.map((r) => {
-          const active = r.id === roomId;
-          return (
-            <button
-              key={r.id}
-              onClick={() => setRoomId(r.id)}
-              style={chip(active, {
-                fontSize: 11,
-                padding: "4px 8px",
-                borderRadius: 999,
-                border: "none",
-                background: active ? T.accent : "transparent",
-                color: active ? "#fff" : T.textDim,
-              })}
-            >
-              {r.icon} {r.label}
-            </button>
-          );
-        })}
-      </div>
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: 10,
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 4,
-          alignContent: "start",
-        }}
-      >
-        {room.assetIds.map((id) => (
-          <CatalogTile key={id} assetId={id} />
-        ))}
-      </div>
-      {placing && (
-        <div style={{ padding: "8px 14px 12px", color: T.textFaint, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
-          click to place · R rotates · Esc done
-        </div>
-      )}
-    </>
-  );
-}
-
-const PAINT_FAMILIES: { slug: TambourFamily; label: string }[] = [
-  { slug: "white", label: "White" },
-  { slug: "neutral", label: "Neutral" },
-  { slug: "red", label: "Red" },
-  { slug: "orange", label: "Orange" },
-  { slug: "yellow", label: "Yellow" },
-  { slug: "green", label: "Green" },
-  { slug: "blue", label: "Blue" },
-  { slug: "purple", label: "Purple" },
-];
-
-/** Paint sub-catalog — the Tambour fan deck; pick a colour to load the brush. */
-function PaintCatalog() {
-  const brush = useSceneStore((s) => s.brush);
-  const activeHex = brush?.kind === "paint" ? brush.hex : undefined;
-  const [colors, setColors] = useState<TambourColor[] | null>(null);
-  const [query, setQuery] = useState("");
-  useEffect(() => {
-    let alive = true;
-    loadTambourColors().then((c) => alive && setColors(c));
-    return () => { alive = false; };
-  }, []);
-  const filtered = useMemo(() => {
-    if (!colors) return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return colors;
-    return colors.filter((c) => c.code.toLowerCase().includes(q) || c.nameEn.toLowerCase().includes(q));
-  }, [colors, query]);
-  const grouped = useMemo(() => groupByFamily(filtered), [filtered]);
-  const pick = (hex: string | null) => useSceneStore.getState().setBrush({ kind: "paint", hex });
-  const plasterActive = brush?.kind === "paint" && activeHex === null;
-  return (
-    <>
-      <div style={{ padding: "0 10px 8px" }}>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search shade…"
-          style={field({ width: "100%", boxSizing: "border-box" })}
-        />
-      </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 10px 12px" }}>
-        <button
-          onClick={() => pick(null)}
-          title="Reset to default plaster"
-          style={{
-            display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 8px",
-            borderRadius: T.radiusS, cursor: "pointer", fontFamily: T.font, fontSize: 12, color: T.text,
-            background: plasterActive ? T.accentSoft : T.inputBg,
-            border: `1.5px solid ${plasterActive ? T.accent : T.panelBorder}`,
-          }}
-        >
-          <span style={{ width: 16, height: 16, borderRadius: 4, background: "#d8d2c4", border: "1px solid rgba(0,0,0,0.25)" }} />
-          Plaster (default)
-        </button>
-        {!colors && <p style={{ fontSize: 12, color: T.textFaint, marginTop: 8 }}>Loading fan deck…</p>}
-        {PAINT_FAMILIES.map(({ slug, label }) => {
-          const items = grouped[slug];
-          if (!items || items.length === 0) return null;
-          return (
-            <section key={slug} style={{ marginTop: 10 }}>
-              <div style={microLabel(T.textDim)}>{label} · {items.length}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(22px, 1fr))", gap: 5, marginTop: 5 }}>
-                {items.map((c) => {
-                  const active = activeHex === c.hex;
-                  return (
-                    <button
-                      key={c.code}
-                      title={`${c.code} · ${c.nameEn}`}
-                      onClick={() => pick(c.hex)}
-                      style={{
-                        aspectRatio: "1 / 1", borderRadius: 5, background: c.hex, cursor: "pointer", padding: 0,
-                        border: active ? `2px solid ${T.accent}` : "1px solid rgba(0,0,0,0.18)",
-                        boxShadow: active ? `0 0 0 2px ${T.accentSoft}` : "none",
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
-/** Floor sub-catalog — pick a material to load the floor brush.
- *  Materials come from the image-based catalog in src/materials/registry.ts,
- *  grouped by family so 16 entries stay scannable. */
-function FloorCatalog() {
-  const brush = useSceneStore((s) => s.brush);
-  const active = brush?.kind === "floor" ? brush.style : undefined;
-  const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
-  return (
-    <div style={{ flex: 1, overflowY: "auto", padding: 10, alignContent: "start" }}>
-      {FAMILY_ORDER.map((family) => {
-        const items = FLOOR_MATERIALS.filter((m) => m.family === family);
-        if (!items.length) return null;
-        return (
-          <div key={family} style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, color: T.textDim, textTransform: "uppercase", letterSpacing: 0.6, margin: "0 0 6px 2px" }}>
-              {FAMILY_LABEL[family]}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-              {items.map((m) => {
-                const on = active === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => pick(m.id)}
-                    title={`${m.name} · tiles every ${m.coverM} m`}
-                    style={{
-                      display: "flex", flexDirection: "column", gap: 6, padding: 6, borderRadius: T.radiusS + 2, cursor: "pointer",
-                      background: on ? T.accentSoft : "transparent", border: `1.5px solid ${on ? T.accent : "transparent"}`,
-                    }}
-                  >
-                    <span style={{ width: "100%", height: 46, borderRadius: 6, backgroundImage: `url(${m.thumb})`, backgroundSize: "cover", backgroundPosition: "center", border: "1px solid rgba(0,0,0,0.2)" }} />
-                    <span style={{ fontSize: 11, color: on ? T.text : T.textDim, textAlign: "left" }}>{m.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-type CatTab = "furniture" | "paint" | "floors";
-const CAT_TABS: { id: CatTab; label: string }[] = [
-  { id: "furniture", label: "Furniture" },
-  { id: "paint", label: "Paint" },
-  { id: "floors", label: "Floors" },
-];
-
-/** Decorate left rail: Furniture · Paint · Floors, IKEA-catalog style. */
-function CatalogPanel() {
-  const [tab, setTab] = useState<CatTab>("furniture");
-  const brush = useSceneStore((s) => s.brush);
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: 14,
-        top: 64,
-        bottom: 14,
-        width: 250,
-        display: "flex",
-        flexDirection: "column",
-        ...glass(),
-      }}
-    >
-      <div style={{ display: "flex", gap: 3, padding: 4, margin: "10px 12px 8px", borderRadius: 999, background: T.inputBg }}>
-        {CAT_TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={chip(tab === t.id, {
-              flex: 1, borderRadius: 999, border: "none", fontSize: 11.5,
-              background: tab === t.id ? T.accent : "transparent",
-              color: tab === t.id ? "#fff" : T.textDim,
-            })}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      {tab === "furniture" && <FurnitureCatalog />}
-      {tab === "paint" && <PaintCatalog />}
-      {tab === "floors" && <FloorCatalog />}
-      {brush && (
-        <div style={{ padding: "8px 14px 12px", color: T.accent, fontSize: 11.5, borderTop: `1px solid ${T.panelBorder}` }}>
-          {brush.kind === "paint" ? "Painting" : "Flooring"} — click surfaces · Esc to stop
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -1175,6 +300,17 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
   const dragging = useSceneStore((s) => s.gestureBase !== null);
+  // Camera should be locked for the ENTIRE time a click-based build/decorate
+  // tool is armed (not just once a drag gesture is already in flight) — see
+  // Plan Dock P9 camera-lock fix. `dragging` above stays as-is (used for
+  // cursor styling elsewhere in this file); this is a separate, broader gate.
+  const toolBusy = useSceneStore((s) =>
+    s.gestureBase !== null ||
+    (s.appMode === "build" && s.buildTool !== "select") ||
+    s.placing !== null ||
+    s.brush !== null ||
+    s.eyedropper,
+  );
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
   const envPreset = useSceneStore((s) => s.envPreset);
@@ -1203,6 +339,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       const step = (Math.PI / 12) * (e.shiftKey ? -1 : 1); // 15° per tap
       if (s.placing) s.rotatePlacing(step);
       else if (s.sel3d?.kind === "furniture") s.rotateSelectedFurniture(step);
+      else if (s.sel3d?.kind === "fixture") s.rotateSelectedFixture(step);
       else return;
     } else if (e.key === "Escape") {
       if (s.brush) s.setBrush(null);
@@ -1232,10 +369,18 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       }}
     >
       <Canvas
-        shadows={{ type: THREE.PCFShadowMap }}
+        // Every renderer value below is recorded in src/render/contract.ts and
+        // checked at startup by <RenderContractCheck>. Values are passed
+        // explicitly even where they match the library default — see
+        // docs/render-contract.md §1.1 for why a default is not the same as a
+        // decision.
+        shadows={{ type: SHADOW.type }}
         camera={{ position: [9, 8, 11], fov: 50 }}
+        dpr={DPR}
         // `flat` disables the renderer's own tonemapping so the ToneMapping
-        // effect in the composer owns ACES (avoids double tonemapping).
+        // effect in the composer owns the display transform (avoids double
+        // tonemapping). The composer forces NoToneMapping too; this is the
+        // belt to its braces.
         flat
         // preserveDrawingBuffer lets us snapshot the frame for project thumbnails.
         gl={{ preserveDrawingBuffer: true }}
@@ -1249,9 +394,15 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         <group position={[-cx, 0, -cz]}>
           <Floors scene={scene} />
           <Ceilings scene={scene} />
+          <RoomLights scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
+          <FixtureLayer scene={scene} offset={offset} />
+          <MeasureTool offset={offset} />
+          <WallTool offset={offset} />
+          <OpeningTool offset={offset} />
           <StairLayer scene={scene} />
+          <CameraFocusRig offset={offset} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
           {/* Collaborators' selection markers (plan coords, inside the group). */}
           {collabOverlay}
@@ -1273,7 +424,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         )}
         <CameraControls
           makeDefault
-          enabled={!dragging && !walkthroughActive}
+          enabled={!toolBusy && !walkthroughActive}
           smoothTime={0.18}
           draggingSmoothTime={0.06}
         />
@@ -1291,23 +442,36 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         {/* Photographic pass: ambient occlusion grounds furniture and darkens
             corners, ACES tonemapping, SMAA. AO is the cost centre — dropped
             while dragging and in Top view. */}
-        <EffectComposer multisampling={0} enableNormalPass={false}>
+        {/* Chain order is fixed by contract §2.3: HDR scene-space effects, then
+            ToneMapping, then LDR display-space effects. Bloom/SSR/DoF go ABOVE
+            the ToneMapping line; vignette/LUT/grain go below. An HDR effect
+            placed after tone mapping operates on clamped values and silently
+            stops meaning anything. */}
+        <EffectComposer
+          multisampling={0}
+          enableNormalPass={false}
+          frameBufferType={FRAME_BUFFER_TYPE}
+        >
           {!dragging && wallMode !== "top" ? (
             <N8AO aoRadius={0.7} intensity={2.4} distanceFalloff={1} halfRes />
           ) : (
             <></>
           )}
-          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          <ToneMapping mode={TONE_MAPPING.operator} />
           <SMAA />
         </EffectComposer>
+        <RenderContractCheck />
       </Canvas>
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
-      {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
-      {appMode === "furnish" && <CatalogPanel />}
+      {(appMode === "build" || appMode === "furnish") && <Inspector />}
+      {appMode === "build" && <BuildToolbar />}
+      {appMode === "build" && <BuildNavigator />}
+      {appMode === "furnish" && <BottomDock />}
       {appMode === "view" && <ScenePanel />}
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
       <WalkthroughFovControl active={walkthroughActive} fovDeg={walkthroughFov} onChange={setWalkthroughFov} />
       <WallModeToggle />
+      <PdToastHost />
     </div>
   );
 }

@@ -7,10 +7,12 @@ import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
+import { applyShadowClass, shadowProps } from "@/render/materialClass";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
 import { placementCollides, snapToWall, wallOBBs, type OBB } from "./collision";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
+import { sampleFurniture } from "@/decorate/eyedropper";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -54,10 +56,13 @@ function normalize(
   const wrapper = new THREE.Group();
   wrapper.add(clone);
   wrapper.scale.setScalar(k);
+  // Shadow behaviour comes from the declared class, not from flags set here.
+  // A placement ghost is `transient`, whose policy currently still casts a
+  // full-strength shadow — the known defect the class exists to make fixable in
+  // one place (src/render/materialClass.ts), rather than a per-mesh oversight.
+  applyShadowClass(clone, opacity !== undefined ? "transient" : "opaqueArchitecture");
   clone.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
-    o.castShadow = true;
-    o.receiveShadow = true;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
     o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
       | THREE.Material
@@ -130,7 +135,7 @@ function PlaceholderBox({ footprint, tint, opacity }: {
   const d = footprint?.d ?? 0.5;
   const h = Math.min(w, d, 0.5);
   return (
-    <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+    <mesh position={[0, h / 2, 0]} {...shadowProps(opacity !== undefined ? "transient" : "opaqueArchitecture")}>
       <boxGeometry args={[w, h, d]} />
       <meshStandardMaterial
         color={tint === "red" ? "#ff3b30" : "#c8c8c8"}
@@ -239,7 +244,12 @@ function FurnitureItemView({ item, offset }: {
     const s = useSceneStore.getState();
     if (s.appMode !== "furnish" || s.placing) return; // furniture edits in Furnish only
     e.stopPropagation();
+    if (sampleFurniture(item)) return; // eyedropper (Plan Dock P7): sample instead of select
+    const wasSelected = s.sel3d?.kind === "furniture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "furniture", id: item.id });
+    // First click only selects (confirms the pick) so a click doesn't also
+    // nudge the item; a second click, now that it's selected, arms the drag.
+    if (!wasSelected) return;
     const p = rayToPlan(e, offset);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -330,7 +340,11 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
     rotation: 0,
     colliding: false,
   });
-  if (!placing) return null;
+  // `placing` is shared with FixtureLayer's own ghost (kind-less {assetId,
+  // rotation}) — without this check, picking a fixture from the Lighting
+  // catalog also triggers this ghost, which resolves the unknown assetId to
+  // a floor-level PlaceholderBox alongside the real ceiling-height ghost.
+  if (!placing || !CATALOG_BY_ID.has(placing.assetId)) return null;
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     const p = rayToPlan(e, offset);
@@ -377,7 +391,10 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {pos && (
-        <group position={[pos.x, 0, pos.y]} rotation={[0, yawOf(state.rotation), 0]}>
+        <group
+          position={[pos.x, CATALOG_BY_ID.get(placing.assetId)?.defaultElevation ?? 0, pos.y]}
+          rotation={[0, yawOf(state.rotation), 0]}
+        >
           <Suspense fallback={null}>
             <AssetModel
               assetId={placing.assetId}

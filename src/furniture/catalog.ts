@@ -14,6 +14,26 @@ export type FurnitureCategory =
   | "Bathroom"
   | "Decor";
 
+/** Illustrated-scene room types (Plan Dock v2). "study" is the renamed
+ *  successor of the older "office" RoomSection id — both ids resolve to the
+ *  same tag via `resolveRoomType` below. "laundry"/"closet"/"kids"/"garage"/
+ *  "outdoors" are taxonomy-only: tagged with catalog items (real or
+ *  placeholder-rendered) so the room exists as a browsable tab, but none has
+ *  hotspot scene art yet — `BottomDock`'s `ROOM_SCENE_COMPONENT` falls back
+ *  to "scene not built yet" for any RoomType missing a Scene component. */
+export type RoomType =
+  | "kitchen"
+  | "bathroom"
+  | "bedroom"
+  | "living"
+  | "dining"
+  | "study"
+  | "laundry"
+  | "closet"
+  | "kids"
+  | "garage"
+  | "outdoors";
+
 export interface FurnitureAsset {
   assetId: string; // also the glb filename, UNLESS `model` is set (see below)
   name: string;
@@ -24,6 +44,19 @@ export interface FurnitureAsset {
   wallSnap?: boolean;
   /** Flat items (rugs) that other furniture may overlap freely. */
   noCollide?: boolean;
+  /** Every room-scene this item is valid in; an item may legitimately appear
+   *  in more than one (e.g. a rug tagged living+bedroom) — not a bug to dedupe.
+   *  Derived from `ROOMS`/IKEA+BlenderKit `rooms` at catalog build time. */
+  roomTags?: RoomType[];
+  /** Reserved for the fire-alarm/smoke-detector/misc-catchall phase (Plan Dock
+   *  v2 Phase E, not yet scoped). No UI reads this field this round. */
+  overflowCategory?: string;
+  /** Meters above floor a fresh placement starts at, for items that mount high
+   *  on a wall (shower head, range hood, towel rack) rather than sitting on
+   *  the floor. Read once by `placeFurniture` at click-to-place time; the
+   *  placed item then carries it as `FurnitureItem.elevation` like any other
+   *  item — there's no separate wall-mount concept in the scene schema. */
+  defaultElevation?: number;
 
   // ── Optional, used by imported brand catalogs (e.g. IKEA) ────────────────
   /** GLB basename to render, when it differs from `assetId`. Lets a real branded
@@ -43,7 +76,30 @@ export interface FurnitureAsset {
   /** Secondary caption (e.g. Hebrew product type). */
   subtitle?: string;
   price?: { value: number | null; currency: string };
+
+  // ── Added by scripts/ikea/enrich-catalog.ts (Plan Dock P1) ───────────────
+  /** Normalized English item-type ("3-seat sofa", "bookcase", ...) — what
+   *  `searchText` actually keys on. `name` alone is a brand word (BILLY,
+   *  KIVIK) that says nothing about what the item IS, which is why the
+   *  hotspot/search match used to miss every imported IKEA/BlenderKit item. */
+  kind?: string;
+  /** Extra English search terms (raw category + BlenderKit tags) folded
+   *  into `searchText`. No UI surfaces this list directly. */
+  typeTags?: string[];
+  /** True color/finish variants — IKEA only (BlenderKit's schema carries no
+   *  colour data). Feeds the Phase 6 swatch row. */
+  colors?: { name: string; hex: string }[];
+  /** Groups literal color/finish variants of the same physical item
+   *  (name + kind + exact W×D×H from the raw source) without merging
+   *  genuine size variants (BILLY's 13 sizes each get their own key). */
+  variantKey?: string;
 }
+
+/** Every English word `matchesHotspot`/search can match against — `name` is
+ *  a brand word for imported catalogs (BILLY, KIVIK), so it's never enough
+ *  on its own. Lowercased; callers do their own substring/keyword check. */
+export const searchText = (a: FurnitureAsset): string =>
+  [a.name, a.kind, ...(a.typeTags ?? [])].filter(Boolean).join(" ").toLowerCase();
 
 export const CATALOG: FurnitureAsset[] = [
   // --- Seating ---
@@ -82,6 +138,51 @@ export const CATALOG: FurnitureAsset[] = [
   { assetId: "pottedPlant", name: "Potted plant", category: "Decor", footprint: { w: 0.4, d: 0.4 } },
   { assetId: "lampRoundFloor", name: "Floor lamp", category: "Decor", footprint: { w: 0.4, d: 0.4 } },
   { assetId: "rugRectangle", name: "Rug", category: "Decor", footprint: { w: 2.0, d: 1.4 }, noCollide: true },
+
+  // --- Bathroom extras (no shipped model yet — render as a neutral
+  // placeholder box until one is sourced; see PlaceholderBox in
+  // FurnitureLayer.tsx. Wall-mounted items get a defaultElevation so a fresh
+  // placement starts at a believable height instead of on the floor. ---
+  { assetId: "showerHead", name: "Shower head", category: "Bathroom", footprint: { w: 0.12, d: 0.12 }, wallSnap: true, defaultElevation: 1.95, roomTags: ["bathroom"] },
+  { assetId: "towelRack", name: "Towel rack", category: "Bathroom", footprint: { w: 0.5, d: 0.08 }, wallSnap: true, defaultElevation: 1.1, roomTags: ["bathroom"] },
+  { assetId: "bathroomMirror", name: "Bathroom mirror", category: "Bathroom", footprint: { w: 0.6, d: 0.05 }, wallSnap: true, defaultElevation: 1.2, roomTags: ["bathroom"] },
+  { assetId: "bathroomTrashBin", name: "Trash bin", category: "Bathroom", footprint: { w: 0.25, d: 0.25 }, roomTags: ["bathroom"] },
+
+  // --- Kitchen extras ---
+  { assetId: "kitchenDishwasher", name: "Dishwasher", category: "Kitchen", footprint: { w: 0.6, d: 0.6 }, wallSnap: true, roomTags: ["kitchen"] },
+  { assetId: "kitchenRangeHood", name: "Range hood", category: "Kitchen", footprint: { w: 0.6, d: 0.5 }, wallSnap: true, defaultElevation: 1.6, roomTags: ["kitchen"] },
+  { assetId: "kitchenIsland", name: "Kitchen island", category: "Kitchen", footprint: { w: 1.2, d: 0.8 }, roomTags: ["kitchen"] },
+  { assetId: "kitchenMicrowave", name: "Microwave", category: "Kitchen", footprint: { w: 0.5, d: 0.35 }, wallSnap: true, roomTags: ["kitchen"] },
+  { assetId: "kitchenTrashBin", name: "Trash bin", category: "Kitchen", footprint: { w: 0.3, d: 0.3 }, roomTags: ["kitchen"] },
+
+  // --- Bedroom extras ---
+  { assetId: "wardrobe", name: "Wardrobe", category: "Storage", footprint: { w: 1.0, d: 0.6 }, wallSnap: true, roomTags: ["bedroom", "closet"] },
+
+  // --- Laundry (taxonomy-only: no scene art yet, see RoomType comment) ---
+  { assetId: "dryer", name: "Dryer", category: "Bathroom", footprint: { w: 0.65, d: 0.65 }, wallSnap: true, roomTags: ["laundry"] },
+  { assetId: "laundrySink", name: "Laundry sink", category: "Bathroom", footprint: { w: 0.55, d: 0.5 }, wallSnap: true, roomTags: ["laundry"] },
+  { assetId: "dryingRack", name: "Drying rack", category: "Storage", footprint: { w: 0.6, d: 0.5 }, roomTags: ["laundry"] },
+  { assetId: "ironingBoard", name: "Ironing board", category: "Storage", footprint: { w: 1.2, d: 0.4 }, roomTags: ["laundry"] },
+
+  // --- Closet ---
+  { assetId: "shoeRack", name: "Shoe rack", category: "Storage", footprint: { w: 0.8, d: 0.3 }, wallSnap: true, roomTags: ["closet"] },
+
+  // --- Kids room ---
+  { assetId: "crib", name: "Crib", category: "Beds", footprint: { w: 0.7, d: 1.3 }, wallSnap: true, roomTags: ["kids"] },
+  { assetId: "toyStorage", name: "Toy storage", category: "Storage", footprint: { w: 0.9, d: 0.4 }, wallSnap: true, roomTags: ["kids"] },
+  { assetId: "changingTable", name: "Changing table", category: "Storage", footprint: { w: 0.8, d: 0.5 }, wallSnap: true, roomTags: ["kids"] },
+
+  // --- Garage ---
+  { assetId: "workbench", name: "Workbench", category: "Tables", footprint: { w: 1.4, d: 0.6 }, wallSnap: true, roomTags: ["garage"] },
+  { assetId: "toolRack", name: "Tool rack", category: "Storage", footprint: { w: 1.0, d: 0.15 }, wallSnap: true, roomTags: ["garage"] },
+  { assetId: "garageShelf", name: "Garage shelving", category: "Storage", footprint: { w: 0.9, d: 0.45 }, wallSnap: true, roomTags: ["garage"] },
+
+  // --- Outdoors ---
+  { assetId: "patioTable", name: "Patio table", category: "Tables", footprint: { w: 1.2, d: 0.8 }, roomTags: ["outdoors"] },
+  { assetId: "patioChair", name: "Patio chair", category: "Seating", footprint: { w: 0.55, d: 0.55 }, roomTags: ["outdoors"] },
+  { assetId: "bbqGrill", name: "BBQ grill", category: "Kitchen", footprint: { w: 0.6, d: 0.5 }, roomTags: ["outdoors"] },
+  { assetId: "outdoorBench", name: "Outdoor bench", category: "Seating", footprint: { w: 1.3, d: 0.45 }, roomTags: ["outdoors"] },
+  { assetId: "planterBox", name: "Planter box", category: "Decor", footprint: { w: 0.6, d: 0.3 }, roomTags: ["outdoors"] },
 ];
 
 // IKEA placement catalog (IL market) — every item ships a real, downloaded IKEA
@@ -101,10 +202,6 @@ export const IKEA_ASSETS = ikeaRaw as unknown as IkeaAsset[];
 // Generated by scripts/blenderkit/build-catalog.ts.
 import blenderkitRaw from "../../data/furniture-blenderkit.catalog.json";
 export const BLENDERKIT_ASSETS = blenderkitRaw as unknown as IkeaAsset[];
-
-export const CATALOG_BY_ID: ReadonlyMap<string, FurnitureAsset> = new Map(
-  [...CATALOG, ...IKEA_ASSETS, ...BLENDERKIT_ASSETS].map((a) => [a.assetId, a]),
-);
 
 export const CATEGORIES: FurnitureCategory[] = [
   "Seating",
@@ -192,3 +289,42 @@ export const ROOMS: RoomSection[] = BASE_ROOMS.map((r) => ({
   ...r,
   assetIds: [...r.assetIds, ...(blenderkitByRoom[r.id] ?? []), ...(ikeaByRoom[r.id] ?? [])],
 }));
+
+/** "office" is the legacy RoomSection id; Plan Dock v2 renamed the scene to
+ *  "study" — both resolve to the same RoomType tag. */
+const resolveRoomType = (id: string): RoomType | null =>
+  id === "office"
+    ? "study"
+    : (
+          [
+            "kitchen", "bathroom", "bedroom", "living", "dining", "study",
+            "laundry", "closet", "kids", "garage", "outdoors",
+          ] as const
+        ).includes(id as RoomType)
+      ? (id as RoomType)
+      : null;
+
+const roomTagsByAssetId: Record<string, RoomType[]> = {};
+for (const section of ROOMS) {
+  const tag = resolveRoomType(section.id);
+  if (!tag) continue;
+  for (const id of section.assetIds) (roomTagsByAssetId[id] ??= []).push(tag);
+}
+
+const withRoomTags = <T extends FurnitureAsset>(a: T): T => {
+  const tags = roomTagsByAssetId[a.assetId];
+  return tags ? { ...a, roomTags: [...new Set(tags)] } : a;
+};
+Object.assign(CATALOG, CATALOG.map(withRoomTags));
+Object.assign(IKEA_ASSETS, IKEA_ASSETS.map(withRoomTags));
+Object.assign(BLENDERKIT_ASSETS, BLENDERKIT_ASSETS.map(withRoomTags));
+
+export const CATALOG_BY_ID: ReadonlyMap<string, FurnitureAsset> = new Map(
+  [...CATALOG, ...IKEA_ASSETS, ...BLENDERKIT_ASSETS].map((a) => [a.assetId, a]),
+);
+
+/** Cross-listing filter: every item tagged for `room`, from every source
+ *  catalog (base + IKEA + BlenderKit). An item with multiple roomTags (e.g.
+ *  a rug tagged living+bedroom) appears in each room's results — by design. */
+export const getItemsForRoom = (room: RoomType): FurnitureAsset[] =>
+  [...CATALOG_BY_ID.values()].filter((a) => a.roomTags?.includes(room));

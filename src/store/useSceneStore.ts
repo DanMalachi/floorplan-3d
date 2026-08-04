@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene, FloorStyle } from "@/schema/scene";
+import type { Scene, FloorStyle, FixtureMount, OpeningType } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import {
   DEFAULT_DOOR,
@@ -9,6 +9,8 @@ import {
   WALL_HEIGHT,
 } from "@/schema/constants";
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
+import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
+import { CATALOG_BY_ID } from "@/furniture/catalog";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -93,6 +95,7 @@ export function* sceneIds(scene: Scene): Generator<string> {
   for (const r of scene.rooms ?? []) yield r.id;
   for (const f of scene.furniture ?? []) yield f.id;
   for (const s of scene.stairs ?? []) yield s.id;
+  for (const fx of scene.fixtures ?? []) yield fx.id;
 }
 
 // When a wall is split at parameter ts, move an opening onto the sub-wall that
@@ -130,7 +133,7 @@ function remapOpening(
 
 /** What a 3D pointer event resolved to (raycast pick contract). */
 export interface PickRef {
-  kind: "wall" | "opening" | "room" | "furniture" | "stair";
+  kind: "wall" | "opening" | "room" | "furniture" | "stair" | "fixture";
   id: string;
   // For wall picks: which face the pointer landed on / is targeted for paint.
   // "a" = wall-local +Z face, "b" = -Z face. Absent for non-wall picks.
@@ -140,6 +143,12 @@ export interface PickRef {
 /** The app's top-level modes (Phase 4 M5): what the main stage shows and
  *  which family of objects responds to the pointer. */
 export type AppMode = "trace" | "build" | "furnish" | "view";
+export type BuildTool = "select" | "wall" | "opening" | "measure";
+
+/** BottomDock's tab row (Plan Dock: furnish-mode dock). Lives here, not in
+ *  BottomDock.tsx, so the Build-tab navigator (Plan Dock P4) can deep-link
+ *  into a tab without importing a UI component into the store's consumers. */
+export type DockTab = "furniture" | "lighting" | "paint" | "floors";
 
 /** How walls render in 3D: solid, camera-facing faded, or Sims top-down stubs. */
 export type WallViewMode = "full" | "cutaway" | "top";
@@ -190,6 +199,7 @@ export function pickExists(scene: Scene, pick: PickRef | null): boolean {
     case "room": return scene.rooms.some((r) => r.id === pick.id);
     case "furniture": return scene.furniture.some((f) => f.id === pick.id);
     case "stair": return (scene.stairs ?? []).some((s) => s.id === pick.id);
+    case "fixture": return (scene.fixtures ?? []).some((f) => f.id === pick.id);
   }
 }
 
@@ -239,6 +249,17 @@ export interface StoreState {
   endGesture: (label: string) => void;
   cancelGesture: () => void;
 
+  // --- camera focus (Plan Dock P8) ---
+  /** Plan-space point (meters) the camera should glide to next — set by
+   *  NavigatorPanel's room-icon click when it resolves to a matching
+   *  scene.rooms entry, consumed once by CameraFocusRig.tsx. Not cleared
+   *  back to null after consuming it: re-clicking the SAME room tag should
+   *  still glide there again even though the target object is unchanged
+   *  (CameraFocusRig tracks what it already consumed by reference/value,
+   *  not by nulling this out). */
+  focusTarget: { x: number; y: number } | null;
+  setFocusTarget: (t: { x: number; y: number } | null) => void;
+
   // --- furniture (Phase 4 M4) ---
   /** Catalog item being placed: ghost follows the cursor until click/Esc. */
   placing: { assetId: string; rotation: number } | null;
@@ -246,11 +267,40 @@ export interface StoreState {
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
+  /** Clone a placed item at a small offset and select the copy — one undo
+   *  step (Plan Dock P5 inspector's Duplicate action). */
+  duplicateFurniture: (id: string) => void;
+  /** Swap a placed item's catalog asset IN PLACE: x/y/rotation/elevation are
+   *  preserved, only `assetId` changes. Powers both the P5 inspector's
+   *  Replace action (any catalog item) and P6's variant swatches (same
+   *  physical item, different color/finish — footprint is identical by
+   *  construction there, so nothing else needs to move). */
+  replaceFurnitureAsset: (id: string, assetId: string) => void;
+  /** Set by the inspector's Replace button: the furniture id awaiting a new
+   *  asset pick. BottomDock's item cards check this before falling back to
+   *  their normal "arm placement" click behavior. Cleared on consumption or
+   *  on the next appMode change (abandoning the pick leaves nothing armed). */
+  replaceTarget: string | null;
+  setReplaceTarget: (id: string | null) => void;
+
+  // --- fixtures (lighting) --- placing state is SHARED with furniture above
+  // (assetId is enough to tell the catalogs apart) — only the commit/rotate
+  // actions are fixture-specific.
+  placeFixture: (mount: FixtureMount, rotation: number) => void;
+  rotateSelectedFixture: (deltaRad: number) => void;
 
   // --- materials brush (Decorate mode) ---
   /** Active paint/floor applicator: click surfaces to apply, Esc to stop. */
   brush: Brush | null;
   setBrush: (b: Brush | null) => void;
+
+  // --- eyedropper (Plan Dock P7) ---
+  /** Armed = the next click on furniture/a fixture/a painted wall face/a
+   *  floor samples it instead of selecting it — see src/decorate/eyedropper.ts
+   *  for what "samples" means per target kind. Mutually exclusive with
+   *  placing/brush (arming any of the three clears the other two). */
+  eyedropper: boolean;
+  setEyedropper: (v: boolean) => void;
 
   // --- app shell (Phase 4 M5) ---
   appMode: AppMode;
@@ -265,6 +315,28 @@ export interface StoreState {
   setEnvPreset: (p: EnvPreset) => void;
   setTimeOfDay: (t: number) => void;
   setWeather: (w: Weather) => void;
+
+  // --- Build-mode toolbar tool ---
+  /** Only "select" changes existing pointer behavior (it IS the existing
+   *  behavior). "measure" arms MeasureTool.tsx. "wall"/"opening" are UI-only
+   *  placeholders for now — real draw-a-new-wall / drop-a-new-opening tools
+   *  are new 3D-interaction features, not a toolbar reskin; see BuildToolbar's
+   *  comment for why they're deferred rather than half-built. */
+  buildTool: BuildTool;
+  setBuildTool: (t: BuildTool) => void;
+  /** Which kind the Opening tool (Plan Dock P3) drops on click. Reset to
+   *  "door" on mode change like `buildTool`, so switching away and back
+   *  never leaves a stale armed type from a previous session. */
+  openingType: OpeningType;
+  setOpeningType: (t: OpeningType) => void;
+  /** Deep-link from the Build-tab house-cutaway navigator (Plan Dock P4) into
+   *  a specific Decorate dock tab: the Floors/Paint hotspots have no build-
+   *  mode tool of their own, so "arming" them means switching appMode AND
+   *  opening the right BottomDock tab. `token` bumps on every request (even
+   *  a repeat of the same tab) so BottomDock's effect has something to key
+   *  off besides tab equality. */
+  dockRequest: { tab: DockTab; token: number } | null;
+  requestDock: (tab: DockTab) => void;
 
   // --- first-person walkthrough mode ---
   /** Only meaningful while appMode === "view"; layered on top rather than a
@@ -417,11 +489,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
 
   return {
-    scene: sampleScene,
+    scene: seedRoomFixtures(sampleScene),
     // Loading/generating a whole scene is itself an undoable command; it is
-    // also the only thing that reframes the 3D camera (frameToken).
+    // also the only thing that reframes the 3D camera (frameToken). Every
+    // whole-scene replacement funnels through here, so this is the one place
+    // `seedRoomFixtures` needs to run — it's a no-op past the first time.
     setScene: (scene) => {
-      get().commitScene("Replace scene", scene);
+      get().commitScene("Replace scene", seedRoomFixtures(scene));
       set((s) => ({ frameToken: s.frameToken + 1 }));
     },
 
@@ -521,6 +595,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({ scene: gestureBase, gestureBase: null, dragViz: null });
     },
 
+    focusTarget: null,
+    setFocusTarget: (focusTarget) => set({ focusTarget }),
+
     appMode: "trace",
     wallMode: "full",
     showCeilings: true,
@@ -528,10 +605,19 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null });
+      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
+    buildTool: "select",
+    setBuildTool: (buildTool) => set({ buildTool }),
+    openingType: "door",
+    setOpeningType: (openingType) => set({ openingType }),
+    dockRequest: null,
+    requestDock: (tab) => {
+      get().setAppMode("furnish");
+      set((s) => ({ dockRequest: { tab, token: (s.dockRequest?.token ?? 0) + 1 } }));
+    },
     envPreset: "none",
     timeOfDay: 13,
     weather: "clear",
@@ -667,9 +753,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     placing: null,
     setPlacing: (assetId) =>
-      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null }),
+      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null, eyedropper: false }),
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, sel3d: null }),
+    setBrush: (brush) => set({ brush, placing: null, sel3d: null, eyedropper: false }),
+    eyedropper: false,
+    setEyedropper: (eyedropper) => set({ eyedropper, ...(eyedropper ? { placing: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing
@@ -680,9 +768,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { placing, scene, commitScene } = get();
       if (!placing) return;
       const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const elevation = CATALOG_BY_ID.get(placing.assetId)?.defaultElevation;
       commitScene("Place furniture", {
         ...scene,
-        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation }],
+        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) }],
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
     },
@@ -692,6 +781,45 @@ export const useSceneStore = create<StoreState>((set, get) => {
       commitScene("Rotate furniture", {
         ...scene,
         furniture: scene.furniture.map((f) =>
+          f.id === sel3d.id ? { ...f, rotation: f.rotation + deltaRad } : f,
+        ),
+      });
+    },
+    duplicateFurniture: (id) => {
+      const { scene, commitScene } = get();
+      const item = scene.furniture.find((f) => f.id === id);
+      if (!item) return;
+      const copy = { ...item, id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, x: item.x + 0.3, y: item.y + 0.3 };
+      commitScene("Duplicate furniture", { ...scene, furniture: [...scene.furniture, copy] });
+      set({ sel3d: { kind: "furniture", id: copy.id } });
+    },
+    replaceFurnitureAsset: (id, assetId) => {
+      const { scene, commitScene } = get();
+      if (!scene.furniture.some((f) => f.id === id)) return;
+      commitScene("Replace furniture", {
+        ...scene,
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, assetId } : f)),
+      });
+    },
+    replaceTarget: null,
+    setReplaceTarget: (replaceTarget) => set({ replaceTarget }),
+
+    placeFixture: (mount, rotation) => {
+      const { placing, scene, commitScene } = get();
+      if (!placing) return;
+      const id = `fx${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      commitScene("Place fixture", {
+        ...scene,
+        fixtures: [...(scene.fixtures ?? []), { id, assetId: placing.assetId, rotation, mount }],
+      });
+      // Stay in placing mode - Sims-style repeat placement; Esc exits.
+    },
+    rotateSelectedFixture: (deltaRad) => {
+      const { sel3d, scene, commitScene } = get();
+      if (sel3d?.kind !== "fixture") return;
+      commitScene("Rotate fixture", {
+        ...scene,
+        fixtures: (scene.fixtures ?? []).map((f) =>
           f.id === sel3d.id ? { ...f, rotation: f.rotation + deltaRad } : f,
         ),
       });
@@ -710,6 +838,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
           ...scene,
           walls: scene.walls.filter((w) => w.id !== sel3d.id),
           openings: scene.openings.filter((o) => o.wallId !== sel3d.id),
+          fixtures: (scene.fixtures ?? []).filter(
+            (f) => f.mount.kind !== "wall" || f.mount.wallId !== sel3d.id,
+          ),
+        });
+      } else if (sel3d.kind === "fixture") {
+        commitScene("Delete fixture", {
+          ...scene,
+          fixtures: (scene.fixtures ?? []).filter((f) => f.id !== sel3d.id),
         });
       } else if (sel3d.kind === "opening") {
         commitScene("Delete opening", {

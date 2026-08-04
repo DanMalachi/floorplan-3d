@@ -1,0 +1,89 @@
+"use client";
+
+import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import type { RoomHotspot } from "./KitchenScene";
+
+export const BEDROOM_HOTSPOTS: RoomHotspot[] = [
+  { id: "bed", label: "Bed", keywords: ["bed"] },
+  { id: "nightstand", label: "Nightstand", keywords: ["side table", "nightstand"] },
+  { id: "wardrobe", label: "Wardrobe", keywords: ["bookcase", "wardrobe", "closet", "coat rack"] },
+  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "rug", "plant"] },
+];
+
+export const BEDROOM_X0 = 12;
+export const BEDROOM_WIDTH = 178;
+
+function LampArt({ x, yFront }: { x: number; yFront: number }) {
+  const poleH = 16;
+  const shadeH = 6;
+  return (
+    <>
+      <line x1={x} y1={yFront} x2={x} y2={yFront - poleH} stroke={DETAIL_LINE} strokeWidth={1} />
+      <polygon
+        points={`${x - 5},${yFront - poleH} ${x + 5},${yFront - poleH} ${x + 3.5},${yFront - poleH - shadeH} ${x - 3.5},${yFront - poleH - shadeH}`}
+        fill={FACE_FRONT}
+        stroke={DETAIL_LINE}
+        strokeWidth={0.6}
+      />
+    </>
+  );
+}
+
+function BedroomItems(): RoomItem[] {
+  const bedBox = isoBox(12, ITEMS_Y, 74, 22, 30);
+  const nightstand = isoBox(90, ITEMS_Y, 16, 16, 14);
+  const wardrobe = isoBox(110, ITEMS_Y, 34, 50, 16);
+  const decorBox = isoBox(150, ITEMS_Y, 30, 22, 14);
+
+  return [
+    { id: "bed", label: "Bed", keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
+    {
+      id: "nightstand",
+      label: "Nightstand",
+      keywords: BEDROOM_HOTSPOTS[1].keywords,
+      box: nightstand,
+      art: (
+        <>
+          <Extrusion box={nightstand} />
+          <ShelfLines box={nightstand} count={1} />
+        </>
+      ),
+    },
+    {
+      id: "wardrobe",
+      label: "Wardrobe",
+      keywords: BEDROOM_HOTSPOTS[2].keywords,
+      box: wardrobe,
+      art: (
+        <>
+          <Extrusion box={wardrobe} />
+          <DoorSeam box={wardrobe} at={0.5} />
+        </>
+      ),
+    },
+    {
+      id: "decor",
+      label: "Lamp & decor",
+      keywords: BEDROOM_HOTSPOTS[3].keywords,
+      box: decorBox,
+      art: (
+        <>
+          <LampArt x={158} yFront={ITEMS_Y + 2} />
+          <Plant x={172} yFront={ITEMS_Y + 6} r={4} potH={6} canopyR={6} />
+        </>
+      ),
+    },
+  ];
+}
+
+export function BedroomScene({
+  activeHotspot,
+  onHotspotClick,
+  onFloorClick,
+}: {
+  activeHotspot: string | null;
+  onHotspotClick: (id: string) => void;
+  onFloorClick: () => void;
+}) {
+  return <RoomSceneShell x0={BEDROOM_X0} width={BEDROOM_WIDTH} items={BedroomItems()} activeHotspot={activeHotspot} onHotspotClick={onHotspotClick} onFloorClick={onFloorClick} />;
+}

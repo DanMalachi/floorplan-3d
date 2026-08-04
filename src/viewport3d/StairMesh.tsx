@@ -12,9 +12,11 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Scene, Stair } from "@/schema/scene";
+import { shadowProps } from "@/render/materialClass";
 import { LANDING_SLAB } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { stairLandings, stairMetrics } from "@/lib/stairs/stairGeometry";
+import { buildToolBlocksSelect } from "./buildTools/gate";
 
 const STAIR_COLOR = "#e0d8c8"; // painted timber, a shade warmer than the plaster
 const ACCENT = "#0a84ff"; // same selection accent as walls and furniture
@@ -225,7 +227,8 @@ function StairMesh({ stair }: { stair: Stair }) {
 
   // Stairs are selected in Build, like walls — and never while furniture is
   // being placed, or the click that drops a chair would select the stair.
-  const interactive = (s = useSceneStore.getState()) => s.appMode === "build" && !s.placing;
+  const interactive = (s = useSceneStore.getState()) =>
+    s.appMode === "build" && !s.placing && !buildToolBlocksSelect(s);
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     const s = useSceneStore.getState();
@@ -255,8 +258,7 @@ function StairMesh({ stair }: { stair: Stair }) {
           material={material}
           position={p.position}
           rotation={p.rotation}
-          castShadow
-          receiveShadow
+          {...shadowProps("opaqueArchitecture")}
         />
       ))}
     </group>

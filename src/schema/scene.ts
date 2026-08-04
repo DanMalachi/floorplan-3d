@@ -182,6 +182,14 @@ export interface Room {
   loop: Id[]; // ordered node ids; closure is implied (last connects to first)
   floor?: FloorStyle; // defaults to "wood"
   semantics?: RoomSemantics; // Building Knowledge Layer — additive, recomputable
+  // Authored ceiling state (M2 lighting, render-contract.md §8.3) — a room is
+  // roofed by design or open to the sky by design. Undefined means unauthored
+  // (no authoring UI ships in M2 yet): src/lib/rooms/roomCeiling.ts is the one
+  // place allowed to fall back to a geometric guess (rail adjacency) when this
+  // is absent. Lighting code itself must only ever read this field — never
+  // mesh mount state (`visible`/`wallMode`) or rail edges directly, since that
+  // is the render layer's own inference and it will diverge (§8.3).
+  ceiling?: "roofed" | "open";
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene
@@ -193,6 +201,35 @@ export interface FurnitureItem {
   y: number;
   rotation: number; // radians about world up
   elevation?: number; // meters above floor (default 0)
+}
+
+/**
+ * A placed lighting fixture. Ceiling fixtures store raw plan coordinates,
+ * same as furniture; which room's light they drive is derived at read time
+ * via point-in-polygon against `scene.rooms` (`src/render/roomLighting.ts`),
+ * never stored, so it can't desync when a room's loop changes. Wall fixtures
+ * anchor the same way `Opening` does (`wallId` + `offset`) rather than raw
+ * xy, since they need to stay glued to a wall face.
+ */
+export type FixtureMount =
+  | { kind: "ceiling"; x: number; y: number }
+  // `side` picks which of the wall's two faces the fixture is mounted on and
+  // therefore which room it lights — mirrors `Wall.paintA`/`paintB`'s "a" =
+  // wall-local +Z face, "b" = -Z face convention, so a shared wall between
+  // two rooms can carry a light on either side unambiguously.
+  | { kind: "wall"; wallId: Id; offset: number; sill: number; side: "a" | "b" };
+
+export interface FixtureItem {
+  id: Id;
+  assetId: string; // catalog key, e.g. "fx:flushDisc"
+  rotation: number; // radians about world up
+  mount: FixtureMount;
+  // Per-fixture brightness/color overrides (undefined = the catalog default —
+  // see DEFAULT_FIXTURE_LUX/DEFAULT_FIXTURE_COLOR_K in render/lightPresets.ts).
+  // Physical units, same convention as every other light in this renderer:
+  // lux, not an eyeballed 0-1 "strength".
+  targetLux?: number;
+  colorK?: number; // color temperature, Kelvin
 }
 
 /** One straight flight within a staircase. Centerline, plan meters. */
@@ -253,5 +290,10 @@ export interface Scene {
   // Optional forever: every project saved before stairs existed has no such key
   // at runtime, whatever the type says. Consumers read `scene.stairs ?? []`.
   stairs?: Stair[];
+  // Optional forever, same convention as stairs: every project saved before
+  // fixtures existed has no such key. `undefined` (never seeded) is distinct
+  // from `[]` (seeded, then user cleared it) — `seedRoomFixtures` only ever
+  // acts on the former. Consumers read `scene.fixtures ?? []`.
+  fixtures?: FixtureItem[];
   building?: BuildingSemantics; // Building Knowledge Layer — house-level verdict
 }

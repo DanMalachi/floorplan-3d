@@ -85,5 +85,9 @@ floorplan_for_training/dxf_dwg/
 # Regenerable with `npm run mat:fetch`.
 /scripts/materials/.raw/
 
+# Same reasoning, M3c's ingest source directories: raw ambientCG JPEGs plus
+# their asset.json descriptors. Regenerable with `npm run mat:ingest:fetch-m3c`.
+/scripts/materials/ingest/.sources/
+
 .vercel
 .venv
