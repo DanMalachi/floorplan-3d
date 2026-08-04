@@ -283,8 +283,12 @@ export interface RoomItem {
 }
 
 /** Invisible oversized hit target + accent outline on hover/active, sized
- *  from the box's bounding box so thin shapes stay easy to hit. */
-function HitArea({
+ *  from the box's bounding box so thin shapes stay easy to hit. Exported
+ *  (Plan Dock P4) so BuildHouseScene can build its own custom hotspot layout
+ *  — a house cutaway's wall/door/window/stair hotspots don't fit
+ *  RoomSceneShell's one-backdrop-wall-plus-floor-row shape, but the hit-area
+ *  mechanics are identical. */
+export function HitArea({
   id,
   box,
   active,

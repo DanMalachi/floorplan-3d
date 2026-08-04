@@ -45,7 +45,7 @@
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { useSceneStore } from "@/store/useSceneStore";
+import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
   getItemsForRoom,
@@ -104,7 +104,6 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   outdoors: OUTDOORS_HOTSPOTS,
 };
 
-type DockTab = "furniture" | "lighting" | "paint" | "floors";
 const DOCK_TABS: { id: DockTab; label: string }[] = [
   { id: "furniture", label: "Furniture" },
   { id: "lighting", label: "Lighting" },
@@ -434,6 +433,17 @@ export function BottomDock() {
   const [room, setRoom] = useState<RoomType>("kitchen");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const brush = useSceneStore((s) => s.brush);
+  const dockRequest = useSceneStore((s) => s.dockRequest);
+
+  // Deep-link from the Build-tab house-cutaway navigator (Plan Dock P4): its
+  // Floors/Paint hotspots have no build-mode tool, so "arming" them means
+  // landing here with that tab already open. Keyed on `token`, not `tab`, so
+  // a second click on the same hotspot (e.g. Floors again after switching
+  // away) still re-opens it.
+  useEffect(() => {
+    if (dockRequest) setTab(dockRequest.tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dockRequest?.token]);
 
   return (
     <>

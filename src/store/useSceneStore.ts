@@ -145,6 +145,11 @@ export interface PickRef {
 export type AppMode = "trace" | "build" | "furnish" | "view";
 export type BuildTool = "select" | "wall" | "opening" | "measure";
 
+/** BottomDock's tab row (Plan Dock: furnish-mode dock). Lives here, not in
+ *  BottomDock.tsx, so the Build-tab navigator (Plan Dock P4) can deep-link
+ *  into a tab without importing a UI component into the store's consumers. */
+export type DockTab = "furniture" | "lighting" | "paint" | "floors";
+
 /** How walls render in 3D: solid, camera-facing faded, or Sims top-down stubs. */
 export type WallViewMode = "full" | "cutaway" | "top";
 
@@ -290,6 +295,14 @@ export interface StoreState {
    *  never leaves a stale armed type from a previous session. */
   openingType: OpeningType;
   setOpeningType: (t: OpeningType) => void;
+  /** Deep-link from the Build-tab house-cutaway navigator (Plan Dock P4) into
+   *  a specific Decorate dock tab: the Floors/Paint hotspots have no build-
+   *  mode tool of their own, so "arming" them means switching appMode AND
+   *  opening the right BottomDock tab. `token` bumps on every request (even
+   *  a repeat of the same tab) so BottomDock's effect has something to key
+   *  off besides tab equality. */
+  dockRequest: { tab: DockTab; token: number } | null;
+  requestDock: (tab: DockTab) => void;
 
   // --- first-person walkthrough mode ---
   /** Only meaningful while appMode === "view"; layered on top rather than a
@@ -563,6 +576,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setBuildTool: (buildTool) => set({ buildTool }),
     openingType: "door",
     setOpeningType: (openingType) => set({ openingType }),
+    dockRequest: null,
+    requestDock: (tab) => {
+      get().setAppMode("furnish");
+      set((s) => ({ dockRequest: { tab, token: (s.dockRequest?.token ?? 0) + 1 } }));
+    },
     envPreset: "none",
     timeOfDay: 13,
     weather: "clear",

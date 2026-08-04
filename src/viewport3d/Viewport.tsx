@@ -43,6 +43,7 @@ import { WallTool } from "./buildTools/WallTool";
 import { OpeningTool } from "./buildTools/OpeningTool";
 import { BottomDock } from "@/ui/planDock/BottomDock";
 import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
+import { BuildNavigator } from "@/ui/planDock/BuildNavigator";
 import { PdToastHost } from "@/ui/planDock/toast";
 import { StairLayer } from "./StairMesh";
 import { StairInspector } from "./StairInspector";
@@ -1399,6 +1400,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
       {(appMode === "build" || appMode === "furnish") && <MiniInspector />}
       {appMode === "build" && <BuildToolbar />}
+      {appMode === "build" && <BuildNavigator />}
       {appMode === "furnish" && <BottomDock />}
       {appMode === "view" && <ScenePanel />}
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
