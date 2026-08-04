@@ -193,12 +193,27 @@ function NavigatorPanel({
 
 function ItemCard({ item }: { item: FurnitureAsset }) {
   const placing = useSceneStore((s) => s.placing);
+  const replaceTarget = useSceneStore((s) => s.replaceTarget);
   const rendered = useThumbnail(item.thumbnail ? "" : item.model ?? item.assetId);
   const thumb = item.thumbnail ?? rendered;
   const active = placing?.assetId === item.assetId;
+  const onClick = () => {
+    const s = useSceneStore.getState();
+    // Replace mode (armed from the P5 inspector's Replace button): this click
+    // swaps the target item's asset IN PLACE instead of arming a new
+    // placement ghost. One-shot — consumed here, not left armed.
+    if (s.replaceTarget) {
+      const id = s.replaceTarget;
+      s.replaceFurnitureAsset(id, item.assetId);
+      s.setReplaceTarget(null);
+      s.setSel3d({ kind: "furniture", id });
+      return;
+    }
+    s.setPlacing(active ? null : item.assetId);
+  };
   return (
     <button
-      onClick={() => useSceneStore.getState().setPlacing(active ? null : item.assetId)}
+      onClick={onClick}
       title={`${item.name} · ${item.footprint.w}×${item.footprint.d} m`}
       style={{
         flex: "0 0 auto",
@@ -434,6 +449,7 @@ export function BottomDock() {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const brush = useSceneStore((s) => s.brush);
   const dockRequest = useSceneStore((s) => s.dockRequest);
+  const replaceTarget = useSceneStore((s) => s.replaceTarget);
 
   // Deep-link from the Build-tab house-cutaway navigator (Plan Dock P4): its
   // Floors/Paint hotspots have no build-mode tool, so "arming" them means
@@ -476,6 +492,11 @@ export function BottomDock() {
           {brush && (
             <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               {brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop
+            </span>
+          )}
+          {!brush && replaceTarget && (
+            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+              Replacing — pick a new item
             </span>
           )}
         </div>

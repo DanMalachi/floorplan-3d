@@ -256,6 +256,21 @@ export interface StoreState {
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
+  /** Clone a placed item at a small offset and select the copy — one undo
+   *  step (Plan Dock P5 inspector's Duplicate action). */
+  duplicateFurniture: (id: string) => void;
+  /** Swap a placed item's catalog asset IN PLACE: x/y/rotation/elevation are
+   *  preserved, only `assetId` changes. Powers both the P5 inspector's
+   *  Replace action (any catalog item) and P6's variant swatches (same
+   *  physical item, different color/finish — footprint is identical by
+   *  construction there, so nothing else needs to move). */
+  replaceFurnitureAsset: (id: string, assetId: string) => void;
+  /** Set by the inspector's Replace button: the furniture id awaiting a new
+   *  asset pick. BottomDock's item cards check this before falling back to
+   *  their normal "arm placement" click behavior. Cleared on consumption or
+   *  on the next appMode change (abandoning the pick leaves nothing armed). */
+  replaceTarget: string | null;
+  setReplaceTarget: (id: string | null) => void;
 
   // --- fixtures (lighting) --- placing state is SHARED with furniture above
   // (assetId is enough to tell the catalogs apart) — only the commit/rotate
@@ -568,7 +583,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door" });
+      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -746,6 +761,24 @@ export const useSceneStore = create<StoreState>((set, get) => {
         ),
       });
     },
+    duplicateFurniture: (id) => {
+      const { scene, commitScene } = get();
+      const item = scene.furniture.find((f) => f.id === id);
+      if (!item) return;
+      const copy = { ...item, id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, x: item.x + 0.3, y: item.y + 0.3 };
+      commitScene("Duplicate furniture", { ...scene, furniture: [...scene.furniture, copy] });
+      set({ sel3d: { kind: "furniture", id: copy.id } });
+    },
+    replaceFurnitureAsset: (id, assetId) => {
+      const { scene, commitScene } = get();
+      if (!scene.furniture.some((f) => f.id === id)) return;
+      commitScene("Replace furniture", {
+        ...scene,
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, assetId } : f)),
+      });
+    },
+    replaceTarget: null,
+    setReplaceTarget: (replaceTarget) => set({ replaceTarget }),
 
     placeFixture: (mount, rotation) => {
       const { placing, scene, commitScene } = get();

@@ -7,33 +7,26 @@
 // climb, step count, how it's built. The FOOTPRINT (where the flights run) stays
 // a traced thing: dragging stair geometry in 3D would need the same gesture
 // machinery walls have, and is deliberately not part of this pass.
+//
+// Restyled onto Plan Dock tokens (P5) — was still the pre-overhaul T/glass/chip
+// look after the rest of the inspector moved to src/ui/planDock/inspector/;
+// same controls, same behavior, just PD-colored via the shared panelKit.
 
 import type { Stair } from "@/schema/scene";
 import { DEFAULT_STAIR } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
-import { T, glass, chip } from "@/ui/tokens";
-import { NumField } from "@/ui/NumField";
+import { PD, pdChip } from "@/ui/planDock/tokens";
+import {
+  pdInspectorPanel,
+  PdSectionTitle,
+  PdHelpText,
+  PdNumField,
+} from "@/ui/planDock/inspector/panelKit";
 import {
   MAX_STAIR_WIDTH,
   MIN_STAIR_WIDTH,
   stairMetrics,
 } from "@/lib/stairs/stairGeometry";
-
-// Mirrors `inspectorPanel` in Viewport.tsx (which is protected and doesn't
-// export it) so a selected stair's panel sits exactly where every other
-// inspector does.
-const inspectorPanel: React.CSSProperties = {
-  position: "absolute",
-  right: 14,
-  top: 64,
-  padding: "12px 14px",
-  fontSize: 12.5,
-  display: "flex",
-  flexDirection: "column",
-  gap: 9,
-  minWidth: 170,
-  ...glass(),
-};
 
 const STYLES = [
   {
@@ -76,20 +69,17 @@ export function StairInspector({ stair }: { stair: Stair }) {
   };
 
   return (
-    <div style={inspectorPanel}>
-      <div style={{ fontWeight: 600 }}>
-        Stair{" "}
-        <span style={{ color: T.textDim, fontWeight: 400 }}>
-          · {stair.flights.length} flight{stair.flights.length === 1 ? "" : "s"} ·{" "}
-          {m.run.toFixed(2)} m
-        </span>
-      </div>
+    <div style={pdInspectorPanel}>
+      <PdSectionTitle
+        title="Stair"
+        meta={`${stair.flights.length} flight${stair.flights.length === 1 ? "" : "s"} · ${m.run.toFixed(2)} m`}
+      />
 
       <div style={{ display: "flex", gap: 4 }}>
         {STYLES.map((s) => (
           <button
             key={s.key}
-            style={chip(style === s.key, { flex: 1, textAlign: "center" })}
+            style={{ ...pdChip(style === s.key), flex: 1, textAlign: "center" }}
             title={s.title}
             onClick={() => style !== s.key && patch(`Stair: ${s.key}`, { style: s.key })}
           >
@@ -98,18 +88,14 @@ export function StairInspector({ stair }: { stair: Stair }) {
         ))}
       </div>
 
-      <NumField
+      <PdNumField
         label="Width"
         value={stair.width}
-        onCommit={(v) =>
-          patch("Stair width", {
-            width: Math.min(MAX_STAIR_WIDTH, Math.max(MIN_STAIR_WIDTH, v)),
-          })
-        }
+        onCommit={(v) => patch("Stair width", { width: Math.min(MAX_STAIR_WIDTH, Math.max(MIN_STAIR_WIDTH, v)) })}
         displayScale={100}
         unit="cm"
       />
-      <NumField
+      <PdNumField
         label="Rise"
         value={stair.rise}
         onCommit={(v) => patch("Stair rise", { rise: Math.min(6, Math.max(0.1, v)) })}
@@ -119,7 +105,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
 
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <div style={{ flex: 1 }}>
-          <NumField
+          <PdNumField
             label="Steps"
             value={m.steps}
             unit=""
@@ -127,7 +113,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
           />
         </div>
         <button
-          style={chip(stair.steps == null)}
+          style={pdChip(stair.steps == null)}
           title={`Derive the step count from the rise (${DEFAULT_STAIR.rise} m climb ≈ 14 steps)`}
           onClick={setAutoSteps}
         >
@@ -135,21 +121,21 @@ export function StairInspector({ stair }: { stair: Stair }) {
         </button>
       </div>
 
-      <div style={{ fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 11, color: PD.textSecondary, lineHeight: 1.5 }}>
         riser {Math.round(m.riser * 100)} cm · tread {Math.round(m.going * 100)} cm · {pitchDeg}°
       </div>
 
       {/* Advisory only — a plan can legitimately show a stair that fails a rule
           of thumb, so nothing here blocks or clamps. */}
       {m.warnings.map((w, i) => (
-        <div key={i} style={{ fontSize: 10.5, color: T.warn, lineHeight: 1.45 }}>
+        <div key={i} style={{ fontSize: 10.5, color: PD.warnText, lineHeight: 1.45 }}>
           ⚠ {w}
         </div>
       ))}
 
-      <div style={{ fontSize: 10.5, color: T.textFaint }}>
-        Where it runs is traced — edit the flights in <b style={{ color: T.textDim, fontWeight: 600 }}>Trace</b>.
-      </div>
+      <PdHelpText>
+        Where it runs is traced — edit the flights in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Trace</b>.
+      </PdHelpText>
     </div>
   );
 }
