@@ -90,7 +90,7 @@ export function BuildToolbar() {
       </div>
       {buildTool === "measure" && (
         <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
-          Click two points on the floor · Esc clears
+          Click two points — floor, wall, or ceiling · Esc clears
         </div>
       )}
       {buildTool === "wall" && (

@@ -1,31 +1,43 @@
 "use client";
 
-// Build-mode "Measure" tool: click two points on the floor, read the plan
-// distance between them. New, additive Canvas child (mirrors FurnitureLayer's
-// PlacementGhost catch-plane pattern) — not a modification to any protected
-// wall/collision file. Only mounted while buildTool === "measure".
+// Build-mode "Measure" tool: click two points anywhere in the scene — floor,
+// wall face, or ceiling — and read the true 3D distance between them. New,
+// additive Canvas child (mirrors FurnitureLayer's PlacementGhost catch-plane
+// pattern) — not a modification to any protected wall/collision file. Only
+// mounted while buildTool === "measure".
+//
+// Surface picking (floor/wall/ceiling) lives in buildTools/planMath.ts's
+// `raycastSceneSurfaces` — pure, store-independent, same convention as
+// WallTool/OpeningTool's own duplicated rayToPlan. The big invisible plane
+// below is kept only so R3F actually fires pointer events everywhere in the
+// room (guarantees `e.ray` is available); its own intersection point is no
+// longer used directly.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
+import type { Node } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { PD } from "@/ui/planDock/tokens";
-
-const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-
-function rayToPlan(e: ThreeEvent<PointerEvent | MouseEvent>, offset: { cx: number; cz: number }) {
-  const hit = new THREE.Vector3();
-  if (!e.ray.intersectPlane(FLOOR_PLANE, hit)) return null;
-  return { x: hit.x + offset.cx, y: hit.z + offset.cz };
-}
+import { raycastSceneSurfaces } from "./buildTools/planMath";
 
 const fmt = (m: number) => (m >= 1 ? `${m.toFixed(2)} m` : `${Math.round(m * 100)} cm`);
 
-type Pt = { x: number; y: number };
+type Pt = { x: number; y: number; z: number };
 
 export function MeasureTool({ offset }: { offset: { cx: number; cz: number } }) {
   const active = useSceneStore((s) => s.buildTool === "measure" && s.appMode === "build");
+  const scene = useSceneStore((s) => s.scene);
+  // Mirrors FloorMesh.tsx's own `Ceilings` visibility condition — the ceiling
+  // should only compete as a pickable surface when one is actually rendered
+  // (Cutaway/Top deliberately hide it so you can see inside).
+  const wallMode = useSceneStore((s) => s.wallMode);
+  const showCeilings = useSceneStore((s) => s.showCeilings);
+  const ceilingVisible = wallMode === "full" && showCeilings;
+  // `wallFrameOf` (inside raycastSceneSurfaces) needs nodes indexed by id —
+  // build that once per scene change, not on every pointer move.
+  const nodes = useMemo(() => new Map<string, Node>(scene.nodes.map((n) => [n.id, n])), [scene.nodes]);
   // 0 points: nothing placed yet. 1 point: first click made, `cursor` is the
   // live second point. 2 points: measurement finalized; the next click starts
   // a fresh one from that click.
@@ -51,23 +63,27 @@ export function MeasureTool({ offset }: { offset: { cx: number; cz: number } }) 
   if (!active) return null;
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
-    const p = rayToPlan(e, offset);
-    if (p) setCursor(p);
+    const hit = raycastSceneSurfaces(e.ray, scene, offset, nodes, ceilingVisible);
+    if (hit) setCursor({ x: hit.point.x, y: hit.point.y, z: hit.point.z });
   };
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    const p = rayToPlan(e, offset);
-    if (!p) return;
+    const hit = raycastSceneSurfaces(e.ray, scene, offset, nodes, ceilingVisible);
+    if (!hit) return;
+    const p: Pt = { x: hit.point.x, y: hit.point.y, z: hit.point.z };
     setPoints((prev) => (prev.length >= 2 ? [p] : [...prev, p]));
   };
 
   const a = points[0] ?? null;
   const b = points[1] ?? (points.length === 1 ? cursor : null);
-  const dist = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : null;
-  const mid = a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : null;
+  const dist = a && b ? Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) : null;
+  const mid = a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 } : null;
 
   return (
     <>
+      {/* Catch-all: no longer read for its own intersection point (that's
+          raycastSceneSurfaces's job now) — kept only so R3F fires pointer
+          events everywhere in the room, guaranteeing `e.ray` is populated. */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[offset.cx, 0.002, offset.cz]}
@@ -78,7 +94,7 @@ export function MeasureTool({ offset }: { offset: { cx: number; cz: number } }) 
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {a && (
-        <mesh position={[a.x, 0.03, a.y]}>
+        <mesh position={[a.x, a.y, a.z]}>
           <sphereGeometry args={[0.06, 16, 12]} />
           <meshBasicMaterial color="#5b8def" />
         </mesh>
@@ -87,12 +103,12 @@ export function MeasureTool({ offset }: { offset: { cx: number; cz: number } }) 
         <>
           <line>
             <bufferGeometry
-              onUpdate={(g) => g.setFromPoints([new THREE.Vector3(a.x, 0.03, a.y), new THREE.Vector3(b.x, 0.03, b.y)])}
+              onUpdate={(g) => g.setFromPoints([new THREE.Vector3(a.x, a.y, a.z), new THREE.Vector3(b.x, b.y, b.z)])}
             />
             <lineBasicMaterial color="#5b8def" linewidth={2} />
           </line>
           {mid && dist !== null && (
-            <Html position={[mid.x, 0.35, mid.y]} center style={{ pointerEvents: "none" }}>
+            <Html position={[mid.x, mid.y + 0.3, mid.z]} center style={{ pointerEvents: "none" }}>
               <div
                 style={{
                   padding: "2px 8px",
