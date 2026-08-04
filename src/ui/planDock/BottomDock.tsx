@@ -139,6 +139,42 @@ function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
  *  (English, normalized by enrich-catalog.ts) instead. */
 const isHebrew = (s: string) => /[֐-׿]/.test(s);
 
+// Which Building Knowledge Layer semantic types (src/lib/rooms/roomTaxonomy.ts's
+// open vocabulary) count as a match for each Navigator room tag. "kids" has no
+// entry — there's no matching semantic type — so it's a no-op focus click by
+// design rather than a wrong guess. "study"->"office" mirrors catalog.ts's own
+// "study is the renamed office RoomSection id" convention.
+const FOCUS_SEMANTIC_TYPES: Partial<Record<RoomType, string[]>> = {
+  kitchen: ["kitchen"],
+  bathroom: ["bathroom"],
+  bedroom: ["bedroom", "master_bedroom"],
+  living: ["living"],
+  dining: ["dining"],
+  study: ["office"],
+  laundry: ["laundry"],
+  closet: ["closet"],
+  garage: ["garage"],
+  outdoors: ["balcony"],
+};
+
+/** Plan Dock P8: camera focus on room click. Finds the first scene.rooms
+ *  entry whose Building Knowledge Layer verdict matches `tag`, computes its
+ *  loop centroid, and arms CameraFocusRig — a no-op (not a wrong guess) when
+ *  nothing in the built scene has been classified as that room type yet. */
+function focusRoomForTag(tag: RoomType) {
+  const types = FOCUS_SEMANTIC_TYPES[tag];
+  if (!types) return;
+  const { scene, setFocusTarget } = useSceneStore.getState();
+  const room = scene.rooms.find((r) => r.semantics && types.includes(r.semantics.type));
+  if (!room) return;
+  const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
+  const pts = room.loop.map((id) => nodes.get(id)).filter((n): n is NonNullable<typeof n> => !!n);
+  if (pts.length === 0) return;
+  const x = pts.reduce((sum, p) => sum + p.x, 0) / pts.length;
+  const y = pts.reduce((sum, p) => sum + p.y, 0) / pts.length;
+  setFocusTarget({ x, y });
+}
+
 /** Separate floating panel: room-icon switcher on top, illustrated scene
  *  below. No longer the left column of the item dock, so its height isn't
  *  squeezed by the compact item list. */
@@ -168,6 +204,7 @@ function NavigatorPanel({
                 onClick={() => {
                   setRoom(r.id);
                   setActiveHotspot(null);
+                  focusRoomForTag(r.id);
                 }}
                 style={pdIconBtn(room === r.id)}
               >

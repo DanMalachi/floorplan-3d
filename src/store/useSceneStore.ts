@@ -249,6 +249,17 @@ export interface StoreState {
   endGesture: (label: string) => void;
   cancelGesture: () => void;
 
+  // --- camera focus (Plan Dock P8) ---
+  /** Plan-space point (meters) the camera should glide to next — set by
+   *  NavigatorPanel's room-icon click when it resolves to a matching
+   *  scene.rooms entry, consumed once by CameraFocusRig.tsx. Not cleared
+   *  back to null after consuming it: re-clicking the SAME room tag should
+   *  still glide there again even though the target object is unchanged
+   *  (CameraFocusRig tracks what it already consumed by reference/value,
+   *  not by nulling this out). */
+  focusTarget: { x: number; y: number } | null;
+  setFocusTarget: (t: { x: number; y: number } | null) => void;
+
   // --- furniture (Phase 4 M4) ---
   /** Catalog item being placed: ghost follows the cursor until click/Esc. */
   placing: { assetId: string; rotation: number } | null;
@@ -583,6 +594,9 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!gestureBase) return;
       set({ scene: gestureBase, gestureBase: null, dragViz: null });
     },
+
+    focusTarget: null,
+    setFocusTarget: (focusTarget) => set({ focusTarget }),
 
     appMode: "trace",
     wallMode: "full",
