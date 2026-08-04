@@ -55,6 +55,7 @@ import {
   type RoomType,
 } from "@/furniture/catalog";
 import { useThumbnail } from "@/furniture/thumbnails";
+import { variantGroupFor } from "@/furniture/variants";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
 import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
@@ -194,27 +195,36 @@ function NavigatorPanel({
 function ItemCard({ item }: { item: FurnitureAsset }) {
   const placing = useSceneStore((s) => s.placing);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
-  const rendered = useThumbnail(item.thumbnail ? "" : item.model ?? item.assetId);
-  const thumb = item.thumbnail ?? rendered;
-  const active = placing?.assetId === item.assetId;
-  const onClick = () => {
+  // Color/finish variant group (Plan Dock P6) — null for the vast majority of
+  // items (~11 real groups out of hundreds). `activeVariant` is which sibling
+  // THIS card currently represents; a dot click swaps it without leaving the
+  // card's position in the rail.
+  const group = variantGroupFor(item.assetId);
+  const [activeVariantId, setActiveVariantId] = useState(item.assetId);
+  const activeSpec = (group?.find((a) => a.assetId === activeVariantId) ?? item) as FurnitureAsset;
+  const rendered = useThumbnail(activeSpec.thumbnail ? "" : activeSpec.model ?? activeSpec.assetId);
+  const thumb = activeSpec.thumbnail ?? rendered;
+  const active = placing?.assetId === activeSpec.assetId;
+
+  const arm = (assetId: string) => {
     const s = useSceneStore.getState();
     // Replace mode (armed from the P5 inspector's Replace button): this click
     // swaps the target item's asset IN PLACE instead of arming a new
     // placement ghost. One-shot — consumed here, not left armed.
     if (s.replaceTarget) {
       const id = s.replaceTarget;
-      s.replaceFurnitureAsset(id, item.assetId);
+      s.replaceFurnitureAsset(id, assetId);
       s.setReplaceTarget(null);
       s.setSel3d({ kind: "furniture", id });
       return;
     }
-    s.setPlacing(active ? null : item.assetId);
+    s.setPlacing(placing?.assetId === assetId ? null : assetId);
   };
+
   return (
     <button
-      onClick={onClick}
-      title={`${item.name} · ${item.footprint.w}×${item.footprint.d} m`}
+      onClick={() => arm(activeSpec.assetId)}
+      title={`${activeSpec.name} · ${activeSpec.footprint.w}×${activeSpec.footprint.d} m`}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -244,18 +254,43 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
       >
         {thumb && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={item.name} width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
+          <img src={thumb} alt={activeSpec.name} width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
         )}
       </div>
+      {group && (
+        <div style={{ display: "flex", gap: 3 }}>
+          {group.slice(0, 4).map((v) => (
+            <span
+              key={v.assetId}
+              role="button"
+              aria-label={`${v.name} · ${v.colors?.[0]?.name ?? "variant"}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveVariantId(v.assetId);
+                arm(v.assetId);
+              }}
+              title={v.colors?.[0]?.name}
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: "50%",
+                background: v.colors?.[0]?.hex ?? "#999",
+                border: v.assetId === activeSpec.assetId ? `1.5px solid ${PD.accent}` : `1px solid ${PD.hairline}`,
+                cursor: "pointer",
+              }}
+            />
+          ))}
+        </div>
+      )}
       <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-        {item.name}
+        {activeSpec.name}
       </span>
       {/* Imported catalogs' `subtitle` is the raw Hebrew product type — not
           useful as a caption for an English-reading picker. `kind` (added by
           enrich-catalog.ts) is the same information, normalized to English. */}
-      {item.kind && (!item.subtitle || isHebrew(item.subtitle)) && (
+      {activeSpec.kind && (!activeSpec.subtitle || isHebrew(activeSpec.subtitle)) && (
         <span style={{ fontSize: 8, color: PD.textTertiary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-          {item.kind}
+          {activeSpec.kind}
         </span>
       )}
     </button>
@@ -379,6 +414,16 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
     if (activeCategory) out = out.filter((i) => i.category === activeCategory);
     const q = query.trim().toLowerCase();
     if (q) out = out.filter((i) => searchText(i).includes(q));
+    // Collapse color/finish variant groups (Plan Dock P6) to their first
+    // member — every sibling stays reachable via ItemCard's swatch-dot row,
+    // so this only removes near-duplicate cards, not the colors themselves.
+    const seenGroups = new Set<string>();
+    out = out.filter((i) => {
+      if (!i.variantKey || !variantGroupFor(i.assetId)) return true;
+      if (seenGroups.has(i.variantKey)) return false;
+      seenGroups.add(i.variantKey);
+      return true;
+    });
     return out;
   }, [roomItems, hotspot, activeCategory, query]);
 
