@@ -41,6 +41,7 @@ import { FixtureCatalog } from "./FixtureCatalog";
 import { MeasureTool } from "./MeasureTool";
 import { BottomDock } from "@/ui/planDock/BottomDock";
 import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
+import { PdToastHost } from "@/ui/planDock/toast";
 import { StairLayer } from "./StairMesh";
 import { StairInspector } from "./StairInspector";
 import { registerViewportCanvas } from "./viewportCapture";
@@ -1399,6 +1400,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
       <WalkthroughFovControl active={walkthroughActive} fovDeg={walkthroughFov} onChange={setWalkthroughFov} />
       <WallModeToggle />
+      <PdToastHost />
     </div>
   );
 }

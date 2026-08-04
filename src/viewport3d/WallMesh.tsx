@@ -24,6 +24,7 @@ import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./geometry/wallJunct
 import { buildWallGeometry } from "./geometry/wallGeometry";
 import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
+import { buildToolBlocksSelect } from "./buildTools/gate";
 
 // Apple-blue accent shared by all 3D selection feedback.
 export const ACCENT = "#0a84ff";
@@ -288,7 +289,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return; // walls edit in Build only
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return; // walls edit in Build only
     e.stopPropagation();
     // Which face did the pointer land on? End caps / top keep the current side.
     // This is what makes "click the face you want to paint" work.
@@ -361,7 +362,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
     if (s.appMode === "furnish" && s.brush?.kind === "paint") {
       e.stopPropagation();
       paintFace(e);
-    } else if (s.appMode === "build" && !s.placing) {
+    } else if (s.appMode === "build" && !s.placing && !buildToolBlocksSelect(s)) {
       e.stopPropagation(); // keep floor behind from stealing the selection
     }
     // else (e.g. placing furniture): fall through to the plane/floor behind
@@ -369,7 +370,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
 
   /** Wall reacts to the pointer when editable (Build) or paintable (Decorate). */
   const wallInteractive = (s = useSceneStore.getState()) =>
-    (s.appMode === "build" && !s.placing) ||
+    (s.appMode === "build" && !s.placing && !buildToolBlocksSelect(s)) ||
     (s.appMode === "furnish" && s.brush?.kind === "paint");
 
   const hoverHandlers = {
@@ -637,7 +638,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return; // openings edit in Build only
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return; // openings edit in Build only
     e.stopPropagation();
     const wasSelected = isPick(s.sel3d, "opening", opening.id);
     s.setSel3d({ kind: "opening", id: opening.id });
@@ -695,7 +696,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         userData={{ pick: { kind: "opening", id: opening.id } }}
         onPointerOver={(e) => {
           const s = useSceneStore.getState();
-          if (s.appMode !== "build" || s.placing) return;
+          if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
           e.stopPropagation();
           s.setHover3d({ kind: "opening", id: opening.id });
         }}
@@ -928,7 +929,7 @@ function RailGroup({ wall, a, b, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return;
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
     e.stopPropagation();
     const wasSelected = isPick(s.sel3d, "wall", wall.id);
     s.setSel3d({ kind: "wall", id: wall.id });
@@ -974,7 +975,7 @@ function RailGroup({ wall, a, b, offset }: {
   const hoverHandlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
       const s = useSceneStore.getState();
-      if (s.appMode !== "build" || s.placing) return;
+      if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
       e.stopPropagation();
       s.setHover3d({ kind: "wall", id: wall.id });
     },
@@ -1103,7 +1104,7 @@ function PortalGroup({ wall, a, b, offset }: {
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
     const s = useSceneStore.getState();
-    if (s.appMode !== "build" || s.placing) return;
+    if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
     e.stopPropagation();
     const wasSelected = isPick(s.sel3d, "wall", wall.id);
     s.setSel3d({ kind: "wall", id: wall.id });
@@ -1166,7 +1167,7 @@ function PortalGroup({ wall, a, b, offset }: {
         userData={{ pick: { kind: "wall", id: wall.id } }}
         onPointerOver={(e) => {
           const s = useSceneStore.getState();
-          if (s.appMode !== "build" || s.placing) return;
+          if (s.appMode !== "build" || s.placing || buildToolBlocksSelect(s)) return;
           e.stopPropagation();
           s.setHover3d({ kind: "wall", id: wall.id });
         }}

@@ -13,10 +13,10 @@
 // implementations" rule rather than silently faked. Clicking them shows what
 // they'll do instead of pretending they already do it.
 
-import { useState } from "react";
 import { useSceneStore, type BuildTool } from "@/store/useSceneStore";
 import { PD, pdGlass } from "./tokens";
 import { Tooltip } from "./Tooltip";
+import { pdToast } from "./toast";
 
 const TOOLS: { id: BuildTool; label: string; glyph: string; built: boolean }[] = [
   { id: "select", label: "Select", glyph: "◇", built: true },
@@ -28,13 +28,11 @@ const TOOLS: { id: BuildTool; label: string; glyph: string; built: boolean }[] =
 export function BuildToolbar() {
   const buildTool = useSceneStore((s) => s.buildTool);
   const setBuildTool = useSceneStore((s) => s.setBuildTool);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const pick = (t: (typeof TOOLS)[number]) => {
     if (!t.built) {
       setBuildTool("select");
-      setNotice(`${t.label} tool isn't built yet — still using Select`);
-      window.setTimeout(() => setNotice(null), 2200);
+      pdToast(`${t.label} tool isn't built yet — still using Select`);
       return;
     }
     setBuildTool(t.id);
@@ -84,11 +82,6 @@ export function BuildToolbar() {
           );
         })}
       </div>
-      {notice && (
-        <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.warnText, ...pdGlass({ borderRadius: 999 }) }}>
-          {notice}
-        </div>
-      )}
       {buildTool === "measure" && (
         <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
           Click two points on the floor · Esc clears
