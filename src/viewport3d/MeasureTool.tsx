@@ -40,8 +40,12 @@ export function MeasureTool({ offset }: { offset: { cx: number; cz: number } }) 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setPoints([]);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Capture-phase: Viewport's wrapper div handles Escape itself (clearing
+    // selection/brush/gesture) and stops it from bubbling, so a bubble-phase
+    // listener here never actually ran — this was dead code. Capture always
+    // sees the key before that handler gets a chance to stop it.
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [active]);
 
   if (!active) return null;

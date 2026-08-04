@@ -3,15 +3,14 @@
 // Build-mode toolbar (v1 README §"Build-mode toolbar"): Select / Wall /
 // Opening / Measure, top-center, Build-tab only.
 //
-// Scope call: only "Select" and "Measure" are real tools here. "Select" IS
-// the existing click/drag-to-edit behavior (no new code — it's what Build
-// mode already does), and "Measure" is wired to MeasureTool.tsx, a new
-// additive Canvas child. "Wall" and "Opening" (draw a brand-new wall from
-// scratch / drop a new opening by clicking a wall) are real new 3D-editing
-// features — node creation, wall-junction solving, snapping — not a toolbar
-// reskin, so they're left as visible-but-inert per Dan's "no half-finished
-// implementations" rule rather than silently faked. Clicking them shows what
-// they'll do instead of pretending they already do it.
+// Scope call: "Select" IS the existing click/drag-to-edit behavior (no new
+// code — it's what Build mode already does). "Measure" (MeasureTool.tsx)
+// and "Wall" (WallTool.tsx, Plan Dock P2) are both real, additive Canvas
+// children. "Opening" (drop a new door/window by clicking a wall) is still
+// real new 3D-editing work — not a toolbar reskin — so it stays
+// visible-but-inert per Dan's "no half-finished implementations" rule until
+// its own phase lands. Clicking an unbuilt tool shows what it'll do instead
+// of pretending it already does it.
 
 import { useSceneStore, type BuildTool } from "@/store/useSceneStore";
 import { PD, pdGlass } from "./tokens";
@@ -20,7 +19,7 @@ import { pdToast } from "./toast";
 
 const TOOLS: { id: BuildTool; label: string; glyph: string; built: boolean }[] = [
   { id: "select", label: "Select", glyph: "◇", built: true },
-  { id: "wall", label: "Wall", glyph: "▤", built: false },
+  { id: "wall", label: "Wall", glyph: "▤", built: true },
   { id: "opening", label: "Opening", glyph: "⬓", built: false },
   { id: "measure", label: "Measure", glyph: "↔", built: true },
 ];
