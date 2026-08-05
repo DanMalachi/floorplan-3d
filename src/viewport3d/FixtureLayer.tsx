@@ -16,6 +16,7 @@ import { FIXTURE_CATALOG_BY_ID, WALL_FIXTURE_SILL_M, type FixtureShape } from "@
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFixture } from "@/decorate/eyedropper";
+import { fixtureTexture } from "./fixtureTexture";
 
 // Structurally a duplicate of FurnitureLayer.tsx's FLOOR_PLANE/rayToPlan/snap
 // (~10 stable lines, a physical constant + a raycast) — accepted rather than
@@ -121,15 +122,25 @@ function FixtureBody({ shape, colorHex, tint, opacity }: {
   tint?: "red" | null;
   opacity?: number;
 }) {
-  const shadow = shadowProps(opacity !== undefined ? "transient" : "opaqueArchitecture");
+  // castShadow deliberately forced off: a fixture's own point light sits at
+  // its local origin (RoomLight.position), so if the housing casts a shadow
+  // it occludes its own cube map and the room it's meant to light goes dark
+  // (Sprint 3b). A 6-20cm housing's shadow is imperceptible either way.
+  const shadow = { ...shadowProps(opacity !== undefined ? "transient" : "opaqueArchitecture"), castShadow: false };
   const bodyColor = tint === "red" ? "#ff3b30" : "#e8e2d5";
   const emissive = tint === "red" ? "#000000" : colorHex;
   const emissiveIntensity = tint === "red" ? 0 : 0.6;
+  // Sprint 9: a brushed-metal micro-roughness/normal pair — previously flat-
+  // shaded plastic-looking primitives. Cylinder/cone/box geometries already
+  // carry default UVs (no wallGeometry.ts-style geometry change needed).
+  const { normalMap, roughnessMap } = fixtureTexture();
   const matProps = {
     color: bodyColor,
     emissive,
     emissiveIntensity,
     roughness: 0.6,
+    normalMap,
+    roughnessMap,
     transparent: opacity !== undefined,
     opacity: opacity ?? 1,
     depthWrite: opacity === undefined,
@@ -357,7 +368,9 @@ export function FixtureLayer({ scene, offset }: {
   scene: Scene;
   offset: { cx: number; cz: number };
 }) {
-  const rooms = useMemo(() => eligibleLitRooms(scene), [scene]);
+  // rooms/walls/nodes only — never openings, so a walkthrough door swing
+  // (new Scene object every frame) doesn't force this to recompute.
+  const rooms = useMemo(() => eligibleLitRooms(scene), [scene.rooms, scene.walls, scene.nodes]);
   return (
     <group>
       {(scene.fixtures ?? []).map((item) => (

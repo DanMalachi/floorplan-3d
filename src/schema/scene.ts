@@ -87,6 +87,10 @@ export interface Opening {
   slide?: SlideSpec; // present = a SLIDING door; swingDeg/hinge are then unused
   mullions?: { cols: number; rows: number }; // window glazing-bar grid (default {cols:2,rows:1})
   lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
+  // --- Materials (Realism sprint, additive) ---
+  doorMaterial?: "walnut" | "painted-white" | "painted-charcoal" | "oak"; // doors only (default "painted-white")
+  frameMaterial?: "aluminum-matte" | "aluminum-glossy" | "painted"; // windows only (default "aluminum-matte")
+  frameColor?: string; // windows only: hex tint over the frame material's own color (absent = natural)
 }
 
 /**
@@ -190,6 +194,12 @@ export interface Room {
   // mesh mount state (`visible`/`wallMode`) or rail edges directly, since that
   // is the render layer's own inference and it will diverge (§8.3).
   ceiling?: "roofed" | "open";
+  // Authored per-room ceiling height, meters. Undefined falls back to the
+  // existing derived rule (tallest wall on the room's own perimeter) — see
+  // src/render/ceilingHeight.ts, the one place both FloorMesh.tsx's Ceilings
+  // component and roomLighting.ts's ceilingHeights() resolve this from, so
+  // the two can never disagree about where a room's ceiling actually sits.
+  ceilingHeight?: number;
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene

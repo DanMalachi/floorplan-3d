@@ -48,15 +48,40 @@ export function buildWallGeometry(size: V, ends: WallEnds): THREE.BufferGeometry
 
   const position: number[] = [];
   const index: number[] = [];
+  // Real-meter UVs on the two painted long faces (Sprint 6: wall paint grain)
+  // — one texture repeat spans PAINT_TILE_M, same "physical cover" convention
+  // textures.ts uses for floors. Baked into the geometry rather than a
+  // material-level texture.repeat because matA/matB are shared across a whole
+  // wall's differently-sized pieces (full spans, sills, lintels); a single
+  // repeat setting on the material can't adapt per piece, but per-vertex UV
+  // can. The other four faces (unpainted `neutral` material, no map) get a
+  // plain unit square — their UV values are never sampled.
+  const PAINT_TILE_M = 0.15; // smaller tile = smaller-reading paint divots (Dan's ask)
+  const uv: number[] = [];
+  const UNIT: [number, number][] = [[0, 0], [1, 0], [1, 1], [0, 1]];
   const geom = new THREE.BufferGeometry();
   faces.forEach((quad, f) => {
     const base = f * 4;
     for (const v of quad) position.push(v[0], v[1], v[2]);
     index.push(base, base + 1, base + 2, base, base + 2, base + 3);
     geom.addGroup(f * 6, 6, f); // one material slot per face, as BoxGeometry does
+    if (f === 4) {
+      // +Z side A: quad order is Ab(BL), Cb(BR), Ct(TR), At(TL).
+      const u1 = (xC - xA) / PAINT_TILE_M;
+      const v1 = size[1] / PAINT_TILE_M;
+      uv.push(0, 0, u1, 0, u1, v1, 0, v1);
+    } else if (f === 5) {
+      // -Z side B: quad order is Bb(BL), Bt(TL), Dt(TR), Db(BR).
+      const u1 = (xD - xB) / PAINT_TILE_M;
+      const v1 = size[1] / PAINT_TILE_M;
+      uv.push(0, 0, 0, v1, u1, v1, u1, 0);
+    } else {
+      for (const [u, v] of UNIT) uv.push(u, v);
+    }
   });
 
   geom.setAttribute("position", new THREE.Float32BufferAttribute(position, 3));
+  geom.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   geom.setIndex(index);
   // No vertex is shared between faces, so this stays flat-shaded — and the long
   // faces come out exactly (0,0,±1), which is what face-picking leans on.

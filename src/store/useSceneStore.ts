@@ -248,6 +248,12 @@ export interface StoreState {
   /** Fold the whole gesture into one undo step (no-op if nothing changed). */
   endGesture: (label: string) => void;
   cancelGesture: () => void;
+  /** True while a walkthrough door swing is folding its per-frame writes into
+   *  a gesture (WalkthroughMode.tsx). Lets the viewport tell that apart from
+   *  a real drag gesture — a door swing shouldn't tear down postprocessing
+   *  or lock the camera the way dragging furniture/walls does. */
+  doorGestureActive: boolean;
+  setDoorGestureActive: (active: boolean) => void;
 
   // --- camera focus (Plan Dock P8) ---
   /** Plan-space point (meters) the camera should glide to next — set by
@@ -594,6 +600,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!gestureBase) return;
       set({ scene: gestureBase, gestureBase: null, dragViz: null });
     },
+    doorGestureActive: false,
+    setDoorGestureActive: (active) => set({ doorGestureActive: active }),
 
     focusTarget: null,
     setFocusTarget: (focusTarget) => set({ focusTarget }),

@@ -151,7 +151,7 @@ function ScenePanel() {
   const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const icon = time >= 6 && time < 19 ? "☀️" : "🌙";
   return (
-    <div style={{ position: "absolute", left: 14, top: 64, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
+    <div style={{ position: "absolute", left: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
       <button
         onClick={() => setWalkthroughActive(!walkthroughActive)}
@@ -174,7 +174,10 @@ function ScenePanel() {
           </button>
         ))}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 8, opacity: preset === "none" ? 0.4 : 1 }}
+        title={preset === "none" ? "Time of day has no effect in the Studio preset" : undefined}
+      >
         <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
         <input
           type="range"
@@ -183,6 +186,7 @@ function ScenePanel() {
           step={0.25}
           value={time}
           onChange={(e) => setTimeOfDay(Number(e.target.value))}
+          disabled={preset === "none"}
           style={{ flex: 1, accentColor: T.accent }}
         />
       </div>
@@ -220,8 +224,8 @@ function WallModeToggle() {
     <div
       style={{
         position: "absolute",
-        right: 14,
-        bottom: 14,
+        left: 14,
+        top: 64,
         display: "flex",
         gap: 3,
         padding: 4,
@@ -299,13 +303,16 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
-  const dragging = useSceneStore((s) => s.gestureBase !== null);
+  // A walkthrough door swing folds its per-frame writes into a gesture too
+  // (WalkthroughMode.tsx), but it isn't a drag: it shouldn't tear down N8AO
+  // or lock out camera controls the way dragging furniture/walls does.
+  const dragging = useSceneStore((s) => s.gestureBase !== null && !s.doorGestureActive);
   // Camera should be locked for the ENTIRE time a click-based build/decorate
   // tool is armed (not just once a drag gesture is already in flight) — see
   // Plan Dock P9 camera-lock fix. `dragging` above stays as-is (used for
   // cursor styling elsewhere in this file); this is a separate, broader gate.
   const toolBusy = useSceneStore((s) =>
-    s.gestureBase !== null ||
+    (s.gestureBase !== null && !s.doorGestureActive) ||
     (s.appMode === "build" && s.buildTool !== "select") ||
     s.placing !== null ||
     s.brush !== null ||

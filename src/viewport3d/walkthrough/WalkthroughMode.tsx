@@ -129,8 +129,11 @@ export function WalkthroughRig({
   onLockChange: (locked: boolean) => void;
 }) {
   const { camera, gl } = useThree();
-  const nodes = useMemo(() => nodeMap(scene.nodes), [scene]);
-  const colliders = useMemo(() => buildWallColliders(scene, offset), [scene, offset]);
+  // nodes/walls only — a door swing republishes a new Scene object every
+  // frame (openings change) but keeps these sub-arrays referentially stable,
+  // so narrowing the deps skips this recompute during the ~1-2s swing.
+  const nodes = useMemo(() => nodeMap(scene.nodes), [scene.nodes]);
+  const colliders = useMemo(() => buildWallColliders(scene, offset), [scene.nodes, scene.walls, offset]);
   const blockingColliders = useMemo(() => {
     const furniture = buildFurnitureColliders(scene, offset);
     const doorLeaves = buildClosedDoorColliders(scene, nodes, offset);
@@ -162,6 +165,13 @@ export function WalkthroughRig({
   const eyeYRef = useRef(CFG.eyeHeightM);
   // Non-null only while the entry flight is in the air (see the mount effect).
   const entryRef = useRef<EntryFlight | null>(null);
+
+  // Exiting walkthrough mid-swing (Esc, or leaving the mode entirely) would
+  // otherwise leave doorGestureActive stuck true, permanently suppressing
+  // N8AO for the rest of the session — clear it unconditionally on unmount.
+  useEffect(() => {
+    return () => useSceneStore.getState().setDoorGestureActive(false);
+  }, []);
 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
@@ -386,6 +396,7 @@ export function WalkthroughRig({
     // currently sits rather than restarting from closed.
     if (targets.size > 0) {
       store.beginGesture();
+      if (!store.doorGestureActive) store.setDoorGestureActive(true);
       const liveScene = store.scene;
       const nextOpenings = liveScene.openings.map((o) => {
         const target = targets.get(o.id);
@@ -395,7 +406,10 @@ export function WalkthroughRig({
         return { ...o, ...applyOpeningValue(o, value) };
       });
       store.updateGesture({ ...liveScene, openings: nextOpenings });
-      if (targets.size === 0) store.endGesture("Door open/close (walkthrough)");
+      if (targets.size === 0) {
+        store.endGesture("Door open/close (walkthrough)");
+        store.setDoorGestureActive(false);
+      }
     }
 
     const keys = keysRef.current;

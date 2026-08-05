@@ -12,9 +12,11 @@
 // "zero lost controls" bar applied honestly — nothing the schema/geometry
 // already supports should stay orphaned without a control.
 
+import { useEffect, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Opening, OpeningType, SlideSpec } from "@/schema/scene";
 import { DEFAULT_WINDOW } from "@/schema/constants";
+import { loadTambourColors, type TambourColor } from "@/lib/tambourColors";
 import { pdChip } from "../tokens";
 import {
   pdInspectorPanel,
@@ -22,6 +24,7 @@ import {
   PdHelpText,
   PdNumField,
   PdStepper,
+  PdSwatch,
   pdChipFlex,
 } from "./panelKit";
 import { pdMicroLabel } from "../tokens";
@@ -51,6 +54,60 @@ const SLIDE_PRESETS: { key: string; label: string; title: string; spec: SlideSpe
 
 const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
   s.style === p.style && s.panels === p.panels && (s.glazed ?? false) === (p.glazed ?? false);
+
+const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; label: string }[] = [
+  { key: "painted-white", label: "White" },
+  { key: "painted-charcoal", label: "Charcoal" },
+  { key: "oak", label: "Oak" },
+  { key: "walnut", label: "Walnut" },
+];
+
+const WINDOW_FRAME_MATERIALS: { key: NonNullable<Opening["frameMaterial"]>; label: string }[] = [
+  { key: "aluminum-matte", label: "Matte" },
+  { key: "aluminum-glossy", label: "Glossy" },
+  { key: "painted", label: "Painted" },
+];
+
+/** Open color tint for a window frame (Dan's ruling: any color, not a
+ *  restricted swatch list) — reuses the SAME Tambour catalog wall paint
+ *  already loads (`loadTambourColors`, `BottomDock.tsx`'s Paint tab), so
+ *  frame tinting shares one palette with wall paint rather than inventing a
+ *  second color dataset. "Natural" (no tint) is the first swatch. */
+function FrameColorSwatches({ opening, patch }: {
+  opening: Opening;
+  patch: (label: string, p: Partial<Opening>) => void;
+}) {
+  const [colors, setColors] = useState<TambourColor[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadTambourColors().then((c) => alive && setColors(c));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const active = opening.frameColor ?? null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+      <PdSwatch
+        hex={null}
+        active={active === null}
+        title="Natural — the material's own color"
+        onClick={() => patch("Frame colour: natural", { frameColor: undefined })}
+        size={18}
+      />
+      {(colors ?? []).slice(0, 20).map((c) => (
+        <PdSwatch
+          key={c.code}
+          hex={c.hex}
+          active={active === c.hex}
+          title={`${c.code} · ${c.nameEn}`}
+          onClick={() => patch(`Frame colour: ${c.nameEn}`, { frameColor: c.hex })}
+          size={18}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function OpeningSection({ opening }: { opening: Opening }) {
   const patch = (label: string, p: Partial<Opening>) => {
@@ -95,6 +152,18 @@ export function OpeningSection({ opening }: { opening: Opening }) {
 
       {isDoor && (
         <>
+          <div style={pdMicroLabel()}>Material</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {DOOR_MATERIALS.map((m) => (
+              <button
+                key={m.key}
+                style={pdChip((opening.doorMaterial ?? "painted-white") === m.key, pdChipFlex)}
+                onClick={() => patch(`Door material: ${m.label}`, { doorMaterial: m.key })}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
           <div style={pdMicroLabel()}>How it opens</div>
           <div style={{ display: "flex", gap: 4 }}>
             <button style={pdChip(!slide, pdChipFlex)} onClick={() => patch("Swing door", { slide: undefined })}>
@@ -193,6 +262,19 @@ export function OpeningSection({ opening }: { opening: Opening }) {
 
       {isWindow && (
         <>
+          <div style={pdMicroLabel()}>Frame material</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {WINDOW_FRAME_MATERIALS.map((m) => (
+              <button
+                key={m.key}
+                style={pdChip((opening.frameMaterial ?? "aluminum-matte") === m.key, pdChipFlex)}
+                onClick={() => patch(`Frame material: ${m.label}`, { frameMaterial: m.key })}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <FrameColorSwatches opening={opening} patch={patch} />
           <div style={pdMicroLabel()}>Glazing bars</div>
           <PdStepper
             label="Columns"

@@ -425,7 +425,7 @@ function PaintTab() {
   const plasterActive = brush?.kind === "paint" && activeHex === null;
   const families: TambourFamily[] = ["white", "neutral", "red", "orange", "yellow", "green", "blue", "purple"];
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 5, overflowX: "auto", alignItems: "flex-start", padding: "2px 2px" }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
       <button
         onClick={() => pick(null)}
         title="Plaster (default)"
@@ -434,7 +434,7 @@ function PaintTab() {
           width: 30,
           height: 30,
           borderRadius: 7,
-          background: "#d8d2c4",
+          background: "#f3ece1",
           cursor: "pointer",
           border: plasterActive ? `2px solid ${PD.accent}` : "1.5px solid transparent",
         }}
@@ -470,7 +470,7 @@ function FloorsTab() {
   const active = brush?.kind === "floor" ? brush.style : undefined;
   const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 6, overflowX: "auto", alignItems: "flex-start", padding: "2px 2px" }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
       {FAMILY_ORDER.flatMap((family) =>
         FLOOR_MATERIALS.filter((m) => m.family === family).map((m) => {
           const on = active === m.id;
@@ -546,7 +546,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   }, [roomItems]);
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", gap: 4 }}>
       {searchOpen ? (
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <input
@@ -635,6 +635,7 @@ export function BottomDock() {
           flexDirection: "column",
           padding: "8px 12px",
           gap: 6,
+          overflow: "hidden",
           ...pdGlass(),
         }}
       >

@@ -1,9 +1,9 @@
 // The furniture catalog: placement metadata for every asset the app ships.
-// Models are Kenney Furniture Kit (CC0) GLBs in public/furniture/ — see
-// LICENSE-kenney-furniture-kit.txt there. Geometry is normalized at load time
-// (scaled so the model's plan bounding box matches `footprint`, floored at
-// y=0), so footprints here are real-world meters and the single source of
-// truth for collision and wall snapping.
+// Real-model-only (IKEA + BlenderKit) — see IKEA_ASSETS / BLENDERKIT_ASSETS
+// below. Geometry is normalized at load time (scaled so the model's plan
+// bounding box matches `footprint`, floored at y=0), so footprints here are
+// real-world meters and the single source of truth for collision and wall
+// snapping.
 
 export type FurnitureCategory =
   | "Seating"
@@ -101,89 +101,11 @@ export interface FurnitureAsset {
 export const searchText = (a: FurnitureAsset): string =>
   [a.name, a.kind, ...(a.typeTags ?? [])].filter(Boolean).join(" ").toLowerCase();
 
-export const CATALOG: FurnitureAsset[] = [
-  // --- Seating ---
-  { assetId: "loungeSofa", name: "Sofa", category: "Seating", footprint: { w: 2.1, d: 0.95 }, wallSnap: true },
-  { assetId: "loungeChair", name: "Lounge chair", category: "Seating", footprint: { w: 0.9, d: 0.9 } },
-  { assetId: "chairCushion", name: "Chair", category: "Seating", footprint: { w: 0.5, d: 0.55 } },
-  { assetId: "stoolBar", name: "Bar stool", category: "Seating", footprint: { w: 0.4, d: 0.4 } },
-  { assetId: "benchCushion", name: "Bench", category: "Seating", footprint: { w: 1.4, d: 0.5 }, wallSnap: true },
-  // --- Tables ---
-  { assetId: "table", name: "Dining table", category: "Tables", footprint: { w: 1.6, d: 0.9 } },
-  { assetId: "tableRound", name: "Round table", category: "Tables", footprint: { w: 1.1, d: 1.1 } },
-  { assetId: "tableCoffee", name: "Coffee table", category: "Tables", footprint: { w: 1.1, d: 0.6 } },
-  { assetId: "desk", name: "Desk", category: "Tables", footprint: { w: 1.4, d: 0.7 }, wallSnap: true },
-  { assetId: "sideTable", name: "Side table", category: "Tables", footprint: { w: 0.5, d: 0.45 } },
-  // --- Beds ---
-  { assetId: "bedDouble", name: "Double bed", category: "Beds", footprint: { w: 1.7, d: 2.1 }, wallSnap: true },
-  { assetId: "bedSingle", name: "Single bed", category: "Beds", footprint: { w: 1.0, d: 2.1 }, wallSnap: true },
-  // --- Storage ---
-  { assetId: "bookcaseClosedWide", name: "Wide bookcase", category: "Storage", footprint: { w: 1.2, d: 0.35 }, wallSnap: true },
-  { assetId: "bookcaseOpen", name: "Bookcase", category: "Storage", footprint: { w: 0.8, d: 0.35 }, wallSnap: true },
-  { assetId: "cabinetTelevision", name: "TV cabinet", category: "Storage", footprint: { w: 1.6, d: 0.5 }, wallSnap: true },
-  { assetId: "coatRackStanding", name: "Coat rack", category: "Storage", footprint: { w: 0.45, d: 0.45 } },
-  // --- Kitchen ---
-  { assetId: "kitchenFridge", name: "Fridge", category: "Kitchen", footprint: { w: 0.7, d: 0.75 }, wallSnap: true },
-  { assetId: "kitchenStove", name: "Stove", category: "Kitchen", footprint: { w: 0.65, d: 0.7 }, wallSnap: true },
-  { assetId: "kitchenCabinet", name: "Counter", category: "Kitchen", footprint: { w: 0.7, d: 0.65 }, wallSnap: true },
-  { assetId: "kitchenSink", name: "Sink counter", category: "Kitchen", footprint: { w: 0.7, d: 0.65 }, wallSnap: true },
-  { assetId: "kitchenBar", name: "Kitchen bar", category: "Kitchen", footprint: { w: 1.4, d: 0.7 } },
-  // --- Bathroom ---
-  { assetId: "toilet", name: "Toilet", category: "Bathroom", footprint: { w: 0.45, d: 0.7 }, wallSnap: true },
-  { assetId: "bathtub", name: "Bathtub", category: "Bathroom", footprint: { w: 1.7, d: 0.8 }, wallSnap: true },
-  { assetId: "bathroomSink", name: "Washbasin", category: "Bathroom", footprint: { w: 0.55, d: 0.5 }, wallSnap: true },
-  { assetId: "shower", name: "Shower", category: "Bathroom", footprint: { w: 0.9, d: 0.9 }, wallSnap: true },
-  { assetId: "washer", name: "Washer", category: "Bathroom", footprint: { w: 0.65, d: 0.65 }, wallSnap: true },
-  // --- Decor ---
-  { assetId: "pottedPlant", name: "Potted plant", category: "Decor", footprint: { w: 0.4, d: 0.4 } },
-  { assetId: "lampRoundFloor", name: "Floor lamp", category: "Decor", footprint: { w: 0.4, d: 0.4 } },
-  { assetId: "rugRectangle", name: "Rug", category: "Decor", footprint: { w: 2.0, d: 1.4 }, noCollide: true },
-
-  // --- Bathroom extras (no shipped model yet — render as a neutral
-  // placeholder box until one is sourced; see PlaceholderBox in
-  // FurnitureLayer.tsx. Wall-mounted items get a defaultElevation so a fresh
-  // placement starts at a believable height instead of on the floor. ---
-  { assetId: "showerHead", name: "Shower head", category: "Bathroom", footprint: { w: 0.12, d: 0.12 }, wallSnap: true, defaultElevation: 1.95, roomTags: ["bathroom"] },
-  { assetId: "towelRack", name: "Towel rack", category: "Bathroom", footprint: { w: 0.5, d: 0.08 }, wallSnap: true, defaultElevation: 1.1, roomTags: ["bathroom"] },
-  { assetId: "bathroomMirror", name: "Bathroom mirror", category: "Bathroom", footprint: { w: 0.6, d: 0.05 }, wallSnap: true, defaultElevation: 1.2, roomTags: ["bathroom"] },
-  { assetId: "bathroomTrashBin", name: "Trash bin", category: "Bathroom", footprint: { w: 0.25, d: 0.25 }, roomTags: ["bathroom"] },
-
-  // --- Kitchen extras ---
-  { assetId: "kitchenDishwasher", name: "Dishwasher", category: "Kitchen", footprint: { w: 0.6, d: 0.6 }, wallSnap: true, roomTags: ["kitchen"] },
-  { assetId: "kitchenRangeHood", name: "Range hood", category: "Kitchen", footprint: { w: 0.6, d: 0.5 }, wallSnap: true, defaultElevation: 1.6, roomTags: ["kitchen"] },
-  { assetId: "kitchenIsland", name: "Kitchen island", category: "Kitchen", footprint: { w: 1.2, d: 0.8 }, roomTags: ["kitchen"] },
-  { assetId: "kitchenMicrowave", name: "Microwave", category: "Kitchen", footprint: { w: 0.5, d: 0.35 }, wallSnap: true, roomTags: ["kitchen"] },
-  { assetId: "kitchenTrashBin", name: "Trash bin", category: "Kitchen", footprint: { w: 0.3, d: 0.3 }, roomTags: ["kitchen"] },
-
-  // --- Bedroom extras ---
-  { assetId: "wardrobe", name: "Wardrobe", category: "Storage", footprint: { w: 1.0, d: 0.6 }, wallSnap: true, roomTags: ["bedroom", "closet"] },
-
-  // --- Laundry (taxonomy-only: no scene art yet, see RoomType comment) ---
-  { assetId: "dryer", name: "Dryer", category: "Bathroom", footprint: { w: 0.65, d: 0.65 }, wallSnap: true, roomTags: ["laundry"] },
-  { assetId: "laundrySink", name: "Laundry sink", category: "Bathroom", footprint: { w: 0.55, d: 0.5 }, wallSnap: true, roomTags: ["laundry"] },
-  { assetId: "dryingRack", name: "Drying rack", category: "Storage", footprint: { w: 0.6, d: 0.5 }, roomTags: ["laundry"] },
-  { assetId: "ironingBoard", name: "Ironing board", category: "Storage", footprint: { w: 1.2, d: 0.4 }, roomTags: ["laundry"] },
-
-  // --- Closet ---
-  { assetId: "shoeRack", name: "Shoe rack", category: "Storage", footprint: { w: 0.8, d: 0.3 }, wallSnap: true, roomTags: ["closet"] },
-
-  // --- Kids room ---
-  { assetId: "crib", name: "Crib", category: "Beds", footprint: { w: 0.7, d: 1.3 }, wallSnap: true, roomTags: ["kids"] },
-  { assetId: "toyStorage", name: "Toy storage", category: "Storage", footprint: { w: 0.9, d: 0.4 }, wallSnap: true, roomTags: ["kids"] },
-  { assetId: "changingTable", name: "Changing table", category: "Storage", footprint: { w: 0.8, d: 0.5 }, wallSnap: true, roomTags: ["kids"] },
-
-  // --- Garage ---
-  { assetId: "workbench", name: "Workbench", category: "Tables", footprint: { w: 1.4, d: 0.6 }, wallSnap: true, roomTags: ["garage"] },
-  { assetId: "toolRack", name: "Tool rack", category: "Storage", footprint: { w: 1.0, d: 0.15 }, wallSnap: true, roomTags: ["garage"] },
-  { assetId: "garageShelf", name: "Garage shelving", category: "Storage", footprint: { w: 0.9, d: 0.45 }, wallSnap: true, roomTags: ["garage"] },
-
-  // --- Outdoors ---
-  { assetId: "patioTable", name: "Patio table", category: "Tables", footprint: { w: 1.2, d: 0.8 }, roomTags: ["outdoors"] },
-  { assetId: "patioChair", name: "Patio chair", category: "Seating", footprint: { w: 0.55, d: 0.55 }, roomTags: ["outdoors"] },
-  { assetId: "bbqGrill", name: "BBQ grill", category: "Kitchen", footprint: { w: 0.6, d: 0.5 }, roomTags: ["outdoors"] },
-  { assetId: "outdoorBench", name: "Outdoor bench", category: "Seating", footprint: { w: 1.3, d: 0.45 }, roomTags: ["outdoors"] },
-  { assetId: "planterBox", name: "Planter box", category: "Decor", footprint: { w: 0.6, d: 0.3 }, roomTags: ["outdoors"] },
-];
+/** Kenney low-poly kit removed (2026-08-05) — catalog is real-model-only now.
+ *  Old projects that placed a Kenney item keep the reference; AssetModel in
+ *  FurnitureLayer.tsx already falls back to a PlaceholderBox for any assetId
+ *  no longer in CATALOG_BY_ID, so those items don't crash on load. */
+export const CATALOG: FurnitureAsset[] = [];
 
 // IKEA placement catalog (IL market) — every item ships a real, downloaded IKEA
 // .glb (proxy-only items are dropped by build-catalog.ts), carrying its real
@@ -223,52 +145,12 @@ export interface RoomSection {
 }
 
 const BASE_ROOMS: RoomSection[] = [
-  {
-    id: "living",
-    label: "Living",
-    icon: "🛋",
-    assetIds: [
-      "loungeSofa", "loungeChair", "tableCoffee", "cabinetTelevision",
-      "bookcaseOpen", "bookcaseClosedWide", "rugRectangle", "lampRoundFloor",
-      "pottedPlant", "benchCushion",
-    ],
-  },
-  {
-    id: "bedroom",
-    label: "Bedroom",
-    icon: "🛏",
-    assetIds: [
-      "bedDouble", "bedSingle", "sideTable", "bookcaseClosedWide",
-      "coatRackStanding", "lampRoundFloor", "rugRectangle",
-    ],
-  },
-  {
-    id: "kitchen",
-    label: "Kitchen",
-    icon: "🍳",
-    assetIds: [
-      "kitchenFridge", "kitchenStove", "kitchenCabinet", "kitchenSink",
-      "kitchenBar", "stoolBar",
-    ],
-  },
-  {
-    id: "dining",
-    label: "Dining",
-    icon: "🍽",
-    assetIds: ["table", "tableRound", "chairCushion", "benchCushion", "pottedPlant"],
-  },
-  {
-    id: "bathroom",
-    label: "Bath",
-    icon: "🛁",
-    assetIds: ["toilet", "bathtub", "shower", "bathroomSink", "washer"],
-  },
-  {
-    id: "office",
-    label: "Office",
-    icon: "💻",
-    assetIds: ["desk", "chairCushion", "bookcaseOpen", "lampRoundFloor", "pottedPlant"],
-  },
+  { id: "living", label: "Living", icon: "🛋", assetIds: [] },
+  { id: "bedroom", label: "Bedroom", icon: "🛏", assetIds: [] },
+  { id: "kitchen", label: "Kitchen", icon: "🍳", assetIds: [] },
+  { id: "dining", label: "Dining", icon: "🍽", assetIds: [] },
+  { id: "bathroom", label: "Bath", icon: "🛁", assetIds: [] },
+  { id: "office", label: "Office", icon: "💻", assetIds: [] },
 ];
 
 // Final room sections: curated CC0 items first, then the realistic BlenderKit

@@ -6,11 +6,13 @@
 
 import { useState } from "react";
 import type { Room } from "@/schema/scene";
+import { WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
 import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
+import { resolveCeilingHeights } from "@/render/ceilingHeight";
 import { PD, pdChip } from "../tokens";
-import { pdInspectorPanel, PdSectionTitle, PdHelpText } from "./panelKit";
+import { pdInspectorPanel, PdSectionTitle, PdHelpText, PdNumField } from "./panelKit";
 
 /** Building Knowledge Layer trigger — escalates undecided rooms to the VLM.
  *  Free rule verdicts are already on the scene; this button spends API
@@ -39,9 +41,26 @@ export function RoomSection({ room }: { room: Room }) {
   const scene = useSceneStore((s) => s.scene);
   const area = roomArea(room.loop, nodeMap(scene.nodes));
   const sem = room.semantics;
+  // Derived (wall-height) fallback when unauthored — same resolver the 3D
+  // layer renders from, so this field always shows what's actually built.
+  const derivedCeilingHeight = resolveCeilingHeights(scene).get(room.id) ?? WALL_HEIGHT;
+  const setCeilingHeight = (v: number) => {
+    const s = useSceneStore.getState();
+    s.commitScene("Ceiling height", {
+      ...s.scene,
+      rooms: s.scene.rooms.map((r) => (r.id === room.id ? { ...r, ceilingHeight: v } : r)),
+    });
+  };
   return (
     <div style={pdInspectorPanel}>
       <PdSectionTitle title={room.name ?? "Room"} meta={`${area.toFixed(1)} m²`} />
+      <PdNumField
+        label="Ceiling height"
+        value={room.ceilingHeight ?? derivedCeilingHeight}
+        onCommit={(v) => setCeilingHeight(Math.min(6, Math.max(2, v)))}
+        displayScale={100}
+        unit="cm"
+      />
       {sem && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>

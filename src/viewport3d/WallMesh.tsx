@@ -8,6 +8,11 @@ import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS, RAIL_HEIGHT } from "@/schema/constants";
 import { shadowProps } from "@/render/materialClass";
+import { resolveCeilingHeights, computeWallEffectiveHeights } from "@/render/ceilingHeight";
+import { paintTexture } from "@/decorate/paintTexture";
+import { doorProceduralFinish } from "@/decorate/doorTexture";
+import { loadDoorTextures, doorMaterialRoughness } from "@/materials/loaderDoors";
+import { loadWindowTextures, windowMaterialMetalness } from "@/materials/loaderWindows";
 import {
   useSceneStore,
   type DimLabel,
@@ -29,7 +34,7 @@ import { sampleWallFace } from "@/decorate/eyedropper";
 
 // Apple-blue accent shared by all 3D selection feedback.
 export const ACCENT = "#0a84ff";
-const WALL_COLOR = "#d8d2c4";
+const WALL_COLOR = "#f3ece1"; // Tambour 0017P "Love is in the Air"
 const MIN_OPENING_WIDTH = 0.4;
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -130,7 +135,7 @@ function wallBodyGeomEqual(a: Opening, b: Opening): boolean {
   );
 }
 
-function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
+function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
   wall: Wall;
   a: Node;
   b: Node;
@@ -138,6 +143,10 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   ends: WallEnds; // how this wall's body meets its neighbours
   bbEnds: WallEnds; // ditto for the wider baseboard band
   offset: { cx: number; cz: number };
+  // wall.height ?? WALL_HEIGHT, maxed with every room this wall borders'
+  // resolved ceiling (Sprint 4) — see WallMesh's `Walls` and
+  // src/render/ceilingHeight.ts.
+  effectiveHeight: number;
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
@@ -167,8 +176,10 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
 
   const { pieces, volumes, baseboards, mid, len, normal, frame } = useMemo(() => {
     const nodes = new Map<string, Node>([[a.id, a], [b.id, b]]);
-    // Sims top-down view: walls drop to knee-high stubs.
-    const eff = wallMode === "top" ? { ...wall, height: 0.32 } : wall;
+    // Sims top-down view: walls drop to knee-high stubs. Otherwise render at
+    // the room-aware effective height (Sprint 4), not the wall's raw own
+    // height — a wall shared with a taller-ceilinged room rises to match it.
+    const eff = wallMode === "top" ? { ...wall, height: 0.32 } : { ...wall, height: effectiveHeight };
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const L = Math.hypot(dx, dy) || 1;
@@ -189,7 +200,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
         rotationY: -Math.atan2(uy, ux),
       } satisfies WallFrame,
     };
-  }, [wall, geomOps, a, b, wallMode, ends, bbEnds]);
+  }, [wall, geomOps, a, b, wallMode, ends, bbEnds, effectiveHeight]);
 
   // Real meshes for the jointed bodies. Unlike <boxGeometry> these are ours to
   // free, so they're disposed whenever the wall reshapes.
@@ -206,18 +217,28 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset }: {
   // the wall-local +Z face (side A), `matB` the -Z face (side B). Selection
   // glow, cutaway fade and paint mutate these directly instead of re-rendering.
   const [neutral, matA, matB] = useMemo(() => {
-    const mk = () =>
-      new THREE.MeshStandardMaterial({
+    const mk = (painted: boolean) => {
+      const m = new THREE.MeshStandardMaterial({
         color: WALL_COLOR,
         emissive: new THREE.Color(ACCENT),
         emissiveIntensity: 0,
         transparent: true,
         opacity: 1,
-        roughness: 0.85, // matte painted plaster
+        roughness: 0.85, // matte painted plaster — the roughness map (below) varies around this base
         metalness: 0,
         envMapIntensity: 0.45,
       });
-    return [mk(), mk(), mk()] as const;
+      // Sprint 6: the painted long faces (A/B) get the roller/grain micro-
+      // texture; the unpainted end/top/bottom faces (`neutral`) don't carry
+      // real UVs for it (wallGeometry.ts) and don't need it.
+      if (painted) {
+        const { normalMap, roughnessMap } = paintTexture();
+        m.normalMap = normalMap;
+        m.roughnessMap = roughnessMap;
+      }
+      return m;
+    };
+    return [mk(false), mk(true), mk(true)] as const;
   }, []);
   useEffect(
     () => () => {
@@ -606,6 +627,81 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
     () => () => Object.values(mats).forEach((m) => m.dispose()),
     [mats],
   );
+  // Door leaf material (Sprint 7): mutates `mats.leaf` in place (same pattern
+  // WallGroup uses for `wall.paintA`/`paintB`) rather than recreating the
+  // material, so selection/hover/cutaway state on it survives a material
+  // swap. Only touches the LEAF — the jamb/head casing (`mats.frame`,
+  // shared with windows) keeps its neutral trim color regardless of
+  // doorMaterial, same as a walnut door still having painted white casing.
+  useEffect(() => {
+    if (opening.type !== "door") return;
+    const kind = opening.doorMaterial ?? "painted-white";
+    const m = mats.leaf;
+    if (kind === "walnut") {
+      const tex = loadDoorTextures("walnut");
+      m.map = tex?.map ?? null;
+      m.normalMap = tex?.normalMap ?? null;
+      m.roughnessMap = tex?.roughnessMap ?? null;
+      m.aoMap = tex?.aoMap ?? null;
+      m.metalnessMap = null; // curated metalness is 0 (wood) — a fixed scalar, not the packed map's B channel
+      m.color.set("#ffffff"); // let the real albedo speak for itself
+      m.roughness = doorMaterialRoughness("walnut") ?? 0.25;
+      m.metalness = 0;
+    } else {
+      const finish = doorProceduralFinish(kind);
+      m.map = finish.map ?? null;
+      m.normalMap = finish.normalMap;
+      m.roughnessMap = finish.roughnessMap;
+      m.aoMap = null;
+      m.metalnessMap = null;
+      m.color.set(kind === "painted-charcoal" ? "#3a3a3e" : kind === "oak" ? "#ffffff" : "#e6e0d4");
+      m.roughness = 0.78;
+      m.metalness = 0;
+    }
+    m.needsUpdate = true;
+  }, [mats, opening.type, opening.doorMaterial]);
+  // Window frame material + color tint (Sprint 8): mutates `mats.frame` AND
+  // `mats.mullion` in place — for a window (unlike a door) the frame IS the
+  // primary visible finish, no separate leaf. `frameColor` tints on top of
+  // the loaded albedo exactly like wall paint's `material.color` × texture
+  // trick (WallMesh's own matA/matB, Sprint 6) — absent means the material's
+  // own natural color. "aluminum-matte"/"aluminum-glossy" share ONE texture
+  // set with a roughness override rather than two separate assets (Dan's
+  // approved cheap-variant call).
+  useEffect(() => {
+    if (opening.type !== "window") return;
+    const kind = opening.frameMaterial ?? "aluminum-matte";
+    const tint = opening.frameColor;
+    const targets = [mats.frame, mats.mullion];
+    if (kind === "painted") {
+      const finish = doorProceduralFinish("painted-white");
+      for (const m of targets) {
+        m.map = finish.map ?? null;
+        m.normalMap = finish.normalMap;
+        m.roughnessMap = finish.roughnessMap;
+        m.metalnessMap = null;
+        m.aoMap = null;
+        m.color.set(tint ?? "#e6e0d4");
+        m.roughness = 0.78;
+        m.metalness = 0;
+        m.needsUpdate = true;
+      }
+    } else {
+      const tex = loadWindowTextures("aluminum");
+      const roughness = kind === "aluminum-glossy" ? 0.15 : 0.55;
+      for (const m of targets) {
+        m.map = tex?.map ?? null;
+        m.normalMap = tex?.normalMap ?? null;
+        m.roughnessMap = tex?.roughnessMap ?? null;
+        m.metalnessMap = tex?.metalnessMap ?? null;
+        m.aoMap = tex?.aoMap ?? null;
+        m.color.set(tint ?? "#ffffff"); // untinted = the anodised aluminium's own albedo
+        m.roughness = roughness;
+        m.metalness = windowMaterialMetalness("aluminum") ?? 1;
+        m.needsUpdate = true;
+      }
+    }
+  }, [mats, opening.type, opening.frameMaterial, opening.frameColor]);
   // Selection/hover glow on the real geometry (the frame + leaf carry it).
   useEffect(() => {
     const g = selected ? 0.16 : hovered ? 0.07 : 0;
@@ -1251,6 +1347,13 @@ export function Walls({ scene, offset }: {
     [scene.walls, nodes],
   );
 
+  // Sprint 4: each wall renders at the taller of its own height and every
+  // room it borders' resolved ceiling — see src/render/ceilingHeight.ts.
+  const wallHeights = useMemo(() => {
+    const roomHeights = resolveCeilingHeights(scene);
+    return computeWallEffectiveHeights(scene, roomHeights);
+  }, [scene.rooms, scene.walls]);
+
   return (
     <group>
       {scene.walls.map((wall) => {
@@ -1273,6 +1376,7 @@ export function Walls({ scene, offset }: {
             ends={junctions.get(wall.id) ?? SQUARE_ENDS}
             bbEnds={bbJunctions.get(wall.id) ?? SQUARE_ENDS}
             offset={offset}
+            effectiveHeight={wallHeights.get(wall.id) ?? wall.height ?? WALL_HEIGHT}
           />
         );
       })}

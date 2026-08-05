@@ -36,6 +36,14 @@ const GLASS_THK = 0.02;
 const MULLION_W = 0.03;
 const THRESHOLD_H = 0.02;
 const HANDLE = 0.045;
+// Swing-door lever hardware (pushHandle, below) — deliberately separate from
+// HANDLE above (that one sizes the sliding-door pull handles, a different
+// fixture entirely).
+const HANDLE_PLATE_W = 0.045; // backplate/rosette, flush against each face
+const HANDLE_PLATE_H = 0.11;
+const HANDLE_PLATE_D = 0.01;
+const HANDLE_LEVER_LEN = 0.11; // the grip bar, parallel to the door
+const HANDLE_LEVER_TH = 0.022;
 
 // Sliding gear.
 const SLIDE_PANEL_THK = 0.035; // one sliding panel/sash
@@ -239,16 +247,64 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
   const swing = ((opening.swingDeg ?? 0) * Math.PI) / 180;
   const leafLen = iw - LEAF_GAP;
   const leafYc = (iSill + iTop) / 2;
+  // Handle sits near the latch edge (opposite the hinge), a fixed distance
+  // in from wherever the leaf's free edge currently is — same absolute
+  // `sh` the closed case already used, now expressed as a distance FROM the
+  // hinge so it applies to the swung leaf's own rotated frame too.
+  const sh = hinge === "end" ? iStart + 0.09 : iEnd - 0.09;
+  const hingeS = hinge === "end" ? iEnd : iStart;
+  const sFromHinge = sh - hingeS;
+
+  /** A real lever, not a cube. Per face: a thin backplate flush against
+   *  THAT face (not embedded through the door — the previous version's plate
+   *  spanned slightly more than the leaf's own thickness, centered on it, so
+   *  it sat almost entirely buried inside the door with barely anything
+   *  showing) plus a bar whose inner end sits right against the plate's
+   *  outer face and runs parallel to the door (along direction), the way a
+   *  real push-down lever does. `along` is the leaf's own unit direction
+   *  (rotated open or not), so this places correctly whether the leaf is
+   *  closed or swung. */
+  const pushHandle = (
+    key: string,
+    origin: readonly [number, number],
+    along: readonly [number, number],
+  ): void => {
+    const [ox, oy] = origin;
+    const [ax_, ay_] = along;
+    const across: [number, number] = [-ay_, ax_]; // this leaf's own +Z (thickness) direction
+    const rot = rotY(ax_, ay_);
+    const pos = (s: number, z: number): [number, number, number] => [
+      ox + ax_ * s - across[0] * z,
+      leafYc,
+      oy + ay_ * s + across[1] * z,
+    ];
+    for (const face of [1, -1] as const) {
+      const faceZ = face * (LEAF_THK / 2); // the leaf's actual face plane on this side
+      const plateZ = faceZ + face * (HANDLE_PLATE_D / 2);
+      pieces.push({
+        key: `${key}Plate${face}`,
+        role: "handle",
+        position: pos(sFromHinge, plateZ),
+        size: [HANDLE_PLATE_W, HANDLE_PLATE_H, HANDLE_PLATE_D],
+        rotationY: rot,
+      });
+      const leverZ = faceZ + face * (HANDLE_PLATE_D + HANDLE_LEVER_TH / 2);
+      pieces.push({
+        key: `${key}Lever${face}`,
+        role: "handle",
+        position: pos(sFromHinge, leverZ),
+        size: [HANDLE_LEVER_LEN, HANDLE_LEVER_TH, HANDLE_LEVER_TH],
+        rotationY: rot,
+      });
+    }
+  };
 
   if (Math.abs(swing) < 1e-3) {
     // Closed: leaf lies flush across the inner opening.
     pieces.push(local("lf", "leaf", (iStart + iEnd) / 2, leafYc, leafLen, ih, LEAF_THK));
-    // Handle near the latch edge (opposite the hinge), proud of both faces.
-    const sh = hinge === "end" ? iStart + 0.09 : iEnd - 0.09;
-    pieces.push(local("hn", "handle", sh, 1.0, HANDLE, HANDLE, LEAF_THK + 0.07));
+    pushHandle("hn", [ax, ay], [ux, uy]);
   } else {
     // Open: leaf swings about a vertical hinge at one jamb (plan-space rotation).
-    const hingeS = hinge === "end" ? iEnd : iStart;
     const sign = hinge === "end" ? -1 : 1; // closed direction toward the far jamb
     const dx0 = ux * sign;
     const dy0 = uy * sign;
@@ -267,6 +323,9 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
       size: [leafLen, ih, LEAF_THK],
       rotationY: rotY(dx, dy),
     });
+    // A swung-open door still has a handle — previously dropped entirely,
+    // leaving every opened door in a walkthrough handle-less.
+    pushHandle("hn", [hx, hy], [dx, dy]);
   }
 
   return pieces;
