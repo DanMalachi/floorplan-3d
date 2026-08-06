@@ -3,6 +3,7 @@
 // job. All dimensions in meters.
 
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
 export const PANEL = 0.018; // carcass panel thickness
 export const FRONT_T = 0.019; // door/drawer front thickness
@@ -154,4 +155,10 @@ export function plinth(w: number, d: number, mat: THREE.Material): THREE.Mesh {
 /** Kitchen countertop, overhanging the carcass front face. */
 export function countertop(w: number, d: number, mat: THREE.Material): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(w, COUNTER_T, d + COUNTER_OVER), mat);
+}
+
+/** Soft-edged box for sofa seat/back cushions, arms and pillows. */
+export function cushion(w: number, d: number, h: number, mat: THREE.Material): THREE.Mesh {
+  const radius = Math.min(w, d, h) * 0.18;
+  return new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 4, radius), mat);
 }

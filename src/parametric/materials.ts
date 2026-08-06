@@ -3,9 +3,9 @@
 // Finish materials for parametric furniture. Reuses the existing door-finish
 // infrastructure (src/decorate/doorTexture.ts, src/materials/loaderDoors.ts)
 // instead of writing new wood/paint shaders — same convention WallMesh.tsx's
-// door-leaf effect uses. fabric-* (sofa, P4) lands alongside the generator
-// that actually references it; the procedural canvas it needs is written
-// here already because counter-dark (kitchenRun) borrows it for speckle.
+// door-leaf effect uses. fabric-* (sofa) and counter-dark (kitchenRun) share
+// one procedural canvas (fabricFinish) — counter-dark uses only its
+// roughnessMap for speckle; the sofa fabrics use both maps.
 
 import * as THREE from "three";
 import { doorProceduralFinish } from "@/decorate/doorTexture";
@@ -107,6 +107,15 @@ function buildFinish(id: string): THREE.MeshStandardMaterial {
     m.color.set("#2e2f31");
     m.roughnessMap = fabricFinish().roughnessMap;
     m.roughness = 0.4;
+    m.metalness = 0;
+    return m;
+  }
+  if (id === "fabric-linen" || id === "fabric-charcoal" || id === "fabric-sage") {
+    const fabric = fabricFinish();
+    m.normalMap = fabric.normalMap;
+    m.roughnessMap = fabric.roughnessMap;
+    m.color.set(id === "fabric-charcoal" ? "#4a4d52" : id === "fabric-sage" ? "#9aa88f" : "#d8d2c4");
+    m.roughness = 1;
     m.metalness = 0;
     return m;
   }

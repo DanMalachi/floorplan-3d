@@ -434,11 +434,23 @@ function KitchenRunGlyph({ size }: { size: number }) {
   );
 }
 
-// Keyed by GeneratorDef.id; sofa adds its glyph alongside its generator file
-// (P4) — GENERATORS doesn't hold "sofa" until then.
+function SofaGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M4 20v-2M20 20v-2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M6 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="9" y1="11" x2="9" y2="16" stroke="currentColor" strokeWidth="1.2" />
+      <line x1="15" y1="11" x2="15" y2="16" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+// Keyed by GeneratorDef.id.
 const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
   wardrobe: WardrobeGlyph,
   kitchenRun: KitchenRunGlyph,
+  sofa: SofaGlyph,
 };
 
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
