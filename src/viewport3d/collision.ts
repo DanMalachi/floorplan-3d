@@ -1,9 +1,9 @@
 // Plan-space collision for furniture: rotated-rectangle (OBB) intersection
 // via the separating axis theorem. Everything is 2D — Sims-accurate and cheap.
 
-import type { FurnitureItem, Scene } from "@/schema/scene";
+import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
-import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 
 export interface OBB {
   cx: number;
@@ -55,8 +55,8 @@ export function obbIntersects(a: OBB, b: OBB): boolean {
 }
 
 /** This item's plan OBB, from its catalog footprint. */
-export function furnitureOBB(item: Pick<FurnitureItem, "assetId" | "x" | "y" | "rotation">): OBB | null {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+export function furnitureOBB(item: Pick<FurnitureItem, "assetId" | "parametric" | "x" | "y" | "rotation">): OBB | null {
+  const spec = specOf(item);
   if (!spec) return null;
   return { cx: item.x, cy: item.y, w: spec.footprint.w, d: spec.footprint.d, angle: item.rotation };
 }
@@ -87,11 +87,11 @@ export function wallOBBs(scene: Scene): OBB[] {
  * Rugs (`noCollide`) neither block nor get blocked.
  */
 export function placementCollides(
-  item: Pick<FurnitureItem, "id" | "assetId" | "x" | "y" | "rotation">,
+  item: Pick<FurnitureItem, "id" | "assetId" | "parametric" | "x" | "y" | "rotation">,
   scene: Scene,
   walls?: OBB[], // pass precomputed OBBs during drags
 ): boolean {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   if (!spec || spec.noCollide) return false;
   const me = furnitureOBB(item);
   if (!me) return false;
@@ -100,7 +100,7 @@ export function placementCollides(
   }
   for (const other of scene.furniture) {
     if (other.id === item.id) continue;
-    if (CATALOG_BY_ID.get(other.assetId)?.noCollide) continue;
+    if (specOf(other)?.noCollide) continue;
     const ob = furnitureOBB(other);
     if (ob && obbIntersects(me, ob)) return true;
   }
@@ -119,11 +119,11 @@ export interface WallSnapResult {
  * the room. Returns null when no wall is near.
  */
 export function snapToWall(
-  item: Pick<FurnitureItem, "assetId" | "x" | "y">,
+  item: { assetId: string; parametric?: ParametricSpec; x: number; y: number },
   scene: Scene,
   range = 0.45,
 ): WallSnapResult | null {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   if (!spec?.wallSnap) return null;
   const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
   let best: { dist: number; res: WallSnapResult } | null = null;

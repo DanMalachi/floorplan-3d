@@ -9,7 +9,7 @@
 
 import type { FurnitureItem } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
-import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { PD } from "../tokens";
 import { pdToast } from "../toast";
@@ -17,7 +17,7 @@ import { pdInspectorPanel, PdHelpText, PdActionRow, PdActionButton } from "./pan
 import { VariantSwatchRow } from "./VariantSwatchRow";
 
 export function FurnitureSection({ item }: { item: FurnitureItem }) {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   const rendered = useThumbnail(spec?.thumbnail ? "" : spec?.model ?? item.assetId);
   const thumb = spec?.thumbnail ?? rendered;
   const deg = Math.round(((item.rotation * 180) / Math.PI) % 360);

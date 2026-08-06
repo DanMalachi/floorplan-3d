@@ -44,7 +44,7 @@
 // UNCHANGED — it requires editing pointer handling inside the protected
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement } from "react";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
@@ -56,6 +56,8 @@ import {
 } from "@/furniture/catalog";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { variantGroupFor } from "@/furniture/variants";
+import { GENERATORS } from "@/parametric";
+import type { GeneratorDef } from "@/parametric/types";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
 import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
@@ -409,6 +411,80 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   );
 }
 
+function WardrobeGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="2" width="16" height="20" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="9.5" cy="12" r="0.8" fill="currentColor" />
+      <circle cx="14.5" cy="12" r="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+// Keyed by GeneratorDef.id; kitchenRun/sofa add their glyphs alongside their
+// generator files (P3/P4) — GENERATORS only ever holds "wardrobe" until then.
+const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
+  wardrobe: WardrobeGlyph,
+};
+
+/** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
+ *  placement of the generator's default spec, same ghost/click-to-place flow
+ *  as a catalog item. */
+function CustomCard({ generator }: { generator: GeneratorDef }) {
+  const placing = useSceneStore((s) => s.placing);
+  const assetId = `param:${generator.id}`;
+  const active = placing?.assetId === assetId;
+  const Glyph = GENERATOR_GLYPH[generator.id];
+
+  const arm = () => {
+    const s = useSceneStore.getState();
+    if (s.replaceTarget) return; // Replace flow doesn't support parametric items in v1
+    s.setPlacing(active ? null : assetId, generator.defaultSpec);
+  };
+
+  return (
+    <button
+      onClick={arm}
+      title={generator.label}
+      style={{
+        flex: "0 0 auto",
+        width: 68,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 3,
+        padding: 4,
+        borderRadius: PD.radiusS,
+        border: `1.5px solid ${active ? PD.accent : "transparent"}`,
+        background: active ? PD.accentTint : PD.surfaceMuted,
+        cursor: "pointer",
+        fontFamily: PD.fontUi,
+      }}
+    >
+      <div style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
+        {Glyph && <Glyph size={30} />}
+      </div>
+      <span
+        style={{
+          fontSize: 7.5,
+          fontWeight: 700,
+          color: PD.accentText,
+          background: PD.accentTint,
+          borderRadius: 999,
+          padding: "1px 5px",
+          letterSpacing: 0.2,
+        }}
+      >
+        Custom
+      </span>
+      <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+        {generator.label}
+      </span>
+    </button>
+  );
+}
+
 function PaintTab() {
   const brush = useSceneStore((s) => s.brush);
   const activeHex = brush?.kind === "paint" ? brush.hex : undefined;
@@ -520,6 +596,14 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   const roomItems = useMemo(() => getItemsForRoom(room), [room]);
   const hotspot = ROOM_HOTSPOTS[room]?.find((h) => h.id === activeHotspot);
 
+  // Pinned first, unaffected by category chips or the hotspot filter — only
+  // search narrows this list.
+  const customGenerators = useMemo(() => Object.values(GENERATORS).filter((g) => g.rooms.includes(room)), [room]);
+  const visibleCustom = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? customGenerators.filter((g) => g.label.toLowerCase().includes(q)) : customGenerators;
+  }, [customGenerators, query]);
+
   const items = useMemo(() => {
     let out = roomItems;
     if (hotspot) out = out.filter((i) => matchesHotspot(i, hotspot));
@@ -586,14 +670,17 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               {c}
             </button>
           ))}
-          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{items.length}</span>
+          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start" }}>
-        {items.length === 0 ? (
+        {visibleCustom.length === 0 && items.length === 0 ? (
           <div style={{ padding: "8px 4px", fontSize: 11, color: PD.textTertiary }}>Nothing here yet.</div>
         ) : (
-          items.map((i) => <ItemCard key={i.assetId} item={i} />)
+          <>
+            {visibleCustom.map((g) => <CustomCard key={g.id} generator={g} />)}
+            {items.map((i) => <ItemCard key={i.assetId} item={i} />)}
+          </>
         )}
       </div>
     </div>

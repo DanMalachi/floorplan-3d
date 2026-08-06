@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene, FloorStyle, FixtureMount, OpeningType } from "@/schema/scene";
+import type { Scene, FloorStyle, FixtureMount, OpeningType, ParametricSpec } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import {
   DEFAULT_DOOR,
@@ -268,8 +268,8 @@ export interface StoreState {
 
   // --- furniture (Phase 4 M4) ---
   /** Catalog item being placed: ghost follows the cursor until click/Esc. */
-  placing: { assetId: string; rotation: number } | null;
-  setPlacing: (assetId: string | null) => void;
+  placing: { assetId: string; rotation: number; parametric?: ParametricSpec } | null;
+  setPlacing: (assetId: string | null, parametric?: ParametricSpec) => void;
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
@@ -760,8 +760,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
 
     placing: null,
-    setPlacing: (assetId) =>
-      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null, eyedropper: false }),
+    setPlacing: (assetId, parametric) =>
+      set({
+        placing: assetId ? { assetId, rotation: 0, ...(parametric ? { parametric } : {}) } : null,
+        brush: null,
+        sel3d: null,
+        eyedropper: false,
+      }),
     brush: null,
     setBrush: (brush) => set({ brush, placing: null, sel3d: null, eyedropper: false }),
     eyedropper: false,
@@ -779,7 +784,18 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const elevation = CATALOG_BY_ID.get(placing.assetId)?.defaultElevation;
       commitScene("Place furniture", {
         ...scene,
-        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) }],
+        furniture: [
+          ...scene.furniture,
+          {
+            id,
+            assetId: placing.assetId,
+            x,
+            y,
+            rotation,
+            ...(elevation !== undefined ? { elevation } : {}),
+            ...(placing.parametric ? { parametric: placing.parametric } : {}),
+          },
+        ],
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
     },
@@ -806,7 +822,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!scene.furniture.some((f) => f.id === id)) return;
       commitScene("Replace furniture", {
         ...scene,
-        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, assetId } : f)),
+        furniture: scene.furniture.map((f) => {
+          if (f.id !== id) return f;
+          const { parametric: _parametric, ...rest } = f;
+          return { ...rest, assetId };
+        }),
       });
     },
     replaceTarget: null,

@@ -9,10 +9,12 @@ import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { applyShadowClass, shadowProps } from "@/render/materialClass";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 import { placementCollides, snapToWall, wallOBBs, type OBB } from "./collision";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFurniture } from "@/decorate/eyedropper";
+import { ParametricModel } from "@/parametric/ParametricModel";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -222,7 +224,7 @@ function FurnitureItemView({ item, offset }: {
   );
   const drag = useRef<FurnDrag | null>(null);
   const [colliding, setColliding] = useState(false);
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   const ringR = spec ? Math.max(spec.footprint.w, spec.footprint.d) / 2 + 0.12 : 0.5;
 
   // Placement pop: newly mounted furniture springs from 78% to full size.
@@ -272,7 +274,7 @@ function FurnitureItemView({ item, offset }: {
     let y = p.y - d.grab.dy;
     let rotation = item.rotation;
     if (!e.shiftKey) {
-      const snapped = snapToWall({ assetId: item.assetId, x, y }, d.base);
+      const snapped = snapToWall({ assetId: item.assetId, parametric: item.parametric, x, y }, d.base);
       if (snapped) {
         x = snapped.x;
         y = snapped.y;
@@ -324,7 +326,9 @@ function FurnitureItemView({ item, offset }: {
     >
       <group ref={popRef} scale={0.78}>
         <Suspense fallback={null}>
-          <AssetModel assetId={item.assetId} tint={colliding ? "red" : null} />
+          {item.parametric
+            ? <ParametricModel spec={item.parametric} tint={colliding ? "red" : null} />
+            : <AssetModel assetId={item.assetId} tint={colliding ? "red" : null} />}
         </Suspense>
       </group>
       {(selected || hovered) && <SelectionRing radius={ringR} dim={!selected} />}
@@ -344,7 +348,7 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
   // rotation}) — without this check, picking a fixture from the Lighting
   // catalog also triggers this ghost, which resolves the unknown assetId to
   // a floor-level PlaceholderBox alongside the real ceiling-height ghost.
-  if (!placing || !CATALOG_BY_ID.has(placing.assetId)) return null;
+  if (!placing || (!placing.parametric && !CATALOG_BY_ID.has(placing.assetId))) return null;
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     const p = rayToPlan(e, offset);
@@ -354,7 +358,7 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
     let y = p.y;
     let rotation = s.placing?.rotation ?? 0;
     if (!e.shiftKey) {
-      const snapped = snapToWall({ assetId: placing.assetId, x, y }, s.scene);
+      const snapped = snapToWall({ assetId: placing.assetId, parametric: placing.parametric, x, y }, s.scene);
       if (snapped) {
         x = snapped.x;
         y = snapped.y;
@@ -365,7 +369,7 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
       }
     }
     const colliding = placementCollides(
-      { id: "__ghost__", assetId: placing.assetId, x, y, rotation },
+      { id: "__ghost__", assetId: placing.assetId, parametric: placing.parametric, x, y, rotation },
       s.scene,
     );
     setPos({ x, y });
@@ -396,11 +400,11 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
           rotation={[0, yawOf(state.rotation), 0]}
         >
           <Suspense fallback={null}>
-            <AssetModel
-              assetId={placing.assetId}
-              opacity={0.55}
-              tint={state.colliding ? "red" : null}
-            />
+            {placing.parametric ? (
+              <ParametricModel spec={placing.parametric} opacity={0.55} tint={state.colliding ? "red" : null} />
+            ) : (
+              <AssetModel assetId={placing.assetId} opacity={0.55} tint={state.colliding ? "red" : null} />
+            )}
           </Suspense>
         </group>
       )}

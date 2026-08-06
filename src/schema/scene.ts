@@ -202,15 +202,35 @@ export interface Room {
   ceilingHeight?: number;
 }
 
+/** Config for a procedurally generated furniture item (parametric furniture).
+ *  Geometry is rebuilt deterministically from this spec at render time by
+ *  src/parametric/ — the scene stores only the recipe, never meshes. */
+export interface ParametricSpec {
+  generator: "wardrobe" | "kitchenRun" | "sofa";
+  /** Outer bounding dims in meters: w along local X, d along local Z, h up. */
+  dims: { w: number; d: number; h: number };
+  /** Generator-specific integer counts, e.g. { doors: 3, drawers: 2 }.
+   *  Missing keys fall back to the generator's defaults. */
+  modules: Record<string, number>;
+  front: "slab" | "shaker" | "farmhouse";
+  handle: "bar" | "knob" | "none";
+  /** Finish id resolved by src/parametric/materials.ts (carcass + fronts,
+   *  or upholstery for the sofa). */
+  finish: string;
+  /** Secondary finish: kitchen countertop / sofa accent pillows. */
+  finish2?: string;
+}
+
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene
  *  stores only placement. Front faces local +Z; back (wall side) is -Z. */
 export interface FurnitureItem {
   id: Id;
-  assetId: string; // catalog key, e.g. "loungeSofa"
+  assetId: string; // catalog key, e.g. "loungeSofa"; parametric items use "param:<generator>"
   x: number; // plan meters (center)
   y: number;
   rotation: number; // radians about world up
   elevation?: number; // meters above floor (default 0)
+  parametric?: ParametricSpec; // present ⇔ assetId starts with "param:"
 }
 
 /**
