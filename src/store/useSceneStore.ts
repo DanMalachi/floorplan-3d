@@ -12,6 +12,7 @@ import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometr
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
 import { sanitizeSpec } from "@/parametric";
+import { pdToast } from "@/ui/planDock/toast";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -297,6 +298,16 @@ export interface StoreState {
    *  on the next appMode change (abandoning the pick leaves nothing armed). */
   replaceTarget: string | null;
   setReplaceTarget: (id: string | null) => void;
+
+  // --- kitchen run-draw placement (R3) --- mutually exclusive with
+  // placing/brush/eyedropper, same pattern as those.
+  /** Armed by the Kitchen tab's two cards instead of setPlacing — RunDrawGhost
+   *  drives its own click-drag-click flow rather than the single-click ghost. */
+  placingRun: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null;
+  setPlacingRun: (run: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null) => void;
+  /** One FurnitureItem per leg (spec.dims.w overridden per leg); >1 leg shares
+   *  a fresh `group` id. One undo commit for the whole run. */
+  placeKitchenRun: (legs: { x: number; y: number; rotation: number; w: number }[]) => void;
 
   // --- fixtures (lighting) --- placing state is SHARED with furniture above
   // (assetId is enough to tell the catalogs apart) — only the commit/rotate
@@ -622,7 +633,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
+      set({ appMode, placing: null, placingRun: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -673,6 +684,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
         metersPerPixel: null,
         sel3d: null,
         placing: null,
+        placingRun: null,
       });
       get().setSourcePdfName(file.name);
       try {
@@ -772,14 +784,18 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setPlacing: (assetId, parametric) =>
       set({
         placing: assetId ? { assetId, rotation: 0, ...(parametric ? { parametric } : {}) } : null,
+        placingRun: null,
         brush: null,
         sel3d: null,
         eyedropper: false,
       }),
+    placingRun: null,
+    setPlacingRun: (run) => set({ placingRun: run, placing: null, brush: null, sel3d: null, eyedropper: false }),
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, sel3d: null, eyedropper: false }),
+    setBrush: (brush) => set({ brush, placing: null, placingRun: null, sel3d: null, eyedropper: false }),
     eyedropper: false,
-    setEyedropper: (eyedropper) => set({ eyedropper, ...(eyedropper ? { placing: null, brush: null } : {}) }),
+    setEyedropper: (eyedropper) =>
+      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing
@@ -808,6 +824,22 @@ export const useSceneStore = create<StoreState>((set, get) => {
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
     },
+    placeKitchenRun: (legs) => {
+      const { placingRun, scene, commitScene } = get();
+      if (!placingRun || legs.length === 0) return;
+      const stamp = Date.now().toString(36);
+      const groupId = legs.length > 1 ? `grp${stamp}${Math.floor(Math.random() * 1e4)}` : undefined;
+      const items = legs.map((leg, i) => ({
+        id: `f${stamp}${i}${Math.floor(Math.random() * 1e4)}`,
+        assetId: `param:${placingRun.generator}`,
+        x: leg.x,
+        y: leg.y,
+        rotation: leg.rotation,
+        parametric: { ...placingRun.spec, dims: { ...placingRun.spec.dims, w: leg.w } },
+        ...(groupId ? { group: groupId } : {}),
+      }));
+      commitScene("Place kitchen run", { ...scene, furniture: [...scene.furniture, ...items] });
+    },
     rotateSelectedFurniture: (deltaRad) => {
       const { sel3d, scene, commitScene } = get();
       if (sel3d?.kind !== "furniture") return;
@@ -822,7 +854,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { scene, commitScene } = get();
       const item = scene.furniture.find((f) => f.id === id);
       if (!item) return;
-      const copy = { ...item, id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, x: item.x + 0.3, y: item.y + 0.3 };
+      // Drop `group`: a duplicated leg is an independent item, not a new
+      // member of the run it was copied from (which would delete together
+      // with a run it was never actually part of).
+      const { group: _group, ...rest } = item;
+      const copy = { ...rest, id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, x: item.x + 0.3, y: item.y + 0.3 };
       commitScene("Duplicate furniture", { ...scene, furniture: [...scene.furniture, copy] });
       set({ sel3d: { kind: "furniture", id: copy.id } });
     },
@@ -889,10 +925,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { sel3d, scene, commitScene } = get();
       if (!sel3d) return;
       if (sel3d.kind === "furniture") {
+        const target = scene.furniture.find((f) => f.id === sel3d.id);
+        const groupId = target?.group;
         commitScene("Delete furniture", {
           ...scene,
-          furniture: scene.furniture.filter((f) => f.id !== sel3d.id),
+          furniture: scene.furniture.filter((f) => (groupId ? f.group !== groupId : f.id !== sel3d.id)),
         });
+        if (groupId) pdToast("Removed kitchen run");
       } else if (sel3d.kind === "wall") {
         commitScene("Delete wall", {
           ...scene,

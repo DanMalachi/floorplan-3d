@@ -14,6 +14,7 @@ import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
+import { RunDrawGhost } from "@/parametric/RunDrawGhost";
 import { FixtureLayer } from "./FixtureLayer";
 import { MeasureTool } from "./MeasureTool";
 import { WallTool } from "./buildTools/WallTool";
@@ -404,6 +405,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <RoomLights scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
+          <RunDrawGhost offset={offset} />
           <FixtureLayer scene={scene} offset={offset} />
           <MeasureTool offset={offset} />
           <WallTool offset={offset} />

@@ -238,6 +238,9 @@ export interface FurnitureItem {
   rotation: number; // radians about world up
   elevation?: number; // meters above floor (default 0)
   parametric?: ParametricSpec; // present ⇔ assetId starts with "param:"
+  /** Items placed as one gesture (e.g. both legs of an L kitchen run). Group
+   *  members delete together; ids are opaque. */
+  group?: Id;
 }
 
 /**

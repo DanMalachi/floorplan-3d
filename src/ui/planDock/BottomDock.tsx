@@ -471,13 +471,21 @@ const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement>
  *  as a catalog item. */
 function CustomCard({ generator }: { generator: GeneratorDef }) {
   const placing = useSceneStore((s) => s.placing);
+  const placingRun = useSceneStore((s) => s.placingRun);
   const assetId = `param:${generator.id}`;
-  const active = placing?.assetId === assetId;
+  // kitchenBase/kitchenWall use the run-draw drag tool (RunDrawGhost)
+  // instead of the single-click ghost every other generator uses.
+  const isRun = generator.id === "kitchenBase" || generator.id === "kitchenWall";
+  const active = isRun ? placingRun?.generator === generator.id : placing?.assetId === assetId;
   const Glyph = GENERATOR_GLYPH[generator.id];
 
   const arm = () => {
     const s = useSceneStore.getState();
     if (s.replaceTarget) return; // Replace flow doesn't support parametric items in v1
+    if (generator.id === "kitchenBase" || generator.id === "kitchenWall") {
+      s.setPlacingRun(active ? null : { generator: generator.id, spec: generator.defaultSpec });
+      return;
+    }
     s.setPlacing(active ? null : assetId, generator.defaultSpec);
   };
 
