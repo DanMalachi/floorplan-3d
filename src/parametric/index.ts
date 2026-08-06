@@ -1,13 +1,14 @@
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { wardrobeGenerator } from "./wardrobe";
+import { kitchenRunGenerator } from "./kitchenRun";
 
-const ALL: GeneratorDef[] = [wardrobeGenerator];
+const ALL: GeneratorDef[] = [wardrobeGenerator, kitchenRunGenerator];
 
-// kitchenRun/sofa register here once their generator files exist (P3/P4).
-// The cast is safe today: every consumer reaches this map through an item's
-// own spec.generator, and the dock's CustomCard list is built from the same
-// ALL array — so "wardrobe" is the only key that can actually be requested.
+// sofa registers here once its generator file exists (P4). The cast is safe
+// today: every consumer reaches this map through an item's own
+// spec.generator, and the dock's CustomCard list is built from the same ALL
+// array — so "sofa" can't actually be requested until it's registered.
 export const GENERATORS = Object.fromEntries(ALL.map((g) => [g.id, g])) as Record<
   ParametricSpec["generator"],
   GeneratorDef

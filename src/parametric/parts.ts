@@ -145,3 +145,13 @@ export function handleMat(): THREE.MeshStandardMaterial {
   if (!_handleMat) _handleMat = new THREE.MeshStandardMaterial({ color: "#b8babd", metalness: 0.9, roughness: 0.35 });
   return _handleMat;
 }
+
+/** Kitchen kickboard, recessed 30mm from the carcass front face. */
+export function plinth(w: number, d: number, mat: THREE.Material): THREE.Mesh {
+  return new THREE.Mesh(new THREE.BoxGeometry(Math.max(w - 0.04, 0.01), PLINTH_H, Math.max(d - 0.03, 0.01)), mat);
+}
+
+/** Kitchen countertop, overhanging the carcass front face. */
+export function countertop(w: number, d: number, mat: THREE.Material): THREE.Mesh {
+  return new THREE.Mesh(new THREE.BoxGeometry(w, COUNTER_T, d + COUNTER_OVER), mat);
+}
