@@ -36,6 +36,13 @@ export function ParametricModel({ spec, tint, opacity }: {
           m.emissive = new THREE.Color("#ff3b30");
           m.emissiveIntensity = 0.55;
         }
+        // Color-wheel tint (docs/parametric-furniture.md R1): generators tag
+        // colorable meshes with userData.tintColor; applied on the CLONE only
+        // — the shared base material in materials.ts's cache never mutates.
+        if (o.userData.tintColor && m instanceof THREE.MeshStandardMaterial) {
+          m.color.set(o.userData.tintColor);
+          if (m instanceof THREE.MeshPhysicalMaterial) m.sheenColor?.set(o.userData.tintColor);
+        }
       }
     });
     return g;

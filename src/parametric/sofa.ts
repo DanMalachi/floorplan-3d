@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { cushion, GAP } from "./parts";
-import { finishMaterial } from "./materials";
+import { finishMaterial, tagTint } from "./materials";
 
 const BASE_H = 0.22;
 const FEET_H = 0.06;
@@ -33,23 +33,27 @@ export const sofaGenerator: GeneratorDef = {
   // configurator (ParametricSection.tsx renders it only when length > 1).
   fronts: ["slab"],
   handles: ["none"],
-  finishes: ["fabric-linen", "fabric-charcoal", "fabric-sage"],
-  finishes2: ["fabric-linen", "fabric-charcoal", "fabric-sage"],
+  finishes: ["fabric", "fabric-boucle", "velvet", "leather"],
+  finishes2: ["fabric", "fabric-boucle", "velvet", "leather"],
   defaultSpec: {
     generator: "sofa",
     dims: { w: 2.2, d: 0.95, h: 0.8 },
     modules: { seats: 3, pillows: 2 },
     front: "slab",
     handle: "none",
-    finish: "fabric-linen",
-    finish2: "fabric-charcoal",
+    finish: "fabric",
+    finish2: "fabric",
+    // Old default look (linen body, charcoal pillows) preserved as a color
+    // preset now that "fabric-charcoal" is a tint rather than its own id.
+    color2: "#4a4d52",
   },
   build(spec: ParametricSpec): THREE.Group {
     const { w, d, h } = spec.dims;
     const seats = Math.max(1, Math.round(spec.modules.seats ?? 3));
     const pillows = Math.max(0, Math.round(spec.modules.pillows ?? 2));
     const mat = finishMaterial(spec.finish);
-    const pillowMat = finishMaterial(spec.finish2 ?? "fabric-charcoal");
+    const finish2 = spec.finish2 ?? "fabric";
+    const pillowMat = finishMaterial(finish2);
 
     const group = new THREE.Group();
 
@@ -60,6 +64,7 @@ export const sofaGenerator: GeneratorDef = {
     const baseCenterY = FEET_H + BASE_H / 2;
 
     const base = cushion(w, baseD, BASE_H, mat);
+    tagTint(base, spec.finish, spec.color);
     base.position.set(0, baseCenterY, baseCenterZ);
     group.add(base);
 
@@ -68,6 +73,7 @@ export const sofaGenerator: GeneratorDef = {
     for (const sx of [-1, 1]) {
       for (const sz of [-1, 1]) {
         const foot = new THREE.Mesh(new THREE.CylinderGeometry(FEET_R, FEET_R, FEET_H, 12), mat);
+        tagTint(foot, spec.finish, spec.color);
         foot.position.set(sx * (w / 2 - footInset), FEET_H / 2, baseCenterZ + sz * (baseD / 2 - footInset));
         group.add(foot);
       }
@@ -77,6 +83,7 @@ export const sofaGenerator: GeneratorDef = {
     const armH = h * 0.75;
     for (const sx of [-1, 1]) {
       const arm = cushion(ARM_W, baseD, armH, mat);
+      tagTint(arm, spec.finish, spec.color);
       arm.position.set(sx * (w / 2 - ARM_W / 2), armH / 2, baseCenterZ);
       group.add(arm);
     }
@@ -91,6 +98,7 @@ export const sofaGenerator: GeneratorDef = {
     for (let i = 0; i < seats; i++) {
       const x = -seatAvailW / 2 + seatSlotW * (i + 0.5);
       const seat = cushion(seatW, seatD, SEAT_H, mat);
+      tagTint(seat, spec.finish, spec.color);
       seat.position.set(x, seatTopY - SEAT_H / 2, seatCenterZ);
       group.add(seat);
     }
@@ -102,6 +110,7 @@ export const sofaGenerator: GeneratorDef = {
     for (let i = 0; i < seats; i++) {
       const x = -seatAvailW / 2 + seatSlotW * (i + 0.5);
       const back = cushion(seatW, BACK_T, backH, mat);
+      tagTint(back, spec.finish, spec.color);
       back.position.set(x, backCenterY, backCenterZ);
       back.rotation.x = BACK_TILT;
       group.add(back);
@@ -117,6 +126,7 @@ export const sofaGenerator: GeneratorDef = {
       const k = Math.floor(i / 2);
       const x = side * Math.max(armInnerX - PILLOW_MARGIN - k * PILLOW_STEP, PILLOW_W / 2);
       const pillow = cushion(PILLOW_W, PILLOW_T, PILLOW_H, pillowMat);
+      tagTint(pillow, finish2, spec.color2);
       pillow.position.set(x, pillowY, pillowZ);
       pillow.rotation.x = PILLOW_TILT;
       group.add(pillow);

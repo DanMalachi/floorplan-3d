@@ -1,33 +1,81 @@
 "use client";
 
 // Finish materials for parametric furniture. Reuses the existing door-finish
-// infrastructure (src/decorate/doorTexture.ts, src/materials/loaderDoors.ts)
-// instead of writing new wood/paint shaders — same convention WallMesh.tsx's
-// door-leaf effect uses. fabric-* (sofa) and counter-dark (kitchenRun) share
-// one procedural canvas (fabricFinish) — counter-dark uses only its
-// roughnessMap for speckle; the sofa fabrics use both maps.
+// infrastructure (src/decorate/doorTexture.ts, src/materials/loaderDoors.ts,
+// src/materials/loader.ts) instead of writing new wood/paint shaders — same
+// convention WallMesh.tsx's door-leaf effect uses.
+//
+// v2 (color wheel, docs/parametric-furniture.md R1): a finish id now only
+// selects the TEXTURE. Free color is a separate `ParametricSpec.color`/
+// `color2` field, applied by ParametricModel AFTER cloning each material —
+// see `tagTint()` below, which generators call to mark which cloned meshes
+// should receive the tint. `painted-white`/`painted-charcoal` and
+// `fabric-linen`/`fabric-charcoal`/`fabric-sage` are kept as legacy aliases
+// so P1-P4 saved items still render their original baked color exactly;
+// new placements use `painted`/`fabric` plus a `color`.
 
 import * as THREE from "three";
 import { doorProceduralFinish } from "@/decorate/doorTexture";
 import { loadDoorTextures, doorMaterialRoughness } from "@/materials/loaderDoors";
+import { loadFloorTextures, floorMaterialRoughness } from "@/materials/loader";
 import { makeCanvas, mulberry32, heightToNormal, applyTiling } from "@/decorate/proceduralTexture";
 
 const cache = new Map<string, THREE.MeshStandardMaterial>();
 
+const COLORABLE = new Set([
+  "painted",
+  "painted-white",
+  "painted-charcoal",
+  "laminate-matte",
+  "laminate-gloss",
+  "fabric",
+  "fabric-linen",
+  "fabric-charcoal",
+  "fabric-sage",
+  "fabric-boucle",
+  "velvet",
+  "leather",
+  "counter-white",
+  "counter-dark",
+]);
+
+/** Photo-wood and counter-oak finishes ignore the color wheel — they keep
+ *  their natural texture color. */
+export function isColorable(id: string): boolean {
+  return COLORABLE.has(id);
+}
+
+/** Tags every mesh in `obj` with the tint ParametricModel applies to its
+ *  cloned material after cloning. No-op when the finish isn't colorable or
+ *  no color is set — old saved items (no `color` field) render unchanged. */
+export function tagTint(obj: THREE.Object3D, finishId: string, color: string | undefined): void {
+  if (!color || !isColorable(finishId)) return;
+  obj.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.userData.tintColor = color;
+  });
+}
+
 // --- fabric procedural: fine speckle + a subtle woven grid -----------------
-// Neutral gray base (color comes from material.color, same convention as the
-// painted door finishes) so the canvas contributes only normal/roughness
-// variation. counter-dark borrows the roughnessMap at "low strength" via
-// multiplication with its own low material.roughness scalar.
-function fabricColorCanvas(): HTMLCanvasElement {
+// Neutral gray base (color comes from material.color) so the canvas
+// contributes only normal/roughness variation. Parameterized so
+// fabric-boucle can rerun the same recipe at a different seed/scale.
+interface FabricParams {
+  seed: number;
+  noiseAmp: number;
+  cover: number;
+}
+const FABRIC_DEFAULT: FabricParams = { seed: 11, noiseAmp: 40, cover: 0.4 };
+const FABRIC_BOUCLE: FabricParams = { seed: 23, noiseAmp: 80, cover: 0.25 };
+
+function fabricColorCanvas(p: FabricParams): HTMLCanvasElement {
   const S = 256;
   const [c, ctx] = makeCanvas(S);
-  const rnd = mulberry32(11);
+  const rnd = mulberry32(p.seed);
   ctx.fillStyle = "rgb(128, 128, 128)";
   ctx.fillRect(0, 0, S, S);
   const img = ctx.getImageData(0, 0, S, S);
   for (let i = 0; i < img.data.length; i += 4) {
-    const v = Math.round(THREE.MathUtils.clamp(128 + (rnd() - 0.5) * 40, 0, 255));
+    const v = Math.round(THREE.MathUtils.clamp(128 + (rnd() - 0.5) * p.noiseAmp, 0, 255));
     img.data[i] = v;
     img.data[i + 1] = v;
     img.data[i + 2] = v;
@@ -68,71 +116,223 @@ function fabricRoughnessCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
-let fabricCache: { normalMap: THREE.Texture; roughnessMap: THREE.Texture } | null = null;
-function fabricFinish(): { normalMap: THREE.Texture; roughnessMap: THREE.Texture } {
-  if (fabricCache) return fabricCache;
-  const colorCanvas = fabricColorCanvas();
-  const cover = 0.4;
+const fabricCache = new Map<string, { normalMap: THREE.Texture; roughnessMap: THREE.Texture }>();
+function fabricFinish(p: FabricParams = FABRIC_DEFAULT): { normalMap: THREE.Texture; roughnessMap: THREE.Texture } {
+  const key = `${p.seed}:${p.noiseAmp}:${p.cover}`;
+  let f = fabricCache.get(key);
+  if (f) return f;
+  const colorCanvas = fabricColorCanvas(p);
   const normalMap = new THREE.CanvasTexture(heightToNormal(colorCanvas, 0.35));
   normalMap.colorSpace = THREE.NoColorSpace;
-  applyTiling(normalMap, cover);
+  applyTiling(normalMap, p.cover);
   const roughnessMap = new THREE.CanvasTexture(fabricRoughnessCanvas(colorCanvas));
   roughnessMap.colorSpace = THREE.NoColorSpace;
-  applyTiling(roughnessMap, cover);
-  fabricCache = { normalMap, roughnessMap };
-  return fabricCache;
+  applyTiling(roughnessMap, p.cover);
+  f = { normalMap, roughnessMap };
+  fabricCache.set(key, f);
+  return f;
 }
 
-function buildFinish(id: string): THREE.MeshStandardMaterial {
+// --- leather procedural: fabric-style base + dark cellular pore outlines ---
+let leatherNormalCache: THREE.Texture | null = null;
+function leatherNormalMap(): THREE.Texture {
+  if (leatherNormalCache) return leatherNormalCache;
+  const S = 256;
+  const [c, ctx] = makeCanvas(S);
+  const rnd = mulberry32(7);
+  ctx.fillStyle = "rgb(128, 128, 128)";
+  ctx.fillRect(0, 0, S, S);
+  const img = ctx.getImageData(0, 0, S, S);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.round(THREE.MathUtils.clamp(128 + (rnd() - 0.5) * 40, 0, 255));
+    img.data[i] = v;
+    img.data[i + 1] = v;
+    img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.06)";
+  ctx.lineWidth = 1;
+  for (let k = 0; k < 60; k++) {
+    const cx = rnd() * S;
+    const cy = rnd() * S;
+    const rx = 4 + rnd() * 10;
+    const ry = 3 + rnd() * 8;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, rnd() * Math.PI, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(heightToNormal(c, 0.5));
+  tex.colorSpace = THREE.NoColorSpace;
+  applyTiling(tex, 0.6);
+  leatherNormalCache = tex;
+  return tex;
+}
+
+// --- velvet: the default fabric canvas, baked at half normal strength -----
+let velvetNormalCache: THREE.Texture | null = null;
+function velvetNormalMap(): THREE.Texture {
+  if (velvetNormalCache) return velvetNormalCache;
+  const colorCanvas = fabricColorCanvas(FABRIC_DEFAULT);
+  const tex = new THREE.CanvasTexture(heightToNormal(colorCanvas, 0.35 * 0.5));
+  tex.colorSpace = THREE.NoColorSpace;
+  applyTiling(tex, FABRIC_DEFAULT.cover);
+  velvetNormalCache = tex;
+  return tex;
+}
+
+function buildPainted(color: string, kind: "painted-white" | "painted-charcoal" = "painted-white"): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial();
-  if (id === "walnut") {
-    const tex = loadDoorTextures("walnut");
-    m.map = tex?.map ?? null;
-    m.normalMap = tex?.normalMap ?? null;
-    m.roughnessMap = tex?.roughnessMap ?? null;
-    m.aoMap = tex?.aoMap ?? null;
-    m.metalnessMap = null;
-    m.color.set("#ffffff");
-    m.roughness = doorMaterialRoughness("walnut") ?? 0.25;
-    m.metalness = 0;
-    return m;
-  }
-  if (id === "counter-white") {
-    m.color.set("#e9e7e2");
-    m.roughness = 0.35;
-    m.metalness = 0;
-    return m;
-  }
-  if (id === "counter-dark") {
-    m.color.set("#2e2f31");
-    m.roughnessMap = fabricFinish().roughnessMap;
-    m.roughness = 0.4;
-    m.metalness = 0;
-    return m;
-  }
-  if (id === "fabric-linen" || id === "fabric-charcoal" || id === "fabric-sage") {
-    const fabric = fabricFinish();
-    m.normalMap = fabric.normalMap;
-    m.roughnessMap = fabric.roughnessMap;
-    m.color.set(id === "fabric-charcoal" ? "#4a4d52" : id === "fabric-sage" ? "#9aa88f" : "#d8d2c4");
-    m.roughness = 1;
-    m.metalness = 0;
-    return m;
-  }
-  const kind = id === "oak" || id === "counter-oak" ? "oak" : id === "painted-charcoal" ? "painted-charcoal" : "painted-white";
   const finish = doorProceduralFinish(kind);
   m.map = finish.map ?? null;
   m.normalMap = finish.normalMap;
   m.roughnessMap = finish.roughnessMap;
-  m.color.set(kind === "painted-charcoal" ? "#3a3d40" : kind === "oak" ? "#ffffff" : "#f4f4f2");
+  m.color.set(color);
   m.roughness = 0.78;
   m.metalness = 0;
   return m;
 }
 
+function buildOak(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  const finish = doorProceduralFinish("oak");
+  m.map = finish.map ?? null;
+  m.normalMap = finish.normalMap;
+  m.roughnessMap = finish.roughnessMap;
+  m.color.set("#ffffff");
+  m.roughness = 0.78;
+  m.metalness = 0;
+  return m;
+}
+
+function buildWalnut(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  const tex = loadDoorTextures("walnut");
+  m.map = tex?.map ?? null;
+  m.normalMap = tex?.normalMap ?? null;
+  m.roughnessMap = tex?.roughnessMap ?? null;
+  m.aoMap = tex?.aoMap ?? null;
+  m.metalnessMap = null;
+  m.color.set("#ffffff");
+  m.roughness = doorMaterialRoughness("walnut") ?? 0.25;
+  m.metalness = 0;
+  return m;
+}
+
+function buildFloorWood(id: string): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  const tex = loadFloorTextures(id);
+  m.map = tex?.map ?? null;
+  m.normalMap = tex?.normalMap ?? null;
+  m.roughnessMap = tex?.roughnessMap ?? null;
+  m.color.set("#ffffff");
+  m.roughness = floorMaterialRoughness(id) ?? 0.6;
+  m.metalness = 0;
+  return m;
+}
+
+function buildLaminate(roughness: number): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  m.color.set("#e8e6e1");
+  m.roughness = roughness;
+  m.metalness = 0;
+  return m;
+}
+
+function buildFlat(color: string, roughness: number): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  m.color.set(color);
+  m.roughness = roughness;
+  m.metalness = 0;
+  return m;
+}
+
+function buildFabric(color: string, params: FabricParams = FABRIC_DEFAULT): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  const fabric = fabricFinish(params);
+  m.normalMap = fabric.normalMap;
+  m.roughnessMap = fabric.roughnessMap;
+  m.color.set(color);
+  m.roughness = 1;
+  m.metalness = 0;
+  return m;
+}
+
+function buildCounterDark(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  m.color.set("#2e2f31");
+  m.roughnessMap = fabricFinish().roughnessMap;
+  m.roughness = 0.4;
+  m.metalness = 0;
+  return m;
+}
+
+function buildVelvet(): THREE.MeshStandardMaterial {
+  // MeshPhysicalMaterial extends MeshStandardMaterial — a valid return here.
+  const m = new THREE.MeshPhysicalMaterial();
+  m.normalMap = velvetNormalMap();
+  m.color.set("#5a4a6a");
+  m.roughness = 0.6;
+  m.metalness = 0;
+  m.sheen = 1.0;
+  m.sheenRoughness = 0.5;
+  m.sheenColor.set("#5a4a6a");
+  return m;
+}
+
+function buildLeather(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  m.normalMap = leatherNormalMap();
+  m.color.set("#6b4a35");
+  m.roughness = 0.42;
+  m.metalness = 0;
+  return m;
+}
+
+function buildFinish(id: string): THREE.MeshStandardMaterial {
+  switch (id) {
+    case "walnut":
+      return buildWalnut();
+    case "oak":
+    case "counter-oak":
+      return buildOak();
+    case "painted":
+    case "painted-white":
+      return buildPainted("#f4f4f2", "painted-white");
+    case "painted-charcoal":
+      return buildPainted("#3a3d40", "painted-charcoal");
+    case "laminate-matte":
+      return buildLaminate(0.5);
+    case "laminate-gloss":
+      return buildLaminate(0.12);
+    case "wood-walnut-dark":
+    case "wood-plank-pale":
+      return buildFloorWood(id);
+    case "fabric":
+    case "fabric-linen":
+      return buildFabric("#d8d2c4");
+    case "fabric-charcoal":
+      return buildFabric("#4a4d52");
+    case "fabric-sage":
+      return buildFabric("#9aa88f");
+    case "fabric-boucle":
+      return buildFabric("#e3ded2", FABRIC_BOUCLE);
+    case "velvet":
+      return buildVelvet();
+    case "leather":
+      return buildLeather();
+    case "counter-white":
+      return buildFlat("#e9e7e2", 0.35);
+    case "counter-dark":
+      return buildCounterDark();
+    default:
+      return buildPainted("#f4f4f2", "painted-white");
+  }
+}
+
 /** Module-level cache per finish id — materials ARE shared across items;
- *  parametric meshes never tint-mutate materials (ParametricModel clones
- *  per instance for tint/opacity), so sharing the base material is safe. */
+ *  parametric meshes never tint-mutate the shared material (color wheel
+ *  tinting clones per instance in ParametricModel), so sharing is safe. */
 export function finishMaterial(id: string): THREE.MeshStandardMaterial {
   let m = cache.get(id);
   if (!m) {

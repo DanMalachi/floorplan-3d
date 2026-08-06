@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { carcass, frontOf, barHandle, knobHandle, handleMat, FRONT_T, GAP, REVEAL } from "./parts";
-import { finishMaterial } from "./materials";
+import { finishMaterial, tagTint } from "./materials";
 
 const BASE_GAP = 0.02; // clearance above the floor before the drawer/door band starts
 const DRAWER_H = 0.25; // per-drawer band height
@@ -27,14 +27,14 @@ export const wardrobeGenerator: GeneratorDef = {
   ],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],
-  finishes: ["painted-white", "painted-charcoal", "oak", "walnut"],
+  finishes: ["painted", "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark", "wood-plank-pale"],
   defaultSpec: {
     generator: "wardrobe",
     dims: { w: 1.5, d: 0.6, h: 2.2 },
     modules: { doors: 2, drawers: 0 },
     front: "slab",
     handle: "bar",
-    finish: "painted-white",
+    finish: "painted",
   },
   build(spec: ParametricSpec): THREE.Group {
     const { w, d, h } = spec.dims;
@@ -43,7 +43,9 @@ export const wardrobeGenerator: GeneratorDef = {
     const mat = finishMaterial(spec.finish);
 
     const group = new THREE.Group();
-    group.add(carcass(w, d, h, mat));
+    const body = carcass(w, d, h, mat);
+    tagTint(body, spec.finish, spec.color);
+    group.add(body);
 
     const frontBandW = Math.max(w - 2 * REVEAL, 0.1);
     const drawerBandH = drawers * DRAWER_H;
@@ -55,6 +57,7 @@ export const wardrobeGenerator: GeneratorDef = {
     for (let i = 0; i < drawers; i++) {
       const y = BASE_GAP + i * DRAWER_H + DRAWER_H / 2;
       const front = frontOf(spec.front, frontBandW, DRAWER_H - GAP, mat);
+      tagTint(front, spec.finish, spec.color);
       front.position.set(0, y, frontZ);
       group.add(front);
 
@@ -75,6 +78,7 @@ export const wardrobeGenerator: GeneratorDef = {
     for (let i = 0; i < doorCount; i++) {
       const x = -frontBandW / 2 + slotW * (i + 0.5);
       const front = frontOf(spec.front, doorW, doorBandH, mat);
+      tagTint(front, spec.finish, spec.color);
       front.position.set(x, doorY, frontZ);
       group.add(front);
 

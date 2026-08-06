@@ -219,6 +219,11 @@ export interface ParametricSpec {
   finish: string;
   /** Secondary finish: kitchen countertop / sofa accent pillows. */
   finish2?: string;
+  /** Free tint (hex) for colorable finishes (painted/fabric/leather). Ignored
+   *  by photo-wood finishes, which keep their natural color. */
+  color?: string;
+  /** Same, for the finish2 surface (counter / pillows). */
+  color2?: string;
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene

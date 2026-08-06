@@ -5,9 +5,11 @@
 // item.parametric is present. Every control commits through
 // updateFurnitureParametric, which re-sanitizes and re-renders the mesh live.
 
+import { useState } from "react";
 import type { FurnitureItem, ParametricSpec } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { GENERATORS } from "@/parametric";
+import { isColorable } from "@/parametric/materials";
 import { pdToast } from "../toast";
 import { PD, pdChip } from "../tokens";
 import {
@@ -38,17 +40,63 @@ const HANDLE_LABEL: Record<ParametricSpec["handle"], string> = {
 // Representative swatch colors — a flat UI stand-in for the actual procedural/
 // photo finish, not the finish itself. Extend alongside new finish ids.
 const FINISH_HEX: Record<string, string> = {
+  painted: "#f4f4f2",
   "painted-white": "#f4f4f2",
   "painted-charcoal": "#3a3d40",
+  "laminate-matte": "#e8e6e1",
+  "laminate-gloss": "#e8e6e1",
   oak: "#d6b282",
   walnut: "#5b4632",
+  "wood-walnut-dark": "#3f2a1f",
+  "wood-plank-pale": "#d9c7a8",
+  fabric: "#d8d2c4",
   "fabric-linen": "#d8d2c4",
   "fabric-charcoal": "#4a4d52",
   "fabric-sage": "#9aa88f",
+  "fabric-boucle": "#e3ded2",
+  velvet: "#5a4a6a",
+  leather: "#6b4a35",
   "counter-oak": "#d6b282",
   "counter-white": "#e9e7e2",
   "counter-dark": "#2e2f31",
 };
+
+// Color-wheel presets — the old hardcoded finish colors (painted-charcoal,
+// fabric-linen/sage, etc.) live on here now instead of as separate finish ids.
+const COLOR_PRESETS = ["#f4f4f2", "#3a3d40", "#d8d2c4", "#9aa88f", "#5a4a6a", "#6b4a35"];
+
+/** Native color input (26px round) + preset swatches. Commits on blur, not
+ *  onChange — the browser's picker fires input continuously while dragging
+ *  inside it, and onChange would be a store commit (one undo step) per tick. */
+function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: string) => void }) {
+  const [pending, setPending] = useState<string | null>(null);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <input
+        type="color"
+        value={pending ?? value}
+        onChange={(e) => setPending(e.target.value)}
+        onBlur={() => {
+          if (pending && pending !== value) onCommit(pending);
+          setPending(null);
+        }}
+        style={{
+          width: 26,
+          height: 26,
+          padding: 0,
+          border: `1px solid ${PD.hairline}`,
+          borderRadius: "50%",
+          overflow: "hidden",
+          background: "none",
+          cursor: "pointer",
+        }}
+      />
+      {COLOR_PRESETS.map((hex) => (
+        <PdSwatch key={hex} hex={hex} active={value === hex} title={hex} onClick={() => onCommit(hex)} size={16} />
+      ))}
+    </div>
+  );
+}
 
 export function ParametricSection({ item }: { item: FurnitureItem }) {
   const spec = item.parametric;
@@ -125,6 +173,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           <PdSwatch key={f} hex={FINISH_HEX[f] ?? null} active={spec.finish === f} title={f} onClick={() => update({ finish: f })} />
         ))}
       </div>
+      {isColorable(spec.finish) && (
+        <ColorControl value={spec.color ?? FINISH_HEX[spec.finish] ?? "#ffffff"} onCommit={(color) => update({ color })} />
+      )}
 
       {g.finishes2 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -142,6 +193,12 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               />
             ))}
           </div>
+          {isColorable(spec.finish2 ?? g.finishes2[0]) && (
+            <ColorControl
+              value={spec.color2 ?? FINISH_HEX[spec.finish2 ?? g.finishes2[0]] ?? "#ffffff"}
+              onCommit={(color2) => update({ color2 })}
+            />
+          )}
         </div>
       )}
 
