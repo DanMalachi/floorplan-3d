@@ -15,6 +15,7 @@ import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFurniture } from "@/decorate/eyedropper";
 import { ParametricModel } from "@/parametric/ParametricModel";
+import { snapKitchenWall } from "@/parametric/kitchenSnap";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -282,6 +283,14 @@ function FurnitureItemView({ item, offset }: {
       } else {
         x = snap(x);
         y = snap(y);
+      }
+    }
+    if (!e.shiftKey && item.parametric?.generator === "kitchenWall") {
+      const ks = snapKitchenWall({ ...item, x, y, rotation }, d.base);
+      if (ks) {
+        x = ks.x;
+        y = ks.y;
+        rotation = ks.rotation;
       }
     }
     const candidate = { ...item, x, y, rotation };

@@ -206,7 +206,9 @@ export interface Room {
  *  Geometry is rebuilt deterministically from this spec at render time by
  *  src/parametric/ — the scene stores only the recipe, never meshes. */
 export interface ParametricSpec {
-  generator: "wardrobe" | "kitchenRun" | "sofa";
+  // kitchenRun stays valid forever (renders pre-R2 saves) but is no longer
+  // placeable — kitchenBase/kitchenWall replace it as of R2.
+  generator: "wardrobe" | "kitchenRun" | "sofa" | "kitchenBase" | "kitchenWall";
   /** Outer bounding dims in meters: w along local X, d along local Z, h up. */
   dims: { w: number; d: number; h: number };
   /** Generator-specific integer counts, e.g. { doors: 3, drawers: 2 }.

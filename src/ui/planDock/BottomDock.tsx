@@ -422,7 +422,7 @@ function WardrobeGlyph({ size }: { size: number }) {
   );
 }
 
-function KitchenRunGlyph({ size }: { size: number }) {
+function BaseRunGlyph({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <line x1="2" y1="8" x2="22" y2="8" stroke="currentColor" strokeWidth="1.4" />
@@ -430,6 +430,18 @@ function KitchenRunGlyph({ size }: { size: number }) {
       <rect x="13" y="8" width="8" height="9" rx="1" stroke="currentColor" strokeWidth="1.4" />
       <line x1="7" y1="10.5" x2="7" y2="14.5" stroke="currentColor" strokeWidth="1.2" />
       <line x1="17" y1="10.5" x2="17" y2="14.5" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function WallCabinetsGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <line x1="2" y1="4" x2="22" y2="4" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="3" y="6" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="13" y="6" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="7" y1="7.5" x2="7" y2="10.5" stroke="currentColor" strokeWidth="1.2" />
+      <line x1="17" y1="7.5" x2="17" y2="10.5" stroke="currentColor" strokeWidth="1.2" />
     </svg>
   );
 }
@@ -449,7 +461,8 @@ function SofaGlyph({ size }: { size: number }) {
 // Keyed by GeneratorDef.id.
 const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
   wardrobe: WardrobeGlyph,
-  kitchenRun: KitchenRunGlyph,
+  kitchenBase: BaseRunGlyph,
+  kitchenWall: WallCabinetsGlyph,
   sofa: SofaGlyph,
 };
 

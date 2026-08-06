@@ -2,9 +2,11 @@ import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { wardrobeGenerator } from "./wardrobe";
 import { kitchenRunGenerator } from "./kitchenRun";
+import { kitchenBaseGenerator } from "./kitchenBase";
+import { kitchenWallGenerator } from "./kitchenWall";
 import { sofaGenerator } from "./sofa";
 
-const ALL: GeneratorDef[] = [wardrobeGenerator, kitchenRunGenerator, sofaGenerator];
+const ALL: GeneratorDef[] = [wardrobeGenerator, kitchenRunGenerator, kitchenBaseGenerator, kitchenWallGenerator, sofaGenerator];
 
 export const GENERATORS: Record<ParametricSpec["generator"], GeneratorDef> = Object.fromEntries(
   ALL.map((g) => [g.id, g]),

@@ -180,7 +180,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.finishes2 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontSize: 10.5, color: PD.textTertiary }}>
-            {spec.generator === "kitchenRun" ? "Counter" : "Pillows"}
+            {spec.generator === "kitchenRun" || spec.generator === "kitchenBase" ? "Counter" : "Pillows"}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {g.finishes2.map((f) => (
@@ -200,6 +200,16 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             />
           )}
         </div>
+      )}
+
+      {spec.generator === "kitchenWall" && (
+        <PdNumField
+          label="Height off floor"
+          value={item.elevation ?? g.defaultElevation ?? 1.45}
+          onCommit={(m) => useSceneStore.getState().setFurnitureElevation(item.id, Math.min(2.1, Math.max(0.8, m)))}
+          displayScale={100}
+          unit="cm"
+        />
       )}
 
       <PdActionRow>

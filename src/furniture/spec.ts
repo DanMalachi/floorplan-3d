@@ -24,6 +24,8 @@ export function specOf(item: ItemLike): FurnitureAsset | undefined {
       category: g.category,
       footprint: { w: item.parametric.dims.w, d: item.parametric.dims.d },
       wallSnap: g.wallSnap,
+      ...(g.defaultElevation !== undefined ? { defaultElevation: g.defaultElevation } : {}),
+      ...(g.noCollide !== undefined ? { noCollide: g.noCollide } : {}),
     };
   }
   return CATALOG_BY_ID.get(item.assetId);

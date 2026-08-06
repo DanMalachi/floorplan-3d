@@ -23,6 +23,12 @@ export interface GeneratorDef {
   finishes: string[]; // primary finish ids (ordered, first = default)
   finishes2?: string[]; // secondary finish ids, when applicable
   defaultSpec: ParametricSpec;
+  /** Meters above floor a fresh placement starts at — wall-mounted items
+   *  (kitchen wall cabinets, counter drop-ins). Absent = floor level. */
+  defaultElevation?: number;
+  /** Flat/overlappable items that neither block nor get blocked by
+   *  collision (counter drop-ins sitting on a base run's own OBB). */
+  noCollide?: boolean;
   /** Pure build: spec → group. Origin at floor center (y=0 at floor, x/z centered),
    *  front faces +Z — same convention FurnitureLayer's normalize() produces. */
   build(spec: ParametricSpec): THREE.Group;

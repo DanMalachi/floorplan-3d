@@ -10,7 +10,7 @@ import {
 } from "@/schema/constants";
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
-import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 import { sanitizeSpec } from "@/parametric";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
@@ -287,6 +287,10 @@ export interface StoreState {
    *  shallowly too), re-sanitize, and commit — one undo step per edit,
    *  powers ParametricSection's live-editing configurator. */
   updateFurnitureParametric: (id: string, patch: Partial<ParametricSpec>) => void;
+  /** Move a placed item's height off the floor (kitchenWall's "Height off
+   *  floor" field) — same one-commit-per-edit pattern as
+   *  updateFurnitureParametric. */
+  setFurnitureElevation: (id: string, elevation: number) => void;
   /** Set by the inspector's Replace button: the furniture id awaiting a new
    *  asset pick. BottomDock's item cards check this before falling back to
    *  their normal "arm placement" click behavior. Cleared on consumption or
@@ -786,7 +790,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { placing, scene, commitScene } = get();
       if (!placing) return;
       const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
-      const elevation = CATALOG_BY_ID.get(placing.assetId)?.defaultElevation;
+      const elevation = specOf(placing)?.defaultElevation;
       commitScene("Place furniture", {
         ...scene,
         furniture: [
@@ -847,6 +851,14 @@ export const useSceneStore = create<StoreState>((set, get) => {
       commitScene("Edit custom furniture", {
         ...scene,
         furniture: scene.furniture.map((f) => (f.id === id ? { ...f, parametric } : f)),
+      });
+    },
+    setFurnitureElevation: (id, elevation) => {
+      const { scene, commitScene } = get();
+      if (!scene.furniture.some((f) => f.id === id)) return;
+      commitScene("Move furniture height", {
+        ...scene,
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, elevation } : f)),
       });
     },
     replaceTarget: null,

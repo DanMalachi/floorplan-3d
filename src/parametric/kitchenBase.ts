@@ -4,9 +4,6 @@ import type { GeneratorDef } from "./types";
 import { carcass, frontOf, plinth, countertop, barHandle, knobHandle, handleMat, PLINTH_H, COUNTER_T, COUNTER_OVER, FRONT_T, GAP, REVEAL } from "./parts";
 import { finishMaterial, tagTint } from "./materials";
 
-const CARCASS_H = 0.72; // base-unit carcass height; counter surface sits at PLINTH_H + CARCASS_H + COUNTER_T = 0.84
-const WALL_CAB_D = 0.32;
-const WALL_CAB_H = 0.7;
 const HANDLE_INSET = 0.04;
 
 function handleFor(spec: ParametricSpec): THREE.Object3D | null {
@@ -15,29 +12,24 @@ function handleFor(spec: ParametricSpec): THREE.Object3D | null {
   return spec.handle === "knob" ? knobHandle(mat) : barHandle(mat);
 }
 
-// R2 (docs/parametric-furniture.md): superseded by kitchenBase + kitchenWall.
-// Stays registered so pre-R2 saves still render and resolve through
-// GENERATORS/specOf — `rooms: []` means it can never match a dock room tab,
-// so no UI path can place a new one.
-export const kitchenRunGenerator: GeneratorDef = {
-  id: "kitchenRun",
-  label: "Custom kitchen run",
+export const kitchenBaseGenerator: GeneratorDef = {
+  id: "kitchenBase",
+  label: "Kitchen base run",
   category: "Kitchen",
-  rooms: [],
+  rooms: ["kitchen"],
   wallSnap: true,
-  dimLimits: { w: [0.6, 6.0], d: [0.55, 0.7], h: [1.4, 2.6] },
-  modules: [
-    { key: "drawerUnits", label: "Drawer units", min: 0, max: 4, default: 1 },
-    { key: "wallCabinets", label: "Wall cabinets", min: 0, max: 6, default: 2 },
-  ],
+  // dims.h IS the counter surface height (v1 kitchenRun fixed this at 0.84 —
+  // here it's the dimension the user sets); carcass height derives from it.
+  dimLimits: { w: [0.6, 6.0], d: [0.55, 0.7], h: [0.75, 0.95] },
+  modules: [{ key: "drawerUnits", label: "Drawer units", min: 0, max: 4, default: 1 }],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],
   finishes: ["painted", "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark", "wood-plank-pale"],
   finishes2: ["counter-oak", "counter-white", "counter-dark"],
   defaultSpec: {
-    generator: "kitchenRun",
-    dims: { w: 2.4, d: 0.6, h: 2.2 },
-    modules: { drawerUnits: 1, wallCabinets: 2 },
+    generator: "kitchenBase",
+    dims: { w: 2.4, d: 0.6, h: 0.84 },
+    modules: { drawerUnits: 1 },
     front: "slab",
     handle: "bar",
     finish: "painted",
@@ -46,22 +38,22 @@ export const kitchenRunGenerator: GeneratorDef = {
   build(spec: ParametricSpec): THREE.Group {
     const { w, d, h } = spec.dims;
     const drawerUnits = Math.max(0, Math.round(spec.modules.drawerUnits ?? 1));
-    const wallCabinets = Math.max(0, Math.round(spec.modules.wallCabinets ?? 2));
     const mat = finishMaterial(spec.finish);
     const counterMat = finishMaterial(spec.finish2 ?? "counter-oak");
 
+    const carcassH = Math.max(h - PLINTH_H - COUNTER_T, 0.3);
     const group = new THREE.Group();
 
     const unitCount = Math.max(1, Math.round(w / 0.6));
     const unitW = w / unitCount;
     const drawerUnitsEff = Math.min(drawerUnits, unitCount);
-    const frontBandH = CARCASS_H - 2 * REVEAL;
+    const frontBandH = carcassH - 2 * REVEAL;
     const frontBandBottom = PLINTH_H + REVEAL;
     const frontZ = d / 2 + FRONT_T / 2;
 
     for (let i = 0; i < unitCount; i++) {
       const x = -w / 2 + unitW * (i + 0.5);
-      const unit = carcass(unitW, d, CARCASS_H, mat);
+      const unit = carcass(unitW, d, carcassH, mat);
       tagTint(unit, spec.finish, spec.color);
       unit.position.set(x, PLINTH_H, 0);
       group.add(unit);
@@ -110,38 +102,8 @@ export const kitchenRunGenerator: GeneratorDef = {
 
     const counter = countertop(w, d, counterMat);
     tagTint(counter, spec.finish2 ?? "counter-oak", spec.color2);
-    counter.position.set(0, PLINTH_H + CARCASS_H + COUNTER_T / 2, COUNTER_OVER / 2);
+    counter.position.set(0, PLINTH_H + carcassH + COUNTER_T / 2, COUNTER_OVER / 2);
     group.add(counter);
-
-    // Wall cabinets: left-aligned on the same unit grid, flush to the back
-    // plane, top pinned to dims.h (ignored entirely when wallCabinets is 0).
-    const wallCabEff = Math.min(wallCabinets, unitCount);
-    const wallCabZ = -d / 2 + WALL_CAB_D / 2;
-    const wallFrontZ = wallCabZ + WALL_CAB_D / 2 + FRONT_T / 2;
-    for (let i = 0; i < wallCabEff; i++) {
-      const x = -w / 2 + unitW * (i + 0.5);
-      const cab = carcass(unitW, WALL_CAB_D, WALL_CAB_H, mat);
-      tagTint(cab, spec.finish, spec.color);
-      cab.position.set(x, h - WALL_CAB_H, wallCabZ);
-      group.add(cab);
-
-      const frontBandW = Math.max(unitW - 2 * REVEAL, 0.1);
-      const cabFrontH = WALL_CAB_H - 2 * REVEAL;
-      const y = h - WALL_CAB_H + WALL_CAB_H / 2;
-      const front = frontOf(spec.front, frontBandW, cabFrontH, mat);
-      tagTint(front, spec.finish, spec.color);
-      front.position.set(x, y, wallFrontZ);
-      group.add(front);
-
-      const handle = handleFor(spec);
-      if (handle) {
-        const hingeLeft = i % 2 === 0;
-        const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
-        const hy = h - WALL_CAB_H + 0.06;
-        handle.position.set(hx, hy, wallFrontZ);
-        group.add(handle);
-      }
-    }
 
     return group;
   },
