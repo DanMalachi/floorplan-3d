@@ -508,3 +508,269 @@ install Blender locally, rerun `bk:optimize` pipeline — NOT a code task).
 Each phase ends: run `npx tsc --noEmit`, verify the ✔ list in the browser, commit
 (`P1: parametric skeleton + wardrobe` style), report deviations from this doc
 explicitly.
+
+---
+---
+
+# v2 Revision (2026-08-06) — Dan's feedback after P1–P4
+
+P1–P4 shipped and reviewed (commits `8364e59..3229389`). This revision is APPROVED
+DESIGN. Same rules as v1: this doc is the spec, do not redesign, report contradictions.
+Decisions confirmed with Dan: color wheel is SEPARATE from texture (wheel tints
+painted/fabric/leather, never photo wood); kitchen L-shape drag is IN scope; wall
+cabinets slide along their wall + adjustable height, snapping to align with base runs;
+sink/stove are drop-in items on the counter (no counter cutout).
+
+Four phases R1–R4, one commit each.
+
+---
+
+## R1 — Color wheel + texture expansion (all generators)
+
+### Schema (`src/schema/scene.ts` — protected, additive)
+
+`ParametricSpec` gains:
+
+```ts
+  /** Free tint (hex) for colorable finishes (painted/fabric/leather). Ignored
+   *  by photo-wood finishes, which keep their natural color. */
+  color?: string;
+  /** Same, for the finish2 surface (counter / pillows). */
+  color2?: string;
+```
+
+### Finish system rework (`src/parametric/materials.ts`)
+
+Each finish id gets a `colorable: boolean`. New export:
+
+```ts
+export function isColorable(id: string): boolean;
+```
+
+Finish table becomes (replaces the v1 painted-white/painted-charcoal pair — keep those
+ids resolving as aliases of `painted` so saved P1–P4 items still render):
+
+| id | colorable | recipe |
+|---|---|---|
+| `painted` | ✔ (default `#f4f4f2`) | v1 paintedFinish maps; color from wheel |
+| `laminate-matte` | ✔ (default `#e8e6e1`) | no maps, roughness 0.5 |
+| `laminate-gloss` | ✔ (default `#e8e6e1`) | no maps, roughness 0.12 |
+| `oak` | ✘ | unchanged v1 |
+| `walnut` | ✘ | unchanged v1 |
+| `wood-walnut-dark` | ✘ | `loadFloorTextures("wood-walnut-dark")` from `src/materials/loader.ts` + `floorMaterialRoughness` (ids verified in `data/materials-floors.manifest.json`) |
+| `wood-plank-pale` | ✘ | same, id `wood-plank-pale` |
+| `fabric-linen` → rename to `fabric` | ✔ (default `#d8d2c4`) | v1 fabric maps; `fabric-charcoal`/`fabric-sage` become aliases of `fabric` (their old hardcoded colors move to preset swatches) |
+| `fabric-boucle` | ✔ (default `#e3ded2`) | fabric canvas rerun with seed 23, noise amplitude ×2, cover 0.25 |
+| `velvet` | ✔ (default `#5a4a6a`) | `MeshPhysicalMaterial` (subtype of MeshStandardMaterial — return type stays), sheen 1.0, sheenRoughness 0.5, `sheenColor` = the tint color, roughness 0.6, fabric normal map at strength ×0.5 |
+| `leather` | ✔ (default `#6b4a35`) | new procedural: fabric-style canvas, seed 7, cellular look = 60 random dark ellipse outlines alpha 0.06 over noise, `heightToNormal` strength 0.5, roughness 0.42, cover 0.6 |
+| `counter-oak` / `counter-white` / `counter-dark` | ✘ / ✔ / ✔ | unchanged recipes; white/dark colorable |
+
+### Tint plumbing — zero new material lifecycle
+
+Generators do NOT clone materials for color. Instead: when a mesh's finish is colorable
+and `spec.color` (or `color2` for finish2 surfaces) is set, the generator tags
+`mesh.userData.tintColor = thatHex`. `ParametricModel` already clones every material per
+instance — after cloning, it applies
+`if (o.userData.tintColor && m instanceof THREE.MeshStandardMaterial) m.color.set(o.userData.tintColor)`
+(and for velvet also `m.sheenColor?.set(...)`). Shared base materials never mutate;
+disposal story unchanged.
+
+### UI (`ParametricSection.tsx`)
+
+- Finish swatch rows stay (they pick the TEXTURE). Under each row, when
+  `isColorable(selectedFinish)`: a color control — native `<input type="color">`
+  styled to a 26px round swell (border `PD.hairline`), plus 6 preset swatches
+  (`#f4f4f2 #3a3d40 #d8d2c4 #9aa88f #5a4a6a #6b4a35`). Commits
+  `updateFurnitureParametric(id, { color })` on change-end (`onChange` is fine —
+  the store action already coalesces per commit; verify undo isn't spammed per
+  drag tick, else commit on blur).
+- Generator finish lists update: wardrobe/kitchen fronts `["painted",
+  "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark",
+  "wood-plank-pale"]`; sofa `["fabric", "fabric-boucle", "velvet", "leather"]`
+  (finishes2 same list).
+
+✔ R1 acceptance: wardrobe painted + wheel → any color live; switch to walnut → wheel
+hides, natural wood; sofa leather tinted deep green renders leather grain; velvet has
+visible sheen; old saved P1–P4 items (painted-white etc.) still render.
+
+---
+
+## R2 — Kitchen split: base runs + wall-cabinet runs as separate items
+
+Kill the monolith: `kitchenRun` stays registered (renders old saves) but loses its dock
+card. Two NEW generators in `src/parametric/`:
+
+### `kitchenBase.ts`
+v1 kitchenRun MINUS wall cabinets. `id: "kitchenBase"`, label "Kitchen base run",
+dims h fixed-ish [0.75, 0.95] mapped to counter height (carcass derives:
+`h - PLINTH_H - COUNTER_T`), w [0.6, 6.0], d [0.55, 0.7]. Modules: `drawerUnits`
+unchanged. finishes2 = counters. `wallSnap: true`.
+
+### `kitchenWall.ts`
+`id: "kitchenWall"`, label "Kitchen wall cabinets". Row of wall cabinets only:
+w [0.3, 4.0], d [0.28, 0.4], h [0.35, 0.9] (row height). Same unit logic
+(`unitCount = max(1, round(w/0.6))`), single door per unit, hinge alternating,
+handle 60mm above bottom edge. No plinth, no counter, no finishes2.
+**GeneratorDef gains two optional fields** (add to `types.ts`, wire into `specOf`):
+
+```ts
+  defaultElevation?: number; // meters above floor a fresh placement starts at
+  noCollide?: boolean;
+```
+
+`kitchenWall.defaultElevation = 1.45` (bottom of the row ⇒ standard 600mm above an
+840mm counter). `specOf` passes both through to the pseudo-asset; store's
+`placeFurniture` must read elevation via `specOf(placing)` instead of
+`CATALOG_BY_ID.get(placing.assetId)` (store is unprotected — one-line swap).
+
+### Height moves (the "y axis")
+`FurnitureItem.elevation` already exists and FurnitureLayer already renders it
+(`position={[item.x, item.elevation ?? 0, item.y]}`). Add to `ParametricSection`, for
+`kitchenWall` only: PdNumField "Height off floor" (cm, range 80–210) writing
+`item.elevation` via a new store action `setFurnitureElevation(id, m)` (same commit
+pattern as `updateFurnitureParametric`). Walkthrough collision already ignores items
+above `CFG.furnitureElevationCutoffM` — verify a 1.45m wall row doesn't block walking.
+
+### Align snap to base runs ("actually connect")
+New file `src/parametric/kitchenSnap.ts`:
+
+```ts
+/** When a kitchenWall row is dragged near a kitchenBase run on the same wall
+ *  (|Δrotation| < 6°, back faces within 0.55m in plan), snap its x/y so the
+ *  row's left edge aligns to the base run's left edge or its unit grid
+ *  (0.6m steps), whichever is nearer; and pull it flush to the same wall.
+ *  Returns null when nothing is near. */
+export function snapKitchenWall(item: ItemLike & { x: number; y: number; rotation: number }, scene: Scene):
+  { x: number; y: number; rotation: number } | null;
+```
+
+Called from `FurnitureLayer.tsx` `onPointerMove` (protected — exact diff): after the
+existing `snapToWall` block, add
+
+```ts
+if (!e.shiftKey && item.parametric?.generator === "kitchenWall") {
+  const ks = snapKitchenWall({ ...item, x, y, rotation }, d.base);
+  if (ks) { x = ks.x; y = ks.y; rotation = ks.rotation; }
+}
+```
+
+plus the import. Nothing else in the file (Shift already means "no snapping" —
+keep that contract).
+
+### Dock
+Kitchen tab custom cards become: "Base run", "Wall cabinets" (two SVG glyphs), replacing
+the old single kitchen card.
+
+✔ R2 acceptance: place a base run against a wall; place wall cabinets — they spawn at
+1.45m, drag near the base run → left edges click into alignment on the same wall;
+inspector height field moves them vertically; walkthrough walks under them; old saved
+kitchenRun items still render but no card creates new ones.
+
+---
+
+## R3 — Run-draw placement (drag start→finish, corner = L)
+
+Replaces click-to-place for `kitchenBase`/`kitchenWall` ONLY (wardrobe/sofa keep the
+ghost). Model: the two-click drag-confirm pattern the Wall tool uses (see
+`src/viewport3d/buildTools` for conventions).
+
+### Schema (`src/schema/scene.ts` — protected, one line)
+
+```ts
+  /** Items placed as one gesture (e.g. both legs of an L kitchen). Group
+   *  members delete together; ids are opaque. */
+  group?: Id;
+```
+on `FurnitureItem`.
+
+### Store (unprotected)
+New slice `placingRun: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null`
++ `setPlacingRun(...)` (arming it clears `placing`/`brush` and vice versa — follow the
+existing mutual-exclusion pattern at ~:764). New action
+`placeKitchenRun(legs: { x: number; y: number; rotation: number; w: number }[])`:
+creates one FurnitureItem per leg (spec = placingRun.spec with `dims.w` per leg),
+sharing a fresh `group` id when >1 leg, one undo commit "Place kitchen run".
+`deleteSelected3d` extends: deleting a grouped item deletes every item with the same
+`group` (toast "Removed kitchen run").
+
+### Ghost component — `src/parametric/RunDrawGhost.tsx` (NEW)
+Mounted in `Viewport.tsx` (protected — exactly one line, next to
+`<FurnitureLayer scene={scene} offset={offset} />` at ~:406: `<RunDrawGhost offset={offset} />`).
+Renders null unless `placingRun` is set. Behavior:
+
+1. Invisible ground plane catches moves/clicks (copy `PlacementGhost`'s plane).
+2. Before first click: a 1-unit-wide ghost run wall-snapped under the cursor
+   (reuse `snapToWall` with the generator's spec probe).
+3. First click: anchors the START. The start leg locks to the nearest wall
+   (direction = wall direction, back flush; require a wall within 0.45m — show a
+   toast "Start against a wall" and ignore the click otherwise).
+4. Dragging: run grows from start toward cursor along the wall direction, length
+   snapped to 0.1m, live `ParametricModel` ghost (opacity 0.55) with per-frame spec
+   `{...spec, dims: {...dims, w: len}}` — cheap enough at ghost cadence; do NOT
+   commit to the store per frame.
+5. **Corner turn**: when the cursor's projection passes the wall's far corner node by
+   > 0.25m and an adjacent wall continues within 80–100° of the current one, leg A
+   freezes at corner length, leg B grows along the adjacent wall. Leg B's start is
+   inset by leg A's depth `d` (carcass butt joint — counters meet edge-to-edge, the
+   standard L junction; no mitre geometry). Only 2 legs max; dragging back before the
+   corner un-freezes leg A.
+6. Second click: `placeKitchenRun(legs)`. Esc cancels (`setPlacingRun(null)`).
+7. Each leg's `w` clamps to the generator `dimLimits.w`; a leg that would be < min
+   is dropped (single-leg L collapses to straight).
+
+Dock: the two kitchen cards call `setPlacingRun` instead of `setPlacing`.
+
+✔ R3 acceptance: draw a straight 2.4m base run in one drag; draw an L around a corner —
+two legs, counters meet cleanly, no z-fight; select either leg → Delete removes both;
+undo restores both; Esc mid-draw leaves no debris; wardrobe/sofa placement unchanged.
+
+---
+
+## R4 — Counter items: sink + cooktop
+
+Two NEW generators, placed like normal furniture (click-to-place ghost), sitting at
+counter height automatically.
+
+### Shared behavior
+`rooms: ["kitchen"]`, `wallSnap: false`, `noCollide: true` (v1: they must overlap the
+base run's OBB to sit on it; the cost — two sinks can overlap each other — is accepted
+for now, note it in the commit message), `defaultElevation` = 0.84 (counter surface;
+if R2 made counter height variable, still default 0.84 — refinement comes later).
+Category `"Kitchen"`. Both appear as custom cards in the Kitchen tab.
+
+### `sink.ts`
+dims w [0.45, 0.9] (default 0.56), d fixed-ish [0.44, 0.52], h ignored (fix 0.02 rim).
+Geometry (stainless: color `#c6c8ca`, metalness 0.9, roughness 0.3):
+- Rim: 20mm-thick slab `w × d`, rounded corners unnecessary.
+- Basin: inside a 40mm inset, an open box 180mm deep — 4 walls 8mm + bottom, visible
+  from above (normal FrontSide boxes, no CSG).
+- Faucet at back-center: base disc Ø40×25mm, riser Ø22mm × 250mm, spout = quarter
+  torus r 120mm tube Ø18mm arcing forward-down.
+- Modules: `bowls` (min 1, max 2, default 1) — 2 splits the basin with an 8mm divider.
+- finishes: `["steel"]` (new non-colorable finish id in materials.ts: the values above);
+  fronts/handles: single-option (hidden pickers, sofa precedent).
+
+### `cooktop.ts`
+dims w [0.3, 0.9] (default 0.6), d [0.45, 0.55], h ignored (8mm slab).
+- Glass: slab 8mm, color `#101113`, roughness 0.1, metalness 0.
+- Burners: `burners` module (min 1, max 5, default 4) — flat cylinders Ø160mm×1.5mm
+  color `#33363a` arranged 2×2 (5th centered), inset 60mm from edges.
+- Front-right: 3 tiny touch-dot discs Ø8mm color `#5a5e63`.
+- finishes: `["glass-black"]` (non-colorable, values above).
+
+Store: `placeFurniture` already reads elevation via `specOf` after R2 — nothing new.
+
+✔ R4 acceptance: place sink + 4-burner cooktop on a base run — both rest exactly on
+the counter surface, walkthrough shows them at counter height; 2-bowl sink shows
+divider; deleting the base run does NOT delete them (independent items — by design);
+they never flag red-collision against the run they sit on.
+
+---
+
+## v2 execution notes
+- Protected-file diffs in this revision, exhaustive: `scene.ts` (+2 spec fields,
+  +1 item field), `FurnitureLayer.tsx` (+kitchenWall snap block), `Viewport.tsx`
+  (+1 ghost mount line). Anything beyond these = stop and report.
+- After each phase: `npx tsc --noEmit`, browser verification of the ✔ list
+  (visible tab — hidden tabs get 0 rAF ticks), commit `R1: …` style.
+- Deviations from this doc go in the commit message under "Deviations:".
