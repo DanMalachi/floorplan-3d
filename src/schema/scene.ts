@@ -208,7 +208,7 @@ export interface Room {
 export interface ParametricSpec {
   // kitchenRun stays valid forever (renders pre-R2 saves) but is no longer
   // placeable — kitchenBase/kitchenWall replace it as of R2.
-  generator: "wardrobe" | "kitchenRun" | "sofa" | "kitchenBase" | "kitchenWall";
+  generator: "wardrobe" | "kitchenRun" | "sofa" | "kitchenBase" | "kitchenWall" | "sink" | "cooktop";
   /** Outer bounding dims in meters: w along local X, d along local Z, h up. */
   dims: { w: number; d: number; h: number };
   /** Generator-specific integer counts, e.g. { doors: 3, drawers: 2 }.

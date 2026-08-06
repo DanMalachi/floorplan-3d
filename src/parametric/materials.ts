@@ -289,6 +289,22 @@ function buildLeather(): THREE.MeshStandardMaterial {
   return m;
 }
 
+function buildSteel(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  m.color.set("#c6c8ca");
+  m.metalness = 0.9;
+  m.roughness = 0.3;
+  return m;
+}
+
+function buildGlassBlack(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial();
+  m.color.set("#101113");
+  m.metalness = 0;
+  m.roughness = 0.1;
+  return m;
+}
+
 function buildFinish(id: string): THREE.MeshStandardMaterial {
   switch (id) {
     case "walnut":
@@ -325,6 +341,10 @@ function buildFinish(id: string): THREE.MeshStandardMaterial {
       return buildFlat("#e9e7e2", 0.35);
     case "counter-dark":
       return buildCounterDark();
+    case "steel":
+      return buildSteel();
+    case "glass-black":
+      return buildGlassBlack();
     default:
       return buildPainted("#f4f4f2", "painted-white");
   }

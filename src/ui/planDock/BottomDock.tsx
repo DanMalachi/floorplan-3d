@@ -458,12 +458,36 @@ function SofaGlyph({ size }: { size: number }) {
   );
 }
 
+function SinkGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="6" width="18" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="6" y="9" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M15 6V3.5a1.5 1.5 0 0 1 3 0V5" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function CooktopGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="5" width="18" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="8.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.1" />
+      <circle cx="15.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.1" />
+      <circle cx="8.5" cy="15" r="2" stroke="currentColor" strokeWidth="1.1" />
+      <circle cx="15.5" cy="15" r="2" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  );
+}
+
 // Keyed by GeneratorDef.id.
 const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
   wardrobe: WardrobeGlyph,
   kitchenBase: BaseRunGlyph,
   kitchenWall: WallCabinetsGlyph,
   sofa: SofaGlyph,
+  sink: SinkGlyph,
+  cooktop: CooktopGlyph,
 };
 
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
