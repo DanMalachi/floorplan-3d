@@ -12,6 +12,7 @@ import { StairInspector } from "@/viewport3d/StairInspector";
 import { WallSection } from "./WallSection";
 import { OpeningSection } from "./OpeningSection";
 import { FurnitureSection } from "./FurnitureSection";
+import { ParametricSection } from "./ParametricSection";
 import { FixtureSection } from "./FixtureSection";
 import { RoomSection } from "./RoomSection";
 
@@ -36,7 +37,8 @@ export function Inspector() {
     }
     case "furniture": {
       const item = scene.furniture.find((f) => f.id === sel3d.id);
-      return item ? <FurnitureSection item={item} /> : null;
+      if (!item) return null;
+      return item.parametric ? <ParametricSection item={item} /> : <FurnitureSection item={item} />;
     }
     case "fixture": {
       const item = (scene.fixtures ?? []).find((f) => f.id === sel3d.id);

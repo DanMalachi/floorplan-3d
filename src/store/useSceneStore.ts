@@ -11,6 +11,7 @@ import {
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { sanitizeSpec } from "@/parametric";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -282,6 +283,10 @@ export interface StoreState {
    *  physical item, different color/finish — footprint is identical by
    *  construction there, so nothing else needs to move). */
   replaceFurnitureAsset: (id: string, assetId: string) => void;
+  /** Merge an edit into a placed parametric item's spec (modules merged
+   *  shallowly too), re-sanitize, and commit — one undo step per edit,
+   *  powers ParametricSection's live-editing configurator. */
+  updateFurnitureParametric: (id: string, patch: Partial<ParametricSpec>) => void;
   /** Set by the inspector's Replace button: the furniture id awaiting a new
    *  asset pick. BottomDock's item cards check this before falling back to
    *  their normal "arm placement" click behavior. Cleared on consumption or
@@ -827,6 +832,21 @@ export const useSceneStore = create<StoreState>((set, get) => {
           const { parametric: _parametric, ...rest } = f;
           return { ...rest, assetId };
         }),
+      });
+    },
+    updateFurnitureParametric: (id, patch) => {
+      const { scene, commitScene } = get();
+      const item = scene.furniture.find((f) => f.id === id);
+      if (!item?.parametric) return;
+      const merged: ParametricSpec = {
+        ...item.parametric,
+        ...patch,
+        modules: { ...item.parametric.modules, ...(patch.modules ?? {}) },
+      };
+      const parametric = sanitizeSpec(merged);
+      commitScene("Edit custom furniture", {
+        ...scene,
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, parametric } : f)),
       });
     },
     replaceTarget: null,
