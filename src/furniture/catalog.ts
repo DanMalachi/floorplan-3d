@@ -125,6 +125,8 @@ export const IKEA_ASSETS = ikeaRaw as unknown as IkeaAsset[];
 import blenderkitRaw from "../../data/furniture-blenderkit.catalog.json";
 export const BLENDERKIT_ASSETS = blenderkitRaw as unknown as IkeaAsset[];
 
+import { retagRooms } from "./roomRetag";
+
 export const CATEGORIES: FurnitureCategory[] = [
   "Seating",
   "Tables",
@@ -144,6 +146,10 @@ export interface RoomSection {
   assetIds: string[];
 }
 
+// Every RoomType the Plan Dock shows a tab for needs a section here, or
+// `roomTagsByAssetId` below never tags anything for it and the tab renders
+// empty no matter what the catalog contains — which is exactly why laundry/
+// closet/kids/garage/outdoors shipped empty. Icons match BottomDock's tabs.
 const BASE_ROOMS: RoomSection[] = [
   { id: "living", label: "Living", icon: "🛋", assetIds: [] },
   { id: "bedroom", label: "Bedroom", icon: "🛏", assetIds: [] },
@@ -151,6 +157,11 @@ const BASE_ROOMS: RoomSection[] = [
   { id: "dining", label: "Dining", icon: "🍽", assetIds: [] },
   { id: "bathroom", label: "Bath", icon: "🛁", assetIds: [] },
   { id: "office", label: "Office", icon: "💻", assetIds: [] },
+  { id: "laundry", label: "Laundry", icon: "🧺", assetIds: [] },
+  { id: "closet", label: "Closet", icon: "🧥", assetIds: [] },
+  { id: "kids", label: "Kids", icon: "🧸", assetIds: [] },
+  { id: "garage", label: "Garage", icon: "🔧", assetIds: [] },
+  { id: "outdoors", label: "Outdoors", icon: "🌳", assetIds: [] },
 ];
 
 // Final room sections: curated CC0 items first, then the realistic BlenderKit
@@ -158,9 +169,13 @@ const BASE_ROOMS: RoomSection[] = [
 // in the same picker). BlenderKit sits ahead of IKEA because those models are
 // the better-looking default when someone is just dressing a room; IKEA is what
 // you reach for when you want a specific product.
+// `retagRooms` widens each item's source `rooms` to the dock's own taxonomy
+// (see roomRetag.ts): the sources only file products under living/bedroom/
+// kitchen/dining/office, so an outdoor lounger arrived tagged "living" and a
+// wardrobe tagged "bedroom" with nothing pointing at Outdoors or Closet.
 const byRoom = (assets: IkeaAsset[]): Record<string, string[]> => {
   const out: Record<string, string[]> = {};
-  for (const a of assets) for (const r of a.rooms) (out[r] ??= []).push(a.assetId);
+  for (const a of assets) for (const r of retagRooms(a)) (out[r] ??= []).push(a.assetId);
   return out;
 };
 
