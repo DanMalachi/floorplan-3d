@@ -253,7 +253,14 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
   // hinge so it applies to the swung leaf's own rotated frame too.
   const sh = hinge === "end" ? iStart + 0.09 : iEnd - 0.09;
   const hingeS = hinge === "end" ? iEnd : iStart;
-  const sFromHinge = sh - hingeS;
+  // Absolute distance hinge→handle, applied along the leaf's own hinge→latch
+  // direction. Signed subtraction here was the float-in-air bug: for
+  // hinge="end" it went negative and mirrored the handle to the wrong side
+  // of the hinge.
+  const sFromHinge = Math.abs(sh - hingeS);
+  const sign = hinge === "end" ? -1 : 1; // hinge→latch direction along the wall when closed
+  const hx = ax + ux * hingeS;
+  const hy = ay + uy * hingeS;
 
   /** A real lever, not a cube. Per face: a thin backplate flush against
    *  THAT face (not embedded through the door — the previous version's plate
@@ -289,10 +296,13 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
         rotationY: rot,
       });
       const leverZ = faceZ + face * (HANDLE_PLATE_D + HANDLE_LEVER_TH / 2);
+      // Grip bar pivots at the spindle (plate center) and extends toward the
+      // hinge — centering it on the spindle made it stick out past the door
+      // edge like a T-bar.
       pieces.push({
         key: `${key}Lever${face}`,
         role: "handle",
-        position: pos(sFromHinge, leverZ),
+        position: pos(sFromHinge - HANDLE_LEVER_LEN / 2, leverZ),
         size: [HANDLE_LEVER_LEN, HANDLE_LEVER_TH, HANDLE_LEVER_TH],
         rotationY: rot,
       });
@@ -302,18 +312,17 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
   if (Math.abs(swing) < 1e-3) {
     // Closed: leaf lies flush across the inner opening.
     pieces.push(local("lf", "leaf", (iStart + iEnd) / 2, leafYc, leafLen, ih, LEAF_THK));
-    pushHandle("hn", [ax, ay], [ux, uy]);
+    // Origin is the HINGE, matching sFromHinge's frame — passing the wall's
+    // node a here shifted every closed handle by hingeS along the wall.
+    pushHandle("hn", [hx, hy], [ux * sign, uy * sign]);
   } else {
     // Open: leaf swings about a vertical hinge at one jamb (plan-space rotation).
-    const sign = hinge === "end" ? -1 : 1; // closed direction toward the far jamb
     const dx0 = ux * sign;
     const dy0 = uy * sign;
     const c = Math.cos(swing);
     const sgn = Math.sin(swing);
     const dx = dx0 * c - dy0 * sgn;
     const dy = dx0 * sgn + dy0 * c;
-    const hx = ax + ux * hingeS;
-    const hy = ay + uy * hingeS;
     const cx = hx + dx * (leafLen / 2);
     const cy = hy + dy * (leafLen / 2);
     pieces.push({
