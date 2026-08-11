@@ -87,6 +87,7 @@ export const kitchenBaseGenerator: GeneratorDef = {
   handles: ["bar", "knob", "none"],
   finishes: ["painted", "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark", "wood-plank-pale"],
   finishes2: ["counter-oak", "counter-white", "counter-dark"],
+  hotspotKeywords: ["cabinet", "counter", "island"],
   defaultSpec: {
     generator: "kitchenBase",
     dims: { w: 2.4, d: 0.6, h: 0.84 },

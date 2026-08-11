@@ -5,7 +5,10 @@ import type { RoomHotspot } from "./KitchenScene";
 
 export const STUDY_HOTSPOTS: RoomHotspot[] = [
   { id: "desk", label: "Desk", keywords: ["desk"] },
-  { id: "chair", label: "Chair", keywords: ["chair"] },
+  // "sofa"/"couch" included so the custom sofa generator, which is tagged for
+  // the study, is reachable from a button — a study armchair or two-seater is
+  // the same choice a user is making here.
+  { id: "chair", label: "Chair & sofa", keywords: ["chair", "sofa", "couch"] },
   { id: "bookcase", label: "Bookcase", keywords: ["bookcase"] },
   { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
 ];

@@ -35,6 +35,7 @@ export const sofaGenerator: GeneratorDef = {
   handles: ["none"],
   finishes: ["fabric", "fabric-boucle", "velvet", "leather"],
   finishes2: ["fabric", "fabric-boucle", "velvet", "leather"],
+  hotspotKeywords: ["sofa", "couch"],
   defaultSpec: {
     generator: "sofa",
     dims: { w: 2.2, d: 0.95, h: 0.8 },

@@ -85,6 +85,7 @@ export const cooktopGenerator: GeneratorDef = {
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["glass-black"],
+  hotspotKeywords: ["stove", "cooktop", "oven"],
   defaultSpec: {
     generator: "cooktop",
     dims: { w: 0.6, d: 0.5, h: 0.008 },

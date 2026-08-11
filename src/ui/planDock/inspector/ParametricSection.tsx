@@ -59,6 +59,9 @@ const FINISH_HEX: Record<string, string> = {
   "counter-oak": "#d6b282",
   "counter-white": "#e9e7e2",
   "counter-dark": "#2e2f31",
+  ceramic: "#f6f6f4",
+  acrylic: "#f4f5f4",
+  steel: "#c6c8ca",
 };
 
 // Color-wheel presets — the old hardcoded finish colors (painted-charcoal,
@@ -137,16 +140,37 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         unit="cm"
       />
 
-      {g.modules.map((m) => (
-        <PdStepper
-          key={m.key}
-          label={m.label}
-          value={spec.modules[m.key] ?? m.default}
-          min={m.min}
-          max={m.max}
-          onSet={(v) => update({ modules: { [m.key]: v } })}
-        />
-      ))}
+      {g.modules.map((m) => {
+        const value = spec.modules[m.key] ?? m.default;
+        // Two-state modules read as words, not counts — a stepper offering
+        // "0" and "1" for an open/closed lid is a number pretending to be a
+        // choice.
+        if (m.toggle) {
+          return (
+            <PdChipGroup key={m.key}>
+              {([1, 0] as const).map((v) => (
+                <button
+                  key={v}
+                  style={pdChip(value >= 1 === (v === 1), pdChipFlex)}
+                  onClick={() => update({ modules: { [m.key]: v } })}
+                >
+                  {v === 1 ? m.toggle!.on : m.toggle!.off}
+                </button>
+              ))}
+            </PdChipGroup>
+          );
+        }
+        return (
+          <PdStepper
+            key={m.key}
+            label={m.label}
+            value={value}
+            min={m.min}
+            max={m.max}
+            onSet={(v) => update({ modules: { [m.key]: v } })}
+          />
+        );
+      })}
 
       {g.variants && g.variants.length > 1 && (
         <PdChipGroup>

@@ -26,6 +26,7 @@ export const kitchenWallGenerator: GeneratorDef = {
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],
   finishes: ["painted", "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark", "wood-plank-pale"],
+  hotspotKeywords: ["cabinet"],
   defaultSpec: {
     generator: "kitchenWall",
     dims: { w: 2.4, d: 0.32, h: 0.7 },

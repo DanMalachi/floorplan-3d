@@ -69,6 +69,7 @@ export const sinkGenerator: GeneratorDef = {
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["steel"],
+  hotspotKeywords: ["sink"],
   defaultSpec: {
     generator: "sink",
     dims: { w: 0.56, d: 0.48, h: 0.02 },

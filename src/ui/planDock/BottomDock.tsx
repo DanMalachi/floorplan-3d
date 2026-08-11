@@ -58,6 +58,8 @@ import { useThumbnail } from "@/furniture/thumbnails";
 import { variantGroupFor } from "@/furniture/variants";
 import { GENERATORS } from "@/parametric";
 import type { GeneratorDef } from "@/parametric/types";
+import type { ParametricSpec } from "@/schema/scene";
+import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
 import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
@@ -208,6 +210,42 @@ const ROOM_SCENES: { id: RoomType; label: string }[] = [
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
   const text = searchText(item);
+  return hotspot.keywords.some((k) => text.includes(k));
+}
+
+/** One browsable piece: a generator, plus which of its variants this card
+ *  places. A generator with no variants yields a single card. */
+export interface CustomPiece {
+  generator: GeneratorDef;
+  variantId?: string;
+  label: string;
+  /** Glyph key: "<generatorId>:<variantId>", falling back to the generator id. */
+  glyphKey: string;
+  keywords: string[];
+}
+
+/** Expands a generator into its per-variant cards. Variants are separate
+ *  products in the picker — one "Toilet" card hides the fact that three
+ *  different toilets are available, which makes the catalog look empty. */
+function piecesOf(g: GeneratorDef): CustomPiece[] {
+  if (!g.variants || g.variants.length <= 1) {
+    return [{ generator: g, label: g.label, glyphKey: g.id, keywords: g.hotspotKeywords ?? [g.label] }];
+  }
+  return g.variants.map((v) => ({
+    generator: g,
+    variantId: v.id,
+    label: v.cardLabel ?? `${g.label} · ${v.label}`,
+    glyphKey: `${g.id}:${v.id}`,
+    keywords: v.hotspotKeywords ?? g.hotspotKeywords ?? [g.label],
+  }));
+}
+
+/** Same test as `matchesHotspot`, for a custom piece. Custom cards used to
+ *  ignore the hotspot filter entirely, so clicking "Toilet" in the illustrated
+ *  room still showed every custom card the room had — the picture stopped
+ *  being a navigator. */
+function pieceMatchesHotspot(p: CustomPiece, hotspot: RoomHotspot): boolean {
+  const text = p.keywords.join(" ").toLowerCase();
   return hotspot.keywords.some((k) => text.includes(k));
 }
 
@@ -411,122 +449,62 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   );
 }
 
-function WardrobeGlyph({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect x="4" y="2" width="16" height="20" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="9.5" cy="12" r="0.8" fill="currentColor" />
-      <circle cx="14.5" cy="12" r="0.8" fill="currentColor" />
-    </svg>
-  );
-}
-
-function BaseRunGlyph({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <line x1="2" y1="8" x2="22" y2="8" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="3" y="8" width="8" height="9" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="13" y="8" width="8" height="9" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <line x1="7" y1="10.5" x2="7" y2="14.5" stroke="currentColor" strokeWidth="1.2" />
-      <line x1="17" y1="10.5" x2="17" y2="14.5" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function WallCabinetsGlyph({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <line x1="2" y1="4" x2="22" y2="4" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="3" y="6" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="13" y="6" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <line x1="7" y1="7.5" x2="7" y2="10.5" stroke="currentColor" strokeWidth="1.2" />
-      <line x1="17" y1="7.5" x2="17" y2="10.5" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function SofaGlyph({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M4 20v-2M20 20v-2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M6 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3" stroke="currentColor" strokeWidth="1.4" />
-      <line x1="9" y1="11" x2="9" y2="16" stroke="currentColor" strokeWidth="1.2" />
-      <line x1="15" y1="11" x2="15" y2="16" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function SinkGlyph({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="6" width="18" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="6" y="9" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M15 6V3.5a1.5 1.5 0 0 1 3 0V5" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function CooktopGlyph({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="5" width="18" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="8.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.1" />
-      <circle cx="15.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.1" />
-      <circle cx="8.5" cy="15" r="2" stroke="currentColor" strokeWidth="1.1" />
-      <circle cx="15.5" cy="15" r="2" stroke="currentColor" strokeWidth="1.1" />
-    </svg>
-  );
-}
-
-// Keyed by GeneratorDef.id.
-const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
-  wardrobe: WardrobeGlyph,
-  kitchenBase: BaseRunGlyph,
-  kitchenWall: WallCabinetsGlyph,
-  sofa: SofaGlyph,
-  sink: SinkGlyph,
-  cooktop: CooktopGlyph,
-};
 
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
  *  placement of the generator's default spec, same ghost/click-to-place flow
  *  as a catalog item. */
-function CustomCard({ generator }: { generator: GeneratorDef }) {
+function CustomCard({ piece }: { piece: CustomPiece }) {
+  const generator = piece.generator;
   const placing = useSceneStore((s) => s.placing);
   const placingRun = useSceneStore((s) => s.placingRun);
   const placingCounter = useSceneStore((s) => s.placingCounter);
+  const placingWall = useSceneStore((s) => s.placingWall);
   const assetId = `param:${generator.id}`;
+  // The card places ITS variant, not the generator's default one.
+  const spec: ParametricSpec = piece.variantId
+    ? { ...generator.defaultSpec, variant: piece.variantId }
+    : generator.defaultSpec;
   // kitchenBase/kitchenWall use the run-draw drag tool (RunDrawGhost);
-  // counter items (sink/cooktop/…) use the snap-onto-a-counter ghost
-  // (CounterItemGhost); everything else keeps the single-click floor ghost.
+  // counter items (sink/cooktop/…) use the snap-onto-a-counter ghost and
+  // wall items (mirrors, towel rails) the wall-grid ghost (both in
+  // CounterItemGhost); everything else keeps the single-click floor ghost.
   const isRun = generator.id === "kitchenBase" || generator.id === "kitchenWall";
+  // Mounting follows THIS card's variant — a mirror hangs, the bin that shares
+  // its generator does not.
+  const isWall = generator.wallMounted?.(spec) ?? false;
+  // Compare the armed variant too, or all three toilet cards light up at once.
+  const sameVariant = (s: { spec: ParametricSpec } | null) => s?.spec.variant === spec.variant;
   const active = isRun
     ? placingRun?.generator === generator.id
     : generator.counterItem
-      ? placingCounter?.generator === generator.id
-      : placing?.assetId === assetId;
-  const Glyph = GENERATOR_GLYPH[generator.id];
+      ? placingCounter?.generator === generator.id && sameVariant(placingCounter)
+      : isWall
+        ? placingWall?.generator === generator.id && sameVariant(placingWall)
+        : placing?.assetId === assetId && placing?.parametric?.variant === spec.variant;
+  const Glyph = GENERATOR_GLYPH[piece.glyphKey] ?? GENERATOR_GLYPH[generator.id];
 
   const arm = () => {
     const s = useSceneStore.getState();
     if (s.replaceTarget) return; // Replace flow doesn't support parametric items in v1
     if (generator.id === "kitchenBase" || generator.id === "kitchenWall") {
-      s.setPlacingRun(active ? null : { generator: generator.id, spec: generator.defaultSpec });
+      s.setPlacingRun(active ? null : { generator: generator.id, spec });
       return;
     }
     if (generator.counterItem) {
-      s.setPlacingCounter(active ? null : { generator: generator.id, spec: generator.defaultSpec });
+      s.setPlacingCounter(active ? null : { generator: generator.id, spec });
       return;
     }
-    s.setPlacing(active ? null : assetId, generator.defaultSpec);
+    if (isWall) {
+      s.setPlacingWall(active ? null : { generator: generator.id, spec });
+      return;
+    }
+    s.setPlacing(active ? null : assetId, spec);
   };
 
   return (
     <button
       onClick={arm}
-      title={generator.label}
+      title={piece.label}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -559,7 +537,7 @@ function CustomCard({ generator }: { generator: GeneratorDef }) {
         Custom
       </span>
       <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-        {generator.label}
+        {piece.label}
       </span>
     </button>
   );
@@ -676,13 +654,19 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   const roomItems = useMemo(() => getItemsForRoom(room), [room]);
   const hotspot = ROOM_HOTSPOTS[room]?.find((h) => h.id === activeHotspot);
 
-  // Pinned first, unaffected by category chips or the hotspot filter — only
-  // search narrows this list.
-  const customGenerators = useMemo(() => Object.values(GENERATORS).filter((g) => g.rooms.includes(room)), [room]);
+  // Pinned first and unaffected by the category chips, but the HOTSPOT filter
+  // does apply: the illustrated room is a navigator, so clicking the toilet in
+  // it has to narrow to toilets, custom cards included.
+  const customGenerators = useMemo(
+    () => Object.values(GENERATORS).filter((g) => g.rooms.includes(room)).flatMap(piecesOf),
+    [room],
+  );
   const visibleCustom = useMemo(() => {
+    let out = customGenerators;
+    if (hotspot) out = out.filter((p) => pieceMatchesHotspot(p, hotspot));
     const q = query.trim().toLowerCase();
-    return q ? customGenerators.filter((g) => g.label.toLowerCase().includes(q)) : customGenerators;
-  }, [customGenerators, query]);
+    return q ? out.filter((p) => p.label.toLowerCase().includes(q)) : out;
+  }, [customGenerators, hotspot, query]);
 
   const items = useMemo(() => {
     let out = roomItems;
@@ -758,7 +742,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
           <div style={{ padding: "8px 4px", fontSize: 11, color: PD.textTertiary }}>Nothing here yet.</div>
         ) : (
           <>
-            {visibleCustom.map((g) => <CustomCard key={g.id} generator={g} />)}
+            {visibleCustom.map((p) => <CustomCard key={p.glyphKey} piece={p} />)}
             {items.map((i) => <ItemCard key={i.assetId} item={i} />)}
           </>
         )}

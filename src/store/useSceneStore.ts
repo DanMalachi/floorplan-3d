@@ -329,6 +329,17 @@ export interface StoreState {
    *  attachment sync. */
   placeCounterItem: (hostId: string, along: number) => void;
 
+  /** Armed by a wall-mounted generator's card (mirrors, towel rails). The
+   *  ghost reads the WALL grid — pointing at a wall face yields position,
+   *  facing and height together — instead of the floor grid, which is what
+   *  made a mirror land flat on the floor. */
+  placingWall: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null;
+  setPlacingWall: (
+    pw: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null,
+  ) => void;
+  /** Commit the armed wall item at an already-resolved wall pose. */
+  placeWallItem: (pose: { x: number; y: number; rotation: number; elevation: number }) => void;
+
   // --- fixtures (lighting) --- placing state is SHARED with furniture above
   // (assetId is enough to tell the catalogs apart) — only the commit/rotate
   // actions are fixture-specific.
@@ -658,7 +669,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, placingRun: null, placingCounter: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
+      set({ appMode, placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -811,15 +822,16 @@ export const useSceneStore = create<StoreState>((set, get) => {
         placing: assetId ? { assetId, rotation: 0, ...(parametric ? { parametric } : {}) } : null,
         placingRun: null,
         placingCounter: null,
+        placingWall: null,
         brush: null,
         sel3d: null,
         eyedropper: false,
       }),
     placingRun: null,
-    setPlacingRun: (run) => set({ placingRun: run, placing: null, placingCounter: null, brush: null, sel3d: null, eyedropper: false }),
+    setPlacingRun: (run) => set({ placingRun: run, placing: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
     placingCounter: null,
     setPlacingCounter: (placingCounter) =>
-      set({ placingCounter, placing: null, placingRun: null, brush: null, sel3d: null, eyedropper: false }),
+      set({ placingCounter, placing: null, placingRun: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
     placeCounterItem: (hostId, along) => {
       const { placingCounter, scene, commitScene } = get();
       if (!placingCounter) return;
@@ -842,11 +854,36 @@ export const useSceneStore = create<StoreState>((set, get) => {
       commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, syncKitchenAttachments(withItem));
       // Stay armed — Sims-style repeat placement; Esc exits.
     },
+    placingWall: null,
+    setPlacingWall: (placingWall) =>
+      set({ placingWall, placing: null, placingRun: null, placingCounter: null, brush: null, sel3d: null, eyedropper: false }),
+    placeWallItem: (pose) => {
+      const { placingWall, scene, commitScene } = get();
+      if (!placingWall) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const withItem: Scene = {
+        ...scene,
+        furniture: [
+          ...scene.furniture,
+          {
+            id,
+            assetId: `param:${placingWall.generator}`,
+            x: pose.x,
+            y: pose.y,
+            rotation: pose.rotation,
+            elevation: pose.elevation,
+            parametric: placingWall.spec,
+          },
+        ],
+      };
+      commitScene(`Place ${GENERATORS[placingWall.generator].label.toLowerCase()}`, withItem);
+      // Stay armed for repeat placement, same as counter items.
+    },
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, placingRun: null, placingCounter: null, sel3d: null, eyedropper: false }),
+    setBrush: (brush) => set({ brush, placing: null, placingRun: null, placingCounter: null, placingWall: null, sel3d: null, eyedropper: false }),
     eyedropper: false,
     setEyedropper: (eyedropper) =>
-      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, brush: null } : {}) }),
+      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing

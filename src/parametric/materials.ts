@@ -37,6 +37,8 @@ const COLORABLE = new Set([
   "leather",
   "counter-white",
   "counter-dark",
+  "ceramic",
+  "acrylic",
 ]);
 
 /** Photo-wood and counter-oak finishes ignore the color wheel — they keep
@@ -52,6 +54,23 @@ export function tagTint(obj: THREE.Object3D, finishId: string, color: string | u
   if (!color || !isColorable(finishId)) return;
   obj.traverse((o) => {
     if (o instanceof THREE.Mesh) o.userData.tintColor = color;
+  });
+}
+
+/** Like `tagTint`, but only meshes actually built from `mat` are tinted.
+ *  Cabinet generators can tag whole sub-assemblies because everything in them
+ *  wears the finish; a fixture can't — a toilet is ceramic AND chrome AND a
+ *  dark waste, and tinting the group wholesale turns the tap pink along with
+ *  the pan. */
+export function tagTintOfMaterial(
+  obj: THREE.Object3D,
+  finishId: string,
+  color: string | undefined,
+  mat: THREE.Material,
+): void {
+  if (!color || !isColorable(finishId)) return;
+  obj.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.material === mat) o.userData.tintColor = color;
   });
 }
 
@@ -297,6 +316,36 @@ function buildSteel(): THREE.MeshStandardMaterial {
   return m;
 }
 
+// Glazed sanitary ceramic. The gloss is a CLEARCOAT, not just a low
+// roughness: fired glaze is a transparent layer over an opaque white body, so
+// it holds a tight specular highlight while the body underneath stays matte.
+// Roughness alone gives a chalky sheen that reads as plaster — which is what
+// the first pass looked like. MeshPhysicalMaterial extends
+// MeshStandardMaterial, so this is a valid return here (same as buildVelvet).
+function buildCeramic(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshPhysicalMaterial();
+  m.color.set("#f7f7f5");
+  m.metalness = 0;
+  m.roughness = 0.35;
+  m.clearcoat = 1;
+  m.clearcoatRoughness = 0.02;
+  m.envMapIntensity = 1.35;
+  return m;
+}
+
+// Sanitary acrylic (baths, shower trays): same glazed look, a slightly softer
+// clearcoat — moulded acrylic is a touch less mirror-like than fired glaze.
+function buildAcrylic(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshPhysicalMaterial();
+  m.color.set("#f5f6f5");
+  m.metalness = 0;
+  m.roughness = 0.3;
+  m.clearcoat = 1;
+  m.clearcoatRoughness = 0.06;
+  m.envMapIntensity = 1.2;
+  return m;
+}
+
 function buildGlassBlack(): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial();
   m.color.set("#101113");
@@ -343,6 +392,10 @@ function buildFinish(id: string): THREE.MeshStandardMaterial {
       return buildCounterDark();
     case "steel":
       return buildSteel();
+    case "ceramic":
+      return buildCeramic();
+    case "acrylic":
+      return buildAcrylic();
     case "glass-black":
       return buildGlassBlack();
     default:

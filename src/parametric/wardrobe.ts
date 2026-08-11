@@ -28,6 +28,7 @@ export const wardrobeGenerator: GeneratorDef = {
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],
   finishes: ["painted", "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark", "wood-plank-pale"],
+  hotspotKeywords: ["wardrobe", "closet"],
   defaultSpec: {
     generator: "wardrobe",
     dims: { w: 1.5, d: 0.6, h: 2.2 },

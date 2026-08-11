@@ -7,10 +7,14 @@ export const KIDS_HOTSPOTS: RoomHotspot[] = [
   { id: "crib", label: "Crib", keywords: ["crib"] },
   { id: "toys", label: "Toy storage", keywords: ["toy"] },
   { id: "changing", label: "Changing table", keywords: ["changing"] },
+  // The custom wardrobe and sofa generators are both tagged for this room but
+  // had no button that could reach them — with hotspots now filtering the
+  // custom cards too, that would have made them unreachable here.
+  { id: "storage", label: "Wardrobe & seating", keywords: ["wardrobe", "closet", "sofa", "couch", "armchair"] },
 ];
 
 export const KIDS_X0 = 20;
-export const KIDS_WIDTH = 160;
+export const KIDS_WIDTH = 176;
 
 /** Low mattress box with slatted vertical rails on the near face — crib. */
 function Crib({ x, yFront, w, depth }: { x: number; yFront: number; w: number; depth: number }) {
@@ -36,6 +40,7 @@ function KidsItems(): RoomItem[] {
   const cribBox = isoBox(20, ITEMS_Y, 40, 26, 24);
   const toyBox = isoBox(72, ITEMS_Y, 34, 24, 16);
   const changingBox = isoBox(118, ITEMS_Y, 32, 26, 16);
+  const storageBox = isoBox(156, ITEMS_Y, 30, 44, 16);
 
   return [
     { id: "crib", label: "Crib", keywords: KIDS_HOTSPOTS[0].keywords, box: cribBox, art: <Crib x={20} yFront={ITEMS_Y} w={40} depth={24} /> },
@@ -63,6 +68,37 @@ function KidsItems(): RoomItem[] {
           <Extrusion box={changingBox} />
           <ShelfLines box={changingBox} count={1} />
           <rect x={changingBox.face.x + 2} y={changingBox.face.yFront - changingBox.face.h - 4} width={changingBox.face.w - 4} height={4} rx={1} fill="oklch(0.78 0.02 90 / 0.6)" stroke={DETAIL_LINE} strokeWidth={0.5} />
+        </>
+      ),
+    },
+    {
+      id: "storage",
+      label: "Wardrobe & seating",
+      keywords: KIDS_HOTSPOTS[3].keywords,
+      box: storageBox,
+      art: (
+        <>
+          <Extrusion box={storageBox} />
+          {/* Twin doors with a centre seam and two small knobs — a wardrobe. */}
+          <line
+            x1={storageBox.face.x + storageBox.face.w / 2}
+            y1={storageBox.face.yFront}
+            x2={storageBox.face.x + storageBox.face.w / 2}
+            y2={storageBox.face.yFront - storageBox.face.h}
+            stroke={DETAIL_LINE}
+            strokeWidth={0.9}
+          />
+          {[0.42, 0.58].map((f) => (
+            <circle
+              key={f}
+              cx={storageBox.face.x + storageBox.face.w * f}
+              cy={storageBox.face.yFront - storageBox.face.h * 0.5}
+              r={1.4}
+              fill={DETAIL_LIGHT}
+              stroke={DETAIL_LINE}
+              strokeWidth={0.5}
+            />
+          ))}
         </>
       ),
     },

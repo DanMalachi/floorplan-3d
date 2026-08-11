@@ -7,6 +7,11 @@ import { kitchenWallGenerator } from "./kitchenWall";
 import { sofaGenerator } from "./sofa";
 import { sinkGenerator } from "./sink";
 import { cooktopGenerator } from "./cooktop";
+import { toiletGenerator } from "./toilet";
+import { bathtubGenerator } from "./bathtub";
+import { showerGenerator } from "./shower";
+import { vanityGenerator } from "./vanity";
+import { bathAccessoryGenerator } from "./bathAccessory";
 
 const ALL: GeneratorDef[] = [
   wardrobeGenerator,
@@ -16,6 +21,11 @@ const ALL: GeneratorDef[] = [
   sofaGenerator,
   sinkGenerator,
   cooktopGenerator,
+  toiletGenerator,
+  bathtubGenerator,
+  showerGenerator,
+  vanityGenerator,
+  bathAccessoryGenerator,
 ];
 
 export const GENERATORS: Record<ParametricSpec["generator"], GeneratorDef> = Object.fromEntries(
