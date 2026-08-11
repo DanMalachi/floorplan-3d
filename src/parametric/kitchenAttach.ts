@@ -10,7 +10,7 @@
 // a hole into the host's spec.cutouts, which kitchenBase's build() subtracts
 // from the countertop.
 
-import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
+import type { FurnitureItem, Node, ParametricSpec, Scene, Wall } from "@/schema/scene";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { GENERATORS } from "@/parametric";
 import {
@@ -162,6 +162,56 @@ export function syncKitchenAttachments(scene: Scene): Scene {
   return changed ? { ...scene, furniture } : scene;
 }
 
+const CORNER_MAGNET = 0.5; // how far an L/U's corner reaches for a real corner
+
+/**
+ * Along-wall position of the FACE an L/U run's corner belongs against: the
+ * near face of a wall crossing ours within CORNER_MAGNET of where the corner
+ * currently sits. The extra legs hang off leg 0's far END, so that end — not
+ * the run's centre — is the part that has to stay planted; grid-rounding the
+ * centre instead walks a drawn L out of its corner and buries its second leg
+ * in the wall.
+ */
+function cornerFaceAlong(
+  scene: Scene,
+  nodes: Map<string, Node>,
+  wall: Wall,
+  a: Node,
+  ux: number, uy: number,
+  nx: number, ny: number,
+  endT: number,
+  travel: number,
+): number | null {
+  let best: { t: number; d: number } | null = null;
+  for (const w of scene.walls) {
+    if (w.id === wall.id || w.kind === "rail" || w.kind === "portal") continue;
+    const p0 = nodes.get(w.a);
+    const p1 = nodes.get(w.b);
+    if (!p0 || !p1) continue;
+    const Lp = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    if (Lp < 1e-6) continue;
+    const ex = (p1.x - p0.x) / Lp;
+    const ey = (p1.y - p0.y) / Lp;
+    const cross = ux * ey - uy * ex; // sin of the angle between the walls
+    if (Math.abs(cross) < 0.34) continue; // under 20°: a continuation, not a corner
+    const wx = p0.x - a.x;
+    const wy = p0.y - a.y;
+    const s = (wx * ey - wy * ex) / cross; // crossing, along OUR axis
+    const r = (wx * uy - wy * ux) / cross; // crossing, along THEIRS
+    if (r < -0.02 || r > Lp + 0.02) continue;
+    // It only stops the run if it actually stands on the run's side.
+    const n0 = (p0.x - a.x) * nx + (p0.y - a.y) * ny;
+    const n1 = (p1.x - a.x) * nx + (p1.y - a.y) * ny;
+    if (Math.max(n0, n1) < 0.02) continue;
+    const th = w.thickness ?? DEFAULT_THICKNESS;
+    const faceT = s - travel * (th / 2 / Math.abs(cross));
+    const d = Math.abs(faceT - endT);
+    if (d > CORNER_MAGNET) continue;
+    if (!best || d < best.d) best = { t: faceT, d };
+  }
+  return best?.t ?? null;
+}
+
 /**
  * Glue a kitchen run (base or wall cabinets) to the nearest solid wall:
  * flush back, facing the room, center's along-wall position preserved,
@@ -170,6 +220,7 @@ export function syncKitchenAttachments(scene: Scene): Scene {
  * segment (a long run whose center passes a wall's end no longer loses its
  * wall entirely) and there is no give-up range — a run always belongs to
  * some wall; the nearest one wins. Returns null only in a wall-less scene.
+ * An L/U additionally registers its corner against the crossing wall's face.
  */
 export function snapRunToWall(
   item: Pick<FurnitureItem, "x" | "y" | "parametric">,
@@ -178,7 +229,7 @@ export function snapRunToWall(
   const spec = item.parametric;
   if (!spec) return null;
   const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-  let best: { dist: number; x: number; y: number; rotation: number } | null = null;
+  let best: { gap: number; x: number; y: number; rotation: number } | null = null;
   for (const w of scene.walls) {
     if (w.kind === "rail" || w.kind === "portal") continue;
     const a = nodes.get(w.a);
@@ -194,18 +245,28 @@ export function snapRunToWall(
     const t = clamp(tRaw, 0, L);
     const px = a.x + ux * t;
     const py = a.y + uy * t;
-    const dist = Math.hypot(item.x - px, item.y - py);
-    if (best && dist >= best.dist) continue;
+    const off = (w.thickness ?? DEFAULT_THICKNESS) / 2 + spec.dims.d / 2;
+    // Rank by how far the run's BACK would have to travel to reach this
+    // wall's FACE — not by the distance to its centerline, which makes a
+    // thick wall look further away than the surface you actually stand
+    // against (half a thickness: 15cm on a 30cm wall).
+    const gap = Math.abs(Math.hypot(item.x - px, item.y - py) - off);
+    if (best && gap >= best.gap) continue;
     const side = (item.x - px) * -uy + (item.y - py) * ux;
     const sign = Math.sign(side) || 1;
     const nx = -uy * sign;
     const ny = ux * sign;
-    const off = (w.thickness ?? DEFAULT_THICKNESS) / 2 + spec.dims.d / 2;
     // Keep the run on the segment when it fits; center it when it doesn't.
     const half = Math.min(spec.dims.w / 2, L / 2);
-    const tc = clamp(roundTo(tRaw, ALONG_STEP), half, Math.max(L - half, half));
+    let tc = clamp(roundTo(tRaw, ALONG_STEP), half, Math.max(L - half, half));
+    if (spec.extraLegs?.length) {
+      const travel = sign * (spec.legDir ?? 1); // leg 0's direction along (ux, uy)
+      const endT = tRaw + travel * (spec.dims.w / 2);
+      const face = cornerFaceAlong(scene, nodes, w, a, ux, uy, nx, ny, endT, travel);
+      if (face !== null) tc = clamp(face - travel * (spec.dims.w / 2), 0, L);
+    }
     best = {
-      dist,
+      gap,
       x: a.x + ux * tc + nx * off,
       y: a.y + uy * tc + ny * off,
       rotation: Math.atan2(-nx, ny),

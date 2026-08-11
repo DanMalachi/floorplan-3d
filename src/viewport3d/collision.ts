@@ -114,14 +114,19 @@ export interface WallSnapResult {
 }
 
 /**
- * Back-to-wall magnetism: if the item's center is within `range` of a wall's
- * face, align the item's back (-Z side) flush against that face, facing into
- * the room. Returns null when no wall is near.
+ * Back-to-wall magnetism: if the item's BACK is within `range` of a wall's
+ * face, align it (-Z side) flush against that face, facing into the room.
+ * Returns null when no wall is near.
+ *
+ * The measure is back-to-face, not centre-to-centerline: measuring from the
+ * centerline made the magnet weaker by half a wall thickness, so a 60cm-deep
+ * cabinet could not stay stuck to a 30cm wall at all — its flush position was
+ * already outside the old range.
  */
 export function snapToWall(
   item: { assetId: string; parametric?: ParametricSpec; x: number; y: number },
   scene: Scene,
-  range = 0.45,
+  range = 0.25,
 ): WallSnapResult | null {
   const spec = specOf(item);
   if (!spec?.wallSnap) return null;
@@ -144,13 +149,16 @@ export function snapToWall(
     const py = a.y + uy * t;
     // Signed side: normal (-uy, ux).
     const side = (item.x - px) * -uy + (item.y - py) * ux;
-    const dist = Math.abs(side);
-    if (dist > range || dist < 1e-9) continue;
+    if (Math.abs(side) < 1e-9) continue;
     const sign = Math.sign(side);
     const nx = -uy * sign; // wall normal pointing toward the item
     const ny = ux * sign;
     const th = w.thickness ?? DEFAULT_THICKNESS;
     const off = th / 2 + spec.footprint.d / 2;
+    // Gap between the item's back and this wall's face (negative = the item
+    // is overlapping the wall, which also snaps — it pops back out flush).
+    const dist = Math.abs(Math.abs(side) - off);
+    if (Math.abs(side) - off > range) continue;
     const res: WallSnapResult = {
       x: px + nx * off,
       y: py + ny * off,

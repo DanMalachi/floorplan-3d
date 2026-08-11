@@ -16,8 +16,19 @@ export const COUNTER_OVER = 0.02; // countertop front overhang
 const BACK_T = 0.012;
 
 /** 5-panel open-front carcass: 2 sides (full height), top, bottom (between
- *  the sides), and a back inset flush at the rear. */
-export function carcass(w: number, d: number, h: number, mat: THREE.Material): THREE.Group {
+ *  the sides), and a back inset flush at the rear.
+ *
+ *  `noTop` drops the top panel — a sink/hob base unit is built that way in
+ *  real joinery, and here it is what lets a basin actually hang into the
+ *  cabinet: with the panel there, looking down the counter's cutout showed a
+ *  cabinet-coloured shelf 4cm under the surface instead of the bowl. */
+export function carcass(
+  w: number,
+  d: number,
+  h: number,
+  mat: THREE.Material,
+  noTop = false,
+): THREE.Group {
   const g = new THREE.Group();
   const innerW = Math.max(w - 2 * PANEL, 0.01);
 
@@ -26,15 +37,18 @@ export function carcass(w: number, d: number, h: number, mat: THREE.Material): T
   const right = new THREE.Mesh(new THREE.BoxGeometry(PANEL, h, d), mat);
   right.position.set(w / 2 - PANEL / 2, h / 2, 0);
 
-  const top = new THREE.Mesh(new THREE.BoxGeometry(innerW, PANEL, d), mat);
-  top.position.set(0, h - PANEL / 2, 0);
   const bottom = new THREE.Mesh(new THREE.BoxGeometry(innerW, PANEL, d), mat);
   bottom.position.set(0, PANEL / 2, 0);
 
   const back = new THREE.Mesh(new THREE.BoxGeometry(innerW, Math.max(h - 2 * PANEL, 0.01), BACK_T), mat);
   back.position.set(0, h / 2, -d / 2 + BACK_T / 2);
 
-  g.add(left, right, top, bottom, back);
+  g.add(left, right, bottom, back);
+  if (!noTop) {
+    const top = new THREE.Mesh(new THREE.BoxGeometry(innerW, PANEL, d), mat);
+    top.position.set(0, h - PANEL / 2, 0);
+    g.add(top);
+  }
   return g;
 }
 
@@ -206,6 +220,59 @@ export function countertopWithCutouts(
   return mesh;
 }
 
+const UNIT_W = 0.6; // nominal cabinet width a row divides into
+const MIN_UNIT = 0.15; // narrower than this is a filler, not a cabinet
+const CUT_CLEAR = 0.02; // panel-to-cutout clearance inside a sink/hob unit
+
+/**
+ * How a row of length `len` divides into carcasses. Each countertop cutout
+ * gets a unit to ITSELF (widened by a panel + clearance): a sink base is one
+ * wide unit in real joinery, and letting the equal-width division fall where
+ * it likes runs a carcass side panel straight through the middle of the
+ * basin, visible through the bowl. The rest fills with equal ~60cm units, so
+ * a row with no cutouts divides exactly as it always did.
+ */
+function layoutUnits(
+  len: number,
+  cuts: readonly { x0: number; x1: number }[],
+): { x0: number; x1: number; open: boolean }[] {
+  const wanted = cuts
+    .map((c) => ({
+      x0: Math.max(c.x0 - PANEL - CUT_CLEAR, 0),
+      x1: Math.min(c.x1 + PANEL + CUT_CLEAR, len),
+    }))
+    .filter((c) => c.x1 - c.x0 > 0.05)
+    .sort((a, b) => a.x0 - b.x0);
+  // Overlapping cutouts (two hobs side by side) share one unit.
+  const merged: { x0: number; x1: number }[] = [];
+  for (const c of wanted) {
+    const last = merged[merged.length - 1];
+    if (last && c.x0 <= last.x1) last.x1 = Math.max(last.x1, c.x1);
+    else merged.push({ ...c });
+  }
+
+  const units: { x0: number; x1: number; open: boolean }[] = [];
+  const fill = (a: number, b: number) => {
+    const gap = b - a;
+    if (gap <= 0) return;
+    const n = Math.max(1, Math.round(gap / UNIT_W));
+    for (let i = 0; i < n; i++) {
+      units.push({ x0: a + (gap * i) / n, x1: a + (gap * (i + 1)) / n, open: false });
+    }
+  };
+  let cursor = 0;
+  for (const c of merged) {
+    // A sliver before the cutout would be a fake cabinet: give it to the unit.
+    if (c.x0 - cursor < MIN_UNIT) c.x0 = cursor;
+    else fill(cursor, c.x0);
+    units.push({ x0: c.x0, x1: c.x1, open: true });
+    cursor = c.x1;
+  }
+  if (len - cursor < MIN_UNIT && units.length > 0) units[units.length - 1].x1 = len;
+  else fill(cursor, len);
+  return units.length > 0 ? units : [{ x0: 0, x1: len, open: false }];
+}
+
 /**
  * One straight row of cabinets for a run leg (Kitchen v2.1). Local frame:
  * x 0→len, back plane z=0, front z=d, carcass bottom at yBase. The caller
@@ -223,25 +290,32 @@ export function cabinetRow(o: {
   drawerUnits?: number; // leading units built as 3-drawer stacks
   handleAt: "top" | "bottom"; // door-handle edge
   withPlinth?: boolean;
+  /** Spans of local x that a countertop cutout passes through: the units they
+   *  touch lose their top panel so the sink/hob below is actually open to it. */
+  openTop?: readonly { x0: number; x1: number }[];
 }): THREE.Group {
   const g = new THREE.Group();
   if (o.len < 0.05) return g;
   const HANDLE_INSET = 0.04;
-  const unitCount = Math.max(1, Math.round(o.len / 0.6));
-  const unitW = o.len / unitCount;
-  const drawersEff = Math.min(o.drawerUnits ?? 0, unitCount);
+  const units = layoutUnits(o.len, o.openTop ?? []);
+  let drawersLeft = o.drawerUnits ?? 0;
   const frontBandH = Math.max(o.carcassH - 2 * REVEAL, 0.1);
   const frontBandBottom = o.yBase + REVEAL;
   const frontZ = o.d + FRONT_T / 2;
 
-  for (let i = 0; i < unitCount; i++) {
-    const x = unitW * (i + 0.5);
-    const unit = carcass(unitW, o.d, o.carcassH, o.mat);
+  for (let i = 0; i < units.length; i++) {
+    const u = units[i];
+    const unitW = u.x1 - u.x0;
+    const x = (u.x0 + u.x1) / 2;
+    const unit = carcass(unitW, o.d, o.carcassH, o.mat, u.open);
     unit.position.set(x, o.yBase, o.d / 2);
     g.add(unit);
 
+    // A sink base is never a drawer stack — the bowl is in the way.
+    const drawers = !u.open && drawersLeft > 0;
+    if (drawers) drawersLeft--;
     const frontBandW = Math.max(unitW - 2 * REVEAL, 0.1);
-    if (i < drawersEff) {
+    if (drawers) {
       const thirdH = frontBandH / 3;
       for (let j = 0; j < 3; j++) {
         const y = frontBandBottom + j * thirdH + thirdH / 2;
@@ -262,7 +336,7 @@ export function cabinetRow(o: {
       g.add(front);
       const h = o.handle?.();
       if (h) {
-        const hingeLeft = i % 2 === 0;
+        const hingeLeft = i % 2 === 0; // alternate, so pairs of doors meet
         const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
         const hy = o.handleAt === "top" ? frontBandBottom + frontBandH - 0.06 : frontBandBottom + 0.06;
         h.position.set(hx, hy, frontZ);

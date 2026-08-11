@@ -3,7 +3,7 @@
 
 import * as THREE from "three";
 import type { FurnitureItem, Scene } from "@/schema/scene";
-import { advanceChain, chainLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
+import { advanceChain, chainLegs, commitLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
 import {
   attachedPose,
   findHostRun,
@@ -11,7 +11,7 @@ import {
   syncKitchenAttachments,
   applyKitchenGesture,
 } from "./kitchenAttach";
-import { pathLegs, pathLength, clampAlongToPath, legsToSpec } from "./runPath";
+import { pathLegs, pathLength, clampAlongToPath, legsToSpec, runLocalToWorld } from "./runPath";
 import { sanitizeSpec, GENERATORS } from "@/parametric";
 import { countertopWithCutouts, COUNTER_T } from "./parts";
 
@@ -25,7 +25,7 @@ const check = (name: string, cond: boolean, detail = "") => {
 };
 
 // A 4×3 room: walls w1 (0,0)→(4,0), w2 (4,0)→(4,3), w3 (4,3)→(0,3), w4 (0,3)→(0,0).
-const scene = (furniture: FurnitureItem[] = []): Scene => ({
+const scene = (furniture: FurnitureItem[] = [], thickness = 0.1): Scene => ({
   schemaVersion: 2,
   units: "meters",
   nodes: [
@@ -33,15 +33,17 @@ const scene = (furniture: FurnitureItem[] = []): Scene => ({
     { id: "n2", x: 4, y: 3 }, { id: "n3", x: 0, y: 3 },
   ],
   walls: [
-    { id: "w1", a: "n0", b: "n1", thickness: 0.1 },
-    { id: "w2", a: "n1", b: "n2", thickness: 0.1 },
-    { id: "w3", a: "n2", b: "n3", thickness: 0.1 },
-    { id: "w4", a: "n3", b: "n0", thickness: 0.1 },
+    { id: "w1", a: "n0", b: "n1", thickness },
+    { id: "w2", a: "n1", b: "n2", thickness },
+    { id: "w3", a: "n2", b: "n3", thickness },
+    { id: "w4", a: "n3", b: "n0", thickness },
   ],
   openings: [],
   rooms: [],
   furniture,
 });
+
+const WLIM = GENERATORS.kitchenBase.dimLimits.w;
 
 const baseRun = (over: Partial<FurnitureItem> = {}): FurnitureItem => ({
   id: "run1",
@@ -79,27 +81,80 @@ console.log("\nrun-draw chain — straight, L, U in one drag");
   // Straight drag along w1.
   chain = advanceChain(chain, { x: 3.0, y: 0.3 }, sc, depth);
   check("straight stays 1 leg", chain.length === 1);
-  let legs = chainLegs(chain, { x: 3.0, y: 0.3 });
+  let legs = chainLegs(chain, { x: 3.0, y: 0.3 }, sc, WLIM);
   check("straight leg ~2m", Math.abs(legs[0].w - 2) < 0.06, `${legs[0].w}`);
 
   // Past the corner at n1 → L onto w2.
   chain = advanceChain(chain, { x: 3.9, y: 1.5 }, sc, depth);
   check("L turns onto w2", chain.length === 2 && chain[1].hit.wall.id === "w2");
-  legs = chainLegs(chain, { x: 3.9, y: 1.5 });
-  check("L leg A runs to the corner", Math.abs(legs[0].w - 3) < 0.06, `${legs[0].w}`);
-  check("L leg B inset by depth", Math.abs(legs[1].w - (1.5 - depth)) < 0.11, `${legs[1].w}`);
+  legs = chainLegs(chain, { x: 3.9, y: 1.5 }, sc, WLIM);
+  // 3m to the node, less half of w2's thickness: the leg ends on w2's FACE.
+  check("L leg A runs to the corner FACE", Math.abs(legs[0].w - 2.95) < 1e-9, `${legs[0].w}`);
+  check("L leg B inset by depth", Math.abs(legs[1].w - 0.9) < 1e-9, `${legs[1].w}`);
 
   // Past the second corner at n2 → U onto w3 (endpoint projects BACKWARD on
   // w1 — the case a stateless chain cannot see).
   chain = advanceChain(chain, { x: 1.0, y: 2.7 }, sc, depth);
   check("U turns onto w3", chain.length === 3 && chain[2].hit.wall.id === "w3");
-  legs = chainLegs(chain, { x: 1.0, y: 2.7 });
+  legs = chainLegs(chain, { x: 1.0, y: 2.7 }, sc, WLIM);
   check("U has 3 legs", legs.length === 3);
-  check("U leg B fixed at full wall minus inset", Math.abs(legs[1].w - (3 - depth)) < 0.11, `${legs[1].w}`);
+  // Leg B spans w2's face from its own inset start (0.05 + 0.6) to w3's face.
+  check("U leg B fixed at the face span", Math.abs(legs[1].w - 2.3) < 1e-9, `${legs[1].w}`);
 
-  // Pull back before the second corner → un-turn to L.
+  // Pull back before the second corner → un-turn to L, and the leg handed
+  // back to the cursor must follow it again instead of staying full length.
   chain = advanceChain(chain, { x: 3.9, y: 1.0 }, sc, depth);
   check("retreat un-turns to L", chain.length === 2);
+  check("un-turned leg is live again", chain[1].len === undefined);
+  legs = chainLegs(chain, { x: 3.9, y: 1.0 }, sc, WLIM);
+  check("un-turned leg follows the cursor", Math.abs(legs[1].w - 0.35) <= 0.05 + 1e-9, `${legs[1].w}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nthick walls — legs sit on FACES, not centerlines");
+{
+  const sc = scene([], 0.3); // interior 0.15..3.85 × 0.15..2.85
+  const depth = 0.6;
+  const hit = findNearestWall(1, 0.5, sc, depth)!;
+  check("latch range measures from the face", hit?.wall.id === "w1");
+  let chain: ChainSeg[] = [{ hit, anchor: 1, dir: 0 }];
+  chain = advanceChain(chain, { x: 3.7, y: 1.5 }, sc, depth);
+  check("L turns onto w2", chain.length === 2);
+  const legs = commitLegs(chainLegs(chain, { x: 3.7, y: 1.5 }, sc, WLIM), WLIM);
+  check("leg A stops at w2's face", Math.abs(legs[0].w - 2.85) < 1e-9, `${legs[0].w}`);
+
+  // The committed item hangs leg 1 off leg 0's far end, so that end IS the
+  // corner: it has to land on w2's face (x = 3.85), not its centerline (4.0),
+  // or the whole second leg is buried 15cm into the wall.
+  const conv = legsToSpec(legs, GENERATORS.kitchenBase.defaultSpec);
+  const item = { x: conv.x, y: conv.y, rotation: conv.rotation };
+  const p = pathLegs(conv.spec);
+  const back1 = runLocalToWorld(item, { x: p[1].sx, z: p[1].sz });
+  check("committed corner lands on w2's face", Math.abs(back1.x - 3.85) < 1e-9, `${back1.x}`);
+  const back0 = runLocalToWorld(item, { x: p[0].sx, z: p[0].sz });
+  check("leg A's back lands on w1's face", Math.abs(back0.y - 0.15) < 1e-9, `${back0.y}`);
+  // Both legs stand the same depth off their own wall — the "one leg is
+  // shallower and cuts into the wall" bug.
+  const front1 = runLocalToWorld(item, { x: p[1].sx + p[1].fx * depth, z: p[1].sz });
+  check("both legs are the same depth", Math.abs((3.85 - front1.x) - depth) < 1e-9, `${front1.x}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nhover preview == what the click starts");
+{
+  const sc = scene();
+  const depth = 0.6;
+  const hit = findNearestWall(1.23, 0.3, sc, depth)!;
+  // The click anchors where the hover preview drew its left edge, and the
+  // run's first leg is born at the generator's minimum width — so nothing
+  // moves between the preview and the first frame of the drag.
+  const anchor = 1.2; // 1.23 snapped to the 10cm grid
+  const seed = chainLegs([{ hit, anchor, dir: 0 }], { x: 1.2, y: 0 }, sc, WLIM);
+  check("preview is one minimum-width leg", seed.length === 1 && seed[0].w === WLIM[0], `${seed[0].w}`);
+  check("preview starts AT the anchor", Math.abs(seed[0].x - (anchor + WLIM[0] / 2)) < 1e-9, `${seed[0].x}`);
+  const justClicked = chainLegs([{ hit, anchor, dir: 0 }], { x: 1.23, y: 0.3 }, sc, WLIM);
+  check("click keeps the preview's position", Math.abs(justClicked[0].x - seed[0].x) < 1e-9, `${justClicked[0].x}`);
+  check("click keeps the preview's width", justClicked[0].w === seed[0].w);
 }
 
 // ---------------------------------------------------------------------------
@@ -238,6 +293,22 @@ console.log("\nsnapRunToWall — always glued, clamped to its wall");
   const s2 = snapRunToWall({ x: 3.5, y: 0.35, parametric: baseRun().parametric }, sc)!;
   check("run stays on its wall segment", s2.x <= 4 - 1.2 + 1e-9 && Math.abs(s2.y - 0.35) < 1e-9,
     `${s2.x},${s2.y}`);
+
+  // An L nudged out of place must click BACK into its corner: the corner (leg
+  // 0's far end), not the run's center, is what has to land on the crossing
+  // wall's face — 10cm-grid rounding of the center would leave leg 1 buried.
+  const thick = scene([], 0.3);
+  const lSpec = sanitizeSpec({
+    ...baseRun().parametric!,
+    dims: { w: 2.85, d: 0.6, h: 0.84 },
+    extraLegs: [{ turn: 1, w: 0.8 }],
+  });
+  const s3 = snapRunToWall({ x: 2.425 + 0.07, y: 0.45 + 0.12, parametric: lSpec }, thick)!;
+  check("L re-registers its corner on the face", Math.abs(s3.x - 2.425) < 1e-9, `${s3.x}`);
+  check("L stays flush on its own wall", Math.abs(s3.y - 0.45) < 1e-9, `${s3.y}`);
+  const corner = runLocalToWorld({ x: s3.x, y: s3.y, rotation: s3.rotation }, { x: 2.85 / 2, z: -0.3 });
+  check("corner sits on both faces", Math.abs(corner.x - 3.85) < 1e-9 && Math.abs(corner.y - 0.15) < 1e-9,
+    `${corner.x},${corner.y}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -250,6 +321,46 @@ console.log("\ncountertop with real holes");
   check("a hole adds geometry (inner walls)", count(holed) > count(solid),
     `${count(solid)} -> ${count(holed)}`);
   check("slab thickness preserved", COUNTER_T === 0.04);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nsink drops THROUGH the counter into an open cabinet");
+{
+  const flat = { finish: "laminate-matte", finish2: "counter-white" };
+  const cut = { along: 1.2, w: 0.53, d: 0.45 };
+  // The column under the hole, stopping below the counter slab (0.80–0.84):
+  // anything in here is something you would see instead of the basin.
+  const probe = new THREE.Box3(
+    new THREE.Vector3(-0.2, 0.6, -0.15),
+    new THREE.Vector3(0.2, 0.79, 0.15),
+  );
+  const obstructions = (spec: Parameters<typeof GENERATORS.kitchenBase.build>[0]) => {
+    const g = GENERATORS.kitchenBase.build(spec);
+    g.updateMatrixWorld(true);
+    let n = 0;
+    g.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh && new THREE.Box3().setFromObject(o).intersectsBox(probe)) n++;
+    });
+    return n;
+  };
+  const solid = obstructions(sanitizeSpec({ ...baseRun().parametric!, ...flat }));
+  const holed = obstructions(sanitizeSpec({ ...baseRun().parametric!, ...flat, cutouts: [cut] }));
+  check("a run with no cutout DOES fill that space (probe is real)", solid > 0, `${solid}`);
+  check("under a cutout the cabinet is open — no top panel, no side panel", holed === 0,
+    `${holed} meshes in the basin's space`);
+
+  // The bowl itself: deep enough to be a sink, and all one material with the
+  // rim (the drain puck is the only other one).
+  const sink = GENERATORS.sink.build(sanitizeSpec(GENERATORS.sink.defaultSpec));
+  sink.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(sink);
+  check("bowl hangs at least 20cm below the counter", box.min.y <= -0.2, `${box.min.y.toFixed(3)}`);
+  const mats = new Set<THREE.Material>();
+  sink.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh) mats.add(m.material as THREE.Material);
+  });
+  check("bowl, rim and tap share one material", mats.size === 2, `${mats.size} materials`);
 }
 
 // ---------------------------------------------------------------------------

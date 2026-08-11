@@ -105,6 +105,17 @@ export const kitchenBaseGenerator: GeneratorDef = {
     const group = new THREE.Group();
     const legs = pathLegs(spec);
 
+    // Where each cutout falls in its leg's row-local x, so the units under a
+    // sink/hob lose their top panel and the basin hangs INTO the cabinet.
+    const openTop: { x0: number; x1: number }[][] = legs.map(() => []);
+    for (const c of spec.cutouts ?? []) {
+      const { leg, u } = legAtAlong(legs, c.along);
+      const i = legs.indexOf(leg);
+      if (i < 0) continue;
+      const lead = i > 0 ? d : 0;
+      openTop[i].push({ x0: u - lead - c.w / 2, x1: u - lead + c.w / 2 });
+    }
+
     // Cabinet rows per leg (corner squares excluded), corner blanks between.
     for (let i = 0; i < legs.length; i++) {
       const leg = legs[i];
@@ -119,6 +130,7 @@ export const kitchenBaseGenerator: GeneratorDef = {
           drawerUnits: i === 0 ? drawerUnits : 0,
           handleAt: "top",
           withPlinth: true,
+          openTop: openTop[i],
         });
         tagTint(row, spec.finish, spec.color);
         row.position.set(leg.sx + leg.dx * lead, 0, leg.sz + leg.dz * lead);

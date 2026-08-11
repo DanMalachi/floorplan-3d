@@ -11,7 +11,7 @@ import { finishMaterial } from "./materials";
 const RIM_T = 0.012; // rim slab above the counter
 const RIM_LIP = 0.015; // rim overlap past the cutout edge, each side
 const INSET = 0.045; // rim edge -> basin wall
-const BASIN_D = 0.19; // real bowl depth below the counter
+const BASIN_D = 0.21; // real bowl depth below the counter (standard is 18-22cm)
 const WALL_T = 0.008;
 const DIVIDER_T = 0.008;
 const FAUCET_BASE_R = 0.02;
