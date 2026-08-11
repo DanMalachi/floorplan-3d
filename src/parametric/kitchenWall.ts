@@ -1,10 +1,9 @@
 import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
-import { carcass, frontOf, barHandle, knobHandle, handleMat, FRONT_T, REVEAL } from "./parts";
+import { cabinetRow, barHandle, knobHandle, handleMat } from "./parts";
 import { finishMaterial, tagTint } from "./materials";
-
-const HANDLE_INSET = 0.04;
+import { pathLegs } from "./runPath";
 
 function handleFor(spec: ParametricSpec): THREE.Object3D | null {
   if (spec.handle === "none") return null;
@@ -36,39 +35,36 @@ export const kitchenWallGenerator: GeneratorDef = {
     finish: "painted",
   },
   build(spec: ParametricSpec): THREE.Group {
-    const { w, d, h } = spec.dims;
+    const { d, h } = spec.dims;
     const mat = finishMaterial(spec.finish);
-
     const group = new THREE.Group();
+    const legs = pathLegs(spec);
 
-    const unitCount = Math.max(1, Math.round(w / 0.6));
-    const unitW = w / unitCount;
-    const frontBandH = Math.max(h - 2 * REVEAL, 0.1);
-    const frontBandBottom = REVEAL;
-    const frontZ = d / 2 + FRONT_T / 2;
-
-    for (let i = 0; i < unitCount; i++) {
-      const x = -w / 2 + unitW * (i + 0.5);
-      const cab = carcass(unitW, d, h, mat);
-      tagTint(cab, spec.finish, spec.color);
-      cab.position.set(x, 0, 0);
-      group.add(cab);
-
-      // Single door, hinge alternating, handle 60mm above the bottom edge.
-      const frontBandW = Math.max(unitW - 2 * REVEAL, 0.1);
-      const y = frontBandBottom + frontBandH / 2;
-      const front = frontOf(spec.front, frontBandW, frontBandH, mat);
-      tagTint(front, spec.finish, spec.color);
-      front.position.set(x, y, frontZ);
-      group.add(front);
-
-      const handle = handleFor(spec);
-      if (handle) {
-        const hingeLeft = i % 2 === 0;
-        const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
-        const hy = frontBandBottom + 0.06;
-        handle.position.set(hx, hy, frontZ);
-        group.add(handle);
+    for (let i = 0; i < legs.length; i++) {
+      const leg = legs[i];
+      const lead = i > 0 ? d : 0;
+      const trail = i < legs.length - 1 ? d : 0;
+      const spanLen = leg.len - lead - trail;
+      if (spanLen > 0.05) {
+        const row = cabinetRow({
+          len: spanLen, d, carcassH: h, yBase: 0, mat,
+          front: spec.front,
+          handle: () => handleFor(spec),
+          handleAt: "bottom", // handle 60mm above the bottom edge, wall-cab convention
+        });
+        tagTint(row, spec.finish, spec.color);
+        row.position.set(leg.sx + leg.dx * lead, 0, leg.sz + leg.dz * lead);
+        row.rotation.y = Math.atan2(-leg.dz, leg.dx);
+        group.add(row);
+      }
+      if (i > 0) {
+        // Blank corner box filling the d×d square.
+        const ccx = leg.sx + leg.dx * (d / 2) + leg.fx * (d / 2);
+        const ccz = leg.sz + leg.dz * (d / 2) + leg.fz * (d / 2);
+        const blank = new THREE.Mesh(new THREE.BoxGeometry(d, h, d), mat);
+        blank.position.set(ccx, h / 2, ccz);
+        tagTint(blank, spec.finish, spec.color);
+        group.add(blank);
       }
     }
 

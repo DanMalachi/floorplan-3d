@@ -1,0 +1,277 @@
+// Headless: Kitchen v2 — run-draw chaining (L/U), the attach engine, counter
+// cutouts, and the wall glue. Run: npx tsx src/parametric/kitchen.test.ts
+
+import * as THREE from "three";
+import type { FurnitureItem, Scene } from "@/schema/scene";
+import { advanceChain, chainLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
+import {
+  attachedPose,
+  findHostRun,
+  snapRunToWall,
+  syncKitchenAttachments,
+  applyKitchenGesture,
+} from "./kitchenAttach";
+import { pathLegs, pathLength, clampAlongToPath, legsToSpec } from "./runPath";
+import { sanitizeSpec, GENERATORS } from "@/parametric";
+import { countertopWithCutouts, COUNTER_T } from "./parts";
+
+let failures = 0;
+const check = (name: string, cond: boolean, detail = "") => {
+  if (cond) console.log(`  ok   ${name}`);
+  else {
+    failures++;
+    console.log(`  FAIL ${name}${detail ? ` — ${detail}` : ""}`);
+  }
+};
+
+// A 4×3 room: walls w1 (0,0)→(4,0), w2 (4,0)→(4,3), w3 (4,3)→(0,3), w4 (0,3)→(0,0).
+const scene = (furniture: FurnitureItem[] = []): Scene => ({
+  schemaVersion: 2,
+  units: "meters",
+  nodes: [
+    { id: "n0", x: 0, y: 0 }, { id: "n1", x: 4, y: 0 },
+    { id: "n2", x: 4, y: 3 }, { id: "n3", x: 0, y: 3 },
+  ],
+  walls: [
+    { id: "w1", a: "n0", b: "n1", thickness: 0.1 },
+    { id: "w2", a: "n1", b: "n2", thickness: 0.1 },
+    { id: "w3", a: "n2", b: "n3", thickness: 0.1 },
+    { id: "w4", a: "n3", b: "n0", thickness: 0.1 },
+  ],
+  openings: [],
+  rooms: [],
+  furniture,
+});
+
+const baseRun = (over: Partial<FurnitureItem> = {}): FurnitureItem => ({
+  id: "run1",
+  assetId: "param:kitchenBase",
+  x: 2,
+  y: 0.35, // back flush against w1 (th/2 + d/2 = 0.05 + 0.3)
+  rotation: Math.atan2(0, 1), // wall along +x, normal +y → rotation 0
+  parametric: sanitizeSpec({
+    generator: "kitchenBase",
+    dims: { w: 2.4, d: 0.6, h: 0.84 },
+    modules: { drawerUnits: 1 },
+    front: "slab", handle: "bar", finish: "painted", finish2: "counter-oak",
+  }),
+  ...over,
+});
+
+const sinkItem = (over: Partial<FurnitureItem> = {}): FurnitureItem => ({
+  id: "sink1",
+  assetId: "param:sink",
+  x: 0, y: 0, rotation: 0,
+  parametric: sanitizeSpec(GENERATORS.sink.defaultSpec),
+  attach: { hostId: "run1", along: 1.2 },
+  ...over,
+});
+
+// ---------------------------------------------------------------------------
+console.log("\nrun-draw chain — straight, L, U in one drag");
+{
+  const sc = scene();
+  const depth = 0.6;
+  const hit = findNearestWall(1, 0.3, sc, depth)!;
+  check("start latches to w1", hit.wall.id === "w1");
+  let chain: ChainSeg[] = [{ hit, anchor: 1, dir: 0 }];
+
+  // Straight drag along w1.
+  chain = advanceChain(chain, { x: 3.0, y: 0.3 }, sc, depth);
+  check("straight stays 1 leg", chain.length === 1);
+  let legs = chainLegs(chain, { x: 3.0, y: 0.3 });
+  check("straight leg ~2m", Math.abs(legs[0].w - 2) < 0.06, `${legs[0].w}`);
+
+  // Past the corner at n1 → L onto w2.
+  chain = advanceChain(chain, { x: 3.9, y: 1.5 }, sc, depth);
+  check("L turns onto w2", chain.length === 2 && chain[1].hit.wall.id === "w2");
+  legs = chainLegs(chain, { x: 3.9, y: 1.5 });
+  check("L leg A runs to the corner", Math.abs(legs[0].w - 3) < 0.06, `${legs[0].w}`);
+  check("L leg B inset by depth", Math.abs(legs[1].w - (1.5 - depth)) < 0.11, `${legs[1].w}`);
+
+  // Past the second corner at n2 → U onto w3 (endpoint projects BACKWARD on
+  // w1 — the case a stateless chain cannot see).
+  chain = advanceChain(chain, { x: 1.0, y: 2.7 }, sc, depth);
+  check("U turns onto w3", chain.length === 3 && chain[2].hit.wall.id === "w3");
+  legs = chainLegs(chain, { x: 1.0, y: 2.7 });
+  check("U has 3 legs", legs.length === 3);
+  check("U leg B fixed at full wall minus inset", Math.abs(legs[1].w - (3 - depth)) < 0.11, `${legs[1].w}`);
+
+  // Pull back before the second corner → un-turn to L.
+  chain = advanceChain(chain, { x: 3.9, y: 1.0 }, sc, depth);
+  check("retreat un-turns to L", chain.length === 2);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nattach engine — bonded pose, cutouts, cascade");
+{
+  const sc = syncKitchenAttachments(scene([baseRun(), sinkItem()]));
+  const sink = sc.furniture.find((f) => f.id === "sink1")!;
+  const run = sc.furniture.find((f) => f.id === "run1")!;
+  const pose = attachedPose(run, 1.2);
+  check("sink rides the run", Math.abs(sink.x - pose.x) < 1e-9 && Math.abs(sink.y - pose.y) < 1e-9);
+  check("sink sits at the counter surface", sink.elevation === 0.84, `${sink.elevation}`);
+  check("sink inherits run rotation", sink.rotation === run.rotation);
+  check("run gains exactly one cutout", run.parametric!.cutouts?.length === 1);
+  const cut = run.parametric!.cutouts![0];
+  check("cutout centered under the sink", cut.along === 1.2, `${cut.along}`);
+  check("cutout smaller than the sink (rim laps it)", cut.w < GENERATORS.sink.defaultSpec.dims.w);
+
+  // Host drags right: the wall glue clamps the run onto its wall segment
+  // and the sink must ride to wherever the run actually lands.
+  const dragged = {
+    ...sc,
+    furniture: sc.furniture.map((f) => (f.id === "run1" ? { ...f, x: f.x + 1 } : f)),
+  };
+  const after = applyKitchenGesture(dragged, sc);
+  const run2 = after.furniture.find((f) => f.id === "run1")!;
+  const sink2 = after.furniture.find((f) => f.id === "sink1")!;
+  check("host drag moved the run", run2.x > run.x + 0.5, `${run2.x}`);
+  check("run clamped onto its wall segment", run2.x <= 4 - 1.2 + 1e-9, `${run2.x}`);
+  const expect2 = attachedPose(run2, sink2.attach!.along);
+  check("host drag carries the sink", Math.abs(sink2.x - expect2.x) < 1e-9 && Math.abs(sink2.y - expect2.y) < 1e-9,
+    `${sink2.x},${sink2.y} vs ${expect2.x},${expect2.y}`);
+
+  // Host shrinks to 1m: along 1.2 must clamp inside the new counter.
+  const shrunk = syncKitchenAttachments({
+    ...sc,
+    furniture: sc.furniture.map((f) =>
+      f.id === "run1"
+        ? { ...f, parametric: { ...f.parametric!, dims: { ...f.parametric!.dims, w: 1 } } }
+        : f,
+    ),
+  });
+  const sink3 = shrunk.furniture.find((f) => f.id === "sink1")!;
+  const host3 = shrunk.furniture.find((f) => f.id === "run1")!;
+  const clamped = clampAlongToPath(host3.parametric!, 1.2, sink3.parametric!.dims.w);
+  check("resize clamps the sink onto the counter", sink3.attach!.along === clamped,
+    `along=${sink3.attach!.along} vs ${clamped}`);
+
+  // Deleting the host must not leave a floating sink (store cascades; the
+  // sync at least dissolves the bond).
+  const orphan = syncKitchenAttachments({
+    ...sc,
+    furniture: sc.furniture.filter((f) => f.id !== "run1"),
+  });
+  check("host gone → bond dissolves", !orphan.furniture.find((f) => f.id === "sink1")!.attach);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nfindHostRun — the counter under the cursor");
+{
+  const sc = syncKitchenAttachments(scene([baseRun()]));
+  const hit = findHostRun(1.4, 0.4, sc, 0.56);
+  check("cursor over the counter finds the run", hit?.host.id === "run1");
+  check("along is grid-snapped from the left edge", hit !== null && Math.abs((hit.along * 10) % 1) < 1e-6, `${hit?.along}`);
+  check("nothing found in open floor", findHostRun(2, 2.2, sc, 0.56) === null);
+  const edge = findHostRun(0.85, 0.4, sc, 0.56)!;
+  check("near the left end clamps so the sink stays on", edge.along >= 0.28, `${edge.along}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\none-piece multi-leg runs (v2.1)");
+{
+  // Ghost → single item: an L along w1 then w2.
+  const worldLegs = [
+    { x: 2, y: 0.35, rotation: 0, w: 2.4, dir: 1 },
+    { x: 3.65, y: 1.5, rotation: Math.atan2(-(-1), 0), w: 1.0, dir: 1 }, // wall w2, facing -x
+  ];
+  const conv = legsToSpec(worldLegs, GENERATORS.kitchenBase.defaultSpec);
+  check("L converts to ONE spec with one extra leg", conv.spec.extraLegs?.length === 1);
+  check("pose comes from leg 0", conv.x === 2 && conv.y === 0.35 && conv.rotation === 0);
+
+  // Path math on a hand-built L host.
+  const hostL = baseRun({
+    parametric: sanitizeSpec({
+      ...baseRun().parametric!,
+      extraLegs: [{ turn: 1, w: 1 }],
+    }),
+  });
+  const legs = pathLegs(hostL.parametric!);
+  check("L path has 2 legs", legs.length === 2);
+  check("leg 1 includes the corner square", Math.abs(legs[1].len - 1.6) < 1e-9, `${legs[1].len}`);
+  check("path length = w + d + extra", Math.abs(pathLength(hostL.parametric!) - 4.0) < 1e-9);
+
+  // A sink bonded onto the SECOND leg: rides it, rotated with it.
+  const pose = attachedPose(hostL, 3.5); // 1.1 m past the corner start
+  check("second-leg pose sits on leg 1", Math.abs(pose.x - 2.9) < 1e-9 && Math.abs(pose.y - 1.15) < 1e-9,
+    `${pose.x},${pose.y}`);
+  check("second-leg pose faces leg 1's room side", Math.abs(pose.rotation - Math.PI / 2) < 1e-9,
+    `${pose.rotation}`);
+
+  // Corner exclusion: an along inside the corner square clamps out of it.
+  const inCorner = clampAlongToPath(hostL.parametric!, 2.5, 0.56); // corner spans 2.4..3.0
+  check("corner square rejects attachments", inCorner <= 2.4 - 0.28 + 1e-9 || inCorner >= 3.0 + 0.28 - 1e-9,
+    `${inCorner}`);
+
+  // findHostRun sees the second leg (its counter centerline runs at world
+  // x ≈ 2.9 for this hand-built L).
+  const scL = scene([hostL]);
+  const hit2 = findHostRun(2.9, 1.3, scL, 0.56);
+  check("cursor over leg 1 finds the run", hit2?.host.id === "run1", `${hit2?.along}`);
+  check("...with a second-leg along", (hit2?.along ?? 0) > 2.4, `${hit2?.along}`);
+
+  // Builders: an L builds (more parts than straight). Headless-safe
+  // finishes only — painted/oak build canvas textures and need a DOM.
+  const flat = { finish: "laminate-matte", finish2: "counter-white" };
+  const straightParts = GENERATORS.kitchenBase.build(
+    sanitizeSpec({ ...baseRun().parametric!, ...flat }),
+  ).children.length;
+  const lParts = GENERATORS.kitchenBase.build(
+    sanitizeSpec({ ...hostL.parametric!, ...flat }),
+  ).children.length;
+  check("L base run builds more parts than straight", lParts > straightParts, `${straightParts} -> ${lParts}`);
+  const lWall = GENERATORS.kitchenWall.build(
+    sanitizeSpec({ ...GENERATORS.kitchenWall.defaultSpec, finish: "laminate-matte", extraLegs: [{ turn: 1, w: 0.9 }] }),
+  );
+  check("L wall-cabinet run builds", lWall.children.length > 2, `${lWall.children.length}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nsnapRunToWall — always glued, clamped to its wall");
+{
+  const sc = scene();
+  const s1 = snapRunToWall({ x: 2, y: 0.9, parametric: baseRun().parametric }, sc)!;
+  check("pulls flush to w1", Math.abs(s1.y - 0.35) < 1e-9, `${s1.y}`);
+  check("faces into the room", Math.abs(s1.rotation - 0) < 1e-9, `${s1.rotation}`);
+  // Center dragged toward the wall's end: the run may not hang past it.
+  const s2 = snapRunToWall({ x: 3.5, y: 0.35, parametric: baseRun().parametric }, sc)!;
+  check("run stays on its wall segment", s2.x <= 4 - 1.2 + 1e-9 && Math.abs(s2.y - 0.35) < 1e-9,
+    `${s2.x},${s2.y}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\ncountertop with real holes");
+{
+  const mat = new THREE.MeshStandardMaterial(); // headless: no canvas-textured finishes
+  const solid = countertopWithCutouts(2.4, 0.6, [], mat);
+  const holed = countertopWithCutouts(2.4, 0.6, [{ along: 1.2, w: 0.53, d: 0.45 }], mat);
+  const count = (m: THREE.Mesh) => m.geometry.getAttribute("position").count;
+  check("a hole adds geometry (inner walls)", count(holed) > count(solid),
+    `${count(solid)} -> ${count(holed)}`);
+  check("slab thickness preserved", COUNTER_T === 0.04);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nvariants + builds don't throw");
+{
+  for (const variant of ["induction", "radiant", "gas"]) {
+    const spec = sanitizeSpec({ ...GENERATORS.cooktop.defaultSpec, variant });
+    check(`cooktop ${variant} keeps its variant`, spec.variant === variant, `${spec.variant}`);
+    const g = GENERATORS.cooktop.build(spec);
+    check(`cooktop ${variant} builds`, g.children.length > 3, `${g.children.length} parts`);
+  }
+  const narrow = GENERATORS.cooktop.build(
+    sanitizeSpec({ ...GENERATORS.cooktop.defaultSpec, dims: { w: 0.3, d: 0.5, h: 0.008 }, modules: { burners: 2 } }),
+  );
+  check("30cm domino builds", narrow.children.length > 2);
+  for (const bowls of [1, 2]) {
+    const g = GENERATORS.sink.build(sanitizeSpec({ ...GENERATORS.sink.defaultSpec, modules: { bowls } }));
+    check(`sink bowls=${bowls} builds`, g.children.length > 3);
+  }
+  const unknown = sanitizeSpec({ ...GENERATORS.cooktop.defaultSpec, variant: "plasma" });
+  check("unknown variant falls back to default", unknown.variant === "induction", `${unknown.variant}`);
+}
+
+console.log(failures === 0 ? "\nall kitchen v2 checks passed\n" : `\n${failures} FAILED\n`);
+process.exit(failures === 0 ? 0 : 1);

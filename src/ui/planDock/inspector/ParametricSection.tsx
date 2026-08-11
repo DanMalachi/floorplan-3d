@@ -148,6 +148,20 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         />
       ))}
 
+      {g.variants && g.variants.length > 1 && (
+        <PdChipGroup>
+          {g.variants.map((v) => (
+            <button
+              key={v.id}
+              style={pdChip((spec.variant ?? g.variants![0].id) === v.id, pdChipFlex)}
+              onClick={() => update({ variant: v.id })}
+            >
+              {v.label}
+            </button>
+          ))}
+        </PdChipGroup>
+      )}
+
       {g.fronts.length > 1 && (
         <PdChipGroup>
           {g.fronts.map((f) => (
@@ -217,7 +231,13 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         <PdActionButton label="Delete" tone="danger" onClick={onDelete} />
       </PdActionRow>
 
-      <PdHelpText>drag to move · R rotates · Delete removes</PdHelpText>
+      <PdHelpText>
+        {spec.generator === "kitchenBase" || spec.generator === "kitchenWall"
+          ? "drag to move along walls · drag end arrows to resize · Delete removes"
+          : spec.generator === "sink" || spec.generator === "cooktop"
+            ? "drag to slide along the counter · Delete removes"
+            : "drag to move · R rotates · Delete removes"}
+      </PdHelpText>
     </div>
   );
 }

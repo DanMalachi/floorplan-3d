@@ -216,6 +216,28 @@ export interface ParametricSpec {
   modules: Record<string, number>;
   front: "slab" | "shaker" | "farmhouse";
   handle: "bar" | "knob" | "none";
+  /** Generator-specific style variant id (e.g. cooktop "induction" | "gas").
+   *  Optional + additive (Kitchen v2, Dan-approved): absent = generator's
+   *  default variant. */
+  variant?: string;
+  /** Counter cutouts on a kitchenBase run — holes the countertop is built
+   *  around (sink basins, cooktop wells). Maintained by the store's kitchen
+   *  attachment sync (src/parametric/kitchenAttach.ts), never hand-authored:
+   *  one entry per attached counter item that cuts. `along` is meters along
+   *  the run's PATH (leg 0 start → last leg end, corners included — see
+   *  src/parametric/runPath.ts) to the cutout center. Optional + additive
+   *  (Kitchen v2, Dan-approved). */
+  cutouts?: { along: number; w: number; d: number }[];
+  /** Kitchen v2.1 (additive, same Dan-approved pattern): an L/U run is ONE
+   *  item — these are the legs after the first. Each turns ±90° from the
+   *  previous travel direction and adds `w` meters of cabinets past the
+   *  corner (the corner square itself is implicit). Geometry derives in
+   *  src/parametric/runPath.ts. Absent = plain straight run. */
+  extraLegs?: { turn: 1 | -1; w: number }[];
+  /** Travel direction of leg 0 along the item's local X (+1 = toward +X).
+   *  Only meaningful when extraLegs exist — it fixes which end of leg 0 the
+   *  chain hangs off. Default +1. */
+  legDir?: 1 | -1;
   /** Finish id resolved by src/parametric/materials.ts (carcass + fronts,
    *  or upholstery for the sofa). */
   finish: string;
@@ -241,6 +263,12 @@ export interface FurnitureItem {
   /** Items placed as one gesture (e.g. both legs of an L kitchen run). Group
    *  members delete together; ids are opaque. */
   group?: Id;
+  /** Counter-item bond (Kitchen v2, additive, Dan-approved): this item sits
+   *  ON a kitchenBase run. `hostId` is that run's furniture id; `along` is
+   *  meters from the run's LEFT edge (local -w/2) to this item's center.
+   *  x/y/rotation/elevation are kept derived from the host by the store's
+   *  attachment sync — the host drags/resizes and its items ride along. */
+  attach?: { hostId: Id; along: number };
 }
 
 /**

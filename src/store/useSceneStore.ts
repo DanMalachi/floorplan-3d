@@ -11,7 +11,9 @@ import {
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
-import { sanitizeSpec } from "@/parametric";
+import { sanitizeSpec, GENERATORS } from "@/parametric";
+import { applyKitchenGesture, syncKitchenAttachments } from "@/parametric/kitchenAttach";
+import { legsToSpec } from "@/parametric/runPath";
 import { pdToast } from "@/ui/planDock/toast";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
@@ -305,9 +307,27 @@ export interface StoreState {
    *  drives its own click-drag-click flow rather than the single-click ghost. */
   placingRun: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null;
   setPlacingRun: (run: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null) => void;
-  /** One FurnitureItem per leg (spec.dims.w overridden per leg); >1 leg shares
-   *  a fresh `group` id. One undo commit for the whole run. */
-  placeKitchenRun: (legs: { x: number; y: number; rotation: number; w: number }[]) => void;
+  /** ONE FurnitureItem for the whole drawn run (Kitchen v2.1): leg 0 fixes
+   *  the pose, later legs fold into spec.extraLegs — an L or U is a single
+   *  piece with one continuous countertop. `elevation` mounts wall-cabinet
+   *  runs at the height the anchor click picked on the wall. */
+  placeKitchenRun: (
+    legs: { x: number; y: number; rotation: number; w: number; dir: number }[],
+    elevation?: number,
+  ) => void;
+
+  // --- counter items (Kitchen v2) --- sink/cooktop/future counter appliances.
+  // Mutually exclusive with placing/placingRun/brush/eyedropper like the rest.
+  /** Armed by the Kitchen tab's sink/cooktop cards — CounterItemGhost drives
+   *  a snap-onto-a-base-run flow instead of the free floor ghost. */
+  placingCounter: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null;
+  setPlacingCounter: (
+    pc: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null,
+  ) => void;
+  /** Commit the armed counter item bonded to `hostId` at `along` meters from
+   *  the run's left edge; pose/elevation derive from the host via the
+   *  attachment sync. */
+  placeCounterItem: (hostId: string, along: number) => void;
 
   // --- fixtures (lighting) --- placing state is SHARED with furniture above
   // (assetId is enough to tell the catalogs apart) — only the commit/rotate
@@ -592,8 +612,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!s.gestureBase) set({ gestureBase: s.scene });
     },
     updateGesture: (next, viz = null) => {
-      if (!get().gestureBase) return; // no gesture in flight
-      set({ scene: next, dragViz: viz });
+      const s = get();
+      if (!s.gestureBase) return; // no gesture in flight
+      // Kitchen v2: runs glue to walls and counter items ride their runs —
+      // applied here so EVERY drag path (layer drags, resize handles) gets
+      // the same physics. Door-swing gestures skip it (openings only).
+      const scene = s.doorGestureActive ? next : applyKitchenGesture(next, s.scene);
+      set({ scene, dragViz: viz });
     },
     endGesture: (label) => {
       const { gestureBase, scene, collab } = get();
@@ -633,7 +658,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, placingRun: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
+      set({ appMode, placing: null, placingRun: null, placingCounter: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -785,17 +810,43 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({
         placing: assetId ? { assetId, rotation: 0, ...(parametric ? { parametric } : {}) } : null,
         placingRun: null,
+        placingCounter: null,
         brush: null,
         sel3d: null,
         eyedropper: false,
       }),
     placingRun: null,
-    setPlacingRun: (run) => set({ placingRun: run, placing: null, brush: null, sel3d: null, eyedropper: false }),
+    setPlacingRun: (run) => set({ placingRun: run, placing: null, placingCounter: null, brush: null, sel3d: null, eyedropper: false }),
+    placingCounter: null,
+    setPlacingCounter: (placingCounter) =>
+      set({ placingCounter, placing: null, placingRun: null, brush: null, sel3d: null, eyedropper: false }),
+    placeCounterItem: (hostId, along) => {
+      const { placingCounter, scene, commitScene } = get();
+      if (!placingCounter) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const withItem: Scene = {
+        ...scene,
+        furniture: [
+          ...scene.furniture,
+          {
+            id,
+            assetId: `param:${placingCounter.generator}`,
+            x: 0, // derived from the host by the sync below
+            y: 0,
+            rotation: 0,
+            parametric: placingCounter.spec,
+            attach: { hostId, along },
+          },
+        ],
+      };
+      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, syncKitchenAttachments(withItem));
+      // Stay armed — Sims-style repeat placement; Esc exits.
+    },
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, placingRun: null, sel3d: null, eyedropper: false }),
+    setBrush: (brush) => set({ brush, placing: null, placingRun: null, placingCounter: null, sel3d: null, eyedropper: false }),
     eyedropper: false,
     setEyedropper: (eyedropper) =>
-      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, brush: null } : {}) }),
+      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing
@@ -824,21 +875,28 @@ export const useSceneStore = create<StoreState>((set, get) => {
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
     },
-    placeKitchenRun: (legs) => {
+    placeKitchenRun: (legs, elevationArg) => {
       const { placingRun, scene, commitScene } = get();
       if (!placingRun || legs.length === 0) return;
       const stamp = Date.now().toString(36);
-      const groupId = legs.length > 1 ? `grp${stamp}${Math.floor(Math.random() * 1e4)}` : undefined;
-      const items = legs.map((leg, i) => ({
-        id: `f${stamp}${i}${Math.floor(Math.random() * 1e4)}`,
+      // ONE item for the whole L/U — legs fold into the spec's path
+      // (extraLegs), so the countertop is a single continuous slab and the
+      // run selects/moves/deletes as one piece.
+      const { x, y, rotation, spec } = legsToSpec(legs, placingRun.spec);
+      // Wall-cabinet runs hang at the height the anchor click picked (or the
+      // generator's default) — placing them through the run-draw path used
+      // to drop elevation entirely, leaving wall cabinets on the floor.
+      const elevation = elevationArg ?? GENERATORS[placingRun.generator].defaultElevation;
+      const item = {
+        id: `f${stamp}${Math.floor(Math.random() * 1e4)}`,
         assetId: `param:${placingRun.generator}`,
-        x: leg.x,
-        y: leg.y,
-        rotation: leg.rotation,
-        parametric: { ...placingRun.spec, dims: { ...placingRun.spec.dims, w: leg.w } },
-        ...(groupId ? { group: groupId } : {}),
-      }));
-      commitScene("Place kitchen run", { ...scene, furniture: [...scene.furniture, ...items] });
+        x,
+        y,
+        rotation,
+        ...(elevation !== undefined ? { elevation } : {}),
+        parametric: sanitizeSpec(spec),
+      };
+      commitScene("Place kitchen run", { ...scene, furniture: [...scene.furniture, item] });
     },
     rotateSelectedFurniture: (deltaRad) => {
       const { sel3d, scene, commitScene } = get();
@@ -858,8 +916,26 @@ export const useSceneStore = create<StoreState>((set, get) => {
       // member of the run it was copied from (which would delete together
       // with a run it was never actually part of).
       const { group: _group, ...rest } = item;
-      const copy = { ...rest, id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, x: item.x + 0.3, y: item.y + 0.3 };
-      commitScene("Duplicate furniture", { ...scene, furniture: [...scene.furniture, copy] });
+      // Deep-copy the spec (two items must never share one spec object) and
+      // drop copied cutouts — the copy has no attachments yet; the sync
+      // rebuilds cutouts from real bonds only. An attached item's copy stays
+      // on the same host, shifted along the counter.
+      const parametric = item.parametric
+        ? (({ cutouts: _c, ...ps }) => ({
+            ...ps,
+            dims: { ...ps.dims },
+            modules: { ...ps.modules },
+          }))(item.parametric)
+        : undefined;
+      const copy = {
+        ...rest,
+        ...(parametric ? { parametric } : {}),
+        ...(item.attach ? { attach: { hostId: item.attach.hostId, along: item.attach.along + 0.3 } } : {}),
+        id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`,
+        x: item.x + 0.3,
+        y: item.y + 0.3,
+      };
+      commitScene("Duplicate furniture", syncKitchenAttachments({ ...scene, furniture: [...scene.furniture, copy] }));
       set({ sel3d: { kind: "furniture", id: copy.id } });
     },
     replaceFurnitureAsset: (id, assetId) => {
@@ -884,10 +960,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
         modules: { ...item.parametric.modules, ...(patch.modules ?? {}) },
       };
       const parametric = sanitizeSpec(merged);
-      commitScene("Edit custom furniture", {
+      // Sync after: a resized run re-clamps/carries its counter items, a
+      // resized sink re-cuts its hole.
+      commitScene("Edit custom furniture", syncKitchenAttachments({
         ...scene,
         furniture: scene.furniture.map((f) => (f.id === id ? { ...f, parametric } : f)),
-      });
+      }));
     },
     setFurnitureElevation: (id, elevation) => {
       const { scene, commitScene } = get();
@@ -927,10 +1005,19 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (sel3d.kind === "furniture") {
         const target = scene.furniture.find((f) => f.id === sel3d.id);
         const groupId = target?.group;
-        commitScene("Delete furniture", {
+        const gone = new Set(
+          scene.furniture
+            .filter((f) => (groupId ? f.group === groupId : f.id === sel3d.id))
+            .map((f) => f.id),
+        );
+        // Counter items bonded to a deleted run go with it — a sink can't
+        // hover where its counter used to be.
+        commitScene("Delete furniture", syncKitchenAttachments({
           ...scene,
-          furniture: scene.furniture.filter((f) => (groupId ? f.group !== groupId : f.id !== sel3d.id)),
-        });
+          furniture: scene.furniture.filter(
+            (f) => !gone.has(f.id) && !(f.attach && gone.has(f.attach.hostId)),
+          ),
+        }));
         if (groupId) pdToast("Removed kitchen run");
       } else if (sel3d.kind === "wall") {
         commitScene("Delete wall", {

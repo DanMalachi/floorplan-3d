@@ -1,15 +1,76 @@
 import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
-import { carcass, frontOf, plinth, countertop, barHandle, knobHandle, handleMat, PLINTH_H, COUNTER_T, COUNTER_OVER, FRONT_T, GAP, REVEAL } from "./parts";
+import { cabinetRow, barHandle, knobHandle, handleMat, PLINTH_H, COUNTER_T, COUNTER_OVER } from "./parts";
 import { finishMaterial, tagTint } from "./materials";
-
-const HANDLE_INSET = 0.04;
+import { pathLegs, legAtAlong, type RunLeg } from "./runPath";
 
 function handleFor(spec: ParametricSpec): THREE.Object3D | null {
   if (spec.handle === "none") return null;
   const mat = handleMat();
   return spec.handle === "knob" ? knobHandle(mat) : barHandle(mat);
+}
+
+/**
+ * One continuous countertop slab covering the whole path: back polyline along
+ * the legs' back edges, front offset by depth + overhang, mitred at each
+ * right-angle corner, flush end caps — extruded as a single Shape with REAL
+ * holes for the cutouts. Local origin: the slab's bottom plane at y=0 (the
+ * caller lifts it to the carcass top).
+ */
+function counterSlabForPath(
+  legs: RunLeg[],
+  d: number,
+  cutouts: readonly { along: number; w: number; d: number }[],
+  mat: THREE.Material,
+): THREE.Mesh {
+  const D = d + COUNTER_OVER;
+  // Back points: leg starts + final end.
+  const back: { x: number; z: number }[] = legs.map((l) => ({ x: l.sx, z: l.sz }));
+  const last = legs[legs.length - 1];
+  back.push({ x: last.sx + last.dx * last.len, z: last.sz + last.dz * last.len });
+  // Front points, walked backward: end cap, then mitres (corner + fᵢ·D +
+  // fᵢ₊₁·D — exact for right angles), then the start cap point.
+  const front: { x: number; z: number }[] = [
+    { x: back[back.length - 1].x + last.fx * D, z: back[back.length - 1].z + last.fz * D },
+  ];
+  for (let i = legs.length - 1; i >= 1; i--) {
+    const a = legs[i - 1];
+    const b = legs[i];
+    front.push({ x: b.sx + a.fx * D + b.fx * D, z: b.sz + a.fz * D + b.fz * D });
+  }
+  front.push({ x: back[0].x + legs[0].fx * D, z: back[0].z + legs[0].fz * D });
+
+  // three's -90°-about-X extrusion maps shape (x, y) → world (x, z = -y).
+  const shape = new THREE.Shape();
+  const ring = [...back, ...front];
+  shape.moveTo(ring[0].x, -ring[0].z);
+  for (let i = 1; i < ring.length; i++) shape.lineTo(ring[i].x, -ring[i].z);
+  shape.closePath();
+
+  for (const c of cutouts) {
+    const { leg, u } = legAtAlong(legs, c.along);
+    const cx = leg.sx + leg.dx * u + leg.fx * (d / 2);
+    const cz = leg.sz + leg.dz * u + leg.fz * (d / 2);
+    const hw = Math.min(c.w, d - 0.03) / 2;
+    const hd = Math.min(c.d, d - 0.03) / 2;
+    const hole = new THREE.Path();
+    const corners = [
+      { x: cx - leg.dx * hw - leg.fx * hd, z: cz - leg.dz * hw - leg.fz * hd },
+      { x: cx + leg.dx * hw - leg.fx * hd, z: cz + leg.dz * hw - leg.fz * hd },
+      { x: cx + leg.dx * hw + leg.fx * hd, z: cz + leg.dz * hw + leg.fz * hd },
+      { x: cx - leg.dx * hw + leg.fx * hd, z: cz - leg.dz * hw + leg.fz * hd },
+    ];
+    hole.moveTo(corners[0].x, -corners[0].z);
+    for (let i = 1; i < 4; i++) hole.lineTo(corners[i].x, -corners[i].z);
+    hole.closePath();
+    shape.holes.push(hole);
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: COUNTER_T, bevelEnabled: false });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  return mesh;
 }
 
 export const kitchenBaseGenerator: GeneratorDef = {
@@ -36,73 +97,53 @@ export const kitchenBaseGenerator: GeneratorDef = {
     finish2: "counter-oak",
   },
   build(spec: ParametricSpec): THREE.Group {
-    const { w, d, h } = spec.dims;
+    const { d, h } = spec.dims;
     const drawerUnits = Math.max(0, Math.round(spec.modules.drawerUnits ?? 1));
     const mat = finishMaterial(spec.finish);
     const counterMat = finishMaterial(spec.finish2 ?? "counter-oak");
-
     const carcassH = Math.max(h - PLINTH_H - COUNTER_T, 0.3);
     const group = new THREE.Group();
+    const legs = pathLegs(spec);
 
-    const unitCount = Math.max(1, Math.round(w / 0.6));
-    const unitW = w / unitCount;
-    const drawerUnitsEff = Math.min(drawerUnits, unitCount);
-    const frontBandH = carcassH - 2 * REVEAL;
-    const frontBandBottom = PLINTH_H + REVEAL;
-    const frontZ = d / 2 + FRONT_T / 2;
-
-    for (let i = 0; i < unitCount; i++) {
-      const x = -w / 2 + unitW * (i + 0.5);
-      const unit = carcass(unitW, d, carcassH, mat);
-      tagTint(unit, spec.finish, spec.color);
-      unit.position.set(x, PLINTH_H, 0);
-      group.add(unit);
-
-      const frontBandW = Math.max(unitW - 2 * REVEAL, 0.1);
-
-      if (i < drawerUnitsEff) {
-        // 3-drawer stack, equal thirds of the front band.
-        const thirdH = frontBandH / 3;
-        for (let j = 0; j < 3; j++) {
-          const y = frontBandBottom + j * thirdH + thirdH / 2;
-          const front = frontOf(spec.front, frontBandW, thirdH - GAP, mat);
-          tagTint(front, spec.finish, spec.color);
-          front.position.set(x, y, frontZ);
-          group.add(front);
-          const handle = handleFor(spec);
-          if (handle) {
-            handle.rotation.z = Math.PI / 2; // horizontal, drawer convention
-            handle.position.set(x, y, frontZ);
-            group.add(handle);
-          }
-        }
-      } else {
-        // Single door, hinge alternating, handle 60mm below the top edge.
-        const y = frontBandBottom + frontBandH / 2;
-        const front = frontOf(spec.front, frontBandW, frontBandH, mat);
-        tagTint(front, spec.finish, spec.color);
-        front.position.set(x, y, frontZ);
-        group.add(front);
-        const handle = handleFor(spec);
-        if (handle) {
-          const hingeLeft = i % 2 === 0;
-          const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
-          const hy = frontBandBottom + frontBandH - 0.06;
-          handle.position.set(hx, hy, frontZ);
-          group.add(handle);
-        }
+    // Cabinet rows per leg (corner squares excluded), corner blanks between.
+    for (let i = 0; i < legs.length; i++) {
+      const leg = legs[i];
+      const lead = i > 0 ? d : 0;
+      const trail = i < legs.length - 1 ? d : 0;
+      const spanLen = leg.len - lead - trail;
+      if (spanLen > 0.05) {
+        const row = cabinetRow({
+          len: spanLen, d, carcassH, yBase: PLINTH_H, mat,
+          front: spec.front,
+          handle: () => handleFor(spec),
+          drawerUnits: i === 0 ? drawerUnits : 0,
+          handleAt: "top",
+          withPlinth: true,
+        });
+        tagTint(row, spec.finish, spec.color);
+        row.position.set(leg.sx + leg.dx * lead, 0, leg.sz + leg.dz * lead);
+        row.rotation.y = Math.atan2(-leg.dz, leg.dx);
+        group.add(row);
+      }
+      if (i > 0) {
+        // Blank corner unit filling the d×d square, plinth under it.
+        const ccx = leg.sx + leg.dx * (d / 2) + leg.fx * (d / 2);
+        const ccz = leg.sz + leg.dz * (d / 2) + leg.fz * (d / 2);
+        const blank = new THREE.Mesh(new THREE.BoxGeometry(d, carcassH, d), mat);
+        blank.position.set(ccx, PLINTH_H + carcassH / 2, ccz);
+        const cPlinth = new THREE.Mesh(new THREE.BoxGeometry(d - 0.03, PLINTH_H, d - 0.03), mat);
+        cPlinth.position.set(ccx, PLINTH_H / 2, ccz);
+        tagTint(blank, spec.finish, spec.color);
+        tagTint(cPlinth, spec.finish, spec.color);
+        group.add(blank, cPlinth);
       }
     }
 
-    // Plinth + countertop span the full run, backs flush with the carcasses'.
-    const plinthMesh = plinth(w, d, mat);
-    tagTint(plinthMesh, spec.finish, spec.color);
-    plinthMesh.position.set(0, PLINTH_H / 2, -0.015);
-    group.add(plinthMesh);
-
-    const counter = countertop(w, d, counterMat);
+    // ONE continuous countertop following the whole path — mitred at the
+    // corners, front overhang throughout, REAL holes for attached cutouts.
+    const counter = counterSlabForPath(legs, d, spec.cutouts ?? [], counterMat);
     tagTint(counter, spec.finish2 ?? "counter-oak", spec.color2);
-    counter.position.set(0, PLINTH_H + carcassH + COUNTER_T / 2, COUNTER_OVER / 2);
+    counter.position.y = PLINTH_H + carcassH;
     group.add(counter);
 
     return group;

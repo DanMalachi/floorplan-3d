@@ -157,6 +157,131 @@ export function countertop(w: number, d: number, mat: THREE.Material): THREE.Mes
   return new THREE.Mesh(new THREE.BoxGeometry(w, COUNTER_T, d + COUNTER_OVER), mat);
 }
 
+/**
+ * Countertop with REAL holes (Kitchen v2): a Shape-with-holes extrusion, so a
+ * sink basin actually hangs through the slab and a cooktop sits in a well —
+ * no CSG library. `cutouts[].along` is meters from the slab's LEFT edge to
+ * the hole center; holes are clamped to keep ≥15mm of slab at every edge.
+ *
+ * Placement contract (differs from `countertop`, whose box is center-origin):
+ * the mesh's local origin is the slab's BOTTOM plane at the carcass center —
+ * position it at (0, counterBottomY, COUNTER_OVER / 2) and the slab spans the
+ * same volume the box version did, holes centered on the carcass centerline.
+ */
+export function countertopWithCutouts(
+  w: number,
+  d: number,
+  cutouts: readonly { along: number; w: number; d: number }[],
+  mat: THREE.Material,
+): THREE.Mesh {
+  const D = d + COUNTER_OVER;
+  const EDGE = 0.015;
+  const shape = new THREE.Shape();
+  shape.moveTo(-w / 2, -D / 2);
+  shape.lineTo(w / 2, -D / 2);
+  shape.lineTo(w / 2, D / 2);
+  shape.lineTo(-w / 2, D / 2);
+  shape.closePath();
+
+  for (const c of cutouts) {
+    const hw = Math.min(c.w, w - 2 * EDGE) / 2;
+    const hd = Math.min(c.d, d - 2 * EDGE) / 2;
+    if (hw <= 0.01 || hd <= 0.01) continue;
+    const cx = Math.min(Math.max(c.along - w / 2, -w / 2 + EDGE + hw), w / 2 - EDGE - hw);
+    // Shape-y maps to world -z after the -90° X rotation below; the carcass
+    // centerline (world z = 0) is shape-y = +COUNTER_OVER / 2.
+    const cy = COUNTER_OVER / 2;
+    const hole = new THREE.Path();
+    hole.moveTo(cx - hw, cy - hd);
+    hole.lineTo(cx + hw, cy - hd);
+    hole.lineTo(cx + hw, cy + hd);
+    hole.lineTo(cx - hw, cy + hd);
+    hole.closePath();
+    shape.holes.push(hole);
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: COUNTER_T, bevelEnabled: false });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  return mesh;
+}
+
+/**
+ * One straight row of cabinets for a run leg (Kitchen v2.1). Local frame:
+ * x 0→len, back plane z=0, front z=d, carcass bottom at yBase. The caller
+ * positions/rotates the returned group onto its leg. Tinting is the caller's
+ * job (it owns the spec).
+ */
+export function cabinetRow(o: {
+  len: number;
+  d: number;
+  carcassH: number;
+  yBase: number;
+  mat: THREE.Material;
+  front: "slab" | "shaker" | "farmhouse";
+  handle: (() => THREE.Object3D | null) | null;
+  drawerUnits?: number; // leading units built as 3-drawer stacks
+  handleAt: "top" | "bottom"; // door-handle edge
+  withPlinth?: boolean;
+}): THREE.Group {
+  const g = new THREE.Group();
+  if (o.len < 0.05) return g;
+  const HANDLE_INSET = 0.04;
+  const unitCount = Math.max(1, Math.round(o.len / 0.6));
+  const unitW = o.len / unitCount;
+  const drawersEff = Math.min(o.drawerUnits ?? 0, unitCount);
+  const frontBandH = Math.max(o.carcassH - 2 * REVEAL, 0.1);
+  const frontBandBottom = o.yBase + REVEAL;
+  const frontZ = o.d + FRONT_T / 2;
+
+  for (let i = 0; i < unitCount; i++) {
+    const x = unitW * (i + 0.5);
+    const unit = carcass(unitW, o.d, o.carcassH, o.mat);
+    unit.position.set(x, o.yBase, o.d / 2);
+    g.add(unit);
+
+    const frontBandW = Math.max(unitW - 2 * REVEAL, 0.1);
+    if (i < drawersEff) {
+      const thirdH = frontBandH / 3;
+      for (let j = 0; j < 3; j++) {
+        const y = frontBandBottom + j * thirdH + thirdH / 2;
+        const front = frontOf(o.front, frontBandW, thirdH - GAP, o.mat);
+        front.position.set(x, y, frontZ);
+        g.add(front);
+        const h = o.handle?.();
+        if (h) {
+          h.rotation.z = Math.PI / 2; // horizontal, drawer convention
+          h.position.set(x, y, frontZ);
+          g.add(h);
+        }
+      }
+    } else {
+      const y = frontBandBottom + frontBandH / 2;
+      const front = frontOf(o.front, frontBandW, frontBandH, o.mat);
+      front.position.set(x, y, frontZ);
+      g.add(front);
+      const h = o.handle?.();
+      if (h) {
+        const hingeLeft = i % 2 === 0;
+        const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
+        const hy = o.handleAt === "top" ? frontBandBottom + frontBandH - 0.06 : frontBandBottom + 0.06;
+        h.position.set(hx, hy, frontZ);
+        g.add(h);
+      }
+    }
+  }
+
+  if (o.withPlinth) {
+    const p = new THREE.Mesh(
+      new THREE.BoxGeometry(Math.max(o.len - 0.04, 0.01), PLINTH_H, Math.max(o.d - 0.03, 0.01)),
+      o.mat,
+    );
+    p.position.set(o.len / 2, PLINTH_H / 2, o.d / 2 - 0.015);
+    g.add(p);
+  }
+  return g;
+}
+
 /** Soft-edged box for sofa seat/back cushions, arms and pillows. */
 export function cushion(w: number, d: number, h: number, mat: THREE.Material): THREE.Mesh {
   const radius = Math.min(w, d, h) * 0.18;

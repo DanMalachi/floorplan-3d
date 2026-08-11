@@ -58,6 +58,24 @@ export function sanitizeSpec(spec: ParametricSpec): ParametricSpec {
   const handle = g.handles.includes(spec.handle) ? spec.handle : g.handles[0];
   const finish = finishValid(spec.finish) ? spec.finish : g.finishes[0];
   const finish2 = g.finishes2 ? (finish2Valid(spec.finish2) ? spec.finish2 : g.finishes2[0]) : undefined;
+  // Variant falls back to the generator's first (default) variant; generators
+  // without variants carry none.
+  const variant = g.variants?.some((v) => v.id === spec.variant)
+    ? spec.variant
+    : g.variants?.[0]?.id;
+  // Multi-leg path (kitchen runs): legs keep sane widths, turns stay ±1.
+  const extraLegs = spec.extraLegs
+    ?.filter((l) => (l.turn === 1 || l.turn === -1) && l.w > 0.05)
+    .map((l) => ({ turn: l.turn, w: clamp(l.w, 0.1, g.dimLimits.w[1]) }));
+  const legDir = spec.legDir === -1 ? -1 : undefined;
+  // Cutouts pass through clamped to the run's actual PATH length — they are
+  // store-maintained (kitchenAttach sync), but a stale save must not cut
+  // past an edge. Exact per-leg intervals are the sync's job.
+  const totalLen =
+    dims.w + (extraLegs?.reduce((acc, l) => acc + dims.d + l.w, 0) ?? 0);
+  const cutouts = spec.cutouts
+    ?.filter((c) => c.w > 0.01 && c.d > 0.01)
+    .map((c) => ({ ...c, along: clamp(c.along, c.w / 2, Math.max(totalLen - c.w / 2, c.w / 2)) }));
 
   return {
     generator: spec.generator,
@@ -69,5 +87,9 @@ export function sanitizeSpec(spec: ParametricSpec): ParametricSpec {
     ...(finish2 !== undefined ? { finish2 } : {}),
     ...(spec.color !== undefined ? { color: spec.color } : {}),
     ...(spec.color2 !== undefined ? { color2: spec.color2 } : {}),
+    ...(variant !== undefined ? { variant } : {}),
+    ...(cutouts !== undefined && cutouts.length > 0 ? { cutouts } : {}),
+    ...(extraLegs !== undefined && extraLegs.length > 0 ? { extraLegs } : {}),
+    ...(legDir !== undefined && extraLegs?.length ? { legDir } : {}),
   };
 }

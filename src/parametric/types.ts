@@ -29,6 +29,17 @@ export interface GeneratorDef {
   /** Flat/overlappable items that neither block nor get blocked by
    *  collision (counter drop-ins sitting on a base run's own OBB). */
   noCollide?: boolean;
+  /** Kitchen v2: this generator lives ON a kitchenBase counter — placed via
+   *  CounterItemGhost, bonded through FurnitureItem.attach, rides its host.
+   *  Any future counter appliance/decor generator just sets this. */
+  counterItem?: boolean;
+  /** Kitchen v2: the countertop hole this item needs, in meters — attachment
+   *  sync writes it into the host's spec.cutouts. Return null for items that
+   *  sit on the surface without cutting (decor, small appliances). */
+  cutoutSize?: (spec: ParametricSpec) => { w: number; d: number } | null;
+  /** Style variants surfaced as chips in the inspector (spec.variant).
+   *  First entry is the default. */
+  variants?: { id: string; label: string }[];
   /** Pure build: spec → group. Origin at floor center (y=0 at floor, x/z centered),
    *  front faces +Z — same convention FurnitureLayer's normalize() produces. */
   build(spec: ParametricSpec): THREE.Group;
