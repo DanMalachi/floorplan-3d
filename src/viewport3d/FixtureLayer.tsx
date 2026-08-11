@@ -10,13 +10,39 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { shadowProps } from "@/render/materialClass";
 import { ROOM_LIGHT } from "@/render/contract";
 import { DEFAULT_FIXTURE_COLOR_K, kelvinToColor } from "@/render/lightPresets";
-import { eligibleLitRooms, resolveFixtureWorldXY, type EligibleRoom } from "@/render/roomLighting";
+import { eligibleLitRooms, resolveFixtureWorldXY, WALL_FIXTURE_GAP_M, type EligibleRoom } from "@/render/roomLighting";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
 import { FIXTURE_CATALOG_BY_ID, WALL_FIXTURE_SILL_M, type FixtureShape } from "@/fixtures/catalog";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFixture } from "@/decorate/eyedropper";
 import { fixtureTexture } from "./fixtureTexture";
+import { WallSurfaceGrid } from "./SnapGridViz";
+import { rayToWall } from "@/parametric/wallRay";
+
+/** Wall-mount from a WALL-FACE raycast (Kitchen v2.1): pointing at a wall
+ *  gives wall, face, along AND height directly — the wall grid is the whole
+ *  interaction, the floor plays no part. Falls back to the floor-projection
+ *  `nearestWallMount` only when the pointer isn't on any wall. */
+function wallMountFromRay(
+  e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
+  scene: Scene,
+  offset: { cx: number; cz: number },
+  fallbackSill: number,
+): FixtureMount | null {
+  const hit = rayToWall(e.ray, scene, offset);
+  if (hit) {
+    return {
+      kind: "wall",
+      wallId: hit.wallId,
+      side: hit.side,
+      offset: Math.min(Math.max(snap(hit.along), 0), hit.L),
+      sill: Math.min(Math.max(snap(hit.height), 0.3), 2.6),
+    };
+  }
+  const p = rayToPlan(e, offset);
+  return p ? nearestWallMount(p.x, p.y, scene, fallbackSill, eyeOf(e, offset)) : null;
+}
 
 // Structurally a duplicate of FurnitureLayer.tsx's FLOOR_PLANE/rayToPlan/snap
 // (~10 stable lines, a physical constant + a raycast) — accepted rather than
@@ -54,8 +80,17 @@ function ceilingYAt(x: number, y: number, rooms: EligibleRoom[]): number {
  * anywhere in a room should snap to *some* wall, the way furniture's own
  * `wallSnap` is magnetic rather than range-gated-to-nothing). Rails/portals
  * never qualify (`isSolidWall`) — nothing to mount a sconce on.
+ *
+ * `offset` locks to the wall grid (multiples of GRID from node a — the same
+ * lattice `WallSurfaceGrid` draws). `side` is the face toward `eye` (the
+ * camera, in plan coords) — NOT toward the cursor: the cursor ray is
+ * intersected with the floor plane, so aiming at an interior wall face puts
+ * the plan point BEHIND the wall and a cursor-side pick chose the exterior
+ * face the user wasn't even looking at.
  */
-function nearestWallMount(x: number, y: number, scene: Scene, sill: number): FixtureMount | null {
+function nearestWallMount(
+  x: number, y: number, scene: Scene, sill: number, eye: { x: number; y: number },
+): FixtureMount | null {
   let best: { dist: number; wallId: string; offset: number; side: "a" | "b" } | null = null;
   const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
   for (const w of scene.walls) {
@@ -73,13 +108,27 @@ function nearestWallMount(x: number, y: number, scene: Scene, sill: number): Fix
     const px = a.x + ux * t;
     const py = a.y + uy * t;
     const dist = Math.hypot(x - px, y - py);
-    const side = (x - px) * -uy + (y - py) * ux;
+    const camSide = (eye.x - px) * -uy + (eye.y - py) * ux;
     if (!best || dist < best.dist) {
-      best = { dist, wallId: w.id, offset: t, side: side >= 0 ? "a" : "b" };
+      best = {
+        dist,
+        wallId: w.id,
+        offset: Math.min(Math.max(snap(t), 0), L),
+        side: camSide >= 0 ? "a" : "b",
+      };
     }
   }
   if (!best) return null;
   return { kind: "wall", wallId: best.wallId, offset: best.offset, side: best.side, sill };
+}
+
+/** The event camera's plan-space position (undoes the recentring offset the
+ *  same way `rayToPlan` does for the cursor). */
+function eyeOf(
+  e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
+  offset: { cx: number; cz: number },
+): { x: number; y: number } {
+  return { x: e.camera.position.x + offset.cx, y: e.camera.position.z + offset.cz };
 }
 
 /** Plan-space rotation (same convention as `FixtureItem.rotation`/
@@ -146,39 +195,76 @@ function FixtureBody({ shape, colorHex, tint, opacity }: {
     depthWrite: opacity === undefined,
   };
 
+  // Dark hardware (stem/plate/arm) shared by every shape — never emissive.
+  const hardware = { color: "#3a3a3a", roughness: 0.5, normalMap, roughnessMap };
+
+  // The local origin of every shape is the LIGHT SOURCE (RoomLight.position):
+  // ROOM_LIGHT.dropBelowCeilingM below the ceiling for ceiling mounts,
+  // WALL_FIXTURE_GAP_M off the wall face for wall mounts. Bodies must span
+  // from the origin back to that surface, or the fixture visibly floats.
+
   if (shape === "pendant") {
+    // Ceiling rose on the slab, cord down to a cone shade with a bulb in it.
     return (
       <group>
+        <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM - 0.011, 0]} {...shadow}>
+          <cylinderGeometry args={[0.045, 0.045, 0.022, 16]} />
+          <meshStandardMaterial {...hardware} />
+        </mesh>
         <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM / 2, 0]} {...shadow}>
           <cylinderGeometry args={[0.008, 0.008, ROOM_LIGHT.dropBelowCeilingM, 8]} />
-          <meshStandardMaterial color="#3a3a3a" roughness={0.5} />
+          <meshStandardMaterial {...hardware} />
         </mesh>
         <mesh position={[0, -0.06, 0]} {...shadow}>
           <coneGeometry args={[0.14, 0.16, 16, 1, true]} />
           <meshStandardMaterial {...matProps} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.1, 0]} {...shadow}>
+          <sphereGeometry args={[0.032, 16, 12]} />
+          <meshStandardMaterial {...matProps} emissiveIntensity={emissiveIntensity * 1.6} />
         </mesh>
       </group>
     );
   }
 
   if (shape === "sconce") {
-    // Local origin is the resolved wall-face point (already pushed out past
-    // the wall's thickness) — the plate sits just beyond it, front (+Z per
-    // FurnitureItem's own "front faces local +Z" convention) toward the room.
+    // Anchored to the wall FACE at local z = -WALL_FIXTURE_GAP_M (the resolved
+    // origin is pushed that far into the room for the lighting math — Sprint
+    // 3c): backplate on the wall, arm out to a glowing open-cylinder shade
+    // around the light source. Front is +Z toward the room, per
+    // FurnitureItem's own "front faces local +Z" convention.
     return (
-      <mesh position={[0, 0, 0.03]} {...shadow}>
-        <boxGeometry args={[0.16, 0.22, 0.06]} />
-        <meshStandardMaterial {...matProps} />
-      </mesh>
+      <group>
+        <mesh position={[0, 0, -WALL_FIXTURE_GAP_M + 0.011]} {...shadow}>
+          <boxGeometry args={[0.09, 0.18, 0.022]} />
+          <meshStandardMaterial {...hardware} />
+        </mesh>
+        <mesh position={[0, 0, -WALL_FIXTURE_GAP_M / 2]} rotation={[Math.PI / 2, 0, 0]} {...shadow}>
+          <cylinderGeometry args={[0.012, 0.012, WALL_FIXTURE_GAP_M, 8]} />
+          <meshStandardMaterial {...hardware} />
+        </mesh>
+        <mesh {...shadow}>
+          <cylinderGeometry args={[0.05, 0.062, 0.16, 16, 1, true]} />
+          <meshStandardMaterial {...matProps} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
     );
   }
 
-  // flushDisc — a squat puck, its top embedded into the ceiling above.
+  // flushDisc — trim plate tight against the ceiling, shallow diffuser dome
+  // below it. The origin (light source) hangs under the housing; the housing
+  // itself reaches up to the slab.
   return (
-    <mesh position={[0, 0.02, 0]} {...shadow}>
-      <cylinderGeometry args={[0.18, 0.18, 0.05, 24]} />
-      <meshStandardMaterial {...matProps} />
-    </mesh>
+    <group>
+      <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM - 0.011, 0]} {...shadow}>
+        <cylinderGeometry args={[0.15, 0.15, 0.022, 24]} />
+        <meshStandardMaterial {...hardware} />
+      </mesh>
+      <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM - 0.022, 0]} scale={[1, 0.42, 1]} {...shadow}>
+        <sphereGeometry args={[0.135, 24, 16]} />
+        <meshStandardMaterial {...matProps} />
+      </mesh>
+    </group>
   );
 }
 
@@ -186,7 +272,14 @@ interface FixtureDrag {
   pointerId: number;
   base: Scene;
   grab: { dx: number; dy: number }; // ceiling only: grab point relative to item center
+  start: { x: number; y: number }; // plan point at pointer-down (dead-zone check)
+  began: boolean; // gesture opened — only after the dead zone is crossed
 }
+
+/** Plan-space dead zone before a press becomes a drag: a plain click (select)
+ *  must never nudge the item, but select-and-drag works in ONE motion — no
+ *  click-to-select-then-click-again-to-drag two-step. */
+const DRAG_DEAD_ZONE_M = 0.035;
 
 function FixtureItemView({ item, offset, rooms }: {
   item: FixtureItem;
@@ -210,10 +303,9 @@ function FixtureItemView({ item, offset, rooms }: {
     if (s.appMode !== "furnish" || s.placing) return; // fixture edits in Furnish only, same as furniture
     e.stopPropagation();
     if (sampleFixture(item)) return; // eyedropper (Plan Dock P7): sample instead of select
-    const wasSelected = s.sel3d?.kind === "fixture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "fixture", id: item.id });
-    // First click only selects (see FurnitureLayer's onPointerDown for why).
-    if (!wasSelected) return;
+    // Select AND arm the drag in one press. The gesture itself only opens
+    // once the pointer leaves the dead zone, so a plain click never nudges.
     const p = rayToPlan(e, offset);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -221,8 +313,7 @@ function FixtureItemView({ item, offset, rooms }: {
       item.mount.kind === "ceiling"
         ? { dx: p.x - item.mount.x, dy: p.y - item.mount.y }
         : { dx: 0, dy: 0 }; // wall items snap directly under the cursor — no relative grab
-    drag.current = { pointerId: e.pointerId, base: s.scene, grab };
-    s.beginGesture();
+    drag.current = { pointerId: e.pointerId, base: s.scene, grab, start: p, began: false };
   };
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -231,6 +322,11 @@ function FixtureItemView({ item, offset, rooms }: {
     e.stopPropagation();
     const p = rayToPlan(e, offset);
     if (!p) return;
+    if (!d.began) {
+      if (Math.hypot(p.x - d.start.x, p.y - d.start.y) < DRAG_DEAD_ZONE_M) return;
+      d.began = true;
+      useSceneStore.getState().beginGesture();
+    }
 
     let mount: FixtureMount;
     if (item.mount.kind === "ceiling") {
@@ -238,7 +334,7 @@ function FixtureItemView({ item, offset, rooms }: {
       const y = e.shiftKey ? p.y - d.grab.dy : snap(p.y - d.grab.dy);
       mount = { kind: "ceiling", x, y };
     } else {
-      const snapped = nearestWallMount(p.x, p.y, d.base, item.mount.sill);
+      const snapped = wallMountFromRay(e, d.base, offset, item.mount.sill);
       if (!snapped) return;
       mount = snapped;
     }
@@ -257,7 +353,8 @@ function FixtureItemView({ item, offset, rooms }: {
     e.stopPropagation();
     (e.target as Element).releasePointerCapture(e.pointerId);
     drag.current = null;
-    useSceneStore.getState().endGesture("Move fixture");
+    // A click inside the dead zone never opened a gesture — nothing to commit.
+    if (d.began) useSceneStore.getState().endGesture("Move fixture");
   };
 
   const scene = useSceneStore((s) => s.scene);
@@ -312,7 +409,7 @@ function PlacementGhost({ offset, rooms }: { offset: { cx: number; cz: number };
     const p = rayToPlan(e, offset);
     if (!p) return;
     if (onWall) {
-      setWallMount(nearestWallMount(p.x, p.y, scene, WALL_FIXTURE_SILL_M));
+      setWallMount(wallMountFromRay(e, scene, offset, WALL_FIXTURE_SILL_M));
     } else {
       setPos(e.shiftKey ? p : { x: snap(p.x), y: snap(p.y) });
     }
@@ -360,8 +457,25 @@ function PlacementGhost({ offset, rooms }: { offset: { cx: number; cz: number };
           <FixtureBody shape={spec.shape} colorHex={kelvinToColor(DEFAULT_FIXTURE_COLOR_K)} opacity={0.55} />
         </group>
       )}
+      {/* The wall grid the ghost is snapping to — same cell rhythm as the
+          floor/ceiling overlays (SnapGridViz). */}
+      {wallMount?.kind === "wall" && (
+        <WallSurfaceGrid scene={scene} wallId={wallMount.wallId} side={wallMount.side} />
+      )}
     </>
   );
+}
+
+/** Wall grid while DRAGGING an existing wall fixture (the placement ghost
+ *  above renders its own). The dragged item's live mount is already in the
+ *  store scene (gesture updates write through), so this just mirrors it. */
+function DraggedWallFixtureGrid({ scene }: { scene: Scene }) {
+  const dragging = useSceneStore((s) => s.gestureBase !== null);
+  const sel3d = useSceneStore((s) => s.sel3d);
+  if (!dragging || sel3d?.kind !== "fixture") return null;
+  const item = (scene.fixtures ?? []).find((f) => f.id === sel3d.id);
+  if (!item || item.mount.kind !== "wall") return null;
+  return <WallSurfaceGrid scene={scene} wallId={item.mount.wallId} side={item.mount.side} />;
 }
 
 export function FixtureLayer({ scene, offset }: {
@@ -377,6 +491,7 @@ export function FixtureLayer({ scene, offset }: {
         <FixtureItemView key={item.id} item={item} offset={offset} rooms={rooms} />
       ))}
       <PlacementGhost offset={offset} rooms={rooms} />
+      <DraggedWallFixtureGrid scene={scene} />
     </group>
   );
 }

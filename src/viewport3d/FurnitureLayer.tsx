@@ -211,7 +211,14 @@ interface FurnDrag {
   base: Scene;
   walls: OBB[];
   grab: { dx: number; dy: number }; // grab point relative to item center
+  start: { x: number; y: number }; // plan point at pointer-down (dead-zone check)
+  began: boolean; // gesture opened — only after the dead zone is crossed
 }
+
+/** Plan-space dead zone before a press becomes a drag: a plain click (select)
+ *  must never nudge the item, but select-and-drag works in ONE motion — no
+ *  click-to-select-then-click-again-to-drag two-step. */
+const DRAG_DEAD_ZONE_M = 0.035;
 
 function FurnitureItemView({ item, offset }: {
   item: FurnitureItem;
@@ -248,11 +255,9 @@ function FurnitureItemView({ item, offset }: {
     if (s.appMode !== "furnish" || s.placing) return; // furniture edits in Furnish only
     e.stopPropagation();
     if (sampleFurniture(item)) return; // eyedropper (Plan Dock P7): sample instead of select
-    const wasSelected = s.sel3d?.kind === "furniture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "furniture", id: item.id });
-    // First click only selects (confirms the pick) so a click doesn't also
-    // nudge the item; a second click, now that it's selected, arms the drag.
-    if (!wasSelected) return;
+    // Select AND arm the drag in one press. The gesture itself only opens
+    // once the pointer leaves the dead zone, so a plain click never nudges.
     const p = rayToPlan(e, offset);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -261,8 +266,9 @@ function FurnitureItemView({ item, offset }: {
       base: s.scene,
       walls: wallOBBs(s.scene),
       grab: { dx: p.x - item.x, dy: p.y - item.y },
+      start: p,
+      began: false,
     };
-    s.beginGesture();
   };
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -271,6 +277,11 @@ function FurnitureItemView({ item, offset }: {
     e.stopPropagation();
     const p = rayToPlan(e, offset);
     if (!p) return;
+    if (!d.began) {
+      if (Math.hypot(p.x - d.start.x, p.y - d.start.y) < DRAG_DEAD_ZONE_M) return;
+      d.began = true;
+      useSceneStore.getState().beginGesture();
+    }
     let x = p.x - d.grab.dx;
     let y = p.y - d.grab.dy;
     let rotation = item.rotation;
@@ -309,7 +320,8 @@ function FurnitureItemView({ item, offset }: {
     (e.target as Element).releasePointerCapture(e.pointerId);
     drag.current = null;
     setColliding(false);
-    useSceneStore.getState().endGesture("Move furniture");
+    // A click inside the dead zone never opened a gesture — nothing to commit.
+    if (d.began) useSceneStore.getState().endGesture("Move furniture");
   };
 
   return (

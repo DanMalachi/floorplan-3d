@@ -19,7 +19,7 @@ import {
  *  enough that dot(N,L) with its own wall isn't ~0 (Sprint 3c: a wall light
  *  sitting almost in the wall's own plane always renders that wall as the
  *  darkest surface in the room, however bright the fixture is). */
-const WALL_FIXTURE_GAP_M = 0.14;
+export const WALL_FIXTURE_GAP_M = 0.14;
 
 /** Fixed reference area a wall-mounted fixture sizes itself against, instead
  *  of the room's actual area (Sprint 3c). `roomFixtureCandela` scaling a

@@ -15,7 +15,10 @@ import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
 import { RunDrawGhost } from "@/parametric/RunDrawGhost";
+import { CounterItemGhost } from "@/parametric/CounterItemGhost";
+import { RunHandles } from "@/parametric/RunHandles";
 import { FixtureLayer } from "./FixtureLayer";
+import { SnapGridOverlays } from "./SnapGridViz";
 import { MeasureTool } from "./MeasureTool";
 import { WallTool } from "./buildTools/WallTool";
 import { OpeningTool } from "./buildTools/OpeningTool";
@@ -316,8 +319,16 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
     (s.gestureBase !== null && !s.doorGestureActive) ||
     (s.appMode === "build" && s.buildTool !== "select") ||
     s.placing !== null ||
+    s.placingRun !== null ||
+    s.placingCounter !== null ||
     s.brush !== null ||
-    s.eyedropper,
+    s.eyedropper ||
+    // Hovering a draggable item in Furnish locks the camera BEFORE the press:
+    // CameraControls listens on the canvas DOM element, so it sees the same
+    // pointerdown the item's drag handler does — disabling it only once the
+    // gesture state lands (a React render later) let that first press orbit
+    // the camera underneath a starting drag.
+    (s.appMode === "furnish" && s.hover3d !== null),
   );
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
@@ -336,14 +347,17 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
     const s = useSceneStore.getState();
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === "z") {
+    // Letter shortcuts match on e.code (physical key), not e.key: a Hebrew/
+    // Russian/... layout types a different character on the same key, and
+    // e.key-based matching silently dead-keys R/Z/Y for those users.
+    if (mod && e.code === "KeyZ") {
       if (e.shiftKey) s.redoScene();
       else s.undoScene();
-    } else if (mod && e.key.toLowerCase() === "y") {
+    } else if (mod && e.code === "KeyY") {
       s.redoScene();
     } else if (e.key === "Delete" || e.key === "Backspace") {
       s.deleteSelected3d();
-    } else if (e.key.toLowerCase() === "r" && !mod) {
+    } else if (e.code === "KeyR" && !mod) {
       const step = (Math.PI / 12) * (e.shiftKey ? -1 : 1); // 15° per tap
       if (s.placing) s.rotatePlacing(step);
       else if (s.sel3d?.kind === "furniture") s.rotateSelectedFurniture(step);
@@ -352,6 +366,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
     } else if (e.key === "Escape") {
       if (s.brush) s.setBrush(null);
       else if (s.placing) s.setPlacing(null);
+      else if (s.placingCounter) s.setPlacingCounter(null);
       else if (s.gestureBase) s.cancelGesture();
       else s.setSel3d(null);
     } else {
@@ -406,6 +421,8 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
           <RunDrawGhost offset={offset} />
+          <CounterItemGhost offset={offset} />
+          <RunHandles offset={offset} />
           <FixtureLayer scene={scene} offset={offset} />
           <MeasureTool offset={offset} />
           <WallTool offset={offset} />
@@ -413,6 +430,8 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <StairLayer scene={scene} />
           <CameraFocusRig offset={offset} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
+          {/* Snap grids (floor/ceiling) shown while placing or dragging. */}
+          <SnapGridOverlays />
           {/* Collaborators' selection markers (plan coords, inside the group). */}
           {collabOverlay}
         </group>

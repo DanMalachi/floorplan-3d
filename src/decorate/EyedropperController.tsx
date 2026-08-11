@@ -26,7 +26,9 @@ export function EyedropperController() {
       const t = e.target as HTMLElement | null;
       const typing = !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
       if (typing) return;
-      if (e.key.toLowerCase() === "e") {
+      // e.code (physical key), not e.key: non-Latin layouts type a different
+      // character on the same key and e.key matching dead-keys the shortcut.
+      if (e.code === "KeyE") {
         const s = useSceneStore.getState();
         s.setEyedropper(!s.eyedropper);
       }
