@@ -2,20 +2,35 @@
 
 Start a fresh session with this file and the `furniture-catalog-gap-audit` memory,
 which is the source of truth for what Phases 1–4 are. Phases 1 (bathroom) and
-2 (appliances, plus the mirror/towel/bin split) are shipped and uncommitted on
+2 (appliances, plus the mirror/towel/bin split) are shipped and committed on
 branch `parametric-furniture`.
 
-## What Phase 3 is
+## Status
 
-Four generators, because every room currently reads dead:
+- **`rug` — DONE**, commit `fcd46da`. Five product cards (wool area, round shag,
+  Persian medallion, modern geometric, braided jute round), suite
+  `npm run test:decor` (160 checks). What that build learned is below under
+  "Surfaces" — read it before writing another material.
+- **`wallArt`, `tv`, `curtain` — NOT BUILT.** Scope unchanged (below).
+- **Wide room roll-out — NOT DONE.** Rugs reach Living + Bedroom only. Dan
+  chose WIDE coverage: rug also in dining/study/kids + a bathroom bathmat;
+  wallArt in those plus kitchen/bathroom/laundry; tv in living/bedroom/study/
+  kids; curtain in living/bedroom/dining/study/kids. Each room needs its own
+  hotspot button and true-scale art (rule 5).
 
-- `rug` — flat, `noCollide`, uses the existing ambientCG PBR floor textures
+## What is left of Phase 3
+
 - `wallArt` — framed print / canvas / gallery set / wall clock
-- `tv` — ~5cm slab, wall-mounted **or** on a stand, size chips 43–75"
-- `curtain` — rod + sine-displaced panel planes; drape pair / single / roman blind / sheer
+- `tv` — ~5cm slab, wall-mounted **or** on a stand, size chips 43–75", with a
+  labelled screen on/off toggle (Dan's call: a dim emissive panel, not a lamp)
+- `curtain` — rod + sine-displaced panel planes; drape pair / single / roman
+  blind / sheer. **Placement Dan asked for: one click locks the anchor onto the
+  wall grid, then you drag to size it.** Not auto-fit to the nearest window —
+  he wants precise placement with an easy gesture. RunDrawGhost is the closest
+  existing interaction and is NOT in a protected file.
 
-Plants are deliberately NOT built — they are a sourcing job (Poly Haven,
-BlenderKit `nature`), not a generator.
+Plants are deliberately NOT built — a sourcing job (Poly Haven, BlenderKit
+`nature`), not a generator.
 
 ## Before writing anything
 
@@ -23,19 +38,21 @@ BlenderKit `nature`), not a generator.
 npm run dev                     # visual pass is not optional
 npx tsc --noEmit
 npm run test:accessories && npm run test:appliances && npm run test:bathroom
+npm run test:decor
 npx tsx src/parametric/kitchen.test.ts
 ```
 
-Read `src/parametric/bin.ts` (simple), `appliance.ts` (variants + mounting) and
-`accessories.test.ts` (what a suite has to cover). Copy their shape.
+Read `src/parametric/bin.ts` (simple), `appliance.ts` (variants + mounting),
+`rug.ts` (surfaces, custom geometry) and `softDecor.test.ts`. Copy their shape.
 
-## The rules. Each one below cost a review round in Phase 2 — don't re-learn them
+## The rules. Each one below cost a review round — don't re-learn them
 
 1. **A variant is a product, not a style.** Every card carries its own
    `defaults` (dims *and* finish) and the generator sets `variantIsProduct: true`,
    which hides the inspector's variant chips. Switching a placed 75" TV to
    "wall clock" would keep the TV's dimensions. Styling that a placed item can
    be re-tuned to (colour, finish, front profile) stays in the inspector.
+   Shape belongs to the product too, never to the finish.
 2. **Mounting is per-variant, never per-generator.** `wallMounted(spec)` for
    wall art / wall-mounted TVs / curtains; plain floor for rugs and TV stands.
    A generator that mixes them must NOT set a flat `defaultElevation` — that
@@ -52,7 +69,10 @@ Read `src/parametric/bin.ts` (simple), `appliance.ts` (variants + mounting) and
    position (a TV hangs on the wall band; a rug lies on the floor plane), then
    re-space the row around it. Never wedge it in as a small box beside
    something unrelated, and never hide it behind another product's button.
-   Watch keyword collisions: "bin" is a substring of "cabinet".
+   Watch keyword collisions: "bin" is a substring of "cabinet", and two buttons
+   must never both match one product (the rug had to leave "Lamp & decor").
+   The app's floating compass badge covers the navigator's bottom-left corner —
+   art parked under it is art nobody can click.
 6. **Dead controls hide**: `ModuleDef.appliesTo(spec)` and
    `GeneratorDef.showFronts(spec)`. A control that does nothing for this
    variant teaches people the inspector lies.
@@ -61,9 +81,11 @@ Read `src/parametric/bin.ts` (simple), `appliance.ts` (variants + mounting) and
 8. **Materials**: no `transmission` — it needs its own render pass and turns
    panels into mirrors. Anything live (a `Reflector`) sets
    `userData.keepMaterial` so `ParametricModel` doesn't clone it dead.
-   Canvas-built finishes (painted / oak / walnut / fabric) don't exist headless,
-   so tests must swap to a canvas-free finish **the generator itself offers** —
-   `sanitizeSpec` resets anything else straight back into the canvas.
+   Canvas-built finishes (painted / oak / walnut / fabric / every rug pattern)
+   AND image-based ones (the ambientCG scans go through `THREE.TextureLoader`,
+   which needs a document as much as a canvas does) don't exist headless, so
+   every generator must offer at least one finish that needs neither, and tests
+   swap to it — `sanitizeSpec` resets anything the generator doesn't list.
 9. **Retire, never delete.** Superseding a generator means `rooms: []` plus a
    comment; it keeps rendering items already saved with it. `ALL_PIECES()`
    skips it.
@@ -74,17 +96,52 @@ Read `src/parametric/bin.ts` (simple), `appliance.ts` (variants + mounting) and
 11. **Ship a headless suite with the phase** (`src/parametric/<phase>.test.ts`
     plus a `test:` script): builds, no NaN, footprint, base plane, mounting,
     per-variant sizes distinct, unique glyphs, card names that stand alone (no
-    `·` fallback), navigator reachability for the whole catalog. Phase 2's
-    suites caught 20 real defects before Dan saw them; the ones that reached
-    him were all things the tests didn't measure.
-12. **Then look at it in the browser.** Screenshots catch what tests can't — a
-    hood's flue through the roof, a mirror with no visible glass.
+    `·` fallback), navigator reachability for the whole catalog. Measure in
+    WORLD space — a geometry authored lying down and rotated into place has
+    local coordinates that mean nothing (this produced a false failure claiming
+    a 2cm rug was 1.18m tall).
+12. **Then look at it in the browser, at floor level.** Screenshots catch what
+    tests can't — a hood's flue through the roof, a mirror with no visible
+    glass, a rim that aliases into a dashed black line. The default overhead
+    camera hides all of it.
 
-## Open items carried into Phase 3
+## Surfaces: what the rug build learned (read before writing a material)
+
+Dan's review order is **material first, pattern second**. A pattern painted in
+flat fills is a picture of the thing, not the thing.
+
+- **Real relief beats a normal map.** A map has no silhouette and casts no
+  shadow. `rug.ts` displaces a ~3cm grid with seeded value noise — canvas-free,
+  so it builds headless — by 3mm (wool) to 9mm (shag). Keep the noise frequency
+  under the grid's own Nyquist limit (`1 / 2·CELL`) or it turns to speckle.
+- **Grain at the physical unit's scale.** Colour has to break up at the size of
+  a knot / fibre / strand, and the normal AND roughness must come from that
+  same field so light and pigment agree. `weaveLayer()` in `materials.ts` does
+  this; the first patterned pass shipped without it and was rejected on sight.
+- **Texture scale is easy to get 4× wrong.** "Too zoomed in" was the note on
+  shag at 0.42m per repeat; 0.22m with 4× thinner strokes reads right.
+- **Edges**: no coplanar seam in a second tone, no vertical rim. Chamfer, with
+  relief damped to zero at the rim.
+- **Never sit anything exactly in the floor plane** (y=0) — z-fighting draws a
+  dashed black line. 1.5mm of lift is invisible and fixes it.
+- **Two UV channels when a pattern must not tile**: channel 1 normalised 0..1
+  for the design, channel 0 in metres for the grain. Textures carry `.channel`.
+  Every mesh in the group needs `uv1`, backing planes included.
+- **A pattern that owns its palette opts out of the colour wheel** (leave it out
+  of `COLORABLE`) — tinting multiplies the whole map into one muddy tone.
+
+## Open items carried into the rest of Phase 3
 
 - The worktop microwave and island hood **counter-bond feel** is unit-tested but
   never eyeballed — synthetic clicks can't drive the run-draw tool (click-move-click
   on a wall face). Ask Dan to try it.
+- **Placement ghosts cannot be driven by synthetic clicks at all.** Verifying a
+  new generator in the browser means committing through the store's own
+  `placeFurniture` (`window.useSceneStore.getState()`) and screenshotting; the
+  ghost's *feel* is Dan's call. Camera: the OrbitControls wheel only responds to
+  a `WheelEvent` dispatched on the canvas, and a left-drag inside the room
+  selects and MOVES furniture — drag on empty ground, and check nothing moved
+  before you finish.
 - **Generic stacking** ("place anything on top of anything") needs
   `PlacementGhost` in the protected `FurnitureLayer.tsx`. Not built. Ask first.
 - Each mirror costs **one extra scene render per frame** (planar reflector at
