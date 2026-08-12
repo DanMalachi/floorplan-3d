@@ -625,6 +625,67 @@ function BinOpenGlyph({ size }: { size: number }) {
   );
 }
 
+// Rugs read from above, not in elevation: a rug seen edge-on is a line. Both
+// glyphs are plan-view shapes with a border inset — the bound edge that the
+// geometry itself is built around — and fringe ticks, the one silhouette
+// detail that says "rug" and not "tile".
+function RugAreaGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3.5" y="5" width="17" height="14" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="6" y="7.5" width="12" height="9" rx="0.6" stroke="currentColor" strokeWidth="0.9" opacity="0.7" />
+      <path d="M3.5 5v-1.6M7 5v-1.6M10.5 5v-1.6M14 5v-1.6M17.5 5v-1.6M20.5 5v-1.6" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+      <path d="M3.5 19v1.6M7 19v1.6M10.5 19v1.6M14 19v1.6M17.5 19v1.6M20.5 19v1.6" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+    </svg>
+  );
+}
+
+function RugRoundGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="12" r="5.6" stroke="currentColor" strokeWidth="0.9" opacity="0.7" />
+      {/* Shag: strands poking past the outline. */}
+      <path d="M12 3.5v-1.4M18 6v-1M21.5 12h1.4M18 18l0.9 0.9M12 20.5v1.4M6 18l-0.9 0.9M2.6 12H1.2M6 6L5.1 5.1" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+    </svg>
+  );
+}
+
+function RugPersianGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="6" y="6" width="12" height="12" rx="0.6" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      {/* The medallion is the whole read on this one. */}
+      <path d="M12 8.2l2.6 3.8-2.6 3.8-2.6-3.8z" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M12 6.6v1.2M12 16.2v1.2" stroke="currentColor" strokeWidth="0.9" opacity="0.8" />
+    </svg>
+  );
+}
+
+function RugModernGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="6" y="6.5" width="7" height="4" fill="currentColor" opacity="0.75" />
+      <rect x="11" y="13" width="7" height="3.2" fill="currentColor" opacity="0.5" />
+      <path d="M3.5 11.8h17" stroke="currentColor" strokeWidth="0.9" opacity="0.8" />
+    </svg>
+  );
+}
+
+function RugJuteGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.4" />
+      {/* Coils of one braided rope, spiralled. */}
+      <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+      <circle cx="12" cy="12" r="3.6" stroke="currentColor" strokeWidth="0.9" opacity="0.6" />
+      <circle cx="12" cy="12" r="1.4" stroke="currentColor" strokeWidth="0.9" opacity="0.5" />
+    </svg>
+  );
+}
+
 export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
   "cooktop:induction": CooktopInductionGlyph,
   "cooktop:radiant": CooktopRadiantGlyph,
@@ -668,6 +729,12 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   "bin:kitchen": BinKitchenGlyph,
   "bin:recycling": BinRecyclingGlyph,
   "bin:open": BinOpenGlyph,
+  "rug:area": RugAreaGlyph,
+  "rug:round": RugRoundGlyph,
+  "rug:persian": RugPersianGlyph,
+  "rug:modern": RugModernGlyph,
+  "rug:jute": RugJuteGlyph,
+  rug: RugAreaGlyph,
   appliance: FridgeGlyph,
   rangeHood: ChimneyHoodGlyph,
   mirror: MirrorFramedGlyph,

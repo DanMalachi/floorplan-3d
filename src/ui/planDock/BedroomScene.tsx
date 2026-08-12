@@ -1,13 +1,16 @@
 "use client";
 
-import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, Rug, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
+// See LivingScene: "rug" moved off the decor button onto its own, now that
+// rugs are real products rather than a keyword hoping to match an IKEA item.
 export const BEDROOM_HOTSPOTS: RoomHotspot[] = [
   { id: "bed", label: "Bed", keywords: ["bed"] },
   { id: "nightstand", label: "Nightstand", keywords: ["side table", "nightstand"] },
   { id: "wardrobe", label: "Wardrobe", keywords: ["bookcase", "wardrobe", "closet", "coat rack"] },
-  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "rug", "plant"] },
+  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
 ];
 
 export const BEDROOM_X0 = 12;
@@ -34,9 +37,14 @@ function BedroomItems(): RoomItem[] {
   const nightstand = isoBox(90, ITEMS_Y, 16, 16, 14);
   const wardrobe = isoBox(110, ITEMS_Y, 34, 50, 16);
   const decorBox = isoBox(150, ITEMS_Y, 30, 22, 14);
+  // Bedside rug: it runs along the open side of the bed, in the floor strip in
+  // front of it, at the length a real one has against a 2m bed. Held off the
+  // panel's bottom-left corner, which the app's compass badge sits over.
+  const rugBox = isoBox(48, FLOOR_Y - 9, 66, 0, 24);
 
   return [
     { id: "bed", label: "Bed", keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
+    { id: "rug", label: "Rug", keywords: BEDROOM_HOTSPOTS[3].keywords, box: rugBox, art: <Rug x={48} yFront={FLOOR_Y - 9} w={66} depth={24} /> },
     {
       id: "nightstand",
       label: "Nightstand",
@@ -64,7 +72,7 @@ function BedroomItems(): RoomItem[] {
     {
       id: "decor",
       label: "Lamp & decor",
-      keywords: BEDROOM_HOTSPOTS[3].keywords,
+      keywords: BEDROOM_HOTSPOTS[4].keywords,
       box: decorBox,
       art: (
         <>

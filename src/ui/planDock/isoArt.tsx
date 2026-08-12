@@ -275,6 +275,42 @@ export function Bin({ x, yFront, w, h, pedal = true }: { x: number; yFront: numb
   );
 }
 
+/**
+ * Rug lying ON the floor plane — shared by every room that shows one, so a rug
+ * is the same object wherever you meet it (same reasoning as `Bin`).
+ *
+ * It is drawn as a floor quad (`isoBox` with h=0), not as a low box: a rug has
+ * no elevation to speak of, and giving it one makes it read as a plinth. What
+ * carries the read instead is what a real rug has — an inset border for the
+ * bound edge, and fringe ticks off the two short ends.
+ */
+export function Rug({ x, yFront, w, depth }: { x: number; yFront: number; w: number; depth: number }) {
+  const quad = isoBox(x, yFront, w, 0, depth);
+  const inset = 3.2;
+  // The bound border is an inset on both axes: `inset` in from the left/right
+  // edges, and `inset` ALONG the depth axis (RX, RY) in from the near/far ones.
+  const fieldQuad = isoBox(x + inset + inset * RX, yFront + inset * RY, w - inset * 2, 0, depth - inset * 2);
+  const fringe = [];
+  const ticks = Math.max(3, Math.round(w / 7));
+  for (let i = 0; i <= ticks; i++) {
+    const t = i / ticks;
+    // Front short edge (running along +x) gets ticks pointing at the viewer;
+    // the far edge gets the same, offset along the depth axis.
+    const px = x + w * t;
+    fringe.push(<line key={`f${i}`} x1={px} y1={yFront} x2={px} y2={yFront + 2.4} stroke={DETAIL_LINE} strokeWidth={0.7} opacity={0.7} />);
+    const bx = px + depth * RX;
+    const by = yFront + depth * RY;
+    fringe.push(<line key={`b${i}`} x1={bx} y1={by} x2={bx} y2={by - 2.4} stroke={DETAIL_LINE} strokeWidth={0.7} opacity={0.55} />);
+  }
+  return (
+    <>
+      <polygon points={quad.top} fill="oklch(0.55 0.035 75 / 0.9)" stroke={FACE_STROKE} strokeWidth={0.6} />
+      <polygon points={fieldQuad.top} fill="oklch(0.63 0.045 75 / 0.9)" stroke={FACE_STROKE} strokeWidth={0.4} />
+      {fringe}
+    </>
+  );
+}
+
 /** Wall-mounted rail with towels folded over it — the bathroom's towel spot. */
 export function TowelRail({ x, y, w }: { x: number; y: number; w: number }) {
   return (

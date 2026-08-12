@@ -17,6 +17,7 @@ import { rangeHoodGenerator } from "./rangeHood";
 import { mirrorGenerator } from "./mirror";
 import { towelRailGenerator } from "./towelRail";
 import { binGenerator } from "./bin";
+import { rugGenerator } from "./rug";
 
 const ALL: GeneratorDef[] = [
   wardrobeGenerator,
@@ -36,6 +37,7 @@ const ALL: GeneratorDef[] = [
   mirrorGenerator,
   towelRailGenerator,
   binGenerator,
+  rugGenerator,
 ];
 
 export const GENERATORS: Record<ParametricSpec["generator"], GeneratorDef> = Object.fromEntries(
