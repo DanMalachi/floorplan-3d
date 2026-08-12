@@ -57,7 +57,7 @@ export const sinkGenerator: GeneratorDef = {
   rooms: ["kitchen"],
   wallSnap: false,
   noCollide: true,
-  counterItem: true,
+  counterItem: () => true,
   // The hole the host countertop cuts: rim minus its lip on every side.
   cutoutSize: (spec: ParametricSpec) => ({
     w: Math.max(spec.dims.w - 2 * RIM_LIP, 0.1),

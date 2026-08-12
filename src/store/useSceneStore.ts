@@ -11,7 +11,7 @@ import {
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
-import { sanitizeSpec, GENERATORS } from "@/parametric";
+import { sanitizeSpec, GENERATORS, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
 import { pdToast } from "@/ui/planDock/toast";
@@ -923,7 +923,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       // Wall-cabinet runs hang at the height the anchor click picked (or the
       // generator's default) — placing them through the run-draw path used
       // to drop elevation entirely, leaving wall cabinets on the floor.
-      const elevation = elevationArg ?? GENERATORS[placingRun.generator].defaultElevation;
+      const elevation = elevationArg ?? elevationOf(spec);
       const item = {
         id: `f${stamp}${Math.floor(Math.random() * 1e4)}`,
         assetId: `param:${placingRun.generator}`,

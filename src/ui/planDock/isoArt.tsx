@@ -235,6 +235,66 @@ export function Plant({ x, yFront, r = 6, potH = 8, canopyR = 9 }: { x: number; 
   );
 }
 
+/**
+ * Pedal bin — a tapered body with a lid that reads as a separate part.
+ *
+ * Every room that shows a bin uses this one, so a bin looks like the same
+ * object wherever you meet it. The plain `Cylinder` it replaces was a straight
+ * tube with a disc on top, which read as a tin can: what makes a bin a bin is
+ * the taper toward the floor, the lid sitting proud of the body with a shadow
+ * line under it, and the pedal at the foot.
+ */
+export function Bin({ x, yFront, w, h, pedal = true }: { x: number; yFront: number; w: number; h: number; pedal?: boolean }) {
+  const rTop = w / 2;
+  const rBot = rTop * 0.84;
+  const cx = x + rTop;
+  const ryTop = rTop * 0.42;
+  const bodyTop = yFront - h;
+  return (
+    <>
+      {/* Tapered body between the two ellipses. */}
+      <path
+        d={`M ${cx - rTop} ${bodyTop} L ${cx - rBot} ${yFront} A ${rBot} ${rBot * 0.42} 0 0 0 ${cx + rBot} ${yFront} L ${cx + rTop} ${bodyTop} Z`}
+        fill={FACE_FRONT}
+        stroke={FACE_STROKE}
+        strokeWidth={0.6}
+      />
+      {/* Shadow line under the lid — the gap that says it opens. */}
+      <ellipse cx={cx} cy={bodyTop} rx={rTop} ry={ryTop} fill="oklch(0.24 0.01 90 / 0.85)" stroke={FACE_STROKE} strokeWidth={0.5} />
+      {/* Lid, a touch wider than the body and lifted off it. */}
+      <ellipse cx={cx} cy={bodyTop - 1.6} rx={rTop * 1.06} ry={ryTop * 1.06} fill={FACE_TOP} stroke={FACE_STROKE} strokeWidth={0.6} />
+      {pedal && (
+        <path
+          d={`M ${cx + rBot * 0.2} ${yFront - 1} l ${rBot * 0.9} 0`}
+          stroke={DETAIL_LINE}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+      )}
+    </>
+  );
+}
+
+/** Wall-mounted rail with towels folded over it — the bathroom's towel spot. */
+export function TowelRail({ x, y, w }: { x: number; y: number; w: number }) {
+  return (
+    <>
+      <line x1={x} y1={y} x2={x + w} y2={y} stroke={DETAIL_LINE} strokeWidth={1.4} strokeLinecap="round" />
+      <line x1={x + 1} y1={y} x2={x + 1} y2={y - 3} stroke={DETAIL_LINE} strokeWidth={1} />
+      <line x1={x + w - 1} y1={y} x2={x + w - 1} y2={y - 3} stroke={DETAIL_LINE} strokeWidth={1} />
+      {[0.14, 0.55].map((f) => (
+        <path
+          key={f}
+          d={`M ${x + w * f} ${y} v 14 a 2.1 2.1 0 0 0 4 0 v -14`}
+          fill="oklch(0.74 0.03 200 / 0.5)"
+          stroke={DETAIL_LINE}
+          strokeWidth={0.7}
+        />
+      ))}
+    </>
+  );
+}
+
 /** Small tank box + narrower bowl box — toilet. */
 export function Toilet({ x, yFront, w, depth }: { x: number; yFront: number; w: number; depth: number }) {
   const tank = isoBox(x, yFront - depth * 0.5, w, 18, depth * 0.5);

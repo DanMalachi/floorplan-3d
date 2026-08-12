@@ -21,14 +21,20 @@ import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useSceneStore } from "@/store/useSceneStore";
 import { pdToast } from "@/ui/planDock/toast";
-import { attachedPose, findHostRun } from "./kitchenAttach";
+import { attachedPose, counterLiftOf, findHostRun, isCounterHost } from "./kitchenAttach";
 import { ParametricModel } from "./ParametricModel";
+import { pathLegs, runLocalToWorld } from "./runPath";
 import { rayToWall, roomFacingSide } from "./wallRay";
 import { GRID } from "@/viewport3d/snap";
-import type { Scene } from "@/schema/scene";
+import { WALL_HEIGHT } from "@/schema/constants";
+import type { FurnitureItem, Scene } from "@/schema/scene";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const yawOf = (rotation: number) => -rotation;
+/** Worktop slabs run a little past the cabinets on every side, so the ghost
+ *  latches slightly before the cursor is pixel-perfect — the same forgiveness
+ *  findHostRun's own margins give. */
+const HOST_SIDE_PAD = 0.12;
 
 function rayToPlan(e: ThreeEvent<PointerEvent | MouseEvent>, offset: { cx: number; cz: number }) {
   const hit = new THREE.Vector3();
@@ -71,8 +77,10 @@ function wallPose(
     rotation: Math.atan2(-nx, ny),
     // Keep the whole item on the wall: its own height is measured up from the
     // mount point, so a tall mirror can't be hung with its top through the
-    // ceiling or its base below the floor.
-    elevation: Math.min(Math.max(snap(hit.height), 0.1), Math.max(2.6 - itemH, 0.1)),
+    // ceiling or its base below the floor. The ceiling is WALL_HEIGHT — the
+    // 2.6 this used to allow is above it, which is how a chimney hood's flue
+    // ended up sticking out through the roof.
+    elevation: Math.min(Math.max(snap(hit.height), 0.1), Math.max(WALL_HEIGHT - itemH, 0.1)),
   };
 }
 
@@ -143,6 +151,46 @@ function WallItemGhost({ offset }: { offset: { cx: number; cz: number } }) {
   );
 }
 
+/**
+ * An invisible slab lying ON each counter surface, one per leg of every base
+ * run — the thing that makes dropping an item onto a worktop behave the way
+ * dropping it on the floor does.
+ *
+ * Without it the ghost read the FLOOR plane: the cursor sat visually on the
+ * counter while the item it was carrying tracked a point on the ground metres
+ * further back, and hovering the run handed the pointer to the run itself
+ * (select + drag the host instead of placing on it), which is why the ghost
+ * appeared to freeze over a counter. The slab sits 4mm above the worktop, so
+ * it is the nearest thing under the pointer and answers first.
+ */
+export function counterSurfaces(scene: Scene): { host: FurnitureItem; x: number; y: number; yaw: number; len: number; d: number; top: number }[] {
+  const out: { host: FurnitureItem; x: number; y: number; yaw: number; len: number; d: number; top: number }[] = [];
+  for (const host of scene.furniture) {
+    if (!isCounterHost(host) || !host.parametric) continue;
+    const spec = host.parametric;
+    const d = spec.dims.d;
+    for (const leg of pathLegs(spec)) {
+      const mid = {
+        x: leg.sx + leg.dx * (leg.len / 2) + leg.fx * (d / 2),
+        z: leg.sz + leg.dz * (leg.len / 2) + leg.fz * (d / 2),
+      };
+      const p = runLocalToWorld(host, mid);
+      out.push({
+        host,
+        x: p.x,
+        y: p.y,
+        // The leg's own travel direction, in the same convention attachedPose
+        // uses for an attached item's rotation.
+        yaw: yawOf(host.rotation + Math.atan2(-leg.fx, leg.fz)),
+        len: leg.len,
+        d,
+        top: (host.elevation ?? 0) + spec.dims.h,
+      });
+    }
+  }
+  return out;
+}
+
 function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
   const placingCounter = useSceneStore((s) => s.placingCounter);
   const scene = useSceneStore((s) => s.scene);
@@ -164,16 +212,25 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
   if (!placingCounter) return null;
   const spec = placingCounter.spec;
   const found = cursor ? findHostRun(cursor.x, cursor.y, scene, spec.dims.w) : null;
+  const surfaces = counterSurfaces(scene);
+
+  /** Plan point of whatever the pointer actually touched — the worktop slab
+   *  when it's over a counter, the ground plane otherwise. Reading the FLOOR
+   *  for both is what made the item lag behind the cursor by the parallax of
+   *  the counter's height. */
+  const pointToPlan = (e: ThreeEvent<PointerEvent | MouseEvent>) => ({
+    x: e.point.x + offset.cx,
+    y: e.point.z + offset.cz,
+  });
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
-    const p = rayToPlan(e, offset);
-    if (p) setCursor(p);
+    e.stopPropagation();
+    setCursor(pointToPlan(e));
   };
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    const p = rayToPlan(e, offset);
-    if (!p) return;
+    const p = pointToPlan(e);
     const hit = findHostRun(p.x, p.y, useSceneStore.getState().scene, spec.dims.w);
     if (!hit) {
       pdToast("Place it on a kitchen counter");
@@ -182,11 +239,14 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
     useSceneStore.getState().placeCounterItem(hit.host.id, hit.along);
   };
 
-  const pose = found ? attachedPose(found.host, found.along) : null;
+  // Same lift the store's attachment sync will apply, so an island hood
+  // previews where it will actually hang rather than flat on the worktop.
+  const pose = found ? attachedPose(found.host, found.along, counterLiftOf(spec)) : null;
 
   return (
     <>
-      {/* Catch-all ground plane: drives the ghost and takes the place click. */}
+      {/* Catch-all ground plane: drives the ghost and takes the place click
+          everywhere OFF a counter. */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[offset.cx, 0.001, offset.cz]}
@@ -196,6 +256,23 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
         <planeGeometry args={[600, 600]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
+
+      {/* …and a slab on each worktop, which the pointer meets before the run
+          itself. Nearest-hit wins in R3F, so stopping propagation here also
+          stops the host being selected and dragged by the placing click. */}
+      {surfaces.map((s, i) => (
+        <mesh
+          key={`${s.host.id}:${i}`}
+          position={[s.x, s.top + 0.004, s.y]}
+          rotation={[0, s.yaw, 0]}
+          onPointerMove={onMove}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={onClick}
+        >
+          <boxGeometry args={[s.len + HOST_SIDE_PAD, 0.002, s.d + HOST_SIDE_PAD]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      ))}
       {pose && (
         <group position={[pose.x, pose.elevation, pose.y]} rotation={[0, yawOf(pose.rotation), 0]}>
           <ParametricModel spec={spec} opacity={0.55} />

@@ -8,7 +8,8 @@
 import { useState } from "react";
 import type { FurnitureItem, ParametricSpec } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
-import { GENERATORS } from "@/parametric";
+import { GENERATORS, elevationOf } from "@/parametric";
+import { WALL_HEIGHT } from "@/schema/constants";
 import { isColorable } from "@/parametric/materials";
 import { pdToast } from "../toast";
 import { PD, pdChip } from "../tokens";
@@ -62,6 +63,7 @@ const FINISH_HEX: Record<string, string> = {
   ceramic: "#f6f6f4",
   acrylic: "#f4f5f4",
   steel: "#c6c8ca",
+  "glass-black": "#101113",
 };
 
 // Color-wheel presets — the old hardcoded finish colors (painted-charcoal,
@@ -141,6 +143,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       />
 
       {g.modules.map((m) => {
+        // A control that does nothing for this variant is worse than a missing
+        // one: burner count on a fridge teaches people the inspector lies.
+        if (m.appliesTo && !m.appliesTo(spec)) return null;
         const value = spec.modules[m.key] ?? m.default;
         // Two-state modules read as words, not counts — a stepper offering
         // "0" and "1" for an open/closed lid is a number pretending to be a
@@ -172,7 +177,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         );
       })}
 
-      {g.variants && g.variants.length > 1 && (
+      {g.variants && g.variants.length > 1 && !g.variantIsProduct && (
         <PdChipGroup>
           {g.variants.map((v) => (
             <button
@@ -186,7 +191,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         </PdChipGroup>
       )}
 
-      {g.fronts.length > 1 && (
+      {g.fronts.length > 1 && (g.showFronts?.(spec) ?? true) && (
         <PdChipGroup>
           {g.fronts.map((f) => (
             <button key={f} style={pdChip(spec.front === f, pdChipFlex)} onClick={() => update({ front: f })}>
@@ -240,11 +245,22 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         </div>
       )}
 
-      {spec.generator === "kitchenWall" && (
+      {/* Anything that hangs needs its height editable, not just wall
+          cabinets: dragging a hood or a mirror slides it ALONG its wall, so
+          this field is the only way to change how high it hangs. */}
+      {(spec.generator === "kitchenWall" || (g.wallMounted?.(spec) ?? false)) && (
         <PdNumField
           label="Height off floor"
-          value={item.elevation ?? g.defaultElevation ?? 1.45}
-          onCommit={(m) => useSceneStore.getState().setFurnitureElevation(item.id, Math.min(2.1, Math.max(0.8, m)))}
+          value={item.elevation ?? elevationOf(spec) ?? 1.45}
+          onCommit={(m) => {
+            // Wall cabinets keep their original worktop-to-ceiling range; other
+            // wall items use the same limits the placement ghost enforces, so a
+            // height you could point at can't be rejected when you retype it.
+            const isRun = spec.generator === "kitchenWall";
+            const lo = isRun ? 0.8 : 0.1;
+            const hi = isRun ? 2.1 : Math.max(WALL_HEIGHT - spec.dims.h, 0.1);
+            useSceneStore.getState().setFurnitureElevation(item.id, Math.min(hi, Math.max(lo, m)));
+          }}
           displayScale={100}
           unit="cm"
         />

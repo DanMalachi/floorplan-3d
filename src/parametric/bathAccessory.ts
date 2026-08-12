@@ -4,18 +4,18 @@ import type { GeneratorDef } from "./types";
 import { finishMaterial, tagTintOfMaterial } from "./materials";
 import { chromeMat, roundedRect, toPath, extrudeUp } from "./bathParts";
 
-// Bathroom accessories — Phase 1 fixture #5, and the one that fills the dock's
-// "Mirror, towel & bin" hotspot.
+// RETIRED — kept only so items saved before the split still render, the same
+// way kitchenRun outlived kitchenBase/kitchenWall. `rooms: []` takes it out of
+// every picker; nothing new is ever placed with it.
 //
-// Five small objects share one generator because they share one decision:
-// where on the wall they hang. Splitting them into five generators would mean
-// five near-identical files and five cards for what a user thinks of as
-// "the small stuff".
+// Phase 1 argued that five small objects could share one generator because
+// they shared one decision: where on the wall they hang. That was wrong on the
+// two counts that matter. They do NOT share a size — a 60cm towel rail, a 15cm
+// ring and a 25cm bin were all being placed at 0.6 × 0.12 × 0.75 — and a bin
+// does not hang on a wall at all, which made the mounting rule a per-variant
+// exception rather than the thing they had in common.
 //
-// Everything here except the bin is WALL-MOUNTED, so `defaultElevation` puts a
-// fresh placement at eye/rail height instead of on the floor, and the geometry
-// is authored hanging off a wall at -Z, matching the wall-mounted convention
-// kitchenWall already uses.
+// Replaced by three real products: mirror.ts, towelRail.ts, bin.ts.
 
 /** True mirror: a near-perfect metal reflector. Roughness has to stay very
  *  low — at even 0.1 the environment smears and it reads as brushed steel. */
@@ -42,16 +42,18 @@ export const bathAccessoryGenerator: GeneratorDef = {
   id: "bathAccessory",
   label: "Mirror & accessories",
   category: "Bathroom",
-  rooms: ["bathroom"],
+  rooms: [], // retired: renders old saves, never offered again
   wallSnap: true,
   dimLimits: { w: [0.15, 1.2], d: [0.06, 0.35], h: [0.1, 1.2] },
   modules: [],
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["painted", "oak", "walnut", "ceramic"],
-  defaultElevation: 1.25,
   // Everything here hangs on the wall except the bin, which stands on the
-  // floor — so placement mode follows the variant, not the generator.
+  // floor — so both placement mode AND start height follow the variant, not
+  // the generator. A flat 1.25 here used to be applied to the bin as well,
+  // which placed it hovering at chest height.
+  defaultElevation: (spec) => ((spec.variant ?? "mirror") === "bin" ? undefined : 1.25),
   wallMounted: (spec) => (spec.variant ?? "mirror") !== "bin",
   // Each accessory stands on its own in the picker — they share a generator
   // only because they share a mounting decision, not because they're one

@@ -69,7 +69,7 @@ export const cooktopGenerator: GeneratorDef = {
   rooms: ["kitchen"],
   wallSnap: false,
   noCollide: true,
-  counterItem: true,
+  counterItem: () => true,
   cutoutSize: (spec: ParametricSpec) => ({
     w: Math.max(spec.dims.w - 2 * PLATE_LIP, 0.1),
     d: Math.max(spec.dims.d - 2 * PLATE_LIP, 0.1),

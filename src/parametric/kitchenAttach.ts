@@ -35,15 +35,28 @@ export const isCounterHost = (f: FurnitureItem): boolean =>
   f.parametric?.generator === "kitchenBase";
 
 export const isCounterItem = (f: Pick<FurnitureItem, "parametric">): boolean =>
-  !!f.parametric && !!GENERATORS[f.parametric.generator]?.counterItem;
+  !!f.parametric && !!GENERATORS[f.parametric.generator]?.counterItem?.(f.parametric);
+
+/** Hangs on a wall: mirrors, towel rails, chimney/visor hoods, the over-range
+ *  microwave. Placement already reads the wall grid; this is what lets EDITING
+ *  do the same. */
+export const isWallItem = (f: Pick<FurnitureItem, "parametric">): boolean =>
+  !!f.parametric && !!GENERATORS[f.parametric.generator]?.wallMounted?.(f.parametric);
+
+/** Metres above the worktop an attached item bonds at. Zero for everything
+ *  that sits ON the counter; an extractor over an island is the exception —
+ *  it belongs to the run and rides it, but hangs above it. */
+export const counterLiftOf = (spec: ParametricSpec): number =>
+  GENERATORS[spec.generator]?.counterLift?.(spec) ?? 0;
 
 /** World pose an attached item derives from its host — path-aware: the leg
  *  under `along` supplies position AND orientation, so a sink on a U's
  *  second leg faces that leg's room side. Elevation is the host's counter
- *  surface (kitchenBase dims.h IS that height). */
+ *  surface (kitchenBase dims.h IS that height), plus the item's own lift. */
 export function attachedPose(
   host: FurnitureItem,
   along: number,
+  lift = 0,
 ): { x: number; y: number; rotation: number; elevation: number } {
   const spec = host.parametric!;
   const legs = pathLegs(spec);
@@ -57,7 +70,7 @@ export function attachedPose(
     x: world.x,
     y: world.y,
     rotation: host.rotation + Math.atan2(-leg.fx, leg.fz),
-    elevation: spec.dims.h,
+    elevation: spec.dims.h + lift,
   };
 }
 
@@ -123,7 +136,7 @@ export function syncKitchenAttachments(scene: Scene): Scene {
       return free;
     }
     const along = clampAlongToPath(host.parametric!, f.attach.along, f.parametric.dims.w);
-    const pose = attachedPose(host, along);
+    const pose = attachedPose(host, along, counterLiftOf(f.parametric));
     if (
       along === f.attach.along &&
       f.x === pose.x && f.y === pose.y &&
@@ -290,6 +303,19 @@ export function applyKitchenGesture(next: Scene, prev: Scene): Scene {
     const before = prevById.get(f.id);
     if (before === f || !f.parametric) return f; // untouched by this update
     if (isKitchenRun(f)) {
+      const snapped = snapRunToWall(f, next);
+      if (snapped && (snapped.x !== f.x || snapped.y !== f.y || snapped.rotation !== f.rotation)) {
+        changed = true;
+        return { ...f, ...snapped };
+      }
+      return f;
+    }
+    if (isWallItem(f)) {
+      // A wall item stays ON the wall grid while it is dragged, exactly as it
+      // did when it was placed. The generic drag path snaps to the FLOOR grid,
+      // which slid hoods and mirrors out into the middle of the room at their
+      // old height. Same projection a run uses (wall FACE, not centerline);
+      // elevation is untouched, so it slides along the wall at its own height.
       const snapped = snapRunToWall(f, next);
       if (snapped && (snapped.x !== f.x || snapped.y !== f.y || snapped.rotation !== f.rotation)) {
         changed = true;

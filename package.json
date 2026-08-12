@@ -27,6 +27,8 @@
     "bk:thumbnails": "tsx scripts/blenderkit/fetch-thumbnails.ts",
     "furniture:audit-rooms": "tsx scripts/audit-room-coverage.ts",
     "test:bathroom": "tsx src/parametric/bathroom.test.ts",
+    "test:appliances": "tsx src/parametric/appliances.test.ts",
+    "test:accessories": "tsx src/parametric/accessories.test.ts",
     "furniture:test-retag": "tsx src/furniture/roomRetag.test.ts",
     "mat:index": "tsx scripts/materials/fetch-index.ts",
     "mat:fetch": "tsx scripts/materials/fetch-materials.ts",

@@ -21,6 +21,12 @@ export function ParametricModel({ spec, tint, opacity }: {
     applyShadowClass(g, opacity !== undefined ? "transient" : "opaqueArchitecture");
     g.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
+      // A mirror's reflection lives in its material's uniforms, refreshed each
+      // frame by the Reflector that owns it. Cloning that material hands the
+      // renderer a copy nobody updates — a mirror showing one frozen frame —
+      // so flagged meshes keep the material (and the tint/opacity that would
+      // mean nothing on it).
+      if (o.userData.keepMaterial) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
         | THREE.Material
@@ -56,6 +62,12 @@ export function ParametricModel({ spec, tint, opacity }: {
       group.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return;
         o.geometry.dispose();
+        // A Reflector also owns a render target; its own dispose() frees that.
+        const asReflector = o as THREE.Mesh & { dispose?: () => void };
+        if (o.userData.keepMaterial && typeof asReflector.dispose === "function") {
+          asReflector.dispose();
+          return;
+        }
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         for (const m of mats) m.dispose();
       });

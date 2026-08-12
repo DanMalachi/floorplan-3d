@@ -57,7 +57,7 @@ import {
 import { useThumbnail } from "@/furniture/thumbnails";
 import { variantGroupFor } from "@/furniture/variants";
 import { GENERATORS } from "@/parametric";
-import type { GeneratorDef } from "@/parametric/types";
+import { piecesOf, type CustomPiece } from "@/parametric/pieces";
 import type { ParametricSpec } from "@/schema/scene";
 import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
@@ -110,14 +110,20 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   outdoors: OUTDOORS_HOTSPOTS,
 };
 
-// Item dock resize (Plan Dock P9). Default is sized to comfortably fit 2 full
-// rows of ItemCard out of the box: card ≈ 4(pad-top) + 48(thumb) + 3(gap) +
-// ~11.4(name line, 9.5px/1.2) + 3(gap) + ~9.6(kind line, 8px/1.2) + 4(pad-bottom)
-// ≈ 83px, × 2 rows + 6px row gap ≈ 172px item-grid area; plus the resize
-// handle (12) + gap (6) + tab-icon row (28) + gap (6) + category/search row
-// (22) + inner gap (4) + outer padding (16) ≈ 268px total.
-const DOCK_HEIGHT_KEY = "planDock:dockHeight";
-const DOCK_HEIGHT_DEFAULT = 268;
+// Item dock resize (Plan Dock P9). One ItemCard ≈ 4(pad-top) + 48(thumb) +
+// 3(gap) + ~11.4(name line, 9.5px/1.2) + 3(gap) + ~9.6(kind line, 8px/1.2) +
+// 4(pad-bottom) ≈ 83px; the chrome around the grid (resize handle 12 + gap 6 +
+// tab-icon row 28 + gap 6 + category/search row 22 + inner gap 4 + outer
+// padding 16) ≈ 96px.
+//
+// P9 opened at TWO full rows (268). That reads as a drawer that opened itself:
+// it eats a third of a laptop viewport before you've asked for anything, in
+// every room. Default is now ONE full row plus a slice of the next — enough to
+// show there's more and to invite the resize handle, without covering the room
+// you're decorating. The storage key is versioned so a stored 268 from the old
+// default doesn't survive as a "choice" nobody made.
+const DOCK_HEIGHT_KEY = "planDock:dockHeight2";
+const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
 const DOCK_HEIGHT_MIN = 150; // old single-row height — still collapsible to compact
 const DOCK_HEIGHT_MAX_CAP = 560;
 
@@ -215,31 +221,6 @@ function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
 
 /** One browsable piece: a generator, plus which of its variants this card
  *  places. A generator with no variants yields a single card. */
-export interface CustomPiece {
-  generator: GeneratorDef;
-  variantId?: string;
-  label: string;
-  /** Glyph key: "<generatorId>:<variantId>", falling back to the generator id. */
-  glyphKey: string;
-  keywords: string[];
-}
-
-/** Expands a generator into its per-variant cards. Variants are separate
- *  products in the picker — one "Toilet" card hides the fact that three
- *  different toilets are available, which makes the catalog look empty. */
-function piecesOf(g: GeneratorDef): CustomPiece[] {
-  if (!g.variants || g.variants.length <= 1) {
-    return [{ generator: g, label: g.label, glyphKey: g.id, keywords: g.hotspotKeywords ?? [g.label] }];
-  }
-  return g.variants.map((v) => ({
-    generator: g,
-    variantId: v.id,
-    label: v.cardLabel ?? `${g.label} · ${v.label}`,
-    glyphKey: `${g.id}:${v.id}`,
-    keywords: v.hotspotKeywords ?? g.hotspotKeywords ?? [g.label],
-  }));
-}
-
 /** Same test as `matchesHotspot`, for a custom piece. Custom cards used to
  *  ignore the hotspot filter entirely, so clicking "Toilet" in the illustrated
  *  room still showed every custom card the room had — the picture stopped
@@ -460,23 +441,23 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
   const placingCounter = useSceneStore((s) => s.placingCounter);
   const placingWall = useSceneStore((s) => s.placingWall);
   const assetId = `param:${generator.id}`;
-  // The card places ITS variant, not the generator's default one.
-  const spec: ParametricSpec = piece.variantId
-    ? { ...generator.defaultSpec, variant: piece.variantId }
-    : generator.defaultSpec;
+  // The card places ITS variant, at ITS size — resolved in piecesOf.
+  const spec: ParametricSpec = piece.spec;
   // kitchenBase/kitchenWall use the run-draw drag tool (RunDrawGhost);
-  // counter items (sink/cooktop/…) use the snap-onto-a-counter ghost and
-  // wall items (mirrors, towel rails) the wall-grid ghost (both in
-  // CounterItemGhost); everything else keeps the single-click floor ghost.
+  // counter items (sink/cooktop/worktop microwave/island hood) use the
+  // snap-onto-a-counter ghost and wall items (mirrors, towel rails, chimney
+  // hoods) the wall-grid ghost (both in CounterItemGhost); everything else
+  // keeps the single-click floor ghost.
   const isRun = generator.id === "kitchenBase" || generator.id === "kitchenWall";
   // Mounting follows THIS card's variant — a mirror hangs, the bin that shares
-  // its generator does not.
+  // its generator does not; a chimney hood hangs, a fridge does not.
   const isWall = generator.wallMounted?.(spec) ?? false;
+  const isCounter = generator.counterItem?.(spec) ?? false;
   // Compare the armed variant too, or all three toilet cards light up at once.
   const sameVariant = (s: { spec: ParametricSpec } | null) => s?.spec.variant === spec.variant;
   const active = isRun
     ? placingRun?.generator === generator.id
-    : generator.counterItem
+    : isCounter
       ? placingCounter?.generator === generator.id && sameVariant(placingCounter)
       : isWall
         ? placingWall?.generator === generator.id && sameVariant(placingWall)
@@ -490,7 +471,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       s.setPlacingRun(active ? null : { generator: generator.id, spec });
       return;
     }
-    if (generator.counterItem) {
+    if (isCounter) {
       s.setPlacingCounter(active ? null : { generator: generator.id, spec });
       return;
     }
@@ -657,8 +638,15 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   // Pinned first and unaffected by the category chips, but the HOTSPOT filter
   // does apply: the illustrated room is a navigator, so clicking the toilet in
   // it has to narrow to toilets, custom cards included.
+  // Room membership is per CARD, not per generator: one appliance generator
+  // covers the Kitchen's fridge and the Laundry's washing machine, and neither
+  // tab should show the other's card.
   const customGenerators = useMemo(
-    () => Object.values(GENERATORS).filter((g) => g.rooms.includes(room)).flatMap(piecesOf),
+    () =>
+      Object.values(GENERATORS)
+        .filter((g) => g.rooms.includes(room))
+        .flatMap(piecesOf)
+        .filter((p) => p.rooms.includes(room)),
     [room],
   );
   const visibleCustom = useMemo(() => {

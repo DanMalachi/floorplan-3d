@@ -111,6 +111,34 @@ console.log("\nrun-draw chain — straight, L, U in one drag");
 }
 
 // ---------------------------------------------------------------------------
+// A cursor a few centimetres round the corner used to satisfy the turn test
+// AND, on the leg the turn had just created, the retreat test — so the two
+// recursed into each other until the stack overflowed, killing the canvas
+// mid-drag. Turning waits until the cursor clears the corner square.
+console.log("\nrun-draw chain — just past a corner does not ping-pong");
+{
+  const sc = scene();
+  const depth = 0.6;
+  const hit = findNearestWall(1, 0.3, sc, depth)!;
+  let chain: ChainSeg[] = [{ hit, anchor: 1, dir: 0 }];
+  chain = advanceChain(chain, { x: 3.0, y: 0.3 }, sc, depth);
+
+  for (const y of [0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.8, 0.9, 1.0]) {
+    let out: ChainSeg[] | null = null;
+    let threw = "";
+    try {
+      out = advanceChain(chain, { x: 3.9, y }, sc, depth);
+    } catch (e) {
+      threw = e instanceof Error ? e.message : String(e);
+    }
+    check(`cursor ${y}m past the corner resolves`, !!out, threw);
+    if (out) check(`  …to a sane chain at ${y}m`, out.length >= 1 && out.length <= 3, `${out.length} legs`);
+  }
+  // Once the cursor is genuinely along the next wall, it still turns.
+  check("it still turns when the cursor clears the corner", advanceChain(chain, { x: 3.9, y: 1.5 }, sc, depth).length === 2);
+}
+
+// ---------------------------------------------------------------------------
 console.log("\nthick walls — legs sit on FACES, not centerlines");
 {
   const sc = scene([], 0.3); // interior 0.15..3.85 × 0.15..2.85

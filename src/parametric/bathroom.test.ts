@@ -7,7 +7,8 @@
 // measurable, so they're measured here rather than eyeballed.
 
 import * as THREE from "three";
-import { GENERATORS, sanitizeSpec } from "@/parametric";
+import { GENERATORS, sanitizeSpec, elevationOf } from "@/parametric";
+import { ALL_PIECES } from "@/parametric/pieces";
 import type { ParametricSpec } from "@/schema/scene";
 import { BATHROOM_HOTSPOTS } from "@/ui/planDock/BathroomScene";
 import { BEDROOM_HOTSPOTS } from "@/ui/planDock/BedroomScene";
@@ -242,15 +243,30 @@ for (const variant of ["vanity-doors", "vanity-drawers", "countertop", "pedestal
   check("a ray down the basin centre passes the top", hits.length > 0 && hits[0].point.y < 0.85, hits.length ? `first hit y=${hits[0].point.y.toFixed(3)}` : "no hit");
 }
 
-console.log("\naccessories — every variant builds");
+// The accessory catch-all is RETIRED (split into mirror/towelRail/bin), but a
+// project saved before the split still holds items pointing at it, so it has
+// to keep rendering every variant it ever placed — and has to stay out of the
+// pickers while it does. Same contract kitchenRun has.
+console.log("\nretired accessories — old saves still render, nothing new is offered");
 for (const variant of ["mirror", "cabinet", "towel-rail", "towel-ladder", "bin"]) {
   const g = GENERATORS.bathAccessory.build(specFor("bathAccessory", { variant }));
-  check(`accessory/${variant} builds`, countVerts(g) > 40 && !hasNaN(g), `${countVerts(g)} verts`);
+  check(`saved accessory/${variant} still builds`, countVerts(g) > 40 && !hasNaN(g), `${countVerts(g)} verts`);
 }
-check("accessories start at wall height, not on the floor", (GENERATORS.bathAccessory.defaultElevation ?? 0) > 0.9);
+check("the retired generator is off every room tab", GENERATORS.bathAccessory.rooms.length === 0);
+check(
+  "a saved wall accessory keeps its wall height",
+  (elevationOf(specFor("bathAccessory", { variant: "mirror" })) ?? 0) > 0.9,
+);
+// …and the one that doesn't hang starts ON the floor. A flat generator-level
+// elevation used to hang the bin at 1.25m too.
+check(
+  "a saved bin keeps its place on the floor",
+  elevationOf(specFor("bathAccessory", { variant: "bin" })) === undefined,
+);
 
-console.log("\nall five fixtures are on the bathroom tab");
+console.log("\nthe bathroom's own fixtures are on the bathroom tab");
 for (const id of BATH_IDS) {
+  if (id === "bathAccessory") continue; // retired above
   check(`${id} is tagged bathroom`, GENERATORS[id].rooms.includes("bathroom"));
   check(`${id} clamps + builds from an absurd spec`, countVerts(GENERATORS[id].build(specFor(id, { dims: { w: 99, d: -3, h: 0 }, variant: "nonsense" }))) > 40);
 }
@@ -275,25 +291,17 @@ console.log("\nnavigator — every generator is reachable from a hotspot in each
     outdoors: OUTDOORS_HOTSPOTS,
   };
 
-  // Mirrors BottomDock's piecesOf(): every VARIANT is its own card, so every
-  // variant — not just the generator — has to be reachable.
-  for (const g of Object.values(GENERATORS)) {
-    if (g.rooms.length === 0) continue; // kitchenRun: legacy, deliberately unplaceable
-    const pieces =
-      g.variants && g.variants.length > 1
-        ? g.variants.map((v) => ({
-            name: `${g.id}:${v.id}`,
-            words: (v.hotspotKeywords ?? g.hotspotKeywords ?? [g.label]).join(" ").toLowerCase(),
-          }))
-        : [{ name: g.id, words: (g.hotspotKeywords ?? [g.label]).join(" ").toLowerCase() }];
-
-    for (const piece of pieces) {
-      for (const room of g.rooms) {
-        const hotspots = HOTSPOTS_BY_ROOM[room];
-        if (!hotspots) continue;
-        const hit = hotspots.find((h) => h.keywords.some((k) => piece.words.includes(k)));
-        check(`${piece.name} is reachable from a ${room} hotspot`, !!hit, `keywords "${piece.words}" match no hotspot`);
-      }
+  // Every VARIANT is its own card, so every variant — not just the generator —
+  // has to be reachable, and in the rooms THAT CARD appears in: Phase 2's
+  // appliance generator spans kitchen/laundry/bathroom while each of its cards
+  // belongs to one or two of them (`piecesOf` resolves that).
+  for (const piece of ALL_PIECES()) {
+    const words = piece.keywords.join(" ").toLowerCase();
+    for (const room of piece.rooms) {
+      const hotspots = HOTSPOTS_BY_ROOM[room];
+      if (!hotspots) continue;
+      const hit = hotspots.find((h) => h.keywords.some((k) => words.includes(k)));
+      check(`${piece.glyphKey} is reachable from a ${room} hotspot`, !!hit, `keywords "${words}" match no hotspot`);
     }
   }
 

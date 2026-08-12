@@ -12,6 +12,11 @@ import { bathtubGenerator } from "./bathtub";
 import { showerGenerator } from "./shower";
 import { vanityGenerator } from "./vanity";
 import { bathAccessoryGenerator } from "./bathAccessory";
+import { applianceGenerator } from "./appliance";
+import { rangeHoodGenerator } from "./rangeHood";
+import { mirrorGenerator } from "./mirror";
+import { towelRailGenerator } from "./towelRail";
+import { binGenerator } from "./bin";
 
 const ALL: GeneratorDef[] = [
   wardrobeGenerator,
@@ -26,6 +31,11 @@ const ALL: GeneratorDef[] = [
   showerGenerator,
   vanityGenerator,
   bathAccessoryGenerator,
+  applianceGenerator,
+  rangeHoodGenerator,
+  mirrorGenerator,
+  towelRailGenerator,
+  binGenerator,
 ];
 
 export const GENERATORS: Record<ParametricSpec["generator"], GeneratorDef> = Object.fromEntries(
@@ -33,6 +43,21 @@ export const GENERATORS: Record<ParametricSpec["generator"], GeneratorDef> = Obj
 ) as Record<ParametricSpec["generator"], GeneratorDef>;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+/**
+ * Height off the floor a FRESH placement of this spec starts at, or undefined
+ * for anything that stands on the floor.
+ *
+ * The single reader of `GeneratorDef.defaultElevation`, because the field is
+ * now per-spec: one generator can cover a mirror that hangs at 1.25m and a bin
+ * that does not, and reading the raw field gives the bin the mirror's height.
+ * Items placed onto a wall or onto a counter never consult this at all — they
+ * take their height from the wall ray or from their host run.
+ */
+export function elevationOf(spec: ParametricSpec): number | undefined {
+  const e = GENERATORS[spec.generator]?.defaultElevation;
+  return typeof e === "function" ? e(spec) : e;
+}
 
 // v1 finish ids retired from the pickable lists in R1 (painted split into a
 // colorable "painted" + wheel, fabric-linen renamed to "fabric") but still

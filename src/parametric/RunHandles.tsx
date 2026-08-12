@@ -12,7 +12,7 @@ import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
-import { GENERATORS } from "@/parametric";
+import { GENERATORS, elevationOf } from "@/parametric";
 import { isKitchenRun } from "./kitchenAttach";
 import { pathLegs, runLocalToWorld, type RunLeg } from "./runPath";
 import { ACCENT } from "@/viewport3d/WallMesh";
@@ -62,7 +62,7 @@ function EndHandle({ item, end, offset }: {
   const grip = runLocalToWorld(item, gripLocal);
   const handleY =
     spec.generator === "kitchenWall"
-      ? (item.elevation ?? g.defaultElevation ?? 0) + spec.dims.h / 2
+      ? (item.elevation ?? elevationOf(spec) ?? 0) + spec.dims.h / 2
       : spec.dims.h + 0.06;
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {

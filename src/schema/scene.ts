@@ -209,7 +209,8 @@ export interface ParametricSpec {
   // kitchenRun stays valid forever (renders pre-R2 saves) but is no longer
   // placeable — kitchenBase/kitchenWall replace it as of R2.
   // Bathroom Phase 1 adds the five fixture ids below — additive only, same as
-  // the Kitchen v2 ids above.
+  // the Kitchen v2 ids above. Phase 2 adds "appliance" (one generator for the
+  // whole white-goods set) and "rangeHood", on the same additive terms.
   generator:
     | "wardrobe"
     | "kitchenRun"
@@ -222,7 +223,13 @@ export interface ParametricSpec {
     | "bathtub"
     | "shower"
     | "vanity"
-    | "bathAccessory";
+    | "bathAccessory"
+    | "appliance"
+    | "rangeHood"
+    // The three products the retired "bathAccessory" catch-all split into.
+    | "mirror"
+    | "towelRail"
+    | "bin";
   /** Outer bounding dims in meters: w along local X, d along local Z, h up. */
   dims: { w: number; d: number; h: number };
   /** Generator-specific integer counts, e.g. { doors: 3, drawers: 2 }.

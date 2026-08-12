@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, Cylinder, isoCylinder, Toilet, Bathtub, BasinCutout, KnobRow, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Toilet, Bathtub, Bin, TowelRail, BasinCutout, KnobRow, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
@@ -10,12 +10,22 @@ export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
   { id: "shower", label: "Shower", keywords: ["shower"] },
   { id: "bathtub", label: "Bathtub", keywords: ["bathtub", "tub"] },
   { id: "vanity", label: "Sink & vanity", keywords: ["sink", "basin", "vanity"] },
-  { id: "washer", label: "Washer", keywords: ["washer"] },
+  // Israeli bathrooms routinely hold the laundry pair, and Phase 2 put a
+  // tumble dryer in the catalog — a hotspot that only said "washer" left it
+  // with no way in.
+  { id: "washer", label: "Washer & dryer", keywords: ["washer", "washing machine", "dryer", "laundry"] },
   // Mirrors were folded into "extras" and so had no button of their own, even
   // though a mirror is one of the things people go looking for first.
   { id: "mirror", label: "Mirror", keywords: ["mirror"] },
-  { id: "extras", label: "Towel & bin", keywords: ["towel", "trash", "bin"] },
+  // Towels and the bin used to share one "extras" button, which is the same
+  // mistake the generator made — they are different products bought at
+  // different times. Split, they also stop competing for one hit box that
+  // spanned the wall band down to the floor.
+  { id: "towels", label: "Towels", keywords: ["towel", "hook"] },
+  { id: "bin", label: "Bin", keywords: ["trash", "waste", "recycl"] },
 ];
+
+const kw = (id: string) => BATHROOM_HOTSPOTS.find((h) => h.id === id)!.keywords;
 
 export const BATHROOM_X0 = 12;
 export const BATHROOM_WIDTH = 194;
@@ -36,18 +46,23 @@ function BathroomItems(): RoomItem[] {
   // the vanity's projected top face, so the two hit boxes never overlap.
   const mirror = isoBox(130, 96, 34, 26, 2);
 
-  // Towel rail hangs on the wall; the bin stands under it. One hotspot covers
-  // both, so its hit box spans the wall band down to the floor.
-  const bin = isoCylinder(199, ITEMS_Y + 2, 5, 11);
+  // Towel rail hangs on the wall; the bin stands on the floor beneath it.
+  // Two objects, two hit boxes, two buttons.
   const RAIL_Y = 100;
-  const extras = isoBox(192, ITEMS_Y, 14, ITEMS_Y - RAIL_Y + 4, 10);
+  const RAIL_X = 190;
+  const RAIL_W = 18;
+  const towels = isoBox(RAIL_X, RAIL_Y + 18, RAIL_W, 20, 6);
+  const BIN_X = 192;
+  const BIN_W = 13;
+  const BIN_H = 15;
+  const binBox = isoBox(BIN_X, ITEMS_Y + 3, BIN_W, BIN_H, 9);
 
   return [
-    { id: "toilet", label: "Toilet", keywords: BATHROOM_HOTSPOTS[0].keywords, box: toiletBox, art: <Toilet x={14} yFront={ITEMS_Y} w={22} depth={16} /> },
+    { id: "toilet", label: "Toilet", keywords: kw("toilet"), box: toiletBox, art: <Toilet x={14} yFront={ITEMS_Y} w={22} depth={16} /> },
     {
       id: "shower",
       label: "Shower",
-      keywords: BATHROOM_HOTSPOTS[1].keywords,
+      keywords: kw("shower"),
       box: shower,
       art: (
         <>
@@ -56,11 +71,11 @@ function BathroomItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "bathtub", label: "Bathtub", keywords: BATHROOM_HOTSPOTS[2].keywords, box: tub, art: <Bathtub x={80} yFront={ITEMS_Y} w={46} depth={20} /> },
+    { id: "bathtub", label: "Bathtub", keywords: kw("bathtub"), box: tub, art: <Bathtub x={80} yFront={ITEMS_Y} w={46} depth={20} /> },
     {
       id: "vanity",
       label: "Sink & vanity",
-      keywords: BATHROOM_HOTSPOTS[3].keywords,
+      keywords: kw("vanity"),
       box: vanity,
       art: (
         <>
@@ -71,8 +86,8 @@ function BathroomItems(): RoomItem[] {
     },
     {
       id: "washer",
-      label: "Washer",
-      keywords: BATHROOM_HOTSPOTS[4].keywords,
+      label: "Washer & dryer",
+      keywords: kw("washer"),
       box: washer,
       art: (
         <>
@@ -89,7 +104,7 @@ function BathroomItems(): RoomItem[] {
       // no depth to speak of — an isometric box would read as a cabinet.
       id: "mirror",
       label: "Mirror",
-      keywords: BATHROOM_HOTSPOTS[5].keywords,
+      keywords: kw("mirror"),
       box: mirror,
       art: (
         <g>
@@ -127,26 +142,18 @@ function BathroomItems(): RoomItem[] {
       ),
     },
     {
-      id: "extras",
-      label: "Towel & bin",
-      keywords: BATHROOM_HOTSPOTS[6].keywords,
-      box: extras,
-      art: (
-        <>
-          {/* Wall-mounted rail with two towels folded over it, bin beneath. */}
-          <line x1={bin.cx - 9} y1={RAIL_Y} x2={bin.cx + 9} y2={RAIL_Y} stroke={DETAIL_LINE} strokeWidth={1.4} strokeLinecap="round" />
-          {[-5.5, 2].map((dx) => (
-            <path
-              key={dx}
-              d={`M ${bin.cx + dx} ${RAIL_Y} v 13 a 1.8 1.8 0 0 0 3.4 0 v -13`}
-              fill="oklch(0.74 0.03 200 / 0.5)"
-              stroke={DETAIL_LINE}
-              strokeWidth={0.7}
-            />
-          ))}
-          <Cylinder c={bin} />
-        </>
-      ),
+      id: "towels",
+      label: "Towels",
+      keywords: kw("towels"),
+      box: towels,
+      art: <TowelRail x={RAIL_X} y={RAIL_Y} w={RAIL_W} />,
+    },
+    {
+      id: "bin",
+      label: "Bin",
+      keywords: kw("bin"),
+      box: binBox,
+      art: <Bin x={BIN_X} yFront={ITEMS_Y + 3} w={BIN_W} h={BIN_H} />,
     },
   ];
 }

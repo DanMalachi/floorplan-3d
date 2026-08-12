@@ -27,7 +27,7 @@ import type { Node, Scene, Wall } from "@/schema/scene";
 import { DEFAULT_THICKNESS, WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { pdToast } from "@/ui/planDock/toast";
-import { GENERATORS } from "@/parametric";
+import { GENERATORS, elevationOf } from "@/parametric";
 import type { ParametricSpec } from "@/schema/scene";
 import { legsToSpec, pathLegs, type WorldLeg } from "./runPath";
 import { rayToWall, roomFacingSide } from "./wallRay";
@@ -45,6 +45,8 @@ const CORNER_ANGLE_MIN = (85 * Math.PI) / 180;
 const CORNER_ANGLE_MAX = (95 * Math.PI) / 180;
 const CORNER_SLACK = 0.35; // how close to the corner the drag must get to turn
 const DIR_DEADZONE = 0.08; // jitter that must not lock the drag direction
+// How far behind its own start a tail may sit before it counts as a retreat.
+const RETREAT_SLACK = 0.1;
 const COLLINEAR_DOT = 0.94; // ~20°: a straight continuation, not a corner
 const LEN_STEP = 0.1;
 const yawOf = (rotation: number) => -rotation;
@@ -295,7 +297,11 @@ export function advanceChain(
   cursor: { x: number; y: number },
   scene: Scene,
   depth: number,
+  /** Recursion budget. Turning and un-turning are mutually recursive, so a
+   *  geometry the two disagree about must cost a frame, never the stack. */
+  steps = 8,
 ): ChainSeg[] {
+  if (steps <= 0) return chain;
   const tail = chain[chain.length - 1];
   const { hit } = tail;
   const alongCursor = (cursor.x - hit.a.x) * hit.ux + (cursor.y - hit.a.y) * hit.uy;
@@ -310,9 +316,9 @@ export function advanceChain(
   // Retreat: cursor pulled back behind this segment's start — un-turn, and
   // hand the segment before it back to the cursor (dropping its fixed length,
   // or an un-turned U would leave its second leg frozen at full wall length).
-  if (chain.length > 1 && rawLen < -0.1) {
+  if (chain.length > 1 && rawLen < -RETREAT_SLACK) {
     const { len: _fixed, ...live } = chain[chain.length - 2];
-    return advanceChain([...chain.slice(0, -2), live], cursor, scene, depth);
+    return advanceChain([...chain.slice(0, -2), live], cursor, scene, depth, steps - 1);
   }
 
   const node = dir > 0 ? hit.b : hit.a;
@@ -335,23 +341,31 @@ export function advanceChain(
     if (adj) {
       const prog =
         (cursor.x - node.x) * adj.hit.ux * adj.dir + (cursor.y - node.y) * adj.hit.uy * adj.dir;
-      if (prog > CORNER_OVERSHOOT) {
+      const adjInsetPre = faceSpanEnd(
+        scene, adj.hit.wall, node, adj.hit.ux, adj.hit.uy, adj.hit.nx, adj.hit.ny,
+      ).inset;
+      // The new leg's anchor lands `lead` past the corner, so a cursor short of
+      // that is BEHIND its own anchor the instant it is created — which the
+      // retreat rule below reads as "un-turn", which turns again, forever. That
+      // mutual recursion overflowed the stack and took the whole canvas down
+      // mid-drag. Turning only once the cursor has cleared the corner square
+      // removes the contradiction instead of refereeing it; the range it now
+      // declines to turn in is exactly the range that used to crash.
+      const lead = adjInsetPre + depth;
+      if (prog > Math.max(CORNER_OVERSHOOT, lead - RETREAT_SLACK)) {
         // NOT grid-rounded: this leg ends where the two wall faces cross, and
         // the committed item hangs its next leg off exactly that point — 5cm
         // of rounding here is 5cm of the next leg buried in the wall.
         const fixed: ChainSeg = { ...tail, dir, len: Math.max(toFace, 0.01) };
-        const adjInset = faceSpanEnd(
-          scene, adj.hit.wall, node, adj.hit.ux, adj.hit.uy, adj.hit.nx, adj.hit.ny,
-        ).inset;
         const next: ChainSeg = {
           hit: adj.hit,
           // The new leg's cabinets start one depth past the face corner (the
           // corner square itself belongs to the turn), and the face corner is
           // half THIS wall's thickness along the new one — not the node.
-          anchor: alongWallNode(adj.hit, node) + adj.dir * (adjInset + depth),
+          anchor: alongWallNode(adj.hit, node) + adj.dir * lead,
           dir: adj.dir,
         };
-        return advanceChain([...chain.slice(0, -1), fixed, next], cursor, scene, depth);
+        return advanceChain([...chain.slice(0, -1), fixed, next], cursor, scene, depth, steps - 1);
       }
     }
   }
@@ -540,7 +554,7 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
   }
   const legs = commitLegs(raw, wLimits);
   const preview = legs.length > 0 ? legsToSpec(legs, spec) : null;
-  const elev = anchorElev ?? GENERATORS[generator].defaultElevation ?? 0;
+  const elev = anchorElev ?? elevationOf(spec) ?? 0;
 
   return (
     <>
