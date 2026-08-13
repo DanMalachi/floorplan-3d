@@ -69,12 +69,14 @@ export const CAMERA = {
    *  shot) so the two can never disagree and clip the scene at full zoom-out. */
   farMul: 4,
 
-  // --- framing (P2 T1/T2/T3): every fitToBox call site shares these --------
-  /** Meters of clearance added on every side of a fitToBox target. Zero
-   *  padding puts the object's silhouette exactly at the frame edge, which
-   *  reads as a crop, not a "frame". One constant so a room click, a
-   *  double-click and the F/Home keys all land with the same comfortable
-   *  margin instead of each inventing its own. */
+  // --- framing (P2 T1/T2/T3): every framing call site shares this ----------
+  /** Meters of clearance added to the framed target's bounding-sphere RADIUS.
+   *  Zero padding puts the silhouette exactly at the frame edge, which reads
+   *  as a crop, not a "frame". One constant so a room click, a double-click
+   *  and the F/Home keys all land with the same comfortable margin instead of
+   *  each inventing its own. Applied to the radius rather than per-side
+   *  because framing goes through `fitToSphere`, which takes no padding
+   *  option — see frameTarget.ts for why it is not `fitToBox`. */
   framePaddingM: 0.5,
 
   // --- keyboard channel (P2 T3) --------------------------------------------

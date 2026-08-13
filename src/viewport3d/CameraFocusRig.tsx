@@ -6,7 +6,7 @@
 // child — reads the new `focusTarget` store field and drives the existing
 // drei CameraControls instance (`makeDefault` in Viewport.tsx).
 //
-// P2 T1: reframes the whole ROOM (fitToBox its loop's bbox) instead of just
+// P2 T1: reframes the whole ROOM (frames its loop bbox) instead of just
 // re-centering on a point at a fixed eye height. focusRoomForTag only ever
 // hands us the room's own loop-vertex centroid, not the room itself, so this
 // re-derives which room that point sits in via point-in-polygon before it can
@@ -22,19 +22,12 @@ import { useSceneStore } from "@/store/useSceneStore";
 import type { Room, Node, Id } from "@/schema/scene";
 import { nodeMap, pointInPolygon } from "@/lib/rooms/roomArea";
 import { WALL_HEIGHT } from "@/schema/constants";
-import { CAMERA } from "./CameraRig";
+import { frameBox } from "./frameTarget";
 
 /** Look-at height for the point-only fallback, meters above the floor —
  *  roughly a seated sightline, so the room reads as a space rather than as a
  *  floor plan. */
 const AIM_Y = 0.6;
-
-const FRAME_PADDING = {
-  paddingLeft: CAMERA.framePaddingM,
-  paddingRight: CAMERA.framePaddingM,
-  paddingTop: CAMERA.framePaddingM,
-  paddingBottom: CAMERA.framePaddingM,
-};
 
 /** Which room (if any) a plan point falls inside, by its loop polygon. First
  *  match wins on overlap, same as focusRoomForTag's own lookup — good enough
@@ -82,7 +75,7 @@ export function CameraFocusRig({ offset }: { offset: { cx: number; cz: number } 
     const room = roomAtPoint(scene.rooms, nodes, focusTarget.x, focusTarget.y);
     const box = room && roomBox(room, nodes, offset);
     if (box) {
-      controls.fitToBox(box, true, FRAME_PADDING);
+      frameBox(controls, box);
       return;
     }
 

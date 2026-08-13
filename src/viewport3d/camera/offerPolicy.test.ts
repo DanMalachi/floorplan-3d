@@ -170,10 +170,11 @@ for (const plane of PLANES) {
 }
 
 console.log("\nthe accept key cannot collide with what is already bound");
-// Viewport.tsx spends R, Escape, Delete/Backspace and the undo pair; P2's
-// camera channel takes T, F, Home, WASD and the arrows; P3b takes Space.
+// Viewport.tsx spends R, Escape, Delete/Backspace and the undo pair; the
+// eyedropper owns E; P2's camera channel takes T, F, Home, WASD, the arrows
+// and comma/period; P3b takes Space.
 const TAKEN = ["KeyR", "Escape", "Delete", "Backspace", "KeyZ", "KeyY", "KeyT", "KeyF", "Home",
-  "KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE", "Space",
+  "KeyW", "KeyA", "KeyS", "KeyD", "KeyE", "Space", "Comma", "Period",
   "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 check(`${ACCEPT_KEY} is free`, !TAKEN.includes(ACCEPT_KEY));
 

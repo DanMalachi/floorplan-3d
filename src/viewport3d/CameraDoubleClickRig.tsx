@@ -19,15 +19,8 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import type { CameraControls } from "@react-three/drei";
-import { CAMERA } from "./CameraRig";
 import { pickOf } from "./pickObject3D";
-
-const FRAME_PADDING = {
-  paddingLeft: CAMERA.framePaddingM,
-  paddingRight: CAMERA.framePaddingM,
-  paddingTop: CAMERA.framePaddingM,
-  paddingBottom: CAMERA.framePaddingM,
-};
+import { frameObject } from "./frameTarget";
 
 export function CameraDoubleClickRig() {
   const controls = useThree((s) => s.controls) as CameraControls | null;
@@ -57,7 +50,7 @@ export function CameraDoubleClickRig() {
       if (!hit) return; // double-click on empty sky/grid — nothing to frame
       const resolved = pickOf(hit.object);
       if (!resolved) return; // hit a non-pickable helper (grid, ghost, …)
-      controls.fitToBox(resolved.object, true, FRAME_PADDING);
+      frameObject(controls, resolved.object);
     };
 
     gl.domElement.addEventListener("dblclick", onDblClick);

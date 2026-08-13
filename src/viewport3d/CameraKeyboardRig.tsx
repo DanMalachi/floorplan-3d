@@ -1,6 +1,6 @@
 "use client";
 
-// Keyboard camera channel (P2 T3): WASD/arrows truck, Q/E orbit azimuth, T
+// Keyboard camera channel (P2 T3): WASD/arrows truck, comma/period orbit, T
 // toggles top view, F frames the selection, Home frames the whole house.
 //
 // This is the load-bearing task of the phase, not a nice-to-have: it is a
@@ -17,6 +17,7 @@ import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { CAMERA } from "./CameraRig";
 import { findPickObject3D } from "./pickObject3D";
+import { frameBox, frameObject } from "./frameTarget";
 
 // e.code (physical key), not e.key — same reason Viewport.tsx's onKeyDown
 // gives: a Hebrew/Russian/... layout types a different character on the same
@@ -27,16 +28,16 @@ const TRUCK_KEYS: Record<string, "fwd" | "back" | "left" | "right"> = {
   KeyA: "left", ArrowLeft: "left",
   KeyD: "right", ArrowRight: "right",
 };
+// Comma/Period, NOT Q/E. `KeyE` is already the Decorate eyedropper toggle
+// (src/decorate/EyedropperController.tsx), bound on window in the capture
+// phase and without stopping propagation — so Q/E orbit made one E press both
+// nudge the camera and arm the eyedropper. Law 2 says one key means one thing,
+// and between an established binding and a new one the established binding
+// keeps the key. Comma/Period are unbound, adjacent, and already read as
+// "rotate" to anyone who has played The Sims.
 const ORBIT_KEYS: Record<string, "left" | "right"> = {
-  KeyQ: "left",
-  KeyE: "right",
-};
-
-const FRAME_PADDING = {
-  paddingLeft: CAMERA.framePaddingM,
-  paddingRight: CAMERA.framePaddingM,
-  paddingTop: CAMERA.framePaddingM,
-  paddingBottom: CAMERA.framePaddingM,
+  Comma: "left",
+  Period: "right",
 };
 
 /** Ignore the shortcut while the user is typing, or while walkthrough mode
@@ -109,13 +110,13 @@ export function CameraKeyboardRig({ halfX, halfZ }: { halfX: number; halfZ: numb
         if (!s.sel3d) return;
         const obj = findPickObject3D(rootScene, s.sel3d);
         if (!obj) return;
-        controls.fitToBox(obj, true, FRAME_PADDING);
+        frameObject(controls, obj);
       } else if (e.code === "Home") {
         const box = new THREE.Box3(
           new THREE.Vector3(-halfX, 0, -halfZ),
           new THREE.Vector3(halfX, WALL_HEIGHT, halfZ),
         );
-        controls.fitToBox(box, true, FRAME_PADDING);
+        frameBox(controls, box);
       } else {
         return;
       }
