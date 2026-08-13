@@ -24,9 +24,9 @@
  *  the camera wholesale rather than restricting it.
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { CameraControlsImpl } from "@react-three/drei";
 import { useSceneStore, type AppMode, type PickRef } from "@/store/useSceneStore";
 
@@ -113,6 +113,12 @@ export function CameraRig({ span, halfX, halfZ }: {
   const controls = useThree((s) => s.controls) as CameraControlsImpl | null;
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const wallMode = useSceneStore((s) => s.wallMode);
+  // Stable object identities R3F reuses for the life of the canvas — safe to
+  // select without triggering extra re-renders, and what T4 below reuses to
+  // find whatever surface is under the cursor at orbit-drag start.
+  const raycaster = useThree((s) => s.raycaster);
+  const pointer = useThree((s) => s.pointer);
+  const rootScene = useThree((s) => s.scene);
 
   /** Every clause here was already in Viewport.tsx's `toolBusy`. What changed
    *  is the lever: it now costs the LEFT BUTTON, not the camera.
@@ -206,6 +212,39 @@ export function CameraRig({ span, halfX, halfZ }: {
     const deg = wallMode === "top" ? CAMERA.topModeMaxPolarDeg : CAMERA.maxPolarDeg;
     controls.maxPolarAngle = THREE.MathUtils.degToRad(deg);
   }, [controls, wallMode]);
+
+  // --- Law 3, the orbit half: pivot on whatever is under the cursor --------
+  // Recorded every frame (cheap: one boolean read) so the controlstart
+  // handler below can tell "the camera was already gliding from a fitToBox/
+  // setLookAt call a moment ago" apart from "this drag is the thing that just
+  // started" — both read `controls.active === true` AT controlstart itself,
+  // since `_state` is set before the event dispatches, so only the PRIOR
+  // frame's value distinguishes them.
+  const wasActiveRef = useRef(false);
+  useFrame(() => {
+    if (controls) wasActiveRef.current = controls.active;
+  });
+
+  useEffect(() => {
+    if (!controls) return;
+    const onControlStart = () => {
+      // Only an actual orbit gesture should move the pivot — a truck/dolly
+      // starting shouldn't touch it.
+      const rotating = (controls.currentAction & (ACTION.ROTATE | ACTION.TOUCH_ROTATE)) !== 0;
+      if (!rotating) return;
+      // setOrbitPoint's own doc: "must not run during an animation" — it
+      // fixes the camera's current position immediately, so calling it while
+      // still gliding toward a fitToBox/setLookAt target would fix the wrong
+      // spot and fight that transition.
+      if (wasActiveRef.current) return;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(rootScene.children, true)[0];
+      if (!hit) return; // pointer over empty sky/void — leave the existing pivot
+      controls.setOrbitPoint(hit.point.x, hit.point.y, hit.point.z);
+    };
+    controls.addEventListener("controlstart", onControlStart);
+    return () => controls.removeEventListener("controlstart", onControlStart);
+  }, [controls, raycaster, pointer, camera, rootScene]);
 
   return null;
 }
