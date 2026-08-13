@@ -11,7 +11,25 @@ branch `parametric-furniture`.
   Persian medallion, modern geometric, braided jute round), suite
   `npm run test:decor` (160 checks). What that build learned is below under
   "Surfaces" — read it before writing another material.
-- **`wallArt`, `tv`, `curtain` — NOT BUILT.** Scope unchanged (below).
+- **`tv` — BUILT 2026-08-13/14, uncommitted, awaiting Dan's visual sign-off.**
+  Round 2 added: sizing in INCHES (`GeneratorDef.sizeInches` — screen diagonal
+  at a locked 16:9, standard-size chips, no width/height fields); a lit screen
+  showing ONE real photograph (`public/textures/tv/broadcast-earth.jpg`, NASA
+  ISS, public domain — see docs/DATA_RIGHTS.md); and STACKING — a TV on a stand bonds to
+  the top of any furniture, parametric or IKEA, not just kitchen worktops
+  (`surfaceHosts.ts`, `findAttachHost`, `GeneratorDef.surfaceOptional`).
+  Catalog items carry no height, so a host GLB is measured at render time and
+  the result is cached in localStorage (`furniture:hostHeights1`) — an
+  attached item's elevation is re-derived on every sync, so without the cache
+  a reopened plan would sink its TVs to a per-kind estimate.
+  Five cards (wall 55/65/75", pedestal 55", feet 43"), one generator, mounting
+  per variant. `npm run test:decor` covers rugs + TVs in one suite. Living only
+  until the wide roll-out adds bedroom/study/kids buttons. New: `showFinishes2`
+  + `finishes2Label` on `GeneratorDef` (the second swatch row paints the STAND,
+  so it hides on the wall cards) and `WallTv` / `unionBox` in `isoArt.tsx` —
+  the living TV hotspot now draws a panel on the wall band over a media
+  console, one hit rect covering both.
+- **`wallArt`, `curtain` — NOT BUILT.** Scope unchanged (below).
 - **Wide room roll-out — NOT DONE.** Rugs reach Living + Bedroom only. Dan
   chose WIDE coverage: rug also in dining/study/kids + a bathroom bathmat;
   wallArt in those plus kitchen/bathroom/laundry; tv in living/bedroom/study/
@@ -129,6 +147,38 @@ flat fills is a picture of the thing, not the thing.
   Every mesh in the group needs `uv1`, backing planes included.
 - **A pattern that owns its palette opts out of the colour wheel** (leave it out
   of `COLORABLE`) — tinting multiplies the whole map into one muddy tone.
+
+## Two rules the TV build added (both cost a browser pass to find)
+
+13. **Author every item CENTRED on its declared depth** (`z` from `-d/2` to
+    `+d/2`), the way `carcass()` in `parts.ts` does. Placement backs an item
+    onto a wall assuming that. The TV was first authored with its glass at
+    `z=0` and its body behind — placed flush, the bezel, the housing and the
+    bracket all sat INSIDE the plaster and the room saw one flat black
+    rectangle with no edge. Nothing in the headless suite noticed: every
+    dimension was correct. `softDecor.test.ts` now checks depth centring and
+    that the glass is the frontmost surface.
+14. **A texture's `.channel` must match an attribute the mesh actually has.**
+    A `CanvasTexture` at `channel = 1` on a plain `PlaneGeometry` (no `uv1`)
+    reads (0,0) at every vertex — one texel, silently. The TV's glare overlay
+    rendered as nothing at all. Rugs put patterns on channel 1 because their
+    geometry authors `uv1`; anything else stays on channel 0.
+
+15. **A screen shows a PHOTOGRAPH, so use one.** The lit TV first shipped three
+    procedural "channels" painted on canvas (news studio, football pitch,
+    landscape) and every one read as the vector drawing it was — the screen is
+    the one surface in a room that displays photographic content, and nothing
+    hand-drawn survives next to it. It is now a single loaded JPEG on UV
+    channel 1. Anything shipped this way is REDISTRIBUTION: source it public
+    domain or CC0 and record it in `docs/DATA_RIGHTS.md`, same rule that kept
+    royalty-free BlenderKit models out of the catalog.
+
+Also: an off screen rendered physically (dark dielectric, low roughness) is
+BLACK indoors, because there is no environment worth reflecting — it reads as
+a hole cut in the wall. The fix is a faked window reflection: one additive
+`MeshBasicMaterial` sheen plane over the glass, plus a bezel light enough to
+draw a frame line against the panel. Same lesson as the rugs, other direction:
+physical correctness is not the goal, reading as the real thing is.
 
 ## Open items carried into the rest of Phase 3
 

@@ -48,6 +48,16 @@ permission here before adding.
 | Architect (YOLOv8 weights) | CC BY-NC 4.0 | do not ship |
 | zimhe/pseudo-floor-plan-12k | unverified | do not use until license confirmed |
 
+## Shipped media assets
+
+Anything served to a browser is REDISTRIBUTION — the test a licence has to pass here
+is "may we host it", not "may we look at it". Same rule that kept royalty-free
+BlenderKit models out of the furniture catalog.
+
+| asset | source | license | permitted use here |
+|---|---|---|---|
+| `public/textures/tv/broadcast-earth.jpg` | NASA, ISS Expedition 71 photograph `iss071e449837` (The Bahamas, 24 July 2024), via images.nasa.gov | Public domain (NASA media usage: NASA content is generally not copyrighted) | ✅ ship + redistribute. Cropped to 16:9 and resized to 1280×720; no NASA logo, insignia or identifiable person appears in it, which is what NASA's guidelines actually restrict |
+
 ## Tracing conventions
 
 - **Balcony / terrace railings → trace as `rail`** (the Rail tool in the Walls step),

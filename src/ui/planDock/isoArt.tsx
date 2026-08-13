@@ -368,6 +368,64 @@ export function TvOnStand({ x, yFront, w, depth }: { x: number; yFront: number; 
   );
 }
 
+/**
+ * A television hanging FLAT ON THE WALL — the way most sets are actually
+ * mounted, and the shape the three wall-mounted cards place. Drawn like the
+ * bathroom mirror: a face on the wall band with no extrusion, because a 6cm
+ * panel seen in this projection has no visible side.
+ *
+ * The chin is deliberately deeper than the sides and carries the standby dot;
+ * that asymmetry is what separates "TV" from "dark rectangle" at glyph size.
+ */
+export function WallTv({ box }: { box: IsoBox }) {
+  const { x, w, h } = box.face;
+  const y0 = box.face.yFront - h;
+  const bez = Math.min(2, w * 0.045);
+  return (
+    <>
+      <rect x={x} y={y0} width={w} height={h} rx={1.2} fill="oklch(0.19 0.012 260 / 0.95)" stroke={FACE_STROKE} strokeWidth={0.7} />
+      <rect
+        x={x + bez}
+        y={y0 + bez}
+        width={w - bez * 2}
+        height={h - bez * 2.8}
+        fill="oklch(0.26 0.018 250 / 0.92)"
+        stroke={DETAIL_LINE}
+        strokeWidth={0.4}
+        opacity={0.85}
+      />
+      {/* One soft sheen across the glass — the same cue the mirror uses to say
+          "this is a reflective surface", angled the other way so a TV over a
+          sideboard doesn't read as a second mirror. */}
+      <line
+        x1={x + w * 0.62}
+        y1={y0 + bez + 1.5}
+        x2={x + w * 0.9}
+        y2={y0 + h - bez * 3}
+        stroke={DETAIL_LIGHT}
+        strokeWidth={0.9}
+        opacity={0.35}
+      />
+      <circle cx={x + w / 2} cy={y0 + h - bez * 1.2} r={0.7} fill={DETAIL_LIGHT} opacity={0.6} />
+    </>
+  );
+}
+
+/** One hit target covering two drawn objects — a wall TV and the console under
+ *  it are one button ("TV & storage"), so the hotspot rect has to reach both.
+ *  Only the bbox merges; the faces stay whichever box was passed first. */
+export function unionBox(a: IsoBox, b: IsoBox): IsoBox {
+  return {
+    ...a,
+    bbox: {
+      x0: Math.min(a.bbox.x0, b.bbox.x0),
+      y0: Math.min(a.bbox.y0, b.bbox.y0),
+      x1: Math.max(a.bbox.x1, b.bbox.x1),
+      y1: Math.max(a.bbox.y1, b.bbox.y1),
+    },
+  };
+}
+
 // ── Shared scene shell: floor + wall + hotspot items + hover label. ──
 
 export interface RoomItem {

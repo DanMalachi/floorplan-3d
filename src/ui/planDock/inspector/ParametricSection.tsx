@@ -120,24 +120,51 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
     <div style={pdInspectorPanel}>
       <PdSectionTitle title={g.label} meta="Custom" />
 
-      <PdNumField
-        label="Width"
-        value={spec.dims.w}
-        onCommit={(w) => update({ dims: { ...spec.dims, w } })}
-        displayScale={100}
-        unit="cm"
-      />
+      {/* A television is sold by its screen diagonal, and its width and height
+          are that one number at 16:9 — so it gets inches and the standard
+          sizes, not two centimetre fields that can disagree with each other. */}
+      {g.sizeInches ? (
+        <>
+          <PdNumField
+            label={g.sizeInches.label}
+            value={g.sizeInches.of(spec)}
+            onCommit={(inches) => update({ dims: g.sizeInches!.dims(spec, inches) })}
+            unit={'"'}
+          />
+          <PdChipGroup>
+            {g.sizeInches.presets.map((p) => (
+              <button
+                key={p}
+                style={pdChip(Math.abs(g.sizeInches!.of(spec) - p) < 0.6, pdChipFlex)}
+                onClick={() => update({ dims: g.sizeInches!.dims(spec, p) })}
+              >
+                {p}&quot;
+              </button>
+            ))}
+          </PdChipGroup>
+        </>
+      ) : (
+        <>
+          <PdNumField
+            label="Width"
+            value={spec.dims.w}
+            onCommit={(w) => update({ dims: { ...spec.dims, w } })}
+            displayScale={100}
+            unit="cm"
+          />
+          <PdNumField
+            label="Height"
+            value={spec.dims.h}
+            onCommit={(h) => update({ dims: { ...spec.dims, h } })}
+            displayScale={100}
+            unit="cm"
+          />
+        </>
+      )}
       <PdNumField
         label="Depth"
         value={spec.dims.d}
         onCommit={(d) => update({ dims: { ...spec.dims, d } })}
-        displayScale={100}
-        unit="cm"
-      />
-      <PdNumField
-        label="Height"
-        value={spec.dims.h}
-        onCommit={(h) => update({ dims: { ...spec.dims, h } })}
         displayScale={100}
         unit="cm"
       />
@@ -220,10 +247,10 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         <ColorControl value={spec.color ?? FINISH_HEX[spec.finish] ?? "#ffffff"} onCommit={(color) => update({ color })} />
       )}
 
-      {g.finishes2 && (
+      {g.finishes2 && (g.showFinishes2?.(spec) ?? true) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontSize: 10.5, color: PD.textTertiary }}>
-            {spec.generator === "kitchenRun" || spec.generator === "kitchenBase" ? "Counter" : "Pillows"}
+            {g.finishes2Label ?? (spec.generator === "kitchenRun" || spec.generator === "kitchenBase" ? "Counter" : "Pillows")}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {g.finishes2.map((f) => (

@@ -686,6 +686,70 @@ function RugJuteGlyph({ size }: { size: number }) {
   );
 }
 
+// TVs read in ELEVATION — a screen seen from above is a line. The three wall
+// cards are the same object at three sizes, so the panel itself grows across
+// them and the mount changes with it (a plate for a 55", a full arm for a 75");
+// the two stands differ by their base, which is what you actually choose
+// between when the set is not going on a wall.
+function TvWall55Glyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="4.5" y="6" width="15" height="9.5" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="6.2" y="7.6" width="11.6" height="6.3" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+      {/* Wall plate behind it. */}
+      <path d="M10.5 15.5v2.4h3v-2.4" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M3 19.6h18" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+    </svg>
+  );
+}
+
+function TvWall65Glyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="2.8" y="5.4" width="18.4" height="11" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="4.5" y="7" width="15" height="7.8" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+      <path d="M10 16.4v2.2h4v-2.2" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M2 20.2h20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+    </svg>
+  );
+}
+
+function TvWall75Glyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="1.6" y="4.4" width="20.8" height="12.4" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="3.4" y="6" width="17.2" height="9.2" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+      {/* A 75" hangs off a full arm, not a plate. */}
+      <path d="M8.5 16.8v2.6h7v-2.6" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M12 16.8v2.6" stroke="currentColor" strokeWidth="0.9" opacity="0.7" />
+      <path d="M1 20.8h22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+    </svg>
+  );
+}
+
+function TvPedestalGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="4.5" width="18" height="10.5" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="4.8" y="6.1" width="14.4" height="7.3" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+      <path d="M12 15v3.6" stroke="currentColor" strokeWidth="1.4" />
+      <ellipse cx="12" cy="19.4" rx="5.4" ry="1.5" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function TvFeetGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="5.5" width="16" height="9.5" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="5.7" y="7.1" width="12.6" height="6.3" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+      {/* Two splayed blades, the way a set with feet actually stands. */}
+      <path d="M8 15l-1.8 4.2M16 15l1.8 4.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M4.4 19.6h3.6M16 19.6h3.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
   "cooktop:induction": CooktopInductionGlyph,
   "cooktop:radiant": CooktopRadiantGlyph,
@@ -734,7 +798,13 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   "rug:persian": RugPersianGlyph,
   "rug:modern": RugModernGlyph,
   "rug:jute": RugJuteGlyph,
+  "tv:wall-55": TvWall55Glyph,
+  "tv:wall-65": TvWall65Glyph,
+  "tv:wall-75": TvWall75Glyph,
+  "tv:pedestal-55": TvPedestalGlyph,
+  "tv:feet-43": TvFeetGlyph,
   rug: RugAreaGlyph,
+  tv: TvWall55Glyph,
   appliance: FridgeGlyph,
   rangeHood: ChimneyHoodGlyph,
   mirror: MirrorFramedGlyph,

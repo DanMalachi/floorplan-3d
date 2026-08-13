@@ -1,7 +1,7 @@
 // Headless: Phase 3, soft decor. Run: npx tsx src/parametric/softDecor.test.ts
 //
-// Currently covers RUGS. The rest of the phase (wall art, TV, curtains) lands
-// in this same file — the suite is per-phase, not per-generator.
+// Covers RUGS and TVs. The rest of the phase (wall art, curtains) lands in
+// this same file — the suite is per-phase, not per-generator.
 //
 // A rug is the first item in the catalog whose whole job is its SURFACE, so
 // the checks that matter here are not "is it the right shape" (it's a slab)
@@ -9,11 +9,16 @@
 // UVs in metres — because a 0..1 UV set stretches a 1.7m carpet scan across
 // the whole rug, which is a doll's-house rug at any size.
 
+import { existsSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 import * as THREE from "three";
 import { GENERATORS, sanitizeSpec, elevationOf } from "@/parametric";
+import { BROADCAST_URL } from "@/parametric/tvParts";
 import { isColorable } from "@/parametric/materials";
 import { ALL_PIECES, piecesOf, type CustomPiece } from "@/parametric/pieces";
-import type { ParametricSpec } from "@/schema/scene";
+import { findAttachHost, syncKitchenAttachments } from "@/parametric/kitchenAttach";
+import { isSurfaceHost } from "@/parametric/surfaceHosts";
+import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
 import { LIVING_HOTSPOTS } from "@/ui/planDock/LivingScene";
 import { BEDROOM_HOTSPOTS } from "@/ui/planDock/BedroomScene";
 import { GENERATOR_GLYPH } from "@/ui/planDock/generatorGlyphs";
@@ -284,6 +289,304 @@ console.log("\nbuttons: a rug you can reach through the picture");
       check(`${p.glyphKey} answers ONLY that button in ${room}`, hit.length === 1, hit.map((h) => h.id).join(","));
     }
   }
+}
+
+// ── TVs ────────────────────────────────────────────────────────────────────
+//
+// A TV is the opposite problem to a rug: the material is a single dark plane
+// that tests cannot judge, so what IS testable is the thing a slab gets wrong.
+// Mounting (three cards hang, two stand, on one generator), the silhouette
+// (thin at the top, thick over the lower back), and the fact that the declared
+// height covers the STAND as well as the panel.
+
+const TVS = piecesOf(GENERATORS.tv);
+
+console.log("\nevery TV builds and fits what it says it is");
+for (const p of TVS) {
+  const g = buildCard(p);
+  const b = bbox(g);
+  const { w, d, h } = p.spec.dims;
+  check(`${p.glyphKey} builds meshes`, countVerts(g) > 8, `${countVerts(g)} verts`);
+  check(`${p.glyphKey} has no NaN vertices`, !hasNaN(g));
+  // Rule 4: the footprint contains EVERYTHING — a pedestal base that sticks
+  // out in front of the screen, a foot that splays past the panel.
+  check(`${p.glyphKey} width within footprint`, b.max.x - b.min.x <= w + 0.03, `${(b.max.x - b.min.x).toFixed(3)} vs ${w}`);
+  check(`${p.glyphKey} depth within footprint`, b.max.z - b.min.z <= d + 0.03, `${(b.max.z - b.min.z).toFixed(3)} vs ${d}`);
+  check(`${p.glyphKey} height within footprint`, b.max.y - b.min.y <= h + 0.03, `${(b.max.y - b.min.y).toFixed(3)} vs ${h}`);
+  // y=0 is the BASE for wall items too: the wall ghost clamps the click height
+  // against the item's own height, so a centred panel hangs half below it.
+  check(`${p.glyphKey} sits on its base plane`, near(b.min.y, 0, 0.005), `min.y=${b.min.y.toFixed(4)}`);
+}
+
+console.log("\nmounting is per VARIANT, not per generator");
+{
+  const wall = TVS.filter((p) => p.generator.wallMounted?.(p.spec));
+  const floor = TVS.filter((p) => !p.generator.wallMounted?.(p.spec));
+  check("three cards hang on a wall", wall.length === 3, wall.map((p) => p.variantId).join(","));
+  check("two cards stand on the floor", floor.length === 2, floor.map((p) => p.variantId).join(","));
+  for (const p of TVS) {
+    // The Phase-2 bug in one line: a flat defaultElevation on a generator that
+    // mixes mounting types floats the floor variants (the bathroom bin at
+    // 1.25m). A wall card gets its height from the wall-ray click instead.
+    check(`${p.glyphKey} has no baked elevation`, elevationOf(p.spec) === undefined, `${elevationOf(p.spec)}`);
+    // A set on a stand goes on top of furniture (and on the floor); a set on
+    // the wall never does.
+    const onSurface = p.generator.counterItem?.(p.spec) ?? false;
+    check(`${p.glyphKey} takes a surface only if it has a stand`, onSurface === floor.includes(p), `surface=${onSurface}`);
+  }
+  check("a TV on a stand may also stand on the floor", GENERATORS.tv.surfaceOptional === true);
+  // A stand's height is part of the card's declared height, not a bonus on
+  // top of it — a "0.81m" TV that measures 0.91m is a TV that clips a shelf.
+  for (const p of floor) {
+    const g = buildCard(p);
+    const b = bbox(g);
+    const legRoom = 0.05; // something has to be down there holding it up
+    let lowVerts = 0;
+    const v = new THREE.Vector3();
+    g.updateMatrixWorld(true);
+    g.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      const pos = o.geometry.getAttribute("position");
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+        if (v.y < legRoom) lowVerts++;
+      }
+    });
+    check(`${p.glyphKey} has a stand under the panel`, lowVerts > 8, `${lowVerts} verts below ${legRoom}m`);
+    check(`${p.glyphKey} tops out at its declared height`, b.max.y <= p.spec.dims.h + 0.005, `${b.max.y.toFixed(3)} vs ${p.spec.dims.h}`);
+  }
+}
+
+console.log("\nthe glass is at the FRONT of the footprint, and the item is centred in depth");
+for (const p of TVS) {
+  const g = buildCard(p);
+  g.updateMatrixWorld(true);
+  const b = bbox(g);
+  const d = p.spec.dims.d;
+  // Every generator is authored CENTRED on its own depth (the kitchen carcass
+  // convention), because that is what placement assumes when it backs an item
+  // onto a wall. Authored with the glass at z=0 instead, a wall-mounted set
+  // placed flush sat INSIDE the plaster: bezel, housing and bracket were all
+  // behind the wall face and the room saw one flat black rectangle.
+  check(`${p.glyphKey} is centred in its own depth`, Math.abs(b.min.z + b.max.z) <= 0.02, `z[${b.min.z.toFixed(3)}, ${b.max.z.toFixed(3)}] for d=${d}`);
+  // …and the glass is the frontmost thing on it.
+  let screenZ = -Infinity;
+  const v = new THREE.Vector3();
+  g.traverse((o) => {
+    if (!(o instanceof THREE.Mesh) || o.geometry.type !== "PlaneGeometry" || !o.geometry.getAttribute("uv1")) return;
+    const pos = o.geometry.getAttribute("position");
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+      screenZ = Math.max(screenZ, v.z);
+    }
+  });
+  check(`${p.glyphKey} glass sits at the front face`, near(screenZ, d / 2, 0.006), `screen z=${screenZ.toFixed(4)} vs ${(d / 2).toFixed(4)}`);
+}
+
+console.log("\nthe silhouette is a TV, not a slab");
+for (const p of TVS) {
+  const g = buildCard(p);
+  g.updateMatrixWorld(true);
+  const b = bbox(g);
+  const panelTop = b.max.y;
+  // Depth of the object in its top fifth vs across the whole set. A uniform
+  // box measures the same in both; a real panel is a few millimetres up there
+  // and thickens into the electronics housing lower down.
+  let topDepth = 0;
+  let maxDepth = 0;
+  const v = new THREE.Vector3();
+  const topBand = panelTop - (panelTop - b.min.y) * 0.18;
+  let topLo = Infinity, topHi = -Infinity;
+  g.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const pos = o.geometry.getAttribute("position");
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+      if (v.y >= topBand) {
+        topLo = Math.min(topLo, v.z);
+        topHi = Math.max(topHi, v.z);
+      }
+    }
+  });
+  topDepth = topHi - topLo;
+  maxDepth = b.max.z - b.min.z;
+  check(`${p.glyphKey} is thin at the top edge`, topDepth <= 0.022, `${(topDepth * 1000).toFixed(1)}mm`);
+  check(`${p.glyphKey} thickens behind the lower half`, maxDepth >= topDepth * 2, `${(maxDepth * 1000).toFixed(0)}mm vs ${(topDepth * 1000).toFixed(0)}mm`);
+}
+
+console.log("\nthe screen is a surface, and it knows whether it is on");
+for (const p of TVS) {
+  for (const on of [0, 1]) {
+    const g = buildCard(p, { modules: { screenOn: on } });
+    let screen: THREE.Mesh | null = null;
+    g.traverse((o) => {
+      if (o instanceof THREE.Mesh && (o.material as THREE.MeshStandardMaterial).emissiveIntensity !== undefined && o.geometry.getAttribute("uv1") && o.geometry.type === "PlaneGeometry") screen = o;
+    });
+    check(`${p.glyphKey} has a screen plane (screenOn=${on})`, !!screen);
+    if (!screen) continue;
+    const mat = (screen as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    const lit = mat.emissive.r + mat.emissive.g + mat.emissive.b > 0.01 && mat.emissiveIntensity > 0;
+    check(`${p.glyphKey} screen emits only when on (screenOn=${on})`, lit === (on === 1), `emissive=${mat.emissive.getHexString()} x${mat.emissiveIntensity}`);
+  }
+  // Two UV sets, same split the rugs use: metres for the coating grain so a
+  // 75" is not a magnified 43", 0..1 for anything that spans the panel once.
+  const g = buildCard(p);
+  let metric = 0;
+  let unit = 0;
+  g.traverse((o) => {
+    if (!(o instanceof THREE.Mesh) || o.geometry.type !== "PlaneGeometry") return;
+    const uv = o.geometry.getAttribute("uv");
+    const uv1 = o.geometry.getAttribute("uv1");
+    if (!uv || !uv1) return;
+    let hi = -Infinity, hi1 = -Infinity;
+    for (let i = 0; i < uv.count; i++) {
+      hi = Math.max(hi, uv.getX(i));
+      hi1 = Math.max(hi1, uv1.getX(i));
+    }
+    metric = Math.max(metric, hi);
+    unit = Math.max(unit, hi1);
+  });
+  check(`${p.glyphKey} screen UVs are in metres`, metric > 0.3, `u max ${metric.toFixed(3)}`);
+  check(`${p.glyphKey} screen carries a 0..1 channel too`, near(unit, 1, 0.02), `uv1 max ${unit.toFixed(3)}`);
+}
+
+console.log("\nTVs are sold in inches, and both dimensions follow the one number");
+{
+  const size = GENERATORS.tv.sizeInches!;
+  check("the TV generator sells by screen size", !!size && size.presets.length >= 5);
+  for (const p of TVS) {
+    // The card says a size; the geometry has to BE that size.
+    const label = Number(/(\d+)"/.exec(p.label)?.[1]);
+    check(`${p.glyphKey} measures the size on its card`, near(size.of(p.spec), label, 0.6), `${size.of(p.spec).toFixed(1)}" vs ${label}"`);
+  }
+  const spec = sanitizeSpec({ ...GENERATORS.tv.defaultSpec, variant: "wall-55" } as ParametricSpec);
+  const at = (inches: number) => size.dims(spec, inches);
+  for (const inches of [32, 43, 55, 65, 75, 85]) {
+    const d = at(inches);
+    const round = size.of({ ...spec, dims: d } as ParametricSpec);
+    check(`${inches}" round-trips through the dims`, near(round, inches, 0.4), `${round.toFixed(2)}"`);
+  }
+  // Width and height move TOGETHER, at a fixed 16:9 — the whole point of
+  // sizing by diagonal. Compare picture areas, which is what 16:9 describes.
+  const a = at(43);
+  const b = at(75);
+  const pic = (d: { w: number; h: number }) => ({ w: d.w - 0.018, h: d.h - 0.028 });
+  const ra = pic(a).w / pic(a).h;
+  const rb = pic(b).w / pic(b).h;
+  check("aspect holds across sizes", near(ra, rb, 0.02) && near(ra, 16 / 9, 0.03), `${ra.toFixed(3)} vs ${rb.toFixed(3)}`);
+  check("a bigger screen is bigger both ways", b.w > a.w && b.h > a.h, `${a.w.toFixed(2)}×${a.h.toFixed(2)} → ${b.w.toFixed(2)}×${b.h.toFixed(2)}`);
+  // …and the stand's height is not swallowed by the resize.
+  const standSpec = sanitizeSpec({ ...GENERATORS.tv.defaultSpec, variant: "pedestal-55" } as ParametricSpec);
+  const s55 = size.dims(standSpec, 55);
+  const w55 = size.dims(spec, 55);
+  check("a stand keeps its height when the screen resizes", s55.h > w55.h + 0.05, `${s55.h.toFixed(3)} vs ${w55.h.toFixed(3)}`);
+}
+
+console.log("\nthe lit screen shows a real photograph");
+{
+  // One picture, loaded from a file — not three procedural "channels", which
+  // read as the drawings they were. The generator therefore has exactly one
+  // screen control, and the picture is an asset that has to EXIST.
+  check("there is no channel control left", !GENERATORS.tv.modules.some((m) => m.key === "channel"), GENERATORS.tv.modules.map((m) => m.key).join(","));
+  check("the screen toggle is the only module", GENERATORS.tv.modules.length === 1);
+  const file = resolve(process.cwd(), `public${BROADCAST_URL}`);
+  check("the broadcast image ships in public/", existsSync(file), file);
+  if (existsSync(file)) {
+    const kb = statSync(file).size / 1024;
+    // Big enough to be a photograph, small enough to load with the page.
+    check("the picture is a sane size for a texture", kb > 40 && kb < 600, `${kb.toFixed(0)}KB`);
+  }
+  const p = TVS[0];
+  // The picture rides uv1, which the screen mesh HAS — the bug the glare
+  // overlay shipped with, and the reason this is asserted rather than assumed.
+  const lit = buildCard(p, { modules: { screenOn: 1 } });
+  let uv1s = 0;
+  lit.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.geometry.getAttribute("uv1")) uv1s++;
+  });
+  check("the lit screen carries the picture's UV set", uv1s >= 1, `${uv1s} meshes with uv1`);
+}
+
+console.log("\na TV on a stand can stand on the furniture");
+{
+  // A host with a real top: an under-counter fridge is 0.82m and is not a
+  // kitchen RUN, so it exercises the plain-surface path the IKEA sideboards
+  // use (their height is measured off the GLB at render time).
+  const hostSpec = sanitizeSpec({
+    ...GENERATORS.appliance.defaultSpec,
+    variant: "fridge-under-counter",
+    dims: { w: 1.4, d: 0.45, h: 0.55 },
+  } as ParametricSpec);
+  const host: FurnitureItem = { id: "host", assetId: "param:appliance", x: 2, y: 3, rotation: 0, parametric: hostSpec };
+  const tvPiece = TVS.find((p) => p.variantId === "pedestal-55")!;
+  const scene = { nodes: [], walls: [], rooms: [], furniture: [host] } as unknown as Scene;
+
+  check("a sideboard-height item is a surface", isSurfaceHost(host));
+  check("a rug is not a surface", !isSurfaceHost({ id: "r", assetId: "param:rug", x: 0, y: 0, rotation: 0, parametric: sanitizeSpec(GENERATORS.rug.defaultSpec) }));
+  const hit = findAttachHost(2, 3, scene, tvPiece.spec.dims.w);
+  check("the TV finds the surface under it", hit?.host.id === "host", `${hit?.host.id}`);
+  check("…and lands somewhere on it", (hit?.along ?? -1) >= 0 && (hit?.along ?? 99) <= 1.4, `along=${hit?.along}`);
+  check("off the furniture there is no host", findAttachHost(6, 6, scene, 1) === null);
+
+  const bonded: FurnitureItem = { id: "tv", assetId: "param:tv", x: 0, y: 0, rotation: 0, parametric: tvPiece.spec, attach: { hostId: "host", along: hit!.along } };
+  const synced = syncKitchenAttachments({ ...scene, furniture: [host, bonded] });
+  const placed = synced.furniture.find((f) => f.id === "tv")!;
+  // The bond survives a sync (it used to be dissolved for anything that was
+  // not a kitchenBase) and puts the set ON TOP, riding the host's facing.
+  check("the bond survives the attachment sync", !!placed.attach, JSON.stringify(placed.attach));
+  check("the TV sits on the host's top", near(placed.elevation ?? 0, 0.55, 0.001), `${placed.elevation}`);
+  check("the TV faces the way the host does", placed.rotation === host.rotation);
+  check("the TV stays within the host's width", Math.abs(placed.x - host.x) <= 1.4 / 2 + 0.01, `dx=${(placed.x - host.x).toFixed(3)}`);
+  // Moving the host carries the TV with it, the way the microwave rides a run.
+  const moved = syncKitchenAttachments({ ...scene, furniture: [{ ...host, x: 5, y: 1 }, placed] });
+  const rode = moved.furniture.find((f) => f.id === "tv")!;
+  check("moving the cabinet carries the TV", near(rode.x, 5 + (placed.x - host.x), 0.001) && near(rode.y, 1 + (placed.y - host.y), 0.001), `${rode.x.toFixed(2)},${rode.y.toFixed(2)}`);
+  // And nothing saws a hole in a sideboard.
+  const hostAfter = moved.furniture.find((f) => f.id === "host")!;
+  check("a surface host gets no worktop cutouts", !hostAfter.parametric?.cutouts);
+}
+
+console.log("\nTV cards, names, glyphs and dead controls");
+{
+  const labels = TVS.map((p) => p.label);
+  check("no TV card falls back to '<generator> · <variant>'", labels.every((l) => !l.includes("·")), labels.join(", "));
+  check("TV card names are unique", new Set(labels).size === labels.length);
+  for (const p of TVS) check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey]);
+  const glyphs = TVS.map((p) => GENERATOR_GLYPH[p.glyphKey]);
+  check("no two TVs share a glyph", new Set(glyphs).size === glyphs.length);
+  const sizes = new Set(TVS.map((p) => `${p.spec.dims.w}x${p.spec.dims.d}x${p.spec.dims.h}`));
+  check("each TV card carries its own size", sizes.size === TVS.length, `${sizes.size} of ${TVS.length}`);
+  check("TV variants are products, not inspector styles", GENERATORS.tv.variantIsProduct === true);
+  check("every TV variant carries its own defaults", GENERATORS.tv.variants!.every((v) => !!v.defaults));
+  check("the TV generator offers a canvas-free finish", GENERATORS.tv.finishes.some((f) => CANVAS_FREE.has(f)));
+  // Two-state module, labelled — never a 0/1 stepper.
+  const screenMod = GENERATORS.tv.modules.find((m) => m.key === "screenOn");
+  check("the screen toggle has real labels", !!screenMod?.toggle?.on && !!screenMod?.toggle?.off, JSON.stringify(screenMod?.toggle));
+  // The second swatch row paints the STAND, so it must not appear on a card
+  // that has no stand — a control that does nothing teaches people the
+  // inspector lies.
+  for (const p of TVS) {
+    const shows = GENERATORS.tv.showFinishes2?.(p.spec) ?? true;
+    const stands = !p.generator.wallMounted?.(p.spec);
+    check(`${p.glyphKey} offers a stand finish only if it has a stand`, shows === stands, `shows=${shows} stands=${stands}`);
+  }
+}
+
+console.log("\nbuttons: a TV you can reach through the picture");
+{
+  const reachTv = (p: CustomPiece) => {
+    const text = p.keywords.join(" ").toLowerCase();
+    return LIVING_HOTSPOTS.filter((h) => h.keywords.some((k) => text.includes(k)));
+  };
+  check("living has a TV button", LIVING_HOTSPOTS.some((h) => h.id === "tv"));
+  for (const p of TVS) {
+    const hit = reachTv(p);
+    check(`${p.glyphKey} answers the living TV button`, hit.some((h) => h.id === "tv"));
+    check(`${p.glyphKey} answers ONLY that button`, hit.length === 1, hit.map((h) => h.id).join(","));
+  }
+  // Rooms the generator claims must all be rooms with a button for it — the
+  // wide roll-out adds bedroom/study/kids together with their hotspots.
+  check("the TV generator only claims rooms it has a button in", GENERATORS.tv.rooms.every((r) => r === "living"), GENERATORS.tv.rooms.join(","));
 }
 
 console.log("\nand every card in the catalog still has a button in its rooms");
