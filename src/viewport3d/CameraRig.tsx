@@ -68,6 +68,14 @@ export const CAMERA = {
    *  than the load-time span (which is what FitCamera uses for its opening
    *  shot) so the two can never disagree and clip the scene at full zoom-out. */
   farMul: 4,
+
+  // --- framing (P2 T1/T2/T3): every fitToBox call site shares these --------
+  /** Meters of clearance added on every side of a fitToBox target. Zero
+   *  padding puts the object's silhouette exactly at the frame edge, which
+   *  reads as a crop, not a "frame". One constant so a room click, a
+   *  double-click and the F/Home keys all land with the same comfortable
+   *  margin instead of each inventing its own. */
+  framePaddingM: 0.5,
 } as const;
 
 /** Does hovering this pick mean a left press would START A DRAG rather than
