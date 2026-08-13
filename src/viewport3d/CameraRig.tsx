@@ -76,6 +76,16 @@ export const CAMERA = {
    *  double-click and the F/Home keys all land with the same comfortable
    *  margin instead of each inventing its own. */
   framePaddingM: 0.5,
+
+  // --- keyboard channel (P2 T3) --------------------------------------------
+  /** WASD/arrow truck speed, as a fraction of the CURRENT camera distance
+   *  moved per second rather than a flat m/s — mouse-drag truck already
+   *  scales with zoom (the same drag covers more ground zoomed out), and a
+   *  flat speed would crawl across a whole house zoomed out or overshoot a
+   *  close-up zoomed in. */
+  kbTruckSpeedPerS: 1.1,
+  /** Q/E azimuth-orbit speed, degrees per second held. */
+  kbOrbitSpeedDegS: 90,
 } as const;
 
 /** Does hovering this pick mean a left press would START A DRAG rather than

@@ -30,6 +30,7 @@ import { PdToastHost } from "@/ui/planDock/toast";
 import { StairLayer } from "./StairMesh";
 import { CameraFocusRig } from "./CameraFocusRig";
 import { CameraRig } from "./CameraRig";
+import { CameraKeyboardRig } from "./CameraKeyboardRig";
 import { CameraDoubleClickRig } from "./CameraDoubleClickRig";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
@@ -450,9 +451,10 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         {/* After FitCamera: the rig's far plane is derived from the dolly
             limit and must win over FitCamera's opening-shot value. */}
         <CameraRig span={span} halfX={halfX} halfZ={halfZ} />
-        {/* P2 T2: double-click an item or floor to frame it. Separate file,
-            not folded into CameraRig, so its own diff stays the button-map/
-            envelope it already was. */}
+        {/* P2 T2/T3: double-click-to-frame and the WASD/QE/T/F/Home keyboard
+            channel. Separate files, not folded into CameraRig, so its own
+            diff stays the button-map/envelope it already was. */}
+        <CameraKeyboardRig halfX={halfX} halfZ={halfZ} />
         <CameraDoubleClickRig />
         {walkthroughActive && (
           <WalkthroughRig
