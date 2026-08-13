@@ -239,6 +239,13 @@ function StairMesh({ stair }: { stair: Stair }) {
 
   return (
     <group
+      // Every other layer tags its pickable root with this (FurnitureLayer,
+      // FixtureLayer, FloorMesh, WallMesh) so the P2 camera-framing handlers
+      // (double-click, keyboard "F") can resolve any pick kind through one
+      // shared lookup instead of one bespoke case per layer. Stairs select
+      // via onClick below same as always — this is additive, purely for the
+      // camera side.
+      userData={{ pick: { kind: "stair", id: stair.id } }}
       onClick={onClick}
       onPointerOver={(e) => {
         if (!interactive()) return;
