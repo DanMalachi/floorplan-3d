@@ -20,6 +20,7 @@ import {
   runLocalToWorld,
   runWorldToLocal,
 } from "./runPath";
+import { hostTop, isSurfaceHost, surfaceRects } from "./surfaceHosts";
 
 const ALONG_STEP = 0.1; // same grid feel as everything else
 const HOST_SIDE_MARGIN = 0.3; // how far off a counter's plan rect a cursor still finds it
@@ -33,6 +34,17 @@ export const isKitchenRun = (f: FurnitureItem): boolean =>
 
 export const isCounterHost = (f: FurnitureItem): boolean =>
   f.parametric?.generator === "kitchenBase";
+
+/** Any item something can stand ON: a worktop run, or — new for the TV — the
+ *  top of any sideboard, chest, table or IKEA storage unit in the catalog.
+ *  See surfaceHosts.ts for how a catalog item's height is known at all. */
+export const isAttachHost = (f: FurnitureItem): boolean => isCounterHost(f) || isSurfaceHost(f);
+
+/** Attached items may sit on a plain surface INSTEAD of a counter, and may be
+ *  put on the floor when there is nothing under them. A sink cannot; a TV can,
+ *  which is the difference this flag carries. */
+export const isSurfaceOptional = (spec: ParametricSpec): boolean =>
+  GENERATORS[spec.generator]?.surfaceOptional === true;
 
 export const isCounterItem = (f: Pick<FurnitureItem, "parametric">): boolean =>
   !!f.parametric && !!GENERATORS[f.parametric.generator]?.counterItem?.(f.parametric);
@@ -58,6 +70,7 @@ export function attachedPose(
   along: number,
   lift = 0,
 ): { x: number; y: number; rotation: number; elevation: number } {
+  if (!isCounterHost(host)) return surfacePose(host, along, lift);
   const spec = host.parametric!;
   const legs = pathLegs(spec);
   const { leg, u } = legAtAlong(legs, along);
@@ -72,6 +85,72 @@ export function attachedPose(
     rotation: host.rotation + Math.atan2(-leg.fx, leg.fz),
     elevation: spec.dims.h + lift,
   };
+}
+
+/**
+ * Pose on a PLAIN surface — a sideboard, a chest of drawers, a table, an IKEA
+ * TV bench. `along` keeps the same meaning it has on a run: metres from the
+ * host's left edge, measured across its width. Depth is centred, because
+ * something set down on a cabinet sits on the middle of it, and because
+ * `attach` carries one number, not two (widening it is a schema change to a
+ * protected file, and centred is what you would want anyway).
+ */
+export function surfacePose(
+  host: FurnitureItem,
+  along: number,
+  lift = 0,
+): { x: number; y: number; rotation: number; elevation: number } {
+  const w = surfaceWidth(host);
+  const off = clamp(along, 0, w) - w / 2;
+  // Host-local +X in world, using the scene's rotation convention.
+  const ux = Math.cos(host.rotation);
+  const uy = -Math.sin(host.rotation);
+  return {
+    x: host.x + ux * off,
+    y: host.y + uy * off,
+    rotation: host.rotation,
+    elevation: (hostTop(host) ?? host.elevation ?? 0) + lift,
+  };
+}
+
+function surfaceWidth(host: FurnitureItem): number {
+  if (host.parametric) return host.parametric.dims.w;
+  return surfaceRects({ furniture: [host] } as Scene).find((r) => r.host.id === host.id)?.w ?? 1;
+}
+
+/**
+ * The surface a plan point is over, counter or cabinet top. Runs are tried
+ * first (their worktop is a path, and the kitchen's own margins apply); plain
+ * rectangles are tested in their own local frame, nearest centre wins.
+ */
+export function findAttachHost(
+  x: number,
+  y: number,
+  scene: Scene,
+  itemW = 0,
+): { host: FurnitureItem; along: number } | null {
+  const run = findHostRun(x, y, scene, itemW);
+  if (run) return run;
+  let best: { host: FurnitureItem; along: number; lat: number } | null = null;
+  for (const rect of surfaceRects(scene)) {
+    // World → host-local. Rotation convention matches surfacePose above.
+    const dx = x - rect.x;
+    const dy = y - rect.y;
+    const ux = Math.cos(rect.rotation);
+    const uy = -Math.sin(rect.rotation);
+    const lx = dx * ux + dy * uy;
+    const ly = -dx * uy + dy * ux;
+    if (Math.abs(lx) > rect.w / 2 + HOST_END_MARGIN) continue;
+    const lat = Math.abs(ly);
+    if (lat > rect.d / 2 + HOST_SIDE_MARGIN) continue;
+    if (best && lat >= best.lat) continue;
+    // Keep the item on the surface: an 85" TV cannot hang off both ends of a
+    // 1.2m bench, so it centres instead.
+    const half = Math.min(itemW / 2, rect.w / 2);
+    const along = clamp(roundTo(lx + rect.w / 2, ALONG_STEP), half, Math.max(rect.w - half, half));
+    best = { host: rect.host, along, lat };
+  }
+  return best && { host: best.host, along: best.along };
 }
 
 /**
@@ -130,12 +209,14 @@ export function syncKitchenAttachments(scene: Scene): Scene {
   let furniture: FurnitureItem[] = scene.furniture.map((f): FurnitureItem => {
     if (!f.attach) return f;
     const host = byId.get(f.attach.hostId);
-    if (!host || !isCounterHost(host) || !f.parametric) {
+    if (!host || !isAttachHost(host) || !f.parametric) {
       changed = true;
       const { attach: _a, ...free } = f;
       return free;
     }
-    const along = clampAlongToPath(host.parametric!, f.attach.along, f.parametric.dims.w);
+    const along = isCounterHost(host)
+      ? clampAlongToPath(host.parametric!, f.attach.along, f.parametric.dims.w)
+      : f.attach.along;
     const pose = attachedPose(host, along, counterLiftOf(f.parametric));
     if (
       along === f.attach.along &&
@@ -150,6 +231,9 @@ export function syncKitchenAttachments(scene: Scene): Scene {
   const cutoutsByHost = new Map<string, { along: number; w: number; d: number }[]>();
   for (const f of furniture) {
     if (!f.attach || !f.parametric) continue;
+    // Only a worktop gets cut. A TV standing on a sideboard does not saw a
+    // hole in it, and `cutouts` is a kitchenBase-only field anyway.
+    if (!isCounterHost(byId.get(f.attach.hostId) ?? f)) continue;
     const cut = cutoutOf(f.parametric);
     if (!cut) continue;
     const list = cutoutsByHost.get(f.attach.hostId) ?? [];
@@ -324,14 +408,26 @@ export function applyKitchenGesture(next: Scene, prev: Scene): Scene {
       return f;
     }
     if (isCounterItem(f)) {
-      // Dragged counter item: rebond to whatever run is under it now; if
-      // none is near, it stays clamped to its current host (a sink can't
-      // be dropped in mid-air off the edge of its counter).
-      const found = findHostRun(f.x, f.y, next, f.parametric.dims.w);
+      // Dragged counter item: rebond to whatever surface is under it now — a
+      // worktop, a sideboard, a chest of drawers. If none is near, a sink
+      // stays clamped to its current host (it cannot exist off a counter),
+      // while a TV simply comes off the furniture and stands on the floor.
+      const found = findAttachHost(f.x, f.y, next, f.parametric.dims.w);
+      if (!found && isSurfaceOptional(f.parametric)) {
+        if (!f.attach) return f;
+        changed = true;
+        const { attach: _a, ...free } = f;
+        return { ...free, elevation: 0 };
+      }
       const hostId = found?.host.id ?? f.attach?.hostId;
       if (!hostId) return f;
       const host = next.furniture.find((h) => h.id === hostId);
-      if (!host?.parametric) return f;
+      if (!host) return f;
+      if (!isCounterHost(host)) {
+        changed = true;
+        return { ...f, attach: { hostId, along: found?.along ?? f.attach?.along ?? 0 } };
+      }
+      if (!host.parametric) return f;
       let along: number;
       if (found) {
         along = found.along;

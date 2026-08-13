@@ -16,12 +16,15 @@
 // protected file (docs/PROTECTED_PATHS.md) — adding a sibling ghost would mean
 // editing it.
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
+import { useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useSceneStore } from "@/store/useSceneStore";
 import { pdToast } from "@/ui/planDock/toast";
-import { attachedPose, counterLiftOf, findHostRun, isCounterHost } from "./kitchenAttach";
+import { attachedPose, counterLiftOf, findAttachHost, findHostRun, isCounterHost, isSurfaceOptional } from "./kitchenAttach";
+import { recordHostHeight, measuredHeight, surfaceRects } from "./surfaceHosts";
+import { CATALOG_BY_ID } from "@/furniture/catalog";
 import { ParametricModel } from "./ParametricModel";
 import { pathLegs, runLocalToWorld } from "./runPath";
 import { rayToWall, roomFacingSide } from "./wallRay";
@@ -191,6 +194,65 @@ export function counterSurfaces(scene: Scene): { host: FurnitureItem; x: number;
   return out;
 }
 
+/**
+ * Measures ONE catalog model and records its real height.
+ *
+ * A `FurnitureAsset` has a footprint and no height — nothing needed one until
+ * something had to stand on top of an IKEA sideboard. The viewer scales every
+ * GLB uniformly so its larger plan dimension matches the declared footprint
+ * (`normalize()` in FurnitureLayer.tsx, a protected file), so the same scale
+ * applied to the model's own bounding box gives the height in world metres.
+ * Cheap: drei has the GLTF cached already, since the item is on screen.
+ */
+function HostHeightProbe({ assetId, url, draco }: { assetId: string; url: string; draco: boolean }) {
+  const gltf = useGLTF(url, draco ? "/draco/" : false);
+  const asset = CATALOG_BY_ID.get(assetId);
+  useMemo(() => {
+    const box = new THREE.Box3().setFromObject(gltf.scene);
+    const size = box.getSize(new THREE.Vector3());
+    const target = asset ? Math.max(asset.footprint.w, asset.footprint.d) : 1;
+    const k = target / (Math.max(size.x, size.z) || 1);
+    recordHostHeight(assetId, size.y * k);
+  }, [gltf.scene, assetId, asset]);
+  return null;
+}
+
+/**
+ * Probes catalog items whose height we do not know yet.
+ *
+ * `hosting` mode measures only the items that already carry something — those
+ * have to be measured whether or not anyone is placing, because an attached
+ * item's elevation is re-derived from its host's top on every sync, and an
+ * unmeasured host would drop the thing standing on it to the estimate. The
+ * full sweep runs only while a surface item is armed, so a plan nobody is
+ * dropping a TV into loads nothing extra.
+ */
+function HostHeightProbes({ hosting }: { hosting?: boolean }) {
+  const scene = useSceneStore((s) => s.scene);
+  const targets = useMemo(() => {
+    const seen = new Set<string>();
+    const hosts = new Set(scene.furniture.map((f) => f.attach?.hostId).filter(Boolean) as string[]);
+    const out: { assetId: string; url: string; draco: boolean }[] = [];
+    for (const f of scene.furniture) {
+      if (hosting && !hosts.has(f.id)) continue;
+      if (f.parametric || seen.has(f.assetId) || measuredHeight(f.assetId) !== undefined) continue;
+      const asset = CATALOG_BY_ID.get(f.assetId);
+      const url = asset?.realModel ?? (asset?.model ? `/furniture/${asset.model}.glb` : null);
+      if (!asset || !url) continue;
+      seen.add(f.assetId);
+      out.push({ assetId: f.assetId, url, draco: !!asset.realModel });
+    }
+    return out;
+  }, [scene.furniture]);
+  return (
+    <Suspense fallback={null}>
+      {targets.map((t) => (
+        <HostHeightProbe key={t.assetId} {...t} />
+      ))}
+    </Suspense>
+  );
+}
+
 function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
   const placingCounter = useSceneStore((s) => s.placingCounter);
   const scene = useSceneStore((s) => s.scene);
@@ -211,8 +273,16 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
 
   if (!placingCounter) return null;
   const spec = placingCounter.spec;
-  const found = cursor ? findHostRun(cursor.x, cursor.y, scene, spec.dims.w) : null;
-  const surfaces = counterSurfaces(scene);
+  const freeStanding = isSurfaceOptional(spec);
+  const found = cursor ? findAttachHost(cursor.x, cursor.y, scene, spec.dims.w) : null;
+  // Worktops (path-shaped) plus every plain furniture top — a TV goes on a
+  // media unit the same way a microwave goes on a counter.
+  const surfaces = [
+    ...counterSurfaces(scene),
+    ...(freeStanding
+      ? surfaceRects(scene).map((r) => ({ host: r.host, x: r.x, y: r.y, yaw: yawOf(r.rotation), len: r.w, d: r.d, top: r.top }))
+      : []),
+  ];
 
   /** Plan point of whatever the pointer actually touched — the worktop slab
    *  when it's over a counter, the ground plane otherwise. Reading the FLOOR
@@ -231,9 +301,15 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     const p = pointToPlan(e);
-    const hit = findHostRun(p.x, p.y, useSceneStore.getState().scene, spec.dims.w);
+    const hit = findAttachHost(p.x, p.y, useSceneStore.getState().scene, spec.dims.w);
     if (!hit) {
-      pdToast("Place it on a kitchen counter");
+      // A sink cannot exist off a counter; a TV on a stand is happy on the
+      // floor, so the same ghost either refuses or just puts it down.
+      if (!freeStanding) {
+        pdToast("Place it on a kitchen counter");
+        return;
+      }
+      useSceneStore.getState().placeSurfaceItemFree(p.x, p.y);
       return;
     }
     useSceneStore.getState().placeCounterItem(hit.host.id, hit.along);
@@ -279,11 +355,14 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
         </group>
       )}
       {!pose && cursor && (
-        // No counter under the cursor: red floor-level ghost says "not here".
+        // Nothing under the cursor. For a sink that is an error (red ghost,
+        // click rejected); for a TV it is just the floor, so the preview is
+        // the ordinary one and the click lands.
         <group position={[cursor.x, 0, cursor.y]}>
-          <ParametricModel spec={spec} opacity={0.4} tint="red" />
+          <ParametricModel spec={spec} opacity={freeStanding ? 0.55 : 0.4} tint={freeStanding ? null : "red"} />
         </group>
       )}
+      {freeStanding && <HostHeightProbes />}
     </>
   );
 }
@@ -296,6 +375,9 @@ export function CounterItemGhost({ offset }: { offset: { cx: number; cz: number 
     <>
       <CounterGhost offset={offset} />
       <WallItemGhost offset={offset} />
+      {/* Always on: every host that is already carrying something needs its
+          real height, or whatever stands on it moves when the plan reopens. */}
+      <HostHeightProbes hosting />
     </>
   );
 }

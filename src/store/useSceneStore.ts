@@ -328,6 +328,10 @@ export interface StoreState {
    *  the run's left edge; pose/elevation derive from the host via the
    *  attachment sync. */
   placeCounterItem: (hostId: string, along: number) => void;
+  /** Commit the armed surface item on the FLOOR at a plan point — the escape
+   *  hatch for `surfaceOptional` generators (a TV on a stand), which may be
+   *  put down anywhere rather than requiring a host. */
+  placeSurfaceItemFree: (x: number, y: number) => void;
 
   /** Armed by a wall-mounted generator's card (mirrors, towel rails). The
    *  ghost reads the WALL grid — pointing at a wall face yields position,
@@ -853,6 +857,22 @@ export const useSceneStore = create<StoreState>((set, get) => {
       };
       commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, syncKitchenAttachments(withItem));
       // Stay armed — Sims-style repeat placement; Esc exits.
+    },
+    placeSurfaceItemFree: (x, y) => {
+      // The same armed placement, put down on the FLOOR instead of bonded to a
+      // surface. Only offered for generators marked `surfaceOptional` (a TV on
+      // a stand): a sink off its counter is still an error, and the ghost
+      // never calls this for one.
+      const { placingCounter, scene, commitScene } = get();
+      if (!placingCounter) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, {
+        ...scene,
+        furniture: [
+          ...scene.furniture,
+          { id, assetId: `param:${placingCounter.generator}`, x, y, rotation: 0, parametric: placingCounter.spec },
+        ],
+      });
     },
     placingWall: null,
     setPlacingWall: (placingWall) =>

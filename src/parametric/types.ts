@@ -26,6 +26,21 @@ export interface GeneratorDef {
   rooms: RoomType[]; // which room tabs show the Custom card
   wallSnap: boolean;
   dimLimits: { w: [number, number]; d: [number, number]; h: [number, number] }; // meters
+  /** Some products are not sold by width and height — a television is sold by
+   *  its screen DIAGONAL in inches, at a fixed aspect, and the two dimensions
+   *  move together. When present the inspector shows this control instead of
+   *  the Width/Height fields, and the generator owns the conversion (only it
+   *  knows what its bezel, chin and stand add to the picture). */
+  sizeInches?: {
+    label: string;
+    /** Standard sizes offered as chips, e.g. [43, 50, 55, 65, 75]. */
+    presets: number[];
+    /** Screen diagonal of a spec, in inches. */
+    of: (spec: ParametricSpec) => number;
+    /** Dims for a diagonal, keeping the aspect and whatever else is bundled
+     *  into the declared height (a stand). */
+    dims: (spec: ParametricSpec, inches: number) => { w: number; d: number; h: number };
+  };
   modules: ModuleDef[];
   fronts: ParametricSpec["front"][]; // subset relevant to this generator
   /** Whether the front-profile chips mean anything for this spec. Absent =
@@ -36,6 +51,14 @@ export interface GeneratorDef {
   handles: ParametricSpec["handle"][];
   finishes: string[]; // primary finish ids (ordered, first = default)
   finishes2?: string[]; // secondary finish ids, when applicable
+  /** Whether the secondary swatch row means anything for this spec — the same
+   *  dead-control rule `showFronts` follows. A TV's second finish paints its
+   *  STAND, so the three wall-mounted cards must not offer it. Absent = shown
+   *  whenever `finishes2` exists. */
+  showFinishes2?: (spec: ParametricSpec) => boolean;
+  /** What the secondary row is called in the inspector ("Counter", "Stand").
+   *  Absent = the inspector's own default for the kitchen/sofa generators. */
+  finishes2Label?: string;
   defaultSpec: ParametricSpec;
   /** Meters above floor a fresh placement starts at — wall-mounted items
    *  (kitchen wall cabinets, counter drop-ins). Absent = floor level.
@@ -62,6 +85,11 @@ export interface GeneratorDef {
    *  appliance set is counter-bound for a worktop microwave and floor-standing
    *  for the fridge that shares its generator. */
   counterItem?: (spec: ParametricSpec) => boolean;
+  /** This item may stand on ANY furniture top (sideboard, chest of drawers,
+   *  IKEA TV bench) and, unlike a sink, is perfectly fine on the floor when
+   *  there is nothing under it. A TV on a stand is the case: placement offers
+   *  every surface in the room but never refuses the click. */
+  surfaceOptional?: boolean;
   /** Meters ABOVE the host's counter surface a counter item bonds at. Absent
    *  or 0 = sitting on the worktop (sinks, hobs, a microwave). An extractor
    *  over an island is the case that needs it: it belongs to the run — it must
