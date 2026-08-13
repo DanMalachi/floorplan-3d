@@ -30,7 +30,7 @@
     "test:appliances": "tsx src/parametric/appliances.test.ts",
     "test:accessories": "tsx src/parametric/accessories.test.ts",
     "test:decor": "tsx src/parametric/softDecor.test.ts",
-    "test:camera": "tsx src/viewport3d/camera/targetPlane.test.ts",
+    "test:camera": "tsx src/viewport3d/camera/targetPlane.test.ts && tsx src/viewport3d/camera/inputVocabulary.test.ts",
     "furniture:test-retag": "tsx src/furniture/roomRetag.test.ts",
     "mat:index": "tsx scripts/materials/fetch-index.ts",
     "mat:fetch": "tsx scripts/materials/fetch-materials.ts",
