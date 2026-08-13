@@ -29,6 +29,7 @@ import { Inspector } from "@/ui/planDock/inspector/Inspector";
 import { PdToastHost } from "@/ui/planDock/toast";
 import { StairLayer } from "./StairMesh";
 import { CameraFocusRig } from "./CameraFocusRig";
+import { CameraRig } from "./CameraRig";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
 import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
@@ -311,25 +312,10 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   // (WalkthroughMode.tsx), but it isn't a drag: it shouldn't tear down N8AO
   // or lock out camera controls the way dragging furniture/walls does.
   const dragging = useSceneStore((s) => s.gestureBase !== null && !s.doorGestureActive);
-  // Camera should be locked for the ENTIRE time a click-based build/decorate
-  // tool is armed (not just once a drag gesture is already in flight) — see
-  // Plan Dock P9 camera-lock fix. `dragging` above stays as-is (used for
-  // cursor styling elsewhere in this file); this is a separate, broader gate.
-  const toolBusy = useSceneStore((s) =>
-    (s.gestureBase !== null && !s.doorGestureActive) ||
-    (s.appMode === "build" && s.buildTool !== "select") ||
-    s.placing !== null ||
-    s.placingRun !== null ||
-    s.placingCounter !== null ||
-    s.brush !== null ||
-    s.eyedropper ||
-    // Hovering a draggable item in Furnish locks the camera BEFORE the press:
-    // CameraControls listens on the canvas DOM element, so it sees the same
-    // pointerdown the item's drag handler does — disabling it only once the
-    // gesture state lands (a React render later) let that first press orbit
-    // the camera underneath a starting drag.
-    (s.appMode === "furnish" && s.hover3d !== null),
-  );
+  // Camera arbitration moved to <CameraRig> below. The tool-armed states that
+  // used to switch the whole camera off now cost only the LEFT button, so
+  // orbit/pan/zoom stay live at all times — see CameraRig.tsx for why the old
+  // `enabled={!toolBusy}` gate had to go and what replaced it.
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
   const envPreset = useSceneStore((s) => s.envPreset);
@@ -452,11 +438,17 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         )}
         <CameraControls
           makeDefault
-          enabled={!toolBusy && !walkthroughActive}
+          // Walkthrough is the ONE legitimate use of `enabled` — it replaces
+          // the camera wholesale rather than restricting it. Every tool state
+          // is handled by <CameraRig>, one button at a time.
+          enabled={!walkthroughActive}
           smoothTime={0.18}
           draggingSmoothTime={0.06}
         />
         <FitCamera span={span} />
+        {/* After FitCamera: the rig's far plane is derived from the dolly
+            limit and must win over FitCamera's opening-shot value. */}
+        <CameraRig span={span} halfX={halfX} halfZ={halfZ} />
         {walkthroughActive && (
           <WalkthroughRig
             scene={scene}

@@ -14,6 +14,10 @@ import { useThree } from "@react-three/fiber";
 import type { CameraControls } from "@react-three/drei";
 import { useSceneStore } from "@/store/useSceneStore";
 
+/** Look-at height for a room focus, meters above the floor — roughly a seated
+ *  sightline, so the room reads as a space rather than as a floor plan. */
+const AIM_Y = 0.6;
+
 export function CameraFocusRig({ offset }: { offset: { cx: number; cz: number } }) {
   const controls = useThree((s) => s.controls) as CameraControls | null;
   const focusTarget = useSceneStore((s) => s.focusTarget);
@@ -39,9 +43,15 @@ export function CameraFocusRig({ offset }: { offset: { cx: number; cz: number } 
     controls.getPosition(curPos);
     controls.getTarget(curTarget);
     const rig = curPos.clone().sub(curTarget);
-    const nextPos = new THREE.Vector3(tx, 0, tz).add(rig);
+    // Rebuild the position against the SAME height the camera is then aimed
+    // at. Building it against y=0 while aiming at y=AIM_Y left a new rig of
+    // `rig - (0, AIM_Y, 0)`, i.e. the camera sank AIM_Y on every focus. The
+    // `consumed` dedup only covers repeat clicks on the same room, so
+    // alternating rooms applied it every time and a handful of clicks put the
+    // camera under the floor.
+    const nextPos = new THREE.Vector3(tx, AIM_Y, tz).add(rig);
 
-    controls.setLookAt(nextPos.x, nextPos.y, nextPos.z, tx, 0.6, tz, true);
+    controls.setLookAt(nextPos.x, nextPos.y, nextPos.z, tx, AIM_Y, tz, true);
   }, [focusTarget, controls, offset]);
 
   return null;
