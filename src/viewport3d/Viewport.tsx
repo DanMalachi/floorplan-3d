@@ -323,9 +323,21 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const envPreset = useSceneStore((s) => s.envPreset);
   const brush = useSceneStore((s) => s.brush);
   const walkthroughActive = useSceneStore((s) => s.walkthroughActive);
-  const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const [walkthroughLocked, setWalkthroughLocked] = useState(false);
   const [walkthroughFov, setWalkthroughFov] = useState(WALKTHROUGH_CONFIG.fovDeg);
+  // P2 T5: WalkthroughRig now flies the camera back OUT on exit, mirroring
+  // its fly-IN on entry — so it has to stay mounted (and CameraControls has
+  // to stay disabled) for the whole outro, not just until `walkthroughActive`
+  // flips. That flag itself still flips the instant the user asks to leave
+  // (Esc inside the rig, or the Scene panel's "Exit walkthrough" button below
+  // — both routes already just call setWalkthroughActive(false)), so every
+  // OTHER reader of it (the button's own label/pressed state) keeps behaving
+  // exactly as before. Only the MOUNT lags behind, and only WalkthroughRig's
+  // own onExitComplete — fired once its exit flight lands — brings it down.
+  const [walkthroughMounted, setWalkthroughMounted] = useState(walkthroughActive);
+  useEffect(() => {
+    if (walkthroughActive) setWalkthroughMounted(true);
+  }, [walkthroughActive]);
   // The CAD grid is an editing aid; hide it in the immersive View presets.
   const showGrid = envPreset === "none" || appMode !== "view";
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
@@ -442,8 +454,13 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           makeDefault
           // Walkthrough is the ONE legitimate use of `enabled` — it replaces
           // the camera wholesale rather than restricting it. Every tool state
-          // is handled by <CameraRig>, one button at a time.
-          enabled={!walkthroughActive}
+          // is handled by <CameraRig>, one button at a time. Keyed on
+          // walkthroughMounted, not walkthroughActive: re-enabling this the
+          // instant the user asks to exit (rather than once the rig's own
+          // exit flight lands) would let a stray drag during the outro move
+          // CameraControls' target, so the handoff snapped to wherever THAT
+          // went instead of where the flight just visually landed.
+          enabled={!walkthroughMounted}
           smoothTime={0.18}
           draggingSmoothTime={0.06}
         />
@@ -456,12 +473,13 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
             diff stays the button-map/envelope it already was. */}
         <CameraKeyboardRig halfX={halfX} halfZ={halfZ} />
         <CameraDoubleClickRig />
-        {walkthroughActive && (
+        {walkthroughMounted && (
           <WalkthroughRig
             scene={scene}
             offset={offset}
             fovDeg={walkthroughFov}
-            onExit={() => setWalkthroughActive(false)}
+            exitRequested={!walkthroughActive}
+            onExitComplete={() => setWalkthroughMounted(false)}
             onLockChange={setWalkthroughLocked}
           />
         )}
