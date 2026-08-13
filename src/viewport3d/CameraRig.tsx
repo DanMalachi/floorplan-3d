@@ -13,22 +13,29 @@
  *  all the time.
  *
  *  The rule that replaces it: LEFT acts on the world, RIGHT orbits, MIDDLE
- *  pans, WHEEL zooms — and only LEFT is ever taken away. Orbit, pan and zoom
- *  are never suppressed by anything, so there is no viewport state with a
- *  dead camera. That is the arrangement The Sims 4 uses in Build mode, and
- *  the reason SketchUp/Blender/Fusion put navigation on a button the active
- *  tool never claims: navigation is an ambient layer, not a tool competing
- *  with the others.
+ *  pans, WHEEL zooms — and the camera buttons are never suppressed by
+ *  anything, so there is no viewport state with a dead camera. That is the
+ *  arrangement The Sims 4 uses in Build mode, and the reason
+ *  SketchUp/Blender/Fusion put navigation on a button the active tool never
+ *  claims: navigation is an ambient layer, not a tool competing with the
+ *  others.
+ *
+ *  A first pass at this let LEFT orbit too whenever nothing was hovered or
+ *  armed, keeping a contextual arbitration to decide when. That was wrong in
+ *  use: left and right did the same job most of the time, and a button whose
+ *  meaning depends on what happens to be under the cursor is precisely what
+ *  Law 2 forbids. Left is now never a camera button anywhere, and the
+ *  arbitration is gone with it.
  *
  *  `enabled` keeps exactly one legitimate use — walkthrough, which replaces
  *  the camera wholesale rather than restricting it.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import * as THREE from "three";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { CameraControlsImpl } from "@react-three/drei";
-import { useSceneStore, type AppMode, type PickRef } from "@/store/useSceneStore";
+import { useSceneStore } from "@/store/useSceneStore";
 
 const ACTION = CameraControlsImpl.ACTION;
 
@@ -60,10 +67,14 @@ export const CAMERA = {
    *  boundaryEnclosesCamera below), so viewing the house from outside still
    *  works — it is the point of interest that stays leashed to the house. */
   panMarginM: 4,
-  /** Ceiling for the target's height inside the boundary box. */
-  panCeilingM: 3,
-  /** 0 = hard stop, 1 = immovable. A rubbery edge you feel rather than hit. */
-  boundaryFriction: 0.8,
+  /** Vertical room for the orbit target inside the boundary box. Deliberately
+   *  well clear of a storey height in both directions: `truck` moves the
+   *  target along the camera's up vector, so ordinary panning has a large
+   *  vertical component, and a tight ceiling here turns every pan into a fight
+   *  with the boundary. The XZ leash is what actually keeps the house
+   *  findable; these two only stop the target running away to nowhere. */
+  panCeilingM: 14,
+  panBelowM: 3,
   /** camera.far = maxDistance * this. Derived from the dolly limit rather
    *  than the load-time span (which is what FitCamera uses for its opening
    *  shot) so the two can never disagree and clip the scene at full zoom-out. */
@@ -86,26 +97,9 @@ export const CAMERA = {
    *  flat speed would crawl across a whole house zoomed out or overshoot a
    *  close-up zoomed in. */
   kbTruckSpeedPerS: 1.1,
-  /** Q/E azimuth-orbit speed, degrees per second held. */
+  /** Comma/period azimuth-orbit speed, degrees per second held. */
   kbOrbitSpeedDegS: 90,
 } as const;
-
-/** Does hovering this pick mean a left press would START A DRAG rather than
- *  orbit? Only kinds whose layer actually has a pointerdown drag handler, and
- *  only in the mode that handler runs in:
- *
- *    furnish -> furniture (FurnitureLayer), fixture (FixtureLayer)
- *    build   -> wall, opening (WallMesh)
- *
- *  `room` and `stair` are deliberately absent: FloorMesh and StairMesh are
- *  click-to-select only. Counting them would cost the left button across every
- *  floor in the plan — the same over-broad mistake, one layer down. */
-function hoverClaimsLeft(appMode: AppMode, kind: PickRef["kind"] | undefined): boolean {
-  if (!kind) return false;
-  if (appMode === "furnish") return kind === "furniture" || kind === "fixture";
-  if (appMode === "build") return kind === "wall" || kind === "opening";
-  return false;
-}
 
 export function CameraRig({ span, halfX, halfZ }: {
   span: number;
@@ -115,37 +109,6 @@ export function CameraRig({ span, halfX, halfZ }: {
   const controls = useThree((s) => s.controls) as CameraControlsImpl | null;
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const wallMode = useSceneStore((s) => s.wallMode);
-  // Stable object identities R3F reuses for the life of the canvas — safe to
-  // select without triggering extra re-renders, and what T4 below reuses to
-  // find whatever surface is under the cursor at orbit-drag start.
-  const raycaster = useThree((s) => s.raycaster);
-  const pointer = useThree((s) => s.pointer);
-  const rootScene = useThree((s) => s.scene);
-
-  /** Every clause here was already in Viewport.tsx's `toolBusy`. What changed
-   *  is the lever: it now costs the LEFT BUTTON, not the camera.
-   *
-   *  Hovering a draggable item has to claim left BEFORE the press, not once
-   *  the gesture state lands: camera-controls listens on the canvas DOM
-   *  element, so it sees the same pointerdown the item's drag handler does,
-   *  and React state arriving a render later is a render too late. Hover is
-   *  set on pointer MOVE — you must travel onto an item to press it — so by
-   *  the time the press arrives this value is already correct. That timing is
-   *  why the hover trigger was right all along; only `enabled` was wrong.
-   *
-   *  camera-controls resolves the action once, at pointerdown, and keeps it in
-   *  its own state for the rest of the drag, so a hover that clears mid-drag
-   *  can never flip an in-flight item drag into an orbit. */
-  const leftClaimed = useSceneStore((s) =>
-    (s.gestureBase !== null && !s.doorGestureActive) ||
-    (s.appMode === "build" && s.buildTool !== "select") ||
-    s.placing !== null ||
-    s.placingRun !== null ||
-    s.placingCounter !== null ||
-    s.brush !== null ||
-    s.eyedropper ||
-    hoverClaimsLeft(s.appMode, s.hover3d?.kind),
-  );
 
   /** Touch has no hover to gate on, so one finger is claimed by the whole
    *  editing mode instead: one finger acts, two fingers navigate. Without
@@ -156,25 +119,33 @@ export function CameraRig({ span, halfX, halfZ }: {
   // --- button map: the part that never changes -----------------------------
   useEffect(() => {
     if (!controls) return;
+    // LEFT IS NEVER A CAMERA BUTTON. It used to orbit whenever nothing was
+    // hovered or armed, which meant left and right did the same job most of
+    // the time — and a button whose meaning depends on what happens to be
+    // under the cursor is exactly what Law 2 forbids. One button, one meaning,
+    // everywhere: left acts on the world and only on the world. That also
+    // retires the whole contextual-claim mechanism, since there is no longer
+    // anything to claim, and with it the hover-timing subtlety that mechanism
+    // existed to handle.
+    //
+    // Sims 4 Build mode behaves the same way — left-drag never orbits there
+    // either — so a dead left-drag over empty floor is the convention, not an
+    // oversight.
+    controls.mouseButtons.left = ACTION.NONE;
     controls.mouseButtons.right = ACTION.ROTATE; // orbit — never suppressed
     controls.mouseButtons.middle = ACTION.TRUCK; // pan  — never suppressed
     controls.mouseButtons.wheel = ACTION.DOLLY; // zoom — never suppressed
     controls.touches.two = ACTION.TOUCH_DOLLY_TRUCK;
     controls.touches.three = ACTION.TOUCH_TRUCK;
-    // Zoom and orbit go where you are pointing, the way Fusion, BricsCAD and
-    // SketchUp all behave. Without it, inspecting a corner is a
-    // zoom-pan-zoom-pan grind instead of one gesture.
+    // ZOOM goes where you are pointing, the way Fusion, BricsCAD and SketchUp
+    // all behave. Without it, inspecting a corner is a zoom-pan-zoom-pan grind
+    // instead of one gesture. ORBIT deliberately does NOT — see the note where
+    // setOrbitPoint used to be called.
     controls.dollyToCursor = true;
     // A real minDistance is the floor for approach; pushing the target on
     // overshoot instead would fight the boundary below.
     controls.infinityDolly = false;
   }, [controls]);
-
-  // --- the part that is claimed contextually -------------------------------
-  useEffect(() => {
-    if (!controls) return;
-    controls.mouseButtons.left = leftClaimed ? ACTION.NONE : ACTION.ROTATE;
-  }, [controls, leftClaimed]);
 
   useEffect(() => {
     if (!controls) return;
@@ -190,12 +161,33 @@ export function CameraRig({ span, halfX, halfZ }: {
 
     // Leash the TARGET to the footprint plus a margin; leave the camera free
     // so the house can still be viewed from outside it.
-    controls.boundaryFriction = CAMERA.boundaryFriction;
+    //
+    // friction MUST stay 0. camera-controls' friction branch divides by
+    // `offset.dot(deltaClampedTarget)` (dist/camera-controls.module.js:2429),
+    // and that dot product goes to zero whenever the pan slides ALONG a
+    // boundary face instead of into it — which is the common case, not a
+    // corner case. The factor explodes, the target is flung to infinity, and
+    // the viewport is unrecoverable without a reload. It showed up first as
+    // panning going slow and uneven (the denominator shrinking) and then as
+    // being shot into space (it reaching zero). `friction === 0` takes a
+    // different branch entirely, with no division in it: a clean projection
+    // back onto the boundary.
+    //
+    // So the edge is a hard stop rather than the rubbery one originally
+    // wanted. A rubbery edge is a nicer idea sitting on an unstable code path.
+    controls.boundaryFriction = 0;
     controls.boundaryEnclosesCamera = false;
     const m = CAMERA.panMarginM;
+    // Generous vertically. The box used to stop at 3 m, but `truck` moves the
+    // target along the camera's own up vector, which at any normal orbit angle
+    // has a large world-Y component — so ordinary panning drove the target
+    // into the ceiling face constantly, making "sliding along a boundary" the
+    // normal case and the instability above a routine occurrence rather than
+    // a rarity. The vertical limits exist only to stop the target running away
+    // to nowhere; the XZ leash is the one doing the real work.
     controls.setBoundary(
       new THREE.Box3(
-        new THREE.Vector3(-(halfX + m), 0, -(halfZ + m)),
+        new THREE.Vector3(-(halfX + m), -CAMERA.panBelowM, -(halfZ + m)),
         new THREE.Vector3(halfX + m, CAMERA.panCeilingM, halfZ + m),
       ),
     );
@@ -215,38 +207,24 @@ export function CameraRig({ span, halfX, halfZ }: {
     controls.maxPolarAngle = THREE.MathUtils.degToRad(deg);
   }, [controls, wallMode]);
 
-  // --- Law 3, the orbit half: pivot on whatever is under the cursor --------
-  // Recorded every frame (cheap: one boolean read) so the controlstart
-  // handler below can tell "the camera was already gliding from a fitToBox/
-  // setLookAt call a moment ago" apart from "this drag is the thing that just
-  // started" — both read `controls.active === true` AT controlstart itself,
-  // since `_state` is set before the event dispatches, so only the PRIOR
-  // frame's value distinguishes them.
-  const wasActiveRef = useRef(false);
-  useFrame(() => {
-    if (controls) wasActiveRef.current = controls.active;
-  });
-
-  useEffect(() => {
-    if (!controls) return;
-    const onControlStart = () => {
-      // Only an actual orbit gesture should move the pivot — a truck/dolly
-      // starting shouldn't touch it.
-      const rotating = (controls.currentAction & (ACTION.ROTATE | ACTION.TOUCH_ROTATE)) !== 0;
-      if (!rotating) return;
-      // setOrbitPoint's own doc: "must not run during an animation" — it
-      // fixes the camera's current position immediately, so calling it while
-      // still gliding toward a fitToBox/setLookAt target would fix the wrong
-      // spot and fight that transition.
-      if (wasActiveRef.current) return;
-      raycaster.setFromCamera(pointer, camera);
-      const hit = raycaster.intersectObjects(rootScene.children, true)[0];
-      if (!hit) return; // pointer over empty sky/void — leave the existing pivot
-      controls.setOrbitPoint(hit.point.x, hit.point.y, hit.point.z);
-    };
-    controls.addEventListener("controlstart", onControlStart);
-    return () => controls.removeEventListener("controlstart", onControlStart);
-  }, [controls, raycaster, pointer, camera, rootScene]);
+  // --- orbit does NOT re-pivot on the cursor -------------------------------
+  // There used to be a `controlstart` handler here that raycast under the
+  // cursor and called `setOrbitPoint`, on the theory (Law 3) that orbit should
+  // pivot where you point, the way Fusion and BricsCAD document it.
+  //
+  // In the hand it fails. `setOrbitPoint` "will immediately fix the positions"
+  // — it moves the camera to preserve framing while swapping the target — so
+  // every single orbit drag began with a visible jump to wherever the cursor
+  // happened to be. During continuous back-and-forth orbiting that reads as
+  // the camera snapping around the screen rather than turning around the model.
+  //
+  // The distinction worth keeping: the cursor is a good anchor for a MONOTONIC
+  // gesture like a wheel zoom, where each tick moves toward a point you are
+  // deliberately aiming at, and a bad one for a RECIPROCATING gesture like an
+  // orbit drag, where re-anchoring on every press turns small hand movements
+  // into large camera jumps. So `dollyToCursor` stays on and orbit keeps
+  // pivoting on the existing target — which the F / Home / double-click
+  // framing commands already put where the user asked for it.
 
   return null;
 }

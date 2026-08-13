@@ -43,8 +43,11 @@ export interface Binding {
  *  the test will tell you which one you forgot. */
 export const VOCABULARY: Binding[] = [
   // --- mouse -------------------------------------------------------------
+  // Left is deliberately absent from every row. It used to also orbit on empty
+  // space, which meant left and right did the same job most of the time and a
+  // button's meaning depended on what happened to be under the cursor — the
+  // exact thing Law 2 forbids. Left acts on the world and only on the world.
   { device: "mouse", verb: "orbit", gesture: "right-drag" },
-  { device: "mouse", verb: "orbit", gesture: "left-drag on empty space", suppressible: true },
   { device: "mouse", verb: "pan", gesture: "middle-drag" },
   { device: "mouse", verb: "pan", gesture: "space + left-drag" },
   { device: "mouse", verb: "pan", gesture: "arrow keys / WASD" },

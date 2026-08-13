@@ -295,7 +295,7 @@ function StatusOverlay() {
         <span style={{ color: T.textDim }}>nothing selected</span>
       )}
       <span style={{ color: T.textFaint }}>
-        ⌘Z undo ({past}) · ⇧⌘Z redo ({future})
+        ⌘Z undo ({past}) · ⌘Y redo ({future})
       </span>
     </div>
   );
@@ -352,9 +352,12 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
     // Letter shortcuts match on e.code (physical key), not e.key: a Hebrew/
     // Russian/... layout types a different character on the same key, and
     // e.key-based matching silently dead-keys R/Z/Y for those users.
-    if (mod && e.code === "KeyZ") {
-      if (e.shiftKey) s.redoScene();
-      else s.undoScene();
+    // Redo is Ctrl+Y only — Ctrl+Shift+Z is deliberately NOT a second alias
+    // for it. Two shortcuts for one command is two things to learn and one
+    // more chance to hit the wrong one, same reasoning as the left/right
+    // mouse-button split.
+    if (mod && e.code === "KeyZ" && !e.shiftKey) {
+      s.undoScene();
     } else if (mod && e.code === "KeyY") {
       s.redoScene();
     } else if (e.key === "Delete" || e.key === "Backspace") {

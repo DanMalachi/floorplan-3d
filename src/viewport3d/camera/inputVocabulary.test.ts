@@ -55,6 +55,21 @@ for (const device of DEVICES) {
   }
 }
 
+console.log("\nthe mouse's left button is not a camera binding at all");
+// Regression guard. Left used to orbit on empty space, which read as left and
+// right doing the same job — and made a button's meaning depend on whatever
+// happened to be under the cursor. Both are Law 2 violations, and the second is
+// the one that actually confuses people. Left acts on the world, full stop.
+//
+// PLAIN left, specifically. A held modifier is a different gesture, not a
+// second meaning for the same one — space+drag is the Figma/Photoshop pan and
+// nobody confuses it with a click. The rule bans the unmodified press.
+const MODIFIED = /^(space|shift|alt|ctrl|cmd)\b/;
+for (const b of VOCABULARY.filter((x) => x.device === "mouse")) {
+  const plainLeft = /\bleft-drag\b/.test(b.gesture) && !MODIFIED.test(b.gesture);
+  check(`mouse ${b.verb} via "${b.gesture}" does not use the plain left button`, !plainLeft);
+}
+
 console.log("\nthe suppressible bindings are only ever the plain left press");
 // Law 2: left acts on the world, and it is the ONLY input a tool may claim.
 // A suppressible right-drag or pinch would mean a mode had quietly rebound a
