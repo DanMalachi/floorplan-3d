@@ -27,11 +27,13 @@ import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
 import { BuildNavigator } from "@/ui/planDock/BuildNavigator";
 import { Inspector } from "@/ui/planDock/inspector/Inspector";
 import { PdToastHost } from "@/ui/planDock/toast";
+import { CameraOfferChip } from "@/ui/planDock/cameraOffer";
 import { StairLayer } from "./StairMesh";
 import { CameraFocusRig } from "./CameraFocusRig";
 import { CameraRig } from "./CameraRig";
 import { CameraKeyboardRig } from "./CameraKeyboardRig";
 import { CameraDoubleClickRig } from "./CameraDoubleClickRig";
+import { CameraOfferRig } from "./CameraOfferRig";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
 import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
@@ -473,6 +475,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
             diff stays the button-map/envelope it already was. */}
         <CameraKeyboardRig halfX={halfX} halfZ={halfZ} />
         <CameraDoubleClickRig />
+        <CameraOfferRig />
         {walkthroughMounted && (
           <WalkthroughRig
             scene={scene}
@@ -516,6 +519,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
       <WalkthroughFovControl active={walkthroughActive} fovDeg={walkthroughFov} onChange={setWalkthroughFov} />
       <WallModeToggle />
+      <CameraOfferChip />
       <PdToastHost />
     </div>
   );
