@@ -16,7 +16,7 @@ import { GENERATORS, sanitizeSpec, elevationOf } from "@/parametric";
 import { BROADCAST_URL } from "@/parametric/tvParts";
 import { isColorable } from "@/parametric/materials";
 import { ALL_PIECES, piecesOf, type CustomPiece } from "@/parametric/pieces";
-import { findAttachHost, syncKitchenAttachments } from "@/parametric/kitchenAttach";
+import { applyKitchenGesture, findAttachHost, syncKitchenAttachments } from "@/parametric/kitchenAttach";
 import { isSurfaceHost } from "@/parametric/surfaceHosts";
 import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
 import { LIVING_HOTSPOTS } from "@/ui/planDock/LivingScene";
@@ -837,6 +837,107 @@ console.log("\nbuttons: wall art and clocks you can reach through the picture");
       check(`${p.glyphKey} answers ONLY that button in ${room}`, hit.length === 1, hit.map((h) => h.id).join(","));
     }
   }
+}
+
+// ── Dragging a hung item ───────────────────────────────────────────────────
+//
+// Dan's report: moving a picture feels "stuck", doesn't follow the cursor, and
+// jumps to the other side of the wall. Both are in the snap, not the picture,
+// and both hit EVERY wall-mounted generator — a picture is simply the thinnest,
+// so it sits closest to the centreline the flip test uses.
+//
+// The drag hands the store a point on the FLOOR plane under the pointer, which
+// is metres from where the picture is; it wanders across the wall's centreline
+// while the cursor sits still on the frame. So the snap has to be sticky about
+// which face it is on, and fine-grained about where along the wall.
+
+console.log("\ndragging a hung item: it stays on its own side of the wall");
+{
+  const nodes = [
+    { id: "n0", x: 0, y: 0 },
+    { id: "n1", x: 5, y: 0 },
+    { id: "n2", x: 5, y: 4 },
+    { id: "n3", x: 0, y: 4 },
+  ];
+  const walls = [
+    { id: "w0", a: "n0", b: "n1", thickness: 0.1 },
+    { id: "w1", a: "n1", b: "n2", thickness: 0.1 },
+    { id: "w2", a: "n2", b: "n3", thickness: 0.1 },
+    { id: "w3", a: "n3", b: "n0", thickness: 0.1 },
+  ];
+  const room = { nodes, walls, rooms: [{ id: "r0", loop: ["n0", "n1", "n2", "n3"] }], furniture: [] } as unknown as Scene;
+
+  /** One drag: feed a path of cursor points through the same two steps the app
+   *  does — the layer's wall snap, then the store's gesture hook. */
+  const drag = (spec: ParametricSpec, path: [number, number][], startX: number) => {
+    let item: FurnitureItem = {
+      id: "d1",
+      assetId: `param:${spec.generator}`,
+      x: startX,
+      y: 0.1,
+      rotation: 0,
+      elevation: 1.2,
+      parametric: spec,
+    };
+    let sc: Scene = { ...room, furniture: [item] };
+    const trail: FurnitureItem[] = [];
+    for (const [cx, cy] of path) {
+      const candidate = { ...item, x: cx, y: cy };
+      const next: Scene = { ...sc, furniture: sc.furniture.map((f) => (f.id === item.id ? candidate : f)) };
+      sc = applyKitchenGesture(next, sc);
+      item = sc.furniture[0];
+      trail.push(item);
+    }
+    return trail;
+  };
+
+  const picture = sanitizeSpec({
+    generator: "wallArt",
+    dims: { w: 0.5, d: 0.045, h: 0.7 },
+    modules: { mount: 1 },
+    front: "slab",
+    handle: "none",
+    finish: "art-plum",
+    finish2: "steel",
+    variant: "framed-portrait",
+  } as ParametricSpec);
+
+  // The pointer's floor point crossing and re-crossing the centreline, which
+  // is exactly what a camera looking slightly down at a wall produces.
+  const wander: [number, number][] = [
+    [1.2, 0.06], [1.4, 0.03], [1.6, -0.01], [1.8, 0.04], [2.0, -0.02],
+    [2.2, 0.01], [2.4, -0.03], [2.6, 0.05], [2.8, -0.04], [3.0, 0.02],
+  ];
+  const trail = drag(picture, wander, 1.0);
+  check("the picture never crosses to the far face", trail.every((t) => t.y > 0), trail.map((t) => t.y.toFixed(2)).join(" "));
+  check("its facing never flips mid-drag", trail.every((t) => Math.abs(t.rotation - trail[0].rotation) < 1e-6));
+  // Follows the cursor: the along-wall coordinate is the cursor's, within one
+  // step. On the kitchen's 10cm grid this lagged by up to 5cm and jumped.
+  const lag = Math.max(...trail.map((t, i) => Math.abs(t.x - wander[i][0])));
+  check("it lands where the cursor is, to the centimetre", lag <= 0.011, `worst lag ${(lag * 100).toFixed(1)}cm`);
+  check("it keeps the height it was hung at", trail.every((t) => t.elevation === 1.2));
+
+  // A deliberate move to the other room still works — the hysteresis is a
+  // margin, not a lock.
+  const across = drag(picture, [[2.5, 0.02], [2.5, -0.1], [2.5, -0.4]], 2.5);
+  check("a deliberate drag through the wall does change face", across[2].y < 0, `${across[2].y.toFixed(2)}`);
+  check("and it turns to face the other room", Math.abs(Math.abs(across[2].rotation) - Math.PI) < 1e-6);
+
+  // Every wall-mounted generator gets the same treatment, not just wall art.
+  for (const gen of ["mirror", "towelRail", "tv", "wallClock"] as const) {
+    const g = GENERATORS[gen];
+    const card = piecesOf(g).find((p) => g.wallMounted?.(p.spec));
+    if (!card) continue;
+    const t = drag(card.spec, wander, 1.0);
+    check(`a dragged ${gen} stays on its own face`, t.every((s) => s.y > 0));
+    check(`a dragged ${gen} tracks the cursor`, Math.max(...t.map((s, i) => Math.abs(s.x - wander[i][0]))) <= 0.011);
+  }
+
+  // …except the coarse grid, which a wall cabinet keeps: it has to line up
+  // with the base run underneath it, and nothing else does.
+  const cab = piecesOf(GENERATORS.kitchenWall)[0];
+  const cabTrail = drag(cab.spec, [[1.24, 0.2], [1.37, 0.2], [1.46, 0.2]], 1.2);
+  check("a wall cabinet still snaps on the 10cm grid", cabTrail.every((t) => Math.abs(t.x * 10 - Math.round(t.x * 10)) < 1e-6), cabTrail.map((t) => t.x.toFixed(3)).join(" "));
 }
 
 console.log("\nand every card in the catalog still has a button in its rooms");

@@ -23,6 +23,25 @@ import {
 import { hostTop, isSurfaceHost, surfaceRects } from "./surfaceHosts";
 
 const ALONG_STEP = 0.1; // same grid feel as everything else
+/** Hung things slide on a 1cm step, not the 10cm one.
+ *
+ *  A kitchen cabinet wants the coarse grid — it has to line up with the base
+ *  run under it. A picture has nothing to line up with, and on the 10cm step a
+ *  drag lagged the cursor by up to 5cm and moved in visible jumps, which is
+ *  what "feels stuck" was. */
+const WALL_ITEM_STEP = 0.01;
+/** How far past a wall's centreline the cursor must go before a hung item
+ *  changes which FACE it is on.
+ *
+ *  Without it, a 4.5cm-deep picture sits ~7cm off the centreline and the
+ *  pointer's floor-plane point wanders across that line constantly while you
+ *  drag — so the picture teleported to the far face, into the next room, and
+ *  back again. Hanging it in the next room is still one deliberate drag: push
+ *  the cursor a wall's half-thickness plus this margin past the line. */
+const SIDE_FLIP_MARGIN = 0.15;
+/** Ranking bonus, in metres, for the wall+face the item is already on, so a
+ *  near-tie between two walls at a corner doesn't swap faces mid-drag. */
+const KEEP_FACING_BONUS = 0.12;
 const HOST_SIDE_MARGIN = 0.3; // how far off a counter's plan rect a cursor still finds it
 const HOST_END_MARGIN = 0.25;
 
@@ -322,11 +341,24 @@ function cornerFaceAlong(
 export function snapRunToWall(
   item: Pick<FurnitureItem, "x" | "y" | "parametric">,
   scene: Scene,
+  opts: {
+    /** Along-wall quantisation. Defaults to the kitchen grid. */
+    step?: number;
+    /** The rotation the item ALREADY has, when it is being dragged rather
+     *  than placed. Turns the snap sticky: it prefers the wall and the face
+     *  the item is on, and only changes face when the cursor clearly means
+     *  it. Omit for a fresh placement, which has no face to keep. */
+    keepFacing?: number;
+  } = {},
 ): { x: number; y: number; rotation: number } | null {
   const spec = item.parametric;
   if (!spec) return null;
+  const step = opts.step ?? ALONG_STEP;
+  const keep = opts.keepFacing;
+  // The outward normal the item currently wears: rotation = atan2(-nx, ny).
+  const keepN = keep === undefined ? null : { x: -Math.sin(keep), y: Math.cos(keep) };
   const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-  let best: { gap: number; x: number; y: number; rotation: number } | null = null;
+  let best: { rank: number; x: number; y: number; rotation: number } | null = null;
   for (const w of scene.walls) {
     if (w.kind === "rail" || w.kind === "portal") continue;
     const a = nodes.get(w.a);
@@ -342,20 +374,32 @@ export function snapRunToWall(
     const t = clamp(tRaw, 0, L);
     const px = a.x + ux * t;
     const py = a.y + uy * t;
-    const off = (w.thickness ?? DEFAULT_THICKNESS) / 2 + spec.dims.d / 2;
+    const th = w.thickness ?? DEFAULT_THICKNESS;
+    const off = th / 2 + spec.dims.d / 2;
     // Rank by how far the run's BACK would have to travel to reach this
     // wall's FACE — not by the distance to its centerline, which makes a
     // thick wall look further away than the surface you actually stand
     // against (half a thickness: 15cm on a 30cm wall).
     const gap = Math.abs(Math.hypot(item.x - px, item.y - py) - off);
-    if (best && gap >= best.gap) continue;
     const side = (item.x - px) * -uy + (item.y - py) * ux;
-    const sign = Math.sign(side) || 1;
+    let sign = Math.sign(side) || 1;
+    let rank = gap;
+    if (keepN) {
+      // Which face of THIS wall the item is on today, if it is on this one.
+      const keepSign = Math.sign(keepN.x * -uy + keepN.y * ux);
+      if (keepSign !== 0) {
+        // Hysteresis: the cursor has to clear the wall's far face by a margin
+        // before the item swaps sides. Inside that band it stays put.
+        if (keepSign !== sign && Math.abs(side) < th / 2 + SIDE_FLIP_MARGIN) sign = keepSign;
+        if (keepSign === sign) rank -= KEEP_FACING_BONUS;
+      }
+    }
+    if (best && rank >= best.rank) continue;
     const nx = -uy * sign;
     const ny = ux * sign;
     // Keep the run on the segment when it fits; center it when it doesn't.
     const half = Math.min(spec.dims.w / 2, L / 2);
-    let tc = clamp(roundTo(tRaw, ALONG_STEP), half, Math.max(L - half, half));
+    let tc = clamp(roundTo(tRaw, step), half, Math.max(L - half, half));
     if (spec.extraLegs?.length) {
       const travel = sign * (spec.legDir ?? 1); // leg 0's direction along (ux, uy)
       const endT = tRaw + travel * (spec.dims.w / 2);
@@ -363,7 +407,7 @@ export function snapRunToWall(
       if (face !== null) tc = clamp(face - travel * (spec.dims.w / 2), 0, L);
     }
     best = {
-      gap,
+      rank,
       x: a.x + ux * tc + nx * off,
       y: a.y + uy * tc + ny * off,
       rotation: Math.atan2(-nx, ny),
@@ -400,7 +444,16 @@ export function applyKitchenGesture(next: Scene, prev: Scene): Scene {
       // which slid hoods and mirrors out into the middle of the room at their
       // old height. Same projection a run uses (wall FACE, not centerline);
       // elevation is untouched, so it slides along the wall at its own height.
-      const snapped = snapRunToWall(f, next);
+      //
+      // Sticky, and finely stepped, because the pointer's floor-plane point is
+      // NOT the picture: it wanders several cm around the wall while the
+      // cursor sits still on the frame. Ranked straight by distance, that
+      // wander flipped a picture to the far face of the wall and back every
+      // few frames; quantised to the kitchen's 10cm it also stuttered along
+      // the wall behind the cursor. Cabinets keep the coarse step — they line
+      // up with the base run under them, and nothing else does.
+      const step = f.parametric.generator === "kitchenWall" ? ALONG_STEP : WALL_ITEM_STEP;
+      const snapped = snapRunToWall(f, next, { step, keepFacing: before?.rotation ?? f.rotation });
       if (snapped && (snapped.x !== f.x || snapped.y !== f.y || snapped.rotation !== f.rotation)) {
         changed = true;
         return { ...f, ...snapped };
