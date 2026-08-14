@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, Toilet, Bathtub, Bin, TowelRail, BasinCutout, KnobRow, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Toilet, Bathtub, Bin, TowelRail, BasinCutout, KnobRow, Rug, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
@@ -23,6 +23,9 @@ export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
   // spanned the wall band down to the floor.
   { id: "towels", label: "Towels", keywords: ["towel", "hook"] },
   { id: "bin", label: "Bin", keywords: ["trash", "waste", "recycl"] },
+  // Wide roll-out: the same rug product as every other room, but a rug in a
+  // bathroom is a bathmat, so it gets the name people actually use for it.
+  { id: "rug", label: "Bath mat", keywords: ["rug", "carpet", "mat"] },
 ];
 
 const kw = (id: string) => BATHROOM_HOTSPOTS.find((h) => h.id === id)!.keywords;
@@ -56,6 +59,12 @@ function BathroomItems(): RoomItem[] {
   const BIN_W = 13;
   const BIN_H = 15;
   const binBox = isoBox(BIN_X, ITEMS_Y + 3, BIN_W, BIN_H, 9);
+
+  // A bath mat is small — real scale next to the tub it sits in front of, not
+  // the area-rug size the other rooms draw. Sits in the open floor strip
+  // below the fixture row, well clear of the compass badge over the panel's
+  // bottom-left corner.
+  const matBox = isoBox(86, FLOOR_Y - 6, 28, 0, 14);
 
   return [
     { id: "toilet", label: "Toilet", keywords: kw("toilet"), box: toiletBox, art: <Toilet x={14} yFront={ITEMS_Y} w={22} depth={16} /> },
@@ -155,6 +164,7 @@ function BathroomItems(): RoomItem[] {
       box: binBox,
       art: <Bin x={BIN_X} yFront={ITEMS_Y + 3} w={BIN_W} h={BIN_H} />,
     },
+    { id: "rug", label: "Bath mat", keywords: kw("rug"), box: matBox, art: <Rug x={86} yFront={FLOOR_Y - 6} w={28} depth={14} /> },
   ];
 }
 

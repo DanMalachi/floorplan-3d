@@ -21,7 +21,37 @@ import { isSurfaceHost } from "@/parametric/surfaceHosts";
 import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
 import { LIVING_HOTSPOTS } from "@/ui/planDock/LivingScene";
 import { BEDROOM_HOTSPOTS } from "@/ui/planDock/BedroomScene";
+import { DINING_HOTSPOTS } from "@/ui/planDock/DiningScene";
+import { STUDY_HOTSPOTS } from "@/ui/planDock/StudyScene";
+import { KIDS_HOTSPOTS } from "@/ui/planDock/KidsScene";
+import { BATHROOM_HOTSPOTS } from "@/ui/planDock/BathroomScene";
 import { GENERATOR_GLYPH } from "@/ui/planDock/generatorGlyphs";
+
+// Wide roll-out: every room a rug or a TV now reaches, keyed to its hotspots
+// array, so the reachability checks below can loop over them instead of
+// special-casing each room by name.
+const RUG_ROOMS = [
+  ["living", LIVING_HOTSPOTS],
+  ["bedroom", BEDROOM_HOTSPOTS],
+  ["dining", DINING_HOTSPOTS],
+  ["study", STUDY_HOTSPOTS],
+  ["kids", KIDS_HOTSPOTS],
+  ["bathroom", BATHROOM_HOTSPOTS],
+] as const;
+const TV_ROOMS = [
+  ["living", LIVING_HOTSPOTS],
+  ["bedroom", BEDROOM_HOTSPOTS],
+  ["study", STUDY_HOTSPOTS],
+  ["kids", KIDS_HOTSPOTS],
+] as const;
+const ROOM_HOTSPOTS: Record<string, typeof LIVING_HOTSPOTS> = {
+  living: LIVING_HOTSPOTS,
+  bedroom: BEDROOM_HOTSPOTS,
+  dining: DINING_HOTSPOTS,
+  study: STUDY_HOTSPOTS,
+  kids: KIDS_HOTSPOTS,
+  bathroom: BATHROOM_HOTSPOTS,
+};
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -277,7 +307,7 @@ console.log("\nbuttons: a rug you can reach through the picture");
     const text = p.keywords.join(" ").toLowerCase();
     return hotspots.filter((h) => h.keywords.some((k) => text.includes(k)));
   };
-  for (const [room, hotspots] of [["living", LIVING_HOTSPOTS], ["bedroom", BEDROOM_HOTSPOTS]] as const) {
+  for (const [room, hotspots] of RUG_ROOMS) {
     check(`${room} has a Rug button`, hotspots.some((h) => h.id === "rug"));
     check(`${room} hotspot ids are unique`, new Set(hotspots.map((h) => h.id)).size === hotspots.length);
     // The decor button used to carry "rug" as a keyword. Two buttons matching
@@ -574,26 +604,29 @@ console.log("\nTV cards, names, glyphs and dead controls");
 
 console.log("\nbuttons: a TV you can reach through the picture");
 {
-  const reachTv = (p: CustomPiece) => {
+  const reachTv = (p: CustomPiece, hotspots: typeof LIVING_HOTSPOTS) => {
     const text = p.keywords.join(" ").toLowerCase();
-    return LIVING_HOTSPOTS.filter((h) => h.keywords.some((k) => text.includes(k)));
+    return hotspots.filter((h) => h.keywords.some((k) => text.includes(k)));
   };
-  check("living has a TV button", LIVING_HOTSPOTS.some((h) => h.id === "tv"));
-  for (const p of TVS) {
-    const hit = reachTv(p);
-    check(`${p.glyphKey} answers the living TV button`, hit.some((h) => h.id === "tv"));
-    check(`${p.glyphKey} answers ONLY that button`, hit.length === 1, hit.map((h) => h.id).join(","));
+  for (const [room, hotspots] of TV_ROOMS) {
+    check(`${room} has a TV button`, hotspots.some((h) => h.id === "tv"));
+    check(`${room} hotspot ids are unique`, new Set(hotspots.map((h) => h.id)).size === hotspots.length);
+    for (const p of TVS) {
+      const hit = reachTv(p, hotspots);
+      check(`${p.glyphKey} answers the ${room} TV button`, hit.some((h) => h.id === "tv"));
+      check(`${p.glyphKey} answers ONLY that button in ${room}`, hit.length === 1, hit.map((h) => h.id).join(","));
+    }
   }
-  // Rooms the generator claims must all be rooms with a button for it — the
-  // wide roll-out adds bedroom/study/kids together with their hotspots.
-  check("the TV generator only claims rooms it has a button in", GENERATORS.tv.rooms.every((r) => r === "living"), GENERATORS.tv.rooms.join(","));
+  // Rooms the generator claims must all be rooms with a button for it.
+  const tvRoomIds = TV_ROOMS.map(([room]) => room);
+  check("the TV generator only claims rooms it has a button in", GENERATORS.tv.rooms.every((r) => (tvRoomIds as readonly string[]).includes(r)), GENERATORS.tv.rooms.join(","));
 }
 
 console.log("\nand every card in the catalog still has a button in its rooms");
 for (const p of ALL_PIECES()) {
   const text = p.keywords.join(" ").toLowerCase();
   for (const room of p.rooms) {
-    const hotspots = room === "living" ? LIVING_HOTSPOTS : room === "bedroom" ? BEDROOM_HOTSPOTS : null;
+    const hotspots = ROOM_HOTSPOTS[room];
     if (!hotspots) continue; // other rooms are covered by the Phase 1/2 suites
     check(`${p.glyphKey} reachable in ${room}`, hotspots.some((h) => h.keywords.some((k) => text.includes(k))));
   }

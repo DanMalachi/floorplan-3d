@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, Rug, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, Rug, WallTv, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 // See LivingScene: "rug" moved off the decor button onto its own, now that
@@ -11,6 +11,9 @@ export const BEDROOM_HOTSPOTS: RoomHotspot[] = [
   { id: "wardrobe", label: "Wardrobe", keywords: ["bookcase", "wardrobe", "closet", "coat rack"] },
   { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
   { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
+  // Wide roll-out: no media console here (unlike Living), so a plain
+  // wall-mounted panel of its own.
+  { id: "tv", label: "TV", keywords: ["tv", "television"] },
 ];
 
 export const BEDROOM_X0 = 12;
@@ -41,6 +44,9 @@ function BedroomItems(): RoomItem[] {
   // front of it, at the length a real one has against a 2m bed. Held off the
   // panel's bottom-left corner, which the app's compass badge sits over.
   const rugBox = isoBox(48, FLOOR_Y - 9, 66, 0, 24);
+  // Wall-mounted, above the lamp/plant corner — clear of the wardrobe's own
+  // wall-band footprint to its left.
+  const wallTvBox = isoBox(154, 92, 32, 20, 2);
 
   return [
     { id: "bed", label: "Bed", keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
@@ -81,6 +87,7 @@ function BedroomItems(): RoomItem[] {
         </>
       ),
     },
+    { id: "tv", label: "TV", keywords: BEDROOM_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
   ];
 }
 

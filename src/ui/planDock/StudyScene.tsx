@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, TableWithLegs, ShelfLines, Plant, FACE_RIGHT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, TableWithLegs, ShelfLines, Plant, Rug, WallTv, FACE_RIGHT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const STUDY_HOTSPOTS: RoomHotspot[] = [
@@ -11,6 +11,9 @@ export const STUDY_HOTSPOTS: RoomHotspot[] = [
   { id: "chair", label: "Chair & sofa", keywords: ["chair", "sofa", "couch"] },
   { id: "bookcase", label: "Bookcase", keywords: ["bookcase"] },
   { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
+  // Wide roll-out.
+  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "tv", label: "TV", keywords: ["tv", "television"] },
 ];
 
 export const STUDY_X0 = 14;
@@ -43,6 +46,13 @@ function StudyItems(): RoomItem[] {
   const chairBox = isoBox(66, ITEMS_Y, 16, 25, 11);
   const bookcaseBox = isoBox(88, ITEMS_Y, 32, 48, 16);
   const decorBox = isoBox(126, ITEMS_Y, 26, 22, 14);
+  // Open floor in front of the desk, clear of the compass badge over the
+  // panel's bottom-left corner.
+  const rugBox = isoBox(52, FLOOR_Y - 10, 64, 0, 26);
+  // Wall-mounted, in the room's own unused wall space to the right of the
+  // bookcase and decor — a study TV for calls/media, not paired with any
+  // console here (unlike Living, this room has none).
+  const wallTvBox = isoBox(156, 96, 26, 20, 2);
 
   return [
     { id: "desk", label: "Desk", keywords: STUDY_HOTSPOTS[0].keywords, box: deskBox, art: <DeskWithMonitor x={14} yFront={ITEMS_Y} w={46} depth={24} /> },
@@ -60,6 +70,8 @@ function StudyItems(): RoomItem[] {
       ),
     },
     { id: "decor", label: "Lamp & decor", keywords: STUDY_HOTSPOTS[3].keywords, box: decorBox, art: <Plant x={138} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
+    { id: "rug", label: "Rug", keywords: STUDY_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
+    { id: "tv", label: "TV", keywords: STUDY_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
   ];
 }
 

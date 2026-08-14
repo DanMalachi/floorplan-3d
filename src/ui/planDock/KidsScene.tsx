@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, ShelfLines, DETAIL_LINE, DETAIL_LIGHT, FACE_FRONT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, ShelfLines, Rug, WallTv, DETAIL_LINE, DETAIL_LIGHT, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const KIDS_HOTSPOTS: RoomHotspot[] = [
@@ -11,6 +11,9 @@ export const KIDS_HOTSPOTS: RoomHotspot[] = [
   // had no button that could reach them — with hotspots now filtering the
   // custom cards too, that would have made them unreachable here.
   { id: "storage", label: "Wardrobe & seating", keywords: ["wardrobe", "closet", "sofa", "couch", "armchair"] },
+  // Wide roll-out.
+  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "tv", label: "TV", keywords: ["tv", "television"] },
 ];
 
 export const KIDS_X0 = 20;
@@ -41,6 +44,12 @@ function KidsItems(): RoomItem[] {
   const toyBox = isoBox(72, ITEMS_Y, 34, 24, 16);
   const changingBox = isoBox(118, ITEMS_Y, 32, 26, 16);
   const storageBox = isoBox(156, ITEMS_Y, 30, 44, 16);
+  // Open floor in front of the crib, clear of the compass badge over the
+  // panel's bottom-left corner.
+  const rugBox = isoBox(54, FLOOR_Y - 10, 64, 0, 26);
+  // Wall-mounted, over the toy storage — the same wall-band-over-furniture
+  // composition LivingScene uses for its console, sized well clear of it.
+  const wallTvBox = isoBox(76, 90, 26, 20, 2);
 
   return [
     { id: "crib", label: "Crib", keywords: KIDS_HOTSPOTS[0].keywords, box: cribBox, art: <Crib x={20} yFront={ITEMS_Y} w={40} depth={24} /> },
@@ -102,6 +111,8 @@ function KidsItems(): RoomItem[] {
         </>
       ),
     },
+    { id: "rug", label: "Rug", keywords: KIDS_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={54} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
+    { id: "tv", label: "TV", keywords: KIDS_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
   ];
 }
 

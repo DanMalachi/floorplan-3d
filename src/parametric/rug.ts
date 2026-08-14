@@ -256,7 +256,7 @@ export const rugGenerator: GeneratorDef = {
   id: "rug",
   label: "Rug",
   category: "Decor",
-  rooms: ["living", "bedroom"],
+  rooms: ["living", "bedroom", "dining", "study", "kids", "bathroom"],
   wallSnap: false,
   // A rug is walked over, not walked into: it must not block a sofa from
   // sitting on it, and it must not be blocked by one.

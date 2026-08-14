@@ -229,11 +229,10 @@ export const tvGenerator: GeneratorDef = {
   id: "tv",
   label: "TV",
   category: "Decor",
-  // Living only for now: a card nobody can reach through the illustrated room
-  // does not exist, and living is the one room with a TV button today. The
-  // wide roll-out (bedroom / study / kids) adds the buttons and the art in one
-  // pass, and this list grows with it.
-  rooms: ["living"],
+  // Wide roll-out: bedroom / study / kids each got their own TV button and
+  // wall-band art (LivingScene's console pairing stays living-only — those
+  // rooms have no media console to pair with).
+  rooms: ["living", "bedroom", "study", "kids"],
   wallSnap: true,
   dimLimits: { w: [0.5, 2.2], d: [0.05, 0.4], h: [0.3, 1.3] },
   modules: [
