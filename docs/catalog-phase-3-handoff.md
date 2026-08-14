@@ -183,6 +183,35 @@ flat fills is a picture of the thing, not the thing.
     domain or CC0 and record it in `docs/DATA_RIGHTS.md`, same rule that kept
     royalty-free BlenderKit models out of the catalog.
 
+## Moving a hung item (2026-08-14, Dan's bug report)
+
+Dragging a picture felt stuck, lagged the cursor and kept flipping to the far
+side of the wall. None of it was about pictures — it was the wall snap every
+wall-mounted generator shares, and a picture is just the thinnest thing on it.
+
+- The drag resolved the pointer against the FLOOR plane. A picture hangs at eye
+  level, so that point is metres away from it and wanders centimetres across
+  the wall's centreline while the cursor sits still on the frame.
+- `snapRunToWall` picked the face from that point alone, so a 4.5cm-deep item
+  sitting 7cm off the centreline teleported between faces; and it quantised
+  along the wall on the kitchen's 10cm grid, so it stuttered behind the cursor.
+
+Now: `snapRunToWall` takes `{ step, keepFacing }`. Given the pose an item
+already has it prefers that wall and face, and only changes face once the
+incoming point is as far out as hanging it on the other face would put it —
+which is exactly what pointing at that face gives, and far past any jitter.
+Decor steps 1cm along the wall; `kitchenWall` keeps 10cm because it lines up
+with the base run under it.
+
+**`FurnitureLayer.tsx` was edited with Dan's explicit approval** (2026-08-14) —
+it is protected, so this is the exception, not a precedent. A wall-mounted item
+now resolves the pointer with `rayToWall` + `wallPose` (both in the
+non-protected `wallRay.ts`, and `wallPose` MOVED there from CounterItemGhost so
+placing and moving cannot disagree), which also gives it height: a drag now
+slides a picture UP the wall, not only along it. The drag dead zone counts that
+rise, because measured in plan alone a straight-up drag never opened a gesture
+at all. Heights snap 1cm for decor, 10cm for wall cabinets.
+
 ## Three more the wall-art build added
 
 16. **A canvas map with transparent pixels renders BLACK.** A cleared canvas is

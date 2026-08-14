@@ -918,10 +918,17 @@ console.log("\ndragging a hung item: it stays on its own side of the wall");
   check("it keeps the height it was hung at", trail.every((t) => t.elevation === 1.2));
 
   // A deliberate move to the other room still works — the hysteresis is a
-  // margin, not a lock.
+  // threshold, not a lock.
   const across = drag(picture, [[2.5, 0.02], [2.5, -0.1], [2.5, -0.4]], 2.5);
   check("a deliberate drag through the wall does change face", across[2].y < 0, `${across[2].y.toFixed(2)}`);
   check("and it turns to face the other room", Math.abs(Math.abs(across[2].rotation) - Math.PI) < 1e-6);
+
+  // …and the threshold is set exactly where POINTING AT the far face lands,
+  // so hanging the picture in the next room is one drag onto that face and
+  // not a shove far into the room beyond it.
+  const onFarFace = -(0.1 / 2 + picture.dims.d / 2); // wall pose on the "b" side
+  const pointed = drag(picture, [[2.5, 0.02], [2.5, onFarFace]], 2.5);
+  check("pointing at the far face is enough to move it there", pointed[1].y < 0, `${pointed[1].y.toFixed(3)}`);
 
   // Every wall-mounted generator gets the same treatment, not just wall art.
   for (const gen of ["mirror", "towelRail", "tv", "wallClock"] as const) {

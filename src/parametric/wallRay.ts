@@ -164,3 +164,56 @@ export function rayToWall(
     height: best.height, x: best.x, y: best.y, L: best.L, t: best.t, onTop: best.onTop,
   };
 }
+
+/**
+ * Wall pose from a wall-face hit: the item's back sits flat on the face, it
+ * faces the room, and its height is wherever on the wall you pointed.
+ * `rayToWall` already returns the hit ON the face, so only half the item's
+ * depth is added — the same convention `snapRunToWall` uses.
+ *
+ * Lives here rather than in the ghost because PLACING and MOVING a hung item
+ * must land on the same pose for the same pointer ray: a drag that read the
+ * floor plane while the ghost read the wall is how a picture ended up
+ * following something other than the cursor.
+ */
+export function wallPose(
+  hit: { wallId: string; side: "a" | "b"; x: number; y: number; height: number },
+  scene: Scene,
+  depth: number,
+  itemH: number,
+  /** Height quantisation. The ghost keeps the 10cm grid it always used; a
+   *  drag passes 1cm, because a hung item stepping 10cm under a moving cursor
+   *  is the "stuck" feel this whole change is about. */
+  heightStep = 0.1,
+): { x: number; y: number; rotation: number; elevation: number } | null {
+  const wall = scene.walls.find((w) => w.id === hit.wallId);
+  if (!wall) return null;
+  const a = scene.nodes.find((n) => n.id === wall.a);
+  const b = scene.nodes.find((n) => n.id === wall.b);
+  if (!a || !b) return null;
+
+  const L = Math.hypot(b.x - a.x, b.y - a.y);
+  if (L < 1e-6) return null;
+  const ux = (b.x - a.x) / L;
+  const uy = (b.y - a.y) / L;
+
+  // Prefer the face a ROOM is on: from outside the building the visible face
+  // is the exterior one, and a mirror never hangs there.
+  const side = roomFacingSide(scene, hit.wallId, hit.x, hit.y, hit.side);
+  const sign = side === "a" ? 1 : -1;
+  const nx = -uy * sign;
+  const ny = ux * sign;
+
+  const snap = (v: number) => Math.round(v / heightStep) * heightStep;
+  return {
+    x: hit.x + nx * (depth / 2),
+    y: hit.y + ny * (depth / 2),
+    rotation: Math.atan2(-nx, ny),
+    // Keep the whole item on the wall: its own height is measured up from the
+    // mount point, so a tall mirror can't be hung with its top through the
+    // ceiling or its base below the floor. The ceiling is WALL_HEIGHT — the
+    // 2.6 this used to allow is above it, which is how a chimney hood's flue
+    // ended up sticking out through the roof.
+    elevation: Math.min(Math.max(snap(hit.height), 0.1), Math.max(WALL_HEIGHT - itemH, 0.1)),
+  };
+}

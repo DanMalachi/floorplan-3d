@@ -16,6 +16,8 @@ import { ACCENT } from "./WallMesh";
 import { sampleFurniture } from "@/decorate/eyedropper";
 import { ParametricModel } from "@/parametric/ParametricModel";
 import { snapKitchenWall } from "@/parametric/kitchenSnap";
+import { isWallItem } from "@/parametric/kitchenAttach";
+import { rayToWall, wallPose } from "@/parametric/wallRay";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -211,8 +213,43 @@ interface FurnDrag {
   base: Scene;
   walls: OBB[];
   grab: { dx: number; dy: number }; // grab point relative to item center
+  /** Height grabbed relative to the item's own elevation, for hung items. */
+  grabE: number;
   start: { x: number; y: number }; // plan point at pointer-down (dead-zone check)
+  startE: number; // …and its height, so a straight-up drag counts as movement
   began: boolean; // gesture opened — only after the dead zone is crossed
+}
+
+/**
+ * Where the pointer is, for THIS item: a hung item reads the WALL, everything
+ * else reads the floor.
+ *
+ * A picture hangs at eye level, so the floor point under the pointer is metres
+ * away from it; dragging against the floor plane made the picture slide faster
+ * than the cursor and wander across the wall's centreline. `rayToWall` is the
+ * same resolve the placement ghost uses, so moving a hung item and hanging it
+ * in the first place now answer to the pointer identically — and the height
+ * comes with it, which is what lets a drag slide art UP the wall instead of
+ * only along it.
+ */
+function rayForItem(
+  e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
+  item: FurnitureItem,
+  scene: Scene,
+  offset: { cx: number; cz: number },
+): { x: number; y: number; elevation?: number } | null {
+  if (item.parametric && isWallItem(item)) {
+    const hit = rayToWall(e.ray, scene, offset);
+    // Decor moves at 1cm; a wall cabinet keeps the 10cm height grid it was
+    // placed on, so nudging one sideways can't leave a row of them at four
+    // different heights.
+    const step = item.parametric.generator === "kitchenWall" ? 0.1 : 0.01;
+    const pose = hit && wallPose(hit, scene, item.parametric.dims.d, item.parametric.dims.h, step);
+    // Off every wall face (the cursor left the room, or is over furniture in
+    // front of the wall) — fall through to the floor rather than freezing.
+    if (pose) return { x: pose.x, y: pose.y, elevation: pose.elevation };
+  }
+  return rayToPlan(e, offset);
 }
 
 /** Plan-space dead zone before a press becomes a drag: a plain click (select)
@@ -258,7 +295,7 @@ function FurnitureItemView({ item, offset }: {
     s.setSel3d({ kind: "furniture", id: item.id });
     // Select AND arm the drag in one press. The gesture itself only opens
     // once the pointer leaves the dead zone, so a plain click never nudges.
-    const p = rayToPlan(e, offset);
+    const p = rayForItem(e, item, s.scene, offset);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
     drag.current = {
@@ -266,7 +303,11 @@ function FurnitureItemView({ item, offset }: {
       base: s.scene,
       walls: wallOBBs(s.scene),
       grab: { dx: p.x - item.x, dy: p.y - item.y },
+      // Grab the picture where you took hold of it: without this it jumps so
+      // its centre is under the cursor the moment the drag opens.
+      grabE: (p.elevation ?? 0) - (item.elevation ?? 0),
       start: p,
+      startE: p.elevation ?? 0,
       began: false,
     };
   };
@@ -275,15 +316,22 @@ function FurnitureItemView({ item, offset }: {
     const d = drag.current;
     if (!d || e.pointerId !== d.pointerId) return;
     e.stopPropagation();
-    const p = rayToPlan(e, offset);
+    const p = rayForItem(e, item, d.base, offset);
     if (!p) return;
     if (!d.began) {
-      if (Math.hypot(p.x - d.start.x, p.y - d.start.y) < DRAG_DEAD_ZONE_M) return;
+      // Height counts as movement. Measured in plan alone, dragging a picture
+      // straight UP the wall never left the dead zone, so it could only ever
+      // slide sideways.
+      const rise = p.elevation !== undefined ? p.elevation - d.startE : 0;
+      if (Math.hypot(p.x - d.start.x, p.y - d.start.y, rise) < DRAG_DEAD_ZONE_M) return;
       d.began = true;
       useSceneStore.getState().beginGesture();
     }
     let x = p.x - d.grab.dx;
     let y = p.y - d.grab.dy;
+    // A hung item rides the wall in all three axes; everything else keeps
+    // whatever height it had.
+    const elevation = p.elevation !== undefined ? Math.max(0.05, p.elevation - d.grabE) : item.elevation;
     let rotation = item.rotation;
     if (!e.shiftKey) {
       const snapped = snapToWall({ assetId: item.assetId, parametric: item.parametric, x, y }, d.base);
@@ -304,7 +352,7 @@ function FurnitureItemView({ item, offset }: {
         rotation = ks.rotation;
       }
     }
-    const candidate = { ...item, x, y, rotation };
+    const candidate = { ...item, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) };
     setColliding(placementCollides(candidate, d.base, d.walls));
     const next: Scene = {
       ...d.base,

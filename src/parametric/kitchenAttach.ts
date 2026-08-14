@@ -30,15 +30,8 @@ const ALONG_STEP = 0.1; // same grid feel as everything else
  *  drag lagged the cursor by up to 5cm and moved in visible jumps, which is
  *  what "feels stuck" was. */
 const WALL_ITEM_STEP = 0.01;
-/** How far past a wall's centreline the cursor must go before a hung item
- *  changes which FACE it is on.
- *
- *  Without it, a 4.5cm-deep picture sits ~7cm off the centreline and the
- *  pointer's floor-plane point wanders across that line constantly while you
- *  drag — so the picture teleported to the far face, into the next room, and
- *  back again. Hanging it in the next room is still one deliberate drag: push
- *  the cursor a wall's half-thickness plus this margin past the line. */
-const SIDE_FLIP_MARGIN = 0.15;
+/** Slack under the far-face threshold below, in metres. */
+const SIDE_FLIP_SLACK = 0.005;
 /** Ranking bonus, in metres, for the wall+face the item is already on, so a
  *  near-tie between two walls at a corner doesn't swap faces mid-drag. */
 const KEEP_FACING_BONUS = 0.12;
@@ -388,9 +381,12 @@ export function snapRunToWall(
       // Which face of THIS wall the item is on today, if it is on this one.
       const keepSign = Math.sign(keepN.x * -uy + keepN.y * ux);
       if (keepSign !== 0) {
-        // Hysteresis: the cursor has to clear the wall's far face by a margin
-        // before the item swaps sides. Inside that band it stays put.
-        if (keepSign !== sign && Math.abs(side) < th / 2 + SIDE_FLIP_MARGIN) sign = keepSign;
+        // Hysteresis. The item only changes face once the incoming point is
+        // as far out as hanging it on the OTHER face would put it — which is
+        // exactly what pointing at that face produces, and well past anything
+        // a wandering floor-plane point reaches near the centreline.
+        const flipAt = th / 2 + spec.dims.d / 2 - SIDE_FLIP_SLACK;
+        if (keepSign !== sign && Math.abs(side) < flipAt) sign = keepSign;
         if (keepSign === sign) rank -= KEEP_FACING_BONUS;
       }
     }

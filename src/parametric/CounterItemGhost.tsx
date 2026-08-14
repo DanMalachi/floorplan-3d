@@ -27,9 +27,7 @@ import { recordHostHeight, measuredHeight, surfaceRects } from "./surfaceHosts";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
 import { ParametricModel } from "./ParametricModel";
 import { pathLegs, runLocalToWorld } from "./runPath";
-import { rayToWall, roomFacingSide } from "./wallRay";
-import { GRID } from "@/viewport3d/snap";
-import { WALL_HEIGHT } from "@/schema/constants";
+import { rayToWall, wallPose } from "./wallRay";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -43,48 +41,6 @@ function rayToPlan(e: ThreeEvent<PointerEvent | MouseEvent>, offset: { cx: numbe
   const hit = new THREE.Vector3();
   if (!e.ray.intersectPlane(FLOOR_PLANE, hit)) return null;
   return { x: hit.x + offset.cx, y: hit.z + offset.cz };
-}
-
-/** Wall pose from a wall-face hit: the item's back sits flat on the face, it
- *  faces the room, and its height is wherever on the wall you pointed.
- *  `rayToWall` already returns the hit ON the face, so only half the item's
- *  depth is added — the same convention `snapRunToWall` uses. */
-function wallPose(
-  hit: { wallId: string; side: "a" | "b"; x: number; y: number; height: number },
-  scene: Scene,
-  depth: number,
-  itemH: number,
-): { x: number; y: number; rotation: number; elevation: number } | null {
-  const wall = scene.walls.find((w) => w.id === hit.wallId);
-  if (!wall) return null;
-  const a = scene.nodes.find((n) => n.id === wall.a);
-  const b = scene.nodes.find((n) => n.id === wall.b);
-  if (!a || !b) return null;
-
-  const L = Math.hypot(b.x - a.x, b.y - a.y);
-  if (L < 1e-6) return null;
-  const ux = (b.x - a.x) / L;
-  const uy = (b.y - a.y) / L;
-
-  // Prefer the face a ROOM is on: from outside the building the visible face
-  // is the exterior one, and a mirror never hangs there.
-  const side = roomFacingSide(scene, hit.wallId, hit.x, hit.y, hit.side);
-  const sign = side === "a" ? 1 : -1;
-  const nx = -uy * sign;
-  const ny = ux * sign;
-
-  const snap = (v: number) => Math.round(v / GRID) * GRID;
-  return {
-    x: hit.x + nx * (depth / 2),
-    y: hit.y + ny * (depth / 2),
-    rotation: Math.atan2(-nx, ny),
-    // Keep the whole item on the wall: its own height is measured up from the
-    // mount point, so a tall mirror can't be hung with its top through the
-    // ceiling or its base below the floor. The ceiling is WALL_HEIGHT — the
-    // 2.6 this used to allow is above it, which is how a chimney hood's flue
-    // ended up sticking out through the roof.
-    elevation: Math.min(Math.max(snap(hit.height), 0.1), Math.max(WALL_HEIGHT - itemH, 0.1)),
-  };
 }
 
 function WallItemGhost({ offset }: { offset: { cx: number; cz: number } }) {
