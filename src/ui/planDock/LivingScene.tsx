@@ -9,6 +9,8 @@ import {
   DoorSeam,
   Plant,
   Rug,
+  FramedArt,
+  WallClockArt,
   RoomSceneShell,
   unionBox,
   ITEMS_Y,
@@ -26,6 +28,8 @@ export const LIVING_HOTSPOTS: RoomHotspot[] = [
   { id: "tv", label: "TV & storage", keywords: ["tv", "television", "cabinet", "bookcase"] },
   { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
   { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", label: "Clock", keywords: ["clock"] },
 ];
 
 export const LIVING_X0 = 10;
@@ -51,6 +55,14 @@ function LivingItems(): RoomItem[] {
   // badge covers the panel's bottom-left corner, and art parked under it is
   // art nobody can click.
   const rugBox = isoBox(52, FLOOR_Y - 10, 62, 0, 26);
+  // A gallery wall over the sofa: the wall band's one free stretch, and where
+  // a set of prints actually hangs. Sized against the sofa below it — about
+  // 1.3m of frames over a 2.2m sofa — rather than shrunk into a corner.
+  const artBox = isoBox(24, 96, 44, 28, 2);
+  // The clock goes high and to the side, over the plant corner. Small, but a
+  // 0.3m dial IS small next to a sofa; drawing it any bigger would be the
+  // "cheap patch" the navigator rules exist to stop.
+  const clockBox = isoBox(178, 92, 18, 18, 2);
 
   return [
     { id: "sofa", label: "Sofa", keywords: LIVING_HOTSPOTS[0].keywords, box: sofaBox, art: <Sofa x={10} yFront={ITEMS_Y} w={72} depth={20} /> },
@@ -70,6 +82,20 @@ function LivingItems(): RoomItem[] {
       ),
     },
     { id: "decor", label: "Lamp & decor", keywords: LIVING_HOTSPOTS[4].keywords, box: decorBox, art: <Plant x={188} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
+    {
+      id: "art",
+      label: "Wall art",
+      keywords: LIVING_HOTSPOTS[5].keywords,
+      box: artBox,
+      art: (
+        <>
+          <FramedArt x={24} yTop={68} w={26} h={28} scene="landscape" />
+          <FramedArt x={53} yTop={68} w={15} h={13} scene="abstract" />
+          <FramedArt x={53} yTop={84} w={15} h={12} scene="landscape" />
+        </>
+      ),
+    },
+    { id: "clock", label: "Clock", keywords: LIVING_HOTSPOTS[6].keywords, box: clockBox, art: <WallClockArt cx={187} cy={83} r={9} /> },
   ];
 }
 

@@ -750,6 +750,111 @@ function TvFeetGlyph({ size }: { size: number }) {
   );
 }
 
+// Wall art reads in ELEVATION, like the TVs — and the six cards have to be
+// told apart at 24px, so each one leads with its own silhouette: the aspect
+// (portrait / landscape / large), the absence of a frame (canvas), the
+// arrangement (gallery set), or the shelf under it (ledge). The mount board is
+// the inner rectangle, which is what makes a framed print read as framed.
+function ArtPortraitGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="6.5" y="2.5" width="11" height="19" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="8.6" y="4.8" width="6.8" height="14.4" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      {/* A horizon and a hill: enough to say "there is a picture in here". */}
+      <path d="M8.6 15.4h6.8M10.4 15.4l1.8-2.6 1.6 2.6" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+    </svg>
+  );
+}
+
+function ArtLandscapeGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="2.5" y="6" width="19" height="12" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="4.8" y="8.2" width="14.4" height="7.6" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      <path d="M4.8 13.6h14.4M8 13.6l2.4-3 2 2.2 1.8-1.6 2.2 2.4" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+    </svg>
+  );
+}
+
+function ArtLargeGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Same object, thicker moulding and no room left around it — which is
+          what a statement piece is. */}
+      <rect x="1.8" y="3.6" width="20.4" height="16.8" rx="0.8" stroke="currentColor" strokeWidth="2" />
+      <rect x="4.6" y="6.4" width="14.8" height="11.2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" />
+      <path d="M4.6 14.4h14.8M8.2 14.4l2.6-3.4 2.2 2.4 2-1.8 2.4 2.8" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+    </svg>
+  );
+}
+
+function ArtCanvasGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* No moulding, and a returned edge along two sides: a gallery wrap. */}
+      <rect x="3.5" y="5.5" width="15.5" height="12" rx="0.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M19 5.5l1.8 1.8v12l-1.8-1.8M3.5 17.5l1.8 1.8h15.5" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+      <path d="M5.6 14.2l3.2-4.2 2.6 3 2-1.8 3.4 3.9" stroke="currentColor" strokeWidth="0.9" opacity="0.75" />
+    </svg>
+  );
+}
+
+function ArtGalleryGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="2.4" y="4.5" width="11" height="15" rx="0.7" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="15" y="4.5" width="6.6" height="6.8" rx="0.7" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="15" y="12.7" width="6.6" height="6.8" rx="0.7" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function ArtLedgeGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* The shelf is the product; the frames lean on it. */}
+      <path d="M2.5 18.5h19M3.6 18.5v2.2h17.8v-2.2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <rect x="5" y="7" width="8.4" height="11.5" rx="0.6" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="13.8" y="11" width="6.4" height="7.5" rx="0.6" stroke="currentColor" strokeWidth="1.1" opacity="0.8" />
+    </svg>
+  );
+}
+
+// Clocks: the hands are the read, and all three sit at ten past ten like the
+// geometry does. What separates the cards is the dial — batons, a wooden rim,
+// or numerals with a minute track.
+function ClockMinimalGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M12 12V6.8M12 12l4 2.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 3.4v1.6M20.6 12H19M12 20.6V19M3.4 12H5" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function ClockWoodGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Double rim: the thick turned case a wooden clock is made of. */}
+      <circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="0.9" opacity="0.7" />
+      <path d="M12 12V7.4M12 12l3.6 2.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ClockStationGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M12 12V6.4M12 12l4.4 2.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      {/* The minute track is what makes a station dial a station dial. */}
+      <path d="M12 2.8v1.4M21.2 12h-1.4M12 21.2v-1.4M2.8 12h1.4M18.5 5.5l-1 1M18.5 18.5l-1-1M5.5 18.5l1-1M5.5 5.5l1 1" stroke="currentColor" strokeWidth="1" opacity="0.8" />
+    </svg>
+  );
+}
+
 export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactElement> = {
   "cooktop:induction": CooktopInductionGlyph,
   "cooktop:radiant": CooktopRadiantGlyph,
@@ -803,8 +908,19 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   "tv:wall-75": TvWall75Glyph,
   "tv:pedestal-55": TvPedestalGlyph,
   "tv:feet-43": TvFeetGlyph,
+  "wallArt:framed-portrait": ArtPortraitGlyph,
+  "wallArt:framed-landscape": ArtLandscapeGlyph,
+  "wallArt:framed-large": ArtLargeGlyph,
+  "wallArt:canvas": ArtCanvasGlyph,
+  "wallArt:gallery-3": ArtGalleryGlyph,
+  "wallArt:ledge": ArtLedgeGlyph,
+  "wallClock:minimal": ClockMinimalGlyph,
+  "wallClock:wood": ClockWoodGlyph,
+  "wallClock:station": ClockStationGlyph,
   rug: RugAreaGlyph,
   tv: TvWall55Glyph,
+  wallArt: ArtPortraitGlyph,
+  wallClock: ClockMinimalGlyph,
   appliance: FridgeGlyph,
   rangeHood: ChimneyHoodGlyph,
   mirror: MirrorFramedGlyph,

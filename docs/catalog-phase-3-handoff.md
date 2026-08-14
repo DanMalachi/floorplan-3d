@@ -11,7 +11,7 @@ branch `parametric-furniture`.
   Persian medallion, modern geometric, braided jute round), suite
   `npm run test:decor` (160 checks). What that build learned is below under
   "Surfaces" — read it before writing another material.
-- **`tv` — BUILT 2026-08-13/14, uncommitted, awaiting Dan's visual sign-off.**
+- **`tv` — DONE**, commit `41a10e5`.
   Round 2 added: sizing in INCHES (`GeneratorDef.sizeInches` — screen diagonal
   at a locked 16:9, standard-size chips, no width/height fields); a lit screen
   showing ONE real photograph (`public/textures/tv/broadcast-earth.jpg`, NASA
@@ -29,18 +29,28 @@ branch `parametric-furniture`.
   so it hides on the wall cards) and `WallTv` / `unionBox` in `isoArt.tsx` —
   the living TV hotspot now draws a panel on the wall band over a media
   console, one hit rect covering both.
-- **`wallArt`, `curtain` — NOT BUILT.** Scope unchanged (below).
-- **Wide room roll-out — NOT DONE.** Rugs reach Living + Bedroom only. Dan
-  chose WIDE coverage: rug also in dining/study/kids + a bathroom bathmat;
-  wallArt in those plus kitchen/bathroom/laundry; tv in living/bedroom/study/
-  kids; curtain in living/bedroom/dining/study/kids. Each room needs its own
-  hotspot button and true-scale art (rule 5).
+- **`wallArt` — DONE.** Six cards (framed print portrait / landscape, large
+  framed art, canvas print, gallery wall of 3, picture ledge with frames), in
+  living, bedroom, dining, study, kids, kitchen, bathroom and laundry. The
+  PICTURE is a finish, not a variant — six public-domain museum scans in the
+  first swatch row (thumbnails, not colour dots), the frame tone in the second.
+  Rule 15 taken one step further: a painting on a wall is a photograph of a
+  real work, so no procedural "art" was drawn. Sources and licences are in
+  docs/DATA_RIGHTS.md; every candidate whose `is_public_domain` flag was false
+  was dropped, artist's death date notwithstanding.
+- **`wallClock` — DONE.** Its own generator, not a wallArt card: a clock has no
+  artwork, no mount and no glazing, and its first swatch row paints the CASE —
+  one generator whose primary finish means two different things depending on
+  the card is the dead-control rule from the other side. Three cards (round,
+  wooden, station with a roman dial), in kitchen/living/dining/study/kids.
+- **Wide room roll-out — DONE for rug and tv** (commit `8ffd153`): rug reaches
+  living/bedroom/dining/study/kids + a bathroom bath mat, tv reaches
+  living/bedroom/study/kids. Curtain's rooms land with curtain.
+- **`curtain` — NOT BUILT.** Scope unchanged (below); rooms when it lands:
+  living, bedroom, dining, study, kids.
 
 ## What is left of Phase 3
 
-- `wallArt` — framed print / canvas / gallery set / wall clock
-- `tv` — ~5cm slab, wall-mounted **or** on a stand, size chips 43–75", with a
-  labelled screen on/off toggle (Dan's call: a dim emissive panel, not a lamp)
 - `curtain` — rod + sine-displaced panel planes; drape pair / single / roman
   blind / sheer. **Placement Dan asked for: one click locks the anchor onto the
   wall grid, then you drag to size it.** Not auto-fit to the nearest window —
@@ -172,6 +182,26 @@ flat fills is a picture of the thing, not the thing.
     channel 1. Anything shipped this way is REDISTRIBUTION: source it public
     domain or CC0 and record it in `docs/DATA_RIGHTS.md`, same rule that kept
     royalty-free BlenderKit models out of the catalog.
+
+## Three more the wall-art build added
+
+16. **A canvas map with transparent pixels renders BLACK.** A cleared canvas is
+    rgba(0,0,0,0) and an opaque material multiplies that RGB straight through,
+    so the station clock's numeral dial — numerals drawn on a transparent
+    canvas — came out as a black hole with faint roman numerals in it. Paint
+    the surface tone into the canvas, and set the material colour to white so
+    the two don't multiply.
+17. **A recessed part needs an OPEN case.** The clock's rim was a solid drum,
+    which buried the dial, the ticks and all three hands inside it. Every part
+    was present and correctly sized; the headless suite passed; the room saw a
+    blank disc. An open-ended cylinder plus a back plate fixed it.
+18. **Aspect is data, so test it against the file.** Loading is async and three
+    can't be asked for an image's size synchronously, so each artwork's aspect
+    is hard-coded next to its URL — and `softDecor.test.ts` reads the actual
+    JPEG with `sharp` and compares. A stale number here stretches a painting
+    and nothing else in the app would ever notice. Prints are FITTED inside
+    their mount (the board absorbs the mismatch, which is what a mount is for);
+    a gallery wrap is CROPPED to fill its face. Neither path scales unevenly.
 
 Also: an off screen rendered physically (dark dielectric, low roughness) is
 BLACK indoors, because there is no environment worth reflecting — it reads as

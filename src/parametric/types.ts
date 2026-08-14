@@ -50,6 +50,12 @@ export interface GeneratorDef {
   showFronts?: (spec: ParametricSpec) => boolean;
   handles: ParametricSpec["handle"][];
   finishes: string[]; // primary finish ids (ordered, first = default)
+  /** Caption over the primary swatch row. Absent = no caption, which is right
+   *  whenever the row obviously means "what is this made of". Wall art needs
+   *  it: its first row picks the PICTURE, and an unlabelled row of paintings
+   *  next to a labelled row of frame tones reads as the same kind of choice
+   *  twice. */
+  finishesLabel?: string;
   finishes2?: string[]; // secondary finish ids, when applicable
   /** Whether the secondary swatch row means anything for this spec — the same
    *  dead-control rule `showFronts` follows. A TV's second finish paints its

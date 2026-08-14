@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, Toilet, Bathtub, Bin, TowelRail, BasinCutout, KnobRow, Rug, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Toilet, Bathtub, Bin, TowelRail, BasinCutout, KnobRow, Rug, FramedArt, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
@@ -26,6 +26,10 @@ export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
   // Wide roll-out: the same rug product as every other room, but a rug in a
   // bathroom is a bathmat, so it gets the name people actually use for it.
   { id: "rug", label: "Bath mat", keywords: ["rug", "carpet", "mat"] },
+  // Wall art reaches the bathroom for the same reason it reaches the laundry:
+  // one small framed print is what a narrow wall gets, and it is the cheapest
+  // thing that stops the room reading as a showroom.
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
 
 const kw = (id: string) => BATHROOM_HOTSPOTS.find((h) => h.id === id)!.keywords;
@@ -65,6 +69,10 @@ function BathroomItems(): RoomItem[] {
   // below the fixture row, well clear of the compass badge over the panel's
   // bottom-left corner.
   const matBox = isoBox(86, FLOOR_Y - 6, 28, 0, 14);
+
+  // Over the tub, in the wall band's one free stretch between the shower
+  // enclosure and the mirror. Small, because a bathroom print is small.
+  const artBox = isoBox(88, 104, 20, 22, 2);
 
   return [
     { id: "toilet", label: "Toilet", keywords: kw("toilet"), box: toiletBox, art: <Toilet x={14} yFront={ITEMS_Y} w={22} depth={16} /> },
@@ -165,6 +173,7 @@ function BathroomItems(): RoomItem[] {
       art: <Bin x={BIN_X} yFront={ITEMS_Y + 3} w={BIN_W} h={BIN_H} />,
     },
     { id: "rug", label: "Bath mat", keywords: kw("rug"), box: matBox, art: <Rug x={86} yFront={FLOOR_Y - 6} w={28} depth={14} /> },
+    { id: "art", label: "Wall art", keywords: kw("art"), box: artBox, art: <FramedArt x={88} yTop={82} w={20} h={22} scene="landscape" /> },
   ];
 }
 

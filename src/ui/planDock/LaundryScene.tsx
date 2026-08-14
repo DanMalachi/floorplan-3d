@@ -5,7 +5,7 @@
 // room is named after was unreachable from the picture. The row is re-spaced
 // around it rather than having the washer wedged in as a small box.
 
-import { isoBox, Extrusion, BasinCutout, KnobRow, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, BasinCutout, KnobRow, FramedArt, DETAIL_LINE, DETAIL_LIGHT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const LAUNDRY_HOTSPOTS: RoomHotspot[] = [
@@ -14,6 +14,8 @@ export const LAUNDRY_HOTSPOTS: RoomHotspot[] = [
   { id: "sink", label: "Laundry sink", keywords: ["sink"] },
   { id: "rack", label: "Drying rack", keywords: ["rack"] },
   { id: "iron", label: "Ironing board", keywords: ["ironing"] },
+  // The wall over the machines is the only decorated surface a laundry gets.
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
 
 const kw = (id: string) => LAUNDRY_HOTSPOTS.find((h) => h.id === id)!.keywords;
@@ -79,6 +81,9 @@ function LaundryItems(): RoomItem[] {
   const sink = isoBox(74, ITEMS_Y, 26, 24, 16);
   const rackBox = isoBox(106, ITEMS_Y, 26, 30, 4);
   const ironBox = isoBox(140, ITEMS_Y, 34, 20, 8);
+  // Wall band over the washer/dryer pair, the only stretch of wall this room
+  // has that nothing already stands against.
+  const artBox = isoBox(22, 96, 20, 22, 2);
 
   return [
     {
@@ -119,6 +124,7 @@ function LaundryItems(): RoomItem[] {
     },
     { id: "rack", label: "Drying rack", keywords: kw("rack"), box: rackBox, art: <DryingRack x={106} yFront={ITEMS_Y} /> },
     { id: "iron", label: "Ironing board", keywords: kw("iron"), box: ironBox, art: <IroningBoard x={140} yFront={ITEMS_Y} w={34} /> },
+    { id: "art", label: "Wall art", keywords: kw("art"), box: artBox, art: <FramedArt x={22} yTop={74} w={20} h={22} scene="abstract" /> },
   ];
 }
 

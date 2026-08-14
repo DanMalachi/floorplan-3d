@@ -411,6 +411,94 @@ export function WallTv({ box }: { box: IsoBox }) {
   );
 }
 
+/**
+ * A framed picture on the wall band. Like the mirror and the wall TV it is a
+ * flat face with no extrusion — a 45mm frame seen in this projection has no
+ * side worth drawing — but unlike them it is LIGHT, because a picture is the
+ * one thing on a wall that is brighter than the wall.
+ *
+ * Three rings, and all three earn their place at this size: the moulding, the
+ * mount inside it (what makes a print read as framed rather than taped up),
+ * and a horizon line in the opening so the middle is a picture and not a hole.
+ */
+export function FramedArt({
+  x,
+  yTop,
+  w,
+  h,
+  scene = "landscape",
+}: {
+  x: number;
+  yTop: number;
+  w: number;
+  h: number;
+  /** What is drawn inside the mount. "landscape" reads as a painting at any
+   *  size; "abstract" keeps a set of three from being three copies of one
+   *  picture, which is exactly the failure the 3D gallery card avoids too. */
+  scene?: "landscape" | "abstract";
+}) {
+  const frame = Math.max(1.2, Math.min(w, h) * 0.075);
+  const mount = frame * 1.5;
+  const ix = x + frame + mount;
+  const iy = yTop + frame + mount;
+  const iw = Math.max(1, w - 2 * (frame + mount));
+  const ih = Math.max(1, h - 2 * (frame + mount));
+  return (
+    <>
+      <rect x={x} y={yTop} width={w} height={h} rx={0.8} fill={FACE_FRONT} stroke={FACE_STROKE} strokeWidth={0.7} />
+      <rect x={x + frame} y={yTop + frame} width={w - 2 * frame} height={h - 2 * frame} fill="oklch(0.93 0.012 90 / 0.95)" stroke={DETAIL_LINE} strokeWidth={0.4} />
+      <rect x={ix} y={iy} width={iw} height={ih} fill="oklch(0.72 0.045 220 / 0.75)" stroke={DETAIL_LINE} strokeWidth={0.4} />
+      {scene === "landscape" ? (
+        <>
+          <path
+            d={`M${ix} ${iy + ih * 0.68} L${ix + iw * 0.34} ${iy + ih * 0.3} L${ix + iw * 0.58} ${iy + ih * 0.62} L${ix + iw * 0.76} ${iy + ih * 0.45} L${ix + iw} ${iy + ih * 0.72} L${ix + iw} ${iy + ih} L${ix} ${iy + ih} Z`}
+            fill="oklch(0.45 0.05 200 / 0.8)"
+          />
+          <circle cx={ix + iw * 0.78} cy={iy + ih * 0.24} r={Math.min(iw, ih) * 0.11} fill={DETAIL_LIGHT} opacity={0.75} />
+        </>
+      ) : (
+        <>
+          <rect x={ix + iw * 0.12} y={iy + ih * 0.18} width={iw * 0.34} height={ih * 0.34} fill="oklch(0.55 0.09 40 / 0.8)" />
+          <circle cx={ix + iw * 0.66} cy={iy + ih * 0.62} r={Math.min(iw, ih) * 0.2} fill="oklch(0.5 0.07 150 / 0.8)" />
+        </>
+      )}
+    </>
+  );
+}
+
+/** A picture ledge: the shelf, plus two frames leaning on it. Drawn wherever a
+ *  room's wall band has width but not height — the pair reads as "wall art"
+ *  faster than one frame does, and the shelf says which card it is. */
+export function ArtLedge({ x, yTop, w, h }: { x: number; yTop: number; w: number; h: number }) {
+  const shelfT = Math.max(1.4, h * 0.09);
+  const frameH = h - shelfT;
+  const bigW = Math.min(w * 0.42, frameH * 0.8);
+  const smallW = Math.min(w * 0.34, frameH * 0.75);
+  return (
+    <>
+      <FramedArt x={x + w * 0.04} yTop={yTop + (h - shelfT - frameH)} w={bigW} h={frameH} scene="landscape" />
+      <FramedArt x={x + w * 0.04 + bigW * 0.85} yTop={yTop + h - shelfT - frameH * 0.76} w={smallW} h={frameH * 0.76} scene="abstract" />
+      <rect x={x} y={yTop + h - shelfT} width={w} height={shelfT} rx={0.6} fill={FACE_TOP} stroke={FACE_STROKE} strokeWidth={0.7} />
+    </>
+  );
+}
+
+/** A wall clock: rim, dial, and hands at ten past ten — the same time the 3D
+ *  geometry shows, so the picture and the object agree. */
+export function WallClockArt({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={r} fill="oklch(0.9 0.012 90 / 0.95)" stroke={FACE_STROKE} strokeWidth={0.8} />
+      <circle cx={cx} cy={cy} r={r * 0.82} fill="none" stroke={DETAIL_LINE} strokeWidth={0.4} opacity={0.7} />
+      {/* Hands: hour to 10, minute to 2 — the pair frames the dial instead of
+          stacking into one stick, which is why every catalogue shows it. */}
+      <line x1={cx} y1={cy} x2={cx - r * 0.42} y2={cy - r * 0.3} stroke={DETAIL_LINE} strokeWidth={1.1} strokeLinecap="round" />
+      <line x1={cx} y1={cy} x2={cx + r * 0.5} y2={cy - r * 0.48} stroke={DETAIL_LINE} strokeWidth={0.9} strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r={r * 0.09} fill={DETAIL_LINE} />
+    </>
+  );
+}
+
 /** One hit target covering two drawn objects — a wall TV and the console under
  *  it are one button ("TV & storage"), so the hotspot rect has to reach both.
  *  Only the bbox merges; the faces stay whichever box was passed first. */

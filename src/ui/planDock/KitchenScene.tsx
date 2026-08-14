@@ -10,7 +10,7 @@
 // its name: a dishwasher hid behind "Cabinets", and an extractor behind
 // "Stove". A shopper hunting for a dishwasher does not click Cabinets.
 
-import { isoBox, Extrusion, DoorSeam, ShelfLines, KnobRow, BurnerRings, BasinCutout, Bin, Cylinder, isoCylinder, RoomSceneShell, ITEMS_Y, DETAIL_LINE, DETAIL_LIGHT, FACE_TOP, FACE_FRONT, FACE_STROKE, RX, RY, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, DoorSeam, ShelfLines, KnobRow, BurnerRings, BasinCutout, Bin, Cylinder, isoCylinder, FramedArt, WallClockArt, RoomSceneShell, ITEMS_Y, DETAIL_LINE, DETAIL_LIGHT, FACE_TOP, FACE_FRONT, FACE_STROKE, RX, RY, type RoomItem } from "./isoArt";
 
 export interface RoomHotspot {
   id: string;
@@ -31,6 +31,10 @@ export const KITCHEN_HOTSPOTS: RoomHotspot[] = [
   // fills the Trash button with kitchen cabinets. The bathroom bin card is
   // reached by "trash", which it also carries.
   { id: "trash", label: "Trash", keywords: ["trash", "waste", "recycl"] },
+  // Soft decor reaches the kitchen too: one print over the run, and the clock
+  // that every kitchen in the world has above it.
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", label: "Clock", keywords: ["clock"] },
 ];
 
 const kw = (id: string) => KITCHEN_HOTSPOTS.find((h) => h.id === id)!.keywords;
@@ -126,6 +130,11 @@ function KitchenItems(): RoomItem[] {
   // the two never fight for the same click.
   const HOOD_BOTTOM = 96;
   const hood = isoBox(118, HOOD_BOTTOM, 24, 24, 8);
+
+  // Wall band over the run, in the gap between the fridge's full-height side
+  // and the hood: a small framed print, then the clock above the sink.
+  const artBox = isoBox(44, 100, 22, 22, 2);
+  const clockBox = isoBox(70, 94, 20, 20, 2);
 
   return [
     {
@@ -226,6 +235,8 @@ function KitchenItems(): RoomItem[] {
       box: hood,
       art: <ChimneyHood x={118} yBottom={HOOD_BOTTOM} w={24} depth={8} />,
     },
+    { id: "art", label: "Wall art", keywords: kw("art"), box: artBox, art: <FramedArt x={44} yTop={78} w={22} h={22} scene="abstract" /> },
+    { id: "clock", label: "Clock", keywords: kw("clock"), box: clockBox, art: <WallClockArt cx={80} cy={84} r={10} /> },
     {
       id: "counter",
       label: "Counter & bar",

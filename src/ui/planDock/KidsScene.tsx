@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, ShelfLines, Rug, WallTv, DETAIL_LINE, DETAIL_LIGHT, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, ShelfLines, Rug, WallTv, FramedArt, WallClockArt, DETAIL_LINE, DETAIL_LIGHT, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 export const KIDS_HOTSPOTS: RoomHotspot[] = [
@@ -14,6 +14,8 @@ export const KIDS_HOTSPOTS: RoomHotspot[] = [
   // Wide roll-out.
   { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
   { id: "tv", label: "TV", keywords: ["tv", "television"] },
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", label: "Clock", keywords: ["clock"] },
 ];
 
 export const KIDS_X0 = 20;
@@ -50,6 +52,10 @@ function KidsItems(): RoomItem[] {
   // Wall-mounted, over the toy storage — the same wall-band-over-furniture
   // composition LivingScene uses for its console, sized well clear of it.
   const wallTvBox = isoBox(76, 90, 26, 20, 2);
+  // Two small prints over the crib — the wall a nursery actually decorates,
+  // and at the size prints over a cot really are.
+  const artBox = isoBox(22, 98, 34, 24, 2);
+  const clockBox = isoBox(111, 91, 18, 18, 2);
 
   return [
     { id: "crib", label: "Crib", keywords: KIDS_HOTSPOTS[0].keywords, box: cribBox, art: <Crib x={20} yFront={ITEMS_Y} w={40} depth={24} /> },
@@ -113,6 +119,19 @@ function KidsItems(): RoomItem[] {
     },
     { id: "rug", label: "Rug", keywords: KIDS_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={54} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
     { id: "tv", label: "TV", keywords: KIDS_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
+    {
+      id: "art",
+      label: "Wall art",
+      keywords: KIDS_HOTSPOTS[6].keywords,
+      box: artBox,
+      art: (
+        <>
+          <FramedArt x={22} yTop={76} w={16} h={22} scene="abstract" />
+          <FramedArt x={41} yTop={80} w={15} h={18} scene="landscape" />
+        </>
+      ),
+    },
+    { id: "clock", label: "Clock", keywords: KIDS_HOTSPOTS[7].keywords, box: clockBox, art: <WallClockArt cx={120} cy={82} r={9} /> },
   ];
 }
 

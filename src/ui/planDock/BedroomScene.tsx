@@ -1,6 +1,6 @@
 "use client";
 
-import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, Rug, WallTv, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, Rug, WallTv, FramedArt, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
 // See LivingScene: "rug" moved off the decor button onto its own, now that
@@ -14,6 +14,7 @@ export const BEDROOM_HOTSPOTS: RoomHotspot[] = [
   // Wide roll-out: no media console here (unlike Living), so a plain
   // wall-mounted panel of its own.
   { id: "tv", label: "TV", keywords: ["tv", "television"] },
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
 
 export const BEDROOM_X0 = 12;
@@ -47,6 +48,10 @@ function BedroomItems(): RoomItem[] {
   // Wall-mounted, above the lamp/plant corner — clear of the wardrobe's own
   // wall-band footprint to its left.
   const wallTvBox = isoBox(154, 92, 32, 20, 2);
+  // Over the bed, where art goes in a bedroom and the only wall band this room
+  // has free. Drawn at true scale against the bed under it — a pair of prints
+  // spanning about half the bed's width, not one stamp-sized square.
+  const artBox = isoBox(30, 100, 38, 26, 2);
 
   return [
     { id: "bed", label: "Bed", keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
@@ -88,6 +93,18 @@ function BedroomItems(): RoomItem[] {
       ),
     },
     { id: "tv", label: "TV", keywords: BEDROOM_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
+    {
+      id: "art",
+      label: "Wall art",
+      keywords: BEDROOM_HOTSPOTS[6].keywords,
+      box: artBox,
+      art: (
+        <>
+          <FramedArt x={30} yTop={74} w={22} h={26} scene="landscape" />
+          <FramedArt x={55} yTop={80} w={13} h={17} scene="abstract" />
+        </>
+      ),
+    },
   ];
 }
 

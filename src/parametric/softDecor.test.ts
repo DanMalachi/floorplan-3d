@@ -24,7 +24,10 @@ import { BEDROOM_HOTSPOTS } from "@/ui/planDock/BedroomScene";
 import { DINING_HOTSPOTS } from "@/ui/planDock/DiningScene";
 import { STUDY_HOTSPOTS } from "@/ui/planDock/StudyScene";
 import { KIDS_HOTSPOTS } from "@/ui/planDock/KidsScene";
-import { BATHROOM_HOTSPOTS } from "@/ui/planDock/BathroomScene";
+import { BATHROOM_HOTSPOTS, } from "@/ui/planDock/BathroomScene";
+import { KITCHEN_HOTSPOTS } from "@/ui/planDock/KitchenScene";
+import { LAUNDRY_HOTSPOTS } from "@/ui/planDock/LaundryScene";
+import { ARTWORKS } from "@/parametric/wallArtParts";
 import { GENERATOR_GLYPH } from "@/ui/planDock/generatorGlyphs";
 
 // Wide roll-out: every room a rug or a TV now reaches, keyed to its hotspots
@@ -51,6 +54,9 @@ const ROOM_HOTSPOTS: Record<string, typeof LIVING_HOTSPOTS> = {
   study: STUDY_HOTSPOTS,
   kids: KIDS_HOTSPOTS,
   bathroom: BATHROOM_HOTSPOTS,
+  // Wall art reaches these two as well, so the suite has to know them.
+  kitchen: KITCHEN_HOTSPOTS,
+  laundry: LAUNDRY_HOTSPOTS,
 };
 
 let failures = 0;
@@ -100,9 +106,21 @@ const CANVAS_FREE = new Set([
   "rug-flat",
 ]);
 const headless = (p: CustomPiece, spec: ParametricSpec): ParametricSpec => {
-  if (CANVAS_FREE.has(spec.finish)) return spec;
-  const swap = p.generator.finishes.find((f) => CANVAS_FREE.has(f));
-  return swap ? sanitizeSpec({ ...spec, finish: swap }) : spec;
+  let out = spec;
+  if (!CANVAS_FREE.has(out.finish)) {
+    const swap = p.generator.finishes.find((f) => CANVAS_FREE.has(f));
+    if (swap) out = sanitizeSpec({ ...out, finish: swap });
+  }
+  // The SECOND row needs the same treatment, and wall art is what found it: a
+  // frame's default is oak, oak is drawn on a canvas, and a generator whose
+  // primary finish is canvas-free can still fail to build headlessly through
+  // its accessory material.
+  const f2 = out.finish2;
+  if (p.generator.finishes2 && f2 && !CANVAS_FREE.has(f2)) {
+    const swap2 = p.generator.finishes2.find((f) => CANVAS_FREE.has(f));
+    if (swap2) out = sanitizeSpec({ ...out, finish2: swap2 });
+  }
+  return out;
 };
 const buildCard = (p: CustomPiece, patch: Partial<ParametricSpec> = {}) =>
   p.generator.build(headless(p, sanitizeSpec({ ...p.spec, ...patch } as ParametricSpec)));
@@ -620,6 +638,205 @@ console.log("\nbuttons: a TV you can reach through the picture");
   // Rooms the generator claims must all be rooms with a button for it.
   const tvRoomIds = TV_ROOMS.map(([room]) => room);
   check("the TV generator only claims rooms it has a button in", GENERATORS.tv.rooms.every((r) => (tvRoomIds as readonly string[]).includes(r)), GENERATORS.tv.rooms.join(","));
+}
+
+// ── Wall art and clocks ────────────────────────────────────────────────────
+//
+// The picture is the product here, so the checks are mostly about the IMAGE:
+// that the files exist and are the shape the registry claims (a stale aspect
+// silently stretches a painting and nothing else notices), that a print is
+// FITTED rather than scaled unevenly, and that everything the room sees is
+// authored the way placement assumes — base at y=0, centred on its depth.
+
+const ART = piecesOf(GENERATORS.wallArt);
+const CLOCKS = piecesOf(GENERATORS.wallClock);
+
+console.log("\nevery wall-art card builds and fits what it says it is");
+for (const p of ART) {
+  const g = buildCard(p);
+  const b = bbox(g);
+  const { w, d, h } = p.spec.dims;
+  check(`${p.glyphKey} builds meshes`, countVerts(g) > 8, `${countVerts(g)} verts`);
+  check(`${p.glyphKey} has no NaN vertices`, !hasNaN(g));
+  check(`${p.glyphKey} width within footprint`, b.max.x - b.min.x <= w + 0.03, `${(b.max.x - b.min.x).toFixed(3)} vs ${w}`);
+  check(`${p.glyphKey} height within footprint`, b.max.y - b.min.y <= h + 0.03, `${(b.max.y - b.min.y).toFixed(3)} vs ${h}`);
+  check(`${p.glyphKey} depth within footprint`, b.max.z - b.min.z <= d + 0.03, `${(b.max.z - b.min.z).toFixed(3)} vs ${d}`);
+  check(`${p.glyphKey} sits on its base plane`, near(b.min.y, 0, 0.01), `min.y=${b.min.y.toFixed(4)}`);
+  // Rule 13, the one the TV build paid for: authored centred on the declared
+  // depth. Off-centre, a flush wall placement buries the frame in the plaster
+  // and the room sees a floating rectangle.
+  check(`${p.glyphKey} is centred on its depth`, near((b.min.z + b.max.z) / 2, 0, 0.012), `centre z=${((b.min.z + b.max.z) / 2).toFixed(4)}`);
+}
+
+console.log("\nwall art hangs, and hangs at the height art hangs at");
+for (const p of [...ART, ...CLOCKS]) {
+  check(`${p.glyphKey} is wall-mounted`, p.generator.wallMounted?.(p.spec) === true);
+  const e = elevationOf(p.spec);
+  check(`${p.glyphKey} has a default height off the floor`, e !== undefined && e > 0.3, `${e}`);
+  if (e === undefined) continue;
+  const centre = e + p.spec.dims.h / 2;
+  check(`${p.glyphKey} centres between 1.2m and 2.0m`, centre >= 1.2 && centre <= 2.0, `centre ${centre.toFixed(2)}m`);
+  // A wall item taller than the wall is a wall item nobody can place.
+  check(`${p.glyphKey} fits under the wall`, e + p.spec.dims.h <= 2.4, `top ${(e + p.spec.dims.h).toFixed(2)}m`);
+}
+
+console.log("\nthe pictures are real files, and the registry knows their shape");
+{
+  // A generator can't ask an <img> for its size synchronously, so the aspect
+  // is hard-coded in ARTWORKS — which makes this the check that keeps it
+  // honest. Wrong by 10% and the painting is stretched by 10%.
+  const sharp = require("sharp") as typeof import("sharp");
+  for (const art of ARTWORKS) {
+    const file = resolve(process.cwd(), "public", art.url.replace(/^\//, ""));
+    const there = existsSync(file);
+    check(`${art.id} file is shipped`, there, art.url);
+    if (!there) continue;
+    const kb = statSync(file).size / 1024;
+    check(`${art.id} is web-sized`, kb < 400, `${kb.toFixed(0)}KB`);
+    const meta = sharp(file).metadata();
+    const w = (meta as unknown as { width?: number }).width;
+    const h = (meta as unknown as { height?: number }).height;
+    if (typeof w === "number" && typeof h === "number") {
+      check(`${art.id} registry aspect matches the file`, near(art.aspect, w / h, 0.02), `${art.aspect.toFixed(3)} vs ${(w / h).toFixed(3)}`);
+    }
+  }
+  check("every artwork id is a pickable finish", ARTWORKS.every((a) => GENERATORS.wallArt.finishes.includes(a.id)));
+  // A painting owns its palette; multiplying the wheel's colour over a scan
+  // makes one muddy tone, which is the same rule the patterned rugs follow.
+  check("artwork finishes opt out of the colour wheel", ARTWORKS.every((a) => !isColorable(a.id)));
+  check("the artwork row is labelled", GENERATORS.wallArt.finishesLabel === "Picture");
+}
+
+console.log("\nno painting is ever stretched: the mount takes the mismatch");
+for (const p of ART) {
+  if (p.variantId === "canvas") continue; // a gallery wrap is cropped, by design
+  for (const art of ARTWORKS) {
+    const g = buildCard(p, { finish: art.id });
+    // The picture planes are the meshes carrying uv1 under a standard
+    // material; the glazing shares the geometry but is a basic material.
+    //
+    // Every plane is measured against the CLOSEST artwork in the registry, not
+    // against the selected one: a gallery set and a picture ledge deliberately
+    // hang the next works along, so "matches the chosen aspect" would be the
+    // wrong question there. What must never happen is a plane whose shape is
+    // no painting's shape — that is the stretch this check exists to catch.
+    let worst = 0;
+    g.updateMatrixWorld(true);
+    g.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      if (!(o.material instanceof THREE.MeshStandardMaterial)) return;
+      if (!o.geometry.getAttribute("uv1")) return;
+      o.geometry.computeBoundingBox();
+      const bb = o.geometry.boundingBox!;
+      const w = bb.max.x - bb.min.x;
+      const h = bb.max.y - bb.min.y;
+      if (w <= 0 || h <= 0) return;
+      const off = Math.min(...ARTWORKS.map((a) => Math.abs(w / h - a.aspect) / a.aspect));
+      worst = Math.max(worst, off);
+    });
+    check(`${p.glyphKey} keeps ${art.id} in proportion`, worst <= 0.02, `off by ${(worst * 100).toFixed(1)}%`);
+  }
+}
+
+console.log("\nthe mount is a real board, and it takes room from the picture");
+for (const p of ART) {
+  if (p.variantId === "canvas") continue;
+  const picArea = (mount: number) => {
+    const g = buildCard(p, { modules: { ...p.spec.modules, mount } });
+    let area = 0;
+    g.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      if (!(o.material instanceof THREE.MeshStandardMaterial)) return;
+      if (!o.geometry.getAttribute("uv1")) return;
+      o.geometry.computeBoundingBox();
+      const bb = o.geometry.boundingBox!;
+      area += (bb.max.x - bb.min.x) * (bb.max.y - bb.min.y);
+    });
+    return area;
+  };
+  check(`${p.glyphKey} mounted print is smaller than the unmounted one`, picArea(1) < picArea(0), `${picArea(1).toFixed(4)} vs ${picArea(0).toFixed(4)}`);
+}
+
+console.log("\na gallery set is a gallery, not one painting three times");
+{
+  const g = GENERATORS.wallArt;
+  const set = ART.find((p) => p.variantId === "gallery-3")!;
+  const built = buildCard(set);
+  let frames = 0;
+  built.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshStandardMaterial && o.geometry.getAttribute("uv1")) frames++;
+  });
+  check("the set hangs three pictures", frames === 3, `${frames}`);
+  // Distinct artworks, and the walk wraps rather than running off the list.
+  const ids = new Set(ARTWORKS.map((a) => a.id));
+  check("the artwork walk stays inside the registry", ids.size === ARTWORKS.length);
+  check("a frameless canvas offers no frame finish", g.showFinishes2?.({ ...g.defaultSpec, variant: "canvas" } as ParametricSpec) === false);
+  check("a framed print does offer one", g.showFinishes2?.({ ...g.defaultSpec, variant: "framed-portrait" } as ParametricSpec) === true);
+  check("the mount control hides on a canvas", g.modules[0].appliesTo?.({ ...g.defaultSpec, variant: "canvas" } as ParametricSpec) === false);
+}
+
+console.log("\nclocks are round, and they tell a time");
+for (const p of CLOCKS) {
+  const g = buildCard(p);
+  const b = bbox(g);
+  const { w, h } = p.spec.dims;
+  check(`${p.glyphKey} builds meshes`, countVerts(g) > 8, `${countVerts(g)} verts`);
+  check(`${p.glyphKey} has no NaN vertices`, !hasNaN(g));
+  check(`${p.glyphKey} is square in elevation`, near(w, h, 0.001), `${w} × ${h}`);
+  check(`${p.glyphKey} width within footprint`, b.max.x - b.min.x <= w + 0.01, `${(b.max.x - b.min.x).toFixed(3)}`);
+  check(`${p.glyphKey} sits on its base plane`, near(b.min.y, 0, 0.01), `min.y=${b.min.y.toFixed(4)}`);
+  check(`${p.glyphKey} is centred on its depth`, near((b.min.z + b.max.z) / 2, 0, 0.012), `centre z=${((b.min.z + b.max.z) / 2).toFixed(4)}`);
+  // Two hands and a boss at minimum; the seconds hand is a labelled toggle.
+  const withSec = countVerts(buildCard(p, { modules: { secondHand: 1 } }));
+  const without = countVerts(buildCard(p, { modules: { secondHand: 0 } }));
+  check(`${p.glyphKey} drops the second hand when told to`, withSec > without, `${withSec} vs ${without}`);
+}
+{
+  const m = GENERATORS.wallClock.modules[0];
+  check("the second hand is a labelled pair, not a 0/1 stepper", !!m.toggle && m.max === 1);
+}
+
+console.log("\nwall-art and clock cards, names and glyphs");
+for (const p of [...ART, ...CLOCKS]) {
+  check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey]);
+  check(`${p.glyphKey} has a name that stands alone`, !p.label.includes("·"), p.label);
+}
+{
+  const keys = [...ART, ...CLOCKS].map((p) => p.glyphKey);
+  check("every soft-decor glyph key is unique", new Set(keys).size === keys.length);
+  const glyphs = keys.map((k) => GENERATOR_GLYPH[k]);
+  check("no two cards share one glyph", new Set(glyphs).size === glyphs.length);
+}
+
+console.log("\nbuttons: wall art and clocks you can reach through the picture");
+{
+  const reach = (p: CustomPiece, hotspots: typeof LIVING_HOTSPOTS) => {
+    const text = p.keywords.join(" ").toLowerCase();
+    return hotspots.filter((h) => h.keywords.some((k) => text.includes(k)));
+  };
+  for (const room of GENERATORS.wallArt.rooms) {
+    const hotspots = ROOM_HOTSPOTS[room];
+    check(`${room} is a room this suite knows`, !!hotspots, room);
+    if (!hotspots) continue;
+    check(`${room} has a wall-art button`, hotspots.some((h) => h.id === "art"));
+    check(`${room} hotspot ids are unique`, new Set(hotspots.map((h) => h.id)).size === hotspots.length);
+    for (const p of ART) {
+      const hit = reach(p, hotspots);
+      check(`${p.glyphKey} answers the ${room} wall-art button`, hit.some((h) => h.id === "art"));
+      check(`${p.glyphKey} answers ONLY that button in ${room}`, hit.length === 1, hit.map((h) => h.id).join(","));
+    }
+  }
+  for (const room of GENERATORS.wallClock.rooms) {
+    const hotspots = ROOM_HOTSPOTS[room];
+    check(`${room} is a room this suite knows`, !!hotspots, room);
+    if (!hotspots) continue;
+    check(`${room} has a clock button`, hotspots.some((h) => h.id === "clock"));
+    for (const p of CLOCKS) {
+      const hit = reach(p, hotspots);
+      check(`${p.glyphKey} answers the ${room} clock button`, hit.some((h) => h.id === "clock"));
+      check(`${p.glyphKey} answers ONLY that button in ${room}`, hit.length === 1, hit.map((h) => h.id).join(","));
+    }
+  }
 }
 
 console.log("\nand every card in the catalog still has a button in its rooms");

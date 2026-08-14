@@ -11,6 +11,7 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { GENERATORS, elevationOf } from "@/parametric";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { isColorable } from "@/parametric/materials";
+import { ARTWORKS } from "@/parametric/wallArtParts";
 import { pdToast } from "../toast";
 import { PD, pdChip } from "../tokens";
 import {
@@ -238,10 +239,23 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         </PdChipGroup>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {g.finishes.map((f) => (
-          <PdSwatch key={f} hex={FINISH_HEX[f] ?? null} active={spec.finish === f} title={f} onClick={() => update({ finish: f })} />
-        ))}
+      {g.finishesLabel && <span style={{ fontSize: 10.5, color: PD.textTertiary }}>{g.finishesLabel}</span>}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        {g.finishes.map((f) => {
+          // Wall art's finishes ARE pictures: the swatch shows the painting,
+          // because a dot in its average colour is a choice made blind.
+          const art = ARTWORKS.find((a) => a.id === f);
+          return (
+            <PdSwatch
+              key={f}
+              hex={FINISH_HEX[f] ?? null}
+              img={art?.url}
+              active={spec.finish === f}
+              title={art?.label ?? f}
+              onClick={() => update({ finish: f })}
+            />
+          );
+        })}
       </div>
       {isColorable(spec.finish) && (
         <ColorControl value={spec.color ?? FINISH_HEX[spec.finish] ?? "#ffffff"} onCommit={(color) => update({ color })} />
