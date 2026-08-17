@@ -17,6 +17,12 @@ export const kitchenWallGenerator: GeneratorDef = {
   category: "Kitchen",
   rooms: ["kitchen"],
   wallSnap: true,
+  // A wall cabinet hangs on a wall, so say so. Without this the drag path's
+  // `isWallItem` gate read false and a selected wall cabinet followed the
+  // FLOOR point under the cursor — metres away from a box at 1.45m, so it
+  // slid at a different speed than the pointer. `isSurfaceHost` already
+  // excluded kitchenWall by name, so nothing else changes.
+  wallMounted: () => true,
   // A fresh placement starts 600mm above a standard 840mm counter, mounted
   // flush to the wall like any other wall-mount item (FurnitureItem.elevation,
   // read once from here at place time — see spec.ts / store.placeFurniture).

@@ -26,6 +26,16 @@ function corners(o: OBB): [number, number][] {
   return pts;
 }
 
+/**
+ * Overlap, in metres, that two rectangles must share before they count as
+ * colliding. Touching is not colliding: a cabinet snapped flush to a wall sits
+ * with its back face exactly ON that wall's face, so the projections meet at a
+ * single value and a strict `<` test found no separating axis — a correctly
+ * placed run reported a collision and glowed red for as long as it existed.
+ * A millimetre is far below any real overlap and far above float noise.
+ */
+const TOUCH_EPS = 1e-3;
+
 /** Separating axis test between two rotated rectangles. */
 export function obbIntersects(a: OBB, b: OBB): boolean {
   const pa = corners(a);
@@ -49,7 +59,8 @@ export function obbIntersects(a: OBB, b: OBB): boolean {
       bMin = Math.min(bMin, p);
       bMax = Math.max(bMax, p);
     }
-    if (aMax < bMin || bMax < aMin) return false; // found a separating axis
+    // Found a separating axis (they touch, or are apart, on this one).
+    if (aMax - bMin < TOUCH_EPS || bMax - aMin < TOUCH_EPS) return false;
   }
   return true;
 }

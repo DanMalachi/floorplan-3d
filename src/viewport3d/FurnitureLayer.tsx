@@ -15,8 +15,7 @@ import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFurniture } from "@/decorate/eyedropper";
 import { ParametricModel } from "@/parametric/ParametricModel";
-import { snapKitchenWall } from "@/parametric/kitchenSnap";
-import { isWallItem } from "@/parametric/kitchenAttach";
+import { isWallItem, kitchenOwnsPlacement } from "@/parametric/kitchenAttach";
 import { rayToWall, wallPose } from "@/parametric/wallRay";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -333,7 +332,14 @@ function FurnitureItemView({ item, offset }: {
     // whatever height it had.
     const elevation = p.elevation !== undefined ? Math.max(0.05, p.elevation - d.grabE) : item.elevation;
     let rotation = item.rotation;
-    if (!e.shiftKey) {
+    // Kitchen pieces are placed by ONE authority — applyKitchenGesture, which
+    // the store runs on the scene this handler hands it. Snapping here as well
+    // put two wall magnets with different ranges, different projections and
+    // different rankings in series, disagreeing about which wall and which
+    // face several times a second. The raw pointer position is what that
+    // authority wants; grid-rounding it here would also quantise on the WORLD
+    // axes, which fight the wall's own grid the moment a wall isn't square.
+    if (!e.shiftKey && !kitchenOwnsPlacement(item)) {
       const snapped = snapToWall({ assetId: item.assetId, parametric: item.parametric, x, y }, d.base);
       if (snapped) {
         x = snapped.x;
@@ -342,14 +348,6 @@ function FurnitureItemView({ item, offset }: {
       } else {
         x = snap(x);
         y = snap(y);
-      }
-    }
-    if (!e.shiftKey && item.parametric?.generator === "kitchenWall") {
-      const ks = snapKitchenWall({ ...item, x, y, rotation }, d.base);
-      if (ks) {
-        x = ks.x;
-        y = ks.y;
-        rotation = ks.rotation;
       }
     }
     const candidate = { ...item, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) };

@@ -21,6 +21,7 @@ import {
   runWorldToLocal,
 } from "./runPath";
 import { hostTop, isSurfaceHost, surfaceRects } from "./surfaceHosts";
+import { snapKitchenWall } from "./kitchenSnap";
 
 const ALONG_STEP = 0.1; // same grid feel as everything else
 /** Hung things slide on a 1cm step, not the 10cm one.
@@ -41,7 +42,7 @@ const HOST_END_MARGIN = 0.25;
 const roundTo = (v: number, step: number) => Math.round(v / step) * step;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-export const isKitchenRun = (f: FurnitureItem): boolean =>
+export const isKitchenRun = (f: Pick<FurnitureItem, "parametric">): boolean =>
   f.parametric?.generator === "kitchenBase" || f.parametric?.generator === "kitchenWall";
 
 export const isCounterHost = (f: FurnitureItem): boolean =>
@@ -66,6 +67,20 @@ export const isCounterItem = (f: Pick<FurnitureItem, "parametric">): boolean =>
  *  do the same. */
 export const isWallItem = (f: Pick<FurnitureItem, "parametric">): boolean =>
   !!f.parametric && !!GENERATORS[f.parametric.generator]?.wallMounted?.(f.parametric);
+
+/**
+ * Items whose placement `applyKitchenGesture` owns outright: runs glue to a
+ * wall, wall items ride the wall grid, counter items bond to a surface.
+ *
+ * The drag handler must NOT pre-snap these. It used to run collision.ts's
+ * generic `snapToWall` (range-limited, projection unclamped, ranked its own
+ * way) and then hand the result to `snapRunToWall` here (no range, projection
+ * clamped, ranked differently) — two wall magnets with different rules
+ * disagreeing about which wall and which face, on every pointer move. Only one
+ * of them can be right; this is how the drag path knows which.
+ */
+export const kitchenOwnsPlacement = (f: Pick<FurnitureItem, "parametric">): boolean =>
+  !!f.parametric && (isKitchenRun(f) || isWallItem(f) || isCounterItem(f));
 
 /** Metres above the worktop an attached item bonds at. Zero for everything
  *  that sits ON the counter; an extractor over an island is the exception —
@@ -413,6 +428,28 @@ export function snapRunToWall(
 }
 
 /**
+ * Re-glue every kitchen piece to the walls as they now stand, without a drag.
+ *
+ * For the one case where walls move under a kitchen that is already built:
+ * regenerating from the trace. Squaring up shifts corners by a few centimetres,
+ * which is enough to leave a run floating off its wall or a hair inside it.
+ * `keepFacing` is passed so a re-glue can never flip a run to the far side of
+ * its wall — the walls moved, the design decisions did not.
+ */
+export function reglueKitchen(scene: Scene): Scene {
+  let changed = false;
+  const furniture = scene.furniture.map((f) => {
+    if (!f.parametric || !(isKitchenRun(f) || isWallItem(f))) return f;
+    const step = isKitchenRun(f) ? ALONG_STEP : WALL_ITEM_STEP;
+    const snapped = snapRunToWall(f, scene, { step, keepFacing: f.rotation });
+    if (!snapped || (snapped.x === f.x && snapped.y === f.y && snapped.rotation === f.rotation)) return f;
+    changed = true;
+    return { ...f, ...snapped };
+  });
+  return syncKitchenAttachments(changed ? { ...scene, furniture } : scene);
+}
+
+/**
  * Store-side gesture hook: given the scene a drag wants (`next`) and the
  * scene as it currently is (`prev`), re-glue whichever kitchen pieces the
  * drag moved, then re-derive every attachment. Furniture entries are
@@ -427,7 +464,22 @@ export function applyKitchenGesture(next: Scene, prev: Scene): Scene {
     const before = prevById.get(f.id);
     if (before === f || !f.parametric) return f; // untouched by this update
     if (isKitchenRun(f)) {
-      const snapped = snapRunToWall(f, next);
+      // `keepFacing` is the whole difference between a run that stays where you
+      // put it and one that pops through to the far side of the wall. Without
+      // it the face came straight from `Math.sign(side)` off the run's CENTRE,
+      // and a drag that pushes the run into the wall carries that centre past
+      // the centreline within a few centimetres — at which point the run snaps
+      // flush to the OUTSIDE of the house. Wall items have had the hysteresis
+      // since they were written; runs were simply never given it.
+      let snapped = snapRunToWall(f, next, { keepFacing: before?.rotation ?? f.rotation });
+      if (snapped && f.parametric.generator === "kitchenWall") {
+        // Align to the base run underneath, from the WALL-SNAPPED pose. This
+        // used to run in the drag handler, one snap earlier, off a rotation
+        // that was still the previous wall's — so a row crossing a corner
+        // measured its offset against the wrong axis for a frame.
+        const aligned = snapKitchenWall({ ...f, ...snapped }, next);
+        if (aligned) snapped = aligned;
+      }
       if (snapped && (snapped.x !== f.x || snapped.y !== f.y || snapped.rotation !== f.rotation)) {
         changed = true;
         return { ...f, ...snapped };
