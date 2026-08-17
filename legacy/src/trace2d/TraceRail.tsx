@@ -14,6 +14,9 @@ import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { MAX_STAIR_WIDTH, MIN_STAIR_WIDTH, stairMetrics } from "@/lib/stairs/stairGeometry";
 import { traceToScene } from "./traceToScene";
 import { preserveSceneEdits } from "@/lib/scene/preserveEdits";
+import { squareUpScene } from "@/lib/scene/squareUp";
+import { reglueKitchen } from "@/parametric/kitchenAttach";
+import { pdToast } from "@/ui/planDock/toast";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 
 // Precedent pair from src/dev/gtToScene.ts (interior 0.1 / exterior 0.2) —
@@ -228,6 +231,7 @@ export function TraceRail() {
   const setTraceStep = useSceneStore((s) => s.setTraceStep);
 
   const [distance, setDistance] = useState("");
+  const [squareUp, setSquareUp] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const scaleSet = metersPerPixel != null;
@@ -321,16 +325,30 @@ export function TraceRail() {
     if (metersPerPixel == null) return;
     const prev = useSceneStore.getState();
     const texts = prev.importedTexts;
+    const traced = traceToScene({ points, segments, openings, stairs, metersPerPixel, texts });
+    // Square up before anything downstream sees the geometry. A hand trace
+    // leaves a tail of near-square walls (the ortho lock doesn't apply on the
+    // vertex/wall/PDF snap branches), and everything that runs ALONG a wall
+    // pays for it — worst of all the kitchen, whose L-runs turn exact right
+    // angles. Real diagonals are left alone; see src/lib/scene/squareUp.ts.
+    const squared = squareUp ? squareUpScene(traced) : null;
     // Re-derive everything the trace owns, but keep what only 3D knows: paint,
     // floors, door joinery, stair style, furniture. Without this, correcting one
     // wall in the trace would throw away every decision made in Build/Decorate.
-    setScene(
-      preserveSceneEdits(
-        prev.scene,
-        traceToScene({ points, segments, openings, stairs, metersPerPixel, texts }),
-      ),
-    );
+    const merged = preserveSceneEdits(prev.scene, squared?.scene ?? traced);
+    // The walls just moved under a kitchen that was already built, so re-glue
+    // it rather than leaving runs floating a centimetre off their wall.
+    setScene(squared?.report.straightened ? reglueKitchen(merged) : merged);
     setAppMode("build");
+    const r = squared?.report;
+    if (r?.straightened) {
+      const shift = Math.round(r.maxShift * 100);
+      pdToast(
+        `Squared up ${r.straightened} wall${r.straightened === 1 ? "" : "s"}` +
+          (r.diagonals ? `, kept ${r.diagonals} angled` : "") +
+          (shift >= 10 ? ` — moved a corner by ${shift}cm, worth a look` : ""),
+      );
+    }
   };
 
   const stepBody = (n: number): React.ReactNode => {
@@ -538,6 +556,15 @@ export function TraceRail() {
             {!canGenerate && (
               <div style={hintText}>Close at least one room loop — walls must connect back on themselves to make a floor.</div>
             )}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: T.textDim }}>
+              <input type="checkbox" checked={squareUp} onChange={(e) => setSquareUp(e.target.checked)} />
+              Square up near-square walls
+            </label>
+            <div style={hintText}>
+              Straightens walls traced a degree or two out — the ortho lock lets them
+              through whenever you click onto an existing corner or the plan underneath.
+              Genuinely angled walls are left as drawn.
+            </div>
             <button style={primaryBtn(canGenerate)} disabled={!canGenerate} onClick={generate}>
               Generate 3D model →
             </button>
