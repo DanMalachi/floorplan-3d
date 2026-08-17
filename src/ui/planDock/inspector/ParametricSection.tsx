@@ -297,9 +297,16 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             // Wall cabinets keep their original worktop-to-ceiling range; other
             // wall items use the same limits the placement ghost enforces, so a
             // height you could point at can't be rejected when you retype it.
+            // The ghost's own clamp (RunDrawGhost.tsx, wallCabElev) uses this
+            // SAME pair of numbers — a run's cabinets can now stand up to 1.4m
+            // tall, so a fixed 2.1m ceiling stopped being high enough to hang
+            // one flush under a 2.4m ceiling; deriving hi from the item's own
+            // height keeps both in sync as dimLimits change.
             const isRun = spec.generator === "kitchenWall";
             const lo = isRun ? 0.8 : 0.1;
-            const hi = isRun ? 2.1 : Math.max(WALL_HEIGHT - spec.dims.h, 0.1);
+            const hi = isRun
+              ? Math.max(WALL_HEIGHT - spec.dims.h, lo)
+              : Math.max(WALL_HEIGHT - spec.dims.h, 0.1);
             useSceneStore.getState().setFurnitureElevation(item.id, Math.min(hi, Math.max(lo, m)));
           }}
           displayScale={100}

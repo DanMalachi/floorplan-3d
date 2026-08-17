@@ -12,6 +12,7 @@ import {
   kitchenOwnsPlacement,
   reglueKitchen,
   snapRunToWall,
+  runWallId,
 } from "./kitchenAttach";
 import { sanitizeSpec, GENERATORS } from "@/parametric";
 import { placementCollides } from "@/viewport3d/collision";
@@ -518,6 +519,49 @@ console.log("\nthe first cabinet lands exactly where the hover preview showed it
   check("dragging the previewed way also keeps the promise",
     fLo <= previewed.lo + 1e-9 && fHi >= previewed.hi - 1e-9,
     `run [${fLo.toFixed(2)}, ${fHi.toFixed(2)}]`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\na resize keeps the run on the wall it started on");
+{
+  // A 4m south wall with a run on it. Grow the run past what the wall can hold
+  // and the centre marches toward the corner — far enough that the east wall
+  // wins the nearest-wall ranking and takes the whole run. Resizing is not
+  // moving, so the wall must be locked for the gesture.
+  // Left edge at 1.4m, so dragging the far handle out to the generator's 6m
+  // maximum pushes the run's centre past what this 4m wall can hold.
+  const start = baseRun({ x: 2.6 });
+  const sc = scene([start]);
+  const wallId = runWallId(start, sc, start.rotation);
+  check("the run reports the wall it is on", wallId === "w1", `got ${wallId}`);
+
+  // Widths up to the generator's 6m maximum. In this 4x3 room the unlocked
+  // snap holds w1 until 6m, at which point the run no longer fits and its
+  // re-centred position lets w2 win the ranking — the run turns 90° and lands
+  // on a different wall, mid-resize.
+  const lock = { itemId: start.id, wallId: wallId! };
+  let lockedWorst = 0;
+  let unlockedMoved = false;
+  for (const w of [2.4, 3.0, 3.6, 4.2, 5.0, 6.0]) {
+    const grown: FurnitureItem = {
+      ...start,
+      // Grow from the left edge, exactly as the end handle does.
+      x: (start.x - start.parametric!.dims.w / 2) + w / 2,
+      parametric: { ...start.parametric!, dims: { ...start.parametric!.dims, w } },
+    };
+    const locked = applyKitchenGesture(scene([grown]), sc, lock).furniture[0];
+    const free = applyKitchenGesture(scene([grown]), sc).furniture[0];
+    // Locked: still flush to w1 (y = 0.35), still facing into the room.
+    lockedWorst = Math.max(
+      lockedWorst,
+      Math.abs(locked.y - 0.35) + Math.abs(locked.rotation),
+    );
+    if (Math.abs(free.y - 0.35) > 1e-6 || Math.abs(free.rotation) > 1e-6) unlockedMoved = true;
+  }
+  check("locked: every width stays flush to the original wall, facing the room",
+    lockedWorst < 1e-9, `worst deviation ${lockedWorst.toFixed(4)}`);
+  check("unlocked the same input DOES leave that wall (the bug being fixed)",
+    unlockedMoved);
 }
 
 console.log(failures === 0 ? "\nall kitchen drag checks passed" : `\n${failures} FAILED`);

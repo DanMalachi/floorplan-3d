@@ -27,7 +27,7 @@ export const kitchenWallGenerator: GeneratorDef = {
   // flush to the wall like any other wall-mount item (FurnitureItem.elevation,
   // read once from here at place time — see spec.ts / store.placeFurniture).
   defaultElevation: 1.45,
-  dimLimits: { w: [0.3, 4.0], d: [0.28, 0.4], h: [0.35, 0.9] },
+  dimLimits: { w: [0.3, 4.0], d: [0.28, 0.6], h: [0.35, 1.4] },
   modules: [],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],

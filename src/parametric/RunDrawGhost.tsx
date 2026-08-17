@@ -59,6 +59,25 @@ function rayToPlan(e: ThreeEvent<PointerEvent | MouseEvent>, offset: { cx: numbe
 
 const roundTo = (v: number, step: number) => Math.round(v / step) * step;
 
+/** Where a kitchenWall run mounts, given the wall height the pointer is over:
+ *  centers the box on that point, snapped to the wall grid. Shared by the
+ *  hover ghost and the anchor click so the box cannot LOOK like it will hang
+ *  at one height and then jump to another the instant you click — before this
+ *  was factored out, the ghost drew at the generator's 1.45m default no
+ *  matter where you pointed, and only the click applied this formula.
+ *
+ *  Bounds match the inspector's own "Height off floor" field
+ *  (ParametricSection.tsx) exactly: 0.8m keeps cabinets above the worktop,
+ *  and Math.max(WALL_HEIGHT - h, 0.8) keeps the top from going through the
+ *  ceiling while never dropping below that floor — if the two clamps
+ *  disagreed, a height you could point at here would be rejected the moment
+ *  you retyped it there. */
+export function wallCabElev(height: number, h: number): number {
+  const lo = 0.8;
+  const hi = Math.max(WALL_HEIGHT - h, lo);
+  return THREE.MathUtils.clamp(roundTo(height - h / 2, LEN_STEP), lo, hi);
+}
+
 interface WallHit {
   wall: Wall;
   a: Node;
@@ -423,6 +442,10 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
   const [chain, setChain] = useState<ChainSeg[] | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [anchorElev, setAnchorElev] = useState<number | null>(null);
+  // Raw pointer height over the wall, pre-anchor — the input to wallCabElev
+  // that drives the HOVER ghost. Kept separate from anchorElev, which is the
+  // committed value the anchor click derives from the same reading.
+  const [hoverHeight, setHoverHeight] = useState<number | null>(null);
   const [activeWall, setActiveWall] = useState<{ wallId: string; side: "a" | "b" } | null>(null);
 
   useEffect(() => {
@@ -430,6 +453,7 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
       setChain(null);
       setCursor(null);
       setAnchorElev(null);
+      setHoverHeight(null);
       setActiveWall(null);
       return;
     }
@@ -488,9 +512,14 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
   };
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
-    const { p } = dragPoint(e);
+    const { p, height } = dragPoint(e);
     if (!p) return;
     setCursor(p);
+    // Before the anchor click, track the raw pointer height so the hover
+    // ghost can run it through the SAME wallCabElev the click will use —
+    // once the chain exists the mounting height is fixed (anchorElev) and
+    // dragging only extends the run sideways.
+    if (onTheWall && !chain) setHoverHeight(height);
     if (chain) {
       // Corners are consumed/un-consumed as the cursor passes them — the
       // chain is drag STATE, not a pure function of the last point (a U's
@@ -524,9 +553,9 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
       ]);
       if (onTheWall && height !== null) {
         // The anchor click fixes the mounting height: cabinets center on
-        // where you pointed, snapped to the wall grid.
-        const elev = roundTo(height - spec.dims.h / 2, LEN_STEP);
-        setAnchorElev(THREE.MathUtils.clamp(elev, 0.3, WALL_HEIGHT - spec.dims.h - 0.05));
+        // where you pointed, snapped to the wall grid — same formula the
+        // hover ghost just drew with, so nothing jumps on click.
+        setAnchorElev(wallCabElev(height, spec.dims.h));
       }
       return;
     }
@@ -556,7 +585,12 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
   }
   const legs = commitLegs(raw, wLimits);
   const preview = legs.length > 0 ? legsToSpec(legs, spec) : null;
-  const elev = anchorElev ?? elevationOf(spec) ?? 0;
+  // Pre-anchor, draw at the height a click WOULD set (wallCabElev on the
+  // live pointer reading) rather than the generator's static default — see
+  // wallCabElev's comment for why these two call sites must never drift.
+  const elev =
+    anchorElev ??
+    (onTheWall && hoverHeight !== null ? wallCabElev(hoverHeight, spec.dims.h) : elevationOf(spec) ?? 0);
 
   return (
     <>

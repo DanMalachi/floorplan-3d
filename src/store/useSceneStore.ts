@@ -241,6 +241,12 @@ export interface StoreState {
   // --- 3D editing: drag gestures (Phase 4 M2) ---
   /** Scene at gesture start; non-null while a drag is in flight. */
   gestureBase: Scene | null;
+  /** Set by the run-resize handles for the duration of their gesture. Growing
+   *  a run moves its centre, and the wall snap ranks purely by proximity — so
+   *  without pinning the run to the wall it started on, a resize could hand it
+   *  to a neighbouring wall (or the far face of its own) mid-drag. */
+  gestureLock: { itemId: string; wallId: string } | null;
+  setGestureLock: (lock: { itemId: string; wallId: string } | null) => void;
   /** Snap guides + dimension labels the viewport draws during a drag. */
   dragViz: DragViz | null;
   /** Bumped only on whole-scene replaces — the viewport recenters on this,
@@ -620,6 +626,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
       });
     },
     gestureBase: null,
+    gestureLock: null,
+    setGestureLock: (gestureLock) => set({ gestureLock }),
     dragViz: null,
     frameToken: 0,
     beginGesture: () => {
@@ -632,24 +640,25 @@ export const useSceneStore = create<StoreState>((set, get) => {
       // Kitchen v2: runs glue to walls and counter items ride their runs —
       // applied here so EVERY drag path (layer drags, resize handles) gets
       // the same physics. Door-swing gestures skip it (openings only).
-      const scene = s.doorGestureActive ? next : applyKitchenGesture(next, s.scene);
+      const scene = s.doorGestureActive ? next : applyKitchenGesture(next, s.scene, s.gestureLock);
       set({ scene, dragViz: viz });
     },
     endGesture: (label) => {
       const { gestureBase, scene, collab } = get();
       if (!gestureBase) return;
       if (gestureBase === scene) {
-        set({ gestureBase: null, dragViz: null }); // click, not a drag
+        set({ gestureBase: null, gestureLock: null, dragViz: null }); // click, not a drag
         return;
       }
       if (collab) {
         // One granular commit of the whole drag into the shared doc.
         collab.commit(gestureBase, scene);
-        set({ gestureBase: null, dragViz: null });
+        set({ gestureBase: null, gestureLock: null, dragViz: null });
         return;
       }
       set((s) => ({
         gestureBase: null,
+        gestureLock: null,
         dragViz: null,
         scenePast: [...s.scenePast.slice(-(HISTORY_CAP - 1)), { label, scene: gestureBase }],
         sceneFuture: [],
@@ -658,7 +667,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     cancelGesture: () => {
       const { gestureBase } = get();
       if (!gestureBase) return;
-      set({ scene: gestureBase, gestureBase: null, dragViz: null });
+      set({ scene: gestureBase, gestureBase: null, gestureLock: null, dragViz: null });
     },
     doorGestureActive: false,
     setDoorGestureActive: (active) => set({ doorGestureActive: active }),

@@ -8,18 +8,47 @@
 // sinks/cooktops while it resizes.
 
 import { useRef, useState } from "react";
+import * as THREE from "three";
 
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { GENERATORS, elevationOf } from "@/parametric";
-import { isKitchenRun } from "./kitchenAttach";
+import { isKitchenRun, runWallId } from "./kitchenAttach";
 import { pathLegs, runLocalToWorld } from "./runPath";
 import { ACCENT } from "@/viewport3d/WallMesh";
 import { rayToPlanAt } from "@/viewport3d/dragPlane";
 import { legWorldDir, resizeRunEnd } from "./runResize";
 
 const STEP = 0.1;
+
+/** Draw order for the handles. Walls are `transparent: true`, so they render
+ *  in the transparent queue AFTER opaque geometry and painted straight over
+ *  the arrows even with depth testing off. A high renderOrder puts the handles
+ *  last in that queue, so they are always visible — which is the whole point
+ *  of a manipulator. */
+const HANDLE_RENDER_ORDER = 1000;
+
+/**
+ * Raycast that reports zero distance, so R3F's nearest-first event dispatch
+ * always offers the handle the pointer before anything in front of it.
+ *
+ * Drawing on top is only half the fix. R3F sorts intersections by distance and
+ * walks them in order, and WallMesh's handlers call `stopPropagation()` — so a
+ * wall between the camera and the handle ate every press and the arrows could
+ * not be grabbed at all, however clearly they were drawn. Rewriting the
+ * distance is what makes a manipulator behave like an overlay rather than like
+ * another object in the room.
+ */
+function overlayRaycast(
+  this: THREE.Object3D,
+  raycaster: THREE.Raycaster,
+  intersects: THREE.Intersection[],
+): void {
+  const own: THREE.Intersection[] = [];
+  THREE.Mesh.prototype.raycast.call(this as THREE.Mesh, raycaster, own);
+  for (const hit of own) intersects.push({ ...hit, distance: 0 });
+}
 
 function EndHandle({ item, end, offset }: {
   item: FurnitureItem;
@@ -63,6 +92,12 @@ function EndHandle({ item, end, offset }: {
     (e.target as Element).setPointerCapture(e.pointerId);
     const s = useSceneStore.getState();
     drag.current = { pointerId: e.pointerId, base: s.scene, item, planeY: handleY };
+    // Pin the run to the wall it is on for the whole resize. Growing a run
+    // moves its centre, and the wall snap ranks purely by proximity — so
+    // without this, widening a run far enough hands it to a neighbouring wall
+    // (or the far face of its own) and the whole thing jumps rooms.
+    const wallId = runWallId(item, s.scene, item.rotation);
+    s.setGestureLock(wallId ? { itemId: item.id, wallId } : null);
     s.beginGesture();
   };
 
@@ -106,12 +141,14 @@ function EndHandle({ item, end, offset }: {
   return (
     <group position={[grip.x, handleY, grip.y]} rotation={[0, Math.atan2(-point.y, point.x), 0]}>
       {/* Arrow cone pointing out of this end. */}
-      <mesh rotation={[0, 0, -Math.PI / 2]}>
+      <mesh rotation={[0, 0, -Math.PI / 2]} renderOrder={HANDLE_RENDER_ORDER}>
         <coneGeometry args={[0.045, 0.11, 12]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={hovered ? 1 : 0.75} depthTest={false} />
+        <meshBasicMaterial color={ACCENT} transparent opacity={hovered ? 1 : 0.75} depthTest={false} depthWrite={false} />
       </mesh>
       {/* Fat invisible hit target — the cone alone is a sniper shot. */}
       <mesh
+        raycast={overlayRaycast}
+        renderOrder={HANDLE_RENDER_ORDER}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);

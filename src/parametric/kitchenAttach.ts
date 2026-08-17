@@ -347,19 +347,27 @@ function cornerFaceAlong(
  * some wall; the nearest one wins. Returns null only in a wall-less scene.
  * An L/U additionally registers its corner against the crossing wall's face.
  */
-export function snapRunToWall(
+export interface SnapRunOpts {
+  /** Along-wall quantisation. Defaults to the kitchen grid. */
+  step?: number;
+  /** The rotation the item ALREADY has, when it is being dragged rather
+   *  than placed. Turns the snap sticky: it prefers the wall and the face
+   *  the item is on, and only changes face when the cursor clearly means
+   *  it. Omit for a fresh placement, which has no face to keep. */
+  keepFacing?: number;
+  /** Consider ONLY this wall. Used when the gesture is a RESIZE: growing a
+   *  run is not moving it, so it must stay on the wall it is on. Without
+   *  this the run's centre shifts as it grows, another wall wins the
+   *  nearest-wall ranking, and the whole run jumps to a different wall —
+   *  or the far face of its own. */
+  lockWallId?: string;
+}
+
+function solveRunWall(
   item: Pick<FurnitureItem, "x" | "y" | "parametric">,
   scene: Scene,
-  opts: {
-    /** Along-wall quantisation. Defaults to the kitchen grid. */
-    step?: number;
-    /** The rotation the item ALREADY has, when it is being dragged rather
-     *  than placed. Turns the snap sticky: it prefers the wall and the face
-     *  the item is on, and only changes face when the cursor clearly means
-     *  it. Omit for a fresh placement, which has no face to keep. */
-    keepFacing?: number;
-  } = {},
-): { x: number; y: number; rotation: number } | null {
+  opts: SnapRunOpts = {},
+): { wallId: string; x: number; y: number; rotation: number } | null {
   const spec = item.parametric;
   if (!spec) return null;
   const step = opts.step ?? ALONG_STEP;
@@ -367,9 +375,10 @@ export function snapRunToWall(
   // The outward normal the item currently wears: rotation = atan2(-nx, ny).
   const keepN = keep === undefined ? null : { x: -Math.sin(keep), y: Math.cos(keep) };
   const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-  let best: { rank: number; x: number; y: number; rotation: number } | null = null;
+  let best: { rank: number; wallId: string; x: number; y: number; rotation: number } | null = null;
   for (const w of scene.walls) {
     if (w.kind === "rail" || w.kind === "portal") continue;
+    if (opts.lockWallId !== undefined && w.id !== opts.lockWallId) continue;
     const a = nodes.get(w.a);
     const b = nodes.get(w.b);
     if (!a || !b) continue;
@@ -429,12 +438,35 @@ export function snapRunToWall(
     }
     best = {
       rank,
+      wallId: w.id,
       x: a.x + ux * tc + nx * off,
       y: a.y + uy * tc + ny * off,
       rotation: Math.atan2(-nx, ny),
     };
   }
-  return best && { x: best.x, y: best.y, rotation: best.rotation };
+  return best && { wallId: best.wallId, x: best.x, y: best.y, rotation: best.rotation };
+}
+
+/** Which wall a run currently belongs to — the one `snapRunToWall` would glue
+ *  it to right now. Captured at the start of a RESIZE so the gesture can lock
+ *  onto it: growing a run moves its centre, and without a lock that shift is
+ *  enough for a neighbouring wall to win the ranking and take the whole run. */
+export function runWallId(
+  item: Pick<FurnitureItem, "x" | "y" | "parametric">,
+  scene: Scene,
+  keepFacing?: number,
+): string | null {
+  return solveRunWall(item, scene, keepFacing === undefined ? {} : { keepFacing })?.wallId ?? null;
+}
+
+/** Glue a kitchen run to a wall — see solveRunWall for the ranking. */
+export function snapRunToWall(
+  item: Pick<FurnitureItem, "x" | "y" | "parametric">,
+  scene: Scene,
+  opts: SnapRunOpts = {},
+): { x: number; y: number; rotation: number } | null {
+  const r = solveRunWall(item, scene, opts);
+  return r && { x: r.x, y: r.y, rotation: r.rotation };
 }
 
 /**
@@ -465,7 +497,15 @@ export function reglueKitchen(scene: Scene): Scene {
  * drag moved, then re-derive every attachment. Furniture entries are
  * compared by reference — only actually-touched items pay for a wall snap.
  */
-export function applyKitchenGesture(next: Scene, prev: Scene): Scene {
+export function applyKitchenGesture(
+  next: Scene,
+  prev: Scene,
+  /** Set while a RESIZE gesture is in flight: that run stays on the wall it
+   *  started on. Growing a run moves its centre, and without the lock that
+   *  shift alone is enough for a neighbouring wall to win the nearest-wall
+   *  ranking and carry the whole run off to it. */
+  lock?: { itemId: string; wallId: string } | null,
+): Scene {
   const prevById = new Map(prev.furniture.map((f) => [f.id, f]));
   let furniture = next.furniture;
   let changed = false;
@@ -481,7 +521,10 @@ export function applyKitchenGesture(next: Scene, prev: Scene): Scene {
       // the centreline within a few centimetres — at which point the run snaps
       // flush to the OUTSIDE of the house. Wall items have had the hysteresis
       // since they were written; runs were simply never given it.
-      let snapped = snapRunToWall(f, next, { keepFacing: before?.rotation ?? f.rotation });
+      let snapped = snapRunToWall(f, next, {
+        keepFacing: before?.rotation ?? f.rotation,
+        ...(lock && lock.itemId === f.id ? { lockWallId: lock.wallId } : {}),
+      });
       if (snapped && f.parametric.generator === "kitchenWall") {
         // Align to the base run underneath, from the WALL-SNAPPED pose. This
         // used to run in the drag handler, one snap earlier, off a rotation
