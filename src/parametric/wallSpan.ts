@@ -27,6 +27,17 @@ import { DEFAULT_THICKNESS } from "@/schema/constants";
  *  exactness, and anything a person would call a corner is far outside it. */
 const COLLINEAR_RAD = (3 * Math.PI) / 180;
 
+export interface SpanEnd {
+  /** Along-span coordinate of this end of the usable face, measured from
+   *  (ax, ay) along (ux, uy). Can lie outside the seed wall entirely. */
+  t: number;
+  /** The node the surface runs out at, and the wall record that owns it —
+   *  what a run needs in order to turn the corner there, which may belong to a
+   *  collinear neighbour several segments away rather than the seed wall. */
+  node: Node;
+  wall: Wall;
+}
+
 export interface WallSpan {
   /** Span origin — node `a` of the seed wall, so callers can keep measuring in
    *  the frame they already have. */
@@ -39,6 +50,8 @@ export interface WallSpan {
    *  behind the seed wall's node a. */
   lo: number;
   hi: number;
+  loEnd: SpanEnd;
+  hiEnd: SpanEnd;
 }
 
 const isSolid = (w: Wall) => w.kind !== "rail" && w.kind !== "portal";
@@ -124,9 +137,9 @@ export function collinearSpan(
   const ux = dx / L;
   const uy = dy / L;
 
-  /** Walk from `from` along `dir` (+1 = toward b) until the surface ends.
-   *  Returns the along-axis coordinate of the end, measured from node a. */
-  const walk = (dir: 1 | -1): number => {
+  /** Walk from the seed wall along `dir` (+1 = toward b) until the surface
+   *  ends, collecting where it ends and which wall/node it ended at. */
+  const walk = (dir: 1 | -1): SpanEnd => {
     let cur = wall;
     let node = dir > 0 ? b : a;
     // Along-axis position of `node`, measured from the seed wall's node a.
@@ -134,17 +147,19 @@ export function collinearSpan(
     const seen = new Set<string>([wall.id]);
     for (let guard = 0; guard < 64; guard++) {
       const r = endAt(scene, cur, node, nodes, ux * dir, uy * dir, nx, ny);
-      if ("inset" in r) return t + dir * r.inset;
-      if (seen.has(r.next.id)) return t; // a closed collinear loop; stop here
+      if ("inset" in r) return { t: t + dir * r.inset, node, wall: cur };
+      if (seen.has(r.next.id)) return { t, node, wall: cur }; // closed loop
       seen.add(r.next.id);
       cur = r.next;
       const far = nodes.get(cur.a === node.id ? cur.b : cur.a);
-      if (!far) return t;
+      if (!far) return { t, node, wall: cur };
       node = far;
       t = (node.x - a.x) * ux + (node.y - a.y) * uy;
     }
-    return t;
+    return { t, node, wall: cur };
   };
 
-  return { ax: a.x, ay: a.y, ux, uy, lo: walk(-1), hi: walk(1) };
+  const loEnd = walk(-1);
+  const hiEnd = walk(1);
+  return { ax: a.x, ay: a.y, ux, uy, lo: loEnd.t, hi: hiEnd.t, loEnd, hiEnd };
 }

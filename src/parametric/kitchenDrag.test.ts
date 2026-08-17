@@ -16,6 +16,7 @@ import { sanitizeSpec, GENERATORS } from "@/parametric";
 import { placementCollides } from "@/viewport3d/collision";
 import { squareUpScene } from "@/lib/scene/squareUp";
 import { collinearSpan } from "./wallSpan";
+import { chainLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -274,6 +275,62 @@ console.log("\nthe span ends where the SURFACE ends, not at every node");
   const near = collinearSpan(nearScene, seed(nearScene), 0, 1);
   check("a wall turning in ON the run's side ends the surface at its face",
     Math.abs(near.hi - 3.9) < 1e-9, `hi=${near.hi.toFixed(3)}, want 3.9 (4 - 0.2/2)`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nDRAWING a run crosses a T-junction the same way dragging does");
+{
+  // The screenshot case: a 10m wall a run is drawn along, with a partition
+  // teeing in at x=5 from the FAR side (it divides the rooms behind, and does
+  // not touch the face the cabinets stand on). The run must grow straight
+  // past it. Before, any non-collinear wall at a node counted as a blocker
+  // whichever side it stood on, so the ghost stopped dead at x=5 while the
+  // cursor kept going — "the cabinets just stopped following my mouse".
+  const scene = (): Scene => ({
+    schemaVersion: 2, units: "meters",
+    nodes: [
+      { id: "n0", x: 0, y: 0 }, { id: "nt", x: 5, y: 0 }, { id: "n1", x: 10, y: 0 },
+      { id: "n2", x: 10, y: 6 }, { id: "n3", x: 0, y: 6 },
+      { id: "back", x: 5, y: -4 }, // partition on the FAR side of the wall
+    ],
+    walls: [
+      { id: "wA", a: "n0", b: "nt", thickness: 0.1 },
+      { id: "wB", a: "nt", b: "n1", thickness: 0.1 },
+      { id: "wPart", a: "nt", b: "back", thickness: 0.1 },
+      { id: "w2", a: "n1", b: "n2", thickness: 0.1 },
+      { id: "w3", a: "n2", b: "n3", thickness: 0.1 },
+      { id: "w4", a: "n3", b: "n0", thickness: 0.1 },
+    ],
+    openings: [], rooms: [], furniture: [],
+  } as unknown as Scene);
+
+  const sc = scene();
+  const depth = 0.6;
+  const wLimits = GENERATORS.kitchenBase.dimLimits.w;
+  const hit = findNearestWall(1, 0.35, sc, depth)!;
+  check("the draw tool latches onto the wall", !!hit && hit.wall.id === "wA");
+
+  // Anchor at x=1 and sweep the cursor rightwards past the T at x=5.
+  // Swept to 6.5m only: the generator caps a run at 6m wide, so past x=7 the
+  // ghost stops for a reason that has nothing to do with walls.
+  const chain: ChainSeg[] = [{ hit, anchor: 1, dir: 1 }];
+  const reach: number[] = [];
+  for (let cx = 2; cx <= 6.5; cx += 0.5) {
+    const legs = chainLegs(chain, { x: cx, y: 0.35 }, sc, wLimits);
+    reach.push(1 + legs[0].w); // far end of leg 0, along the wall
+  }
+  check("the ghost grows past a partition teeing in from the far side",
+    reach[reach.length - 1] > 6.4, `reaches ${reach[reach.length - 1].toFixed(2)}m`);
+  check("and it never stalls at the T", reach.every((v, i) => i === 0 || v > reach[i - 1]),
+    `[${reach.map((v) => v.toFixed(2))}]`);
+
+  // A partition on the run's OWN side is a real obstruction and must stop it.
+  const blocking = scene();
+  blocking.nodes = blocking.nodes.map((n) => (n.id === "back" ? { ...n, y: 4 } : n));
+  const hit2 = findNearestWall(1, 0.35, blocking, depth)!;
+  const legs2 = chainLegs([{ hit: hit2, anchor: 1, dir: 1 }], { x: 9, y: 0.35 }, blocking, wLimits);
+  check("but a partition on the run's OWN side still stops it at that wall's face",
+    Math.abs(1 + legs2[0].w - 4.95) < 1e-9, `reaches ${(1 + legs2[0].w).toFixed(3)}m, want 4.95`);
 }
 
 console.log(failures === 0 ? "\nall kitchen drag checks passed" : `\n${failures} FAILED`);

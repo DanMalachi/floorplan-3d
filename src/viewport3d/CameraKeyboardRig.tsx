@@ -47,6 +47,14 @@ function shouldIgnore(e: KeyboardEvent): boolean {
   const t = e.target as HTMLElement | null;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return true;
   const s = useSceneStore.getState();
+  // A drag in flight owns the pointer ray. Every gesture resolves the pointer
+  // against the scene THROUGH the camera, so trucking the camera mid-drag
+  // moves the ray without the mouse moving at all — the dragged item jumps to
+  // wherever the new ray lands, which with a kitchen run means the nearest
+  // wall of whatever room the camera has flown into. There is no sensible
+  // reading of "fly the camera while I am holding this cabinet", so the camera
+  // channel stands down until the gesture ends.
+  if (s.gestureBase) return true;
   return s.walkthroughActive || s.appMode === "trace";
 }
 

@@ -30,6 +30,7 @@ import { pdToast } from "@/ui/planDock/toast";
 import { GENERATORS, elevationOf } from "@/parametric";
 import type { ParametricSpec } from "@/schema/scene";
 import { legsToSpec, pathLegs, type WorldLeg } from "./runPath";
+import { collinearSpan } from "./wallSpan";
 import { rayToWall, roomFacingSide } from "./wallRay";
 import { WallSurfaceGrid } from "@/viewport3d/SnapGridViz";
 import { ACCENT } from "@/viewport3d/WallMesh";
@@ -47,7 +48,6 @@ const CORNER_SLACK = 0.35; // how close to the corner the drag must get to turn
 const DIR_DEADZONE = 0.08; // jitter that must not lock the drag direction
 // How far behind its own start a tail may sit before it counts as a retreat.
 const RETREAT_SLACK = 0.1;
-const COLLINEAR_DOT = 0.94; // ~20°: a straight continuation, not a corner
 const LEN_STEP = 0.1;
 const yawOf = (rotation: number) => -rotation;
 
@@ -106,68 +106,31 @@ function alongWallNode(hit: WallHit, node: Node): number {
 
 const isSolid = (w: Wall) => w.kind !== "rail" && w.kind !== "portal";
 
-/**
- * Where a wall's usable FACE ends at `node` — the real end of the surface a
- * run can sit against, which is NOT the node. `inset` is positive when
- * another wall turns INTO the run's side (its face crosses ours th/2 before
- * the node at a right angle, more at a slant) and negative when it turns away
- * (our face carries on around the outside corner). `blocked` is false at a
- * free end or a straight continuation, where a run may simply keep going.
- */
-function faceSpanEnd(
-  scene: Scene,
-  wall: Wall,
-  node: Node,
-  ux: number,
-  uy: number,
-  nx: number,
-  ny: number,
-): { inset: number; blocked: boolean } {
-  let inset = 0;
-  let blocked = false;
-  for (const w of scene.walls) {
-    if (w.id === wall.id || !isSolid(w)) continue;
-    if (w.a !== node.id && w.b !== node.id) continue;
-    const other = scene.nodes.find((n) => n.id === (w.a === node.id ? w.b : w.a));
-    if (!other) continue;
-    const ex = other.x - node.x;
-    const ey = other.y - node.y;
-    const L = Math.hypot(ex, ey);
-    if (L < 1e-6) continue;
-    const along = (ex * ux + ey * uy) / L;
-    if (Math.abs(along) > COLLINEAR_DOT) continue; // straight continuation
-    const across = (ex * nx + ey * ny) / L; // sinθ, signed toward the run's side
-    const th = w.thickness ?? DEFAULT_THICKNESS;
-    const reach = th / 2 / Math.max(Math.abs(across), 0.25); // faces cross here
-    const v = across > 0 ? reach : -reach;
-    if (!blocked || v > inset) inset = v;
-    blocked = true;
-  }
-  return { inset, blocked };
-}
+/** The straight surface this hit's wall belongs to. Shared with the DRAG path
+ *  (kitchenAttach's snapRunToWall) so drawing a run and dragging one agree
+ *  about where a wall ends — see wallSpan.ts. This file used to answer the
+ *  question itself, and got it wrong in a way the picture makes obvious: any
+ *  non-collinear wall at a node counted as a blocker regardless of which side
+ *  it stood on, so a partition teeing in from the far side stopped the run
+ *  dead in the middle of a wall that visibly carried straight on. */
+const spanOf = (hit: WallHit, scene: Scene) =>
+  collinearSpan(scene, hit.wall, hit.nx, hit.ny);
 
 /** How far a leg anchored at `anchor` may grow before it runs out of wall
- *  face. Infinity at a free end or a straight continuation — a run has always
- *  been allowed to overrun those. */
+ *  face, measured along the whole straight surface rather than this one Wall
+ *  record. */
 function usableLen(hit: WallHit, anchor: number, dir: number, scene: Scene): number {
-  const node = dir > 0 ? hit.b : hit.a;
-  const { inset, blocked } = faceSpanEnd(scene, hit.wall, node, hit.ux, hit.uy, hit.nx, hit.ny);
-  if (!blocked) return Infinity;
-  return Math.abs(alongWallNode(hit, node) - anchor) - inset;
+  const span = spanOf(hit, scene);
+  return (dir > 0 ? span.hi - anchor : anchor - span.lo);
 }
 
-/** Where a click on the wall starts the run: grid-snapped along the wall and
- *  kept inside the face span, so a run started in a corner starts at the
- *  crossing wall's face rather than inside it. */
+/** Where a click on the wall starts the run: grid-snapped along the surface
+ *  and kept inside it, so a run started in a corner starts at the crossing
+ *  wall's face rather than inside it. */
 function anchorAlong(hit: WallHit, x: number, y: number, scene: Scene): number {
   const raw = (x - hit.a.x) * hit.ux + (y - hit.a.y) * hit.uy;
-  const L = alongWallNode(hit, hit.b);
-  const at = (node: Node) => faceSpanEnd(scene, hit.wall, node, hit.ux, hit.uy, hit.nx, hit.ny);
-  const start = at(hit.a);
-  const end = at(hit.b);
-  const lo = start.blocked ? start.inset : 0;
-  const hi = L - (end.blocked ? end.inset : 0);
-  return THREE.MathUtils.clamp(roundTo(raw, LEN_STEP), Math.min(lo, hi), Math.max(lo, hi));
+  const span = spanOf(hit, scene);
+  return THREE.MathUtils.clamp(roundTo(raw, LEN_STEP), span.lo, span.hi);
 }
 
 /** Which way a fresh anchor grows before the drag says otherwise: toward the
@@ -321,10 +284,14 @@ export function advanceChain(
     return advanceChain([...chain.slice(0, -2), live], cursor, scene, depth, steps - 1);
   }
 
-  const node = dir > 0 ? hit.b : hit.a;
-  const distToNode = Math.abs(alongWallNode(hit, node) - tail.anchor);
-  const { inset } = faceSpanEnd(scene, hit.wall, node, hit.ux, hit.uy, hit.nx, hit.ny);
-  const toFace = distToNode - inset; // this leg's length if it ends in the corner
+  // The corner this leg turns at is the end of the SURFACE, which may belong
+  // to a collinear neighbour several segments along — not this Wall record's
+  // own node. Turning at the record's node is what stopped a run at every
+  // T-junction on an otherwise straight wall.
+  const span = spanOf(hit, scene);
+  const end = dir > 0 ? span.hiEnd : span.loEnd;
+  const node = end.node;
+  const toFace = Math.abs((dir > 0 ? span.hi : span.lo) - tail.anchor);
   // Turn test: the drag has (nearly) reached this wall's far node AND has
   // made real progress along the adjacent wall. Progress is measured on the
   // NEXT wall, not as overshoot on the current one — a cursor following the
@@ -337,13 +304,18 @@ export function advanceChain(
     // side at all).
     const refX = node.x + hit.nx * hit.off - hit.ux * dir * depth;
     const refY = node.y + hit.ny * hit.off - hit.uy * dir * depth;
-    const adj = findAdjacentWall(node.id, hit.wall.id, scene, incoming, refX, refY, depth);
+    // Exclude the wall that actually OWNS this corner — after a collinear walk
+    // that is not the wall the leg started on.
+    const adj = findAdjacentWall(node.id, end.wall.id, scene, incoming, refX, refY, depth);
     if (adj) {
       const prog =
         (cursor.x - node.x) * adj.hit.ux * adj.dir + (cursor.y - node.y) * adj.hit.uy * adj.dir;
-      const adjInsetPre = faceSpanEnd(
-        scene, adj.hit.wall, node, adj.hit.ux, adj.hit.uy, adj.hit.nx, adj.hit.ny,
-      ).inset;
+      // How far past the corner the NEXT surface actually begins: our wall's
+      // body pushes it in by half a thickness (more at a slant), or lets it
+      // start early around an outside corner.
+      const adjSpan = spanOf(adj.hit, scene);
+      const nodeT = alongWallNode(adj.hit, node);
+      const adjInsetPre = adj.dir > 0 ? adjSpan.lo - nodeT : nodeT - adjSpan.hi;
       // The new leg's anchor lands `lead` past the corner, so a cursor short of
       // that is BEHIND its own anchor the instant it is created — which the
       // retreat rule below reads as "un-turn", which turns again, forever. That
