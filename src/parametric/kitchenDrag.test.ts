@@ -17,6 +17,7 @@ import { placementCollides } from "@/viewport3d/collision";
 import { squareUpScene } from "@/lib/scene/squareUp";
 import { collinearSpan } from "./wallSpan";
 import { chainLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
+import { resizeRunEnd } from "./runResize";
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -331,6 +332,65 @@ console.log("\nDRAWING a run crosses a T-junction the same way dragging does");
   const legs2 = chainLegs([{ hit: hit2, anchor: 1, dir: 1 }], { x: 9, y: 0.35 }, blocking, wLimits);
   check("but a partition on the run's OWN side still stops it at that wall's face",
     Math.abs(1 + legs2[0].w - 4.95) < 1e-9, `reaches ${(1 + legs2[0].w).toFixed(3)}m, want 4.95`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nthe resize handles do not walk the run down the wall");
+{
+  // The handle drag used to recompute the planted end from the item as it
+  // stood AFTER the previous frame's wall snap, so the "fixed" end drifted a
+  // step every frame. Held still it crept; held long enough it walked far
+  // enough to re-home onto a wall in another room. These are the two
+  // properties that failure violates, and the fix is to drive every frame
+  // from the pointer-down baseline.
+  const LIM = GENERATORS.kitchenBase.dimLimits.w;
+  const base0 = baseRun();
+  const scene0 = scene([base0]);
+
+  /** Play a handle drag frame by frame the way the component does now. */
+  const play = (end: 1 | -1, cursors: { x: number; y: number }[]) => {
+    let live = scene0;
+    for (const c of cursors) {
+      const r = resizeRunEnd(base0, end, c, LIM); // always the BASELINE item
+      const next: Scene = {
+        ...scene0,
+        furniture: scene0.furniture.map((f) =>
+          f.id === base0.id
+            ? { ...f, parametric: r.parametric, ...(r.x !== undefined ? { x: r.x, y: r.y! } : {}) }
+            : f,
+        ),
+      };
+      live = applyKitchenGesture(next, live);
+    }
+    return live.furniture[0];
+  };
+
+  // Hold the pointer still for 60 frames: nothing may move after the first.
+  const still = Array.from({ length: 60 }, () => ({ x: 3.4, y: 0.35 }));
+  const held = play(1, still);
+  const once = play(1, [{ x: 3.4, y: 0.35 }]);
+  check("holding the handle still for 60 frames changes nothing",
+    Math.abs(held.x - once.x) < 1e-9 &&
+      Math.abs(held.parametric!.dims.w - once.parametric!.dims.w) < 1e-9,
+    `x ${once.x.toFixed(3)}→${held.x.toFixed(3)}, w ${once.parametric!.dims.w.toFixed(2)}→${held.parametric!.dims.w.toFixed(2)}`);
+  check("and the run stays on its own wall", Math.abs(held.y - 0.35) < 1e-9, `y=${held.y.toFixed(3)}`);
+
+  // Drag out and back: the run returns to exactly the width it started at.
+  const out = [3.0, 3.4, 3.8, 4.2, 3.8, 3.4, 3.0, 3.2].map((x) => ({ x, y: 0.35 }));
+  const there = play(1, out);
+  const direct = play(1, [{ x: 3.2, y: 0.35 }]);
+  check("dragging out and back lands where a direct drag would",
+    Math.abs(there.x - direct.x) < 1e-9 &&
+      Math.abs(there.parametric!.dims.w - direct.parametric!.dims.w) < 1e-9,
+    `x ${there.x.toFixed(3)} vs ${direct.x.toFixed(3)}`);
+
+  // The other end plants the opposite edge. Growing leg 0 backwards must not
+  // move the end the handle is not holding.
+  const rightEdge = (f: FurnitureItem) => f.x + f.parametric!.dims.w / 2;
+  const grown = play(-1, [{ x: 0.4, y: 0.35 }]);
+  check("dragging the start handle leaves the far end planted",
+    Math.abs(rightEdge(grown) - rightEdge(base0)) < 1e-9,
+    `far end ${rightEdge(base0).toFixed(3)} → ${rightEdge(grown).toFixed(3)}`);
 }
 
 console.log(failures === 0 ? "\nall kitchen drag checks passed" : `\n${failures} FAILED`);

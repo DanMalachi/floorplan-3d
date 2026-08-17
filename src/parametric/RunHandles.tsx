@@ -8,24 +8,18 @@
 // sinks/cooktops while it resizes.
 
 import { useRef, useState } from "react";
-import * as THREE from "three";
+
 import type { ThreeEvent } from "@react-three/fiber";
-import type { FurnitureItem } from "@/schema/scene";
+import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { GENERATORS, elevationOf } from "@/parametric";
 import { isKitchenRun } from "./kitchenAttach";
-import { pathLegs, runLocalToWorld, type RunLeg } from "./runPath";
+import { pathLegs, runLocalToWorld } from "./runPath";
 import { ACCENT } from "@/viewport3d/WallMesh";
 import { rayToPlanAt } from "@/viewport3d/dragPlane";
+import { legWorldDir, resizeRunEnd } from "./runResize";
 
 const STEP = 0.1;
-
-/** A leg's local direction in plan-world terms. */
-function worldDir(item: FurnitureItem, leg: RunLeg): { x: number; y: number } {
-  const c = Math.cos(item.rotation);
-  const s = Math.sin(item.rotation);
-  return { x: leg.dx * c - leg.dz * s, y: leg.dx * s + leg.dz * c };
-}
 
 function EndHandle({ item, end, offset }: {
   item: FurnitureItem;
@@ -35,13 +29,17 @@ function EndHandle({ item, end, offset }: {
   const spec = item.parametric!;
   const g = GENERATORS[spec.generator];
   const [hovered, setHovered] = useState(false);
-  const drag = useRef<{ pointerId: number } | null>(null);
+  // The whole gesture is computed from this snapshot, never from the live
+  // item: the store re-snaps the run to its wall on every update, so deriving
+  // the planted end from the CURRENT pose let it drift a step per frame until
+  // the run walked onto a wall in another room. See runResize.ts.
+  const drag = useRef<{ pointerId: number; base: Scene; item: FurnitureItem; planeY: number } | null>(null);
 
   const d = spec.dims.d;
   const legs = pathLegs(spec);
   const leg = end === -1 ? legs[0] : legs[legs.length - 1];
-  const isLast = end === 1 && legs.length > 1;
-  const dirW = worldDir(item, leg);
+
+  const dirW = legWorldDir(item, leg);
   // Pointing direction: out of this end of the path.
   const point = end === -1 ? { x: -dirW.x, y: -dirW.y } : dirW;
 
@@ -63,8 +61,9 @@ function EndHandle({ item, end, offset }: {
     if (e.button !== 0) return;
     e.stopPropagation();
     (e.target as Element).setPointerCapture(e.pointerId);
-    drag.current = { pointerId: e.pointerId };
-    useSceneStore.getState().beginGesture();
+    const s = useSceneStore.getState();
+    drag.current = { pointerId: e.pointerId, base: s.scene, item, planeY: handleY };
+    s.beginGesture();
   };
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -75,57 +74,23 @@ function EndHandle({ item, end, offset }: {
     // higher, on a wall run). Read the pointer on the handle's OWN plane —
     // against the floor plane the run stretched faster than the cursor, so the
     // arrow ran away from it. See viewport3d/dragPlane.ts.
-    const p = rayToPlanAt(e.ray, handleY, offset);
+    const p = rayToPlanAt(e.ray, dr.planeY, offset);
     if (!p) return;
-    const s = useSceneStore.getState();
-    const [lo, hi] = g.dimLimits.w;
-    let patch: Partial<FurnitureItem>;
-    let label: number;
-
-    if (isLast) {
-      // Grow/shrink the LAST leg from its corner; nothing else moves.
-      const cW = runLocalToWorld(item, { x: leg.sx, z: leg.sz });
-      const u = (p.x - cW.x) * dirW.x + (p.y - cW.y) * dirW.y;
-      const w = THREE.MathUtils.clamp(Math.round((u - d) / STEP) * STEP, 0.1, hi);
-      const extras = spec.extraLegs!.map((l, i) =>
-        i === spec.extraLegs!.length - 1 ? { ...l, w } : l,
-      );
-      patch = { parametric: { ...spec, extraLegs: extras } };
-      label = w;
-    } else if (end === -1) {
-      // Leg 0's start moves; its END (and every later leg) stays planted.
-      const fixedW = runLocalToWorld(item, {
-        x: legs[0].sx + legs[0].dx * legs[0].len,
-        z: legs[0].sz + legs[0].dz * legs[0].len,
-      });
-      const raw = (fixedW.x - p.x) * dirW.x + (fixedW.y - p.y) * dirW.y;
-      const w = THREE.MathUtils.clamp(Math.round(raw / STEP) * STEP, lo, hi);
-      patch = {
-        x: fixedW.x - dirW.x * (w / 2),
-        y: fixedW.y - dirW.y * (w / 2),
-        parametric: { ...spec, dims: { ...spec.dims, w } },
-      };
-      label = w;
-    } else {
-      // Straight run's far end; the start stays planted.
-      const fixedW = runLocalToWorld(item, { x: legs[0].sx, z: legs[0].sz });
-      const raw = (p.x - fixedW.x) * dirW.x + (p.y - fixedW.y) * dirW.y;
-      const w = THREE.MathUtils.clamp(Math.round(raw / STEP) * STEP, lo, hi);
-      patch = {
-        x: fixedW.x + dirW.x * (w / 2),
-        y: fixedW.y + dirW.y * (w / 2),
-        parametric: { ...spec, dims: { ...spec.dims, w } },
-      };
-      label = w;
-    }
-
-    const next = {
-      ...s.scene,
-      furniture: s.scene.furniture.map((f) => (f.id === item.id ? { ...f, ...patch } : f)),
+    const { x, y, parametric, width } = resizeRunEnd(dr.item, end, p, g.dimLimits.w, STEP);
+    // Rebuilt from the pointer-down BASELINE every frame, so the gesture is a
+    // pure function of the cursor: holding still changes nothing, and dragging
+    // out and back lands exactly where it started.
+    const next: Scene = {
+      ...dr.base,
+      furniture: dr.base.furniture.map((f) =>
+        f.id === dr.item.id
+          ? { ...f, parametric, ...(x !== undefined ? { x, y: y! } : {}) }
+          : f,
+      ),
     };
-    s.updateGesture(next, {
+    useSceneStore.getState().updateGesture(next, {
       guides: [],
-      labels: [{ world: [grip.x, handleY + 0.12, grip.y], text: `${Math.round(label * 100)} cm` }],
+      labels: [{ world: [grip.x, handleY + 0.12, grip.y], text: `${Math.round(width * 100)} cm` }],
     });
   };
 
