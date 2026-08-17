@@ -4,7 +4,8 @@
 // pinned so it can't come back.
 // Run: npx tsx src/parametric/kitchenDrag.test.ts
 
-import type { FurnitureItem, Scene } from "@/schema/scene";
+
+import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
 import {
   applyKitchenGesture,
   isWallItem,
@@ -16,8 +17,9 @@ import { sanitizeSpec, GENERATORS } from "@/parametric";
 import { placementCollides } from "@/viewport3d/collision";
 import { squareUpScene } from "@/lib/scene/squareUp";
 import { collinearSpan } from "./wallSpan";
-import { chainLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
+import { advanceChain, chainLegs, commitLegs, findNearestWall, type ChainSeg } from "./RunDrawGhost";
 import { resizeRunEnd } from "./runResize";
+import { pathLegs, rowPlacement } from "./runPath";
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -391,6 +393,131 @@ console.log("\nthe resize handles do not walk the run down the wall");
   check("dragging the start handle leaves the far end planted",
     Math.abs(rightEdge(grown) - rightEdge(base0)) < 1e-9,
     `far end ${rightEdge(base0).toFixed(3)} → ${rightEdge(grown).toFixed(3)}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\ncabinets and countertop end up on the SAME side of the wall");
+{
+  // pathLegs hard-codes leg 0's front normal to (0, 1) whatever legDir says,
+  // so a run drawn BACKWARDS along its wall (legDir = -1) hands the builders a
+  // left-handed (travel, front) pair. Both builders used to take the row's yaw
+  // from travel, which is the front normal for every leg except that one — so
+  // the cabinets mirrored onto the far side of the wall while the countertop,
+  // built straight from `f`, stayed put.
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+
+  // sanitizeSpec keeps `legDir` only on a multi-leg run — a straight run is
+  // symmetric about its centre, so which way it was drawn cannot be observed.
+  // That means the mirrored-cabinet bug is an L/U bug specifically, and a
+  // "straight, backwards" case would test nothing.
+  const L = (over: Partial<ParametricSpec>) =>
+    sanitizeSpec({ ...GENERATORS.kitchenBase.defaultSpec, ...over } as ParametricSpec);
+  const cases: { label: string; spec: ParametricSpec }[] = [
+    { label: "straight", spec: L({}) },
+    { label: "L, drawn forwards", spec: L({ extraLegs: [{ turn: 1, w: 1.8 }] }) },
+    { label: "L, drawn BACKWARDS", spec: L({ legDir: -1, extraLegs: [{ turn: -1, w: 1.8 }] }) },
+    { label: "U, drawn forwards", spec: L({ extraLegs: [{ turn: 1, w: 1.8 }, { turn: 1, w: 2.0 }] }) },
+    { label: "U, drawn BACKWARDS", spec: L({ legDir: -1, extraLegs: [{ turn: -1, w: 1.8 }, { turn: -1, w: 2.0 }] }) },
+  ];
+  check("legDir=-1 actually survives onto a multi-leg spec (else these test nothing)",
+    cases.some((c) => c.spec.legDir === -1));
+
+  for (const { label, spec } of cases) {
+    const legs = pathLegs(spec);
+    const d = spec.dims.d;
+    let frontOk = true;
+    let spanOk = true;
+    for (let i = 0; i < legs.length; i++) {
+      const leg = legs[i];
+      const lead = i > 0 ? d : 0;
+      const trail = i < legs.length - 1 ? d : 0;
+      const at = rowPlacement(leg, lead, trail);
+      // A row is built with its DEPTH along local +z, so the yaw must send +z
+      // to this leg's front normal or the cabinets sit behind the back line —
+      // i.e. inside the wall, and out the other side of it.
+      if (!near(Math.sin(at.yaw), leg.fx) || !near(Math.cos(at.yaw), leg.fz)) frontOk = false;
+      // …and the row must still cover exactly the leg's cabinet span.
+      const spanLen = leg.len - lead - trail;
+      const ex = Math.cos(at.yaw);
+      const ez = -Math.sin(at.yaw);
+      const endX = at.x + ex * spanLen;
+      const endZ = at.z + ez * spanLen;
+      const wantA = { x: leg.sx + leg.dx * lead, z: leg.sz + leg.dz * lead };
+      const wantB = { x: leg.sx + leg.dx * (leg.len - trail), z: leg.sz + leg.dz * (leg.len - trail) };
+      const matches =
+        (near(at.x, wantA.x) && near(at.z, wantA.z) && near(endX, wantB.x) && near(endZ, wantB.z)) ||
+        (near(at.x, wantB.x) && near(at.z, wantB.z) && near(endX, wantA.x) && near(endZ, wantA.z));
+      if (!matches) spanOk = false;
+    }
+    check(`${label}: every row's depth follows its leg's front normal`, frontOk);
+    check(`${label}: every row still covers its leg's cabinet span`, spanOk);
+  }
+
+  // Prove the test bites: the OLD yaw (taken from travel direction) puts the
+  // depth axis backwards on exactly the case that was broken.
+  const backwards = pathLegs(L({ legDir: -1, extraLegs: [{ turn: -1, w: 1.8 }] }))[0];
+  const oldYaw = Math.atan2(-backwards.dz, backwards.dx);
+  check("the old travel-derived yaw really did point the cabinets backwards",
+    !near(Math.cos(oldYaw), backwards.fz),
+    `old +z → (${Math.sin(oldYaw).toFixed(2)}, ${Math.cos(oldYaw).toFixed(2)}), front is (${backwards.fx}, ${backwards.fz})`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nthe first cabinet lands exactly where the hover preview showed it");
+{
+  // 8m wall; anchor near the LEFT end so the presumptive direction (toward the
+  // end with more room) is rightwards. Then drag LEFT. The preview promised a
+  // cabinet at [anchor, anchor + 0.6]; building from the same anchor in the
+  // new direction would put the run at [anchor - len, anchor] — the whole run
+  // one cabinet away from where the user aimed.
+  const sc: Scene = {
+    schemaVersion: 2, units: "meters",
+    nodes: [
+      { id: "n0", x: 0, y: 0 }, { id: "n1", x: 8, y: 0 },
+      { id: "n2", x: 8, y: 5 }, { id: "n3", x: 0, y: 5 },
+    ],
+    walls: [
+      { id: "wS", a: "n0", b: "n1", thickness: 0.1 },
+      { id: "wE", a: "n1", b: "n2", thickness: 0.1 },
+      { id: "wN", a: "n2", b: "n3", thickness: 0.1 },
+      { id: "wW", a: "n3", b: "n0", thickness: 0.1 },
+    ],
+    openings: [], rooms: [], furniture: [],
+  } as unknown as Scene;
+
+  const lim = GENERATORS.kitchenBase.dimLimits.w;
+  const depth = GENERATORS.kitchenBase.defaultSpec.dims.d;
+  const hit = findNearestWall(2, 0.35, sc, depth)!;
+  const anchor = 2;
+  const seedDir = 1; // more room toward x=8
+  const seed = { dir: seedDir, w: lim[0] };
+
+  // What the hover preview drew: one cabinet from the anchor, rightwards.
+  const previewed = { lo: anchor, hi: anchor + lim[0] };
+
+  // Now drag LEFT past the direction dead zone.
+  let chain: ChainSeg[] = [{ hit, anchor, dir: 0, seed }];
+  for (const cx of [1.8, 1.2, 0.6]) chain = advanceChain(chain, { x: cx, y: 0.35 }, sc, depth);
+  const legs = commitLegs(chainLegs(chain, { x: 0.6, y: 0.35 }, sc, lim), lim);
+  // Leg 0's span along the wall, from its centre and width.
+  const centre = (legs[0].x - 0) * 1; // wall runs along +x from the origin
+  const lo = centre - legs[0].w / 2;
+  const hi = centre + legs[0].w / 2;
+  check("the run still contains the cabinet the preview promised",
+    lo <= previewed.lo + 1e-9 && hi >= previewed.hi - 1e-9,
+    `run [${lo.toFixed(2)}, ${hi.toFixed(2)}] vs previewed [${previewed.lo.toFixed(2)}, ${previewed.hi.toFixed(2)}]`);
+  check("and it grew leftwards from there, as dragged", lo < previewed.lo - 0.05,
+    `run starts ${lo.toFixed(2)}`);
+
+  // Dragging the way the preview pointed keeps the promise too, trivially.
+  let fwd: ChainSeg[] = [{ hit, anchor, dir: 0, seed }];
+  for (const cx of [2.4, 3.5, 4.5]) fwd = advanceChain(fwd, { x: cx, y: 0.35 }, sc, depth);
+  const fLegs = commitLegs(chainLegs(fwd, { x: 4.5, y: 0.35 }, sc, lim), lim);
+  const fLo = fLegs[0].x - fLegs[0].w / 2;
+  const fHi = fLegs[0].x + fLegs[0].w / 2;
+  check("dragging the previewed way also keeps the promise",
+    fLo <= previewed.lo + 1e-9 && fHi >= previewed.hi - 1e-9,
+    `run [${fLo.toFixed(2)}, ${fHi.toFixed(2)}]`);
 }
 
 console.log(failures === 0 ? "\nall kitchen drag checks passed" : `\n${failures} FAILED`);

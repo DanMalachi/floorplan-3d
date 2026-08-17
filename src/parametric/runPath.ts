@@ -46,6 +46,35 @@ export function pathLegs(spec: ParametricSpec): RunLeg[] {
   return legs;
 }
 
+/**
+ * Where to put a leg's cabinet row, and which way to turn it.
+ *
+ * A row is built with its length along local +x and its DEPTH along local +z,
+ * so the yaw has to be the one that sends +z to the leg's front normal. Both
+ * builders used to derive it from the leg's travel direction instead —
+ * `atan2(-leg.dz, leg.dx)` — which is the same angle for every leg except one:
+ * leg 0 of a run drawn BACKWARDS along its wall. `pathLegs` hard-codes leg 0's
+ * front to (0, 1) whatever `legDir` says, so with legDir = -1 the (travel,
+ * front) pair is left-handed, and no single yaw can satisfy both axes. Taking
+ * the yaw from travel put the cabinets on the far side of the wall while the
+ * countertop — built straight from `f` — stayed on the correct side.
+ *
+ * Fixing the depth axis flips which way local +x runs, so the row also has to
+ * grow from the other end of its span. The result is identical for a
+ * right-handed leg and mirrored (correctly) for the left-handed one.
+ */
+export function rowPlacement(
+  leg: RunLeg,
+  lead: number,
+  trail: number,
+): { x: number; z: number; yaw: number } {
+  const yaw = Math.atan2(leg.fx, leg.fz); // local +z → (fx, fz)
+  // …which sends local +x to (fz, -fx). Does that run along the leg or against it?
+  const forward = leg.fz * leg.dx - leg.fx * leg.dz >= 0;
+  const at = forward ? lead : leg.len - trail;
+  return { x: leg.sx + leg.dx * at, z: leg.sz + leg.dz * at, yaw };
+}
+
 export function pathLength(spec: ParametricSpec): number {
   const legs = pathLegs(spec);
   const last = legs[legs.length - 1];

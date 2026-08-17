@@ -3,7 +3,7 @@ import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { cabinetRow, barHandle, knobHandle, handleMat, PLINTH_H, COUNTER_T, COUNTER_OVER } from "./parts";
 import { finishMaterial, tagTint } from "./materials";
-import { pathLegs, legAtAlong, type RunLeg } from "./runPath";
+import { pathLegs, legAtAlong, rowPlacement, type RunLeg } from "./runPath";
 
 function handleFor(spec: ParametricSpec): THREE.Object3D | null {
   if (spec.handle === "none") return null;
@@ -134,8 +134,12 @@ export const kitchenBaseGenerator: GeneratorDef = {
           openTop: openTop[i],
         });
         tagTint(row, spec.finish, spec.color);
-        row.position.set(leg.sx + leg.dx * lead, 0, leg.sz + leg.dz * lead);
-        row.rotation.y = Math.atan2(-leg.dz, leg.dx);
+        // Oriented off the FRONT normal, not the travel direction — see
+        // rowPlacement. Taking it from travel mirrored the cabinets onto the
+        // far side of the wall whenever a run was drawn backwards along it.
+        const at = rowPlacement(leg, lead, trail);
+        row.position.set(at.x, 0, at.z);
+        row.rotation.y = at.yaw;
         group.add(row);
       }
       if (i > 0) {

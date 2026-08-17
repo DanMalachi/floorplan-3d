@@ -244,6 +244,11 @@ export interface ChainSeg {
   anchor: number; // along hit.a→hit.b where this segment starts
   dir: number; // +1 toward b, -1 toward a; 0 = not resolved yet (fresh anchor)
   len?: number; // fixed length (non-tail segments only)
+  /** What the hover preview promised at this anchor, recorded at click time:
+   *  which way the stub pointed and how wide it was. Kept so that resolving
+   *  the drag in the OTHER direction can re-anchor rather than build the run
+   *  on the opposite side of the cabinet the user was shown. */
+  seed?: { dir: number; w: number };
 }
 
 /**
@@ -274,6 +279,27 @@ export function advanceChain(
   // presumptive one.
   const dir = tail.dir || (Math.abs(delta) > DIR_DEADZONE ? Math.sign(delta) : 0);
   if (dir === 0) return chain;
+
+  // The hover preview showed one cabinet sitting at [anchor, anchor + seed.w]
+  // in the presumptive direction, and the click is a promise to build THAT.
+  // If the drag then commits to the opposite direction, growing from the same
+  // anchor would put the run on the far side of the cabinet the user was
+  // shown — the whole run lands one cabinet away from where they aimed. So
+  // re-anchor to the far end of the previewed stub instead: the run then grows
+  // away from it and the previewed cabinet stays exactly where it was drawn.
+  if (tail.dir === 0 && tail.seed && dir !== tail.seed.dir) {
+    const span = spanOf(hit, scene);
+    const moved = THREE.MathUtils.clamp(
+      tail.anchor + tail.seed.dir * tail.seed.w,
+      span.lo,
+      span.hi,
+    );
+    return advanceChain(
+      [...chain.slice(0, -1), { ...tail, anchor: moved, dir }],
+      cursor, scene, depth, steps - 1,
+    );
+  }
+
   const rawLen = delta * dir;
 
   // Retreat: cursor pulled back behind this segment's start — un-turn, and
@@ -489,9 +515,13 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
         pdToast(onTheWall ? "Point at a wall" : "Start against a wall");
         return;
       }
-      // Same anchor the hover preview drew, so the run starts exactly where
-      // the preview said it would.
-      setChain([{ hit, anchor: anchorAlong(hit, p.x, p.y, scene), dir: 0 }]);
+      // Same anchor AND same stub the hover preview drew, so the run starts
+      // exactly where the preview said it would — see ChainSeg.seed for what
+      // happens when the drag then goes the other way.
+      const anchor = anchorAlong(hit, p.x, p.y, scene);
+      setChain([
+        { hit, anchor, dir: 0, seed: { dir: presumptiveDir(hit, anchor), w: wLimits[0] } },
+      ]);
       if (onTheWall && height !== null) {
         // The anchor click fixes the mounting height: cabinets center on
         // where you pointed, snapped to the wall grid.
