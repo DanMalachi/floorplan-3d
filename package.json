@@ -31,6 +31,7 @@
     "test:accessories": "tsx src/parametric/accessories.test.ts",
     "test:decor": "tsx src/parametric/softDecor.test.ts",
     "test:kitchen": "tsx src/parametric/kitchen.test.ts && tsx src/parametric/kitchenDrag.test.ts",
+    "test:dragplane": "tsx src/viewport3d/dragPlane.test.ts",
     "test:squareup": "tsx src/lib/scene/squareUp.test.ts",
     "test:camera": "tsx src/viewport3d/camera/targetPlane.test.ts && tsx src/viewport3d/camera/inputVocabulary.test.ts && tsx src/viewport3d/camera/offerPolicy.test.ts",
     "furniture:test-retag": "tsx src/furniture/roomRetag.test.ts",

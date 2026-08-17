@@ -15,6 +15,7 @@ import {
 import { sanitizeSpec, GENERATORS } from "@/parametric";
 import { placementCollides } from "@/viewport3d/collision";
 import { squareUpScene } from "@/lib/scene/squareUp";
+import { collinearSpan } from "./wallSpan";
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -179,6 +180,100 @@ console.log("\nsquaring up carries the kitchen with it");
   check("the run is flush to the wall's new line", Math.abs(Math.abs(lat) - 0.35) < 1e-9,
     `off-wall ${lat.toFixed(4)}m, want ±0.35`);
   check("and still on the room side", sideOf(after) === 1, `y=${after.y.toFixed(3)}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\na straight wall made of several segments drags as ONE wall");
+{
+  // The south wall of an 8×5 room. `split` mints a node halfway along it —
+  // exactly what the tracer does wherever an interior wall tees in, or
+  // wherever the user happened to click an extra point.
+  const room = (furniture: FurnitureItem[], split: boolean): Scene => ({
+    schemaVersion: 2, units: "meters",
+    nodes: [
+      { id: "n0", x: 0, y: 0 }, { id: "nm", x: 4, y: 0 }, { id: "n1", x: 8, y: 0 },
+      { id: "n2", x: 8, y: 5 }, { id: "n3", x: 0, y: 5 },
+    ],
+    walls: [
+      ...(split
+        ? [{ id: "wA", a: "n0", b: "nm", thickness: 0.1 }, { id: "wB", a: "nm", b: "n1", thickness: 0.1 }]
+        : [{ id: "wA", a: "n0", b: "n1", thickness: 0.1 }]),
+      { id: "w2", a: "n1", b: "n2", thickness: 0.1 },
+      { id: "w3", a: "n2", b: "n3", thickness: 0.1 },
+      { id: "w4", a: "n3", b: "n0", thickness: 0.1 },
+    ],
+    openings: [], rooms: [], furniture,
+  } as unknown as Scene);
+
+  /** Drag the run from x=2 rightwards, one 0.5m step at a time, and record
+   *  where it actually ends up. */
+  const sweep = (split: boolean): number[] => {
+    const out: number[] = [];
+    let cur = baseRun();
+    let prev = room([cur], split);
+    for (let cx = 2; cx <= 7.5; cx += 0.5) {
+      const next = applyKitchenGesture(room([{ ...cur, x: cx, y: 0.35 }], split), prev);
+      cur = next.furniture[0];
+      prev = next;
+      out.push(cur.x);
+    }
+    return out;
+  };
+
+  const one = sweep(false);
+  const two = sweep(true);
+  check("splitting a wall in two changes nothing about the drag",
+    one.every((v, i) => Math.abs(v - two[i]) < 1e-9),
+    `one=[${one.map((v) => v.toFixed(2))}] two=[${two.map((v) => v.toFixed(2))}]`);
+
+  // No dead zone: every step of the cursor moves the run, until it reaches the
+  // real end of the wall. Before the fix the split wall stalled for 1.2m at
+  // the first segment's limit and then teleported 2.4m to the second's.
+  let stalls = 0;
+  let jumps = 0;
+  for (let i = 1; i < two.length; i++) {
+    const d = two[i] - two[i - 1];
+    if (Math.abs(d) < 1e-9 && two[i] < 6.7) stalls++;
+    if (d > 0.55) jumps++;
+  }
+  check("no dead zone part-way along the wall", stalls === 0, `${stalls} stalled steps`);
+  check("no teleport across the joint", jumps === 0, `${jumps} jumps`);
+  check("it does still stop at the real end of the wall",
+    Math.abs(two[two.length - 1] - 6.75) < 1e-9, `${two[two.length - 1].toFixed(3)}`);
+}
+
+console.log("\nthe span ends where the SURFACE ends, not at every node");
+{
+  const wallsOf = (extra: { id: string; a: string; b: string }[]): Scene => ({
+    schemaVersion: 2, units: "meters",
+    nodes: [
+      { id: "n0", x: 0, y: 0 }, { id: "nm", x: 4, y: 0 }, { id: "n1", x: 8, y: 0 },
+      { id: "near", x: 4, y: 3 },   // tees in on the run's side (+y)
+      { id: "far", x: 4, y: -3 },   // tees in on the far side
+    ],
+    walls: [
+      { id: "wA", a: "n0", b: "nm", thickness: 0.1 },
+      { id: "wB", a: "nm", b: "n1", thickness: 0.1 },
+      ...extra.map((e) => ({ ...e, thickness: 0.2 })),
+    ],
+    openings: [], rooms: [], furniture: [],
+  } as unknown as Scene);
+
+  const seed = (sc: Scene) => sc.walls.find((w) => w.id === "wA")!;
+  const plain = collinearSpan(wallsOf([]), seed(wallsOf([])), 0, 1);
+  check("two collinear segments read as one 8m surface",
+    Math.abs(plain.lo) < 1e-9 && Math.abs(plain.hi - 8) < 1e-9,
+    `[${plain.lo.toFixed(3)}, ${plain.hi.toFixed(3)}]`);
+
+  const farScene = wallsOf([{ id: "wf", a: "nm", b: "far" }]);
+  const far = collinearSpan(farScene, seed(farScene), 0, 1);
+  check("a wall teeing in on the FAR side does not break the surface",
+    Math.abs(far.hi - 8) < 1e-9, `hi=${far.hi.toFixed(3)}`);
+
+  const nearScene = wallsOf([{ id: "wn", a: "nm", b: "near" }]);
+  const near = collinearSpan(nearScene, seed(nearScene), 0, 1);
+  check("a wall turning in ON the run's side ends the surface at its face",
+    Math.abs(near.hi - 3.9) < 1e-9, `hi=${near.hi.toFixed(3)}, want 3.9 (4 - 0.2/2)`);
 }
 
 console.log(failures === 0 ? "\nall kitchen drag checks passed" : `\n${failures} FAILED`);

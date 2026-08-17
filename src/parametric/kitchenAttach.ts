@@ -22,6 +22,7 @@ import {
 } from "./runPath";
 import { hostTop, isSurfaceHost, surfaceRects } from "./surfaceHosts";
 import { snapKitchenWall } from "./kitchenSnap";
+import { collinearSpan } from "./wallSpan";
 
 const ALONG_STEP = 0.1; // same grid feel as everything else
 /** Hung things slide on a 1cm step, not the 10cm one.
@@ -408,14 +409,23 @@ export function snapRunToWall(
     if (best && rank >= best.rank) continue;
     const nx = -uy * sign;
     const ny = ux * sign;
-    // Keep the run on the segment when it fits; center it when it doesn't.
-    const half = Math.min(spec.dims.w / 2, L / 2);
-    let tc = clamp(roundTo(tRaw, step), half, Math.max(L - half, half));
+    // Keep the run on the straight SURFACE — which is not this Wall record.
+    // A long wall is usually several collinear segments (the tracer splits it
+    // wherever anything tees in), and clamping to one of them left the run
+    // stuck part-way along a visibly straight wall, then teleporting to the
+    // next segment's own limit. See wallSpan.ts.
+    const span = collinearSpan(scene, w, nx, ny);
+    const half = Math.min(spec.dims.w / 2, (span.hi - span.lo) / 2);
+    let tc = clamp(
+      roundTo(tRaw, step),
+      span.lo + half,
+      Math.max(span.hi - half, span.lo + half),
+    );
     if (spec.extraLegs?.length) {
       const travel = sign * (spec.legDir ?? 1); // leg 0's direction along (ux, uy)
       const endT = tRaw + travel * (spec.dims.w / 2);
       const face = cornerFaceAlong(scene, nodes, w, a, ux, uy, nx, ny, endT, travel);
-      if (face !== null) tc = clamp(face - travel * (spec.dims.w / 2), 0, L);
+      if (face !== null) tc = clamp(face - travel * (spec.dims.w / 2), span.lo, span.hi);
     }
     best = {
       rank,

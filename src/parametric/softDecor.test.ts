@@ -944,7 +944,23 @@ console.log("\ndragging a hung item: it stays on its own side of the wall");
   // with the base run underneath it, and nothing else does.
   const cab = piecesOf(GENERATORS.kitchenWall)[0];
   const cabTrail = drag(cab.spec, [[1.24, 0.2], [1.37, 0.2], [1.46, 0.2]], 1.2);
-  check("a wall cabinet still snaps on the 10cm grid", cabTrail.every((t) => Math.abs(t.x * 10 - Math.round(t.x * 10)) < 1e-6), cabTrail.map((t) => t.x.toFixed(3)).join(" "));
+  // Free travel is on the grid…
+  check(
+    "a wall cabinet still snaps on the 10cm grid",
+    cabTrail.slice(1).every((t) => Math.abs(t.x * 10 - Math.round(t.x * 10)) < 1e-6),
+    cabTrail.map((t) => t.x.toFixed(3)).join(" "),
+  );
+  // …but the END of the wall beats the grid, and the end is the return wall's
+  // FACE, not its centreline. The first cursor point (1.24) is past that limit
+  // in a 5m room, so the run clamps to 0.05 + 1.2 = 1.25 — its left edge
+  // exactly on the face. Rounding that back to 1.20 to keep it "on grid" is
+  // what used to bury 5cm of cabinet inside the corner wall.
+  const halfW = cab.spec.dims.w / 2;
+  check(
+    "and at the corner it stops ON the return wall's face, not inside it",
+    Math.abs(cabTrail[0].x - halfW - 0.05) < 1e-9,
+    `left edge at ${(cabTrail[0].x - halfW).toFixed(4)}m, want 0.05`,
+  );
 }
 
 console.log("\nand every card in the catalog still has a button in its rooms");
