@@ -8,11 +8,15 @@
 import type { Scene } from "@/schema/scene";
 import type { ItemLike } from "@/furniture/spec";
 
-const ANGLE_TOL = (6 * Math.PI) / 180;
-const BACK_TOL = 0.55;
+// Exported (not just UNIT/tangentOf below): kitchenAttach.ts's
+// `nearestLinkableBase` — the "Match run below" toggle's host search — reuses
+// this SAME same-wall/face gate, so the control never offers a link a drag
+// wouldn't itself have snapped to. One tolerance pair, not two that can drift.
+export const ANGLE_TOL = (6 * Math.PI) / 180;
+export const BACK_TOL = 0.55;
 const UNIT = 0.6;
 
-function angleDiff(a: number, b: number): number {
+export function angleDiff(a: number, b: number): number {
   let d = a - b;
   while (d > Math.PI) d -= 2 * Math.PI;
   while (d < -Math.PI) d += 2 * Math.PI;
@@ -20,7 +24,7 @@ function angleDiff(a: number, b: number): number {
 }
 
 const tangentOf = (rotation: number): [number, number] => [Math.cos(rotation), Math.sin(rotation)];
-const normalOf = (rotation: number): [number, number] => [-Math.sin(rotation), Math.cos(rotation)];
+export const normalOf = (rotation: number): [number, number] => [-Math.sin(rotation), Math.cos(rotation)];
 
 /** When a kitchenWall row is dragged near a kitchenBase run on the same wall
  *  (|Δrotation| < 6°, back faces within 0.55m in plan), snap its x/y so the

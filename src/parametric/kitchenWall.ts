@@ -27,7 +27,11 @@ export const kitchenWallGenerator: GeneratorDef = {
   // flush to the wall like any other wall-mount item (FurnitureItem.elevation,
   // read once from here at place time — see spec.ts / store.placeFurniture).
   defaultElevation: 1.45,
-  dimLimits: { w: [0.3, 4.0], d: [0.28, 0.6], h: [0.35, 1.4] },
+  // Width reaches 6.0 to match kitchenBase. "Match run below" copies the base
+  // run's whole path into the linked upper, and sanitizeSpec clamps it — so a
+  // lower cap here would silently shorten the uppers over a wide run and the
+  // feature would quietly fail to do the one thing its name promises.
+  dimLimits: { w: [0.3, 6.0], d: [0.28, 0.6], h: [0.35, 1.4] },
   modules: [],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],

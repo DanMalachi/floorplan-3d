@@ -11,11 +11,13 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { GENERATORS, elevationOf } from "@/parametric";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { isColorable } from "@/parametric/materials";
+import { nearestLinkableBase } from "@/parametric/kitchenAttach";
 import { ARTWORKS } from "@/parametric/wallArtParts";
 import { pdToast } from "../toast";
 import { PD, pdChip } from "../tokens";
 import {
   pdInspectorPanel,
+  pdInspectorRow,
   PdSectionTitle,
   PdNumField,
   PdStepper,
@@ -110,6 +112,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
   const g = GENERATORS[spec.generator];
 
   const update = (patch: Partial<ParametricSpec>) => useSceneStore.getState().updateFurnitureParametric(item.id, patch);
+
+  // "Match run below" (kitchenWall only): read imperatively, same convention
+  // every other handler in this file uses (`.getState()`, not a subscribed
+  // hook) — Inspector.tsx already re-renders this component on every scene
+  // change, so a second subscription here would just be a redundant one.
+  const isWallRun = spec.generator === "kitchenWall";
+  const linkHost = isWallRun ? nearestLinkableBase(item, useSceneStore.getState().scene) : null;
+  const isLinked = isWallRun && !!item.attach;
 
   const onDuplicate = () => {
     useSceneStore.getState().duplicateFurniture(item.id);
@@ -284,6 +294,32 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             />
           )}
         </div>
+      )}
+
+      {/* Opt-in: uppers only follow a base run if the user asks. Disabled
+          rather than hidden when no base run qualifies, per the same "the
+          absence is legible" rule the dead-control comments elsewhere in
+          this file follow — an invisible control reads as "not offered",
+          a disabled one reads as "not right now, here's why". */}
+      {isWallRun && (
+        <label style={pdInspectorRow}>
+          <span style={{ color: PD.textSecondary }}>Match run below</span>
+          <button
+            disabled={!isLinked && !linkHost}
+            onClick={() => {
+              const store = useSceneStore.getState();
+              if (isLinked) store.setKitchenWallLink(item.id, null);
+              else if (linkHost) store.setKitchenWallLink(item.id, linkHost.id);
+            }}
+            style={{
+              ...pdChip(isLinked),
+              opacity: !isLinked && !linkHost ? 0.4 : 1,
+              cursor: !isLinked && !linkHost ? "default" : "pointer",
+            }}
+          >
+            {isLinked ? "On" : "Off"}
+          </button>
+        </label>
       )}
 
       {/* Anything that hangs needs its height editable, not just wall

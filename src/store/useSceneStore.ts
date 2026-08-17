@@ -12,7 +12,7 @@ import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometr
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
 import { sanitizeSpec, GENERATORS, elevationOf } from "@/parametric";
-import { applyKitchenGesture, syncKitchenAttachments } from "@/parametric/kitchenAttach";
+import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
 import { pdToast } from "@/ui/planDock/toast";
 import type { ImportText } from "@/lib/import/importPdfClient";
@@ -300,6 +300,15 @@ export interface StoreState {
    *  floor" field) — same one-commit-per-edit pattern as
    *  updateFurnitureParametric. */
   setFurnitureElevation: (id: string, elevation: number) => void;
+  /** "Match run below" (ParametricSection): link/unlink a placed kitchenWall
+   *  run to a kitchenBase run beneath it. `hostId` links (must be an actual
+   *  kitchenBase item — silently ignored otherwise); `null` unlinks. Linking
+   *  writes `attach` and runs syncKitchenAttachments so the run immediately
+   *  takes on the host's pose/path in the SAME commit — one undo step, not a
+   *  bare-attach step followed by a visible jump on the next sync. Unlinking
+   *  just drops `attach`: the run is left exactly where its last derived
+   *  pose put it, free — no repositioning, per Dan's spec. */
+  setKitchenWallLink: (id: string, hostId: string | null) => void;
   /** Set by the inspector's Replace button: the furniture id awaiting a new
    *  asset pick. BottomDock's item cards check this before falling back to
    *  their normal "arm placement" click behavior. Cleared on consumption or
@@ -1040,6 +1049,28 @@ export const useSceneStore = create<StoreState>((set, get) => {
         ...scene,
         furniture: scene.furniture.map((f) => (f.id === id ? { ...f, elevation } : f)),
       });
+    },
+    setKitchenWallLink: (id, hostId) => {
+      const { scene, commitScene } = get();
+      const item = scene.furniture.find((f) => f.id === id);
+      if (!item?.parametric || item.parametric.generator !== "kitchenWall") return;
+      if (hostId !== null) {
+        const host = scene.furniture.find((f) => f.id === hostId);
+        if (!host || !isCounterHost(host)) return;
+      }
+      const patched = scene.furniture.map((f) => {
+        if (f.id !== id) return f;
+        if (hostId === null) {
+          const { attach: _a, ...free } = f;
+          return free;
+        }
+        return { ...f, attach: { hostId, along: 0 } };
+      });
+      // syncKitchenAttachments does the actual work of taking on the host's
+      // pose/path (link) — nothing to derive on unlink, but running it anyway
+      // costs nothing and keeps this action's output identically-shaped to
+      // every other kitchen-mutating one.
+      commitScene(hostId === null ? "Unlink wall cabinets" : "Match run below", syncKitchenAttachments({ ...scene, furniture: patched }));
     },
     replaceTarget: null,
     setReplaceTarget: (replaceTarget) => set({ replaceTarget }),

@@ -9,10 +9,18 @@
 // carries its items; items that cut (GeneratorDef.cutoutSize) also project
 // a hole into the host's spec.cutouts, which kitchenBase's build() subtracts
 // from the countertop.
+//
+// A kitchenWall run reuses the SAME field for a second relationship — "Match
+// run below" (Kitchen v2.2, Dan-approved, additive): `attach.hostId` points
+// at a kitchenBase run and the wall run's WHOLE PATH (dims.w/extraLegs/
+// legDir), not one point on it, derives from the host every sync — see
+// `linkedRunPose`. `along` carries no meaning here (stored 0) since there is
+// no single position to measure; it exists only so the field stays one
+// shape for both relationships instead of forking the schema.
 
 import type { FurnitureItem, Node, ParametricSpec, Scene, Wall } from "@/schema/scene";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
-import { GENERATORS } from "@/parametric";
+import { GENERATORS, sanitizeSpec } from "@/parametric";
 import {
   pathLegs,
   legAtAlong,
@@ -21,7 +29,7 @@ import {
   runWorldToLocal,
 } from "./runPath";
 import { hostTop, isSurfaceHost, surfaceRects } from "./surfaceHosts";
-import { snapKitchenWall } from "./kitchenSnap";
+import { snapKitchenWall, ANGLE_TOL, BACK_TOL, angleDiff, normalOf } from "./kitchenSnap";
 import { collinearSpan } from "./wallSpan";
 
 const ALONG_STEP = 0.1; // same grid feel as everything else
@@ -42,6 +50,17 @@ const HOST_END_MARGIN = 0.25;
 
 const roundTo = (v: number, step: number) => Math.round(v / step) * step;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** Value-equal, not reference-equal: a linked wall run's copy of the host's
+ *  extraLegs is a NEW array from sanitizeSpec every sync, so `===` would
+ *  report "changed" every frame even when nothing about the path moved and
+ *  send syncKitchenAttachments into needless re-renders (see its own
+ *  "referentially lazy" contract above). */
+const sameExtraLegs = (
+  a: { turn: 1 | -1; w: number }[] | undefined,
+  b: { turn: 1 | -1; w: number }[] | undefined,
+): boolean =>
+  a === b || (!!a && !!b && a.length === b.length && a.every((l, i) => l.turn === b[i].turn && l.w === b[i].w));
 
 export const isKitchenRun = (f: Pick<FurnitureItem, "parametric">): boolean =>
   f.parametric?.generator === "kitchenBase" || f.parametric?.generator === "kitchenWall";
@@ -147,6 +166,91 @@ function surfaceWidth(host: FurnitureItem): number {
 }
 
 /**
+ * World pose + copied path a LINKED kitchenWall run derives from its
+ * kitchenBase host ("Match run below"): same rotation and the same
+ * dims.w/extraLegs/legDir, so a reshape of the base run (resize, add a leg,
+ * drag to a new wall) carries the wall run with it. dims.d/h, elevation, and
+ * the wall run's own finish/front/handle are left alone — a wall cabinet is
+ * shallower, shorter and mounted higher than the counter run underneath it,
+ * and staying that way is the whole point of keeping them separate items.
+ *
+ * The two runs' BACK lines — the face flush to the wall — have to coincide,
+ * not their centres, because their depths differ. In an item's local frame
+ * +z is the front normal (`runLocalToWorld`'s convention; `pathLegs` puts
+ * leg 0's back line at local z = -d/2 and its centre at z = 0), so shifting
+ * the wall run's centre by -(hostDepth - wallDepth)/2 along the WORLD front
+ * normal n = (-sin(rotation), cos(rotation)) walks its back line onto the
+ * host's:
+ *   hostBack  = hostPos  + n·(-hostDepth/2)
+ *   wallBack  = wallPos  + n·(-wallDepth/2)
+ *   set equal, solve for wallPos: wallPos = hostPos + n·(wallDepth - hostDepth)/2
+ * i.e. shift = -(hostDepth - wallDepth)/2. Get the sign backwards and a
+ * shallower-than-base wall cabinet (the normal case) walks its centre the
+ * WRONG way along n — out past the counter's front edge instead of in toward
+ * the wall — which is exactly the "uppers hanging into the room" failure the
+ * task calls out. Verified numerically in kitchenLink.test.ts.
+ *
+ * Run through sanitizeSpec because the copied width isn't guaranteed to fit
+ * kitchenWall's own dimLimits.w (a base run can run wider than a wall run
+ * ever could) — the spec must never leave here holding a width its own
+ * generator wouldn't accept.
+ */
+export function linkedRunPose(
+  host: FurnitureItem,
+  wallSpec: ParametricSpec,
+): { x: number; y: number; rotation: number; spec: ParametricSpec } {
+  const hostSpec = host.parametric!;
+  const [nx, ny] = normalOf(host.rotation);
+  const shift = -(hostSpec.dims.d - wallSpec.dims.d) / 2;
+  const spec = sanitizeSpec({
+    ...wallSpec,
+    dims: { ...wallSpec.dims, w: hostSpec.dims.w },
+    extraLegs: hostSpec.extraLegs,
+    legDir: hostSpec.legDir,
+  });
+  return {
+    x: host.x + nx * shift,
+    y: host.y + ny * shift,
+    rotation: host.rotation,
+    spec,
+  };
+}
+
+/**
+ * The kitchenBase run the "Match run below" toggle would link `item` to:
+ * nearest one on the same wall/face, using the identical gate
+ * `snapKitchenWall`'s one-shot drag-time align already applies (ANGLE_TOL
+ * rotation, BACK_TOL perpendicular back-to-back distance) — so the control
+ * never offers a base run a drag wouldn't itself have snapped to. Null when
+ * none qualifies; the inspector disables the toggle rather than hiding it,
+ * so a wall cabinet with no run under it still shows the option exists.
+ */
+export function nearestLinkableBase(
+  item: Pick<FurnitureItem, "x" | "y" | "rotation" | "parametric">,
+  scene: Scene,
+): FurnitureItem | null {
+  const spec = item.parametric;
+  if (!spec) return null;
+  const [nx, ny] = normalOf(item.rotation);
+  const itemBackX = item.x - nx * (spec.dims.d / 2);
+  const itemBackY = item.y - ny * (spec.dims.d / 2);
+  let best: FurnitureItem | null = null;
+  let bestDist = Infinity;
+  for (const f of scene.furniture) {
+    if (!isCounterHost(f)) continue;
+    if (Math.abs(angleDiff(item.rotation, f.rotation)) > ANGLE_TOL) continue;
+    const [bnx, bny] = normalOf(f.rotation);
+    const backX = f.x - bnx * (f.parametric!.dims.d / 2);
+    const backY = f.y - bny * (f.parametric!.dims.d / 2);
+    const dist = Math.abs((itemBackX - backX) * bnx + (itemBackY - backY) * bny);
+    if (dist > BACK_TOL || dist >= bestDist) continue;
+    bestDist = dist;
+    best = f;
+  }
+  return best;
+}
+
+/**
  * The surface a plan point is over, counter or cabinet top. Runs are tried
  * first (their worktop is a path, and the kitchen's own margins apply); plain
  * rectangles are tested in their own local frame, nearest centre wins.
@@ -241,6 +345,34 @@ export function syncKitchenAttachments(scene: Scene): Scene {
       changed = true;
       const { attach: _a, ...free } = f;
       return free;
+    }
+    if (f.parametric.generator === "kitchenWall") {
+      // "Match run below": a linked wall run bonds to exactly one kitchenBase
+      // run and derives its whole path from it (see linkedRunPose) — never a
+      // single point on a surface, which is what the generic branch below
+      // would do to it (attachedPose treats an unrecognized host as
+      // something the item merely STANDS ON, sized by its own d, not the
+      // run's leg path). A host that stopped being a kitchenBase (asset
+      // swapped under it) can't satisfy that relationship at all, so the
+      // bond dissolves rather than falling through to nonsense math.
+      if (!isCounterHost(host)) {
+        changed = true;
+        const { attach: _a, ...free } = f;
+        return free;
+      }
+      const derived = linkedRunPose(host, f.parametric);
+      const specSame =
+        f.parametric.dims.w === derived.spec.dims.w &&
+        f.parametric.dims.d === derived.spec.dims.d &&
+        f.parametric.dims.h === derived.spec.dims.h &&
+        sameExtraLegs(f.parametric.extraLegs, derived.spec.extraLegs) &&
+        f.parametric.legDir === derived.spec.legDir;
+      if (
+        specSame &&
+        f.x === derived.x && f.y === derived.y && f.rotation === derived.rotation
+      ) return f;
+      changed = true;
+      return { ...f, x: derived.x, y: derived.y, rotation: derived.rotation, parametric: derived.spec };
     }
     const along = isCounterHost(host)
       ? clampAlongToPath(host.parametric!, f.attach.along, f.parametric.dims.w)
@@ -514,6 +646,22 @@ export function applyKitchenGesture(
     const before = prevById.get(f.id);
     if (before === f || !f.parametric) return f; // untouched by this update
     if (isKitchenRun(f)) {
+      let item = f;
+      if (item.parametric!.generator === "kitchenWall" && item.attach) {
+        // The user grabbed a LINKED wall run directly (drag or resize handle)
+        // and moved it — the natural "I want it somewhere else" gesture. Its
+        // pose normally DERIVES from the host on every sync (pass 1 of
+        // syncKitchenAttachments, which runs after this whole map, below): if
+        // `attach` survived the touch, that pass would snap the run straight
+        // back onto the host's pose next frame and the drag would visibly
+        // fight the pointer. Dropping it here — unconditionally, whatever the
+        // snap below decides — is what lets the drag win; it must not depend
+        // on the snapped pose actually differing, or an unlink that happens
+        // to land back on the same spot would silently stay linked.
+        const { attach: _drop, ...unlinked } = item;
+        item = unlinked;
+        changed = true;
+      }
       // `keepFacing` is the whole difference between a run that stays where you
       // put it and one that pops through to the far side of the wall. Without
       // it the face came straight from `Math.sign(side)` off the run's CENTRE,
@@ -521,23 +669,23 @@ export function applyKitchenGesture(
       // the centreline within a few centimetres — at which point the run snaps
       // flush to the OUTSIDE of the house. Wall items have had the hysteresis
       // since they were written; runs were simply never given it.
-      let snapped = snapRunToWall(f, next, {
-        keepFacing: before?.rotation ?? f.rotation,
-        ...(lock && lock.itemId === f.id ? { lockWallId: lock.wallId } : {}),
+      let snapped = snapRunToWall(item, next, {
+        keepFacing: before?.rotation ?? item.rotation,
+        ...(lock && lock.itemId === item.id ? { lockWallId: lock.wallId } : {}),
       });
-      if (snapped && f.parametric.generator === "kitchenWall") {
+      if (snapped && item.parametric!.generator === "kitchenWall") {
         // Align to the base run underneath, from the WALL-SNAPPED pose. This
         // used to run in the drag handler, one snap earlier, off a rotation
         // that was still the previous wall's — so a row crossing a corner
         // measured its offset against the wrong axis for a frame.
-        const aligned = snapKitchenWall({ ...f, ...snapped }, next);
+        const aligned = snapKitchenWall({ ...item, ...snapped }, next);
         if (aligned) snapped = aligned;
       }
-      if (snapped && (snapped.x !== f.x || snapped.y !== f.y || snapped.rotation !== f.rotation)) {
+      if (snapped && (snapped.x !== item.x || snapped.y !== item.y || snapped.rotation !== item.rotation)) {
         changed = true;
-        return { ...f, ...snapped };
+        return { ...item, ...snapped };
       }
-      return f;
+      return item;
     }
     if (isWallItem(f)) {
       // A wall item stays ON the wall grid while it is dragged, exactly as it
