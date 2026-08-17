@@ -19,6 +19,7 @@ import { sampleFixture } from "@/decorate/eyedropper";
 import { fixtureTexture } from "./fixtureTexture";
 import { WallSurfaceGrid } from "./SnapGridViz";
 import { rayToWall } from "@/parametric/wallRay";
+import { grabHeight, rayToPlanAt } from "./dragPlane";
 
 /** Wall-mount from a WALL-FACE raycast (Kitchen v2.1): pointing at a wall
  *  gives wall, face, along AND height directly — the wall grid is the whole
@@ -54,13 +55,22 @@ const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 function rayToPlan(
   e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
   offset: { cx: number; cz: number },
+  /** World height the gesture runs at. A ceiling fixture lives 2.4m up, so
+   *  dragging it against the FLOOR plane moved it faster than the cursor —
+   *  the largest instance of the problem dragPlane.ts describes. */
+  height = 0,
 ): { x: number; y: number } | null {
+  if (height !== 0) return rayToPlanAt(e.ray, height, offset);
   const hit = new THREE.Vector3();
   if (!e.ray.intersectPlane(FLOOR_PLANE, hit)) return null;
   return { x: hit.x + offset.cx, y: hit.z + offset.cz };
 }
 
 const snap = (v: number) => Math.round(v / GRID) * GRID;
+
+// Shared with FurnitureLayer/RunHandles — see viewport3d/dragPlane.ts for why
+// a drag must not run on the floor plane.
+
 
 /** Plan rotation θ → three.js yaw (plan y is world z, so the sense flips). */
 const yawOf = (rotation: number) => -rotation;
@@ -273,6 +283,7 @@ interface FixtureDrag {
   base: Scene;
   grab: { dx: number; dy: number }; // ceiling only: grab point relative to item center
   start: { x: number; y: number }; // plan point at pointer-down (dead-zone check)
+  planeY: number; // world height the gesture runs at (where the ray met the fixture)
   began: boolean; // gesture opened — only after the dead zone is crossed
 }
 
@@ -306,21 +317,22 @@ function FixtureItemView({ item, offset, rooms }: {
     s.setSel3d({ kind: "fixture", id: item.id });
     // Select AND arm the drag in one press. The gesture itself only opens
     // once the pointer leaves the dead zone, so a plain click never nudges.
-    const p = rayToPlan(e, offset);
+    const planeY = grabHeight(e.point, 0);
+    const p = rayToPlan(e, offset, planeY);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
     const grab =
       item.mount.kind === "ceiling"
         ? { dx: p.x - item.mount.x, dy: p.y - item.mount.y }
         : { dx: 0, dy: 0 }; // wall items snap directly under the cursor — no relative grab
-    drag.current = { pointerId: e.pointerId, base: s.scene, grab, start: p, began: false };
+    drag.current = { pointerId: e.pointerId, base: s.scene, grab, start: p, planeY, began: false };
   };
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     const d = drag.current;
     if (!d || e.pointerId !== d.pointerId) return;
     e.stopPropagation();
-    const p = rayToPlan(e, offset);
+    const p = rayToPlan(e, offset, d.planeY);
     if (!p) return;
     if (!d.began) {
       if (Math.hypot(p.x - d.start.x, p.y - d.start.y) < DRAG_DEAD_ZONE_M) return;

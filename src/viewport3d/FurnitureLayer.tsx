@@ -16,6 +16,7 @@ import { ACCENT } from "./WallMesh";
 import { sampleFurniture } from "@/decorate/eyedropper";
 import { ParametricModel } from "@/parametric/ParametricModel";
 import { isWallItem, kitchenOwnsPlacement } from "@/parametric/kitchenAttach";
+import { grabHeight, rayToPlanAt } from "./dragPlane";
 import { rayToWall, wallPose } from "@/parametric/wallRay";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -23,7 +24,12 @@ const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 function rayToPlan(
   e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
   offset: { cx: number; cz: number },
+  /** World height the gesture runs at. Defaults to the floor, which is right
+   *  for a placement ghost (it lands ON the floor) and wrong for a drag (see
+   *  dragPlane.ts) — so drags pass the height they grabbed at. */
+  height = 0,
 ): { x: number; y: number } | null {
+  if (height !== 0) return rayToPlanAt(e.ray, height, offset);
   const hit = new THREE.Vector3();
   if (!e.ray.intersectPlane(FLOOR_PLANE, hit)) return null;
   return { x: hit.x + offset.cx, y: hit.z + offset.cz };
@@ -216,6 +222,9 @@ interface FurnDrag {
   grabE: number;
   start: { x: number; y: number }; // plan point at pointer-down (dead-zone check)
   startE: number; // …and its height, so a straight-up drag counts as movement
+  /** World height the whole gesture runs at — where the pointer touched the
+   *  item, captured once so the plane can't shift under the drag. */
+  planeY: number;
   began: boolean; // gesture opened — only after the dead zone is crossed
 }
 
@@ -236,6 +245,11 @@ function rayForItem(
   item: FurnitureItem,
   scene: Scene,
   offset: { cx: number; cz: number },
+  /** World height this gesture runs at — see dragPlane.ts. A floor-standing
+   *  item dragged against the FLOOR plane slides faster than the cursor for
+   *  exactly the reason a picture did; this is the same fix, for the plane
+   *  case rather than the wall case. */
+  planeY = 0,
 ): { x: number; y: number; elevation?: number } | null {
   if (item.parametric && isWallItem(item)) {
     const hit = rayToWall(e.ray, scene, offset);
@@ -248,7 +262,7 @@ function rayForItem(
     // front of the wall) — fall through to the floor rather than freezing.
     if (pose) return { x: pose.x, y: pose.y, elevation: pose.elevation };
   }
-  return rayToPlan(e, offset);
+  return rayToPlan(e, offset, planeY);
 }
 
 /** Plan-space dead zone before a press becomes a drag: a plain click (select)
@@ -294,13 +308,18 @@ function FurnitureItemView({ item, offset }: {
     s.setSel3d({ kind: "furniture", id: item.id });
     // Select AND arm the drag in one press. The gesture itself only opens
     // once the pointer leaves the dead zone, so a plain click never nudges.
-    const p = rayForItem(e, item, s.scene, offset);
+    // Where the ray actually met the item, in world height. Everything after
+    // this runs on the horizontal plane through that point, so the spot you
+    // took hold of stays under the cursor for the whole drag.
+    const planeY = grabHeight(e.point, item.elevation ?? 0);
+    const p = rayForItem(e, item, s.scene, offset, planeY);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
     drag.current = {
       pointerId: e.pointerId,
       base: s.scene,
       walls: wallOBBs(s.scene),
+      planeY,
       grab: { dx: p.x - item.x, dy: p.y - item.y },
       // Grab the picture where you took hold of it: without this it jumps so
       // its centre is under the cursor the moment the drag opens.
@@ -315,7 +334,7 @@ function FurnitureItemView({ item, offset }: {
     const d = drag.current;
     if (!d || e.pointerId !== d.pointerId) return;
     e.stopPropagation();
-    const p = rayForItem(e, item, d.base, offset);
+    const p = rayForItem(e, item, d.base, offset, d.planeY);
     if (!p) return;
     if (!d.began) {
       // Height counts as movement. Measured in plan alone, dragging a picture
@@ -461,9 +480,13 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
         <planeGeometry args={[600, 600]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
+      {/* Elevation through specOf, not CATALOG_BY_ID: a parametric item has no
+          catalog entry, so the ghost drew at floor level while placeFurniture
+          (which does use specOf) put the real item at its mounting height —
+          preview and placement disagreed by the whole elevation. */}
       {pos && (
         <group
-          position={[pos.x, CATALOG_BY_ID.get(placing.assetId)?.defaultElevation ?? 0, pos.y]}
+          position={[pos.x, specOf(placing)?.defaultElevation ?? 0, pos.y]}
           rotation={[0, yawOf(state.rotation), 0]}
         >
           <Suspense fallback={null}>

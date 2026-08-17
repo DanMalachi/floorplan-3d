@@ -16,15 +16,9 @@ import { GENERATORS, elevationOf } from "@/parametric";
 import { isKitchenRun } from "./kitchenAttach";
 import { pathLegs, runLocalToWorld, type RunLeg } from "./runPath";
 import { ACCENT } from "@/viewport3d/WallMesh";
+import { rayToPlanAt } from "@/viewport3d/dragPlane";
 
-const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const STEP = 0.1;
-
-function rayToPlan(e: ThreeEvent<PointerEvent>, offset: { cx: number; cz: number }) {
-  const hit = new THREE.Vector3();
-  if (!e.ray.intersectPlane(FLOOR_PLANE, hit)) return null;
-  return { x: hit.x + offset.cx, y: hit.z + offset.cz };
-}
 
 /** A leg's local direction in plan-world terms. */
 function worldDir(item: FurnitureItem, leg: RunLeg): { x: number; y: number } {
@@ -77,7 +71,11 @@ function EndHandle({ item, end, offset }: {
     const dr = drag.current;
     if (!dr || e.pointerId !== dr.pointerId) return;
     e.stopPropagation();
-    const p = rayToPlan(e, offset);
+    // The handle is what you are dragging, and it floats at counter height (or
+    // higher, on a wall run). Read the pointer on the handle's OWN plane —
+    // against the floor plane the run stretched faster than the cursor, so the
+    // arrow ran away from it. See viewport3d/dragPlane.ts.
+    const p = rayToPlanAt(e.ray, handleY, offset);
     if (!p) return;
     const s = useSceneStore.getState();
     const [lo, hi] = g.dimLimits.w;
