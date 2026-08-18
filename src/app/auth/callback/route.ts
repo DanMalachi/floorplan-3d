@@ -13,6 +13,14 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
+  // Google or Supabase refused before we ever got a code. Carry the reason back
+  // to the UI — silently redirecting home leaves the user staring at a "Sign in"
+  // button with no idea why nothing happened.
+  const failure = searchParams.get("error_description") ?? searchParams.get("error");
+  if (failure) {
+    return NextResponse.redirect(`${origin}${next}?authError=${encodeURIComponent(failure)}`);
+  }
+
   if (!code) return NextResponse.redirect(`${origin}${next}`);
 
   const supabase = await getServerSupabase();

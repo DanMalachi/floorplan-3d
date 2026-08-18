@@ -21,7 +21,20 @@ export function AccountMenu() {
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  // A failed sign-in comes back as ?authError=… from the callback route. Show it
+  // once, then take it out of the URL so a refresh isn't haunted by it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const message = params.get("authError");
+    if (!message) return;
+    setAuthError(message);
+    params.delete("authError");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -41,31 +54,55 @@ export function AccountMenu() {
 
   if (!user) {
     return (
-      <button
-        onClick={() => {
-          setBusy(true);
-          void signInWithGoogle().catch(() => setBusy(false));
-        }}
-        disabled={busy}
-        title="Sign in so your projects follow you to any computer"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          height: SIZE + 6,
-          padding: "0 14px",
-          fontSize: 12.5,
-          fontWeight: 600,
-          fontFamily: PD.fontUi,
-          color: PD.textPrimary,
-          cursor: busy ? "default" : "pointer",
-          opacity: busy ? 0.6 : 1,
-          ...pdGlass({ borderRadius: 999 }),
-        }}
-      >
-        <GoogleMark />
-        {busy ? "Opening…" : "Sign in"}
-      </button>
+      <div style={{ position: "relative" }}>
+        <button
+          onClick={() => {
+            setAuthError(null);
+            setBusy(true);
+            void signInWithGoogle().catch(() => setBusy(false));
+          }}
+          disabled={busy}
+          title="Sign in so your projects follow you to any computer"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            height: SIZE + 6,
+            padding: "0 14px",
+            fontSize: 12.5,
+            fontWeight: 600,
+            fontFamily: PD.fontUi,
+            color: PD.textPrimary,
+            cursor: busy ? "default" : "pointer",
+            opacity: busy ? 0.6 : 1,
+            ...pdGlass({ borderRadius: 999 }),
+          }}
+        >
+          <GoogleMark />
+          {busy ? "Opening…" : "Sign in"}
+        </button>
+        {authError && (
+          <div
+            role="alert"
+            style={{
+              position: "absolute",
+              top: SIZE + 14,
+              right: 0,
+              maxWidth: 300,
+              padding: "8px 11px",
+              fontSize: 11.5,
+              lineHeight: 1.45,
+              fontFamily: PD.fontUi,
+              color: PD.warnText,
+              background: PD.warnBg,
+              borderRadius: PD.radiusS,
+              zIndex: 40,
+            }}
+          >
+            Sign-in failed: {authError}
+          </div>
+        )}
+      </div>
     );
   }
 
