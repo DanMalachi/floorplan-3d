@@ -44,11 +44,26 @@ let userId: string | null = null;
 let started = false;
 const dirty = new Set<string>();
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
-let passRunning = false;
-let passQueued = false;
 let lastReconcileAt = 0;
 
 const sync = () => useSyncStore.getState();
+
+/**
+ * One lock over the whole engine — reconciles and pushes run one at a time.
+ *
+ * They cannot overlap: a reconcile decides what to do by comparing a card's
+ * syncedRev/remoteRev against the server, and a push in flight is precisely the
+ * window where those two are stale. Overlapping them makes a project look like
+ * it changed on both sides at once, and the engine dutifully "keeps both" —
+ * conjuring a phantom "(from another device)" copy on a single device.
+ */
+let chain: Promise<unknown> = Promise.resolve();
+
+function withLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn, fn);
+  chain = run.catch(() => {});
+  return run;
+}
 
 // ---- lifecycle --------------------------------------------------------------
 
@@ -108,7 +123,7 @@ function schedulePush(): void {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(() => {
     pushTimer = null;
-    void runPass();
+    void withLock(pushLoop);
   }, PUSH_DELAY_MS);
 }
 
@@ -119,7 +134,11 @@ function schedulePush(): void {
  * queue whatever each side is missing. Runs on sign-in, on tab focus, and when
  * the network returns.
  */
-export async function reconcile(): Promise<void> {
+export function reconcile(): Promise<void> {
+  return withLock(reconcileInner);
+}
+
+async function reconcileInner(): Promise<void> {
   if (!userId) return;
   sync().setStatus("syncing");
   const remote = await listRemote();
@@ -162,7 +181,7 @@ export async function reconcile(): Promise<void> {
     else if (m.remoteRev !== r.rev) await patchProjectMeta(m.id, { remoteRev: r.rev });
   }
 
-  await runPass();
+  await pushLoop();
 }
 
 function markDirty(id: string): void {
@@ -206,7 +225,11 @@ async function pull(r: RemoteProject, local: ProjectMeta | null): Promise<boolea
 }
 
 /** Download a project this device only has a card for. Returns false if it can't. */
-export async function ensureDownloaded(projectId: string): Promise<boolean> {
+export function ensureDownloaded(projectId: string): Promise<boolean> {
+  return withLock(() => ensureDownloadedInner(projectId));
+}
+
+async function ensureDownloadedInner(projectId: string): Promise<boolean> {
   const meta = getProjectMeta(projectId);
   if (!meta) return false;
   if (!meta.cloudOnly) return true;
@@ -257,35 +280,22 @@ async function keepBoth(local: ProjectMeta, r: RemoteProject): Promise<void> {
 
 // ---- push -------------------------------------------------------------------
 
-async function runPass(): Promise<void> {
+async function pushLoop(): Promise<void> {
   if (!userId) return;
-  if (passRunning) {
-    passQueued = true;
-    return;
-  }
-  passRunning = true;
-  try {
-    while (dirty.size) {
-      const id = dirty.values().next().value as string;
-      dirty.delete(id);
-      sync().setStatus("syncing");
-      const outcome = await pushOne(id);
-      if (outcome === "retry") {
-        dirty.add(id); // put it back; the next online/focus pass picks it up
-        sync().setStatus(navigator.onLine ? "error" : "offline");
-        sync().setPending(dirty.size);
-        return;
-      }
+  while (dirty.size) {
+    const id = dirty.values().next().value as string;
+    dirty.delete(id);
+    sync().setStatus("syncing");
+    const outcome = await pushOne(id);
+    if (outcome === "retry") {
+      dirty.add(id); // put it back; the next online/focus pass picks it up
+      sync().setStatus(navigator.onLine ? "error" : "offline");
       sync().setPending(dirty.size);
+      return;
     }
-    if (sync().status !== "conflict") sync().markSynced();
-  } finally {
-    passRunning = false;
-    if (passQueued) {
-      passQueued = false;
-      void runPass();
-    }
+    sync().setPending(dirty.size);
   }
+  if (sync().status !== "conflict") sync().markSynced();
 }
 
 type PushOutcome = "ok" | "retry" | "skip";
@@ -335,7 +345,8 @@ async function pushOne(id: string): Promise<PushOutcome> {
 
   if (result.conflict) {
     // Someone else got there first. Re-listing sorts it out (pull, or keep both).
-    await reconcile();
+    // Called directly, not through withLock — we already hold it.
+    await reconcileInner();
     return "ok";
   }
 
