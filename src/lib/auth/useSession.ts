@@ -30,6 +30,18 @@ export function useSession(): SessionState {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(supabaseConfigured);
 
+  // A misconfigured Redirect URL allowlist makes Supabase fall back to the
+  // project's Site URL, dropping the one-time code on "/" where nothing exchanges
+  // it — the user just lands back on a page that still says "Sign in". Forward it
+  // to the route that knows what to do with it rather than losing the sign-in.
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code || window.location.pathname.startsWith("/auth/")) return;
+    window.location.replace(`/auth/callback?code=${encodeURIComponent(code)}`);
+  }, []);
+
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
@@ -61,7 +73,11 @@ export function useSession(): SessionState {
       // No access_type/prompt overrides: we never call Google's own APIs, and
       // forcing the consent screen would re-prompt on every single sign-in.
       // Supabase issues its own refresh token either way.
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/` },
+      // No query string on redirectTo: Supabase matches this against its Redirect
+      // URLs allowlist, and a trailing `?next=/` stops a plain `https://host/**`
+      // entry from matching — at which point it silently falls back to the
+      // project's Site URL and the code lands on the wrong origin entirely.
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
   }, []);
 
