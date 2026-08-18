@@ -12,7 +12,20 @@ export interface GrantPayload {
   exp?: number; // epoch ms; links auto-expire (stateless time-boxed revoke)
 }
 
-const secret = () => process.env.LIVEBLOCKS_SECRET_KEY ?? "dev-unsafe-secret";
+// Share links get their own key. Reusing the Liveblocks secret meant rotating one
+// silently invalidated the other, and it gave a single value two unrelated jobs.
+// SHARE_SIGNING_SECRET is the one to set; the Liveblocks key stays as a fallback
+// so links already in circulation keep verifying (see LEGACY_SECRETS below).
+const secret = () =>
+  process.env.SHARE_SIGNING_SECRET ?? process.env.LIVEBLOCKS_SECRET_KEY ?? "dev-unsafe-secret";
+
+/** Keys a grant may have been signed with before the current one. Grants live 30
+ *  days, so dropping the old key would break every link already sent. */
+const LEGACY_SECRETS = (): string[] =>
+  process.env.SHARE_SIGNING_SECRET && process.env.LIVEBLOCKS_SECRET_KEY
+    ? [process.env.LIVEBLOCKS_SECRET_KEY]
+    : [];
+
 const b64 = (s: string) => Buffer.from(s).toString("base64url");
 const DEFAULT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -24,13 +37,18 @@ export function signGrant(p: Omit<GrantPayload, "exp"> & { ttlMs?: number }): st
   return `${body}.${sig}`;
 }
 
+function signatureMatches(body: string, sig: string, key: string): boolean {
+  const expect = crypto.createHmac("sha256", key).update(body).digest("base64url");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expect);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export function verifyGrant(grant: string): GrantPayload | null {
   const [body, sig] = grant.split(".");
   if (!body || !sig) return null;
-  const expect = crypto.createHmac("sha256", secret()).update(body).digest("base64url");
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expect);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  const keys = [secret(), ...LEGACY_SECRETS()];
+  if (!keys.some((k) => signatureMatches(body, sig, k))) return null;
   try {
     const p = JSON.parse(Buffer.from(body, "base64url").toString()) as GrantPayload;
     if (p.exp && Date.now() > p.exp) return null; // expired link

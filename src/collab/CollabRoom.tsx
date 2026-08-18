@@ -30,7 +30,9 @@ import {
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
 import { T, glass, chip, field } from "@/ui/tokens";
-import { randomIdentity, initials, type Identity } from "./identity";
+import { randomIdentity, identityForUser, initials, type Identity } from "./identity";
+import { displayName } from "@/lib/auth/profile";
+import { useSession } from "@/lib/auth/useSession";
 import type { RemoteSelection } from "./liveblocks";
 import { ROLE_MODES, ROLE_LABEL, roleFromGrant, mintGrant, lbRoom, type ShareRole } from "./share";
 import {
@@ -383,7 +385,15 @@ export function CollabRoom({ roomId }: { roomId: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const identity = useMemo(() => randomIdentity(), []);
+  // RoomProvider only reads initialPresence on the first connect, so the session
+  // has to be resolved BEFORE the room mounts — otherwise a signed-in user joins
+  // as "Swift Fox" and keeps that name for the whole visit.
+  const { user, loading: sessionLoading } = useSession();
+  const guest = useMemo(() => randomIdentity(), []);
+  const identity = useMemo(
+    () => (user ? identityForUser(displayName(user), user.id) : guest),
+    [user, guest],
+  );
   const role = useMemo<ShareRole>(
     () => (mounted ? roleFromGrant(new URLSearchParams(window.location.search).get("g")) : "view"),
     [mounted],
@@ -400,7 +410,7 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     return res.json();
   }, []);
 
-  if (!mounted) return <div style={{ height: "100vh", background: T.bg }} />;
+  if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: T.bg }} />;
 
   return (
     <LiveblocksProvider authEndpoint={authEndpoint} throttle={16}>

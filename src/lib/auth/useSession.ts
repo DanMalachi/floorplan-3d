@@ -22,17 +22,9 @@ export interface SessionState {
   signOut: () => Promise<void>;
 }
 
-/** Display name for a signed-in user: their Google name, else their email. */
-export function displayName(user: User | null): string {
-  if (!user) return "Guest";
-  const meta = user.user_metadata ?? {};
-  return (meta.full_name as string) || (meta.name as string) || user.email || "Signed in";
-}
-
-export function avatarUrl(user: User | null): string | null {
-  const meta = user?.user_metadata ?? {};
-  return (meta.avatar_url as string) || (meta.picture as string) || null;
-}
+// Presentation lives in profile.ts so the server can name collaborators the same
+// way this menu does.
+export { displayName, avatarUrl } from "./profile";
 
 export function useSession(): SessionState {
   const [user, setUser] = useState<User | null>(null);

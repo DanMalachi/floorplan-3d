@@ -1,6 +1,8 @@
 import { Liveblocks } from "@liveblocks/node";
 import { randomUUID } from "node:crypto";
 import { verifyGrant } from "@/collab/grant.server";
+import { getServerUser } from "@/lib/supabase/server";
+import { avatarUrl, displayName } from "@/lib/auth/profile";
 import type { ShareRole } from "@/collab/share";
 
 // Liveblocks access-token endpoint. The client sends the room it wants to join
@@ -22,7 +24,16 @@ export async function POST(req: Request) {
     role = g.role;
   }
 
-  const session = liveblocks.prepareSession(`anon-${randomUUID()}`);
+  // A signed-in collaborator is a stable principal with their own name; a link
+  // visitor without an account is still welcome, as a throwaway anonymous one.
+  // The grant, not the identity, is what decides access — an account does not by
+  // itself grant entry to someone else's room.
+  const user = await getServerUser();
+  const session = user
+    ? liveblocks.prepareSession(user.id, {
+        userInfo: { name: displayName(user), avatar: avatarUrl(user) ?? undefined },
+      })
+    : liveblocks.prepareSession(`anon-${randomUUID()}`);
   session.allow(room, role === "view" ? session.READ_ACCESS : session.FULL_ACCESS);
   const { body, status } = await session.authorize();
   return new Response(body, { status });
