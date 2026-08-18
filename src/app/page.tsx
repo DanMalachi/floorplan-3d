@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Viewport } from "@/viewport3d/Viewport";
 import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
+import { AccountMenu } from "@/ui/AccountMenu";
 import { GtLab } from "@/dev/GtLab";
 import { legacyExtractionEnabled } from "@/lib/featureFlags";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
@@ -253,7 +254,18 @@ export default function Home() {
       <PdThemeStyle />
       <ModeSwitcher />
       <ProjectBar onOpenProjects={() => setProjectsOpen(true)} />
-      <div style={{ position: "absolute", top: 14, right: showTrace ? 14 : 132, zIndex: 30 }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          right: showTrace ? 14 : 132,
+          zIndex: 30,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <AccountMenu />
         <ThemeToggle />
       </div>
       {!showTrace && <GoLiveButton />}
