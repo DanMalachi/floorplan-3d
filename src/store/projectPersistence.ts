@@ -1,129 +1,54 @@
 import { reserveIds, sceneIds, useSceneStore, type StoreState } from "./useSceneStore";
+import { idbDel, idbGet, idbSet } from "./idb";
+import {
+  DURABLE_KEYS,
+  SCHEMA_VERSION,
+  attachImage,
+  migrateDoc,
+  stripImage,
+  type ProjectDocument,
+  type ProjectMetaBase,
+  type ProjectState,
+} from "./projectDoc";
+import { deletePlanImage, deleteThumb, getPlanImage, getThumb, setPlanImage, setThumb } from "./planImageStore";
 import type { GoLiveSeed } from "@/collab/goLiveHandoff";
 import type { ShareRole } from "@/collab/share";
 
 // -----------------------------------------------------------------------------
 // Project persistence — a multi-project store in the browser's IndexedDB. Each
 // project autosaves its working plan; a lightweight manifest of cards (id, name,
-// thumbnail, timestamps) powers the Projects gallery without loading the multi-MB
+// timestamps, rev) powers the Projects gallery without loading the multi-MB
 // image/geometry blobs. No dependency, SSR-safe.
 //
-// IndexedDB layout (all in the `kv` object store):
-//   projects:manifest   → ProjectMeta[]              (small; drives the gallery)
-//   projects:currentId  → string                     (which project reopens)
-//   project:<id>        → ProjectDocument             (the heavy per-project state)
+// IndexedDB layout (all in the `kv` object store, see idb.ts):
+//   projects:manifest   → StoredMeta[]                (small; drives the gallery)
+//   projects:currentId  → string                      (which project reopens)
+//   project:<id>        → ProjectDocument             (geometry; image-free)
+//   image:<id>          → data URL of the plan image  (see planImageStore)
+//   thumb:<id>          → data URL of the card thumb  (see planImageStore)
 //   project:current     → legacy single-project doc, migrated in on first load
 //
-// The image data URL + parsed geometry are multi-MB, so we debounce writes and
-// skip saves when the durable slice is byte-for-byte unchanged.
+// The heavy base64 strings deliberately live OUTSIDE the two things this module
+// rewrites on every autosave tick. A document is geometry only, so a save (and,
+// later, a cloud push) stays small no matter how big the imported plan was.
 // -----------------------------------------------------------------------------
 
-const DB_NAME = "floorplan3d";
-const STORE = "kv";
 const MANIFEST_KEY = "projects:manifest";
 const CURRENT_KEY = "projects:currentId";
 const LEGACY_KEY = "project:current";
 const docKey = (id: string) => `project:${id}`;
-const SCHEMA_VERSION = 1;
 const DEBOUNCE_MS = 600;
 
-// The durable slice of the store — the actual "project". Transient UI (busy
-// flags, messages, selections, derived suggestions, proposals) is intentionally
-// excluded so it regenerates fresh.
-const DURABLE_KEYS = [
-  "scene",
-  "appMode",
-  "traceStep",
-  "mode",
-  "envPreset",
-  "timeOfDay",
-  "weather",
-  "image",
-  "imageOpacity",
-  "sourcePdfName",
-  "importedSegments",
-  "importedArcs",
-  "importedTexts",
-  "showImport",
-  "wallSnap",
-  "points",
-  "segments",
-  "openings",
-  "stairs",
-  "metersPerPixel",
-  "liveRoomId",
-] as const satisfies readonly (keyof StoreState)[];
-
-type DurableKey = (typeof DURABLE_KEYS)[number];
-type ProjectState = Pick<StoreState, DurableKey>;
-
-interface ProjectDocument {
-  schemaVersion: number;
-  savedAt: number;
-  state: ProjectState;
-  /** Reserved for the reasoning engine's belief event log (Phase C+). */
-  worldModel: null;
-}
-
-/** One card in the gallery — small enough to hold every project in memory. */
-export interface ProjectMeta {
-  id: string;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  thumb: string | null; // small JPEG data URL of the 3D view, or null
+/** One card in the gallery. */
+export interface ProjectMeta extends ProjectMetaBase {
+  /** In-memory only — the JPEG lives under `thumb:<id>`, never inside the manifest. */
+  thumb: string | null;
   liveRoomId?: string | null; // set once the project has gone live (opens into its room)
   liveRole?: ShareRole; // this browser's role in the shared room (owner = "build")
 }
 
-// ---- IndexedDB key/value (dep-free, browser-only) ---------------------------
-
-function hasIDB(): boolean {
-  return typeof indexedDB !== "undefined";
-}
-
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE);
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function idbGet<T>(key: string): Promise<T | null> {
-  if (!hasIDB()) return null;
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
-    tx.onsuccess = () => resolve((tx.result as T) ?? null);
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbSet(key: string, value: unknown): Promise<void> {
-  if (!hasIDB()) return;
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(value, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbDel(key: string): Promise<void> {
-  if (!hasIDB()) return;
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).delete(key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
+/** The manifest as it is written to disk: a card minus its thumbnail pixels. */
+type StoredMeta = Omit<ProjectMeta, "thumb"> & { thumb?: string | null };
 
 // ---- module state -----------------------------------------------------------
 
@@ -156,10 +81,26 @@ let initialized = false;
 let defaults: ProjectState | null = null; // pristine durable slice, for New Project
 let manifest: ProjectMeta[] = []; // in-memory mirror of projects:manifest
 let currentId: string | null = null;
-let lastSaved = ""; // serialized durable slice we last persisted (write de-dupe)
+let lastSaved = ""; // durable fingerprint we last persisted (write de-dupe)
 let timer: ReturnType<typeof setTimeout> | null = null;
+/** projectId → hash of the plan image currently in the side store (skip re-writes). */
+const imageWritten = new Map<string, string>();
 
-const persistManifest = () => idbSet(MANIFEST_KEY, manifest);
+function storedMeta(m: ProjectMeta): StoredMeta {
+  const out: StoredMeta = {
+    id: m.id,
+    name: m.name,
+    createdAt: m.createdAt,
+    updatedAt: m.updatedAt,
+    rev: m.rev,
+  };
+  if (m.syncedRev !== undefined) out.syncedRev = m.syncedRev;
+  if (m.liveRoomId !== undefined) out.liveRoomId = m.liveRoomId;
+  if (m.liveRole !== undefined) out.liveRole = m.liveRole;
+  return out;
+}
+
+const persistManifest = () => idbSet(MANIFEST_KEY, manifest.map(storedMeta));
 const metaOf = (id: string | null) => manifest.find((m) => m.id === id) ?? null;
 
 /**
@@ -175,16 +116,103 @@ function* idsIn(state: ProjectState): Generator<string> {
   if (state.scene) yield* sceneIds(state.scene);
 }
 
+// ---- document read/write ----------------------------------------------------
+
+/** The fingerprint used to skip no-op saves: geometry text + the image's identity. */
+function durableFingerprint(state: ProjectState): string {
+  const { state: stripped, hash } = stripImage(state);
+  return `${hash ?? ""}|${JSON.stringify(stripped)}`;
+}
+
+/**
+ * Read a project document, migrating it forward if it was saved by an older
+ * version. Pass `withImage` when the pixels are actually needed (opening a
+ * project) — every other caller works on geometry alone.
+ */
+async function readDoc(id: string, withImage = false): Promise<ProjectDocument | null> {
+  const migrated = migrateDoc(await idbGet<unknown>(docKey(id)));
+  if (!migrated) return null;
+  const { doc, pendingImage } = migrated;
+
+  if (pendingImage) {
+    // v1 → v2: move the inline pixels into their own key, then rewrite the doc
+    // without them. Done once, on the first open after the upgrade.
+    await setPlanImage(id, pendingImage);
+    if (doc.imageHash) imageWritten.set(id, doc.imageHash);
+  }
+  if (migrated.changed) await idbSet(docKey(id), doc);
+
+  if (!withImage || !doc.state.image) return doc;
+  const src = pendingImage ?? (await getPlanImage(id));
+  if (src && doc.imageHash) imageWritten.set(id, doc.imageHash);
+  return { ...doc, state: attachImage(doc.state, src) };
+}
+
+/**
+ * Write a project document, keeping the plan image in its side key.
+ *
+ * `prevHash` carries the existing image's identity through writes whose state
+ * came from disk (the live-room mirror), so merging a scene patch never orphans
+ * the image.
+ */
+async function writeDoc(
+  id: string,
+  state: ProjectState,
+  savedAt: number,
+  prevHash: string | null = null,
+): Promise<void> {
+  const { state: stripped, src, hash } = stripImage(state);
+  if (src !== null && hash !== null) {
+    if (imageWritten.get(id) !== hash) {
+      await setPlanImage(id, src);
+      imageWritten.set(id, hash);
+    }
+  } else if (!state.image && imageWritten.has(id)) {
+    imageWritten.delete(id);
+    await deletePlanImage(id).catch(() => {});
+  }
+  await idbSet(docKey(id), {
+    schemaVersion: SCHEMA_VERSION,
+    savedAt,
+    state: stripped,
+    worldModel: null,
+    imageHash: hash ?? prevHash,
+  } satisfies ProjectDocument);
+}
+
+/**
+ * Bump a card's freshness and revision after a durable write. Works both with the
+ * manifest in memory (the editor) and without it (the live-room mirror runs on
+ * /v, where initProjectPersistence never ran).
+ */
+async function touchMeta(id: string, savedAt: number, patch?: Partial<StoredMeta>): Promise<void> {
+  const meta = metaOf(id);
+  if (meta) {
+    meta.updatedAt = savedAt;
+    meta.rev = (meta.rev ?? 0) + 1;
+    if (patch) Object.assign(meta, patch);
+    await persistManifest();
+    return;
+  }
+  const mani = (await idbGet<StoredMeta[]>(MANIFEST_KEY)) ?? [];
+  const m = mani.find((x) => x.id === id);
+  if (!m) return;
+  m.updatedAt = savedAt;
+  m.rev = (m.rev ?? 0) + 1;
+  if (patch) Object.assign(m, patch);
+  await idbSet(MANIFEST_KEY, mani);
+}
+
 /** Push the given project's saved (or pristine) state into the store. */
 async function loadIntoStore(id: string): Promise<void> {
-  const doc = await idbGet<ProjectDocument>(docKey(id));
+  const doc = await readDoc(id, true);
   const meta = metaOf(id);
   // Bump frameToken so the 3D view reframes/recenters onto THIS project's model.
   // Loading a project replaces `scene` directly (not via setScene), so without
   // this the viewport keeps the previous project's bounds and the model renders
   // off-origin — floating away from the origin-centred environment.
-  if (doc?.state && doc.schemaVersion === SCHEMA_VERSION) {
-    lastSaved = JSON.stringify(doc.state);
+  if (doc?.state) {
+    lastSaved = durableFingerprint(doc.state);
     reserveIds(idsIn(doc.state));
     useSceneStore.setState((s) => ({
       ...doc.state,
@@ -210,6 +238,22 @@ async function loadIntoStore(id: string): Promise<void> {
   }
 }
 
+/** Read the manifest, moving any v1 inline thumbnails out into their own keys. */
+async function hydrateManifest(): Promise<ProjectMeta[]> {
+  const stored = (await idbGet<StoredMeta[]>(MANIFEST_KEY)) ?? [];
+  return Promise.all(
+    stored.map(async (m) => {
+      const inline = m.thumb ?? null; // v1 manifests kept the JPEG inline
+      if (inline) await setThumb(m.id, inline).catch(() => {});
+      return {
+        ...m,
+        rev: m.rev ?? 1,
+        thumb: inline ?? (await getThumb(m.id).catch(() => null)),
+      } satisfies ProjectMeta;
+    }),
+  );
+}
+
 /**
  * Load the manifest + last-open project, restore it into the store, then
  * autosave on change. Idempotent and browser-only. Safe to call from a React
@@ -223,19 +267,21 @@ export async function initProjectPersistence(): Promise<void> {
   defaults = snapshot(useSceneStore.getState());
 
   try {
-    manifest = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
+    manifest = await hydrateManifest();
     currentId = await idbGet<string>(CURRENT_KEY);
 
     // One-time migration: fold a legacy `project:current` doc into a project.
     if (manifest.length === 0) {
-      const legacy = await idbGet<ProjectDocument>(LEGACY_KEY);
-      if (legacy?.state) {
+      const legacy = migrateDoc(await idbGet<unknown>(LEGACY_KEY));
+      if (legacy) {
         const id = uid();
-        const at = legacy.savedAt || Date.now();
-        await idbSet(docKey(id), legacy);
-        manifest = [{ id, name: deriveName(legacy.state), createdAt: at, updatedAt: at, thumb: null }];
+        const at = legacy.doc.savedAt || Date.now();
+        if (legacy.pendingImage) await setPlanImage(id, legacy.pendingImage);
+        await idbSet(docKey(id), legacy.doc);
+        manifest = [
+          { id, name: deriveName(legacy.doc.state), createdAt: at, updatedAt: at, rev: 1, thumb: null },
+        ];
         currentId = id;
-        await persistManifest();
         await idbSet(CURRENT_KEY, id);
         await idbDel(LEGACY_KEY).catch(() => {});
       }
@@ -249,6 +295,8 @@ export async function initProjectPersistence(): Promise<void> {
       const meta = await createProjectMeta();
       currentId = meta.id;
     }
+    // Rewrite the manifest once, so a v1 one sheds its inline thumbnails for good.
+    await persistManifest();
     await idbSet(CURRENT_KEY, currentId);
     await loadIntoStore(currentId);
   } catch {
@@ -256,6 +304,21 @@ export async function initProjectPersistence(): Promise<void> {
   }
 
   useSceneStore.subscribe((s) => scheduleSave(s));
+
+  // A debounced save loses up to DEBOUNCE_MS of edits when the tab goes away, so
+  // take the last chance to write. Best-effort: IndexedDB may not finish during
+  // teardown, but it usually does, and it costs nothing when it doesn't.
+  const flushNow = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    void flushSave(useSceneStore.getState());
+  };
+  window.addEventListener("pagehide", flushNow);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushNow();
+  });
 }
 
 function scheduleSave(s: StoreState): void {
@@ -266,22 +329,13 @@ function scheduleSave(s: StoreState): void {
 async function flushSave(s: StoreState): Promise<void> {
   if (!currentId) return;
   const state = snapshot(s);
-  const serialized = JSON.stringify(state);
-  if (serialized === lastSaved) return; // nothing durable changed
+  const fingerprint = durableFingerprint(state);
+  if (fingerprint === lastSaved) return; // nothing durable changed
   const savedAt = Date.now();
   try {
-    await idbSet(docKey(currentId), {
-      schemaVersion: SCHEMA_VERSION,
-      savedAt,
-      state,
-      worldModel: null,
-    } satisfies ProjectDocument);
-    lastSaved = serialized;
-    const meta = metaOf(currentId);
-    if (meta) {
-      meta.updatedAt = savedAt;
-      await persistManifest();
-    }
+    await writeDoc(currentId, state, savedAt);
+    lastSaved = fingerprint;
+    await touchMeta(currentId, savedAt);
     useSceneStore.setState({ projectSavedAt: savedAt } as Partial<StoreState>);
   } catch {
     /* quota/blocked — keep working in-memory */
@@ -314,15 +368,17 @@ export async function importProject(name: string, overrides: Partial<StoreState>
   }
   const id = uid();
   const now = Date.now();
-  const meta: ProjectMeta = { id, name: name.trim() || nextUntitledName(), createdAt: now, updatedAt: now, thumb: null };
+  const meta: ProjectMeta = {
+    id,
+    name: name.trim() || nextUntitledName(),
+    createdAt: now,
+    updatedAt: now,
+    rev: 1,
+    thumb: null,
+  };
   manifest.unshift(meta);
   await persistManifest();
-  await idbSet(docKey(id), {
-    schemaVersion: SCHEMA_VERSION,
-    savedAt: now,
-    state,
-    worldModel: null,
-  } satisfies ProjectDocument);
+  await writeDoc(id, state, now);
   return meta;
 }
 
@@ -341,15 +397,17 @@ export function getCurrentProjectId(): string | null {
 async function createProjectMeta(name?: string): Promise<ProjectMeta> {
   const id = uid();
   const now = Date.now();
-  const meta: ProjectMeta = { id, name: name?.trim() || nextUntitledName(), createdAt: now, updatedAt: now, thumb: null };
+  const meta: ProjectMeta = {
+    id,
+    name: name?.trim() || nextUntitledName(),
+    createdAt: now,
+    updatedAt: now,
+    rev: 1,
+    thumb: null,
+  };
   manifest.unshift(meta);
   await persistManifest();
-  await idbSet(docKey(id), {
-    schemaVersion: SCHEMA_VERSION,
-    savedAt: now,
-    state: defaults as ProjectState,
-    worldModel: null,
-  } satisfies ProjectDocument);
+  await writeDoc(id, defaults as ProjectState, now);
   return meta;
 }
 
@@ -376,7 +434,10 @@ export async function openProject(id: string): Promise<void> {
 export async function deleteProject(id: string): Promise<void> {
   manifest = manifest.filter((m) => m.id !== id);
   await persistManifest();
+  imageWritten.delete(id);
   await idbDel(docKey(id)).catch(() => {});
+  await deletePlanImage(id).catch(() => {});
+  await deleteThumb(id).catch(() => {});
   if (id === currentId) {
     currentId = null;
     if (manifest.length) await openProject(manifest[0].id);
@@ -398,7 +459,7 @@ export async function setProjectThumb(id: string, thumb: string): Promise<void> 
   const meta = metaOf(id);
   if (!meta) return;
   meta.thumb = thumb;
-  await persistManifest();
+  await setThumb(id, thumb).catch(() => {});
 }
 
 // ---- live projects (continuous, Google-Docs-style sharing) ------------------
@@ -458,21 +519,16 @@ export async function registerSharedProject(
     weather: seed.weather,
     liveRoomId: roomId,
   };
-  await idbSet(docKey(id), {
-    schemaVersion: SCHEMA_VERSION,
-    savedAt: now,
-    state,
-    worldModel: null,
-  } satisfies ProjectDocument);
+  await writeDoc(id, state, now);
   // Manifest may not be loaded on /v — read/write it directly.
-  const mani = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
+  const mani = (await idbGet<StoredMeta[]>(MANIFEST_KEY)) ?? [];
   if (!mani.some((m) => m.id === id)) {
     mani.unshift({
       id,
       name: seed.title?.trim() || "Shared plan",
       createdAt: now,
       updatedAt: now,
-      thumb: null,
+      rev: 1,
       liveRoomId: roomId,
       liveRole: role,
     });
@@ -499,10 +555,10 @@ export async function getRoomOwner(roomId: string): Promise<string | null> {
  *  This is the durable source of truth when the go-live handoff is absent (e.g. on
  *  reopening a live project) — so the room never falls back to the default sample. */
 export async function getProjectSeed(projectId: string): Promise<GoLiveSeed | null> {
-  const doc = await idbGet<ProjectDocument>(docKey(projectId));
+  const doc = await readDoc(projectId); // geometry only — the room never shows the plan image
   const st = doc?.state;
   if (!st?.scene) return null;
-  const mani = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
+  const mani = (await idbGet<StoredMeta[]>(MANIFEST_KEY)) ?? [];
   return {
     scene: st.scene,
     envPreset: st.envPreset ?? "none",
@@ -535,27 +591,16 @@ export function scheduleProjectMirror(projectId: string, patch: Partial<ProjectS
 
 async function writeProjectPatch(projectId: string, patch: Partial<ProjectState>): Promise<void> {
   try {
-    const doc = await idbGet<ProjectDocument>(docKey(projectId));
+    const doc = await readDoc(projectId); // geometry only: the merge must not touch the image
     if (!doc?.state) return; // no base to merge into — owner's project must exist first
     const state = { ...doc.state, ...patch } as ProjectState;
     const serialized = JSON.stringify(state);
     if (serialized === mirrorLast.get(projectId)) return; // nothing changed
     const savedAt = Date.now();
-    await idbSet(docKey(projectId), {
-      schemaVersion: SCHEMA_VERSION,
-      savedAt,
-      state,
-      worldModel: null,
-    } satisfies ProjectDocument);
+    await writeDoc(projectId, state, savedAt, doc.imageHash);
     mirrorLast.set(projectId, serialized);
-    // Bump the gallery card's freshness (manifest may not be loaded on /v — read it).
-    const mani = (await idbGet<ProjectMeta[]>(MANIFEST_KEY)) ?? [];
-    const m = mani.find((x) => x.id === projectId);
-    if (m) {
-      m.updatedAt = savedAt;
-      m.liveRoomId = state.liveRoomId ?? m.liveRoomId;
-      await idbSet(MANIFEST_KEY, mani);
-    }
+    // Bump the gallery card's freshness (manifest may not be loaded on /v).
+    await touchMeta(projectId, savedAt, state.liveRoomId ? { liveRoomId: state.liveRoomId } : undefined);
   } catch {
     /* quota / blocked — keep the room running, local mirror just lags */
   }
