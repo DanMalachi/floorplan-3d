@@ -9,8 +9,10 @@ import {
   renameProject,
   setProjectThumb,
   getCurrentProjectId,
+  subscribeProjects,
   type ProjectMeta,
 } from "@/store/projectPersistence";
+import { ensureDownloaded } from "@/store/syncEngine";
 import { captureViewportThumb } from "@/viewport3d/viewportCapture";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, microLabel } from "@/ui/tokens";
@@ -37,9 +39,14 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<ProjectMeta[]>([]);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
   const currentId = getCurrentProjectId();
 
   const refresh = () => setItems(listProjects());
+
+  // Cloud sync pulls projects in the background, so the gallery can't be a
+  // one-shot read any more — it has to hear about cards that arrive while open.
+  useEffect(() => subscribeProjects(refresh), []);
 
   // Snapshot the open project's 3D view, then list everything.
   useEffect(() => {
@@ -63,6 +70,15 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   async function handleOpen(id: string) {
+    // A card that came from the account but has never been on this computer:
+    // fetch it before opening, so the editor never loads an empty project.
+    if (items.find((x) => x.id === id)?.cloudOnly) {
+      setBusyId(id);
+      const ok = await ensureDownloaded(id);
+      setBusyId(null);
+      if (!ok) return; // stay in the gallery; the status line says why
+      refresh();
+    }
     if (id !== getCurrentProjectId()) await openProject(id);
     // A live project IS its shared room, so opening it drops straight into the room
     // (openProject above persists it as current, so leaving returns here).
@@ -227,6 +243,22 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         }}
                       >
                         OPEN
+                      </span>
+                    )}
+                    {m.cloudOnly && (
+                      <span
+                        title="Saved to your account — click to bring it onto this computer"
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: 999,
+                          background: T.panelBorder,
+                          color: T.text,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {busyId === m.id ? "DOWNLOADING…" : "IN CLOUD"}
                       </span>
                     )}
                     {m.liveRoomId && (

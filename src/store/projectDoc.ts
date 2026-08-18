@@ -66,8 +66,17 @@ export interface ProjectMetaBase {
   updatedAt: number;
   /** Bumped on every durable write. The change token cloud sync compares against. */
   rev: number;
-  /** The rev last confirmed by the server (set by the sync engine, not here). */
+  // ---- cloud sync bookkeeping (written by syncEngine, meaningless offline) ----
+  /** Local `rev` at the last successful push. rev > syncedRev = unpushed edits. */
   syncedRev?: number;
+  /** The server's own rev counter as of our last exchange with it. */
+  remoteRev?: number;
+  /** Hash of the plan image already uploaded — skips re-sending megabytes. */
+  syncedImageHash?: string;
+  /** Same idea for the card thumbnail. */
+  syncedThumbHash?: string;
+  /** A card pulled from the account whose document hasn't been downloaded yet. */
+  cloudOnly?: boolean;
 }
 
 // ---- hashing ----------------------------------------------------------------

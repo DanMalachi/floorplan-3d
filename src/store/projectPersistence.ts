@@ -86,6 +86,44 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 /** projectId → hash of the plan image currently in the side store (skip re-writes). */
 const imageWritten = new Map<string, string>();
 
+// ---- observers (the gallery, and the cloud sync engine) ---------------------
+
+const listeners = new Set<() => void>();
+
+interface SyncHooks {
+  /** A project's saved state changed on this device. */
+  onWrite?: (projectId: string) => void;
+  /** The user deleted a project here; it has to go on their other devices too. */
+  onDelete?: (projectId: string) => void;
+}
+let hooks: SyncHooks = {};
+const onDurableWrite = (id: string) => hooks.onWrite?.(id);
+
+/** Fires whenever the gallery's contents change — including from a background pull. */
+export function subscribeProjects(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function notifyProjects(): void {
+  for (const fn of listeners) {
+    try {
+      fn();
+    } catch {
+      /* a listener's problem is not the save path's problem */
+    }
+  }
+}
+
+/**
+ * Register the cloud sync engine's callbacks. Persistence stays unaware of what
+ * sync does with them — and with none registered (guest, or no Supabase) the
+ * save path behaves exactly as it did before accounts existed.
+ */
+export function setSyncHooks(next: SyncHooks): void {
+  hooks = next;
+}
+
 function storedMeta(m: ProjectMeta): StoredMeta {
   const out: StoredMeta = {
     id: m.id,
@@ -95,12 +133,19 @@ function storedMeta(m: ProjectMeta): StoredMeta {
     rev: m.rev,
   };
   if (m.syncedRev !== undefined) out.syncedRev = m.syncedRev;
+  if (m.remoteRev !== undefined) out.remoteRev = m.remoteRev;
+  if (m.cloudOnly !== undefined) out.cloudOnly = m.cloudOnly;
+  if (m.syncedImageHash !== undefined) out.syncedImageHash = m.syncedImageHash;
+  if (m.syncedThumbHash !== undefined) out.syncedThumbHash = m.syncedThumbHash;
   if (m.liveRoomId !== undefined) out.liveRoomId = m.liveRoomId;
   if (m.liveRole !== undefined) out.liveRole = m.liveRole;
   return out;
 }
 
-const persistManifest = () => idbSet(MANIFEST_KEY, manifest.map(storedMeta));
+async function persistManifest(): Promise<void> {
+  await idbSet(MANIFEST_KEY, manifest.map(storedMeta));
+  notifyProjects();
+}
 const metaOf = (id: string | null) => manifest.find((m) => m.id === id) ?? null;
 
 /**
@@ -259,8 +304,20 @@ async function hydrateManifest(): Promise<ProjectMeta[]> {
  * autosave on change. Idempotent and browser-only. Safe to call from a React
  * effect. Migrates a legacy single-project save into the multi-project store.
  */
-export async function initProjectPersistence(): Promise<void> {
-  if (initialized || typeof window === "undefined") return;
+export function initProjectPersistence(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  ready ??= doInit();
+  return ready;
+}
+
+/** Resolves once the manifest and the open project are loaded. Callers that need
+ *  the gallery to exist (cloud sync) await this instead of racing the boot. */
+export const whenProjectsReady = (): Promise<void> => ready ?? Promise.resolve();
+
+let ready: Promise<void> | null = null;
+
+async function doInit(): Promise<void> {
+  if (initialized) return;
   initialized = true;
 
   // Capture pristine defaults BEFORE restoring, so New Project can reset to them.
@@ -337,6 +394,7 @@ async function flushSave(s: StoreState): Promise<void> {
     lastSaved = fingerprint;
     await touchMeta(currentId, savedAt);
     useSceneStore.setState({ projectSavedAt: savedAt } as Partial<StoreState>);
+    onDurableWrite?.(currentId);
   } catch {
     /* quota/blocked — keep working in-memory */
   }
@@ -434,6 +492,7 @@ export async function openProject(id: string): Promise<void> {
 export async function deleteProject(id: string): Promise<void> {
   manifest = manifest.filter((m) => m.id !== id);
   await persistManifest();
+  hooks.onDelete?.(id);
   imageWritten.delete(id);
   await idbDel(docKey(id)).catch(() => {});
   await deletePlanImage(id).catch(() => {});
@@ -460,6 +519,92 @@ export async function setProjectThumb(id: string, thumb: string): Promise<void> 
   if (!meta) return;
   meta.thumb = thumb;
   await setThumb(id, thumb).catch(() => {});
+}
+
+// ---- cloud sync surface -----------------------------------------------------
+//
+// Everything the sync engine needs to read and write a project WITHOUT going
+// through the open-project path, so a background pull never disturbs what the
+// user is currently editing.
+
+export function getProjectMeta(id: string): ProjectMeta | null {
+  return metaOf(id);
+}
+
+/** Update a card's sync bookkeeping. Deliberately does NOT bump `rev` — recording
+ *  that we pushed is not itself a change worth pushing. */
+export async function patchProjectMeta(id: string, patch: Partial<StoredMeta>): Promise<void> {
+  const meta = metaOf(id);
+  if (!meta) return;
+  Object.assign(meta, patch);
+  await persistManifest();
+}
+
+/** A project's saved geometry plus its image/thumbnail, ready to upload. */
+export async function readProjectForSync(
+  id: string,
+): Promise<{ state: ProjectState; imageHash: string | null; planImage: string | null; thumb: string | null } | null> {
+  const doc = await readDoc(id); // geometry only — the image comes from its own key
+  if (!doc) return null;
+  return {
+    state: doc.state,
+    imageHash: doc.imageHash,
+    planImage: doc.imageHash ? await getPlanImage(id) : null,
+    thumb: await getThumb(id).catch(() => null),
+  };
+}
+
+/**
+ * Write a project that came from the server into local storage.
+ *
+ * Never touches the open project's store state: if the user happens to be
+ * looking at this project, `reopen` re-reads it once the write lands, rather
+ * than mutating the scene under their cursor mid-edit.
+ */
+export async function applyRemoteProject(
+  meta: Omit<ProjectMeta, "thumb"> & { thumb?: string | null },
+  state: ProjectState,
+  extras: { planImage?: string | null; thumb?: string | null; reopen?: boolean } = {},
+): Promise<void> {
+  const now = Date.now();
+  if (extras.planImage) {
+    await setPlanImage(meta.id, extras.planImage);
+    imageWritten.delete(meta.id); // force the hash to be recomputed from the doc
+  }
+  if (extras.thumb) await setThumb(meta.id, extras.thumb).catch(() => {});
+
+  await writeDoc(meta.id, state, now);
+
+  const existing = metaOf(meta.id);
+  if (existing) {
+    Object.assign(existing, meta, { cloudOnly: false });
+    if (extras.thumb) existing.thumb = extras.thumb;
+  } else {
+    manifest.unshift({ ...meta, cloudOnly: false, thumb: extras.thumb ?? meta.thumb ?? null });
+  }
+  await persistManifest();
+
+  // loadIntoStore resets the save fingerprint from what it just read, so the
+  // reload does not look like an edit and bounce straight back to the server.
+  if (extras.reopen && meta.id === currentId) await loadIntoStore(meta.id);
+}
+
+/** Add a card for a project that lives on the account but not yet on this device. */
+export async function addCloudStub(meta: Omit<ProjectMeta, "thumb">, thumb: string | null): Promise<void> {
+  if (metaOf(meta.id)) return;
+  manifest.unshift({ ...meta, cloudOnly: true, thumb });
+  await persistManifest();
+}
+
+/** Drop a project from this device only (it was deleted on another one). */
+export async function forgetProject(id: string): Promise<void> {
+  if (id === currentId) return; // never yank the project the user is looking at
+  manifest = manifest.filter((m) => m.id !== id);
+  imageWritten.delete(id);
+  await persistManifest();
+  await idbDel(docKey(id)).catch(() => {});
+  await deletePlanImage(id).catch(() => {});
+  await deleteThumb(id).catch(() => {});
 }
 
 // ---- live projects (continuous, Google-Docs-style sharing) ------------------
@@ -601,6 +746,7 @@ async function writeProjectPatch(projectId: string, patch: Partial<ProjectState>
     mirrorLast.set(projectId, serialized);
     // Bump the gallery card's freshness (manifest may not be loaded on /v).
     await touchMeta(projectId, savedAt, state.liveRoomId ? { liveRoomId: state.liveRoomId } : undefined);
+    onDurableWrite?.(projectId);
   } catch {
     /* quota / blocked — keep the room running, local mirror just lags */
   }

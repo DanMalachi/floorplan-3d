@@ -8,6 +8,8 @@ import { AccountMenu } from "@/ui/AccountMenu";
 import { GtLab } from "@/dev/GtLab";
 import { legacyExtractionEnabled } from "@/lib/featureFlags";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
+import { useSyncStore } from "@/store/useSyncStore";
+import { CloudSync } from "@/ui/CloudSync";
 import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectLiveRole } from "@/store/projectPersistence";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T } from "@/ui/tokens";
@@ -21,7 +23,22 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
   const savedAt = useSceneStore((s) => s.projectSavedAt);
   const restored = useSceneStore((s) => s.projectRestored);
   const name = useSceneStore((s) => s.projectName);
-  const status = savedAt ? "Saved" : restored ? "Restored" : "Autosaving…";
+  const sync = useSyncStore((s) => s.status);
+  const local = savedAt ? "Saved" : restored ? "Restored" : "Autosaving…";
+  // Signed out, the local wording is the whole truth. Signed in, what matters is
+  // whether the work has left this computer yet.
+  const status =
+    sync === "off"
+      ? local
+      : sync === "syncing"
+        ? "Syncing…"
+        : sync === "offline"
+          ? "Saved here · offline"
+          : sync === "error"
+            ? "Saved here · can't reach cloud"
+            : sync === "conflict"
+              ? "Kept both versions"
+              : `${local} · Synced`;
   return (
     <div
       style={{
@@ -252,6 +269,7 @@ export default function Home() {
       }}
     >
       <PdThemeStyle />
+      <CloudSync />
       <ModeSwitcher />
       <ProjectBar onOpenProjects={() => setProjectsOpen(true)} />
       <div
