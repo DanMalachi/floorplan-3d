@@ -13,6 +13,14 @@ import {
   computeWallEffectiveHeights,
   computeWallRenderHeights,
 } from "@/render/ceilingHeight";
+import { takesWindowFinish } from "@/render/doorStyle";
+import { frameFinishOf } from "@/render/frameFinish";
+import {
+  frameMatteFinish,
+  MATTE_NEUTRAL,
+  MATTE_SHADING,
+  GLOSSY_SHADING,
+} from "@/decorate/frameTexture";
 import { paintTexture } from "@/decorate/paintTexture";
 import { doorProceduralFinish } from "@/decorate/doorTexture";
 import { loadDoorTextures, doorMaterialRoughness } from "@/materials/loaderDoors";
@@ -672,40 +680,78 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   // own natural color. "aluminum-matte"/"aluminum-glossy" share ONE texture
   // set with a roughness override rather than two separate assets (Dan's
   // approved cheap-variant call).
+  //
+  // A PATIO DOOR runs through here too, not through the door-leaf branch
+  // above: its sashes are glass in an aluminium frame, which is a window's
+  // construction and not a door's. `mats.mullion` is what its sash stiles are
+  // tagged as (buildJoinery's glazed bypass panels), so the same two
+  // materials cover both — the leaf branch above only ever touches
+  // `mats.leaf`, which a glazed slider has no pieces in, so the two effects
+  // can both run on the same opening without fighting.
+  const windowFinish = takesWindowFinish(opening);
   useEffect(() => {
-    if (opening.type !== "window") return;
-    const kind = opening.frameMaterial ?? "aluminum-matte";
-    const tint = opening.frameColor;
     const targets = [mats.frame, mats.mullion];
-    if (kind === "painted") {
-      const finish = doorProceduralFinish("painted-white");
+    if (!windowFinish) {
+      // Not (or no longer) glazed. Put the two shared materials back to the
+      // neutral trim they start as — switching a patio door to a swing leaf
+      // has to take the aluminium off its casing, not leave it behind.
+      for (const [m, color] of [[mats.frame, "#d9cfbb"], [mats.mullion, "#c9bfa8"]] as const) {
+        m.map = null;
+        m.normalMap = null;
+        m.roughnessMap = null;
+        m.metalnessMap = null;
+        m.aoMap = null;
+        m.color.set(color);
+        m.roughness = 0.7;
+        m.metalness = 0;
+        m.normalScale.set(1, 1);
+        m.envMapIntensity = 1;
+        m.needsUpdate = true;
+      }
+      return;
+    }
+    const tint = opening.frameColor;
+    if (frameFinishOf(opening) === "matte") {
+      // Powder coat, not dulled metal. No colour map at all — the tint IS the
+      // colour, the way wall paint works — because multiplying a tint into a
+      // metallic albedo drove every colour towards grey, which is what made
+      // the old "matte" swallow whatever it was tinted. Grain carries both a
+      // normal and a matching roughness map (a flat fill with only one reads
+      // as printed vinyl). Metalness near zero and a low env intensity are
+      // what actually take the reflections out; roughness alone never did.
+      const finish = frameMatteFinish();
+      const s = MATTE_SHADING;
       for (const m of targets) {
-        m.map = finish.map ?? null;
+        m.map = null;
         m.normalMap = finish.normalMap;
+        m.normalScale.set(s.normalScale, s.normalScale);
         m.roughnessMap = finish.roughnessMap;
         m.metalnessMap = null;
         m.aoMap = null;
-        m.color.set(tint ?? "#e6e0d4");
-        m.roughness = 0.78;
-        m.metalness = 0;
+        m.color.set(tint ?? MATTE_NEUTRAL);
+        m.roughness = s.roughness;
+        m.metalness = s.metalness;
+        m.envMapIntensity = s.envMapIntensity;
         m.needsUpdate = true;
       }
     } else {
       const tex = loadWindowTextures("aluminum");
-      const roughness = kind === "aluminum-glossy" ? 0.15 : 0.55;
+      const s = GLOSSY_SHADING;
       for (const m of targets) {
         m.map = tex?.map ?? null;
         m.normalMap = tex?.normalMap ?? null;
+        m.normalScale.set(s.normalScale, s.normalScale);
         m.roughnessMap = tex?.roughnessMap ?? null;
         m.metalnessMap = tex?.metalnessMap ?? null;
         m.aoMap = tex?.aoMap ?? null;
         m.color.set(tint ?? "#ffffff"); // untinted = the anodised aluminium's own albedo
-        m.roughness = roughness;
+        m.roughness = s.roughness;
         m.metalness = windowMaterialMetalness("aluminum") ?? 1;
+        m.envMapIntensity = s.envMapIntensity;
         m.needsUpdate = true;
       }
     }
-  }, [mats, opening.type, opening.frameMaterial, opening.frameColor]);
+  }, [mats, windowFinish, opening.frameMaterial, opening.frameColor]);
   // Selection/hover glow on the real geometry (the frame + leaf carry it).
   useEffect(() => {
     const g = selected ? 0.16 : hovered ? 0.07 : 0;

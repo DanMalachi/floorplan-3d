@@ -23,7 +23,12 @@ const FIXTURE_BY_ID = new Map(FIXTURE_CATALOG.map((f) => [f.assetId, f]));
  *  assetId is never in CATALOG_BY_ID, and treating it as a catalog miss would
  *  silently file every ceiling light under "floor". */
 export function armedTarget(s: SceneState): ArmedTarget | null {
-  if (s.brush) return { source: "brush", kind: s.brush.kind };
+  // The frame brush is the one brush with no surface to click — it retints
+  // every window and patio door at once — so there is nothing for the camera
+  // to aim at and it must not offer to reframe.
+  if (s.brush) {
+    return s.brush.kind === "frame" ? null : { source: "brush", kind: s.brush.kind };
+  }
   if (s.appMode === "build" && s.buildTool === "opening") return { source: "opening" };
 
   const run = s.placingRun ?? s.placingCounter;

@@ -23,8 +23,7 @@ import {
   takesWindowFinish,
   withLeafWidth,
 } from "@/render/doorStyle";
-import { useEffect, useState } from "react";
-import { loadTambourColors, type TambourColor } from "@/lib/tambourColors";
+import { frameFinishOf, type FrameFinish } from "@/render/frameFinish";
 import { pdChip } from "../tokens";
 import {
   pdInspectorPanel,
@@ -70,49 +69,46 @@ const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; label: string
   { key: "walnut", label: "Walnut" },
 ];
 
-const WINDOW_FRAME_MATERIALS: { key: NonNullable<Opening["frameMaterial"]>; label: string }[] = [
-  { key: "aluminum-matte", label: "Matte" },
-  { key: "aluminum-glossy", label: "Glossy" },
-  { key: "painted", label: "Painted" },
+// Two finishes, not three: "Painted" was tinted matte under another name, so
+// it offered a choice that changed nothing (it survives in the schema for
+// saved projects — see `frameFinishOf`). Colour is orthogonal to both and
+// comes from the Decorate palette. Like colour, the finish is whole-house.
+const WINDOW_FRAME_MATERIALS: { key: FrameFinish; label: string; title: string }[] = [
+  { key: "matte", label: "Matte", title: "Powder-coated — fine grain, almost no reflection. Applies to every window and patio door." },
+  { key: "glossy", label: "Glossy", title: "Polished anodised aluminium — sharp reflections. Applies to every window and patio door." },
 ];
 
-/** Open color tint for a window frame (Dan's ruling: any color, not a
- *  restricted swatch list) — reuses the SAME Tambour catalog wall paint
- *  already loads (`loadTambourColors`, `BottomDock.tsx`'s Paint tab), so
- *  frame tinting shares one palette with wall paint rather than inventing a
- *  second color dataset. "Natural" (no tint) is the first swatch. */
-function FrameColorSwatches({ opening, patch }: {
-  opening: Opening;
-  patch: (label: string, p: Partial<Opening>) => void;
-}) {
-  const [colors, setColors] = useState<TambourColor[] | null>(null);
-  useEffect(() => {
-    let alive = true;
-    loadTambourColors().then((c) => alive && setColors(c));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  const active = opening.frameColor ?? null;
+/** The frame's current colour, plus the one button that changes it.
+ *
+ *  The colour list itself lives in the Decorate dock's Paint tab, not here.
+ *  Twenty swatches crammed into a 190 px inspector column was the whole reason
+ *  this panel read as cluttered, and the dock already has a full, grouped,
+ *  scrollable palette built for exactly this. "Paint" arms the frame brush and
+ *  opens that tab, so the same colours that paint walls also paint frames —
+ *  and every colour in the catalog is reachable, not the first twenty. */
+function FramePaintRow({ opening }: { opening: Opening }) {
+  const armed = useSceneStore((s) => s.brush?.kind === "frame");
+  const openPalette = () => {
+    const s = useSceneStore.getState();
+    // Order matters: requestDock switches to Decorate, and switching app mode
+    // clears the brush — arming first would arm it and immediately drop it.
+    s.requestDock("paint");
+    useSceneStore.getState().setBrush({ kind: "frame", hex: opening.frameColor ?? null });
+  };
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <PdSwatch
-        hex={null}
-        active={active === null}
-        title="Natural — the material's own color"
-        onClick={() => patch("Frame colour: natural", { frameColor: undefined })}
-        size={18}
+        hex={opening.frameColor ?? null}
+        title={opening.frameColor ?? "Natural — the finish's own colour"}
+        onClick={openPalette}
       />
-      {(colors ?? []).slice(0, 20).map((c) => (
-        <PdSwatch
-          key={c.code}
-          hex={c.hex}
-          active={active === c.hex}
-          title={`${c.code} · ${c.nameEn}`}
-          onClick={() => patch(`Frame colour: ${c.nameEn}`, { frameColor: c.hex })}
-          size={18}
-        />
-      ))}
+      <button
+        style={pdChip(armed, { flex: 1, textAlign: "center" })}
+        onClick={openPalette}
+        title="Pick a colour in the Decorate palette — it applies to every window and patio door"
+      >
+        {armed ? "Picking…" : "🎨 Paint"}
+      </button>
     </div>
   );
 }
@@ -367,19 +363,21 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           window and patio door at once: one house, one glazing colour. */}
       {(isWindow || glazedDoor) && (
         <>
-          <div style={pdMicroLabel()}>Frame material</div>
+          <div style={pdMicroLabel()}>Frame finish · whole house</div>
           <div style={{ display: "flex", gap: 4 }}>
             {WINDOW_FRAME_MATERIALS.map((m) => (
               <button
                 key={m.key}
-                style={pdChip((opening.frameMaterial ?? "aluminum-matte") === m.key, pdChipFlex)}
-                onClick={() => patch(`Frame material: ${m.label}`, { frameMaterial: m.key })}
+                style={pdChip(frameFinishOf(opening) === m.key, pdChipFlex)}
+                onClick={() => useSceneStore.getState().setFrameFinish(m.key)}
+                title={m.title}
               >
                 {m.label}
               </button>
             ))}
           </div>
-          <FrameColorSwatches opening={opening} patch={patch} />
+          <div style={pdMicroLabel()}>Frame colour · whole house</div>
+          <FramePaintRow opening={opening} />
         </>
       )}
 

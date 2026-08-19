@@ -98,8 +98,17 @@ export interface Opening {
   lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
   // --- Materials (Realism sprint, additive) ---
   doorMaterial?: "walnut" | "painted-white" | "painted-charcoal" | "oak"; // doors only (default "painted-white")
-  frameMaterial?: "aluminum-matte" | "aluminum-glossy" | "painted"; // windows only (default "aluminum-matte")
-  frameColor?: string; // windows only: hex tint over the frame material's own color (absent = natural)
+  // Windows and patio doors (default "aluminum-matte"). "painted" is LEGACY —
+  // it duplicated tinted matte, so it no longer has a control and resolves to
+  // matte on render; it stays in the union because saved projects hold it.
+  // See `frameFinishOf` in src/render/frameFinish.ts, the one resolver.
+  frameMaterial?: "aluminum-matte" | "aluminum-glossy" | "painted";
+  // Hex tint over the frame finish (absent = the finish's own colour). SCENE-
+  // WIDE by design: a house does not have windows in two different colours, so
+  // this is written to every window and patio door at once by the store's
+  // `setFrameColor`, never edited per opening. `frameMaterial` is whole-house
+  // the same way, via `setFrameFinish`.
+  frameColor?: string;
 }
 
 /**

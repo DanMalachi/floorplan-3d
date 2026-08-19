@@ -526,7 +526,12 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
 
 function PaintTab() {
   const brush = useSceneStore((s) => s.brush);
-  const activeHex = brush?.kind === "paint" ? brush.hex : undefined;
+  // The same palette serves walls and window frames — which one a swatch lands
+  // on is the armed brush, not a second copy of the colour list. Frames take
+  // the colour immediately on pick (there is no surface to click: frame colour
+  // is whole-house), walls arm the brush for the next click.
+  const forFrames = brush?.kind === "frame";
+  const activeHex = brush?.kind === "paint" || brush?.kind === "frame" ? brush.hex : undefined;
   const [colors, setColors] = useState<TambourColor[] | null>(null);
   useEffect(() => {
     let alive = true;
@@ -536,14 +541,17 @@ function PaintTab() {
     };
   }, []);
   const grouped = useMemo(() => groupByFamily(colors ?? []), [colors]);
-  const pick = (hex: string | null) => useSceneStore.getState().setBrush({ kind: "paint", hex });
-  const plasterActive = brush?.kind === "paint" && activeHex === null;
+  const pick = (hex: string | null) =>
+    forFrames
+      ? useSceneStore.getState().setFrameColor(hex)
+      : useSceneStore.getState().setBrush({ kind: "paint", hex });
+  const plasterActive = activeHex === null && (brush?.kind === "paint" || forFrames);
   const families: TambourFamily[] = ["white", "neutral", "red", "orange", "yellow", "green", "blue", "purple"];
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
       <button
         onClick={() => pick(null)}
-        title="Plaster (default)"
+        title={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
         style={{
           flex: "0 0 auto",
           width: 30,
@@ -797,7 +805,9 @@ export function BottomDock() {
           </Tooltip>
           {brush && (
             <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-              {brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop
+              {brush.kind === "frame"
+                ? "Window frames — pick a colour · Esc to stop"
+                : `${brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop`}
             </span>
           )}
           {!brush && replaceTarget && (

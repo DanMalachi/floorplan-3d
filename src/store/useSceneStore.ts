@@ -11,6 +11,7 @@ import {
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
+import { frameColorPatch, frameMaterialPatch, type FrameFinish } from "@/render/frameFinish";
 import { sanitizeSpec, GENERATORS, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
@@ -158,10 +159,17 @@ export type DockTab = "furniture" | "lighting" | "paint" | "floors";
 export type WallViewMode = "full" | "cutaway" | "top";
 
 /** Active materials applicator in Decorate mode. Paint carries a hex (null =
- *  reset to plaster); floor carries a floor style. Click surfaces to apply. */
+ *  reset to plaster); floor carries a floor style. Click surfaces to apply.
+ *
+ *  `frame` is the odd one out and deliberately so: it has no surface to click,
+ *  because frame colour is a whole-house property (see `setFrameColor`).
+ *  Arming it re-points the Paint tab's palette at the window frames, so one
+ *  colour list serves walls and frames instead of the inspector growing a
+ *  second, cramped copy of it. */
 export type Brush =
   | { kind: "paint"; hex: string | null }
-  | { kind: "floor"; style: FloorStyle };
+  | { kind: "floor"; style: FloorStyle }
+  | { kind: "frame"; hex: string | null };
 
 /** Presentation environment around the model. Persisted per project. */
 export type EnvPreset = "none" | "suburb" | "city";
@@ -369,6 +377,13 @@ export interface StoreState {
   /** Active paint/floor applicator: click surfaces to apply, Esc to stop. */
   brush: Brush | null;
   setBrush: (b: Brush | null) => void;
+  /** Retint / re-finish EVERY window and patio door in the project, each in one
+   *  commit (one undo step). Both halves of a frame's look are whole-house
+   *  properties — frames are one joinery package, ordered once — so these are
+   *  the only writers of `Opening.frameColor` / `frameMaterial`, and there is
+   *  deliberately no per-opening path to either. */
+  setFrameColor: (hex: string | null) => void;
+  setFrameFinish: (finish: FrameFinish) => void;
 
   // --- eyedropper (Plan Dock P7) ---
   /** Armed = the next click on furniture/a fixture/a painted wall face/a
@@ -919,6 +934,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
     brush: null,
     setBrush: (brush) => set({ brush, placing: null, placingRun: null, placingCounter: null, placingWall: null, sel3d: null, eyedropper: false }),
+    setFrameColor: (hex) => {
+      const s = get();
+      s.commitScene(hex ? "Frame colour" : "Frame colour: natural", frameColorPatch(s.scene, hex));
+      // Keep the brush armed and in step, so the palette keeps showing which
+      // swatch is live while you try another.
+      if (s.brush?.kind === "frame") set({ brush: { kind: "frame", hex: hex ?? null } });
+    },
+    setFrameFinish: (finish) => {
+      const s = get();
+      s.commitScene(`Frame finish: ${finish}`, frameMaterialPatch(s.scene, finish));
+    },
     eyedropper: false,
     setEyedropper: (eyedropper) =>
       set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null } : {}) }),
