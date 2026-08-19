@@ -1,5 +1,7 @@
 import type { Scene } from "@/schema/scene";
 import { WALL_HEIGHT } from "@/schema/constants";
+import { MIN_CASTER_THICKNESS } from "./contract";
+import { resolveCeilingState } from "@/lib/rooms/roomCeiling";
 
 /**
  * Resolved ceiling height for every room: `room.ceilingHeight` when authored
@@ -68,6 +70,70 @@ export function computeWallEffectiveHeights(
       if (!wall) continue;
       const prev = heights.get(wall.id) ?? wall.height ?? WALL_HEIGHT;
       heights.set(wall.id, Math.max(prev, roomH));
+    }
+  }
+  return heights;
+}
+
+/**
+ * Which rooms actually get a ceiling built over them.
+ *
+ * Resolved through `roomCeiling.ts` — the one place allowed to infer this —
+ * rather than re-deriving rail adjacency here, which render-contract.md §8.3
+ * forbids precisely because a second copy of the check drifts. It also means
+ * an authored `room.ceiling` is honoured: `Ceilings` used to read rail edges
+ * directly and would roof a room explicitly marked open to the sky.
+ *
+ * A rail means open to the SKY, so the room loses its ceiling. A portal means
+ * open to the next ROOM, and the ceiling runs straight over it. Do not merge
+ * the two.
+ */
+export function roomsWithCeiling(scene: Scene): Set<string> {
+  const out = new Set<string>();
+  for (const room of scene.rooms) {
+    if (room.loop.length < 3) continue;
+    if (resolveCeilingState(room, scene.walls) === "roofed") out.add(room.id);
+  }
+  return out;
+}
+
+/**
+ * The height a wall's BODY is actually drawn to — its effective height plus
+ * the ceiling slab of any roofed room it bounds.
+ *
+ * A ceiling is a solid, not a plane (it has to be, to cast a shadow without
+ * acneing — render contract §3.4), and its underside is the room's ceiling
+ * plane. That puts the slab's MIT thickness in the airspace above the wall
+ * top, where from any outside or aerial angle it read as a white lip standing
+ * proud of every wall. Walls carry that slab in a real building, so they end
+ * at its top, not at its underside: raising the body by exactly the slab
+ * thickness hides it behind the wall head and leaves the ceiling plane —
+ * which lights, fixtures and `room.ceilingHeight` all resolve against —
+ * exactly where it was.
+ *
+ * Separate from `computeWallEffectiveHeights` on purpose. That one is the
+ * ceiling/riser contract (is this wall taller than the room's ceiling?) and
+ * must keep comparing against the ceiling plane; this one is only about what
+ * gets drawn, so a universal +slab can't make every wall look like it needs a
+ * riser.
+ */
+export function computeWallRenderHeights(
+  scene: Scene,
+  roomHeights: Map<string, number>,
+  effectiveHeights: Map<string, number>,
+): Map<string, number> {
+  const wallByEdge = new Map(scene.walls.map((w) => [[w.a, w.b].sort().join("|"), w]));
+  const roofed = roomsWithCeiling(scene);
+  const heights = new Map(effectiveHeights);
+  for (const room of scene.rooms) {
+    if (!roofed.has(room.id)) continue; // open to the sky — no slab to hide
+    const roomH = roomHeights.get(room.id);
+    if (roomH == null) continue;
+    for (let i = 0; i < room.loop.length; i++) {
+      const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
+      if (!wall) continue;
+      const prev = heights.get(wall.id) ?? wall.height ?? WALL_HEIGHT;
+      heights.set(wall.id, Math.max(prev, roomH + MIN_CASTER_THICKNESS));
     }
   }
   return heights;

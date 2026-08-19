@@ -8,7 +8,11 @@ import { useSceneStore } from "@/store/useSceneStore";
 import type { Node } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
 import { MIN_CASTER_THICKNESS } from "@/render/contract";
-import { resolveCeilingHeights, computeWallEffectiveHeights } from "@/render/ceilingHeight";
+import {
+  resolveCeilingHeights,
+  computeWallEffectiveHeights,
+  roomsWithCeiling,
+} from "@/render/ceilingHeight";
 import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
 import { useFloorTexture, floorRoughness } from "./textures";
@@ -206,14 +210,11 @@ export function Ceilings({ scene }: { scene: Scene }) {
 
   const ceilingsAndRisers = useMemo(() => {
     const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-    // RAILS only — deliberately not every non-solid kind. A rail means open to
-    // the SKY, so the room loses its ceiling. A portal means open to the next
-    // ROOM, and the ceiling runs straight over it. Do not merge these.
-    const railEdges = new Set(
-      scene.walls
-        .filter((w) => w.kind === "rail")
-        .map((w) => [w.a, w.b].sort().join("|")),
-    );
+    // Which rooms are roofed at all (rail-bounded ones are open to the sky).
+    // Shared with `computeWallRenderHeights`, which raises a wall head to hide
+    // the slab — the two must agree on where a slab exists or a wall grows a
+    // 12 cm parapet with nothing behind it.
+    const roofed = roomsWithCeiling(scene);
     // Every wall by its node-pair edge, to look up each bounding wall's own
     // (possibly customized) height — same lookup shape as WallMesh's per-wall
     // height resolution, just keyed for room-loop traversal.
@@ -246,10 +247,7 @@ export function Ceilings({ scene }: { scene: Scene }) {
         .map((id) => nodes.get(id))
         .filter((n): n is NonNullable<typeof n> => n != null);
       if (loop.length < 3) continue;
-      const open = room.loop.some((id, i) =>
-        railEdges.has([id, room.loop[(i + 1) % room.loop.length]].sort().join("|")),
-      );
-      if (open) continue; // balcony / open-air room — no ceiling
+      if (!roofed.has(room.id)) continue; // balcony / open-air room — no ceiling
       const height = roomHeights.get(room.id) ?? WALL_HEIGHT;
       out.push({ id: room.id, geometry: buildCeilingSlab(loop, MIN_CASTER_THICKNESS), height });
 

@@ -8,7 +8,11 @@ import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS, RAIL_HEIGHT } from "@/schema/constants";
 import { shadowProps } from "@/render/materialClass";
-import { resolveCeilingHeights, computeWallEffectiveHeights } from "@/render/ceilingHeight";
+import {
+  resolveCeilingHeights,
+  computeWallEffectiveHeights,
+  computeWallRenderHeights,
+} from "@/render/ceilingHeight";
 import { paintTexture } from "@/decorate/paintTexture";
 import { doorProceduralFinish } from "@/decorate/doorTexture";
 import { loadDoorTextures, doorMaterialRoughness } from "@/materials/loaderDoors";
@@ -1348,10 +1352,13 @@ export function Walls({ scene, offset }: {
   );
 
   // Sprint 4: each wall renders at the taller of its own height and every
-  // room it borders' resolved ceiling — see src/render/ceilingHeight.ts.
+  // room it borders' resolved ceiling — see src/render/ceilingHeight.ts —
+  // plus the ceiling slab it carries, so the wall head hides the slab instead
+  // of the slab standing proud above every wall.
   const wallHeights = useMemo(() => {
     const roomHeights = resolveCeilingHeights(scene);
-    return computeWallEffectiveHeights(scene, roomHeights);
+    const effective = computeWallEffectiveHeights(scene, roomHeights);
+    return computeWallRenderHeights(scene, roomHeights, effective);
   }, [scene.rooms, scene.walls]);
 
   return (

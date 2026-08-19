@@ -5,8 +5,13 @@ import type { FixtureItem, Node, Room, Scene, Wall } from "@/schema/scene";
 import { poleOfInaccessibility } from "@/lib/rooms/poleOfInaccessibility";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
 import { computeRoomLights, WALL_FIXTURE_REFERENCE_AREA_M2 } from "./roomLighting";
-import { resolveCeilingHeights, computeWallEffectiveHeights } from "./ceilingHeight";
-import { ROOM_LIGHT } from "./contract";
+import {
+  resolveCeilingHeights,
+  computeWallEffectiveHeights,
+  computeWallRenderHeights,
+  roomsWithCeiling,
+} from "./ceilingHeight";
+import { ROOM_LIGHT, MIN_CASTER_THICKNESS } from "./contract";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { DEFAULT_FIXTURE_LUX, roomFixtureCandela, toRenderIntensity } from "./lightPresets";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
@@ -270,6 +275,46 @@ console.log("\ncomputeRoomLights — driven by fixtures, no built-in fallback");
     const wallHeights = computeWallEffectiveHeights(authored, resolveCeilingHeights(authored));
     check("a wall shared with a taller authored-ceiling room rises to match it",
       wallHeights.get("wa1") === 3.6, `got ${wallHeights.get("wa1")}`);
+  }
+
+  // -------------------------------------------------------------------------
+  console.log("\nthe wall head hides the ceiling slab");
+  {
+    const roomH = resolveCeilingHeights(baseScene);
+    const effective = computeWallEffectiveHeights(baseScene, roomH);
+    const render = computeWallRenderHeights(baseScene, roomH, effective);
+
+    // The slab is a solid, its underside IS the ceiling plane, so its thickness
+    // lands in the airspace above the wall top unless the wall carries it.
+    check("a roofed room's wall is drawn a slab taller than its ceiling",
+      Math.abs((render.get("wa0") ?? 0) - (WALL_HEIGHT + MIN_CASTER_THICKNESS)) < 1e-9,
+      `got ${render.get("wa0")}`);
+    check("...while the ceiling plane itself does not move",
+      roomH.get("A") === WALL_HEIGHT, `got ${roomH.get("A")}`);
+
+    // The riser rule compares walls against ceiling planes. If the +slab leaked
+    // into the effective heights, EVERY wall would suddenly read as taller than
+    // its room's ceiling and grow a 12 cm riser it does not need.
+    check("the ceiling/riser contract is untouched by it",
+      effective.get("wa0") === WALL_HEIGHT, `got ${effective.get("wa0")}`);
+
+    // A balcony is open to the sky: no slab exists, so there is nothing to hide
+    // and its walls must not sprout a parapet.
+    check("balcony walls stay at their own height", render.get("wc1") === WALL_HEIGHT,
+      `got ${render.get("wc1")}`);
+    check("...and the balcony is correctly counted as roofless",
+      !roomsWithCeiling(baseScene).has("balcony") && roomsWithCeiling(baseScene).has("A"));
+    // Resolved through roomCeiling.ts, so an AUTHORED "open" wins over the
+    // geometry. `Ceilings` used to read rail edges itself and would roof a
+    // room explicitly marked open to the sky (§8.3's warning, in the wild).
+    check("an authored ceiling:\"open\" room is roofless even with no rail on it",
+      !roomsWithCeiling(baseScene).has("authoredOpen"));
+    check("...so its walls get no parapet either", render.get("we0") === WALL_HEIGHT,
+      `got ${render.get("we0")}`);
+
+    // A wall no room references has no slab bearing on it either.
+    check("a facade wall bordering no room is left alone", render.get("wx0") === WALL_HEIGHT,
+      `got ${render.get("wx0")}`);
   }
 
   // -------------------------------------------------------------------------
