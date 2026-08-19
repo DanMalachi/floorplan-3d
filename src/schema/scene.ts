@@ -85,6 +85,15 @@ export interface Opening {
   swingDeg?: number; // door leaf open angle, 0 = closed (default). Swing doors only.
   hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Swing doors only.
   slide?: SlideSpec; // present = a SLIDING door; swingDeg/hinge are then unused
+  // A pair of hinged leaves meeting mid-opening (French/double doors). Each
+  // leaf hangs on its own jamb and swings out its own way, so `hinge` is
+  // unused; `swingDeg` opens both. Mutually exclusive with `slide`.
+  double?: boolean;
+  // How the opening's width divides between its leaves/panels, in order from
+  // node a — fractions, normalised on read, absent = an even split. Applies to
+  // double doors (2 leaves) and bypass sliders (`slide.panels` panels), so an
+  // uneven pair (a 90 cm active leaf beside a 60 cm fixed one) is expressible.
+  leafSplit?: number[];
   mullions?: { cols: number; rows: number }; // window glazing-bar grid (default {cols:2,rows:1})
   lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
   // --- Materials (Realism sprint, additive) ---

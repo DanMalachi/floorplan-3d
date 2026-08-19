@@ -1,4 +1,5 @@
 import type { Opening, SlideSpec } from "@/schema/scene";
+import { effectiveSlide, isDoubleDoor, leafWidths } from "@/render/doorStyle";
 
 // Real door/window joinery filling an opening's gap. Pure geometry: given an
 // opening + its host wall's local frame, emit tagged boxes (frame lining, door
@@ -81,8 +82,11 @@ type PlaceZ = (
  * The three types the product cares about are one parameterisation, not three
  * code paths: patio = bypass + glazed + 2, wardrobe = bypass + solid + 2..3,
  * barn = surface + solid + 1.
+ *
+ * `widths` are the per-panel widths (bypass only), already summing to the
+ * inner opening — an even split unless the opening carries a `leafSplit`.
  */
-function slidingLeaves(s: SlideSpec, b: SlideBox, place: PlaceZ): JoineryPiece[] {
+function slidingLeaves(s: SlideSpec, b: SlideBox, place: PlaceZ, widths: number[]): JoineryPiece[] {
   const out: JoineryPiece[] = [];
   const open = Math.min(1, Math.max(0, s.open ?? 0));
   const toStart = (s.side ?? "end") === "start";
@@ -108,15 +112,24 @@ function slidingLeaves(s: SlideSpec, b: SlideBox, place: PlaceZ): JoineryPiece[]
 
   // Bypass: panels tile the opening when shut and stack at `side` when open.
   // Each rides its own track depth, which is what lets them pass each other.
-  const n = Math.max(2, Math.round(s.panels || 2));
-  const pw = b.iw / n;
+  const n = widths.length;
+  // Shut centres, left to right. Derived from the widths rather than a single
+  // panel pitch so an uneven pair (a wide slider beside a narrow fixed light)
+  // tiles the opening exactly the same way an even one does.
+  const centers: number[] = [];
+  let acc = b.iStart;
+  for (const w of widths) {
+    centers.push(acc + w / 2);
+    acc += w;
+  }
+  // Where a panel ends up fully open: on top of the one at `side`, which is
+  // itself fixed. Interpolating centre -> that target reduces to the old
+  // "pitch x panels passed" travel when the widths are equal.
+  const parked = centers[toStart ? 0 : n - 1];
   for (let k = 0; k < n; k++) {
-    // Distance THIS panel travels: the one already at `side` is fixed, and the
-    // rest run up behind it. Falls out of the arithmetic — no special case.
-    const steps = toStart ? k : n - 1 - k;
-    const cs = b.iStart + pw * (k + 0.5) + dir * open * pw * steps;
+    const cs = centers[k] + open * (parked - centers[k]);
     const z = (k - (n - 1) / 2) * TRACK_GAP;
-    const panelW = pw + PANEL_OVERLAP;
+    const panelW = widths[k] + PANEL_OVERLAP;
     if (glazed) {
       // A glazed sash: pane plus the stiles that frame it.
       out.push(place(`sg${k}`, "glass", cs, yc, panelW, b.ih, GLASS_THK, z));
@@ -236,31 +249,24 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
   }
   if (!hasInner) return pieces;
 
-  if (opening.slide) {
+  const slide = effectiveSlide(opening);
+  if (slide) {
+    const panels = slide.style === "surface" ? 1 : Math.max(2, Math.round(slide.panels || 2));
     pieces.push(
-      ...slidingLeaves(opening.slide, { iStart, iEnd, iSill, iTop, iw, ih, th }, localZ),
+      ...slidingLeaves(
+        slide,
+        { iStart, iEnd, iSill, iTop, iw, ih, th },
+        localZ,
+        leafWidths(iw, panels, opening.leafSplit),
+      ),
     );
     return pieces;
   }
 
+  const double = isDoubleDoor(opening);
   const hinge = opening.hinge ?? "start";
   const swing = ((opening.swingDeg ?? 0) * Math.PI) / 180;
-  const leafLen = iw - LEAF_GAP;
   const leafYc = (iSill + iTop) / 2;
-  // Handle sits near the latch edge (opposite the hinge), a fixed distance
-  // in from wherever the leaf's free edge currently is — same absolute
-  // `sh` the closed case already used, now expressed as a distance FROM the
-  // hinge so it applies to the swung leaf's own rotated frame too.
-  const sh = hinge === "end" ? iStart + 0.09 : iEnd - 0.09;
-  const hingeS = hinge === "end" ? iEnd : iStart;
-  // Absolute distance hinge→handle, applied along the leaf's own hinge→latch
-  // direction. Signed subtraction here was the float-in-air bug: for
-  // hinge="end" it went negative and mirrored the handle to the wrong side
-  // of the hinge.
-  const sFromHinge = Math.abs(sh - hingeS);
-  const sign = hinge === "end" ? -1 : 1; // hinge→latch direction along the wall when closed
-  const hx = ax + ux * hingeS;
-  const hy = ay + uy * hingeS;
 
   /** A real lever, not a cube. Per face: a thin backplate flush against
    *  THAT face (not embedded through the door — the previous version's plate
@@ -270,11 +276,17 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
    *  outer face and runs parallel to the door (along direction), the way a
    *  real push-down lever does. `along` is the leaf's own unit direction
    *  (rotated open or not), so this places correctly whether the leaf is
-   *  closed or swung. */
+   *  closed or swung.
+   *
+   *  `sFromHinge` is the absolute distance hinge→handle, applied along the
+   *  leaf's own hinge→latch direction. Signed subtraction here was the
+   *  float-in-air bug: for hinge="end" it went negative and mirrored the
+   *  handle to the wrong side of the hinge. */
   const pushHandle = (
     key: string,
     origin: readonly [number, number],
     along: readonly [number, number],
+    sFromHinge: number,
   ): void => {
     const [ox, oy] = origin;
     const [ax_, ay_] = along;
@@ -309,32 +321,57 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
     }
   };
 
-  if (Math.abs(swing) < 1e-3) {
-    // Closed: leaf lies flush across the inner opening.
-    pieces.push(local("lf", "leaf", (iStart + iEnd) / 2, leafYc, leafLen, ih, LEAF_THK));
-    // Origin is the HINGE, matching sFromHinge's frame — passing the wall's
-    // node a here shifted every closed handle by hingeS along the wall.
-    pushHandle("hn", [hx, hy], [ux * sign, uy * sign]);
-  } else {
-    // Open: leaf swings about a vertical hinge at one jamb (plan-space rotation).
+  /**
+   * One hinged leaf filling the slot [`hingeS`, `hingeS + sign * slot`], with
+   * its handle. `rot` is its own open angle, so a double door can hand its two
+   * leaves opposite signs and have them swing to the SAME side of the wall
+   * (each leaf's hinge→latch direction is already mirrored by `sign`).
+   */
+  const swingLeaf = (key: string, hingeS: number, sign: 1 | -1, slot: number, rot: number): void => {
+    const leafLen = slot - LEAF_GAP;
+    if (leafLen <= 1e-3) return;
+    const hx = ax + ux * hingeS;
+    const hy = ay + uy * hingeS;
+    // Handle sits near the latch edge, 9 cm in from the leaf's free edge.
+    const sFromHinge = slot - 0.09;
+    if (Math.abs(rot) < 1e-3) {
+      // Closed: leaf lies flush across its slot.
+      pieces.push(
+        local(key, "leaf", hingeS + sign * (slot / 2), leafYc, leafLen, ih, LEAF_THK),
+      );
+      // Origin is the HINGE, matching sFromHinge's frame — passing the wall's
+      // node a here shifted every closed handle by hingeS along the wall.
+      pushHandle(`${key}h`, [hx, hy], [ux * sign, uy * sign], sFromHinge);
+      return;
+    }
+    // Open: leaf swings about a vertical hinge at its jamb (plan-space rotation).
     const dx0 = ux * sign;
     const dy0 = uy * sign;
-    const c = Math.cos(swing);
-    const sgn = Math.sin(swing);
+    const c = Math.cos(rot);
+    const sgn = Math.sin(rot);
     const dx = dx0 * c - dy0 * sgn;
     const dy = dx0 * sgn + dy0 * c;
-    const cx = hx + dx * (leafLen / 2);
-    const cy = hy + dy * (leafLen / 2);
     pieces.push({
-      key: "lf",
+      key,
       role: "leaf",
-      position: [cx, leafYc, cy],
+      position: [hx + dx * (leafLen / 2), leafYc, hy + dy * (leafLen / 2)],
       size: [leafLen, ih, LEAF_THK],
       rotationY: rotY(dx, dy),
     });
     // A swung-open door still has a handle — previously dropped entirely,
     // leaving every opened door in a walkthrough handle-less.
-    pushHandle("hn", [hx, hy], [dx, dy]);
+    pushHandle(`${key}h`, [hx, hy], [dx, dy], sFromHinge);
+  };
+
+  if (double) {
+    // A pair meeting mid-opening: each leaf hangs on its own jamb, so `hinge`
+    // has nothing to choose and `swingDeg` opens both. The end leaf takes the
+    // opposite rotation sign purely so the two swing the same way, not apart.
+    const [wA, wB] = leafWidths(iw, 2, opening.leafSplit);
+    swingLeaf("lfA", iStart, 1, wA, swing);
+    swingLeaf("lfB", iEnd, -1, wB, -swing);
+  } else {
+    swingLeaf("lf", hinge === "end" ? iEnd : iStart, hinge === "end" ? -1 : 1, iw, swing);
   }
 
   return pieces;
