@@ -35,6 +35,9 @@ import { displayName } from "@/lib/auth/profile";
 import { useSession } from "@/lib/auth/useSession";
 import type { RemoteSelection } from "./liveblocks";
 import { ROLE_MODES, ROLE_LABEL, roleFromGrant, mintGrant, lbRoom, type ShareRole } from "./share";
+// Same rule the server enforces when minting — roomPolicy.ts is pure (no
+// next/headers, no Supabase), so the UI offers exactly what the API will allow.
+import { canAttenuateTo } from "@/lib/api/roomPolicy";
 import {
   isSceneEmpty,
   observeSceneDoc,
@@ -251,19 +254,34 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
 
 const SHARE_ROLES: ShareRole[] = ["view", "decorate", "build"];
 
-/** Share popover + "Save a copy". Anyone in the room can mint links / fork. */
-function ShareControls({ roomId }: { roomId: string }) {
+/** Share popover + "Save a copy". Anyone in the room can fork, but a link may
+ *  only be minted at the minter's own role or below — the server enforces that
+ *  (src/lib/api/roomPolicy.ts), so offering a role above it would just produce a
+ *  403. Offer exactly what `held` can actually hand out. */
+function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<ShareRole>("view");
   const [link, setLink] = useState("");
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const offerable = useMemo(() => SHARE_ROLES.filter((r) => canAttenuateTo(held, r)), [held]);
 
   const makeLink = useCallback(async (r: ShareRole) => {
     setRole(r);
     setCopied(false);
-    const grant = await mintGrant(lbRoom(roomId), r);
-    setLink(`${window.location.origin}/v/${roomId}?g=${grant}`);
+    setErr(null);
+    try {
+      const grant = await mintGrant(lbRoom(roomId), r);
+      setLink(`${window.location.origin}/v/${roomId}?g=${grant}`);
+    } catch (e) {
+      // Minting can fail for reasons the UI cannot rule out in advance —
+      // an unconfigured signing secret, or ownership that has since moved.
+      // Say so; a silent rejected promise leaves a stale link in the box.
+      setLink("");
+      setErr((e as Error).message || "Could not create a link.");
+    }
   }, [roomId]);
 
   useEffect(() => {
@@ -292,7 +310,7 @@ function ShareControls({ roomId }: { roomId: string }) {
         <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...glass({ borderRadius: T.radiusM }) }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Share this plan</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {SHARE_ROLES.map((r) => (
+            {offerable.map((r) => (
               <button
                 key={r}
                 onClick={() => makeLink(r)}
@@ -304,8 +322,15 @@ function ShareControls({ roomId }: { roomId: string }) {
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <input readOnly value={link} style={field({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
-            <button onClick={copy} style={chip(true)}>{copied ? "Copied" : "Copy"}</button>
+            <button onClick={copy} disabled={!link} style={chip(true)}>{copied ? "Copied" : "Copy"}</button>
           </div>
+          {err && <div style={{ fontSize: 11.5, color: T.warn ?? T.textFaint }}>{err}</div>}
+          {held !== "build" && (
+            <div style={{ fontSize: 11, color: T.textFaint }}>
+              You joined with a {ROLE_LABEL[held].toLowerCase()} link, so you can only
+              share at that level or below.
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -349,7 +374,7 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
           ))}
         </div>
       </div>
-      <ShareControls roomId={roomId} />
+      <ShareControls roomId={roomId} held={role} />
     </div>
   );
 }
