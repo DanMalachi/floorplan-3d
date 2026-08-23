@@ -69,9 +69,8 @@ export default function TermsOfServicePage() {
         <Link href="/legal/privacy" style={{ color: "inherit" }}>
           Privacy Policy
         </Link>{" "}
-        (for example, sending a plan image to Anthropic only when you
-        explicitly trigger the &ldquo;Understand rooms&rdquo; feature, or
-        broadcasting a live project through Liveblocks when you share it).
+        (for example, broadcasting a live project through Liveblocks when you
+        share it).
         This license ends when Your Content is deleted, except where a copy
         persists briefly in backups or as otherwise described in the Privacy
         Policy.
@@ -111,7 +110,7 @@ export default function TermsOfServicePage() {
       <h2 style={legalH2}>6. Third-party services</h2>
       <p style={legalP}>
         The Service relies on third-party infrastructure — including
-        Supabase, Liveblocks, Anthropic, and Vercel — described in the{" "}
+        Supabase, Liveblocks, and Vercel — described in the{" "}
         <Link href="/legal/privacy" style={{ color: "inherit" }}>
           Privacy Policy
         </Link>
@@ -121,10 +120,9 @@ export default function TermsOfServicePage() {
 
       <h2 style={legalH2}>7. Beta features, &ldquo;as is&rdquo;</h2>
       <p style={legalP}>
-        The Service, including any AI-assisted feature (such as
-        &ldquo;Understand rooms&rdquo;), is provided on an &ldquo;as
-        is&rdquo; and &ldquo;as available&rdquo; basis, without warranties of
-        any kind, express or implied. AI-generated classifications are
+        The Service is provided on an &ldquo;as is&rdquo; and &ldquo;as
+        available&rdquo; basis, without warranties of any kind, express or
+        implied. Automatically detected room types and geometry are
         suggestions, not authoritative determinations, and may be wrong. The
         Service is not a substitute for professional architectural,
         structural, or safety advice, and nothing produced by it should be

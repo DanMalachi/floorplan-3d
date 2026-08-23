@@ -61,9 +61,8 @@ export default function PrivacyPolicyPage() {
           password.
         </li>
         <li style={legalLi}>
-          If you use the &ldquo;Understand rooms&rdquo; AI feature, an image
-          of your floor plan is sent to Anthropic (the company behind Claude)
-          to be analyzed. This only happens when you explicitly trigger it.
+          Your floor plan images are never sent to any AI service. The
+          Service has no AI feature that transmits your plans anywhere.
         </li>
         <li style={legalLi}>
           If you create a live shared link, anyone who has that link can view
@@ -142,39 +141,17 @@ export default function PrivacyPolicyPage() {
         </li>
       </ul>
 
-      <h3 style={legalH3}>AI room classification — Anthropic</h3>
-      <p style={legalP}>
-        Floorplan → 3D includes an optional &ldquo;Understand rooms&rdquo;
-        feature (found in the room inspector panel) that uses AI to guess
-        room types (bedroom, kitchen, bathroom, etc.) the built-in rule engine
-        couldn&rsquo;t confidently classify on its own.{" "}
-        <b>This only runs when you click it — it is not automatic.</b> When
-        you do, the Service sends the following to <b>Anthropic</b> (the
-        maker of the Claude models), via its API:
-      </p>
-      <ul style={legalUl}>
-        <li style={legalLi}>
-          A downscaled image of your whole floor plan, plus close-up crops of
-          the specific rooms that need classifying.
-        </li>
-        <li style={legalLi}>
-          Structured, non-image data about each room — approximate area,
-          door/window counts, which rooms are adjacent, and any text labels
-          already detected on the plan.
-        </li>
-      </ul>
+      <h3 style={legalH3}>AI processing — none</h3>
       <p style={legalP}>
         <b>
-          This means an image derived from your uploaded floor plan leaves
-          the Service and is processed by a third-party AI model.
+          The Service does not send your floor plans, images, or any other
+          content to an AI provider.
         </b>{" "}
-        Anthropic&rsquo;s handling of API data is governed by its own terms;{" "}
-        <Verify>
-          whether Anthropic trains on API inputs, and its data retention
-          window for this API, per Anthropic&rsquo;s current commercial terms
-        </Verify>
-        . We do not send this data anywhere else, and this feature never runs
-        without you triggering it.
+        An earlier &ldquo;Understand rooms&rdquo; feature did transmit plan
+        images to a third-party model to guess room types; it was retired on
+        23 August 2026 and the code paths that sent that data were removed.
+        Room types are now determined entirely by a rule engine that runs
+        locally, on your own device.
       </p>
 
       <h3 style={legalH3}>Hosting — Vercel</h3>
@@ -212,8 +189,7 @@ export default function PrivacyPolicyPage() {
         or not you are signed in. This includes the project&rsquo;s geometry,
         the imported plan image, and a gallery thumbnail. This data does not
         leave your device unless you sign in and it syncs, or you explicitly
-        use a feature (like &ldquo;Understand rooms&rdquo; or going live)
-        that sends it elsewhere.
+        go live and share it.
       </p>
       <p style={legalP}>
         <b>In the cloud (only if you sign in):</b> the same project data is
@@ -268,7 +244,7 @@ export default function PrivacyPolicyPage() {
 
       <h2 style={legalH2}>International data transfers</h2>
       <p style={legalP}>
-        Our processors (Supabase, Liveblocks, Anthropic, Vercel) may process
+        Our processors (Supabase, Liveblocks, Vercel) may process
         data in countries other than your own.{" "}
         <Placeholder>
           specific transfer safeguards / legal basis, per counsel
@@ -279,9 +255,9 @@ export default function PrivacyPolicyPage() {
       <h2 style={legalH2}>Your choices</h2>
       <p style={legalP}>
         You can use the Service without an account, in which case nothing
-        described above under &ldquo;Supabase&rdquo;, &ldquo;Liveblocks&rdquo;
-        or &ldquo;Anthropic&rdquo; applies unless you separately trigger a
-        live share or the &ldquo;Understand rooms&rdquo; feature. You can sign
+        described above under &ldquo;Supabase&rdquo; or
+        &ldquo;Liveblocks&rdquo; applies unless you separately trigger a
+        live share. You can sign
         out at any time, and can ask us to delete your account and data (see
         &ldquo;Data retention &amp; deletion&rdquo; above).
       </p>
