@@ -1,5 +1,5 @@
 import { Liveblocks } from "@liveblocks/node";
-import { randomUUID } from "node:crypto";
+import { stableAnonId } from "@/lib/api/auth";
 import { z } from "zod";
 import { verifyGrant, shareSigningConfigured } from "@/collab/grant.server";
 import { getServerUser } from "@/lib/supabase/server";
@@ -80,7 +80,10 @@ export async function POST(req: Request) {
     ? liveblocks.prepareSession(user.id, {
         userInfo: { name: displayName(user), avatar: avatarUrl(user) ?? undefined },
       })
-    : liveblocks.prepareSession(`anon-${randomUUID()}`);
+    // A stable id per browser, not a fresh one per request: Liveblocks counts
+    // distinct user ids as monthly active users, so minting one each call billed
+    // a single guest once per page load.
+    : liveblocks.prepareSession(await stableAnonId());
   session.allow(room, role === "view" ? session.READ_ACCESS : session.FULL_ACCESS);
   const { body, status } = await session.authorize();
   return new Response(body, { status });
