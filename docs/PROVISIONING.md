@@ -101,6 +101,30 @@ undo. None of this code has ever run against the real database.
 
 ---
 
+## 9. Optional: turn on error tracking and uptime alerts
+
+Neither is required — the app runs fine without both.
+
+**Errors (Sentry).** Create a free project at sentry.io, copy its DSN, and add it
+in Vercel as `NEXT_PUBLIC_SENTRY_DSN`. Until you do, error tracking is completely
+dormant: no account, no network calls, no cost. Session replay and performance
+tracing are deliberately off — replay would record the user's floor plan.
+
+**Uptime.** Point any monitor (UptimeRobot, Better Stack, Vercel's own checks) at:
+
+```
+https://<your-domain>/api/health
+```
+
+It returns 200 when the app is configured and serving, 503 when something
+essential is missing, and a small report of which pieces are set — booleans only,
+never secret values. Alert on non-200.
+
+You can open that URL right now to see exactly which steps above are still
+outstanding on any deployment.
+
+---
+
 ## Not required, but worth knowing
 
 - `LOCAL_TOOLS_ENABLED`, `PYTHON_EXE`, `ODA_CONVERTER_EXE` — only needed on your
