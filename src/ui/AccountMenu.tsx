@@ -167,6 +167,25 @@ export function AccountMenu() {
               Your plans are saved to this account.
             </div>
           </div>
+          {/* The data page (export + account deletion). Reachable from here
+              because a right-to-erasure control nobody can find is not one. */}
+          <a
+            href="/account"
+            onClick={() => setOpen(false)}
+            style={{
+              display: "block",
+              padding: "8px 10px",
+              marginBottom: 4,
+              fontSize: 12.5,
+              fontFamily: PD.fontUi,
+              color: PD.textSecondary,
+              background: PD.surfaceMuted,
+              borderRadius: PD.radiusS,
+              textDecoration: "none",
+            }}
+          >
+            Your data
+          </a>
           <button
             onClick={() => {
               setOpen(false);

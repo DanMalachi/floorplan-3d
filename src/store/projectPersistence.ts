@@ -1,5 +1,5 @@
 import { reserveIds, sceneIds, useSceneStore, type StoreState } from "./useSceneStore";
-import { idbDel, idbGet, idbSet } from "./idb";
+import { idbClear, idbDel, idbGet, idbSet as idbSetRaw } from "./idb";
 import {
   DURABLE_KEYS,
   SCHEMA_VERSION,
@@ -78,6 +78,17 @@ function nextUntitledName(): string {
 }
 
 let initialized = false;
+/**
+ * Set once the user has erased their data on this device. Autosave is debounced
+ * and the scene store is still populated in memory, so without this a pending
+ * 600ms tick — or the `pagehide` flush — would write the plan straight back into
+ * the store we just emptied. Every durable write funnels through the guarded
+ * `idbSet` below, so flipping this stops all of them at once.
+ */
+let wiped = false;
+/** The one durable write path. Silently a no-op after a wipe (see `wiped`). */
+const idbSet = (key: string, value: unknown): Promise<void> =>
+  wiped ? Promise.resolve() : idbSetRaw(key, value);
 let defaults: ProjectState | null = null; // pristine durable slice, for New Project
 let manifest: ProjectMeta[] = []; // in-memory mirror of projects:manifest
 let currentId: string | null = null;
@@ -206,6 +217,7 @@ async function writeDoc(
   savedAt: number,
   prevHash: string | null = null,
 ): Promise<void> {
+  if (wiped) return;
   const { state: stripped, src, hash } = stripImage(state);
   if (src !== null && hash !== null) {
     if (imageWritten.get(id) !== hash) {
@@ -515,6 +527,7 @@ export async function renameProject(id: string, name: string): Promise<void> {
 
 /** Store a fresh thumbnail for a project (small JPEG data URL). */
 export async function setProjectThumb(id: string, thumb: string): Promise<void> {
+  if (wiped) return;
   const meta = metaOf(id);
   if (!meta) return;
   meta.thumb = thumb;
@@ -605,6 +618,38 @@ export async function forgetProject(id: string): Promise<void> {
   await idbDel(docKey(id)).catch(() => {});
   await deletePlanImage(id).catch(() => {});
   await deleteThumb(id).catch(() => {});
+}
+
+/**
+ * Erase every project this browser holds — the local half of "delete my account
+ * and data".
+ *
+ * Clears the entire `kv` store rather than walking the manifest: a
+ * `project:<id>` or `image:<id>` whose card was already dropped would survive a
+ * key-by-key pass, and "we deleted everything we had a record of" is not the
+ * promise being made. That means it also removes GUEST projects which never left
+ * this browser, which is correct for a data-erasure request — and is why the
+ * confirmation UI says so in as many words before the user commits.
+ *
+ * Sets `wiped` first, so an autosave tick already in flight cannot land after the
+ * clear. The flag is never unset: the caller reloads the page, which is the only
+ * honest way to rebuild in-memory state from an empty store.
+ */
+export async function wipeLocalData(): Promise<void> {
+  wiped = true;
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  for (const t of mirrorTimers.values()) clearTimeout(t);
+  mirrorTimers.clear();
+  mirrorLast.clear();
+  manifest = [];
+  currentId = null;
+  lastSaved = "";
+  imageWritten.clear();
+  await idbClear();
+  notifyProjects();
 }
 
 // ---- live projects (continuous, Google-Docs-style sharing) ------------------

@@ -47,6 +47,23 @@ export async function idbSet(key: string, value: unknown): Promise<void> {
   });
 }
 
+/**
+ * Empty the whole store. Used by "delete my data": enumerating known keys would
+ * miss a `project:<id>` whose manifest entry was already dropped, and a deletion
+ * guarantee cannot rest on the index being complete. The `kv` store holds nothing
+ * but project data, so clearing it wholesale is both correct and exhaustive.
+ */
+export async function idbClear(): Promise<void> {
+  if (!hasIDB()) return;
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 export async function idbDel(key: string): Promise<void> {
   if (!hasIDB()) return;
   const db = await openDB();
