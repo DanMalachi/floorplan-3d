@@ -124,9 +124,23 @@ export default function AccountPage() {
   const armed = typed.trim().toLowerCase() === expected.toLowerCase();
 
   return (
+    // globals.css pins `body { overflow: hidden; height: 100% }` so the 3D
+    // canvas never scrolls the document. A plain `minHeight: 100vh` block
+    // therefore renders but cannot be scrolled — anything past the fold is
+    // unreachable, which reads as "the page didn't load". Own the viewport and
+    // scroll inside it, exactly as src/app/legal/layout.tsx does.
     // No background of its own: globals.css already paints the app surface, and
     // this page is chrome, not a scene, so it inherits it.
-    <div style={{ minHeight: "100vh", padding: "48px 20px", fontFamily: PD.fontUi }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch",
+        padding: "48px 20px",
+        fontFamily: PD.fontUi,
+      }}
+    >
       <PdThemeStyle />
       <div style={{ maxWidth: 660, margin: "0 auto", display: "grid", gap: 18 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
