@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { ConsentNotice } from "@/ui/consent/ConsentNotice";
 
 // Plan Dock P8: load the two fonts its token stacks have named since P0
 // (src/ui/planDock/tokens.ts: `fontUi`/`fontMono` list "Manrope"/"IBM Plex
@@ -23,7 +24,24 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+// Resolves relative URLs in page metadata (e.g. opengraph-image) to absolute
+// ones. Vercel always sets VERCEL_URL on its deployments; NEXT_PUBLIC_SITE_URL
+// isn't defined anywhere in this repo, so that branch is a fallback for a
+// future custom domain. `new URL()` throws on a malformed string, so the last
+// resort has to be an actually-valid URL, not a bracketed placeholder token —
+// localhost is the standard safe default for local dev (no real domain is
+// invented; this is never shown to a user, only used to resolve relative
+// metadata URLs). See src/app/robots.ts / sitemap.ts for the same logic,
+// which is safe to keep a literal `[[PLACEHOLDER]]` string since those only
+// ever get template-interpolated, never parsed by `new URL()`.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  ? process.env.NEXT_PUBLIC_SITE_URL
+  : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Floorplan → 3D",
   description: "Phase 1: trace a 2D plan into an editable 3D model",
 };
@@ -35,7 +53,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${manrope.variable} ${ibmPlexMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ConsentNotice />
+      </body>
     </html>
   );
 }
