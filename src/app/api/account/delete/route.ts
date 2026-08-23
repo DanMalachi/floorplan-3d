@@ -1,6 +1,7 @@
 import { Liveblocks } from "@liveblocks/node";
 import { getServerUser } from "@/lib/supabase/server";
 import { getAdminSupabase, serviceRoleConfigured } from "@/lib/supabase/admin";
+import { logRequest } from "@/lib/api/log";
 import { BUCKETS, listUserObjects, removeObjects, type Bucket } from "@/lib/supabase/accountData";
 
 // -----------------------------------------------------------------------------
@@ -57,7 +58,21 @@ interface DeleteReport {
   remaining?: string[];
 }
 
-const fail = (report: DeleteReport, status: number) => Response.json(report, { status });
+// Account deletion is irreversible and runs with the service role, so both
+// outcomes are recorded. A partial failure especially: it leaves data behind
+// under a uid the user may no longer be able to sign in as, and without a log
+// line naming the stage there is nothing left to reconstruct it from.
+// No email, no name, no plan content — the uid and the stage names only.
+const fail = (report: DeleteReport, status: number) => {
+  const failed = report.stages.find((s) => !s.ok);
+  logRequest({
+    route: "account/delete",
+    status,
+    ms: 0,
+    reason: failed ? `stage:${failed.stage}` : "unknown",
+  });
+  return Response.json(report, { status });
+};
 
 export async function POST(request: Request) {
   const stages: StageReport[] = [];
@@ -262,6 +277,7 @@ export async function POST(request: Request) {
     return fail({ ok: false, stages }, 500);
   }
 
+  logRequest({ route: "account/delete", status: 200, ms: 0, userId: uid, reason: "completed" });
   return Response.json({ ok: true, stages } satisfies DeleteReport);
 }
 

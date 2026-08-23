@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // -----------------------------------------------------------------------------
 // Security headers
@@ -100,6 +101,11 @@ function csp(): string {
       `wss://api.liveblocks.io`, // same host, ws upgrade — Liveblocks doesn't use a separate socket host
       `https://*.public.blob.vercel-storage.com`, // furniture GLBs (data/furniture-ikea.blob.json); store-id subdomain varies per env, hence wildcard
       `blob:`, // local-file GLTFLoader.load(url) in the calibration rig
+      // Sentry's browser SDK POSTs events to <org>.ingest.sentry.io. Without
+      // this the CSP would silently block the very reports that tell us the CSP
+      // is blocking things. Costs nothing when no DSN is configured.
+      `https://*.ingest.sentry.io`,
+      `https://*.ingest.de.sentry.io`,
     ].join(" "),
     // DRACOLoader/KTX2Loader both do `new Worker(URL.createObjectURL(new
     // Blob([...])))` (confirmed in node_modules/three/examples/jsm/loaders/
@@ -166,4 +172,26 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wraps the build to upload source maps, so a minified stack trace maps
+// back to real code. Everything here is conditional: with no auth token the
+// wrapper still runs but uploads nothing, and with no DSN the SDK itself is a
+// no-op — so a checkout with neither builds and behaves exactly as before.
+//
+// The wrapper must stay OUTSIDE `nextConfig` rather than replace it: it returns
+// a merged config, and the `headers()` above (every security header, including
+// the CSP) has to survive that merge.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  // Only set when Dan has created the project; absent means "skip the upload"
+  // rather than "fail the build".
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Strip source maps from the client bundle after uploading them. Without this
+  // the maps ship publicly, which hands anyone the unminified source.
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  // Routes Sentry's own requests through this app's domain so ad blockers, which
+  // block ingest.sentry.io by default, do not silently drop error reports.
+  tunnelRoute: "/monitoring",
+  disableLogger: true,
+});
