@@ -1,0 +1,65 @@
+name: nextjs-ci
+
+# Lint + typecheck + build for the Next.js app (root package.json). Separate
+# from extraction-ci.yml, which covers only the Python extraction pipeline
+# under extraction/ — this workflow doesn't touch that.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Lint, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # `next lint` was removed in Next.js 16, and this repo has no ESLint or
+      # Biome config (verified 2026-08-23: no node_modules/eslint, no
+      # eslint.config.*/.eslintrc*, no biome.json). This step self-activates
+      # the moment a config file shows up — no workflow edit needed — and
+      # until then it emits a visible warning annotation rather than quietly
+      # doing nothing, so a green "Lint" check never implies lint actually ran.
+      - name: Lint
+        run: |
+          if [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f eslint.config.ts ] || \
+             [ -f .eslintrc.json ] || [ -f .eslintrc.js ] || [ -f .eslintrc ] || \
+             [ -f biome.json ] || [ -f biome.jsonc ]; then
+            npx eslint . || npx @biomejs/biome ci .
+          else
+            echo "::warning title=No linter configured::Skipping lint — next lint was removed in Next.js 16 and no ESLint/Biome config exists in this repo. Add eslint + eslint-config-next (or biome) as a devDependency and a config file to turn this into a real gate."
+          fi
+
+      - name: Build
+        run: npm run build
+
+  audit:
+    name: npm audit (high+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+
+      # Gate on high/critical only, not moderate/low — as of 2026-08-23 this
+      # repo has 5 high + 1 moderate open (nanoid, next, pdfjs-dist, postcss,
+      # sharp, undici — see PR notes for `npm audit fix` vs. `--force` split).
+      # Tighten to `--audit-level=moderate` once that backlog is cleared.
+      - run: npm audit --audit-level=high
