@@ -26,21 +26,16 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      # `next lint` was removed in Next.js 16, and this repo has no ESLint or
-      # Biome config (verified 2026-08-23: no node_modules/eslint, no
-      # eslint.config.*/.eslintrc*, no biome.json). This step self-activates
-      # the moment a config file shows up — no workflow edit needed — and
-      # until then it emits a visible warning annotation rather than quietly
-      # doing nothing, so a green "Lint" check never implies lint actually ran.
+      # `next lint` was removed in Next.js 16, so this calls eslint directly
+      # (eslint 9 flat config, see eslint.config.mjs).
+      #
+      # Gates on ERRORS only. The repo carries ~40 pre-existing warnings, mostly
+      # unused variables; failing on those would mean the first PR to touch this
+      # branch is red for reasons unrelated to it. Errors are held at zero, so a
+      # new one blocks — which is the part that protects the branch. Drive the
+      # warning count down over time, then add --max-warnings to ratchet it.
       - name: Lint
-        run: |
-          if [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f eslint.config.ts ] || \
-             [ -f .eslintrc.json ] || [ -f .eslintrc.js ] || [ -f .eslintrc ] || \
-             [ -f biome.json ] || [ -f biome.jsonc ]; then
-            npx eslint . || npx @biomejs/biome ci .
-          else
-            echo "::warning title=No linter configured::Skipping lint — next lint was removed in Next.js 16 and no ESLint/Biome config exists in this repo. Add eslint + eslint-config-next (or biome) as a devDependency and a config file to turn this into a real gate."
-          fi
+        run: npm run lint
 
       - name: Build
         run: npm run build

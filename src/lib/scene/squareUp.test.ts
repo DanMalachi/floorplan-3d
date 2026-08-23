@@ -98,7 +98,7 @@ console.log("\nsynthetic");
     .map((w) => {
       const a = by.get(w.a)!;
       const b = by.get(w.b)!;
-      let e = Math.abs((((Math.atan2(b.y - a.y, b.x - a.x) - report.frameAngle) * DEG) % 90 + 90) % 90);
+      const e = Math.abs((((Math.atan2(b.y - a.y, b.x - a.x) - report.frameAngle) * DEG) % 90 + 90) % 90);
       return e > 45 ? 90 - e : e;
     });
   check("diagonal: the square walls around it still square up", Math.max(...sq) < 1e-9,

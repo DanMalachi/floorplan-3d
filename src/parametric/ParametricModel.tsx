@@ -52,7 +52,9 @@ export function ParametricModel({ spec, tint, opacity }: {
       }
     });
     return g;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // JSON.stringify is deliberate: the spec is a value object rebuilt each render,
+    // so it must be compared deeply, not by identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
   }, [JSON.stringify(spec), tint, opacity]);
 
   // We own these geometries/materials (unlike GLTF clones, which drei's cache
