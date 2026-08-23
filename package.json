@@ -32,6 +32,7 @@
     "test:decor": "tsx src/parametric/softDecor.test.ts",
     "test:kitchen": "tsx src/parametric/kitchen.test.ts && tsx src/parametric/kitchenDrag.test.ts && tsx src/parametric/wallCabinetGhost.test.ts && tsx src/parametric/kitchenLink.test.ts",
     "test:persist": "tsx src/store/projectDoc.test.ts",
+    "test:apisec": "tsx src/lib/api/roomPolicy.test.ts",
     "test:dragplane": "tsx src/viewport3d/dragPlane.test.ts",
     "test:squareup": "tsx src/lib/scene/squareUp.test.ts",
     "test:camera": "tsx src/viewport3d/camera/targetPlane.test.ts && tsx src/viewport3d/camera/inputVocabulary.test.ts && tsx src/viewport3d/camera/offerPolicy.test.ts",
@@ -69,6 +70,7 @@
     "react-konva": "^19.2.5",
     "three": "0.185.0",
     "yjs": "^13.6.31",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

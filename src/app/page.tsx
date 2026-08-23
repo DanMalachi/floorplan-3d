@@ -94,7 +94,11 @@ function GoLiveButton() {
     setBusy(true);
     try {
       const s = useSceneStore.getState();
-      const roomId = s.liveRoomId ?? crypto.randomUUID().slice(0, 8);
+      // Full UUID, not the first 8 characters. An 8-hex-character id is 32 bits —
+      // enumerable, and the room id is what a share link exposes, so a short one
+      // let a stranger find rooms to knock on. Existing 8-character rooms keep
+      // working; `liveRoomId` is reused whenever it is already set.
+      const roomId = s.liveRoomId ?? crypto.randomUUID();
       // Mark live + persist (roomId, ownership) durably before the full reload.
       await goLivePersist(roomId);
       await enterLiveRoom(roomId, getCurrentProjectId(), {
