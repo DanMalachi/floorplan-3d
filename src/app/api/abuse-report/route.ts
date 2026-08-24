@@ -129,6 +129,12 @@ export async function POST(req: Request) {
     return apiError(500, "could not submit report", "please try again in a moment");
   }
 
+  // TODO(email): send the reporter an acknowledgement here, once
+  // src/lib/email/ exists (owned by a separate branch as of this writing).
+  // Only do this when reporterContact was actually given — most reporters
+  // leave it blank on purpose (see src/app/report/page.tsx) — and keep the
+  // content as neutral as this route's own response: an ack that a report was
+  // received, never confirmation of what it was about or what happens next.
   logRequest({ route: "abuse-report", status: 200, ms: Date.now() - started, userId: user?.id ?? null });
   return Response.json(ACK);
 }
