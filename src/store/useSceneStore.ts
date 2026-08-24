@@ -461,17 +461,20 @@ export interface StoreState {
   sourcePdfName: string | null;
   setSourcePdfName: (name: string | null) => void;
 
-  // --- imported PDF raw overlay (Phase 2 / M1) ---
+  // --- imported CAD vector overlay (DXF/DWG only) ---
+  // PDF import deliberately leaves these empty: its decoded geometry sits
+  // offset from the rendered page, so it hindered hand-tracing. DXF/DWG
+  // vectors are correctly registered and carry real scale, so they stay.
   importedSegments: ImportSegment[];
   importedArcs: ImportArc[];
-  importedTexts: ImportText[]; // PDF text words (knowledge-layer OCR cue)
+  importedTexts: ImportText[]; // PDF/DXF text words (knowledge-layer OCR cue)
   showImport: boolean;
   setImportedSegments: (segs: ImportSegment[]) => void;
   setImportedArcs: (arcs: ImportArc[]) => void;
   setShowImport: (v: boolean) => void;
 
   // --- wall snapping (manual trace aid) ---
-  wallSnap: boolean; // snap traced points to imported-PDF wall centerlines/corners
+  wallSnap: boolean; // snap traced points to imported DXF/DWG centerlines/corners
   setWallSnap: (v: boolean) => void;
 
   // --- trace draft ---
@@ -760,24 +763,24 @@ export const useSceneStore = create<StoreState>((set, get) => {
           const { importPdf } = await import("@/lib/import/importPdfClient");
           const r = await importPdf(file);
           get().setImage(r.image);
-          if (!r.isVector) {
-            set({
-              importedSegments: [],
-              importedArcs: [],
-              importedTexts: [],
-              imageOpacity: 0.8,
-              importMsg: rasterQualityMsg(r.image.width, r.image.height, "Scanned plan loaded"),
-            });
-          } else {
-            set({
-              imageOpacity: 0.45,
-              importedSegments: r.segments,
-              importedArcs: r.arcs,
-              importedTexts: r.texts,
-              showImport: true,
-              importMsg: `✓ Vector PDF — ${r.stats.segments} segments${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
-            });
-          }
+          // ONE path for every PDF, CAD-drawn or scanned: a rendered page you
+          // trace over. A CAD PDF used to also lay its drawing segments over the
+          // page as a "vector overlay" + snap magnet; on real AutoCAD exports
+          // those land offset from the render, so they fought the pen instead of
+          // guiding it — see importPdfClient.ts. Texts are kept: they name rooms
+          // at Generate and never draw on the canvas.
+          set({
+            importedSegments: [],
+            importedArcs: [],
+            importedTexts: r.texts,
+            showImport: false,
+            imageOpacity: 0.8,
+            importMsg: rasterQualityMsg(
+              r.image.width,
+              r.image.height,
+              `Plan loaded${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
+            ),
+          });
         } else if (isDxfFile(file) || isDwgFile(file)) {
           const { importDxf, dxfTextToResult } = await import("@legacy/trace2d/importDxf");
           let r;

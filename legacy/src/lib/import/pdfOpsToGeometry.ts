@@ -1,17 +1,26 @@
 // -----------------------------------------------------------------------------
-// pdf.js operator-list -> raw plan geometry.
+// RETIRED 2026-08-24 -- reference only. Nothing imports this module.
 //
-// This replaces what legacy/scripts/extract_pdf.py got from PyMuPDF's
-// page.get_drawings(). The crucial difference: PyMuPDF hands back coordinates
-// with the CTM already resolved ("PyMuPDF resolves the CTM for us", per that
-// script), whereas pdf.js hands back a raw op stream. We must therefore run the
-// graphics-state machine ourselves -- transform stack, stroke/fill colour and
-// line width -- or the overlay silently lands offset from the background and
-// wall snapping grabs the wrong lines.
+// pdf.js operator-list -> raw plan geometry. It fed the PDF "vector overlay"
+// and the centerline wall-snap magnet, both of which were removed from PDF
+// import. With no auto-detection consuming the geometry its remaining role was
+// purely visual, and on real AutoCAD plans it drew OFFSET from the rendered
+// page -- page /Rotate and a non-zero /MediaBox origin are never resolved here,
+// only the page height is -- which made hand-tracing harder, not easier. PDFs
+// now import as a rendered page you trace over, like any other plan. DXF/DWG
+// keep their own vector path (legacy/src/trace2d/importDxf.ts), which is
+// correctly registered and carries real-world scale.
+//
+// Kept rather than deleted because it is a verified port of what
+// legacy/scripts/extract_pdf.py got from PyMuPDF's page.get_drawings(). The
+// crucial difference: PyMuPDF hands back coordinates with the CTM already
+// resolved ("PyMuPDF resolves the CTM for us", per that script), whereas pdf.js
+// hands back a raw op stream, so this runs the graphics-state machine itself --
+// transform stack, stroke/fill colour and line width. If the overlay is ever
+// wanted again, start from here and fix the page-space mapping FIRST.
 //
 // Output space is PDF page points, y-down from the top-left corner -- exactly
-// what extract_pdf.py emitted, so the existing `* zoom` conversion to
-// image-pixel space in the caller is unchanged.
+// what extract_pdf.py emitted.
 //
 // Pure module: no DOM, no pdfjs import. The op codes are passed in so this can
 // be unit-tested and diffed against the Python baseline under plain Node.

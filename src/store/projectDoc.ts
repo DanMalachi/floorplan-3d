@@ -148,6 +148,43 @@ export function attachImage(state: ProjectState, src: string | null): ProjectSta
   return { ...state, image: { ...state.image, src } };
 }
 
+// ---- repairs ----------------------------------------------------------------
+
+/**
+ * Drop the vector overlay from a project imported from a PDF.
+ *
+ * PDF import stopped extracting drawing geometry (2026-08-24): on real AutoCAD
+ * exports it landed offset from the rendered page, so it fought the pen instead
+ * of guiding it. New imports never store any; projects saved BEFORE that still
+ * carry theirs, and would put the overlay straight back on the canvas at load.
+ *
+ * Deliberately NOT a schema bump. The rule below only recognises what a
+ * previous version of the importer wrote, so it costs nothing to re-run and
+ * leaves the document readable by an older build — which a version bump would
+ * not: `migrateDoc` resets anything newer than it understands to defaults, and
+ * with cloud sync a doc written here can reach a device still on the old code.
+ *
+ * DXF/DWG projects keep their vectors: theirs are correctly registered and
+ * carry real-world scale. `sourcePdfName` holds whatever file was imported, so
+ * its extension is what separates the two. A project with segments but no
+ * recorded source name is left alone — unattributable, so not ours to clear.
+ */
+export function dropPdfVectors(state: ProjectState): { state: ProjectState; changed: boolean } {
+  const src = state.sourcePdfName;
+  if (!src || !/\.pdf$/i.test(src)) return { state, changed: false };
+  // Documents predating these keys exist, so read them as possibly-absent
+  // rather than trusting the type: this runs on whatever is on disk.
+  const segs = state.importedSegments?.length ?? 0;
+  const arcs = state.importedArcs?.length ?? 0;
+  if (segs === 0 && arcs === 0) return { state, changed: false };
+  // `importedTexts` survives: room labels are a naming cue read at Generate,
+  // never drawn on the canvas, so they were never part of the complaint.
+  return {
+    state: { ...state, importedSegments: [], importedArcs: [], showImport: false },
+    changed: true,
+  };
+}
+
 // ---- migration --------------------------------------------------------------
 
 export interface MigratedDoc {
@@ -177,23 +214,32 @@ export function migrateDoc(raw: unknown): MigratedDoc | null {
   if (doc.schemaVersion === 1) {
     const { state, src, hash } = stripImage(doc.state as ProjectState);
     return {
-      doc: { schemaVersion: SCHEMA_VERSION, savedAt, state, worldModel: null, imageHash: hash },
+      doc: {
+        schemaVersion: SCHEMA_VERSION,
+        savedAt,
+        state: dropPdfVectors(state).state,
+        worldModel: null,
+        imageHash: hash,
+      },
       pendingImage: src,
       changed: true,
     };
   }
 
   if (doc.schemaVersion === SCHEMA_VERSION) {
+    // Same version, but possibly written by an importer that still stored PDF
+    // vectors — repair in place and mark it dirty so the fix is persisted.
+    const repaired = dropPdfVectors(doc.state as ProjectState);
     return {
       doc: {
         schemaVersion: SCHEMA_VERSION,
         savedAt,
-        state: doc.state as ProjectState,
+        state: repaired.state,
         worldModel: null,
         imageHash: doc.imageHash ?? null,
       },
       pendingImage: null,
-      changed: false,
+      changed: repaired.changed,
     };
   }
 

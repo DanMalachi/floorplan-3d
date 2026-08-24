@@ -326,7 +326,7 @@ export default function TraceCanvas() {
     if (bestV) return { kind: "vertex", nodeId: bestV.id, point: { x: bestV.x, y: bestV.y } };
 
     // An existing traced wall outranks the imported plan underneath it. Traced
-    // walls sit ON the imported centrelines, so if the PDF snap were tried first
+    // walls sit ON the imported centrelines, so if the CAD snap were tried first
     // it would always win and hand back a detached free point — the click would
     // look right but never join the graph, so the room could not close.
     const hit = nearestSegment(pos.x, pos.y, pointMap, segments);
@@ -346,7 +346,8 @@ export default function TraceCanvas() {
       }
     }
 
-    // Hybrid: snap to a wall centerline / corner from the imported PDF.
+    // Hybrid: snap to a wall centerline / corner from an imported DXF/DWG. PDFs
+    // never populate importedSegments, so this branch is dead for them.
     if (wallSnap && importedSegments.length > 0) {
       const ws = snapWallPoint(pos.x, pos.y, importedSegments);
       if (ws) return { kind: "free", point: { x: ws.x, y: ws.y }, snapped: true };
@@ -632,7 +633,7 @@ export default function TraceCanvas() {
               />
             )}
 
-            {/* Raw extracted-PDF overlay (M1): every parsed segment, by stroke color */}
+            {/* Imported CAD (DXF/DWG) overlay: every parsed segment, by stroke color */}
             {showImport && importedSegments.length > 0 && (
               <Shape
                 listening={false}

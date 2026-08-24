@@ -9,15 +9,22 @@
 // route was unshippable regardless of the interpreter.
 //
 // Doing it in the browser removes both limits, the upload round-trip and the
-// function cold start. Output matches extract_pdf.py's contract exactly; the
-// geometry decoder is verified segment-for-segment against it (see
-// pdfOpsToGeometry.ts).
+// function cold start.
 //
 // The legacy module this supersedes stays untouched in legacy/ per CLAUDE.md
-// rule 2 — nothing here imports its runtime code, only the shared trace types.
+// rule 2 — nothing here imports its runtime code.
+//
+// NO VECTOR GEOMETRY (2026-08-24). A CAD PDF used to also give up its drawing
+// segments, painted as a "vector overlay" and used as a snapping magnet. That
+// was only ever worth its cost while auto-detection consumed it; by hand it
+// hurt, because the decoded geometry lands offset from the rendered page on
+// real AutoCAD plans (see legacy/src/lib/import/pdfOpsToGeometry.ts for why),
+// and tracing over lines that don't sit on the drawing is worse than tracing
+// over none. A PDF now yields exactly what an image import yields: a page to
+// trace over — plus its text, which is a label cue, not geometry, and never
+// gets in the pen's way. DXF/DWG are unaffected: their vectors are correctly
+// registered and carry real-world scale.
 // -----------------------------------------------------------------------------
-import type { ImportSegment, ImportArc } from "@legacy/trace2d/types";
-import { opsToGeometry, type OpCodes, type OperatorList } from "./pdfOpsToGeometry";
 
 /** A text word from the PDF, converted to image-pixel space. */
 export interface ImportText {
@@ -27,20 +34,29 @@ export interface ImportText {
 }
 
 export interface ImportResult {
-  isVector: boolean;
   pageCount: number;
   image: { src: string; width: number; height: number };
-  segments: ImportSegment[];
-  arcs: ImportArc[];
   texts: ImportText[];
-  stats: { drawings: number; images: number; segments: number; arcs: number };
+  /** Diagnostic only — the two counts that decided the render scale below. */
+  stats: { drawings: number; images: number };
+}
+
+/** The slice of a pdf.js operator list this module reads. */
+interface OperatorList {
+  fnArray: ArrayLike<number>;
+  argsArray: ArrayLike<unknown>;
 }
 
 /** Long-edge target for the background render, matching extract_pdf.py. */
 const RENDER_LONG_PX = 1600;
 /** Cap for the higher-resolution raster branch, matching extract_pdf.py. */
 const RASTER_MAX_PX = 3000;
-/** A plan with at least this many painted paths is treated as true vector art. */
+/**
+ * A plan with at least this many painted paths is CAD-drawn rather than a
+ * scan. Nothing is extracted from those paths any more — the count survives
+ * only to pick the render scale, since an image-only PDF wants its embedded
+ * bitmap's native resolution while drawn art is resolution-independent.
+ */
 const VECTOR_PATH_MIN = 50;
 
 type PdfjsModule = typeof import("pdfjs-dist");
@@ -62,11 +78,11 @@ function loadPdfjs(): Promise<PdfjsModule> {
 }
 
 /**
- * Read a floor-plan PDF entirely in the browser: raw drawing geometry for the
- * trace overlay plus a rendered background to trace over.
+ * Read a floor-plan PDF entirely in the browser: a rendered page to trace over,
+ * plus its text words.
  *
- * Coordinates come back in the background image's pixel space, which is the
- * space the trace editor works in — same as the old server extractor.
+ * Text coordinates come back in the background image's pixel space, which is
+ * the space the trace editor works in.
  */
 export async function importPdf(file: File, page = 0): Promise<ImportResult> {
   const pdfjs = await loadPdfjs();
@@ -82,40 +98,14 @@ export async function importPdf(file: File, page = 0): Promise<ImportResult> {
 
     const base = pdfPage.getViewport({ scale: 1 });
 
-    // IMPORTANT: decode the operator list BEFORE rendering. pdf.js caches a
-    // Path2D back into the constructPath args once a page has been painted,
-    // and a Path2D cannot be read back into coordinates.
+    // Survey the op stream BEFORE rendering. pdf.js caches a Path2D back into
+    // the constructPath args once a page has been painted, which would make the
+    // paint-op read below unreliable.
     const opList = (await pdfPage.getOperatorList()) as unknown as OperatorList;
-    const ops = opCodes(pdfjs);
-
     const { pathCount, imageSizes } = surveyOps(opList, pdfjs);
-    const isVector = pathCount >= VECTOR_PATH_MIN;
 
-    const zoom = renderZoom(base.width, base.height, isVector, imageSizes);
+    const zoom = renderZoom(base.width, base.height, pathCount >= VECTOR_PATH_MIN, imageSizes);
     const viewport = pdfPage.getViewport({ scale: zoom });
-
-    // Geometry comes out in page points; scale to the rendered pixel space so
-    // the overlay lands exactly on the background.
-    const raw = opsToGeometry(opList, ops, base.height);
-    const segments: ImportSegment[] = raw.segments.map((s) => ({
-      x0: s.x0 * zoom,
-      y0: s.y0 * zoom,
-      x1: s.x1 * zoom,
-      y1: s.y1 * zoom,
-      color: s.color,
-      width: s.width,
-      layer: s.layer,
-    }));
-    const arcs: ImportArc[] = raw.arcs.map((a) => ({
-      x0: a.x0 * zoom,
-      y0: a.y0 * zoom,
-      x1: a.x1 * zoom,
-      y1: a.y1 * zoom,
-      chord: a.chord * zoom,
-      color: a.color,
-      width: a.width,
-      layer: a.layer,
-    }));
 
     const texts = await readTexts(pdfPage, base.height, zoom);
 
@@ -128,18 +118,10 @@ export async function importPdf(file: File, page = 0): Promise<ImportResult> {
     const src = canvas.toDataURL("image/png");
 
     return {
-      isVector,
       pageCount,
       image: { src, width: canvas.width, height: canvas.height },
-      segments,
-      arcs,
       texts,
-      stats: {
-        drawings: pathCount,
-        images: imageSizes.length,
-        segments: segments.length,
-        arcs: arcs.length,
-      },
+      stats: { drawings: pathCount, images: imageSizes.length },
     };
   } finally {
     // Release the worker's page/font caches; a demo session imports repeatedly.
@@ -147,34 +129,7 @@ export async function importPdf(file: File, page = 0): Promise<ImportResult> {
   }
 }
 
-/** Map pdfjs' OPS table onto the decoder's op-code contract. */
-function opCodes(pdfjs: PdfjsModule): OpCodes {
-  const O = pdfjs.OPS as unknown as Record<string, number>;
-  return {
-    save: O.save,
-    restore: O.restore,
-    transform: O.transform,
-    constructPath: O.constructPath,
-    setLineWidth: O.setLineWidth,
-    setStrokeRGBColor: O.setStrokeRGBColor,
-    setFillRGBColor: O.setFillRGBColor,
-    setGState: O.setGState,
-    paintFormXObjectBegin: O.paintFormXObjectBegin,
-    paintFormXObjectEnd: O.paintFormXObjectEnd,
-    beginGroup: O.beginGroup,
-    endGroup: O.endGroup,
-    stroke: O.stroke,
-    closeStroke: O.closeStroke,
-    fill: O.fill,
-    eoFill: O.eoFill,
-    fillStroke: O.fillStroke,
-    eoFillStroke: O.eoFillStroke,
-    closeFillStroke: O.closeFillStroke,
-    closeEOFillStroke: O.closeEOFillStroke,
-  };
-}
-
-/** Count painted paths and collect embedded image sizes, for the vector/raster call. */
+/** Count painted paths and collect embedded image sizes, for the render-scale call. */
 function surveyOps(
   opList: OperatorList,
   pdfjs: PdfjsModule,
@@ -213,17 +168,17 @@ function surveyOps(
 
 /**
  * Background render scale. Mirrors extract_pdf.py: a fixed long-edge target for
- * vector plans, but for an image-only PDF the render IS the plan, so match the
+ * drawn plans, but for an image-only PDF the render IS the plan, so match the
  * embedded image's native resolution instead (capped, and never upscaled past it).
  */
 function renderZoom(
   widthPt: number,
   heightPt: number,
-  isVector: boolean,
+  isDrawn: boolean,
   imageSizes: [number, number][],
 ): number {
   let zoom = Math.min(RENDER_LONG_PX / widthPt, RENDER_LONG_PX / heightPt);
-  if (!isVector && imageSizes.length > 0) {
+  if (!isDrawn && imageSizes.length > 0) {
     const native = Math.max(0, ...imageSizes.map(([w, h]) => Math.max(w, h)));
     if (native > 0) {
       const target = Math.min(native, RASTER_MAX_PX);

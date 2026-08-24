@@ -12,6 +12,7 @@
 import {
   SCHEMA_VERSION,
   attachImage,
+  dropPdfVectors,
   hashString,
   migrateDoc,
   stripImage,
@@ -135,6 +136,70 @@ check("hash of empty string is defined", typeof hashString("") === "string");
 {
   const noHash = { schemaVersion: SCHEMA_VERSION, savedAt: 1, state: stateOf(null), worldModel: null };
   check("missing imageHash defaults to null", migrateDoc(noHash)?.doc.imageHash === null);
+}
+
+// ---- retiring the PDF vector overlay ----------------------------------------
+//
+// PDF import stopped extracting drawing geometry: on AutoCAD exports it landed
+// offset from the rendered page and fought the pen. Projects saved before that
+// still carry theirs, and would put the overlay back on the canvas at load.
+// DXF/DWG vectors are registered correctly and must survive untouched.
+
+const SEG = { x0: 0, y0: 0, x1: 10, y1: 0, color: null, width: 1, layer: "0" };
+const ARC = { x0: 0, y0: 0, x1: 5, y1: 5, chord: 2, color: null, width: 1, layer: "0" };
+
+const withVectors = (sourceName: string | null): ProjectState =>
+  ({
+    ...stateOf(null),
+    sourcePdfName: sourceName,
+    importedSegments: [SEG],
+    importedArcs: [ARC],
+    importedTexts: [{ x: 1, y: 2, text: "BEDROOM" }],
+    showImport: true,
+  }) as unknown as ProjectState;
+
+{
+  const r = dropPdfVectors(withVectors("plan.pdf"));
+  check("PDF vectors are dropped", r.changed && r.state.importedSegments.length === 0);
+  check("PDF arcs are dropped too", r.state.importedArcs.length === 0);
+  check("the overlay toggle is turned off", r.state.showImport === false);
+  check("room-label texts survive", r.state.importedTexts.length === 1);
+}
+
+{
+  const dxf = withVectors("plan.dxf");
+  const r = dropPdfVectors(dxf);
+  check("DXF vectors are kept", !r.changed && r.state === dxf);
+  check("DWG vectors are kept", dropPdfVectors(withVectors("plan.DWG")).changed === false);
+}
+
+{
+  // Nothing to attribute the geometry to — leave it rather than guess.
+  check("unattributed vectors are left alone", dropPdfVectors(withVectors(null)).changed === false);
+  // Idempotent: a PDF project with no vectors left is already clean.
+  check("a clean PDF project is untouched", dropPdfVectors(stateOf(null)).changed === false);
+  check("uppercase .PDF is matched", dropPdfVectors(withVectors("PLAN.PDF")).changed === true);
+}
+
+{
+  // The repair rides the existing ladder rather than a schema bump: bumping
+  // would make an older build (or another synced device) read the document as
+  // "newer than us" and reset the project to defaults.
+  const doc = {
+    schemaVersion: SCHEMA_VERSION,
+    savedAt: 7,
+    state: withVectors("plan.pdf"),
+    worldModel: null,
+    imageHash: null,
+  };
+  const m = migrateDoc(doc);
+  check("stale PDF vectors are repaired at load", m?.doc.state.importedSegments.length === 0);
+  check("the repair marks the document dirty", m?.changed === true);
+  check("the repair does not bump the version", m?.doc.schemaVersion === SCHEMA_VERSION);
+  check("the repair does not mutate the input", doc.state.importedSegments.length === 1);
+
+  const v1 = migrateDoc({ schemaVersion: 1, savedAt: 7, state: withVectors("plan.pdf"), worldModel: null });
+  check("v1 documents are repaired on the way up", v1?.doc.state.importedSegments.length === 0);
 }
 
 // ---- unreadable input -------------------------------------------------------
