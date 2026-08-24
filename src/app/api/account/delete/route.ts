@@ -3,6 +3,8 @@ import { getServerUser } from "@/lib/supabase/server";
 import { getAdminSupabase, serviceRoleConfigured } from "@/lib/supabase/admin";
 import { logRequest } from "@/lib/api/log";
 import { BUCKETS, listUserObjects, removeObjects, type Bucket } from "@/lib/supabase/accountData";
+import { sendEmailAfterResponse } from "@/lib/email";
+import { accountDeletionReceiptEmail } from "@/lib/email/templates";
 
 // -----------------------------------------------------------------------------
 // POST /api/account/delete — erasure (GDPR Art. 17 / CCPA "delete my data").
@@ -278,6 +280,22 @@ export async function POST(request: Request) {
   }
 
   logRequest({ route: "account/delete", status: 200, ms: 0, userId: uid, reason: "completed" });
+
+  // ---- 6. receipt email, best-effort and after the fact ----------------------
+  //
+  // Deletion above is already complete and verified by this point — everything
+  // below is a courtesy, not part of the operation. sendEmailAfterResponse()
+  // schedules the send for after this response has gone out and never throws,
+  // so a missing RESEND_API_KEY, a Resend outage, or any other mail failure
+  // can neither block this response nor undo anything already deleted. The
+  // user's request wins over their receipt, always.
+  if (user.email) {
+    sendEmailAfterResponse(accountDeletionReceiptEmail({ to: user.email, deletedAt: new Date() }), {
+      template: "account-deletion-receipt",
+      userId: uid,
+    });
+  }
+
   return Response.json({ ok: true, stages } satisfies DeleteReport);
 }
 
