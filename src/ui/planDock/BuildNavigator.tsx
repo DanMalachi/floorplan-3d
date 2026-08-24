@@ -67,11 +67,14 @@ export function BuildNavigator() {
   };
 
   return (
-    <div style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
+    <section
+      aria-label="Build navigator"
+      style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
+    >
       <div style={{ padding: "10px 12px 2px", fontSize: 11.5, fontWeight: 600, color: PD.textSecondary }}>Build</div>
       <div style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
         <BuildHouseScene activeHotspot={activeHotspot} onHotspotClick={onHotspotClick} />
       </div>
-    </div>
+    </section>
   );
 }

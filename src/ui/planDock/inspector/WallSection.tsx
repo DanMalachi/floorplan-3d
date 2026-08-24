@@ -90,14 +90,15 @@ export function WallSection({ wall }: { wall: Wall }) {
         ];
 
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected: ${KIND_LABEL[kind]}`} style={pdInspectorPanel}>
       <PdSectionTitle title={KIND_LABEL[kind]} meta={`${len.toFixed(2)} m`} />
-      <div style={{ display: "flex", gap: 4 }}>
+      <div role="group" aria-label="Boundary kind" style={{ display: "flex", gap: 4 }}>
         {(["wall", "rail", "portal"] as const).map((k) => (
           <button
             key={k}
             style={pdChip(kind === k, pdChipFlex)}
             onClick={() => setKind(k)}
+            aria-pressed={kind === k}
             title={
               k === "portal"
                 ? "No barrier at all — the room still closes, nothing gets built. For a space that simply gives onto the next."
@@ -106,7 +107,8 @@ export function WallSection({ wall }: { wall: Wall }) {
                   : "Full-height solid wall."
             }
           >
-            {k === "portal" ? "⇿ Open" : k === "rail" ? "▭ Rail" : "▉ Wall"}
+            <span aria-hidden>{k === "portal" ? "⇿" : k === "rail" ? "▭" : "▉"} </span>
+            {k === "portal" ? "Open" : k === "rail" ? "Rail" : "Wall"}
           </button>
         ))}
       </div>
@@ -130,10 +132,20 @@ export function WallSection({ wall }: { wall: Wall }) {
           />
           {kind === "wall" && (
             <>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div role="group" aria-label="Painted faces" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ color: PD.textSecondary, fontSize: 11.5 }}>Faces</span>
-                <PdSwatch hex={wall.paintA ?? null} title="Face A — click to re-arm this colour" onClick={() => armPaint(wall.paintA, "Face A")} />
-                <PdSwatch hex={wall.paintB ?? null} title="Face B — click to re-arm this colour" onClick={() => armPaint(wall.paintB, "Face B")} />
+                <PdSwatch
+                  hex={wall.paintA ?? null}
+                  title="Face A — click to re-arm this colour"
+                  label={`Face A, ${wall.paintA ?? "plaster"} — re-arm this colour`}
+                  onClick={() => armPaint(wall.paintA, "Face A")}
+                />
+                <PdSwatch
+                  hex={wall.paintB ?? null}
+                  title="Face B — click to re-arm this colour"
+                  label={`Face B, ${wall.paintB ?? "plaster"} — re-arm this colour`}
+                  onClick={() => armPaint(wall.paintB, "Face B")}
+                />
               </div>
               <PdActionRow>
                 {allButtons.map((b) => (

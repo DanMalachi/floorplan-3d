@@ -58,13 +58,14 @@ export function BuildToolbar() {
         gap: 6,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 2, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+      <div role="group" aria-label="Build tool" style={{ display: "flex", alignItems: "center", gap: 2, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
         {TOOLS.map((t) => {
           const active = buildTool === t.id;
           return (
             <Tooltip key={t.id} label={t.built ? t.label : `${t.label} — not built yet`}>
               <button
                 onClick={() => pick(t)}
+                aria-pressed={active}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -81,28 +82,36 @@ export function BuildToolbar() {
                   opacity: t.built ? 1 : 0.65,
                 }}
               >
-                <span style={{ fontSize: 13 }}>{t.glyph}</span>
+                <span aria-hidden style={{ fontSize: 13 }}>{t.glyph}</span>
                 {t.label}
               </button>
             </Tooltip>
           );
         })}
       </div>
+      {/* These pills are the only statement of what the armed tool now expects
+          from you. They appeared silently; role="status" announces them when
+          the tool is armed. */}
       {buildTool === "measure" && (
-        <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
+        <div role="status" style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
           Click two points — floor, wall, or ceiling · Esc clears
         </div>
       )}
       {buildTool === "wall" && (
-        <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
+        <div role="status" style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
           Click to start, click to draw · Esc ends the chain, Esc again to stop
         </div>
       )}
       {buildTool === "opening" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+        <div role="group" aria-label="Opening type" style={{ display: "flex", alignItems: "center", gap: 4, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
           {OPENING_TYPES.map((t) => (
-            <button key={t.id} onClick={() => setOpeningType(t.id)} style={pdChip(openingType === t.id, { display: "flex", alignItems: "center", gap: 5 })}>
-              <span>{t.glyph}</span>
+            <button
+              key={t.id}
+              onClick={() => setOpeningType(t.id)}
+              aria-pressed={openingType === t.id}
+              style={pdChip(openingType === t.id, { display: "flex", alignItems: "center", gap: 5 })}
+            >
+              <span aria-hidden>{t.glyph}</span>
               {t.label}
             </button>
           ))}

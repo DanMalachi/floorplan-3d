@@ -15,13 +15,16 @@ export function VariantSwatchRow({ item }: { item: FurnitureItem }) {
   const group = variantGroupFor(item.assetId);
   if (!group) return null;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <div role="group" aria-label="Colour and finish" style={{ display: "flex", alignItems: "center", gap: 6 }}>
       {group.map((v) => (
         <PdSwatch
           key={v.assetId}
           hex={v.colors?.[0]?.hex ?? null}
           active={v.assetId === item.assetId}
           title={v.colors?.[0]?.name}
+          // `title` is optional in the catalog, so it cannot be relied on as
+          // the name; the product name is always present.
+          label={v.colors?.[0]?.name ? `${v.name} · ${v.colors[0].name}` : v.name}
           size={16}
           onClick={() => useSceneStore.getState().replaceFurnitureAsset(item.id, v.assetId)}
         />

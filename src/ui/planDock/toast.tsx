@@ -50,6 +50,14 @@ export function PdToastHost() {
   return (
     <div
       key={entry.key}
+      // A11y: the toast is this app's whole confirmation channel — "Wall tool
+      // armed", "Duplicated", "Jumped to Decorate · Floors", "Gap too small
+      // for a door". It appeared and vanished with no announcement, so a
+      // screen-reader user got no confirmation and, worse, no rejection
+      // message. role="status" (implicitly aria-live="polite") reads it once
+      // without interrupting. It stays pointer-events:none and unchanged
+      // visually.
+      role="status"
       style={{
         position: "absolute",
         bottom: 96, // clears BottomDock's 224px card rail and BuildToolbar

@@ -26,7 +26,7 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
   };
 
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected: ${spec?.name ?? item.assetId}`} style={pdInspectorPanel}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>{spec?.name ?? item.assetId}</div>
       <div style={{ fontSize: 11.5, color: PD.textSecondary }}>{deg}°</div>
       <PdRangeRow

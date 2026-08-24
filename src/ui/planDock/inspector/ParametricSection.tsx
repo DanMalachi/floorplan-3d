@@ -82,6 +82,7 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <input
         type="color"
+        aria-label="Custom colour"
         value={pending ?? value}
         onChange={(e) => setPending(e.target.value)}
         onBlur={() => {
@@ -100,7 +101,7 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
         }}
       />
       {COLOR_PRESETS.map((hex) => (
-        <PdSwatch key={hex} hex={hex} active={value === hex} title={hex} onClick={() => onCommit(hex)} size={16} />
+        <PdSwatch key={hex} hex={hex} active={value === hex} title={hex} label={`Preset colour ${hex}`} onClick={() => onCommit(hex)} size={16} />
       ))}
     </div>
   );
@@ -128,7 +129,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected: ${g.label}`} style={pdInspectorPanel}>
       <PdSectionTitle title={g.label} meta="Custom" />
 
       {/* A television is sold by its screen diagonal, and its width and height
@@ -148,6 +149,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
                 key={p}
                 style={pdChip(Math.abs(g.sizeInches!.of(spec) - p) < 0.6, pdChipFlex)}
                 onClick={() => update({ dims: g.sizeInches!.dims(spec, p) })}
+                aria-pressed={Math.abs(g.sizeInches!.of(spec) - p) < 0.6}
               >
                 {p}&quot;
               </button>
@@ -196,6 +198,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
                   key={v}
                   style={pdChip(value >= 1 === (v === 1), pdChipFlex)}
                   onClick={() => update({ modules: { [m.key]: v } })}
+                  aria-pressed={value >= 1 === (v === 1)}
                 >
                   {v === 1 ? m.toggle!.on : m.toggle!.off}
                 </button>
@@ -222,6 +225,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               key={v.id}
               style={pdChip((spec.variant ?? g.variants![0].id) === v.id, pdChipFlex)}
               onClick={() => update({ variant: v.id })}
+              aria-pressed={(spec.variant ?? g.variants![0].id) === v.id}
             >
               {v.label}
             </button>
@@ -232,7 +236,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.fronts.length > 1 && (g.showFronts?.(spec) ?? true) && (
         <PdChipGroup>
           {g.fronts.map((f) => (
-            <button key={f} style={pdChip(spec.front === f, pdChipFlex)} onClick={() => update({ front: f })}>
+            <button key={f} style={pdChip(spec.front === f, pdChipFlex)} onClick={() => update({ front: f })} aria-pressed={spec.front === f}>
               {FRONT_LABEL[f]}
             </button>
           ))}
@@ -242,7 +246,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.handles.length > 1 && (
         <PdChipGroup>
           {g.handles.map((h) => (
-            <button key={h} style={pdChip(spec.handle === h, pdChipFlex)} onClick={() => update({ handle: h })}>
+            <button key={h} style={pdChip(spec.handle === h, pdChipFlex)} onClick={() => update({ handle: h })} aria-pressed={spec.handle === h}>
               {HANDLE_LABEL[h]}
             </button>
           ))}
@@ -302,9 +306,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           this file follow — an invisible control reads as "not offered",
           a disabled one reads as "not right now, here's why". */}
       {isWallRun && (
-        <label style={pdInspectorRow}>
+        // Not a <label>: this row's control is a toggle button, and a label can
+        // only name a form control. The button names itself instead — otherwise
+        // it is announced as just "On"/"Off" with no idea what of.
+        <div style={pdInspectorRow}>
           <span style={{ color: PD.textSecondary }}>Match run below</span>
           <button
+            aria-label="Match run below"
+            aria-pressed={isLinked}
             disabled={!isLinked && !linkHost}
             onClick={() => {
               const store = useSceneStore.getState();
@@ -319,7 +328,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           >
             {isLinked ? "On" : "Off"}
           </button>
-        </label>
+        </div>
       )}
 
       {/* Anything that hangs needs its height editable, not just wall

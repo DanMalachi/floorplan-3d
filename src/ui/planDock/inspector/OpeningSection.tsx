@@ -100,14 +100,22 @@ function FramePaintRow({ opening }: { opening: Opening }) {
       <PdSwatch
         hex={opening.frameColor ?? null}
         title={opening.frameColor ?? "Natural — the finish's own colour"}
+        label={`Current frame colour: ${opening.frameColor ?? "natural"}. Pick a new one.`}
         onClick={openPalette}
       />
       <button
         style={pdChip(armed, { flex: 1, textAlign: "center" })}
         onClick={openPalette}
         title="Pick a colour in the Decorate palette — it applies to every window and patio door"
+        aria-pressed={armed}
       >
-        {armed ? "Picking…" : "🎨 Paint"}
+        {armed ? (
+          "Picking…"
+        ) : (
+          <>
+            <span aria-hidden>🎨 </span>Paint
+          </>
+        )}
       </button>
     </div>
   );
@@ -158,21 +166,33 @@ export function OpeningSection({ opening }: { opening: Opening }) {
     });
 
   return (
-    <div style={pdInspectorPanel}>
+    <div
+      role="region"
+      aria-label={`Selected: ${double ? "double door" : glazedDoor ? "patio door" : opening.type}`}
+      style={pdInspectorPanel}
+    >
       <PdSectionTitle
         title={double ? "Double door" : glazedDoor ? "Patio door" : opening.type}
         meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
       />
 
-      <div style={{ display: "flex", gap: 4 }}>
+      {/* Every chip row in this panel is a single-choice group whose selection
+          is shown by tint alone. `aria-pressed` is what makes "which one is on"
+          available to anything that is not an eye; `role="group"` gives the row
+          the heading its micro-label already gives it visually. Decorative
+          glyphs move into aria-hidden spans so they are not announced ahead of
+          the word that means something — same characters, same position. */}
+      <div role="group" aria-label="Opening type" style={{ display: "flex", gap: 4 }}>
         {(["door", "passage", "window"] as const).map((t) => (
           <button
             key={t}
             style={pdChip(opening.type === t, pdChipFlex)}
             onClick={() => setType(t)}
+            aria-pressed={opening.type === t}
             title={t === "passage" ? "Keep the opening, lose the door — an open way through a wall" : undefined}
           >
-            {t === "door" ? "🚪 Door" : t === "passage" ? "⌷ Open" : "🪟 Window"}
+            <span aria-hidden>{t === "door" ? "🚪" : t === "passage" ? "⌷" : "🪟"} </span>
+            {t === "door" ? "Door" : t === "passage" ? "Open" : "Window"}
           </button>
         ))}
       </div>
@@ -184,12 +204,13 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {!glazedDoor && (
             <>
               <div style={pdMicroLabel()}>Material</div>
-              <div style={{ display: "flex", gap: 4 }}>
+              <div role="group" aria-label="Door material" style={{ display: "flex", gap: 4 }}>
                 {DOOR_MATERIALS.map((m) => (
                   <button
                     key={m.key}
                     style={pdChip((opening.doorMaterial ?? "painted-white") === m.key, pdChipFlex)}
                     onClick={() => patch(`Door material: ${m.label}`, { doorMaterial: m.key })}
+                    aria-pressed={(opening.doorMaterial ?? "painted-white") === m.key}
                   >
                     {m.label}
                   </button>
@@ -198,7 +219,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
             </>
           )}
           <div style={pdMicroLabel()}>How it opens</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <div role="group" aria-label="How it opens" style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {/* Writing swingDeg (not just clearing `slide`) is what makes this
                 an EXPLICIT choice — otherwise a door past PATIO_MIN_WIDTH
                 would fall straight back to the derived patio slider and the
@@ -214,8 +235,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 })
               }
               title="One hinged leaf"
+              aria-pressed={!slide && !double}
             >
-              ↷ Swing
+              <span aria-hidden>↷ </span>Swing
             </button>
             <button
               style={pdChip(double, pdChipFlex)}
@@ -229,8 +251,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 })
               }
               title="A pair of hinged leaves meeting in the middle — French doors"
+              aria-pressed={double}
             >
-              ⁘ Double
+              <span aria-hidden>⁘ </span>Double
             </button>
             {SLIDE_PRESETS.map((p) => (
               <button
@@ -246,6 +269,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                   })
                 }
                 title={p.title}
+                aria-pressed={!!slide && matchesPreset(slide, p.spec)}
               >
                 {p.label}
               </button>
@@ -265,9 +289,14 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {/* A double door has no hinge to choose — each leaf hangs on its own
               jamb, and both swing the same way. */}
           {!double && (
-            <div style={{ display: "flex", gap: 4 }}>
+            <div role="group" aria-label="Hinge side" style={{ display: "flex", gap: 4 }}>
               {(["start", "end"] as const).map((h) => (
-                <button key={h} style={pdChip((opening.hinge ?? "start") === h, pdChipFlex)} onClick={() => patch("Door hinge", { hinge: h })}>
+                <button
+                  key={h}
+                  style={pdChip((opening.hinge ?? "start") === h, pdChipFlex)}
+                  onClick={() => patch("Door hinge", { hinge: h })}
+                  aria-pressed={(opening.hinge ?? "start") === h}
+                >
                   Hinge {h}
                 </button>
               ))}
@@ -287,13 +316,14 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {slide.style === "bypass" && (
             <PdStepper label="Panels" value={slide.panels} min={2} max={3} onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })} />
           )}
-          <div style={{ display: "flex", gap: 4 }}>
+          <div role="group" aria-label="Which jamb the panels stack at" style={{ display: "flex", gap: 4 }}>
             {(["start", "end"] as const).map((sd) => (
               <button
                 key={sd}
                 style={pdChip((slide.side ?? "end") === sd, pdChipFlex)}
                 onClick={() => patch("Slide side", { slide: { ...slide, side: sd } })}
                 title="Which jamb the panels stack at"
+                aria-pressed={(slide.side ?? "end") === sd}
               >
                 Slides {sd}
               </button>
@@ -331,13 +361,14 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       )}
 
       {opening.type === "passage" && (
-        <div style={{ display: "flex", gap: 4 }}>
+        <div role="group" aria-label="Passage lining" style={{ display: "flex", gap: 4 }}>
           {([true, false] as const).map((l) => (
             <button
               key={String(l)}
               style={pdChip((opening.lining ?? true) === l, pdChipFlex)}
               onClick={() => patch("Passage lining", { lining: l })}
               title={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
+              aria-pressed={(opening.lining ?? true) === l}
             >
               {l ? "Cased" : "Bare"}
             </button>
@@ -364,13 +395,14 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       {(isWindow || glazedDoor) && (
         <>
           <div style={pdMicroLabel()}>Frame finish · whole house</div>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div role="group" aria-label="Frame finish, whole house" style={{ display: "flex", gap: 4 }}>
             {WINDOW_FRAME_MATERIALS.map((m) => (
               <button
                 key={m.key}
                 style={pdChip(frameFinishOf(opening) === m.key, pdChipFlex)}
                 onClick={() => useSceneStore.getState().setFrameFinish(m.key)}
                 title={m.title}
+                aria-pressed={frameFinishOf(opening) === m.key}
               >
                 {m.label}
               </button>

@@ -69,6 +69,10 @@ export function CameraOfferChip() {
 
   return (
     <div
+      // The offer appears on its own when the armed tool's surface is
+      // unworkable from here, and Enter accepts it from anywhere. Announcing it
+      // is the only way a non-sighted user learns either fact.
+      role="status"
       style={{
         position: "absolute",
         bottom: 140, // above PdToastHost's 96, so a toast never covers this
@@ -89,6 +93,7 @@ export function CameraOfferChip() {
       <span style={{ fontSize: 12.5, color: PD.textPrimary }}>{offer.reason}</span>
       <button
         onClick={offer.accept}
+        aria-keyshortcuts="Enter"
         style={{
           display: "flex",
           alignItems: "center",
@@ -106,6 +111,9 @@ export function CameraOfferChip() {
       >
         {offer.label}
         <kbd
+          // The shortcut is on the button as aria-keyshortcuts; the glyph would
+          // otherwise be read as "return symbol" after the label.
+          aria-hidden
           style={{
             fontFamily: PD.fontUi,
             fontSize: 10.5,

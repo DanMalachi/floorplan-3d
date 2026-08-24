@@ -146,20 +146,26 @@ export function PdStepper({
     lineHeight: 1.2,
   };
   return (
-    <label style={pdInspectorRow}>
+    // Not a <label>: a label may only be associated with ONE form control, and
+    // this row has two buttons and a plain text readout. Wrapping them made the
+    // row's text ambiguous rather than helpful. A named group plus explicitly
+    // named buttons says the same thing correctly — the visual layout is
+    // byte-identical (the <label> carried no styling of its own beyond
+    // pdInspectorRow, which moves across).
+    <div role="group" aria-label={label} style={pdInspectorRow}>
       <span style={{ color: PD.textSecondary }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button style={btn} onClick={() => onSet(clamp(value - 1))}>
-          –
+        <button style={btn} aria-label={`Decrease ${label.toLowerCase()}`} onClick={() => onSet(clamp(value - 1))}>
+          <span aria-hidden>–</span>
         </button>
-        <span style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: PD.fontMono }}>
+        <span aria-live="polite" style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: PD.fontMono }}>
           {value}
         </span>
-        <button style={btn} onClick={() => onSet(clamp(value + 1))}>
-          +
+        <button style={btn} aria-label={`Increase ${label.toLowerCase()}`} onClick={() => onSet(clamp(value + 1))}>
+          <span aria-hidden>+</span>
         </button>
       </span>
-    </label>
+    </div>
   );
 }
 
@@ -216,6 +222,7 @@ export function PdSwatch({
   img,
   active,
   title,
+  label,
   onClick,
   size = 20,
 }: {
@@ -226,6 +233,9 @@ export function PdSwatch({
   img?: string;
   active?: boolean;
   title?: string;
+  /** Explicit accessible name, for the call sites where `title` is a tooltip
+   *  rather than a name (or is absent entirely). */
+  label?: string;
   onClick: () => void;
   size?: number;
 }) {
@@ -233,6 +243,11 @@ export function PdSwatch({
     <button
       onClick={onClick}
       title={title}
+      // A swatch is an empty button whose only content is a background colour
+      // or image, so without this it has NO accessible name — and `title` is
+      // optional here, so several call sites had none at all.
+      aria-label={label ?? title ?? (hex ? `Colour ${hex}` : "Default finish")}
+      aria-pressed={active ?? undefined}
       style={{
         width: size,
         height: size,
