@@ -21,7 +21,24 @@ import { grantSchema, roomSchema } from "@/lib/api/schemas";
 // (server-side record or signed owner cookie — see src/lib/api/rooms.ts).
 export const runtime = "nodejs";
 
-const liveblocks = new Liveblocks({ secret: process.env.LIVEBLOCKS_SECRET_KEY ?? "" });
+// Constructed on first use, NOT at module scope. The SDK validates the secret
+// inside its constructor, so `new Liveblocks(...)` at module scope runs during
+// `next build` — where LIVEBLOCKS_SECRET_KEY is not set — and fails the whole
+// build with "Secret keys must start with 'sk_'". That is what made every
+// nextjs-ci run red: the build step died collecting page data for this route,
+// so lint and typecheck results never mattered.
+//
+// Nothing is lost by deferring. The handler below already refuses with 503 when
+// the key is missing, so eager construction only ever bought a build-time
+// crash. This matches how the retention sweep builds its own client
+// (src/app/api/account/retention/route.ts) — after checking the secret exists.
+let client: Liveblocks | null = null;
+
+function liveblocksClient(): Liveblocks {
+  // Only reached past the LIVEBLOCKS_SECRET_KEY guard below, so the key is set.
+  client ??= new Liveblocks({ secret: process.env.LIVEBLOCKS_SECRET_KEY as string });
+  return client;
+}
 
 const bodySchema = z.object({
   room: roomSchema,
@@ -77,13 +94,13 @@ export async function POST(req: Request) {
   }
 
   const session = user
-    ? liveblocks.prepareSession(user.id, {
+    ? liveblocksClient().prepareSession(user.id, {
         userInfo: { name: displayName(user), avatar: avatarUrl(user) ?? undefined },
       })
     // A stable id per browser, not a fresh one per request: Liveblocks counts
     // distinct user ids as monthly active users, so minting one each call billed
     // a single guest once per page load.
-    : liveblocks.prepareSession(await stableAnonId());
+    : liveblocksClient().prepareSession(await stableAnonId());
   session.allow(room, role === "view" ? session.READ_ACCESS : session.FULL_ACCESS);
   const { body, status } = await session.authorize();
   return new Response(body, { status });
