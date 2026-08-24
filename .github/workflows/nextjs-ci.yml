@@ -53,8 +53,18 @@ jobs:
 
       - run: npm ci
 
-      # Gate on high/critical only, not moderate/low — as of 2026-08-23 this
-      # repo has 5 high + 1 moderate open (nanoid, next, pdfjs-dist, postcss,
-      # sharp, undici — see PR notes for `npm audit fix` vs. `--force` split).
-      # Tighten to `--audit-level=moderate` once that backlog is cleared.
+      # Gate on high/critical only, not moderate/low.
+      #
+      # The backlog this gate was written around (5 high + 1 moderate: nanoid,
+      # next, pdfjs-dist, postcss, sharp, undici) is now CLEARED — as of
+      # 2026-08-24 `npm audit` reports 0 vulnerabilities at every level. The
+      # last three (next, and postcss + sharp underneath it) went out with the
+      # next 16.3.2 upgrade; postcss and sharp had no parent other than next,
+      # so bumping next was the whole fix.
+      #
+      # That means the "tighten once the backlog is cleared" note that used to
+      # live here is now unblocked: `--audit-level=moderate` would pass today.
+      # Left at `high` deliberately so tightening is a decision on its own PR
+      # rather than a side effect of the upgrade — flipping one word here is
+      # all it takes when you want it.
       - run: npm audit --audit-level=high
