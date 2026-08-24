@@ -72,6 +72,12 @@ export function ConsentNotice() {
 
   return (
     <div
+      // A named region rather than a live region: this is a disclosure that
+      // sits there until dismissed, not an event. Naming it makes it findable
+      // and skippable instead of being an anonymous block of text pinned over
+      // the corner of the editor.
+      role="region"
+      aria-label="Cookie notice"
       style={{
         position: "fixed",
         left: 14,
