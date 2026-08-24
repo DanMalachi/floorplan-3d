@@ -37,6 +37,22 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Runs all 29 suites (see docs/TESTING.md). Before this existed, 17 were
+      # wired to an npm script, 12 were reachable only by typing the path, and
+      # CI ran none of them — so a green build proved nothing about the tests.
+      #
+      # Coverage comes from c8, not vitest's own provider: every suite runs as a
+      # CHILD process, which vitest worker-scoped v8 instrumentation cannot see
+      # (it reported a flat 0% across 16,070 statements). c8 sets
+      # NODE_V8_COVERAGE for the whole process tree, so it sees the children.
+      #
+      # Thresholds live in .c8rc.json, set just under the 2026-08-24 measured
+      # baseline (36.21% lines / 77.33% branches / 62.68% functions) so the
+      # gate ratchets upward rather than failing on arrival. Raise them as
+      # coverage improves; never lower them to make a red build green.
+      - name: Test + coverage
+        run: npm run test:coverage
+
       - name: Build
         run: npm run build
 
