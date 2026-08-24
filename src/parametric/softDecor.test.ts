@@ -685,7 +685,12 @@ console.log("\nthe pictures are real files, and the registry knows their shape")
   // A generator can't ask an <img> for its size synchronously, so the aspect
   // is hard-coded in ARTWORKS — which makes this the check that keeps it
   // honest. Wrong by 10% and the painting is stretched by 10%.
-  const sharp = require("sharp") as typeof import("sharp");
+  // sharp 0.35 split its type entrypoints: the ESM one (index.d.mts, what
+  // `typeof import("sharp")` resolves to) is now a namespace with a `default`
+  // export, while the CJS one this `require` actually returns is still the
+  // callable `export = sharp`. Hence `.default` — it names the constructor
+  // type, not the namespace. Runtime behaviour is unchanged.
+  const sharp = require("sharp") as typeof import("sharp").default;
   for (const art of ARTWORKS) {
     const file = resolve(process.cwd(), "public", art.url.replace(/^\//, ""));
     const there = existsSync(file);
