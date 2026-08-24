@@ -41,3 +41,24 @@ body {
     box-shadow: 0 0 13px 2px rgba(48, 209, 88, 0.5);
   }
 }
+
+/* Honour the OS "reduce motion" setting for the chrome's CSS motion — the
+   ~140-180ms colour/background transitions on every chip, icon button and
+   panel (src/ui/tokens.ts, src/ui/planDock/tokens.ts) plus any future
+   keyframe animation. Only ever applies to someone who has asked their
+   system for less motion; the default look is untouched.
+
+   NOT covered, and it is the motion that actually matters here: the 3D
+   viewport's camera moves, walkthrough, rain and time-of-day are driven by
+   requestAnimationFrame inside the protected WebGL layer, which no CSS media
+   query can reach. See docs/ACCESSIBILITY.md. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

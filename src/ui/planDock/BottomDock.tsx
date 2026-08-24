@@ -171,9 +171,32 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   };
+  // A11y: this was pointer-only, so the dock height was not adjustable at all
+  // without a mouse. `role="separator"` with a tabindex is the ARIA pattern for
+  // a resizable split — arrows nudge, Home/End jump to the extremes. The
+  // drag behaviour above is untouched.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const STEP = 24;
+    let next: number | null = null;
+    if (e.key === "ArrowUp") next = dockHeight + STEP;
+    else if (e.key === "ArrowDown") next = dockHeight - STEP;
+    else if (e.key === "Home") next = DOCK_HEIGHT_MIN;
+    else if (e.key === "End") next = DOCK_HEIGHT_MAX_CAP;
+    if (next === null) return;
+    e.preventDefault();
+    setDockHeight(next);
+  };
   return (
     <div
       onPointerDown={onPointerDown}
+      onKeyDown={onKeyDown}
+      role="separator"
+      aria-orientation="horizontal"
+      aria-label="Resize the item dock"
+      aria-valuenow={Math.round(dockHeight)}
+      aria-valuemin={DOCK_HEIGHT_MIN}
+      aria-valuemax={DOCK_HEIGHT_MAX_CAP}
+      tabIndex={0}
       title="Drag to resize"
       style={{
         flex: "0 0 auto",
@@ -289,8 +312,11 @@ function NavigatorPanel({
   const RoomBigIcon = ROOM_ICON[room];
   const Scene = ROOM_SCENE_COMPONENT[room];
   return (
-    <div style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
-      <div style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
+    <section
+      aria-label="Room navigator"
+      style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
+    >
+      <div role="group" aria-label="Room" style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => {
           const Icon = ROOM_ICON[r.id];
           return (
@@ -301,9 +327,10 @@ function NavigatorPanel({
                   setActiveHotspot(null);
                   focusRoomForTag(r.id);
                 }}
+                aria-pressed={room === r.id}
                 style={pdIconBtn(room === r.id)}
               >
-                <Icon size={15} />
+                <Icon size={15} aria-hidden />
               </button>
             </Tooltip>
           );
@@ -314,14 +341,14 @@ function NavigatorPanel({
           <Scene activeHotspot={activeHotspot} onHotspotClick={(id) => setActiveHotspot(activeHotspot === id ? null : id)} onFloorClick={onFloorClick} />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 8, color: PD.textTertiary }}>
-            <RoomBigIcon size={40} />
+            <RoomBigIcon size={40} aria-hidden />
             <span style={{ fontSize: 10, textAlign: "center", padding: "0 10px" }}>
               {ROOM_SCENES.find((r) => r.id === room)?.label} scene not built yet — showing everything tagged for this room
             </span>
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -358,6 +385,9 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
     <button
       onClick={() => arm(activeSpec.assetId)}
       title={`${activeSpec.name} · ${activeSpec.footprint.w}×${activeSpec.footprint.d} m`}
+      // "Armed for placement" is signalled only by an accent border, so it has
+      // to be reported as pressed state too.
+      aria-pressed={active}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -386,8 +416,10 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
         }}
       >
         {thumb && (
+          // The card's own text already names the item, so a repeated alt would
+          // announce the name twice. The picture carries no extra information.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={activeSpec.name} width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
+          <img src={thumb} alt="" width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
         )}
       </div>
       {group && (
@@ -397,6 +429,20 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
               key={v.assetId}
               role="button"
               aria-label={`${v.name} · ${v.colors?.[0]?.name ?? "variant"}`}
+              aria-pressed={v.assetId === activeSpec.assetId}
+              // Was pointer-only: role="button" with no tabindex and no key
+              // handler is a button nobody can reach or operate from the
+              // keyboard. See docs/ACCESSIBILITY.md for the remaining
+              // structural problem here (this control is nested inside the
+              // card's own <button>, which no amount of ARIA fixes).
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveVariantId(v.assetId);
+                arm(v.assetId);
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveVariantId(v.assetId);
@@ -486,6 +532,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
     <button
       onClick={arm}
       title={piece.label}
+      aria-pressed={active}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -501,7 +548,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
         fontFamily: PD.fontUi,
       }}
     >
-      <div style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
+      <div aria-hidden style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
         {Glyph && <Glyph size={30} />}
       </div>
       <span
@@ -548,10 +595,20 @@ function PaintTab() {
   const plasterActive = activeHex === null && (brush?.kind === "paint" || forFrames);
   const families: TambourFamily[] = ["white", "neutral", "red", "orange", "yellow", "green", "blue", "purple"];
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
+    // Every swatch below is a bare coloured square: no text, no icon, no image.
+    // Without an explicit name each one was announced as just "button", and a
+    // palette of ~200 identical "button"s is not a palette. The colour code and
+    // English name were already in `title` — they are now the real name too.
+    <div
+      role="group"
+      aria-label={forFrames ? "Window frame colour" : "Wall paint colour"}
+      style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}
+    >
       <button
         onClick={() => pick(null)}
         title={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
+        aria-label={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
+        aria-pressed={plasterActive}
         style={{
           flex: "0 0 auto",
           width: 30,
@@ -570,6 +627,8 @@ function PaintTab() {
             <button
               key={c.code}
               title={`${c.code} · ${c.nameEn}`}
+              aria-label={`${c.nameEn}, ${c.code}`}
+              aria-pressed={active}
               onClick={() => pick(c.hex)}
               style={{
                 flex: "0 0 auto",
@@ -593,7 +652,13 @@ function FloorsTab() {
   const active = brush?.kind === "floor" ? brush.style : undefined;
   const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
+    // Same problem as the paint palette: each tile is a background-image only,
+    // so it had no accessible name whatsoever.
+    <div
+      role="group"
+      aria-label="Floor material"
+      style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}
+    >
       {FAMILY_ORDER.flatMap((family) =>
         FLOOR_MATERIALS.filter((m) => m.family === family).map((m) => {
           const on = active === m.id;
@@ -602,6 +667,8 @@ function FloorsTab() {
               key={m.id}
               onClick={() => pick(m.id)}
               title={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
+              aria-label={`${m.name}, ${FAMILY_LABEL[family]}`}
+              aria-pressed={on}
               style={{
                 flex: "0 0 auto",
                 width: 44,
@@ -699,6 +766,9 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Escape" && closeSearch()}
             placeholder={`Search ${roomItems.length} models…`}
+            // A placeholder is not a label: it disappears the moment anything is
+            // typed, and some screen readers never announce it at all.
+            aria-label={`Search ${roomItems.length} models in this room`}
             style={{
               flex: 1,
               padding: "4px 10px",
@@ -711,26 +781,40 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               outline: "none",
             }}
           />
-          <button onClick={closeSearch} style={pdIconBtn(false, 22)}>
-            <CloseIcon size={12} />
+          <button onClick={closeSearch} aria-label="Close search" style={pdIconBtn(false, 22)}>
+            <CloseIcon size={12} aria-hidden />
           </button>
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 3, overflowX: "auto" }}>
+        <div role="group" aria-label="Filter items" style={{ display: "flex", alignItems: "center", gap: 3, overflowX: "auto" }}>
           <Tooltip label="Search">
             <button onClick={() => setSearchOpen(true)} style={pdIconBtn(false, 22)}>
-              <SearchIcon size={13} />
+              <SearchIcon size={13} aria-hidden />
             </button>
           </Tooltip>
-          <button onClick={() => setActiveCategory(null)} style={pdChip(activeCategory === null, { padding: "3px 8px", fontSize: 10.5 })}>
+          <button
+            onClick={() => setActiveCategory(null)}
+            aria-pressed={activeCategory === null}
+            style={pdChip(activeCategory === null, { padding: "3px 8px", fontSize: 10.5 })}
+          >
             All
           </button>
           {roomCategories.map((c) => (
-            <button key={c} onClick={() => setActiveCategory(c)} style={pdChip(activeCategory === c, { padding: "3px 8px", fontSize: 10.5 })}>
+            <button
+              key={c}
+              onClick={() => setActiveCategory(c)}
+              aria-pressed={activeCategory === c}
+              style={pdChip(activeCategory === c, { padding: "3px 8px", fontSize: 10.5 })}
+            >
               {c}
             </button>
           ))}
-          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
+          {/* Deliberately NOT a live region: announcing a bare "37" on every
+              keystroke is noise, not information. Naming it instead, so a
+              screen reader that lands on it says what the number counts. */}
+          <span aria-label={`${visibleCustom.length + items.length} items shown`} style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>
+            {visibleCustom.length + items.length}
+          </span>
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start" }}>
@@ -787,31 +871,40 @@ export function BottomDock() {
         }}
       >
         <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
-        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+        <div role="group" aria-label="Dock section" style={{ display: "flex", alignItems: "center", gap: 3 }}>
           {DOCK_TABS.map((t) => {
             const Icon = SECTION_ICON[t.id];
             return (
               <Tooltip key={t.id} label={t.label}>
-                <button onClick={() => setTab(t.id)} style={pdIconBtn(tab === t.id)}>
-                  <Icon size={15} />
+                <button onClick={() => setTab(t.id)} aria-pressed={tab === t.id} style={pdIconBtn(tab === t.id)}>
+                  <Icon size={15} aria-hidden />
                 </button>
               </Tooltip>
             );
           })}
           <Tooltip label={eyedropper ? "Eyedropper armed (E)" : "Eyedropper (E)"}>
-            <button onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} style={pdIconBtn(eyedropper)}>
-              <EyedropperIcon size={14} />
+            <button
+              onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)}
+              aria-pressed={eyedropper}
+              aria-keyshortcuts="e"
+              style={pdIconBtn(eyedropper)}
+            >
+              <EyedropperIcon size={14} aria-hidden />
             </button>
           </Tooltip>
+          {/* "A brush is armed and your next click paints something" is modal
+              state. It appeared as a line of small text and nothing else, so a
+              screen-reader user got no notice that clicking now does something
+              different. role="status" announces it when it arms. */}
           {brush && (
-            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            <span role="status" style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               {brush.kind === "frame"
                 ? "Window frames — pick a colour · Esc to stop"
                 : `${brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop`}
             </span>
           )}
           {!brush && replaceTarget && (
-            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            <span role="status" style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               Replacing — pick a new item
             </span>
           )}

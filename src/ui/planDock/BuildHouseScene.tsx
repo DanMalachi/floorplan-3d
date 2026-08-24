@@ -206,6 +206,7 @@ export function BuildHouseScene({
         <HitArea
           key={it.id}
           id={it.id}
+          label={it.label}
           box={it.box}
           active={activeHotspot === it.id}
           hovered={hovered === it.id}

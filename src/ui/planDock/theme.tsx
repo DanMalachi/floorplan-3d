@@ -91,6 +91,10 @@ export function ThemeToggle() {
     <button
       onClick={() => setTheme(isLight ? "dark" : "light")}
       title={isLight ? "Switch to dark" : "Switch to light"}
+      // Without this the button's accessible name is its only text content —
+      // the ☀/☾ character — so it is announced as "white sun with rays" rather
+      // than what it does. `title` does not win over text content.
+      aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
       style={{
         width: 32,
         height: 32,
@@ -104,7 +108,7 @@ export function ThemeToggle() {
         ...pdGlass({ borderRadius: 999, padding: 0 }),
       }}
     >
-      {isLight ? "☀" : "☾"}
+      <span aria-hidden>{isLight ? "☀" : "☾"}</span>
     </button>
   );
 }

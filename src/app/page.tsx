@@ -56,6 +56,7 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
       <button
         onClick={onOpenProjects}
         title="Browse projects"
+        aria-label={`Browse projects — currently open: ${name}`}
         style={{
           display: "flex",
           alignItems: "center",
@@ -70,13 +71,20 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
           borderRadius: 999,
         }}
       >
-        <span style={{ fontSize: 14, color: PD.textTertiary }}>▚</span>
+        <span aria-hidden style={{ fontSize: 14, color: PD.textTertiary }}>▚</span>
         <span style={{ fontWeight: 500, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {name}
         </span>
       </button>
-      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}>
-        <span style={{ color: PD.accentText }}>●</span>
+      {/* Save/sync state is the one thing here that changes on its own, and it
+          is the answer to "did my work make it out of this browser?" — so it
+          announces itself politely instead of only being visible. */}
+      <span
+        role="status"
+        aria-live="polite"
+        style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}
+      >
+        <span aria-hidden style={{ color: PD.accentText }}>●</span>
         {status}
       </span>
     </div>
@@ -116,7 +124,11 @@ function GoLiveButton() {
       setBusy(false);
     }
   };
-  const label = busy ? "Starting…" : liveRoomId ? "◈ Open live" : "◈ Go live";
+  const label = busy ? "Starting…" : liveRoomId ? "Open live" : "Go live";
+  // The ◈ stays exactly where it was on screen; it is split out of the label
+  // string only so it is not read aloud as "black diamond with white centre"
+  // before the words that mean something.
+  const glyph = busy ? null : "◈";
   return (
     <button
       onClick={goLive}
@@ -140,6 +152,7 @@ function GoLiveButton() {
         boxShadow: "0 8px 20px -10px oklch(0.62 0.15 258 / 0.6)",
       }}
     >
+      {glyph && <span aria-hidden>{glyph} </span>}
       {label}
     </button>
   );
@@ -164,7 +177,12 @@ function ModeSwitcher() {
   const appMode = useSceneStore((s) => s.appMode);
   const setAppMode = useSceneStore((s) => s.setAppMode);
   return (
-    <div
+    // The app's primary navigation, so it is a real navigation landmark, and
+    // each chip reports whether it is the current mode — otherwise "which mode
+    // am I in" is carried by tint alone, which is exactly the information a
+    // screen-reader user does not get.
+    <nav
+      aria-label="Editor mode"
       style={{
         position: "absolute",
         top: 14,
@@ -185,13 +203,15 @@ function ModeSwitcher() {
             key={m.id}
             onClick={() => setAppMode(m.id)}
             title={`${m.label} (${m.key})`}
+            aria-pressed={active}
+            aria-keyshortcuts={m.key}
             style={pdChip(active, { padding: "6px 18px", fontSize: 13 })}
           >
             {m.label}
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }
 

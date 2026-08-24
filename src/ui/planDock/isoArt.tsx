@@ -532,6 +532,7 @@ export interface RoomItem {
  *  mechanics are identical. */
 export function HitArea({
   id,
+  label,
   box,
   active,
   hovered,
@@ -540,6 +541,12 @@ export function HitArea({
   onClick,
 }: {
   id: string;
+  /** Human wording for the hotspot ("Stove & oven", "Doors — drop on a wall").
+   *  A11y: the accessible name used to be the raw `id` ("stove", "doors"), and
+   *  the readable label only ever existed inside the hover bubble drawn in
+   *  SVG, which nothing but a sighted mouse user can see. Optional so a caller
+   *  that genuinely has no better wording still gets the id. */
+  label?: string;
   box: IsoBox;
   active: boolean;
   hovered: boolean;
@@ -549,8 +556,30 @@ export function HitArea({
 }) {
   const { x0, y0, x1, y1 } = box.bbox;
   const pad = 2;
+  // A11y: these hotspots carried role="button" but no tabindex and no key
+  // handler, so the whole illustrated navigator — every room's hotspots and
+  // the entire Build cutaway — was unreachable without a pointer. Focus +
+  // Enter/Space now work. `onEnter`/`onLeave` double as focus/blur so the
+  // hover outline and label bubble appear for a keyboard user too.
+  const onKeyDown = (e: React.KeyboardEvent<SVGGElement>) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    onClick();
+  };
   return (
-    <g role="button" aria-label={id} onMouseEnter={onEnter} onMouseLeave={onLeave} onClick={onClick} style={{ cursor: "pointer" }}>
+    <g
+      role="button"
+      aria-label={label ?? id}
+      aria-pressed={active}
+      tabIndex={0}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      onKeyDown={onKeyDown}
+      onClick={onClick}
+      style={{ cursor: "pointer" }}
+    >
       <rect x={x0 - pad} y={y0 - pad} width={x1 - x0 + pad * 2} height={y1 - y0 + pad * 2} fill="transparent" />
       {(active || hovered) && (
         <rect
@@ -616,7 +645,22 @@ export function RoomSceneShell({
 
   return (
     <svg viewBox="0 0 220 170" width="100%" height="100%" style={{ display: "block", overflow: "visible" }}>
-      <g role="button" aria-label="floor" onMouseEnter={() => setHovered("floor")} onMouseLeave={() => setHovered((h) => (h === "floor" ? null : h))} onClick={onFloorClick} style={{ cursor: "pointer" }}>
+      <g
+        role="button"
+        aria-label="Floor — pick a material"
+        tabIndex={0}
+        onMouseEnter={() => setHovered("floor")}
+        onMouseLeave={() => setHovered((h) => (h === "floor" ? null : h))}
+        onFocus={() => setHovered("floor")}
+        onBlur={() => setHovered((h) => (h === "floor" ? null : h))}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          onFloorClick();
+        }}
+        onClick={onFloorClick}
+        style={{ cursor: "pointer" }}
+      >
         <polygon points={floor.top} fill="oklch(0.3 0.015 90 / 0.5)" stroke={FACE_STROKE} strokeWidth={0.6} />
         {hovered === "floor" && <polygon points={floor.top} fill="none" stroke={PD.accent} strokeWidth={1.5} strokeDasharray="3 3" />}
       </g>
@@ -628,6 +672,7 @@ export function RoomSceneShell({
           {it.art}
           <HitArea
             id={it.id}
+            label={it.label}
             box={it.box}
             active={activeHotspot === it.id}
             hovered={hovered === it.id}
