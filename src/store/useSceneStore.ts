@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene, FloorStyle, FixtureMount, OpeningType } from "@/schema/scene";
+import type { Scene, FloorStyle, FixtureMount, OpeningType, ParametricSpec } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import {
   DEFAULT_DOOR,
@@ -10,7 +10,12 @@ import {
 } from "@/schema/constants";
 import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometry";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
-import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
+import { frameColorPatch, frameMaterialPatch, type FrameFinish } from "@/render/frameFinish";
+import { sanitizeSpec, GENERATORS, elevationOf } from "@/parametric";
+import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
+import { legsToSpec } from "@/parametric/runPath";
+import { pdToast } from "@/ui/planDock/toast";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -154,10 +159,17 @@ export type DockTab = "furniture" | "lighting" | "paint" | "floors";
 export type WallViewMode = "full" | "cutaway" | "top";
 
 /** Active materials applicator in Decorate mode. Paint carries a hex (null =
- *  reset to plaster); floor carries a floor style. Click surfaces to apply. */
+ *  reset to plaster); floor carries a floor style. Click surfaces to apply.
+ *
+ *  `frame` is the odd one out and deliberately so: it has no surface to click,
+ *  because frame colour is a whole-house property (see `setFrameColor`).
+ *  Arming it re-points the Paint tab's palette at the window frames, so one
+ *  colour list serves walls and frames instead of the inspector growing a
+ *  second, cramped copy of it. */
 export type Brush =
   | { kind: "paint"; hex: string | null }
-  | { kind: "floor"; style: FloorStyle };
+  | { kind: "floor"; style: FloorStyle }
+  | { kind: "frame"; hex: string | null };
 
 /** Presentation environment around the model. Persisted per project. */
 export type EnvPreset = "none" | "suburb" | "city";
@@ -237,6 +249,12 @@ export interface StoreState {
   // --- 3D editing: drag gestures (Phase 4 M2) ---
   /** Scene at gesture start; non-null while a drag is in flight. */
   gestureBase: Scene | null;
+  /** Set by the run-resize handles for the duration of their gesture. Growing
+   *  a run moves its centre, and the wall snap ranks purely by proximity — so
+   *  without pinning the run to the wall it started on, a resize could hand it
+   *  to a neighbouring wall (or the far face of its own) mid-drag. */
+  gestureLock: { itemId: string; wallId: string } | null;
+  setGestureLock: (lock: { itemId: string; wallId: string } | null) => void;
   /** Snap guides + dimension labels the viewport draws during a drag. */
   dragViz: DragViz | null;
   /** Bumped only on whole-scene replaces — the viewport recenters on this,
@@ -248,6 +266,12 @@ export interface StoreState {
   /** Fold the whole gesture into one undo step (no-op if nothing changed). */
   endGesture: (label: string) => void;
   cancelGesture: () => void;
+  /** True while a walkthrough door swing is folding its per-frame writes into
+   *  a gesture (WalkthroughMode.tsx). Lets the viewport tell that apart from
+   *  a real drag gesture — a door swing shouldn't tear down postprocessing
+   *  or lock the camera the way dragging furniture/walls does. */
+  doorGestureActive: boolean;
+  setDoorGestureActive: (active: boolean) => void;
 
   // --- camera focus (Plan Dock P8) ---
   /** Plan-space point (meters) the camera should glide to next — set by
@@ -262,8 +286,8 @@ export interface StoreState {
 
   // --- furniture (Phase 4 M4) ---
   /** Catalog item being placed: ghost follows the cursor until click/Esc. */
-  placing: { assetId: string; rotation: number } | null;
-  setPlacing: (assetId: string | null) => void;
+  placing: { assetId: string; rotation: number; parametric?: ParametricSpec } | null;
+  setPlacing: (assetId: string | null, parametric?: ParametricSpec) => void;
   rotatePlacing: (deltaRad: number) => void;
   placeFurniture: (x: number, y: number, rotation: number) => void;
   rotateSelectedFurniture: (deltaRad: number) => void;
@@ -276,12 +300,72 @@ export interface StoreState {
    *  physical item, different color/finish — footprint is identical by
    *  construction there, so nothing else needs to move). */
   replaceFurnitureAsset: (id: string, assetId: string) => void;
+  /** Merge an edit into a placed parametric item's spec (modules merged
+   *  shallowly too), re-sanitize, and commit — one undo step per edit,
+   *  powers ParametricSection's live-editing configurator. */
+  updateFurnitureParametric: (id: string, patch: Partial<ParametricSpec>) => void;
+  /** Move a placed item's height off the floor (kitchenWall's "Height off
+   *  floor" field) — same one-commit-per-edit pattern as
+   *  updateFurnitureParametric. */
+  setFurnitureElevation: (id: string, elevation: number) => void;
+  /** "Match run below" (ParametricSection): link/unlink a placed kitchenWall
+   *  run to a kitchenBase run beneath it. `hostId` links (must be an actual
+   *  kitchenBase item — silently ignored otherwise); `null` unlinks. Linking
+   *  writes `attach` and runs syncKitchenAttachments so the run immediately
+   *  takes on the host's pose/path in the SAME commit — one undo step, not a
+   *  bare-attach step followed by a visible jump on the next sync. Unlinking
+   *  just drops `attach`: the run is left exactly where its last derived
+   *  pose put it, free — no repositioning, per Dan's spec. */
+  setKitchenWallLink: (id: string, hostId: string | null) => void;
   /** Set by the inspector's Replace button: the furniture id awaiting a new
    *  asset pick. BottomDock's item cards check this before falling back to
    *  their normal "arm placement" click behavior. Cleared on consumption or
    *  on the next appMode change (abandoning the pick leaves nothing armed). */
   replaceTarget: string | null;
   setReplaceTarget: (id: string | null) => void;
+
+  // --- kitchen run-draw placement (R3) --- mutually exclusive with
+  // placing/brush/eyedropper, same pattern as those.
+  /** Armed by the Kitchen tab's two cards instead of setPlacing — RunDrawGhost
+   *  drives its own click-drag-click flow rather than the single-click ghost. */
+  placingRun: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null;
+  setPlacingRun: (run: { generator: "kitchenBase" | "kitchenWall"; spec: ParametricSpec } | null) => void;
+  /** ONE FurnitureItem for the whole drawn run (Kitchen v2.1): leg 0 fixes
+   *  the pose, later legs fold into spec.extraLegs — an L or U is a single
+   *  piece with one continuous countertop. `elevation` mounts wall-cabinet
+   *  runs at the height the anchor click picked on the wall. */
+  placeKitchenRun: (
+    legs: { x: number; y: number; rotation: number; w: number; dir: number }[],
+    elevation?: number,
+  ) => void;
+
+  // --- counter items (Kitchen v2) --- sink/cooktop/future counter appliances.
+  // Mutually exclusive with placing/placingRun/brush/eyedropper like the rest.
+  /** Armed by the Kitchen tab's sink/cooktop cards — CounterItemGhost drives
+   *  a snap-onto-a-base-run flow instead of the free floor ghost. */
+  placingCounter: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null;
+  setPlacingCounter: (
+    pc: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null,
+  ) => void;
+  /** Commit the armed counter item bonded to `hostId` at `along` meters from
+   *  the run's left edge; pose/elevation derive from the host via the
+   *  attachment sync. */
+  placeCounterItem: (hostId: string, along: number) => void;
+  /** Commit the armed surface item on the FLOOR at a plan point — the escape
+   *  hatch for `surfaceOptional` generators (a TV on a stand), which may be
+   *  put down anywhere rather than requiring a host. */
+  placeSurfaceItemFree: (x: number, y: number) => void;
+
+  /** Armed by a wall-mounted generator's card (mirrors, towel rails). The
+   *  ghost reads the WALL grid — pointing at a wall face yields position,
+   *  facing and height together — instead of the floor grid, which is what
+   *  made a mirror land flat on the floor. */
+  placingWall: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null;
+  setPlacingWall: (
+    pw: { generator: ParametricSpec["generator"]; spec: ParametricSpec } | null,
+  ) => void;
+  /** Commit the armed wall item at an already-resolved wall pose. */
+  placeWallItem: (pose: { x: number; y: number; rotation: number; elevation: number }) => void;
 
   // --- fixtures (lighting) --- placing state is SHARED with furniture above
   // (assetId is enough to tell the catalogs apart) — only the commit/rotate
@@ -293,6 +377,13 @@ export interface StoreState {
   /** Active paint/floor applicator: click surfaces to apply, Esc to stop. */
   brush: Brush | null;
   setBrush: (b: Brush | null) => void;
+  /** Retint / re-finish EVERY window and patio door in the project, each in one
+   *  commit (one undo step). Both halves of a frame's look are whole-house
+   *  properties — frames are one joinery package, ordered once — so these are
+   *  the only writers of `Opening.frameColor` / `frameMaterial`, and there is
+   *  deliberately no per-opening path to either. */
+  setFrameColor: (hex: string | null) => void;
+  setFrameFinish: (finish: FrameFinish) => void;
 
   // --- eyedropper (Plan Dock P7) ---
   /** Armed = the next click on furniture/a fixture/a painted wall face/a
@@ -370,25 +461,21 @@ export interface StoreState {
   sourcePdfName: string | null;
   setSourcePdfName: (name: string | null) => void;
 
-  // --- imported PDF raw overlay (Phase 2 / M1) ---
+  // --- imported CAD vector overlay (DXF/DWG only) ---
+  // PDF import deliberately leaves these empty: its decoded geometry sits
+  // offset from the rendered page, so it hindered hand-tracing. DXF/DWG
+  // vectors are correctly registered and carry real scale, so they stay.
   importedSegments: ImportSegment[];
   importedArcs: ImportArc[];
-  importedTexts: ImportText[]; // PDF text words (knowledge-layer OCR cue)
+  importedTexts: ImportText[]; // PDF/DXF text words (knowledge-layer OCR cue)
   showImport: boolean;
   setImportedSegments: (segs: ImportSegment[]) => void;
   setImportedArcs: (arcs: ImportArc[]) => void;
   setShowImport: (v: boolean) => void;
 
   // --- wall snapping (manual trace aid) ---
-  wallSnap: boolean; // snap traced points to imported-PDF wall centerlines/corners
+  wallSnap: boolean; // snap traced points to imported DXF/DWG centerlines/corners
   setWallSnap: (v: boolean) => void;
-
-  // --- VLM classification (Phase 2.5 / M3) ---
-  vlmModel: string; // Claude model id — shared with Building Knowledge Layer's room understanding
-
-  // --- Building Knowledge Layer (room semantics) ---
-  understandBusy: boolean;
-  understandRooms: () => Promise<string>; // VLM escalation for undecided rooms
 
   // --- trace draft ---
   points: TracePoint[];
@@ -559,6 +646,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
       });
     },
     gestureBase: null,
+    gestureLock: null,
+    setGestureLock: (gestureLock) => set({ gestureLock }),
     dragViz: null,
     frameToken: 0,
     beginGesture: () => {
@@ -566,24 +655,30 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!s.gestureBase) set({ gestureBase: s.scene });
     },
     updateGesture: (next, viz = null) => {
-      if (!get().gestureBase) return; // no gesture in flight
-      set({ scene: next, dragViz: viz });
+      const s = get();
+      if (!s.gestureBase) return; // no gesture in flight
+      // Kitchen v2: runs glue to walls and counter items ride their runs —
+      // applied here so EVERY drag path (layer drags, resize handles) gets
+      // the same physics. Door-swing gestures skip it (openings only).
+      const scene = s.doorGestureActive ? next : applyKitchenGesture(next, s.scene, s.gestureLock);
+      set({ scene, dragViz: viz });
     },
     endGesture: (label) => {
       const { gestureBase, scene, collab } = get();
       if (!gestureBase) return;
       if (gestureBase === scene) {
-        set({ gestureBase: null, dragViz: null }); // click, not a drag
+        set({ gestureBase: null, gestureLock: null, dragViz: null }); // click, not a drag
         return;
       }
       if (collab) {
         // One granular commit of the whole drag into the shared doc.
         collab.commit(gestureBase, scene);
-        set({ gestureBase: null, dragViz: null });
+        set({ gestureBase: null, gestureLock: null, dragViz: null });
         return;
       }
       set((s) => ({
         gestureBase: null,
+        gestureLock: null,
         dragViz: null,
         scenePast: [...s.scenePast.slice(-(HISTORY_CAP - 1)), { label, scene: gestureBase }],
         sceneFuture: [],
@@ -592,8 +687,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
     cancelGesture: () => {
       const { gestureBase } = get();
       if (!gestureBase) return;
-      set({ scene: gestureBase, gestureBase: null, dragViz: null });
+      set({ scene: gestureBase, gestureBase: null, gestureLock: null, dragViz: null });
     },
+    doorGestureActive: false,
+    setDoorGestureActive: (active) => set({ doorGestureActive: active }),
 
     focusTarget: null,
     setFocusTarget: (focusTarget) => set({ focusTarget }),
@@ -605,7 +702,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const s = get();
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
-      set({ appMode, placing: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
+      set({ appMode, placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -656,6 +753,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
         metersPerPixel: null,
         sel3d: null,
         placing: null,
+        placingRun: null,
       });
       get().setSourcePdfName(file.name);
       try {
@@ -665,24 +763,24 @@ export const useSceneStore = create<StoreState>((set, get) => {
           const { importPdf } = await import("@/lib/import/importPdfClient");
           const r = await importPdf(file);
           get().setImage(r.image);
-          if (!r.isVector) {
-            set({
-              importedSegments: [],
-              importedArcs: [],
-              importedTexts: [],
-              imageOpacity: 0.8,
-              importMsg: rasterQualityMsg(r.image.width, r.image.height, "Scanned plan loaded"),
-            });
-          } else {
-            set({
-              imageOpacity: 0.45,
-              importedSegments: r.segments,
-              importedArcs: r.arcs,
-              importedTexts: r.texts,
-              showImport: true,
-              importMsg: `✓ Vector PDF — ${r.stats.segments} segments${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
-            });
-          }
+          // ONE path for every PDF, CAD-drawn or scanned: a rendered page you
+          // trace over. A CAD PDF used to also lay its drawing segments over the
+          // page as a "vector overlay" + snap magnet; on real AutoCAD exports
+          // those land offset from the render, so they fought the pen instead of
+          // guiding it — see importPdfClient.ts. Texts are kept: they name rooms
+          // at Generate and never draw on the canvas.
+          set({
+            importedSegments: [],
+            importedArcs: [],
+            importedTexts: r.texts,
+            showImport: false,
+            imageOpacity: 0.8,
+            importMsg: rasterQualityMsg(
+              r.image.width,
+              r.image.height,
+              `Plan loaded${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
+            ),
+          });
         } else if (isDxfFile(file) || isDwgFile(file)) {
           const { importDxf, dxfTextToResult } = await import("@legacy/trace2d/importDxf");
           let r;
@@ -752,12 +850,100 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
 
     placing: null,
-    setPlacing: (assetId) =>
-      set({ placing: assetId ? { assetId, rotation: 0 } : null, brush: null, sel3d: null, eyedropper: false }),
+    setPlacing: (assetId, parametric) =>
+      set({
+        placing: assetId ? { assetId, rotation: 0, ...(parametric ? { parametric } : {}) } : null,
+        placingRun: null,
+        placingCounter: null,
+        placingWall: null,
+        brush: null,
+        sel3d: null,
+        eyedropper: false,
+      }),
+    placingRun: null,
+    setPlacingRun: (run) => set({ placingRun: run, placing: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
+    placingCounter: null,
+    setPlacingCounter: (placingCounter) =>
+      set({ placingCounter, placing: null, placingRun: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
+    placeCounterItem: (hostId, along) => {
+      const { placingCounter, scene, commitScene } = get();
+      if (!placingCounter) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const withItem: Scene = {
+        ...scene,
+        furniture: [
+          ...scene.furniture,
+          {
+            id,
+            assetId: `param:${placingCounter.generator}`,
+            x: 0, // derived from the host by the sync below
+            y: 0,
+            rotation: 0,
+            parametric: placingCounter.spec,
+            attach: { hostId, along },
+          },
+        ],
+      };
+      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, syncKitchenAttachments(withItem));
+      // Stay armed — Sims-style repeat placement; Esc exits.
+    },
+    placeSurfaceItemFree: (x, y) => {
+      // The same armed placement, put down on the FLOOR instead of bonded to a
+      // surface. Only offered for generators marked `surfaceOptional` (a TV on
+      // a stand): a sink off its counter is still an error, and the ghost
+      // never calls this for one.
+      const { placingCounter, scene, commitScene } = get();
+      if (!placingCounter) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, {
+        ...scene,
+        furniture: [
+          ...scene.furniture,
+          { id, assetId: `param:${placingCounter.generator}`, x, y, rotation: 0, parametric: placingCounter.spec },
+        ],
+      });
+    },
+    placingWall: null,
+    setPlacingWall: (placingWall) =>
+      set({ placingWall, placing: null, placingRun: null, placingCounter: null, brush: null, sel3d: null, eyedropper: false }),
+    placeWallItem: (pose) => {
+      const { placingWall, scene, commitScene } = get();
+      if (!placingWall) return;
+      const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+      const withItem: Scene = {
+        ...scene,
+        furniture: [
+          ...scene.furniture,
+          {
+            id,
+            assetId: `param:${placingWall.generator}`,
+            x: pose.x,
+            y: pose.y,
+            rotation: pose.rotation,
+            elevation: pose.elevation,
+            parametric: placingWall.spec,
+          },
+        ],
+      };
+      commitScene(`Place ${GENERATORS[placingWall.generator].label.toLowerCase()}`, withItem);
+      // Stay armed for repeat placement, same as counter items.
+    },
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, sel3d: null, eyedropper: false }),
+    setBrush: (brush) => set({ brush, placing: null, placingRun: null, placingCounter: null, placingWall: null, sel3d: null, eyedropper: false }),
+    setFrameColor: (hex) => {
+      const s = get();
+      s.commitScene(hex ? "Frame colour" : "Frame colour: natural", frameColorPatch(s.scene, hex));
+      // Keep the brush armed and in step, so the palette keeps showing which
+      // swatch is live while you try another.
+      if (s.brush?.kind === "frame") set({ brush: { kind: "frame", hex: hex ?? null } });
+    },
+    setFrameFinish: (finish) => {
+      const s = get();
+      s.commitScene(`Frame finish: ${finish}`, frameMaterialPatch(s.scene, finish));
+    },
     eyedropper: false,
-    setEyedropper: (eyedropper) => set({ eyedropper, ...(eyedropper ? { placing: null, brush: null } : {}) }),
+    setEyedropper: (eyedropper) =>
+      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing
@@ -768,12 +954,46 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { placing, scene, commitScene } = get();
       if (!placing) return;
       const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
-      const elevation = CATALOG_BY_ID.get(placing.assetId)?.defaultElevation;
+      const elevation = specOf(placing)?.defaultElevation;
       commitScene("Place furniture", {
         ...scene,
-        furniture: [...scene.furniture, { id, assetId: placing.assetId, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) }],
+        furniture: [
+          ...scene.furniture,
+          {
+            id,
+            assetId: placing.assetId,
+            x,
+            y,
+            rotation,
+            ...(elevation !== undefined ? { elevation } : {}),
+            ...(placing.parametric ? { parametric: placing.parametric } : {}),
+          },
+        ],
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
+    },
+    placeKitchenRun: (legs, elevationArg) => {
+      const { placingRun, scene, commitScene } = get();
+      if (!placingRun || legs.length === 0) return;
+      const stamp = Date.now().toString(36);
+      // ONE item for the whole L/U — legs fold into the spec's path
+      // (extraLegs), so the countertop is a single continuous slab and the
+      // run selects/moves/deletes as one piece.
+      const { x, y, rotation, spec } = legsToSpec(legs, placingRun.spec);
+      // Wall-cabinet runs hang at the height the anchor click picked (or the
+      // generator's default) — placing them through the run-draw path used
+      // to drop elevation entirely, leaving wall cabinets on the floor.
+      const elevation = elevationArg ?? elevationOf(spec);
+      const item = {
+        id: `f${stamp}${Math.floor(Math.random() * 1e4)}`,
+        assetId: `param:${placingRun.generator}`,
+        x,
+        y,
+        rotation,
+        ...(elevation !== undefined ? { elevation } : {}),
+        parametric: sanitizeSpec(spec),
+      };
+      commitScene("Place kitchen run", { ...scene, furniture: [...scene.furniture, item] });
     },
     rotateSelectedFurniture: (deltaRad) => {
       const { sel3d, scene, commitScene } = get();
@@ -789,8 +1009,30 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { scene, commitScene } = get();
       const item = scene.furniture.find((f) => f.id === id);
       if (!item) return;
-      const copy = { ...item, id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, x: item.x + 0.3, y: item.y + 0.3 };
-      commitScene("Duplicate furniture", { ...scene, furniture: [...scene.furniture, copy] });
+      // Drop `group`: a duplicated leg is an independent item, not a new
+      // member of the run it was copied from (which would delete together
+      // with a run it was never actually part of).
+      const { group: _group, ...rest } = item;
+      // Deep-copy the spec (two items must never share one spec object) and
+      // drop copied cutouts — the copy has no attachments yet; the sync
+      // rebuilds cutouts from real bonds only. An attached item's copy stays
+      // on the same host, shifted along the counter.
+      const parametric = item.parametric
+        ? (({ cutouts: _c, ...ps }) => ({
+            ...ps,
+            dims: { ...ps.dims },
+            modules: { ...ps.modules },
+          }))(item.parametric)
+        : undefined;
+      const copy = {
+        ...rest,
+        ...(parametric ? { parametric } : {}),
+        ...(item.attach ? { attach: { hostId: item.attach.hostId, along: item.attach.along + 0.3 } } : {}),
+        id: `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`,
+        x: item.x + 0.3,
+        y: item.y + 0.3,
+      };
+      commitScene("Duplicate furniture", syncKitchenAttachments({ ...scene, furniture: [...scene.furniture, copy] }));
       set({ sel3d: { kind: "furniture", id: copy.id } });
     },
     replaceFurnitureAsset: (id, assetId) => {
@@ -798,8 +1040,59 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (!scene.furniture.some((f) => f.id === id)) return;
       commitScene("Replace furniture", {
         ...scene,
-        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, assetId } : f)),
+        furniture: scene.furniture.map((f) => {
+          if (f.id !== id) return f;
+          const { parametric: _parametric, ...rest } = f;
+          return { ...rest, assetId };
+        }),
       });
+    },
+    updateFurnitureParametric: (id, patch) => {
+      const { scene, commitScene } = get();
+      const item = scene.furniture.find((f) => f.id === id);
+      if (!item?.parametric) return;
+      const merged: ParametricSpec = {
+        ...item.parametric,
+        ...patch,
+        modules: { ...item.parametric.modules, ...(patch.modules ?? {}) },
+      };
+      const parametric = sanitizeSpec(merged);
+      // Sync after: a resized run re-clamps/carries its counter items, a
+      // resized sink re-cuts its hole.
+      commitScene("Edit custom furniture", syncKitchenAttachments({
+        ...scene,
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, parametric } : f)),
+      }));
+    },
+    setFurnitureElevation: (id, elevation) => {
+      const { scene, commitScene } = get();
+      if (!scene.furniture.some((f) => f.id === id)) return;
+      commitScene("Move furniture height", {
+        ...scene,
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, elevation } : f)),
+      });
+    },
+    setKitchenWallLink: (id, hostId) => {
+      const { scene, commitScene } = get();
+      const item = scene.furniture.find((f) => f.id === id);
+      if (!item?.parametric || item.parametric.generator !== "kitchenWall") return;
+      if (hostId !== null) {
+        const host = scene.furniture.find((f) => f.id === hostId);
+        if (!host || !isCounterHost(host)) return;
+      }
+      const patched = scene.furniture.map((f) => {
+        if (f.id !== id) return f;
+        if (hostId === null) {
+          const { attach: _a, ...free } = f;
+          return free;
+        }
+        return { ...f, attach: { hostId, along: 0 } };
+      });
+      // syncKitchenAttachments does the actual work of taking on the host's
+      // pose/path (link) — nothing to derive on unlink, but running it anyway
+      // costs nothing and keeps this action's output identically-shaped to
+      // every other kitchen-mutating one.
+      commitScene(hostId === null ? "Unlink wall cabinets" : "Match run below", syncKitchenAttachments({ ...scene, furniture: patched }));
     },
     replaceTarget: null,
     setReplaceTarget: (replaceTarget) => set({ replaceTarget }),
@@ -829,10 +1122,22 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { sel3d, scene, commitScene } = get();
       if (!sel3d) return;
       if (sel3d.kind === "furniture") {
-        commitScene("Delete furniture", {
+        const target = scene.furniture.find((f) => f.id === sel3d.id);
+        const groupId = target?.group;
+        const gone = new Set(
+          scene.furniture
+            .filter((f) => (groupId ? f.group === groupId : f.id === sel3d.id))
+            .map((f) => f.id),
+        );
+        // Counter items bonded to a deleted run go with it — a sink can't
+        // hover where its counter used to be.
+        commitScene("Delete furniture", syncKitchenAttachments({
           ...scene,
-          furniture: scene.furniture.filter((f) => f.id !== sel3d.id),
-        });
+          furniture: scene.furniture.filter(
+            (f) => !gone.has(f.id) && !(f.attach && gone.has(f.attach.hostId)),
+          ),
+        }));
+        if (groupId) pdToast("Removed kitchen run");
       } else if (sel3d.kind === "wall") {
         commitScene("Delete wall", {
           ...scene,
@@ -886,151 +1191,6 @@ export const useSceneStore = create<StoreState>((set, get) => {
 
     wallSnap: true,
     setWallSnap: (wallSnap) => set({ wallSnap }),
-
-    // Read-only default now that the trace tab's model picker is gone — still
-    // consumed by Building Knowledge Layer's understandRooms below.
-    vlmModel: "claude-opus-4-8",
-
-    // --- Building Knowledge Layer — VLM escalation for undecided rooms ---
-    understandBusy: false,
-    understandRooms: async () => {
-      const { scene, vlmModel, image, metersPerPixel } = get();
-      if (scene.rooms.length === 0) return "No rooms yet — generate a 3D model first.";
-      set({ understandBusy: true });
-      try {
-        const [{ buildRoomGraph }, { classifyRoomsByRules, RULE_CONFIDENCE_GATE }, { functionForType, displayRoomType }] =
-          await Promise.all([
-            import("@/lib/rooms/semanticGraph"),
-            import("@/lib/rooms/roomClassifier"),
-            import("@/lib/rooms/roomTaxonomy"),
-          ]);
-
-        // Ensure the free layer exists (scenes generated before this feature,
-        // or the sample scene, arrive without semantics).
-        let cur = scene;
-        if (cur.rooms.some((r) => !r.semantics)) {
-          const { rooms: sem, building } = classifyRoomsByRules(buildRoomGraph(cur));
-          cur = {
-            ...cur,
-            rooms: cur.rooms.map((r) => ({ ...r, semantics: r.semantics ?? sem.get(r.id) })),
-            building: cur.building ?? building,
-          };
-        }
-
-        const doorSet = new Set(
-          cur.openings.filter((o) => o.type === "door").map((o) => o.id),
-        );
-        const briefs = cur.rooms.map((r) => {
-          const s = r.semantics!;
-          const status =
-            s.type !== "unknown" && s.confidence >= RULE_CONFIDENCE_GATE
-              ? ("confident" as const)
-              : ("undecided" as const);
-          return {
-            id: r.id,
-            status,
-            provisionalType: s.type,
-            alternatives: s.alternatives,
-            confidence: Math.round(s.confidence * 100) / 100,
-            ocr: s.evidence
-              .filter((e) => e.source === "ocr")
-              .map((e) => String(e.value ?? "")),
-            features: {
-              areaM2: Math.round(s.features.areaM2 * 10) / 10,
-              doorCount: s.features.doorCount,
-              windowCount: s.features.windowCount,
-              exteriorWallCount: s.features.exteriorWallCount,
-              aspectRatio: Math.round(s.features.aspectRatio * 10) / 10,
-              hasCloset: s.features.hasCloset,
-            },
-            adjacentRooms: s.relationships.sharesWallWith,
-            doorConnections: s.relationships.connectedVia
-              .filter((l) => doorSet.has(l.opening))
-              .map((l) => l.room),
-            // Rooms this one flows into with no barrier — the open-plan cue.
-            // Cheap in tokens and near-definitional for living/dining/kitchen.
-            opensInto: s.relationships.opensInto,
-          };
-        });
-
-        const undecided = cur.rooms.filter(
-          (r, i) => briefs[i].status === "undecided",
-        );
-        if (undecided.length === 0) {
-          if (cur !== scene) get().commitScene("Understand rooms", cur);
-          return "✓ All rooms already confidently classified by rules — no AI needed.";
-        }
-
-        // Image evidence: whole-plan overview + native-res crops of the
-        // undecided rooms (fixture symbols + printed labels live there).
-        let overview: string | null = null;
-        let crops: { roomId: string; image: string }[] = [];
-        if (image && metersPerPixel) {
-          const { buildRoomCrops } = await import("@legacy/trace2d/roomCrops");
-          const built = await buildRoomCrops(image.src, cur, undecided, metersPerPixel);
-          overview = built.overview;
-          crops = built.crops;
-        }
-
-        const res = await fetch("/api/classify-rooms", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ rooms: briefs, overview, crops, model: vlmModel }),
-        });
-        const j = await res.json();
-        if (!res.ok || j.error) throw new Error(j.error ?? `HTTP ${res.status}`);
-
-        const byId = new Map<string, (typeof j.rooms)[number]>(
-          (j.rooms as { id: string }[]).map((v) => [v.id, v]),
-        );
-        const next: Scene = {
-          ...cur,
-          rooms: cur.rooms.map((r) => {
-            const v = byId.get(r.id);
-            if (!v || !r.semantics) return r;
-            const evidence = [
-              ...r.semantics.evidence.filter((e) => e.source !== "vlm"),
-              ...(v.evidence as { feature: string; weight: number }[]).map((e) => ({
-                feature: e.feature,
-                weight: e.weight,
-                source: "vlm" as const,
-              })),
-            ];
-            const confidence = Math.max(0, Math.min(1, v.confidence));
-            const name =
-              v.type !== "unknown" && confidence >= 0.5
-                ? displayRoomType(v.type)
-                : r.name;
-            return {
-              ...r,
-              name,
-              semantics: {
-                ...r.semantics,
-                type: v.type,
-                alternatives: v.alternatives ?? [],
-                function: v.function || functionForType(v.type),
-                confidence,
-                evidence,
-                source: "vlm" as const,
-              },
-            };
-          }),
-          building: cur.building
-            ? {
-                ...cur.building,
-                archetype: j.archetype || cur.building.archetype,
-                source: "vlm" as const,
-              }
-            : cur.building,
-        };
-        get().commitScene("Understand rooms", next);
-        return `✓ AI (${j.model}): ${j.rooms.length} room(s) classified · ${j.usage.inputTokens} in / ${j.usage.outputTokens} out tokens`;
-      } catch (e) {
-        return "Understand rooms failed: " + ((e as Error).message ?? String(e));
-      } finally {
-        set({ understandBusy: false });
-      }
-    },
 
     points: [],
     segments: [],

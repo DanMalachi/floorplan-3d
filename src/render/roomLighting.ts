@@ -4,6 +4,7 @@ import { nodeMap, pointInPolygon, roomArea } from "@/lib/rooms/roomArea";
 import { resolveCeilingState } from "@/lib/rooms/roomCeiling";
 import { poleOfInaccessibility, type Point2 } from "@/lib/rooms/poleOfInaccessibility";
 import { ROOM_LIGHT } from "./contract";
+import { resolveCeilingHeights } from "./ceilingHeight";
 import {
   DEFAULT_FIXTURE_COLOR_K,
   DEFAULT_FIXTURE_LUX,
@@ -14,9 +15,19 @@ import {
 
 /** Standoff a wall-mounted fixture's resolved position sits off the wall
  *  face, so it lands unambiguously inside the room it's mounted to face
- *  (not exactly on the boundary, where point-in-polygon is undefined). Purely
- *  a room-attribution/render-position detail — not the fixture's visual size. */
-const WALL_FIXTURE_GAP_M = 0.05;
+ *  (not exactly on the boundary, where point-in-polygon is undefined) and far
+ *  enough that dot(N,L) with its own wall isn't ~0 (Sprint 3c: a wall light
+ *  sitting almost in the wall's own plane always renders that wall as the
+ *  darkest surface in the room, however bright the fixture is). */
+export const WALL_FIXTURE_GAP_M = 0.14;
+
+/** Fixed reference area a wall-mounted fixture sizes itself against, instead
+ *  of the room's actual area (Sprint 3c). `roomFixtureCandela` scaling a
+ *  ceiling fixture by room area is right for a light meant to flood the whole
+ *  room; a wall sconce is a local light and that same scaling starves it in
+ *  small hallways/bathrooms and gives it nothing at all in an unroofed
+ *  balcony (area not even meaningful there). */
+export const WALL_FIXTURE_REFERENCE_AREA_M2 = 6;
 
 /**
  * A ceiling light in render-ready form. `id` is the unique React key — a
@@ -49,43 +60,13 @@ export interface EligibleRoom {
 }
 
 /**
- * A room's own ceiling height: the tallest wall on its OWN perimeter (walls
- * no neighbouring room's loop also references), falling back to any bounding
- * wall if the room has no perimeter wall of its own. Mirrors the height rule
- * `FloorMesh.tsx`'s `Ceilings` component uses to place the ceiling slab
- * itself — reimplemented here (not imported: that component isn't exported
- * for reuse, and this is a stable geometric fact independent of camera mode
- * or mesh visibility, not the rail-adjacency *presence* question §8.3
- * reserves for the schema field) so a room's light sits at the same height as
- * its actual ceiling.
+ * A room's own ceiling height — `room.ceilingHeight` when authored, otherwise
+ * the tallest wall on its OWN perimeter. Delegates to the shared resolver
+ * (`ceilingHeight.ts`) that `FloorMesh.tsx`'s `Ceilings` component and
+ * `WallMesh.tsx`'s `Walls` component also resolve through, so a room's light
+ * sits at the same height as its actual ceiling.
  */
-export function ceilingHeights(scene: Scene): Map<string, number> {
-  const wallByEdge = new Map(scene.walls.map((w) => [[w.a, w.b].sort().join("|"), w]));
-  const roomsPerWall = new Map<string, number>();
-  for (const room of scene.rooms) {
-    for (let i = 0; i < room.loop.length; i++) {
-      const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
-      if (!wall) continue;
-      roomsPerWall.set(wall.id, (roomsPerWall.get(wall.id) ?? 0) + 1);
-    }
-  }
-  const heights = new Map<string, number>();
-  for (const room of scene.rooms) {
-    let perimeterHeight: number | null = null;
-    let anyHeight: number | null = null;
-    for (let i = 0; i < room.loop.length; i++) {
-      const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
-      if (!wall) continue;
-      const h = wall.height ?? WALL_HEIGHT;
-      anyHeight = anyHeight == null ? h : Math.max(anyHeight, h);
-      if (roomsPerWall.get(wall.id) === 1) {
-        perimeterHeight = perimeterHeight == null ? h : Math.max(perimeterHeight, h);
-      }
-    }
-    heights.set(room.id, perimeterHeight ?? anyHeight ?? WALL_HEIGHT);
-  }
-  return heights;
-}
+export const ceilingHeights = resolveCeilingHeights;
 
 /**
  * Every room the scene currently considers light-eligible. Skips:
@@ -121,6 +102,34 @@ export function eligibleLitRooms(scene: Scene): EligibleRoom[] {
     });
   }
 
+  return out;
+}
+
+/**
+ * Every room with a closed loop, regardless of `eligibleLitRooms`' open-
+ * ceiling/min-area gates — the room-attribution surface for WALL-mounted
+ * fixtures (Sprint 3a). Those two gates make sense for "does this room get a
+ * ceiling-light DEFAULT", not for "does a fixture someone actually placed on
+ * this wall light it" — a balcony (open ceiling) or an undersized hallway
+ * still has a wall a sconce can be mounted to.
+ */
+export function allRoomsWithLoop(scene: Scene): EligibleRoom[] {
+  const nodes = nodeMap(scene.nodes);
+  const heights = ceilingHeights(scene);
+  const out: EligibleRoom[] = [];
+  for (const room of scene.rooms) {
+    const loop = room.loop
+      .map((id) => nodes.get(id))
+      .filter((n): n is Node => n != null);
+    if (loop.length < 3) continue;
+    out.push({
+      room,
+      loop,
+      area: roomArea(room.loop, nodes),
+      center: poleOfInaccessibility(loop),
+      ceilingHeight: heights.get(room.id) ?? WALL_HEIGHT,
+    });
+  }
   return out;
 }
 
@@ -189,27 +198,44 @@ export function resolveFixtureWorldXY(item: FixtureItem, scene: Scene): Point2 |
  */
 export function computeRoomLights(scene: Scene): RoomLight[] {
   const fixtures = scene.fixtures ?? [];
+  // Ceiling fixtures only ever light an `eligibleLitRooms` room (unchanged);
+  // wall fixtures attribute against every closed-loop room (Sprint 3a) —
+  // computed once, not per fixture.
+  const eligible = eligibleLitRooms(scene);
+  const allRooms = allRoomsWithLoop(scene);
   const out: RoomLight[] = [];
 
-  for (const er of eligibleLitRooms(scene)) {
-    for (const item of fixtures) {
-      const world = resolveFixtureWorldXY(item, scene);
-      if (!world || !pointInPolygon(world.x, world.y, er.loop)) continue;
+  for (const item of fixtures) {
+    const world = resolveFixtureWorldXY(item, scene);
+    if (!world) continue;
+    const mount = item.mount;
+    const isWall = mount.kind === "wall";
+    const rooms = isWall ? allRooms : eligible;
+    const er = rooms.find((r) => pointInPolygon(world.x, world.y, r.loop));
+    // A ceiling fixture with no eligible room genuinely lights nothing
+    // (unchanged — that's the M2 always-a-room-first design). A WALL fixture
+    // with no containing room at all isn't a "no light" case though: it's
+    // mounted facing an area with no authored Room polygon whatsoever — a
+    // facade, an entrance, a roof-deck edge — exactly Dan's screenshot (a
+    // sconce that renders but stays visibly dark). It still lights *something*
+    // (its own wall face), so it falls through to a room-less light below
+    // instead of being dropped (Sprint 5).
+    if (!er && !isWall) continue;
 
-      const lux = item.targetLux ?? DEFAULT_FIXTURE_LUX;
-      const candela = roomFixtureCandela(er.area, lux);
-      const mount = item.mount;
-      const y =
-        mount.kind === "ceiling" ? er.ceilingHeight - ROOM_LIGHT.dropBelowCeilingM : mount.sill;
+    const lux = item.targetLux ?? DEFAULT_FIXTURE_LUX;
+    // Wall fixtures use a fixed reference area, not the room's actual area
+    // (Sprint 3c) — see WALL_FIXTURE_REFERENCE_AREA_M2. A room-less wall
+    // fixture uses the same fixed area; there's no room to scale against.
+    const candela = roomFixtureCandela(isWall ? WALL_FIXTURE_REFERENCE_AREA_M2 : er!.area, lux);
+    const y = mount.kind === "ceiling" ? er!.ceilingHeight - ROOM_LIGHT.dropBelowCeilingM : mount.sill;
 
-      out.push({
-        id: item.id,
-        roomId: er.room.id,
-        position: [world.x, y, world.y],
-        intensity: toRenderIntensity(candela),
-        color: kelvinToColor(item.colorK ?? DEFAULT_FIXTURE_COLOR_K),
-      });
-    }
+    out.push({
+      id: item.id,
+      roomId: er ? er.room.id : `exterior:${item.id}`,
+      position: [world.x, y, world.y],
+      intensity: toRenderIntensity(candela),
+      color: kelvinToColor(item.colorK ?? DEFAULT_FIXTURE_COLOR_K),
+    });
   }
 
   return out;

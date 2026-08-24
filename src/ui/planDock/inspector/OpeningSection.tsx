@@ -15,6 +15,15 @@
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Opening, OpeningType, SlideSpec } from "@/schema/scene";
 import { DEFAULT_WINDOW } from "@/schema/constants";
+import {
+  effectiveSlide,
+  isDoubleDoor,
+  leafCount,
+  leafWidths,
+  takesWindowFinish,
+  withLeafWidth,
+} from "@/render/doorStyle";
+import { frameFinishOf, type FrameFinish } from "@/render/frameFinish";
 import { pdChip } from "../tokens";
 import {
   pdInspectorPanel,
@@ -22,6 +31,7 @@ import {
   PdHelpText,
   PdNumField,
   PdStepper,
+  PdSwatch,
   pdChipFlex,
 } from "./panelKit";
 import { pdMicroLabel } from "../tokens";
@@ -52,6 +62,57 @@ const SLIDE_PRESETS: { key: string; label: string; title: string; spec: SlideSpe
 const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
   s.style === p.style && s.panels === p.panels && (s.glazed ?? false) === (p.glazed ?? false);
 
+const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; label: string }[] = [
+  { key: "painted-white", label: "White" },
+  { key: "painted-charcoal", label: "Charcoal" },
+  { key: "oak", label: "Oak" },
+  { key: "walnut", label: "Walnut" },
+];
+
+// Two finishes, not three: "Painted" was tinted matte under another name, so
+// it offered a choice that changed nothing (it survives in the schema for
+// saved projects — see `frameFinishOf`). Colour is orthogonal to both and
+// comes from the Decorate palette. Like colour, the finish is whole-house.
+const WINDOW_FRAME_MATERIALS: { key: FrameFinish; label: string; title: string }[] = [
+  { key: "matte", label: "Matte", title: "Powder-coated — fine grain, almost no reflection. Applies to every window and patio door." },
+  { key: "glossy", label: "Glossy", title: "Polished anodised aluminium — sharp reflections. Applies to every window and patio door." },
+];
+
+/** The frame's current colour, plus the one button that changes it.
+ *
+ *  The colour list itself lives in the Decorate dock's Paint tab, not here.
+ *  Twenty swatches crammed into a 190 px inspector column was the whole reason
+ *  this panel read as cluttered, and the dock already has a full, grouped,
+ *  scrollable palette built for exactly this. "Paint" arms the frame brush and
+ *  opens that tab, so the same colours that paint walls also paint frames —
+ *  and every colour in the catalog is reachable, not the first twenty. */
+function FramePaintRow({ opening }: { opening: Opening }) {
+  const armed = useSceneStore((s) => s.brush?.kind === "frame");
+  const openPalette = () => {
+    const s = useSceneStore.getState();
+    // Order matters: requestDock switches to Decorate, and switching app mode
+    // clears the brush — arming first would arm it and immediately drop it.
+    s.requestDock("paint");
+    useSceneStore.getState().setBrush({ kind: "frame", hex: opening.frameColor ?? null });
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <PdSwatch
+        hex={opening.frameColor ?? null}
+        title={opening.frameColor ?? "Natural — the finish's own colour"}
+        onClick={openPalette}
+      />
+      <button
+        style={pdChip(armed, { flex: 1, textAlign: "center" })}
+        onClick={openPalette}
+        title="Pick a colour in the Decorate palette — it applies to every window and patio door"
+      >
+        {armed ? "Picking…" : "🎨 Paint"}
+      </button>
+    </div>
+  );
+}
+
 export function OpeningSection({ opening }: { opening: Opening }) {
   const patch = (label: string, p: Partial<Opening>) => {
     const s = useSceneStore.getState();
@@ -64,7 +125,14 @@ export function OpeningSection({ opening }: { opening: Opening }) {
   // can't keep a stale swing angle or a window a door's slide gear.
   const setType = (type: OpeningType) => {
     if (type === opening.type) return;
-    const base = { type, slide: undefined, swingDeg: undefined, hinge: undefined };
+    const base = {
+      type,
+      slide: undefined,
+      swingDeg: undefined,
+      hinge: undefined,
+      double: undefined,
+      leafSplit: undefined,
+    };
     patch(
       type === "passage" ? "Remove door" : `Make ${type}`,
       type === "window"
@@ -72,13 +140,29 @@ export function OpeningSection({ opening }: { opening: Opening }) {
         : { ...base, sill: 0, mullions: undefined },
     );
   };
-  const slide = opening.slide;
+  // The slide gear this door RENDERS with, which for a wide unstyled door is
+  // the derived patio slider — so the Patio chip lights up for a door that got
+  // there by width alone, and its controls are reachable, instead of the panel
+  // claiming "Swing" while the viewport shows glazed panels.
+  const slide = effectiveSlide(opening);
   const isDoor = opening.type === "door";
   const isWindow = opening.type === "window";
+  const double = isDoubleDoor(opening);
+  // A patio door's finish is a window's, so it gets the window controls.
+  const glazedDoor = isDoor && takesWindowFinish(opening);
+  const leaves = leafCount(opening);
+  const widths = leafWidths(opening.width, leaves, opening.leafSplit);
+  const setLeafWidth = (k: number, v: number) =>
+    patch("Leaf width", {
+      leafSplit: withLeafWidth(opening.leafSplit, leaves, opening.width, k, v),
+    });
 
   return (
     <div style={pdInspectorPanel}>
-      <PdSectionTitle title={opening.type} meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`} />
+      <PdSectionTitle
+        title={double ? "Double door" : glazedDoor ? "Patio door" : opening.type}
+        meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
+      />
 
       <div style={{ display: "flex", gap: 4 }}>
         {(["door", "passage", "window"] as const).map((t) => (
@@ -95,10 +179,58 @@ export function OpeningSection({ opening }: { opening: Opening }) {
 
       {isDoor && (
         <>
+          {/* A patio door has no solid leaf to finish — its sashes are glass in
+              a frame, so it takes the window materials further down instead. */}
+          {!glazedDoor && (
+            <>
+              <div style={pdMicroLabel()}>Material</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {DOOR_MATERIALS.map((m) => (
+                  <button
+                    key={m.key}
+                    style={pdChip((opening.doorMaterial ?? "painted-white") === m.key, pdChipFlex)}
+                    onClick={() => patch(`Door material: ${m.label}`, { doorMaterial: m.key })}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div style={pdMicroLabel()}>How it opens</div>
-          <div style={{ display: "flex", gap: 4 }}>
-            <button style={pdChip(!slide, pdChipFlex)} onClick={() => patch("Swing door", { slide: undefined })}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {/* Writing swingDeg (not just clearing `slide`) is what makes this
+                an EXPLICIT choice — otherwise a door past PATIO_MIN_WIDTH
+                would fall straight back to the derived patio slider and the
+                chip would refuse to stick. */}
+            <button
+              style={pdChip(!slide && !double, pdChipFlex)}
+              onClick={() =>
+                patch("Swing door", {
+                  slide: undefined,
+                  double: undefined,
+                  swingDeg: opening.swingDeg ?? 0,
+                  leafSplit: undefined,
+                })
+              }
+              title="One hinged leaf"
+            >
               ↷ Swing
+            </button>
+            <button
+              style={pdChip(double, pdChipFlex)}
+              onClick={() =>
+                patch("Double doors", {
+                  double: true,
+                  slide: undefined,
+                  hinge: undefined,
+                  swingDeg: opening.swingDeg ?? 0,
+                  leafSplit: undefined,
+                })
+              }
+              title="A pair of hinged leaves meeting in the middle — French doors"
+            >
+              ⁘ Double
             </button>
             {SLIDE_PRESETS.map((p) => (
               <button
@@ -109,6 +241,8 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                     slide: { ...p.spec, open: slide?.open ?? 0, side: slide?.side ?? "end" },
                     swingDeg: undefined,
                     hinge: undefined,
+                    double: undefined,
+                    leafSplit: undefined,
                   })
                 }
                 title={p.title}
@@ -128,13 +262,17 @@ export function OpeningSection({ opening }: { opening: Opening }) {
             value={opening.swingDeg ?? 0}
             onCommit={(v) => patch("Door swing", { swingDeg: Math.min(120, Math.max(0, v)) })}
           />
-          <div style={{ display: "flex", gap: 4 }}>
-            {(["start", "end"] as const).map((h) => (
-              <button key={h} style={pdChip((opening.hinge ?? "start") === h, pdChipFlex)} onClick={() => patch("Door hinge", { hinge: h })}>
-                Hinge {h}
-              </button>
-            ))}
-          </div>
+          {/* A double door has no hinge to choose — each leaf hangs on its own
+              jamb, and both swing the same way. */}
+          {!double && (
+            <div style={{ display: "flex", gap: 4 }}>
+              {(["start", "end"] as const).map((h) => (
+                <button key={h} style={pdChip((opening.hinge ?? "start") === h, pdChipFlex)} onClick={() => patch("Door hinge", { hinge: h })}>
+                  Hinge {h}
+                </button>
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -164,6 +302,34 @@ export function OpeningSection({ opening }: { opening: Opening }) {
         </>
       )}
 
+      {/* Per-leaf widths. Typing one width redistributes what's left across
+          the other leaves, so the pair always still fills the opening — an
+          uneven double (a 90 cm active leaf beside a 70 cm one) or a slider
+          with one wide panel and one narrow fixed light. */}
+      {isDoor && leaves > 1 && (
+        <>
+          <div style={pdMicroLabel()}>{slide ? "Panel widths" : "Leaf widths"}</div>
+          {widths.map((w, k) => (
+            <PdNumField
+              key={k}
+              label={`${slide ? "Panel" : "Leaf"} ${k + 1}`}
+              value={w}
+              onCommit={(v) => setLeafWidth(k, v)}
+              displayScale={100}
+              unit="cm"
+            />
+          ))}
+          {opening.leafSplit && (
+            <button
+              style={pdChip(false, { alignSelf: "flex-start", padding: "3px 8px", fontSize: 11 })}
+              onClick={() => patch("Even leaves", { leafSplit: undefined })}
+            >
+              Even them up
+            </button>
+          )}
+        </>
+      )}
+
       {opening.type === "passage" && (
         <div style={{ display: "flex", gap: 4 }}>
           {([true, false] as const).map((l) => (
@@ -189,6 +355,30 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       />
       {isWindow && (
         <PdNumField label="Sill" value={opening.sill} onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })} displayScale={100} unit="cm" />
+      )}
+
+      {/* Frame finish — windows AND patio doors. A glazed slider is a window's
+          construction (frame, sash, pane), so it takes the window materials
+          rather than the door ones. The colour swatches below retint every
+          window and patio door at once: one house, one glazing colour. */}
+      {(isWindow || glazedDoor) && (
+        <>
+          <div style={pdMicroLabel()}>Frame finish · whole house</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {WINDOW_FRAME_MATERIALS.map((m) => (
+              <button
+                key={m.key}
+                style={pdChip(frameFinishOf(opening) === m.key, pdChipFlex)}
+                onClick={() => useSceneStore.getState().setFrameFinish(m.key)}
+                title={m.title}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <div style={pdMicroLabel()}>Frame colour · whole house</div>
+          <FramePaintRow opening={opening} />
+        </>
       )}
 
       {isWindow && (

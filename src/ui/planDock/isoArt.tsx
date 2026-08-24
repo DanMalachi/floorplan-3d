@@ -235,6 +235,102 @@ export function Plant({ x, yFront, r = 6, potH = 8, canopyR = 9 }: { x: number; 
   );
 }
 
+/**
+ * Pedal bin — a tapered body with a lid that reads as a separate part.
+ *
+ * Every room that shows a bin uses this one, so a bin looks like the same
+ * object wherever you meet it. The plain `Cylinder` it replaces was a straight
+ * tube with a disc on top, which read as a tin can: what makes a bin a bin is
+ * the taper toward the floor, the lid sitting proud of the body with a shadow
+ * line under it, and the pedal at the foot.
+ */
+export function Bin({ x, yFront, w, h, pedal = true }: { x: number; yFront: number; w: number; h: number; pedal?: boolean }) {
+  const rTop = w / 2;
+  const rBot = rTop * 0.84;
+  const cx = x + rTop;
+  const ryTop = rTop * 0.42;
+  const bodyTop = yFront - h;
+  return (
+    <>
+      {/* Tapered body between the two ellipses. */}
+      <path
+        d={`M ${cx - rTop} ${bodyTop} L ${cx - rBot} ${yFront} A ${rBot} ${rBot * 0.42} 0 0 0 ${cx + rBot} ${yFront} L ${cx + rTop} ${bodyTop} Z`}
+        fill={FACE_FRONT}
+        stroke={FACE_STROKE}
+        strokeWidth={0.6}
+      />
+      {/* Shadow line under the lid — the gap that says it opens. */}
+      <ellipse cx={cx} cy={bodyTop} rx={rTop} ry={ryTop} fill="oklch(0.24 0.01 90 / 0.85)" stroke={FACE_STROKE} strokeWidth={0.5} />
+      {/* Lid, a touch wider than the body and lifted off it. */}
+      <ellipse cx={cx} cy={bodyTop - 1.6} rx={rTop * 1.06} ry={ryTop * 1.06} fill={FACE_TOP} stroke={FACE_STROKE} strokeWidth={0.6} />
+      {pedal && (
+        <path
+          d={`M ${cx + rBot * 0.2} ${yFront - 1} l ${rBot * 0.9} 0`}
+          stroke={DETAIL_LINE}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * Rug lying ON the floor plane — shared by every room that shows one, so a rug
+ * is the same object wherever you meet it (same reasoning as `Bin`).
+ *
+ * It is drawn as a floor quad (`isoBox` with h=0), not as a low box: a rug has
+ * no elevation to speak of, and giving it one makes it read as a plinth. What
+ * carries the read instead is what a real rug has — an inset border for the
+ * bound edge, and fringe ticks off the two short ends.
+ */
+export function Rug({ x, yFront, w, depth }: { x: number; yFront: number; w: number; depth: number }) {
+  const quad = isoBox(x, yFront, w, 0, depth);
+  const inset = 3.2;
+  // The bound border is an inset on both axes: `inset` in from the left/right
+  // edges, and `inset` ALONG the depth axis (RX, RY) in from the near/far ones.
+  const fieldQuad = isoBox(x + inset + inset * RX, yFront + inset * RY, w - inset * 2, 0, depth - inset * 2);
+  const fringe = [];
+  const ticks = Math.max(3, Math.round(w / 7));
+  for (let i = 0; i <= ticks; i++) {
+    const t = i / ticks;
+    // Front short edge (running along +x) gets ticks pointing at the viewer;
+    // the far edge gets the same, offset along the depth axis.
+    const px = x + w * t;
+    fringe.push(<line key={`f${i}`} x1={px} y1={yFront} x2={px} y2={yFront + 2.4} stroke={DETAIL_LINE} strokeWidth={0.7} opacity={0.7} />);
+    const bx = px + depth * RX;
+    const by = yFront + depth * RY;
+    fringe.push(<line key={`b${i}`} x1={bx} y1={by} x2={bx} y2={by - 2.4} stroke={DETAIL_LINE} strokeWidth={0.7} opacity={0.55} />);
+  }
+  return (
+    <>
+      <polygon points={quad.top} fill="oklch(0.55 0.035 75 / 0.9)" stroke={FACE_STROKE} strokeWidth={0.6} />
+      <polygon points={fieldQuad.top} fill="oklch(0.63 0.045 75 / 0.9)" stroke={FACE_STROKE} strokeWidth={0.4} />
+      {fringe}
+    </>
+  );
+}
+
+/** Wall-mounted rail with towels folded over it — the bathroom's towel spot. */
+export function TowelRail({ x, y, w }: { x: number; y: number; w: number }) {
+  return (
+    <>
+      <line x1={x} y1={y} x2={x + w} y2={y} stroke={DETAIL_LINE} strokeWidth={1.4} strokeLinecap="round" />
+      <line x1={x + 1} y1={y} x2={x + 1} y2={y - 3} stroke={DETAIL_LINE} strokeWidth={1} />
+      <line x1={x + w - 1} y1={y} x2={x + w - 1} y2={y - 3} stroke={DETAIL_LINE} strokeWidth={1} />
+      {[0.14, 0.55].map((f) => (
+        <path
+          key={f}
+          d={`M ${x + w * f} ${y} v 14 a 2.1 2.1 0 0 0 4 0 v -14`}
+          fill="oklch(0.74 0.03 200 / 0.5)"
+          stroke={DETAIL_LINE}
+          strokeWidth={0.7}
+        />
+      ))}
+    </>
+  );
+}
+
 /** Small tank box + narrower bowl box — toilet. */
 export function Toilet({ x, yFront, w, depth }: { x: number; yFront: number; w: number; depth: number }) {
   const tank = isoBox(x, yFront - depth * 0.5, w, 18, depth * 0.5);
@@ -270,6 +366,152 @@ export function TvOnStand({ x, yFront, w, depth }: { x: number; yFront: number; 
       <Extrusion box={screen} top="oklch(0.2 0.01 260 / 0.9)" front="oklch(0.16 0.01 260 / 0.92)" right="oklch(0.12 0.01 260 / 0.92)" />
     </>
   );
+}
+
+/**
+ * A television hanging FLAT ON THE WALL — the way most sets are actually
+ * mounted, and the shape the three wall-mounted cards place. Drawn like the
+ * bathroom mirror: a face on the wall band with no extrusion, because a 6cm
+ * panel seen in this projection has no visible side.
+ *
+ * The chin is deliberately deeper than the sides and carries the standby dot;
+ * that asymmetry is what separates "TV" from "dark rectangle" at glyph size.
+ */
+export function WallTv({ box }: { box: IsoBox }) {
+  const { x, w, h } = box.face;
+  const y0 = box.face.yFront - h;
+  const bez = Math.min(2, w * 0.045);
+  return (
+    <>
+      <rect x={x} y={y0} width={w} height={h} rx={1.2} fill="oklch(0.19 0.012 260 / 0.95)" stroke={FACE_STROKE} strokeWidth={0.7} />
+      <rect
+        x={x + bez}
+        y={y0 + bez}
+        width={w - bez * 2}
+        height={h - bez * 2.8}
+        fill="oklch(0.26 0.018 250 / 0.92)"
+        stroke={DETAIL_LINE}
+        strokeWidth={0.4}
+        opacity={0.85}
+      />
+      {/* One soft sheen across the glass — the same cue the mirror uses to say
+          "this is a reflective surface", angled the other way so a TV over a
+          sideboard doesn't read as a second mirror. */}
+      <line
+        x1={x + w * 0.62}
+        y1={y0 + bez + 1.5}
+        x2={x + w * 0.9}
+        y2={y0 + h - bez * 3}
+        stroke={DETAIL_LIGHT}
+        strokeWidth={0.9}
+        opacity={0.35}
+      />
+      <circle cx={x + w / 2} cy={y0 + h - bez * 1.2} r={0.7} fill={DETAIL_LIGHT} opacity={0.6} />
+    </>
+  );
+}
+
+/**
+ * A framed picture on the wall band. Like the mirror and the wall TV it is a
+ * flat face with no extrusion — a 45mm frame seen in this projection has no
+ * side worth drawing — but unlike them it is LIGHT, because a picture is the
+ * one thing on a wall that is brighter than the wall.
+ *
+ * Three rings, and all three earn their place at this size: the moulding, the
+ * mount inside it (what makes a print read as framed rather than taped up),
+ * and a horizon line in the opening so the middle is a picture and not a hole.
+ */
+export function FramedArt({
+  x,
+  yTop,
+  w,
+  h,
+  scene = "landscape",
+}: {
+  x: number;
+  yTop: number;
+  w: number;
+  h: number;
+  /** What is drawn inside the mount. "landscape" reads as a painting at any
+   *  size; "abstract" keeps a set of three from being three copies of one
+   *  picture, which is exactly the failure the 3D gallery card avoids too. */
+  scene?: "landscape" | "abstract";
+}) {
+  const frame = Math.max(1.2, Math.min(w, h) * 0.075);
+  const mount = frame * 1.5;
+  const ix = x + frame + mount;
+  const iy = yTop + frame + mount;
+  const iw = Math.max(1, w - 2 * (frame + mount));
+  const ih = Math.max(1, h - 2 * (frame + mount));
+  return (
+    <>
+      <rect x={x} y={yTop} width={w} height={h} rx={0.8} fill={FACE_FRONT} stroke={FACE_STROKE} strokeWidth={0.7} />
+      <rect x={x + frame} y={yTop + frame} width={w - 2 * frame} height={h - 2 * frame} fill="oklch(0.93 0.012 90 / 0.95)" stroke={DETAIL_LINE} strokeWidth={0.4} />
+      <rect x={ix} y={iy} width={iw} height={ih} fill="oklch(0.72 0.045 220 / 0.75)" stroke={DETAIL_LINE} strokeWidth={0.4} />
+      {scene === "landscape" ? (
+        <>
+          <path
+            d={`M${ix} ${iy + ih * 0.68} L${ix + iw * 0.34} ${iy + ih * 0.3} L${ix + iw * 0.58} ${iy + ih * 0.62} L${ix + iw * 0.76} ${iy + ih * 0.45} L${ix + iw} ${iy + ih * 0.72} L${ix + iw} ${iy + ih} L${ix} ${iy + ih} Z`}
+            fill="oklch(0.45 0.05 200 / 0.8)"
+          />
+          <circle cx={ix + iw * 0.78} cy={iy + ih * 0.24} r={Math.min(iw, ih) * 0.11} fill={DETAIL_LIGHT} opacity={0.75} />
+        </>
+      ) : (
+        <>
+          <rect x={ix + iw * 0.12} y={iy + ih * 0.18} width={iw * 0.34} height={ih * 0.34} fill="oklch(0.55 0.09 40 / 0.8)" />
+          <circle cx={ix + iw * 0.66} cy={iy + ih * 0.62} r={Math.min(iw, ih) * 0.2} fill="oklch(0.5 0.07 150 / 0.8)" />
+        </>
+      )}
+    </>
+  );
+}
+
+/** A picture ledge: the shelf, plus two frames leaning on it. Drawn wherever a
+ *  room's wall band has width but not height — the pair reads as "wall art"
+ *  faster than one frame does, and the shelf says which card it is. */
+export function ArtLedge({ x, yTop, w, h }: { x: number; yTop: number; w: number; h: number }) {
+  const shelfT = Math.max(1.4, h * 0.09);
+  const frameH = h - shelfT;
+  const bigW = Math.min(w * 0.42, frameH * 0.8);
+  const smallW = Math.min(w * 0.34, frameH * 0.75);
+  return (
+    <>
+      <FramedArt x={x + w * 0.04} yTop={yTop + (h - shelfT - frameH)} w={bigW} h={frameH} scene="landscape" />
+      <FramedArt x={x + w * 0.04 + bigW * 0.85} yTop={yTop + h - shelfT - frameH * 0.76} w={smallW} h={frameH * 0.76} scene="abstract" />
+      <rect x={x} y={yTop + h - shelfT} width={w} height={shelfT} rx={0.6} fill={FACE_TOP} stroke={FACE_STROKE} strokeWidth={0.7} />
+    </>
+  );
+}
+
+/** A wall clock: rim, dial, and hands at ten past ten — the same time the 3D
+ *  geometry shows, so the picture and the object agree. */
+export function WallClockArt({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={r} fill="oklch(0.9 0.012 90 / 0.95)" stroke={FACE_STROKE} strokeWidth={0.8} />
+      <circle cx={cx} cy={cy} r={r * 0.82} fill="none" stroke={DETAIL_LINE} strokeWidth={0.4} opacity={0.7} />
+      {/* Hands: hour to 10, minute to 2 — the pair frames the dial instead of
+          stacking into one stick, which is why every catalogue shows it. */}
+      <line x1={cx} y1={cy} x2={cx - r * 0.42} y2={cy - r * 0.3} stroke={DETAIL_LINE} strokeWidth={1.1} strokeLinecap="round" />
+      <line x1={cx} y1={cy} x2={cx + r * 0.5} y2={cy - r * 0.48} stroke={DETAIL_LINE} strokeWidth={0.9} strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r={r * 0.09} fill={DETAIL_LINE} />
+    </>
+  );
+}
+
+/** One hit target covering two drawn objects — a wall TV and the console under
+ *  it are one button ("TV & storage"), so the hotspot rect has to reach both.
+ *  Only the bbox merges; the faces stay whichever box was passed first. */
+export function unionBox(a: IsoBox, b: IsoBox): IsoBox {
+  return {
+    ...a,
+    bbox: {
+      x0: Math.min(a.bbox.x0, b.bbox.x0),
+      y0: Math.min(a.bbox.y0, b.bbox.y0),
+      x1: Math.max(a.bbox.x1, b.bbox.x1),
+      y1: Math.max(a.bbox.y1, b.bbox.y1),
+    },
+  };
 }
 
 // ── Shared scene shell: floor + wall + hotspot items + hover label. ──

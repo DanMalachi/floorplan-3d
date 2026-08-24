@@ -37,6 +37,9 @@ export function GtLab() {
 
   // Latest models, readable inside async ingest without a stale closure.
   const modelsRef = useRef(models);
+  // The "latest ref" idiom: assigning during render is the point — it keeps the
+  // ref current for async work without re-subscribing. Deliberate, not a slip.
+  // eslint-disable-next-line react-hooks/refs
   modelsRef.current = models;
 
   // Secret handshake: Shift+G toggles the Lab (ignored while typing in a field).

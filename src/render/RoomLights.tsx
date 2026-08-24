@@ -18,11 +18,28 @@ import { computeRoomLights } from "./roomLighting";
  * every frame: toggling `castShadow` forces three to recompile the affected
  * materials' shadow variant, and doing that continuously for a light sitting
  * near the rank boundary is worse than the rank being briefly stale.
+ *
+ * Sprint 3d: raw nearest-by-distance re-ranking flickers at a room boundary —
+ * two lights on either side of a doorway keep trading the "nearest" spot as
+ * the camera crosses it, each swap forcing that shadow-variant recompile plus
+ * a visible shadow pop. A challenger must beat the current caster by
+ * `HYSTERESIS_DIST_RATIO` (not just barely edge it out) before it takes over.
  */
 const RANK_INTERVAL_S = 0.35;
+/** Squared-distance ratio a challenger must beat the incumbent by (0.49 ==
+ *  actual distance ~30% closer) before it's allowed to take over as caster. */
+const HYSTERESIS_DIST_SQ_RATIO = 0.49;
 
 export function RoomLights({ scene }: { scene: Scene }) {
-  const lights = useMemo(() => computeRoomLights(scene), [scene]);
+  // computeRoomLights only reads rooms/walls/nodes/fixtures — never openings.
+  // A walkthrough door swing (WalkthroughMode.tsx) republishes a new Scene
+  // object every frame but keeps those sub-arrays referentially stable, so
+  // memoizing on them (not on `scene` itself) skips the recompute for the
+  // ~1-2s a door is animating.
+  const lights = useMemo(
+    () => computeRoomLights(scene),
+    [scene.rooms, scene.walls, scene.nodes, scene.fixtures],
+  );
   const camera = useThree((s) => s.camera);
   const refs = useRef<(THREE.PointLight | null)[]>([]);
   const casting = useRef<Set<number>>(new Set());
@@ -36,18 +53,39 @@ export function RoomLights({ scene }: { scene: Scene }) {
     if (elapsed.current < RANK_INTERVAL_S) return;
     elapsed.current = 0;
 
-    const ranked = refs.current
-      .map((light, i) => {
-        if (!light) return null;
-        light.getWorldPosition(worldPos);
-        return { i, distSq: worldPos.distanceToSquared(camera.position) };
-      })
-      .filter((r): r is { i: number; distSq: number } => r != null)
-      .sort((a, b) => a.distSq - b.distSq)
-      .slice(0, ROOM_LIGHT.shadow.maxCasters)
-      .map((r) => r.i);
+    const distSqByIndex = new Map<number, number>();
+    refs.current.forEach((light, i) => {
+      if (!light) return;
+      light.getWorldPosition(worldPos);
+      distSqByIndex.set(i, worldPos.distanceToSquared(camera.position));
+    });
 
-    const next = new Set(ranked);
+    // Incumbents keep their slot unless a challenger is decisively closer
+    // (HYSTERESIS_DIST_SQ_RATIO) — see the class doc for why.
+    const incumbents = [...casting.current]
+      .filter((i) => distSqByIndex.has(i))
+      .sort((a, b) => distSqByIndex.get(b)! - distSqByIndex.get(a)!); // worst-first
+    const challengers = [...distSqByIndex.keys()]
+      .filter((i) => !casting.current.has(i))
+      .sort((a, b) => distSqByIndex.get(a)! - distSqByIndex.get(b)!); // best-first
+
+    const next = new Set<number>();
+    for (const incumbentIdx of incumbents) {
+      const incumbentDistSq = distSqByIndex.get(incumbentIdx)!;
+      const bestChallenger = challengers[0];
+      const beaten =
+        bestChallenger !== undefined &&
+        distSqByIndex.get(bestChallenger)! < incumbentDistSq * HYSTERESIS_DIST_SQ_RATIO;
+      if (beaten) {
+        next.add(challengers.shift()!);
+      } else {
+        next.add(incumbentIdx);
+      }
+    }
+    while (next.size < ROOM_LIGHT.shadow.maxCasters && challengers.length > 0) {
+      next.add(challengers.shift()!);
+    }
+
     let changed = next.size !== casting.current.size;
     if (!changed) for (const i of next) if (!casting.current.has(i)) { changed = true; break; }
     if (!changed) return;

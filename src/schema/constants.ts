@@ -8,6 +8,11 @@ export const RAIL_HEIGHT = 1.1;
 
 export const DEFAULT_DOOR = { width: 0.9, height: 2.0, sill: 0 };
 export const DEFAULT_WINDOW = { width: 1.2, height: 1.2, sill: 0.9 };
+// Past this width a door stops being a hinged leaf — nobody hangs a 1.5 m slab
+// on a pair of butt hinges. A door this wide whose style was never chosen by
+// hand renders as a glazed patio slider instead (src/render/doorStyle.ts).
+// An explicit choice in the inspector always beats this default.
+export const PATIO_MIN_WIDTH = 1.5;
 
 // --- Stairs ---------------------------------------------------------------
 // A stair's default climb is a full storey (the common case when tracing a

@@ -85,8 +85,30 @@ export interface Opening {
   swingDeg?: number; // door leaf open angle, 0 = closed (default). Swing doors only.
   hinge?: "start" | "end"; // which jamb the leaf hinges on (default "start"). Swing doors only.
   slide?: SlideSpec; // present = a SLIDING door; swingDeg/hinge are then unused
+  // A pair of hinged leaves meeting mid-opening (French/double doors). Each
+  // leaf hangs on its own jamb and swings out its own way, so `hinge` is
+  // unused; `swingDeg` opens both. Mutually exclusive with `slide`.
+  double?: boolean;
+  // How the opening's width divides between its leaves/panels, in order from
+  // node a — fractions, normalised on read, absent = an even split. Applies to
+  // double doors (2 leaves) and bypass sliders (`slide.panels` panels), so an
+  // uneven pair (a 90 cm active leaf beside a 60 cm fixed one) is expressible.
+  leafSplit?: number[];
   mullions?: { cols: number; rows: number }; // window glazing-bar grid (default {cols:2,rows:1})
   lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
+  // --- Materials (Realism sprint, additive) ---
+  doorMaterial?: "walnut" | "painted-white" | "painted-charcoal" | "oak"; // doors only (default "painted-white")
+  // Windows and patio doors (default "aluminum-matte"). "painted" is LEGACY —
+  // it duplicated tinted matte, so it no longer has a control and resolves to
+  // matte on render; it stays in the union because saved projects hold it.
+  // See `frameFinishOf` in src/render/frameFinish.ts, the one resolver.
+  frameMaterial?: "aluminum-matte" | "aluminum-glossy" | "painted";
+  // Hex tint over the frame finish (absent = the finish's own colour). SCENE-
+  // WIDE by design: a house does not have windows in two different colours, so
+  // this is written to every window and patio door at once by the store's
+  // `setFrameColor`, never edited per opening. `frameMaterial` is whole-house
+  // the same way, via `setFrameFinish`.
+  frameColor?: string;
 }
 
 /**
@@ -190,17 +212,107 @@ export interface Room {
   // mesh mount state (`visible`/`wallMode`) or rail edges directly, since that
   // is the render layer's own inference and it will diverge (§8.3).
   ceiling?: "roofed" | "open";
+  // Authored per-room ceiling height, meters. Undefined falls back to the
+  // existing derived rule (tallest wall on the room's own perimeter) — see
+  // src/render/ceilingHeight.ts, the one place both FloorMesh.tsx's Ceilings
+  // component and roomLighting.ts's ceilingHeights() resolve this from, so
+  // the two can never disagree about where a room's ceiling actually sits.
+  ceilingHeight?: number;
+}
+
+/** Config for a procedurally generated furniture item (parametric furniture).
+ *  Geometry is rebuilt deterministically from this spec at render time by
+ *  src/parametric/ — the scene stores only the recipe, never meshes. */
+export interface ParametricSpec {
+  // kitchenRun stays valid forever (renders pre-R2 saves) but is no longer
+  // placeable — kitchenBase/kitchenWall replace it as of R2.
+  // Bathroom Phase 1 adds the five fixture ids below — additive only, same as
+  // the Kitchen v2 ids above. Phase 2 adds "appliance" (one generator for the
+  // whole white-goods set) and "rangeHood", on the same additive terms.
+  generator:
+    | "wardrobe"
+    | "kitchenRun"
+    | "sofa"
+    | "kitchenBase"
+    | "kitchenWall"
+    | "sink"
+    | "cooktop"
+    | "toilet"
+    | "bathtub"
+    | "shower"
+    | "vanity"
+    | "bathAccessory"
+    | "appliance"
+    | "rangeHood"
+    // The three products the retired "bathAccessory" catch-all split into.
+    | "mirror"
+    | "towelRail"
+    | "bin"
+    // Phase 3, soft decor: the layer that makes a room read as lived-in.
+    | "rug"
+    | "tv"
+    | "wallArt"
+    | "wallClock";
+  /** Outer bounding dims in meters: w along local X, d along local Z, h up. */
+  dims: { w: number; d: number; h: number };
+  /** Generator-specific integer counts, e.g. { doors: 3, drawers: 2 }.
+   *  Missing keys fall back to the generator's defaults. */
+  modules: Record<string, number>;
+  front: "slab" | "shaker" | "farmhouse";
+  handle: "bar" | "knob" | "none";
+  /** Generator-specific style variant id (e.g. cooktop "induction" | "gas").
+   *  Optional + additive (Kitchen v2, Dan-approved): absent = generator's
+   *  default variant. */
+  variant?: string;
+  /** Counter cutouts on a kitchenBase run — holes the countertop is built
+   *  around (sink basins, cooktop wells). Maintained by the store's kitchen
+   *  attachment sync (src/parametric/kitchenAttach.ts), never hand-authored:
+   *  one entry per attached counter item that cuts. `along` is meters along
+   *  the run's PATH (leg 0 start → last leg end, corners included — see
+   *  src/parametric/runPath.ts) to the cutout center. Optional + additive
+   *  (Kitchen v2, Dan-approved). */
+  cutouts?: { along: number; w: number; d: number }[];
+  /** Kitchen v2.1 (additive, same Dan-approved pattern): an L/U run is ONE
+   *  item — these are the legs after the first. Each turns ±90° from the
+   *  previous travel direction and adds `w` meters of cabinets past the
+   *  corner (the corner square itself is implicit). Geometry derives in
+   *  src/parametric/runPath.ts. Absent = plain straight run. */
+  extraLegs?: { turn: 1 | -1; w: number }[];
+  /** Travel direction of leg 0 along the item's local X (+1 = toward +X).
+   *  Only meaningful when extraLegs exist — it fixes which end of leg 0 the
+   *  chain hangs off. Default +1. */
+  legDir?: 1 | -1;
+  /** Finish id resolved by src/parametric/materials.ts (carcass + fronts,
+   *  or upholstery for the sofa). */
+  finish: string;
+  /** Secondary finish: kitchen countertop / sofa accent pillows. */
+  finish2?: string;
+  /** Free tint (hex) for colorable finishes (painted/fabric/leather). Ignored
+   *  by photo-wood finishes, which keep their natural color. */
+  color?: string;
+  /** Same, for the finish2 surface (counter / pillows). */
+  color2?: string;
 }
 
 /** A placed furniture piece. Geometry lives in the catalog asset; the scene
  *  stores only placement. Front faces local +Z; back (wall side) is -Z. */
 export interface FurnitureItem {
   id: Id;
-  assetId: string; // catalog key, e.g. "loungeSofa"
+  assetId: string; // catalog key, e.g. "loungeSofa"; parametric items use "param:<generator>"
   x: number; // plan meters (center)
   y: number;
   rotation: number; // radians about world up
   elevation?: number; // meters above floor (default 0)
+  parametric?: ParametricSpec; // present ⇔ assetId starts with "param:"
+  /** Items placed as one gesture (e.g. both legs of an L kitchen run). Group
+   *  members delete together; ids are opaque. */
+  group?: Id;
+  /** Counter-item bond (Kitchen v2, additive, Dan-approved): this item sits
+   *  ON a kitchenBase run. `hostId` is that run's furniture id; `along` is
+   *  meters from the run's LEFT edge (local -w/2) to this item's center.
+   *  x/y/rotation/elevation are kept derived from the host by the store's
+   *  attachment sync — the host drags/resizes and its items ride along. */
+  attach?: { hostId: Id; along: number };
 }
 
 /**

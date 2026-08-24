@@ -14,7 +14,11 @@ import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
 import { FurnitureLayer } from "./FurnitureLayer";
+import { RunDrawGhost } from "@/parametric/RunDrawGhost";
+import { CounterItemGhost } from "@/parametric/CounterItemGhost";
+import { RunHandles } from "@/parametric/RunHandles";
 import { FixtureLayer } from "./FixtureLayer";
+import { SnapGridOverlays } from "./SnapGridViz";
 import { MeasureTool } from "./MeasureTool";
 import { WallTool } from "./buildTools/WallTool";
 import { OpeningTool } from "./buildTools/OpeningTool";
@@ -23,8 +27,13 @@ import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
 import { BuildNavigator } from "@/ui/planDock/BuildNavigator";
 import { Inspector } from "@/ui/planDock/inspector/Inspector";
 import { PdToastHost } from "@/ui/planDock/toast";
+import { CameraOfferChip } from "@/ui/planDock/cameraOffer";
 import { StairLayer } from "./StairMesh";
 import { CameraFocusRig } from "./CameraFocusRig";
+import { CameraRig } from "./CameraRig";
+import { CameraKeyboardRig } from "./CameraKeyboardRig";
+import { CameraDoubleClickRig } from "./CameraDoubleClickRig";
+import { CameraOfferRig } from "./CameraOfferRig";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
 import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
@@ -151,7 +160,7 @@ function ScenePanel() {
   const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const icon = time >= 6 && time < 19 ? "☀️" : "🌙";
   return (
-    <div style={{ position: "absolute", left: 14, top: 64, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
+    <div style={{ position: "absolute", left: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
       <button
         onClick={() => setWalkthroughActive(!walkthroughActive)}
@@ -174,7 +183,10 @@ function ScenePanel() {
           </button>
         ))}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 8, opacity: preset === "none" ? 0.4 : 1 }}
+        title={preset === "none" ? "Time of day has no effect in the Studio preset" : undefined}
+      >
         <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
         <input
           type="range"
@@ -183,6 +195,7 @@ function ScenePanel() {
           step={0.25}
           value={time}
           onChange={(e) => setTimeOfDay(Number(e.target.value))}
+          disabled={preset === "none"}
           style={{ flex: 1, accentColor: T.accent }}
         />
       </div>
@@ -220,8 +233,8 @@ function WallModeToggle() {
     <div
       style={{
         position: "absolute",
-        right: 14,
-        bottom: 14,
+        left: 14,
+        top: 64,
         display: "flex",
         gap: 3,
         padding: 4,
@@ -282,7 +295,7 @@ function StatusOverlay() {
         <span style={{ color: T.textDim }}>nothing selected</span>
       )}
       <span style={{ color: T.textFaint }}>
-        ⌘Z undo ({past}) · ⇧⌘Z redo ({future})
+        ⌘Z undo ({past}) · ⌘Y redo ({future})
       </span>
     </div>
   );
@@ -299,26 +312,34 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
   const hovering = useSceneStore((s) => s.hover3d !== null);
-  const dragging = useSceneStore((s) => s.gestureBase !== null);
-  // Camera should be locked for the ENTIRE time a click-based build/decorate
-  // tool is armed (not just once a drag gesture is already in flight) — see
-  // Plan Dock P9 camera-lock fix. `dragging` above stays as-is (used for
-  // cursor styling elsewhere in this file); this is a separate, broader gate.
-  const toolBusy = useSceneStore((s) =>
-    s.gestureBase !== null ||
-    (s.appMode === "build" && s.buildTool !== "select") ||
-    s.placing !== null ||
-    s.brush !== null ||
-    s.eyedropper,
-  );
+  // A walkthrough door swing folds its per-frame writes into a gesture too
+  // (WalkthroughMode.tsx), but it isn't a drag: it shouldn't tear down N8AO
+  // or lock out camera controls the way dragging furniture/walls does.
+  const dragging = useSceneStore((s) => s.gestureBase !== null && !s.doorGestureActive);
+  // Camera arbitration moved to <CameraRig> below. The tool-armed states that
+  // used to switch the whole camera off now cost only the LEFT button, so
+  // orbit/pan/zoom stay live at all times — see CameraRig.tsx for why the old
+  // `enabled={!toolBusy}` gate had to go and what replaced it.
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
   const envPreset = useSceneStore((s) => s.envPreset);
   const brush = useSceneStore((s) => s.brush);
   const walkthroughActive = useSceneStore((s) => s.walkthroughActive);
-  const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const [walkthroughLocked, setWalkthroughLocked] = useState(false);
   const [walkthroughFov, setWalkthroughFov] = useState(WALKTHROUGH_CONFIG.fovDeg);
+  // P2 T5: WalkthroughRig now flies the camera back OUT on exit, mirroring
+  // its fly-IN on entry — so it has to stay mounted (and CameraControls has
+  // to stay disabled) for the whole outro, not just until `walkthroughActive`
+  // flips. That flag itself still flips the instant the user asks to leave
+  // (Esc inside the rig, or the Scene panel's "Exit walkthrough" button below
+  // — both routes already just call setWalkthroughActive(false)), so every
+  // OTHER reader of it (the button's own label/pressed state) keeps behaving
+  // exactly as before. Only the MOUNT lags behind, and only WalkthroughRig's
+  // own onExitComplete — fired once its exit flight lands — brings it down.
+  const [walkthroughMounted, setWalkthroughMounted] = useState(walkthroughActive);
+  useEffect(() => {
+    if (walkthroughActive) setWalkthroughMounted(true);
+  }, [walkthroughActive]);
   // The CAD grid is an editing aid; hide it in the immersive View presets.
   const showGrid = envPreset === "none" || appMode !== "view";
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
@@ -328,14 +349,20 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
     const s = useSceneStore.getState();
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === "z") {
-      if (e.shiftKey) s.redoScene();
-      else s.undoScene();
-    } else if (mod && e.key.toLowerCase() === "y") {
+    // Letter shortcuts match on e.code (physical key), not e.key: a Hebrew/
+    // Russian/... layout types a different character on the same key, and
+    // e.key-based matching silently dead-keys R/Z/Y for those users.
+    // Redo is Ctrl+Y only — Ctrl+Shift+Z is deliberately NOT a second alias
+    // for it. Two shortcuts for one command is two things to learn and one
+    // more chance to hit the wrong one, same reasoning as the left/right
+    // mouse-button split.
+    if (mod && e.code === "KeyZ" && !e.shiftKey) {
+      s.undoScene();
+    } else if (mod && e.code === "KeyY") {
       s.redoScene();
     } else if (e.key === "Delete" || e.key === "Backspace") {
       s.deleteSelected3d();
-    } else if (e.key.toLowerCase() === "r" && !mod) {
+    } else if (e.code === "KeyR" && !mod) {
       const step = (Math.PI / 12) * (e.shiftKey ? -1 : 1); // 15° per tap
       if (s.placing) s.rotatePlacing(step);
       else if (s.sel3d?.kind === "furniture") s.rotateSelectedFurniture(step);
@@ -344,6 +371,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
     } else if (e.key === "Escape") {
       if (s.brush) s.setBrush(null);
       else if (s.placing) s.setPlacing(null);
+      else if (s.placingCounter) s.setPlacingCounter(null);
       else if (s.gestureBase) s.cancelGesture();
       else s.setSel3d(null);
     } else {
@@ -397,6 +425,9 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <RoomLights scene={scene} />
           <Walls scene={scene} offset={offset} />
           <FurnitureLayer scene={scene} offset={offset} />
+          <RunDrawGhost offset={offset} />
+          <CounterItemGhost offset={offset} />
+          <RunHandles offset={offset} />
           <FixtureLayer scene={scene} offset={offset} />
           <MeasureTool offset={offset} />
           <WallTool offset={offset} />
@@ -404,6 +435,8 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           <StairLayer scene={scene} />
           <CameraFocusRig offset={offset} />
           <DragVizLayer cx={cx} cz={cz} span={span} />
+          {/* Snap grids (floor/ceiling) shown while placing or dragging. */}
+          <SnapGridOverlays />
           {/* Collaborators' selection markers (plan coords, inside the group). */}
           {collabOverlay}
         </group>
@@ -424,17 +457,35 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         )}
         <CameraControls
           makeDefault
-          enabled={!toolBusy && !walkthroughActive}
+          // Walkthrough is the ONE legitimate use of `enabled` — it replaces
+          // the camera wholesale rather than restricting it. Every tool state
+          // is handled by <CameraRig>, one button at a time. Keyed on
+          // walkthroughMounted, not walkthroughActive: re-enabling this the
+          // instant the user asks to exit (rather than once the rig's own
+          // exit flight lands) would let a stray drag during the outro move
+          // CameraControls' target, so the handoff snapped to wherever THAT
+          // went instead of where the flight just visually landed.
+          enabled={!walkthroughMounted}
           smoothTime={0.18}
           draggingSmoothTime={0.06}
         />
         <FitCamera span={span} />
-        {walkthroughActive && (
+        {/* After FitCamera: the rig's far plane is derived from the dolly
+            limit and must win over FitCamera's opening-shot value. */}
+        <CameraRig span={span} halfX={halfX} halfZ={halfZ} />
+        {/* P2 T2/T3: double-click-to-frame and the WASD/QE/T/F/Home keyboard
+            channel. Separate files, not folded into CameraRig, so its own
+            diff stays the button-map/envelope it already was. */}
+        <CameraKeyboardRig halfX={halfX} halfZ={halfZ} />
+        <CameraDoubleClickRig />
+        <CameraOfferRig />
+        {walkthroughMounted && (
           <WalkthroughRig
             scene={scene}
             offset={offset}
             fovDeg={walkthroughFov}
-            onExit={() => setWalkthroughActive(false)}
+            exitRequested={!walkthroughActive}
+            onExitComplete={() => setWalkthroughMounted(false)}
             onLockChange={setWalkthroughLocked}
           />
         )}
@@ -471,6 +522,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
       <WalkthroughFovControl active={walkthroughActive} fovDeg={walkthroughFov} onChange={setWalkthroughFov} />
       <WallModeToggle />
+      <CameraOfferChip />
       <PdToastHost />
     </div>
   );

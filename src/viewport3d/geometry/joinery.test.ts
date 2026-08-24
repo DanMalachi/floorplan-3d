@@ -10,6 +10,8 @@ import {
 } from "./buildJoinery";
 import { buildWallSegments } from "./buildWallSegments";
 import { buildRoomGraph, walkableConnections } from "@/lib/rooms/semanticGraph";
+import { takesWindowFinish } from "@/render/doorStyle";
+import { PATIO_MIN_WIDTH } from "@/schema/constants";
 
 let failures = 0;
 const check = (name: string, cond: boolean, detail = "") => {
@@ -184,6 +186,87 @@ console.log("\nsemantics — a passage is neither a door nor a window");
   check("not counted as a door", living.features.doorCount === 0);
   check("it opens into the corridor", living.relationships.opensInto.includes("corridor"));
   check("you can walk through it", walkableConnections(living) === 1);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nwide doors default to a patio slider");
+{
+  // A narrow door is a hinged leaf, a wide one is glazed panels — nobody hangs
+  // a 1.5 m slab on butt hinges.
+  const narrow = buildJoinery(op({ width: 0.9 }), F);
+  check("0.9 m door is a swing leaf", of(narrow, "leaf").length === 1 && of(narrow, "glass").length === 0);
+  const wide = buildJoinery(op({ width: 2.4 }), F);
+  check("2.4 m door is glazed panels", of(wide, "glass").length === 2 && of(wide, "leaf").length === 0);
+  check("and it slides", of(wide, "track").length === 1);
+  check("at the threshold exactly", of(buildJoinery(op({ width: PATIO_MIN_WIDTH }), F), "glass").length === 2);
+  check("just under it, still a leaf", of(buildJoinery(op({ width: PATIO_MIN_WIDTH - 0.01 }), F), "leaf").length === 1);
+
+  // A DERIVED default, not a data change: the rule must lose to any style the
+  // inspector wrote, or picking "Swing" on a wide door would never stick.
+  check("an explicit swing beats it", of(buildJoinery(op({ width: 2.4, swingDeg: 0 }), F), "leaf").length === 1);
+  check("an explicit closet beats it", of(buildJoinery(op({ width: 2.4, slide: closet }), F), "glass").length === 0);
+  check("a double beats it", of(buildJoinery(op({ width: 2.4, double: true }), F), "leaf").length === 2);
+  // Windows and passages are not doors and must be untouched by any of this.
+  check("a wide window is still a window", of(buildJoinery(op({ type: "window", width: 2.4 }), F), "glass").length === 1);
+  check("a wide passage is still empty", of(buildJoinery(op({ type: "passage", width: 2.4 }), F), "glass").length === 0);
+}
+
+console.log("\ndouble doors — a pair meeting in the middle");
+{
+  const shut = buildJoinery(op({ width: 1.6, double: true }), F);
+  const leaves = of(shut, "leaf");
+  check("two leaves", leaves.length === 2);
+  check("they tile the opening", Math.abs(leaves.reduce((s, p) => s + p.size[0], 0) - (1.6 - 2 * 0.06 - 2 * 0.012)) < 1e-6);
+  check("both get handles", of(shut, "handle").length === 8, `${of(shut, "handle").length} handle pieces`);
+  check("no track — it is not a slider", of(shut, "track").length === 0);
+  // Meeting in the MIDDLE: one leaf each side of the opening's centre.
+  check("one leaf each side of centre",
+    Math.min(...leaves.map(along)) < 2 && Math.max(...leaves.map(along)) > 2);
+
+  // Both leaves swing the same way (into one room), not apart into both.
+  const open = of(buildJoinery(op({ width: 1.6, double: true, swingDeg: 90 }), F), "leaf");
+  check("open, both leaves leave the wall line", open.every((p) => Math.abs(across(p)) > 0.3));
+  check("and both to the SAME side", open.every((p) => Math.sign(across(p)) === Math.sign(across(open[0]))),
+    open.map((p) => across(p).toFixed(2)).join(" / "));
+}
+
+console.log("\nleaf widths — an uneven pair still fills the opening");
+{
+  const inner = 1.6 - 2 * 0.06; // the hole inside the frame lining
+  const uneven = of(buildJoinery(op({ width: 1.6, double: true, leafSplit: [0.75, 0.25] }), F), "leaf");
+  const sizes = uneven.map((p) => p.size[0]).sort((a, b) => b - a);
+  check("the wide leaf is three times the narrow one",
+    Math.abs(sizes[0] + 0.012 - 3 * (sizes[1] + 0.012)) < 1e-6, sizes.map((s) => s.toFixed(3)).join(" / "));
+  check("they still tile the opening", Math.abs(sizes[0] + sizes[1] - (inner - 2 * 0.012)) < 1e-6);
+
+  const panels = of(buildJoinery(op({ width: 2.4, slide: closet, leafSplit: [0.7, 0.3] }), F), "leaf");
+  const pw = panels.map((p) => p.size[0]).sort((a, b) => b - a);
+  const innerW = 2.4 - 2 * 0.06;
+  check("sliding panels take the split too", Math.abs(pw[0] - 0.02 - 0.7 * innerW) < 1e-6);
+  check("and still cover the hole", Math.abs(pw[0] + pw[1] - 2 * 0.02 - innerW) < 1e-6);
+
+  // A stale/short split must degrade to an even divide, not collapse a leaf.
+  const stale = of(buildJoinery(op({ width: 1.6, double: true, leafSplit: [0.5] }), F), "leaf");
+  check("a split that doesn't match the leaf count falls back to even",
+    Math.abs(stale[0].size[0] - stale[1].size[0]) < 1e-9);
+
+  // Uneven panels have to park on the panel that is FIXED at the side jamb,
+  // not at some average pitch, or a shut door and an open one disagree.
+  const open = of(buildJoinery(op({ width: 2.4, slide: { ...closet, open: 1, side: "end" }, leafSplit: [0.7, 0.3] }), F), "leaf");
+  check("fully open, the moving panel parks on the fixed one",
+    Math.abs(along(open[0]) - along(open[1])) < 1e-6,
+    open.map((p) => along(p).toFixed(3)).join(" / "));
+}
+
+console.log("\nfinishes — a patio door is glazing, not joinery");
+{
+  check("a patio door takes the window finish", takesWindowFinish(op({ width: 2.4 })));
+  check("an authored patio door too", takesWindowFinish(op({ width: 0.9, slide: patio })));
+  check("a closet slider does NOT", !takesWindowFinish(op({ width: 2.4, slide: closet })));
+  check("a swing door does NOT", !takesWindowFinish(op({ width: 0.9 })));
+  check("a double door does NOT", !takesWindowFinish(op({ width: 2.4, double: true })));
+  check("every window does", takesWindowFinish(op({ type: "window" })));
+  check("a passage never does", !takesWindowFinish(op({ type: "passage", width: 2.4 })));
 }
 
 console.log(failures === 0 ? "\nall joinery checks passed\n" : `\n${failures} FAILED\n`);

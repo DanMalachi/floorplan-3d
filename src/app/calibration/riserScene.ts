@@ -61,3 +61,25 @@ export const riserScene: Scene = {
 
 export const RISER_CEILING_HEIGHT = WALL_HEIGHT;
 export const RISER_TOP = TALL;
+
+/**
+ * Sprint 4 case: nobody sets `wall.height` — the SAME shared wall rises
+ * because room B authors a shorter `ceilingHeight` than room A's. Exercises
+ * `computeWallEffectiveHeights` (src/render/ceilingHeight.ts) rather than an
+ * explicit wall override: the shared wall's effective height becomes
+ * `max(WALL_HEIGHT, 3.0, 2.75) = 3.0`, room A's own ceiling (3.0) matches it
+ * (no riser), and room B's (2.75) sits 0.25 m short of it (riser on B's side
+ * only). Not yet wired into this page's mode switcher — see `page.tsx`'s
+ * `Mode`/`CAMERAS` if a "riser-authored" tab is added.
+ */
+export const riserAuthoredScene: Scene = {
+  ...riserScene,
+  walls: riserScene.walls.map((w) => (w.id === "wshared" ? { id: w.id, a: w.a, b: w.b, thickness: w.thickness } : w)),
+  rooms: [
+    { ...riserScene.rooms[0], ceilingHeight: 3.0 },
+    { ...riserScene.rooms[1], ceilingHeight: 2.75 },
+  ],
+};
+
+export const RISER_AUTHORED_TOP = 3.0;
+export const RISER_AUTHORED_SHORT_CEILING = 2.75;

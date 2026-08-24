@@ -104,10 +104,18 @@ export function preserveSceneEdits(prev: Scene | null | undefined, next: Scene):
     // gets reseeded rather than staying dark — better than the alternative of
     // a regenerated house silently getting no lights at all.
     ...((): { fixtures?: Scene["fixtures"] } => {
-      const nextRooms = eligibleLitRooms(next);
+      // Wall fixtures attribute against every closed-loop room, same as
+      // computeRoomLights (Sprint 3a) — a sconce on a balcony/undersized
+      // room's wall still lights it, so it shouldn't be dropped here either.
+      // A wall fixture with no containing room at all (an exterior/facade
+      // mount, Sprint 5) still lights its own wall — resolving to a plan
+      // position is the only requirement for it, same as computeRoomLights.
+      const eligibleRooms = eligibleLitRooms(next);
       const surviving = (prev.fixtures ?? []).filter((f) => {
         const world = resolveFixtureWorldXY(f, next);
-        return world != null && nextRooms.some((er) => pointInPolygon(world.x, world.y, er.loop));
+        if (!world) return false;
+        if (f.mount.kind === "wall") return true;
+        return eligibleRooms.some((er) => pointInPolygon(world.x, world.y, er.loop));
       });
       return surviving.length > 0 ? { fixtures: surviving } : {};
     })(),

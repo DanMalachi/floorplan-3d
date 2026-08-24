@@ -1,6 +1,6 @@
-// Anonymous-but-named identity for the alpha: each collaborator gets a friendly
-// name + a stable color, no login. (Real accounts can replace this later without
-// touching the presence shape.)
+// Who a collaborator appears as in a live room. Signed-in people show their real
+// name and a colour keyed to their account (identityForUser); guests still get a
+// friendly random one, because a share link has to work without an account.
 
 const ADJECTIVES = [
   "Swift", "Cosy", "Bright", "Calm", "Bold", "Warm", "Quiet", "Lucky",
@@ -26,6 +26,18 @@ export interface Identity {
 /** A fresh random identity for this browser session. */
 export function randomIdentity(): Identity {
   return { name: `${pick(ADJECTIVES)} ${pick(ANIMALS)}`, color: pick(COLORS) };
+}
+
+/**
+ * A signed-in person's identity in a room: their own name, and a colour derived
+ * from their user id so it is the SAME colour every session and on every device.
+ * Collaborators learn "blue is Dan"; a colour that shuffled on each visit would
+ * make presence cursors unreadable.
+ */
+export function identityForUser(name: string, userId: string): Identity {
+  let h = 0;
+  for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) | 0;
+  return { name, color: COLORS[Math.abs(h) % COLORS.length] };
 }
 
 /** Initials for an avatar chip, e.g. "Swift Fox" -> "SF". */

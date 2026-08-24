@@ -37,7 +37,7 @@ export function poleOfInaccessibility(poly: Point2[], precision = 0.02): Point2 
   if (width === 0 || height === 0) return { x: minX, y: minY };
 
   const cellSize = Math.min(width, height);
-  let h = cellSize / 2;
+  const h = cellSize / 2;
   if (h === 0) return { x: minX, y: minY };
 
   // Best-first search over a queue of cells, ranked by an upper bound on the

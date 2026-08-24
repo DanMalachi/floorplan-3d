@@ -8,6 +8,11 @@ import { useSceneStore } from "@/store/useSceneStore";
 import type { Node } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
 import { MIN_CASTER_THICKNESS } from "@/render/contract";
+import {
+  resolveCeilingHeights,
+  computeWallEffectiveHeights,
+  roomsWithCeiling,
+} from "@/render/ceilingHeight";
 import { shadowProps } from "@/render/materialClass";
 import { buildFloorGeometry } from "./geometry/triangulateFloor";
 import { useFloorTexture, floorRoughness } from "./textures";
@@ -174,11 +179,15 @@ export function Floors({ scene }: { scene: Scene }) {
         .filter((n): n is NonNullable<typeof n> => n != null);
       return {
         id: room.id,
-        style: room.floor ?? ("wood" as FloorStyle),
+        style: room.floor ?? ("wood-oak-natural" as FloorStyle),
         geometry: buildFloorGeometry(loop),
       };
     });
-  }, [scene]);
+    // Only rooms/nodes matter here — depending on `scene` itself recomputes
+    // every frame while a walkthrough door is swinging (openings republish
+    // the whole Scene object each frame; rooms/nodes stay referentially
+    // stable through that).
+  }, [scene.rooms, scene.nodes]);
 
   return (
     <group>
@@ -201,61 +210,45 @@ export function Ceilings({ scene }: { scene: Scene }) {
 
   const ceilingsAndRisers = useMemo(() => {
     const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-    // RAILS only — deliberately not every non-solid kind. A rail means open to
-    // the SKY, so the room loses its ceiling. A portal means open to the next
-    // ROOM, and the ceiling runs straight over it. Do not merge these.
-    const railEdges = new Set(
-      scene.walls
-        .filter((w) => w.kind === "rail")
-        .map((w) => [w.a, w.b].sort().join("|")),
-    );
+    // Which rooms are roofed at all (rail-bounded ones are open to the sky).
+    // Shared with `computeWallRenderHeights`, which raises a wall head to hide
+    // the slab — the two must agree on where a slab exists or a wall grows a
+    // 12 cm parapet with nothing behind it.
+    const roofed = roomsWithCeiling(scene);
     // Every wall by its node-pair edge, to look up each bounding wall's own
     // (possibly customized) height — same lookup shape as WallMesh's per-wall
     // height resolution, just keyed for room-loop traversal.
     const wallByEdge = new Map(
       scene.walls.map((w) => [[w.a, w.b].sort().join("|"), w]),
     );
-    // How many rooms' loops reference each wall — 1 means it's that room's own
-    // perimeter, 2 means it's a partition shared with a neighbor. A shared
-    // wall shouldn't drag a shorter neighbor's ceiling up just because they
-    // touch; it stands exposed above that neighbor's lower ceiling instead.
-    const roomsPerWall = new Map<string, number>();
-    for (const room of scene.rooms) {
-      for (let i = 0; i < room.loop.length; i++) {
-        const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
-        if (!wall) continue;
-        roomsPerWall.set(wall.id, (roomsPerWall.get(wall.id) ?? 0) + 1);
-      }
-    }
+    // Resolved per-room ceiling height (authored `room.ceilingHeight`, or the
+    // derived "tallest wall this room actually OWNS" rule) — the single
+    // shared resolver `WallMesh.tsx`'s `Walls` and `roomLighting.ts` also use,
+    // so none of the three can disagree on where a room's ceiling sits.
+    const roomHeights = resolveCeilingHeights(scene);
+    // WallMesh.tsx's `Walls` renders each wall at this same effective height
+    // (its own height maxed with every room it borders' ceiling) — the riser
+    // gap check below must compare against what actually renders, not the
+    // wall's raw authored/derived height, or a wall raised by ITS OTHER side's
+    // taller room would leave a gap-detection blind spot on this side.
+    const wallHeights = computeWallEffectiveHeights(scene, roomHeights);
     const out: { id: string; geometry: THREE.BufferGeometry; height: number }[] = [];
     const risers: { id: string; geometry: THREE.BufferGeometry }[] = [];
+    // A wall whose OWN raw height already clears both rooms it borders (a
+    // vaulted single-wall override, or two rooms with an equal authored
+    // ceilingHeight below it) gets visited from each side's room loop and
+    // would otherwise emit two coincident, z-fighting riser panels at the
+    // same wall/height span (Sprint 4). Keyed on wall id + rounded [lo, hi] —
+    // two rooms on the same wall only ever produce identical spans, never
+    // merely overlapping ones, since `wallH` is the one shared ceiling.
+    const seenRisers = new Set<string>();
     for (const room of scene.rooms) {
       const loop = room.loop
         .map((id) => nodes.get(id))
         .filter((n): n is NonNullable<typeof n> => n != null);
       if (loop.length < 3) continue;
-      const open = room.loop.some((id, i) =>
-        railEdges.has([id, room.loop[(i + 1) % room.loop.length]].sort().join("|")),
-      );
-      if (open) continue; // balcony / open-air room — no ceiling
-      // Ceiling sits at the tallest wall this room actually OWNS — its
-      // perimeter, walls no other room's loop touches. Shared/partition walls
-      // are excluded from this max so a tall shared wall can't pull a shorter
-      // room's ceiling up to match. Falls back to every bounding wall (old
-      // behavior) only if a room has no perimeter wall of its own at all
-      // (fully interior, boxed in by neighbors on every side).
-      let perimeterHeight: number | null = null;
-      let anyHeight: number | null = null;
-      for (let i = 0; i < room.loop.length; i++) {
-        const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
-        if (!wall) continue;
-        const h = wall.height ?? WALL_HEIGHT;
-        anyHeight = anyHeight == null ? h : Math.max(anyHeight, h);
-        if (roomsPerWall.get(wall.id) === 1) {
-          perimeterHeight = perimeterHeight == null ? h : Math.max(perimeterHeight, h);
-        }
-      }
-      const height = perimeterHeight ?? anyHeight ?? WALL_HEIGHT;
+      if (!roofed.has(room.id)) continue; // balcony / open-air room — no ceiling
+      const height = roomHeights.get(room.id) ?? WALL_HEIGHT;
       out.push({ id: room.id, geometry: buildCeilingSlab(loop, MIN_CASTER_THICKNESS), height });
 
       // A bounding wall taller than THIS room's own ceiling (a neighbor's
@@ -269,8 +262,11 @@ export function Ceilings({ scene }: { scene: Scene }) {
         if (!a || !b) continue;
         const wall = wallByEdge.get([room.loop[i], room.loop[(i + 1) % room.loop.length]].sort().join("|"));
         if (!wall) continue;
-        const wallH = wall.height ?? WALL_HEIGHT;
+        const wallH = wallHeights.get(wall.id) ?? wall.height ?? WALL_HEIGHT;
         if (wallH <= height) continue;
+        const riserKey = `${wall.id}:${height.toFixed(3)}:${wallH.toFixed(3)}`;
+        if (seenRisers.has(riserKey)) continue;
+        seenRisers.add(riserKey);
         // As thick as the wall it continues upward — the riser reads as that
         // wall carrying on, and shares its shadow footprint.
         const t = wall.thickness ?? DEFAULT_THICKNESS;
@@ -281,7 +277,9 @@ export function Ceilings({ scene }: { scene: Scene }) {
       }
     }
     return { out, risers };
-  }, [scene]);
+    // Rooms/walls/nodes only — never openings, so this skips the recompute
+    // during a walkthrough door swing (same reasoning as the Floors memo above).
+  }, [scene.rooms, scene.walls, scene.nodes]);
   const { out: ceilings, risers } = ceilingsAndRisers;
 
   const mat = useMemo(

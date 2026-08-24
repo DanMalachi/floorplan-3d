@@ -48,6 +48,22 @@ permission here before adding.
 | Architect (YOLOv8 weights) | CC BY-NC 4.0 | do not ship |
 | zimhe/pseudo-floor-plan-12k | unverified | do not use until license confirmed |
 
+## Shipped media assets
+
+Anything served to a browser is REDISTRIBUTION — the test a licence has to pass here
+is "may we host it", not "may we look at it". Same rule that kept royalty-free
+BlenderKit models out of the furniture catalog.
+
+| asset | source | license | permitted use here |
+|---|---|---|---|
+| `public/textures/tv/broadcast-earth.jpg` | NASA, ISS Expedition 71 photograph `iss071e449837` (The Bahamas, 24 July 2024), via images.nasa.gov | Public domain (NASA media usage: NASA content is generally not copyrighted) | ✅ ship + redistribute. Cropped to 16:9 and resized to 1280×720; no NASA logo, insignia or identifiable person appears in it, which is what NASA's guidelines actually restrict |
+| `public/textures/wallart/hokusai-great-wave.jpg` | Katsushika Hokusai, *Under the Wave off Kanagawa*, 1830/33 — Art Institute of Chicago, object 24645, via api.artic.edu | Public domain (the museum's own `is_public_domain: true` flag — the test applied to every candidate; works flagged false were dropped even where the artist died a century ago) | ✅ ship + redistribute. Downloaded through the IIIF endpoint at 1000px, re-encoded to 900px longest side |
+| `public/textures/wallart/monet-water-lilies.jpg` | Claude Monet, *Water Lilies*, 1906 — Art Institute of Chicago, object 16568, via api.artic.edu | Public domain (the museum's own `is_public_domain: true` flag — the test applied to every candidate; works flagged false were dropped even where the artist died a century ago) | ✅ ship + redistribute. Downloaded through the IIIF endpoint at 1000px, re-encoded to 900px longest side |
+| `public/textures/wallart/vangogh-bedroom.jpg` | Vincent van Gogh, *The Bedroom*, 1889 — Art Institute of Chicago, object 28560, via api.artic.edu | Public domain (the museum's own `is_public_domain: true` flag — the test applied to every candidate; works flagged false were dropped even where the artist died a century ago) | ✅ ship + redistribute. Downloaded through the IIIF endpoint at 1000px, re-encoded to 900px longest side |
+| `public/textures/wallart/kandinsky-improvisation-30.jpg` | Vasily Kandinsky, *Improvisation No. 30 (Cannons)*, 1913 — Art Institute of Chicago, object 8991, via api.artic.edu | Public domain (the museum's own `is_public_domain: true` flag — the test applied to every candidate; works flagged false were dropped even where the artist died a century ago) | ✅ ship + redistribute. Downloaded through the IIIF endpoint at 1000px, re-encoded to 900px longest side |
+| `public/textures/wallart/hiroshige-plum-garden.jpg` | Utagawa Hiroshige, *Plum Garden at Kameido*, 1857 — Art Institute of Chicago, object 26577, via api.artic.edu | Public domain (the museum's own `is_public_domain: true` flag — the test applied to every candidate; works flagged false were dropped even where the artist died a century ago) | ✅ ship + redistribute. Downloaded through the IIIF endpoint at 1000px, re-encoded to 900px longest side |
+| `public/textures/wallart/stieglitz-hand-of-man.jpg` | Alfred Stieglitz, *The Hand of Man*, 1902 — Art Institute of Chicago, object 66303, via api.artic.edu | Public domain (the museum's own `is_public_domain: true` flag — the test applied to every candidate; works flagged false were dropped even where the artist died a century ago) | ✅ ship + redistribute. Downloaded through the IIIF endpoint at 1000px, re-encoded to 900px longest side |
+
 ## Tracing conventions
 
 - **Balcony / terrace railings → trace as `rail`** (the Rail tool in the Walls step),

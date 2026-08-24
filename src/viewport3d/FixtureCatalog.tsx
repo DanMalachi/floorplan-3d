@@ -101,7 +101,7 @@ export function FixtureCatalog() {
           </span>
         )}
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 6, overflowX: "auto", alignItems: "flex-start" }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start" }}>
         {items.map((asset) => (
           <FixtureTile key={asset.assetId} asset={asset} />
         ))}

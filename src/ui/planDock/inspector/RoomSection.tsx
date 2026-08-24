@@ -2,46 +2,42 @@
 
 // Room inspector (Plan Dock P5) — PD port of Viewport.tsx's old MiniInspector
 // room block: area, semantics verdict + evidence, door/window/exterior-wall
-// counts, and the "Understand rooms" Building Knowledge Layer trigger.
+// counts. The "Understand rooms" VLM trigger was retired — see the
+// classify-routes removal commit.
 
-import { useState } from "react";
 import type { Room } from "@/schema/scene";
+import { WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
 import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
+import { resolveCeilingHeights } from "@/render/ceilingHeight";
 import { PD, pdChip } from "../tokens";
-import { pdInspectorPanel, PdSectionTitle, PdHelpText } from "./panelKit";
-
-/** Building Knowledge Layer trigger — escalates undecided rooms to the VLM.
- *  Free rule verdicts are already on the scene; this button spends API
- *  budget, so it stays an explicit user action. */
-function UnderstandRoomsButton() {
-  const busy = useSceneStore((s) => s.understandBusy);
-  const [msg, setMsg] = useState<string | null>(null);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <button
-        style={{ ...pdChip(false), opacity: busy ? 0.6 : 1, textAlign: "center" }}
-        disabled={busy}
-        onClick={async () => {
-          setMsg(null);
-          setMsg(await useSceneStore.getState().understandRooms());
-        }}
-      >
-        {busy ? "🧠 Understanding…" : "🧠 Understand rooms (AI)"}
-      </button>
-      {msg && <div style={{ color: PD.textTertiary, fontSize: 10.5 }}>{msg}</div>}
-    </div>
-  );
-}
+import { pdInspectorPanel, PdSectionTitle, PdHelpText, PdNumField } from "./panelKit";
 
 export function RoomSection({ room }: { room: Room }) {
   const scene = useSceneStore((s) => s.scene);
   const area = roomArea(room.loop, nodeMap(scene.nodes));
   const sem = room.semantics;
+  // Derived (wall-height) fallback when unauthored — same resolver the 3D
+  // layer renders from, so this field always shows what's actually built.
+  const derivedCeilingHeight = resolveCeilingHeights(scene).get(room.id) ?? WALL_HEIGHT;
+  const setCeilingHeight = (v: number) => {
+    const s = useSceneStore.getState();
+    s.commitScene("Ceiling height", {
+      ...s.scene,
+      rooms: s.scene.rooms.map((r) => (r.id === room.id ? { ...r, ceilingHeight: v } : r)),
+    });
+  };
   return (
     <div style={pdInspectorPanel}>
       <PdSectionTitle title={room.name ?? "Room"} meta={`${area.toFixed(1)} m²`} />
+      <PdNumField
+        label="Ceiling height"
+        value={room.ceilingHeight ?? derivedCeilingHeight}
+        onCommit={(v) => setCeilingHeight(Math.min(6, Math.max(2, v)))}
+        displayScale={100}
+        unit="cm"
+      />
       {sem && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -70,7 +66,6 @@ export function RoomSection({ room }: { room: Room }) {
           </div>
         </>
       )}
-      <UnderstandRoomsButton />
       <PdHelpText>
         Change the floor in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Decorate</b>: pick a material, click the floor.
       </PdHelpText>

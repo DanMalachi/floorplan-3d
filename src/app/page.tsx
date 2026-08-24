@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import { Viewport } from "@/viewport3d/Viewport";
 import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
+import { AccountMenu } from "@/ui/AccountMenu";
 import { GtLab } from "@/dev/GtLab";
 import { legacyExtractionEnabled } from "@/lib/featureFlags";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
+import { useSyncStore } from "@/store/useSyncStore";
+import { CloudSync } from "@/ui/CloudSync";
 import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectLiveRole } from "@/store/projectPersistence";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T } from "@/ui/tokens";
@@ -20,7 +23,22 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
   const savedAt = useSceneStore((s) => s.projectSavedAt);
   const restored = useSceneStore((s) => s.projectRestored);
   const name = useSceneStore((s) => s.projectName);
-  const status = savedAt ? "Saved" : restored ? "Restored" : "Autosaving…";
+  const sync = useSyncStore((s) => s.status);
+  const local = savedAt ? "Saved" : restored ? "Restored" : "Autosaving…";
+  // Signed out, the local wording is the whole truth. Signed in, what matters is
+  // whether the work has left this computer yet.
+  const status =
+    sync === "off"
+      ? local
+      : sync === "syncing"
+        ? "Syncing…"
+        : sync === "offline"
+          ? "Saved here · offline"
+          : sync === "error"
+            ? "Saved here · can't reach cloud"
+            : sync === "conflict"
+              ? "Kept both versions"
+              : `${local} · Synced`;
   return (
     <div
       style={{
@@ -76,7 +94,11 @@ function GoLiveButton() {
     setBusy(true);
     try {
       const s = useSceneStore.getState();
-      const roomId = s.liveRoomId ?? crypto.randomUUID().slice(0, 8);
+      // Full UUID, not the first 8 characters. An 8-hex-character id is 32 bits —
+      // enumerable, and the room id is what a share link exposes, so a short one
+      // let a stranger find rooms to knock on. Existing 8-character rooms keep
+      // working; `liveRoomId` is reused whenever it is already set.
+      const roomId = s.liveRoomId ?? crypto.randomUUID();
       // Mark live + persist (roomId, ownership) durably before the full reload.
       await goLivePersist(roomId);
       await enterLiveRoom(roomId, getCurrentProjectId(), {
@@ -251,9 +273,21 @@ export default function Home() {
       }}
     >
       <PdThemeStyle />
+      <CloudSync />
       <ModeSwitcher />
       <ProjectBar onOpenProjects={() => setProjectsOpen(true)} />
-      <div style={{ position: "absolute", top: 14, right: showTrace ? 14 : 132, zIndex: 30 }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          right: showTrace ? 14 : 132,
+          zIndex: 30,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <AccountMenu />
         <ThemeToggle />
       </div>
       {!showTrace && <GoLiveButton />}

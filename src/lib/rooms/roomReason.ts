@@ -1,3 +1,9 @@
+// RETIRED 2026-08-23: nothing imports this. /api/classify-rooms was removed
+// because it sent user plan images to a third-party VLM for a feature that did
+// not work well enough to justify that. The reasoning logic is kept here rather
+// than deleted so re-wiring it later is a route away, not a rewrite. Do not
+// import it without re-adding auth, rate limiting, and a Privacy Policy entry.
+
 import Anthropic from "@anthropic-ai/sdk";
 import { DEFAULT_VLM_MODEL } from "@/lib/rooms/vlmConfig";
 

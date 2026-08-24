@@ -9,17 +9,27 @@ import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { applyShadowClass, shadowProps } from "@/render/materialClass";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 import { placementCollides, snapToWall, wallOBBs, type OBB } from "./collision";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFurniture } from "@/decorate/eyedropper";
+import { ParametricModel } from "@/parametric/ParametricModel";
+import { isWallItem, kitchenOwnsPlacement } from "@/parametric/kitchenAttach";
+import { grabHeight, rayToPlanAt } from "./dragPlane";
+import { rayToWall, wallPose } from "@/parametric/wallRay";
 
 const FLOOR_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 function rayToPlan(
   e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
   offset: { cx: number; cz: number },
+  /** World height the gesture runs at. Defaults to the floor, which is right
+   *  for a placement ghost (it lands ON the floor) and wrong for a drag (see
+   *  dragPlane.ts) — so drags pass the height they grabbed at. */
+  height = 0,
 ): { x: number; y: number } | null {
+  if (height !== 0) return rayToPlanAt(e.ray, height, offset);
   const hit = new THREE.Vector3();
   if (!e.ray.intersectPlane(FLOOR_PLANE, hit)) return null;
   return { x: hit.x + offset.cx, y: hit.z + offset.cz };
@@ -208,7 +218,57 @@ interface FurnDrag {
   base: Scene;
   walls: OBB[];
   grab: { dx: number; dy: number }; // grab point relative to item center
+  /** Height grabbed relative to the item's own elevation, for hung items. */
+  grabE: number;
+  start: { x: number; y: number }; // plan point at pointer-down (dead-zone check)
+  startE: number; // …and its height, so a straight-up drag counts as movement
+  /** World height the whole gesture runs at — where the pointer touched the
+   *  item, captured once so the plane can't shift under the drag. */
+  planeY: number;
+  began: boolean; // gesture opened — only after the dead zone is crossed
 }
+
+/**
+ * Where the pointer is, for THIS item: a hung item reads the WALL, everything
+ * else reads the floor.
+ *
+ * A picture hangs at eye level, so the floor point under the pointer is metres
+ * away from it; dragging against the floor plane made the picture slide faster
+ * than the cursor and wander across the wall's centreline. `rayToWall` is the
+ * same resolve the placement ghost uses, so moving a hung item and hanging it
+ * in the first place now answer to the pointer identically — and the height
+ * comes with it, which is what lets a drag slide art UP the wall instead of
+ * only along it.
+ */
+function rayForItem(
+  e: ThreeEvent<PointerEvent> | ThreeEvent<MouseEvent>,
+  item: FurnitureItem,
+  scene: Scene,
+  offset: { cx: number; cz: number },
+  /** World height this gesture runs at — see dragPlane.ts. A floor-standing
+   *  item dragged against the FLOOR plane slides faster than the cursor for
+   *  exactly the reason a picture did; this is the same fix, for the plane
+   *  case rather than the wall case. */
+  planeY = 0,
+): { x: number; y: number; elevation?: number } | null {
+  if (item.parametric && isWallItem(item)) {
+    const hit = rayToWall(e.ray, scene, offset);
+    // Decor moves at 1cm; a wall cabinet keeps the 10cm height grid it was
+    // placed on, so nudging one sideways can't leave a row of them at four
+    // different heights.
+    const step = item.parametric.generator === "kitchenWall" ? 0.1 : 0.01;
+    const pose = hit && wallPose(hit, scene, item.parametric.dims.d, item.parametric.dims.h, step);
+    // Off every wall face (the cursor left the room, or is over furniture in
+    // front of the wall) — fall through to the floor rather than freezing.
+    if (pose) return { x: pose.x, y: pose.y, elevation: pose.elevation };
+  }
+  return rayToPlan(e, offset, planeY);
+}
+
+/** Plan-space dead zone before a press becomes a drag: a plain click (select)
+ *  must never nudge the item, but select-and-drag works in ONE motion — no
+ *  click-to-select-then-click-again-to-drag two-step. */
+const DRAG_DEAD_ZONE_M = 0.035;
 
 function FurnitureItemView({ item, offset }: {
   item: FurnitureItem;
@@ -222,7 +282,7 @@ function FurnitureItemView({ item, offset }: {
   );
   const drag = useRef<FurnDrag | null>(null);
   const [colliding, setColliding] = useState(false);
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   const ringR = spec ? Math.max(spec.footprint.w, spec.footprint.d) / 2 + 0.12 : 0.5;
 
   // Placement pop: newly mounted furniture springs from 78% to full size.
@@ -245,34 +305,61 @@ function FurnitureItemView({ item, offset }: {
     if (s.appMode !== "furnish" || s.placing) return; // furniture edits in Furnish only
     e.stopPropagation();
     if (sampleFurniture(item)) return; // eyedropper (Plan Dock P7): sample instead of select
-    const wasSelected = s.sel3d?.kind === "furniture" && s.sel3d.id === item.id;
     s.setSel3d({ kind: "furniture", id: item.id });
-    // First click only selects (confirms the pick) so a click doesn't also
-    // nudge the item; a second click, now that it's selected, arms the drag.
-    if (!wasSelected) return;
-    const p = rayToPlan(e, offset);
+    // Select AND arm the drag in one press. The gesture itself only opens
+    // once the pointer leaves the dead zone, so a plain click never nudges.
+    // Where the ray actually met the item, in world height. Everything after
+    // this runs on the horizontal plane through that point, so the spot you
+    // took hold of stays under the cursor for the whole drag.
+    const planeY = grabHeight(e.point, item.elevation ?? 0);
+    const p = rayForItem(e, item, s.scene, offset, planeY);
     if (!p) return;
     (e.target as Element).setPointerCapture(e.pointerId);
     drag.current = {
       pointerId: e.pointerId,
       base: s.scene,
       walls: wallOBBs(s.scene),
+      planeY,
       grab: { dx: p.x - item.x, dy: p.y - item.y },
+      // Grab the picture where you took hold of it: without this it jumps so
+      // its centre is under the cursor the moment the drag opens.
+      grabE: (p.elevation ?? 0) - (item.elevation ?? 0),
+      start: p,
+      startE: p.elevation ?? 0,
+      began: false,
     };
-    s.beginGesture();
   };
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     const d = drag.current;
     if (!d || e.pointerId !== d.pointerId) return;
     e.stopPropagation();
-    const p = rayToPlan(e, offset);
+    const p = rayForItem(e, item, d.base, offset, d.planeY);
     if (!p) return;
+    if (!d.began) {
+      // Height counts as movement. Measured in plan alone, dragging a picture
+      // straight UP the wall never left the dead zone, so it could only ever
+      // slide sideways.
+      const rise = p.elevation !== undefined ? p.elevation - d.startE : 0;
+      if (Math.hypot(p.x - d.start.x, p.y - d.start.y, rise) < DRAG_DEAD_ZONE_M) return;
+      d.began = true;
+      useSceneStore.getState().beginGesture();
+    }
     let x = p.x - d.grab.dx;
     let y = p.y - d.grab.dy;
+    // A hung item rides the wall in all three axes; everything else keeps
+    // whatever height it had.
+    const elevation = p.elevation !== undefined ? Math.max(0.05, p.elevation - d.grabE) : item.elevation;
     let rotation = item.rotation;
-    if (!e.shiftKey) {
-      const snapped = snapToWall({ assetId: item.assetId, x, y }, d.base);
+    // Kitchen pieces are placed by ONE authority — applyKitchenGesture, which
+    // the store runs on the scene this handler hands it. Snapping here as well
+    // put two wall magnets with different ranges, different projections and
+    // different rankings in series, disagreeing about which wall and which
+    // face several times a second. The raw pointer position is what that
+    // authority wants; grid-rounding it here would also quantise on the WORLD
+    // axes, which fight the wall's own grid the moment a wall isn't square.
+    if (!e.shiftKey && !kitchenOwnsPlacement(item)) {
+      const snapped = snapToWall({ assetId: item.assetId, parametric: item.parametric, x, y }, d.base);
       if (snapped) {
         x = snapped.x;
         y = snapped.y;
@@ -282,7 +369,7 @@ function FurnitureItemView({ item, offset }: {
         y = snap(y);
       }
     }
-    const candidate = { ...item, x, y, rotation };
+    const candidate = { ...item, x, y, rotation, ...(elevation !== undefined ? { elevation } : {}) };
     setColliding(placementCollides(candidate, d.base, d.walls));
     const next: Scene = {
       ...d.base,
@@ -298,7 +385,8 @@ function FurnitureItemView({ item, offset }: {
     (e.target as Element).releasePointerCapture(e.pointerId);
     drag.current = null;
     setColliding(false);
-    useSceneStore.getState().endGesture("Move furniture");
+    // A click inside the dead zone never opened a gesture — nothing to commit.
+    if (d.began) useSceneStore.getState().endGesture("Move furniture");
   };
 
   return (
@@ -324,7 +412,9 @@ function FurnitureItemView({ item, offset }: {
     >
       <group ref={popRef} scale={0.78}>
         <Suspense fallback={null}>
-          <AssetModel assetId={item.assetId} tint={colliding ? "red" : null} />
+          {item.parametric
+            ? <ParametricModel spec={item.parametric} tint={colliding ? "red" : null} />
+            : <AssetModel assetId={item.assetId} tint={colliding ? "red" : null} />}
         </Suspense>
       </group>
       {(selected || hovered) && <SelectionRing radius={ringR} dim={!selected} />}
@@ -344,7 +434,7 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
   // rotation}) — without this check, picking a fixture from the Lighting
   // catalog also triggers this ghost, which resolves the unknown assetId to
   // a floor-level PlaceholderBox alongside the real ceiling-height ghost.
-  if (!placing || !CATALOG_BY_ID.has(placing.assetId)) return null;
+  if (!placing || (!placing.parametric && !CATALOG_BY_ID.has(placing.assetId))) return null;
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     const p = rayToPlan(e, offset);
@@ -354,7 +444,7 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
     let y = p.y;
     let rotation = s.placing?.rotation ?? 0;
     if (!e.shiftKey) {
-      const snapped = snapToWall({ assetId: placing.assetId, x, y }, s.scene);
+      const snapped = snapToWall({ assetId: placing.assetId, parametric: placing.parametric, x, y }, s.scene);
       if (snapped) {
         x = snapped.x;
         y = snapped.y;
@@ -365,7 +455,7 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
       }
     }
     const colliding = placementCollides(
-      { id: "__ghost__", assetId: placing.assetId, x, y, rotation },
+      { id: "__ghost__", assetId: placing.assetId, parametric: placing.parametric, x, y, rotation },
       s.scene,
     );
     setPos({ x, y });
@@ -390,17 +480,21 @@ function PlacementGhost({ offset }: { offset: { cx: number; cz: number } }) {
         <planeGeometry args={[600, 600]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
+      {/* Elevation through specOf, not CATALOG_BY_ID: a parametric item has no
+          catalog entry, so the ghost drew at floor level while placeFurniture
+          (which does use specOf) put the real item at its mounting height —
+          preview and placement disagreed by the whole elevation. */}
       {pos && (
         <group
-          position={[pos.x, CATALOG_BY_ID.get(placing.assetId)?.defaultElevation ?? 0, pos.y]}
+          position={[pos.x, specOf(placing)?.defaultElevation ?? 0, pos.y]}
           rotation={[0, yawOf(state.rotation), 0]}
         >
           <Suspense fallback={null}>
-            <AssetModel
-              assetId={placing.assetId}
-              opacity={0.55}
-              tint={state.colliding ? "red" : null}
-            />
+            {placing.parametric ? (
+              <ParametricModel spec={placing.parametric} opacity={0.55} tint={state.colliding ? "red" : null} />
+            ) : (
+              <AssetModel assetId={placing.assetId} opacity={0.55} tint={state.colliding ? "red" : null} />
+            )}
           </Suspense>
         </group>
       )}

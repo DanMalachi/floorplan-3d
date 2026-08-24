@@ -11,7 +11,16 @@ import type { Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
 import { PD, pdChip } from "../tokens";
 import { pdToast } from "../toast";
-import { pdInspectorPanel, PdSectionTitle, PdHelpText, PdNumField, pdChipFlex, PdSwatch } from "./panelKit";
+import {
+  pdInspectorPanel,
+  PdSectionTitle,
+  PdHelpText,
+  PdNumField,
+  pdChipFlex,
+  PdSwatch,
+  PdActionButton,
+  PdActionRow,
+} from "./panelKit";
 
 const KIND_LABEL = { wall: "Wall", rail: "Rail", portal: "Open boundary" } as const;
 
@@ -51,6 +60,34 @@ export function WallSection({ wall }: { wall: Wall }) {
     s.setBrush({ kind: "paint", hex: hex ?? null });
     pdToast(`${label} armed — click a wall face to paint`);
   };
+
+  // Roll one colour over the whole plan in a single commit (one undo step), so
+  // a scheme decided on one wall doesn't have to be clicked onto every face.
+  // BOTH faces of every wall: side A is a wall's own local +Z, which flips with
+  // the direction it happens to have been drawn in, so it carries no shared
+  // inside/outside meaning — mapping A->A across the plan would paint some
+  // rooms' interiors and some rooms' exteriors. Rails and portals are skipped:
+  // neither has a painted face.
+  const paintAllWalls = (hex: string | undefined) => {
+    const s = useSceneStore.getState();
+    const targets = s.scene.walls.filter((w) => (w.kind ?? "wall") === "wall");
+    s.commitScene("Paint all walls", {
+      ...s.scene,
+      walls: s.scene.walls.map((w) =>
+        (w.kind ?? "wall") === "wall" ? { ...w, paintA: hex, paintB: hex } : w,
+      ),
+    });
+    pdToast(`${targets.length} wall${targets.length === 1 ? "" : "s"} painted ${hex ?? "back to plaster"}`);
+  };
+  // One button when both faces already agree; otherwise one per face, since
+  // there is no way to guess which of the two the "all" is meant to spread.
+  const allButtons =
+    wall.paintA === wall.paintB
+      ? [{ hex: wall.paintA, label: "Paint every wall" }]
+      : [
+          { hex: wall.paintA, label: "All walls ← A" },
+          { hex: wall.paintB, label: "All walls ← B" },
+        ];
 
   return (
     <div style={pdInspectorPanel}>
@@ -98,6 +135,11 @@ export function WallSection({ wall }: { wall: Wall }) {
                 <PdSwatch hex={wall.paintA ?? null} title="Face A — click to re-arm this colour" onClick={() => armPaint(wall.paintA, "Face A")} />
                 <PdSwatch hex={wall.paintB ?? null} title="Face B — click to re-arm this colour" onClick={() => armPaint(wall.paintB, "Face B")} />
               </div>
+              <PdActionRow>
+                {allButtons.map((b) => (
+                  <PdActionButton key={b.label} label={b.label} onClick={() => paintAllWalls(b.hex)} />
+                ))}
+              </PdActionRow>
               <PdHelpText>
                 Paint in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Decorate</b>: pick a colour, click faces.
               </PdHelpText>

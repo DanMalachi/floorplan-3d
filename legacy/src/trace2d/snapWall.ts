@@ -45,7 +45,7 @@ interface CL {
 
 /**
  * Snap a clicked point to a wall centerline computed LOCALLY from the imported
- * PDF lines: find the double-line wall under the cursor, return the point on its
+ * CAD lines: find the double-line wall under the cursor, return the point on its
  * centerline. If a perpendicular wall is also near, return the corner
  * intersection. This does the double-line→centerline collapse exactly where the
  * user clicks (reliable), instead of globally (brittle).

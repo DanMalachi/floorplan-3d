@@ -213,12 +213,17 @@ export const pdChipFlex: React.CSSProperties = { flex: 1, textAlign: "center" };
 /** Small round color swatch button — paint faces, IKEA variant dots. */
 export function PdSwatch({
   hex,
+  img,
   active,
   title,
   onClick,
   size = 20,
 }: {
   hex: string | null;
+  /** An image to show INSIDE the swatch instead of a flat tone. A wall-art
+   *  finish is a painting, and a dot the average colour of a Hokusai is a
+   *  choice nobody can make — you have to see which picture you are picking. */
+  img?: string;
   active?: boolean;
   title?: string;
   onClick: () => void;
@@ -232,7 +237,7 @@ export function PdSwatch({
         width: size,
         height: size,
         borderRadius: "50%",
-        background: hex ?? "#d8d2c4",
+        background: img ? `center / cover no-repeat url(${img})` : (hex ?? "#d8d2c4"),
         border: active ? `2px solid ${PD.accent}` : `1.5px solid ${PD.hairline}`,
         boxShadow: active ? `0 0 0 2px ${PD.accentTint}` : "none",
         cursor: "pointer",

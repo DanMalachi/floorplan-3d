@@ -14,6 +14,9 @@ import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { MAX_STAIR_WIDTH, MIN_STAIR_WIDTH, stairMetrics } from "@/lib/stairs/stairGeometry";
 import { traceToScene } from "./traceToScene";
 import { preserveSceneEdits } from "@/lib/scene/preserveEdits";
+import { squareUpScene } from "@/lib/scene/squareUp";
+import { reglueKitchen } from "@/parametric/kitchenAttach";
+import { pdToast } from "@/ui/planDock/toast";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 
 // Precedent pair from src/dev/gtToScene.ts (interior 0.1 / exterior 0.2) —
@@ -31,6 +34,25 @@ const primaryBtn = (enabled = true): React.CSSProperties => ({
   padding: "9px 11px",
   opacity: enabled ? 1 : 0.45,
   cursor: enabled ? "pointer" : "not-allowed",
+});
+
+/**
+ * "Finish" — the control that ends a live drawing gesture. It is the only
+ * button in the rail whose moment matters: it does something exactly while a
+ * chain or a stair draft is open, and nothing at all otherwise. Sitting in a
+ * row of four identical chips it was easy to miss, so ARMED it turns green and
+ * glows (`.fp-armed` in globals.css). Green, not the rail's accent blue —
+ * blue everywhere else means "this mode is selected", not "commit this".
+ * Idle it dims, which is honest: clicking it then does nothing.
+ */
+const finishBtn = (armed: boolean): React.CSSProperties => ({
+  ...chip(false, { flex: 1, textAlign: "center" }),
+  // `border` (shorthand), never `borderColor`: `chip` already sets the
+  // shorthand, and React warns — correctly — that dropping a longhand on
+  // rerender while a conflicting shorthand stays is how stale borders happen.
+  ...(armed
+    ? { background: T.ok, border: "1px solid transparent", color: "#0a2e14", fontWeight: 700 }
+    : { opacity: 0.5 }),
 });
 
 const hintText: React.CSSProperties = { fontSize: 11.5, lineHeight: 1.45, color: T.textFaint };
@@ -81,6 +103,8 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   const deleteSelected = useSceneStore((s) => s.deleteSelected);
   const selectedPointId = useSceneStore((s) => s.selectedPointId);
   const selectedOpeningId = useSceneStore((s) => s.selectedOpeningId);
+  // A wall chain is open: every further click extends it until Finish (or Esc).
+  const drawingChain = useSceneStore((s) => s.activeLastPointId) != null;
   const icons = { door: "🚪 Door", window: "🪟 Window" } as const;
   const pickWall = (kind: SegmentKind) => {
     setMode("wall");
@@ -159,14 +183,28 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
           />
         </>
       )}
-      <div style={{ display: "flex", gap: 4 }}>
+      {/* Four chips do not fit the rail's ~196px of content width (they want
+          ~224), so this row has always clipped Delete. Wrapping is the honest
+          fix — and required now that Finish grows a tick mark when armed. */}
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {tools.includes("wall") && (
           <button style={chip(ortho, { flex: 1 })} onClick={() => setOrtho(!ortho)} title="Constrain walls to 90° (Shift inverts per click)">
             ⊾ 90°
           </button>
         )}
         <button style={chip(false, { flex: 1 })} onClick={undo}>↶ Undo</button>
-        <button style={chip(false, { flex: 1 })} onClick={finishChain}>Finish</button>
+        <button
+          className={drawingChain ? "fp-armed" : undefined}
+          style={finishBtn(drawingChain)}
+          onClick={finishChain}
+          title={
+            drawingChain
+              ? "End this run of walls — the next click starts a fresh one (Esc does the same)"
+              : "Ends a run of walls once you've started one"
+          }
+        >
+          {drawingChain ? "✓ Finish" : "Finish"}
+        </button>
         <button
           style={chip(false, { flex: 1, opacity: selectedPointId || selectedOpeningId ? 1 : 0.4 })}
           onClick={deleteSelected}
@@ -212,6 +250,7 @@ export function TraceRail() {
   const segments = useSceneStore((s) => s.segments);
   const openings = useSceneStore((s) => s.openings);
   const stairs = useSceneStore((s) => s.stairs);
+  const stairDrafting = useSceneStore((s) => s.stairDraft) != null;
   const selectedStairId = useSceneStore((s) => s.selectedStairId);
   const drawStairWidth = useSceneStore((s) => s.drawStairWidth);
   const drawStairRise = useSceneStore((s) => s.drawStairRise);
@@ -228,10 +267,13 @@ export function TraceRail() {
   const setTraceStep = useSceneStore((s) => s.setTraceStep);
 
   const [distance, setDistance] = useState("");
+  const [squareUp, setSquareUp] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const scaleSet = metersPerPixel != null;
-  const hasPdf = importedSegments.length > 0;
+  // DXF/DWG only. PDFs no longer carry vectors — theirs landed offset from the
+  // page render, so they made tracing harder (see importPdfClient.ts).
+  const hasVectors = importedSegments.length > 0;
   const analysis = useMemo(() => analyzeLoops(points, segments), [points, segments]);
   const canGenerate = analysis.loops.length > 0 && scaleSet;
 
@@ -321,16 +363,30 @@ export function TraceRail() {
     if (metersPerPixel == null) return;
     const prev = useSceneStore.getState();
     const texts = prev.importedTexts;
+    const traced = traceToScene({ points, segments, openings, stairs, metersPerPixel, texts });
+    // Square up before anything downstream sees the geometry. A hand trace
+    // leaves a tail of near-square walls (the ortho lock doesn't apply on the
+    // vertex/wall/CAD snap branches), and everything that runs ALONG a wall
+    // pays for it — worst of all the kitchen, whose L-runs turn exact right
+    // angles. Real diagonals are left alone; see src/lib/scene/squareUp.ts.
+    const squared = squareUp ? squareUpScene(traced) : null;
     // Re-derive everything the trace owns, but keep what only 3D knows: paint,
     // floors, door joinery, stair style, furniture. Without this, correcting one
     // wall in the trace would throw away every decision made in Build/Decorate.
-    setScene(
-      preserveSceneEdits(
-        prev.scene,
-        traceToScene({ points, segments, openings, stairs, metersPerPixel, texts }),
-      ),
-    );
+    const merged = preserveSceneEdits(prev.scene, squared?.scene ?? traced);
+    // The walls just moved under a kitchen that was already built, so re-glue
+    // it rather than leaving runs floating a centimetre off their wall.
+    setScene(squared?.report.straightened ? reglueKitchen(merged) : merged);
     setAppMode("build");
+    const r = squared?.report;
+    if (r?.straightened) {
+      const shift = Math.round(r.maxShift * 100);
+      pdToast(
+        `Squared up ${r.straightened} wall${r.straightened === 1 ? "" : "s"}` +
+          (r.diagonals ? `, kept ${r.diagonals} angled` : "") +
+          (shift >= 10 ? ` — moved a corner by ${shift}cm, worth a look` : ""),
+      );
+    }
   };
 
   const stepBody = (n: number): React.ReactNode => {
@@ -352,7 +408,7 @@ export function TraceRail() {
             <button style={primaryBtn(!importBusy)} disabled={importBusy} onClick={() => fileRef.current?.click()}>
               {importBusy ? "Importing…" : image ? "Replace plan…" : "Import plan…"}
             </button>
-            <div style={hintText}>Image (PNG/JPG/WebP) or PDF — CAD PDFs import their vectors, scans go through the image pipeline.</div>
+            <div style={hintText}>Image (PNG/JPG/WebP) or PDF — every PDF imports as a page you trace over. CAD vectors come from DXF/DWG.</div>
             {importMsg && <div style={statusText(importMsg.startsWith("✓"))}>{importMsg}</div>}
             {image && (
               <>
@@ -366,9 +422,9 @@ export function TraceRail() {
                     style={{ flex: 1 }}
                   />
                 </label>
-                {hasPdf && (
+                {hasVectors && (
                   <button style={railBtn(showImport)} onClick={() => setShowImport(!showImport)}>
-                    {showImport ? "✓ " : ""}Vector overlay
+                    {showImport ? "✓ " : ""}CAD vector overlay
                   </button>
                 )}
               </>
@@ -425,10 +481,10 @@ export function TraceRail() {
       case 3:
         return (
           <>
-            {hasPdf && (
-              <Disclosure label="Advanced (PDF)">
+            {hasVectors && (
+              <Disclosure label="Advanced (CAD)">
                 <button style={railBtn(wallSnap)} onClick={() => setWallSnap(!wallSnap)}>
-                  🧲 Snap tracing to PDF centerlines
+                  🧲 Snap tracing to CAD centerlines
                 </button>
               </Disclosure>
             )}
@@ -462,8 +518,17 @@ export function TraceRail() {
               >
                 ✎ Stair
               </button>
-              <button style={chip(false, { flex: 1, textAlign: "center" })} onClick={finishChain}>
-                Finish
+              <button
+                className={stairDrafting ? "fp-armed" : undefined}
+                style={finishBtn(stairDrafting)}
+                onClick={finishChain}
+                title={
+                  stairDrafting
+                    ? "Commit this staircase (Esc does the same)"
+                    : "Commits a staircase once you've started one"
+                }
+              >
+                {stairDrafting ? "✓ Finish" : "Finish"}
               </button>
               <button
                 style={chip(false, { flex: 1, textAlign: "center", opacity: selectedStair ? 1 : 0.4 })}
@@ -538,6 +603,15 @@ export function TraceRail() {
             {!canGenerate && (
               <div style={hintText}>Close at least one room loop — walls must connect back on themselves to make a floor.</div>
             )}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: T.textDim }}>
+              <input type="checkbox" checked={squareUp} onChange={(e) => setSquareUp(e.target.checked)} />
+              Square up near-square walls
+            </label>
+            <div style={hintText}>
+              Straightens walls traced a degree or two out — the ortho lock lets them
+              through whenever you click onto an existing corner or the plan underneath.
+              Genuinely angled walls are left as drawn.
+            </div>
             <button style={primaryBtn(canGenerate)} disabled={!canGenerate} onClick={generate}>
               Generate 3D model →
             </button>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import type { CameraControls } from "@react-three/drei";
 import type { Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { nodeMap } from "@/lib/rooms/roomArea";
@@ -30,14 +31,16 @@ const _inputDir = new THREE.Vector3();
 const _targetVel = new THREE.Vector3();
 const _diff = new THREE.Vector3();
 
-/** The camera's trip from the orbit view into the player's eyes on entry. */
-interface EntryFlight {
+/** The camera's trip between the orbit view and the player's eyes — into them
+ *  on entry, back out of them on exit (P2 T5). Same shape either direction:
+ *  just a lerp of position and a yaw/pitch pair from one pose to another. */
+interface CameraFlight {
   t: number; // 0..1
   durationS: number;
   from: THREE.Vector3;
   to: THREE.Vector3;
   fromYaw: number;
-  deltaYaw: number; // signed shortest arc from fromYaw to the spawn heading
+  deltaYaw: number; // signed shortest arc from fromYaw to the target heading
   fromPitch: number;
   toPitch: number;
 }
@@ -112,25 +115,51 @@ const MOVE_KEYS: Record<string, "forward" | "back" | "left" | "right" | "sprint"
  *  loop), so it still writes camera.position/quaternion from its own stale
  *  orbit state each frame. That runs at useFrame priority -1; ours below
  *  runs after (default priority), so our write wins for render — and because
- *  we never call any CameraControls setter, its internal state is untouched,
- *  so disabling walkthrough hands control straight back on exit with no
- *  manual restore needed. */
+ *  we never call any CameraControls setter, its internal state sits exactly
+ *  where the orbit view left it for the entire walkthrough session. That is
+ *  what makes it usable as the exit flight's TARGET (below) rather than
+ *  something this rig has to separately remember.
+ *
+ *  Phase 6 (P2 T5): exit now mirrors entry — a flight back OUT to that
+ *  untouched orbit pose, instead of the hard cut this used to be (unmount and
+ *  let `enabled` flip back to true, which snapped the view straight from the
+ *  player's eyes to wherever the orbit camera was sitting). `walkthroughActive`
+ *  still flips false the instant the user asks to leave (Esc here, or the
+ *  Scene panel's button — outside this component, watched via
+ *  `exitRequested`); only the actual unmount now waits for the flight to
+ *  land, signaled by `onExitComplete`. CameraControls has to stay disabled
+ *  for that whole tail too (Viewport.tsx keys `enabled` off a separate
+ *  `walkthroughMounted` flag, not `walkthroughActive`, for exactly this
+ *  reason) — otherwise a stray drag mid-flight would move the target we're
+ *  flying toward, and the handoff would snap to wherever THAT went instead of
+ *  where the flight visually landed. */
 export function WalkthroughRig({
   scene,
   offset,
   fovDeg,
-  onExit,
+  exitRequested,
+  onExitComplete,
   onLockChange,
 }: {
   scene: Scene;
   offset: { cx: number; cz: number };
   fovDeg: number;
-  onExit: () => void;
+  /** True once the user has asked to leave (Esc, or the Scene panel button)
+   *  — begins the exit flight. Not itself the unmount signal; see
+   *  onExitComplete. */
+  exitRequested: boolean;
+  /** Fired once the exit flight lands — the parent unmounts this rig (and
+   *  re-enables CameraControls) in response, not on `exitRequested` itself. */
+  onExitComplete: () => void;
   onLockChange: (locked: boolean) => void;
 }) {
   const { camera, gl } = useThree();
-  const nodes = useMemo(() => nodeMap(scene.nodes), [scene]);
-  const colliders = useMemo(() => buildWallColliders(scene, offset), [scene, offset]);
+  const controls = useThree((s) => s.controls) as CameraControls | null;
+  // nodes/walls only — a door swing republishes a new Scene object every
+  // frame (openings change) but keeps these sub-arrays referentially stable,
+  // so narrowing the deps skips this recompute during the ~1-2s swing.
+  const nodes = useMemo(() => nodeMap(scene.nodes), [scene.nodes]);
+  const colliders = useMemo(() => buildWallColliders(scene, offset), [scene.nodes, scene.walls, offset]);
   const blockingColliders = useMemo(() => {
     const furniture = buildFurnitureColliders(scene, offset);
     const doorLeaves = buildClosedDoorColliders(scene, nodes, offset);
@@ -161,7 +190,16 @@ export function WalkthroughRig({
   const groundRef = useRef(0);
   const eyeYRef = useRef(CFG.eyeHeightM);
   // Non-null only while the entry flight is in the air (see the mount effect).
-  const entryRef = useRef<EntryFlight | null>(null);
+  const entryRef = useRef<CameraFlight | null>(null);
+  // Non-null only while the exit flight is in the air (see triggerExit below).
+  const exitRef = useRef<CameraFlight | null>(null);
+
+  // Exiting walkthrough mid-swing (Esc, or leaving the mode entirely) would
+  // otherwise leave doorGestureActive stuck true, permanently suppressing
+  // N8AO for the rest of the session — clear it unconditionally on unmount.
+  useEffect(() => {
+    return () => useSceneStore.getState().setDoorGestureActive(false);
+  }, []);
 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
@@ -297,15 +335,82 @@ export function WalkthroughRig({
     // (Viewport's onKeyDown) treats Escape as "deselect" and calls
     // stopPropagation on the way up, which would otherwise swallow this
     // before it reaches a bubble-phase window listener.
+    //
+    // Just flips the store flag — same as the Scene panel's "Exit walkthrough"
+    // button does from outside this component entirely. Both routes converge
+    // on the `exitRequested` effect below, which is what actually begins the
+    // exit flight; Escape doesn't need its own copy of that logic.
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onExit();
+        useSceneStore.getState().setWalkthroughActive(false);
       }
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [onExit]);
+  }, []);
+
+  // P2 T5: begin the exit flight the moment the user asks to leave, however
+  // that request arrived (Esc above, or the Scene panel's button, which never
+  // touches this component directly — both just flip `walkthroughActive`,
+  // relayed here as `exitRequested`).
+  useEffect(() => {
+    if (!exitRequested || exitRef.current) return;
+    const cam = camera as THREE.PerspectiveCamera;
+
+    // Hand the cursor back right away — the camera itself may still spend up
+    // to entryFlightMaxS seconds visibly flying out.
+    if (document.pointerLockElement === gl.domElement) document.exitPointerLock();
+
+    // A same-instant Esc during the ENTRY flight (rare, but possible) cancels
+    // it rather than fighting it for the camera: the exit flight starts from
+    // wherever entry had gotten to, already sitting in cam.position since
+    // entry writes it every frame.
+    entryRef.current = null;
+
+    // CameraControls has been quietly sitting at the orbit pose for the
+    // entire session (see the class doc) — that is exactly the pose control
+    // hands back to on unmount, so it is the exit flight's target.
+    const toPos = new THREE.Vector3();
+    const toLookAt = new THREE.Vector3();
+    if (controls) {
+      controls.getPosition(toPos);
+      controls.getTarget(toLookAt);
+    } else {
+      // No CameraControls instance somehow — hold the current pose as both
+      // ends rather than crash; the flight collapses to a same-spot no-op
+      // and the mode just exits on the next frame.
+      toPos.copy(cam.position);
+      toLookAt.set(toPos.x - Math.sin(yawRef.current), toPos.y, toPos.z - Math.cos(yawRef.current));
+    }
+
+    // One-off allocation (this runs at most once per walkthrough session, not
+    // per frame) rather than hand-deriving yaw/pitch from the look-at vector.
+    const towards = new THREE.Object3D();
+    towards.position.copy(toPos);
+    towards.lookAt(toLookAt);
+    const toEuler = new THREE.Euler().setFromQuaternion(towards.quaternion, "YXZ");
+
+    const from = cam.position.clone();
+    const durationS = THREE.MathUtils.clamp(
+      from.distanceTo(toPos) / CFG.entryFlightSpeedMs,
+      CFG.entryFlightMinS,
+      CFG.entryFlightMaxS,
+    );
+    exitRef.current = {
+      t: 0,
+      durationS,
+      from,
+      to: toPos,
+      fromYaw: yawRef.current,
+      deltaYaw: shortestAngle(yawRef.current, toEuler.y),
+      fromPitch: pitchRef.current,
+      toPitch: toEuler.x,
+    };
+    // controls/camera/gl are stable for the component's life; only
+    // exitRequested's own transition should re-run this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exitRequested]);
 
   // TODO(mobile): this is keyboard+mouse only (§2 non-goal for this pass) —
   // touch input for movement/look would hook in here.
@@ -339,6 +444,27 @@ export function WalkthroughRig({
   useFrame((_state, rawDelta) => {
     const cam = camera as THREE.PerspectiveCamera;
     const delta = Math.min(rawDelta, 0.1); // clamp huge tab-away/lag spikes
+
+    // Exit flight (P2 T5) takes priority over everything below, symmetric
+    // with the entry flight's own early return: movement/doors/collision/
+    // look all sit out the trip back to the orbit pose exactly as they sit
+    // out the trip in. Once it lands, tell the parent — it unmounts this rig
+    // and re-enables CameraControls, which is already sitting at this exact
+    // pose (that's what we flew to), so the handoff is invisible.
+    const exit = exitRef.current;
+    if (exit) {
+      exit.t = Math.min(1, exit.t + delta / exit.durationS);
+      const k = ease(exit.t);
+      cam.position.lerpVectors(exit.from, exit.to, k);
+      const yaw = exit.fromYaw + exit.deltaYaw * k;
+      const pitch = THREE.MathUtils.lerp(exit.fromPitch, exit.toPitch, k);
+      cam.quaternion.setFromEuler(_euler.set(pitch, yaw, 0, "YXZ"));
+      if (exit.t >= 1) {
+        exitRef.current = null;
+        onExitComplete();
+      }
+      return;
+    }
 
     // Entry flight owns the camera until it lands. Movement, doors and
     // collision all sit this out: the player is already standing at the spawn,
@@ -386,6 +512,7 @@ export function WalkthroughRig({
     // currently sits rather than restarting from closed.
     if (targets.size > 0) {
       store.beginGesture();
+      if (!store.doorGestureActive) store.setDoorGestureActive(true);
       const liveScene = store.scene;
       const nextOpenings = liveScene.openings.map((o) => {
         const target = targets.get(o.id);
@@ -395,7 +522,10 @@ export function WalkthroughRig({
         return { ...o, ...applyOpeningValue(o, value) };
       });
       store.updateGesture({ ...liveScene, openings: nextOpenings });
-      if (targets.size === 0) store.endGesture("Door open/close (walkthrough)");
+      if (targets.size === 0) {
+        store.endGesture("Door open/close (walkthrough)");
+        store.setDoorGestureActive(false);
+      }
     }
 
     const keys = keysRef.current;

@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # App + tooling dependencies (package.json / package-lock.json at repo root).
+  # Covers both the Next.js app and the *.ts build/pipeline scripts under
+  # scripts/ — they share the one package.json.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+
+  # Actions used by our own workflows (.github/workflows/*.yml) — keeps
+  # actions/checkout, actions/setup-node, actions/setup-python etc. patched.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"

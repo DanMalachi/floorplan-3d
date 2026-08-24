@@ -1,0 +1,60 @@
+name: nextjs-ci
+
+# Lint + typecheck + build for the Next.js app (root package.json). Separate
+# from extraction-ci.yml, which covers only the Python extraction pipeline
+# under extraction/ — this workflow doesn't touch that.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Lint, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # `next lint` was removed in Next.js 16, so this calls eslint directly
+      # (eslint 9 flat config, see eslint.config.mjs).
+      #
+      # Gates on ERRORS only. The repo carries ~40 pre-existing warnings, mostly
+      # unused variables; failing on those would mean the first PR to touch this
+      # branch is red for reasons unrelated to it. Errors are held at zero, so a
+      # new one blocks — which is the part that protects the branch. Drive the
+      # warning count down over time, then add --max-warnings to ratchet it.
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  audit:
+    name: npm audit (high+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+
+      # Gate on high/critical only, not moderate/low — as of 2026-08-23 this
+      # repo has 5 high + 1 moderate open (nanoid, next, pdfjs-dist, postcss,
+      # sharp, undici — see PR notes for `npm audit fix` vs. `--force` split).
+      # Tighten to `--audit-level=moderate` once that backlog is cleared.
+      - run: npm audit --audit-level=high

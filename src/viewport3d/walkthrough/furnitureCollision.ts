@@ -5,7 +5,7 @@
 // recenter offset), so the rotation math is unchanged.
 
 import type { Scene } from "@/schema/scene";
-import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
 
 export interface FurnitureOBB {
@@ -31,7 +31,7 @@ export interface FurnitureOBB {
 export function buildFurnitureColliders(scene: Scene, offset: { cx: number; cz: number }): FurnitureOBB[] {
   const out: FurnitureOBB[] = [];
   for (const item of scene.furniture) {
-    const spec = CATALOG_BY_ID.get(item.assetId);
+    const spec = specOf(item);
     if (!spec || spec.noCollide) continue;
     if ((item.elevation ?? 0) >= CFG.furnitureElevationCutoffM) continue;
 

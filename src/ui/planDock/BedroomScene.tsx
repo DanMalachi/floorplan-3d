@@ -1,13 +1,20 @@
 "use client";
 
-import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
+import { isoBox, Extrusion, Bed, DoorSeam, ShelfLines, Plant, Rug, WallTv, FramedArt, DETAIL_LINE, FACE_FRONT, RoomSceneShell, ITEMS_Y, FLOOR_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
+// See LivingScene: "rug" moved off the decor button onto its own, now that
+// rugs are real products rather than a keyword hoping to match an IKEA item.
 export const BEDROOM_HOTSPOTS: RoomHotspot[] = [
   { id: "bed", label: "Bed", keywords: ["bed"] },
   { id: "nightstand", label: "Nightstand", keywords: ["side table", "nightstand"] },
   { id: "wardrobe", label: "Wardrobe", keywords: ["bookcase", "wardrobe", "closet", "coat rack"] },
-  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "rug", "plant"] },
+  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
+  // Wide roll-out: no media console here (unlike Living), so a plain
+  // wall-mounted panel of its own.
+  { id: "tv", label: "TV", keywords: ["tv", "television"] },
+  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
 
 export const BEDROOM_X0 = 12;
@@ -34,9 +41,21 @@ function BedroomItems(): RoomItem[] {
   const nightstand = isoBox(90, ITEMS_Y, 16, 16, 14);
   const wardrobe = isoBox(110, ITEMS_Y, 34, 50, 16);
   const decorBox = isoBox(150, ITEMS_Y, 30, 22, 14);
+  // Bedside rug: it runs along the open side of the bed, in the floor strip in
+  // front of it, at the length a real one has against a 2m bed. Held off the
+  // panel's bottom-left corner, which the app's compass badge sits over.
+  const rugBox = isoBox(48, FLOOR_Y - 9, 66, 0, 24);
+  // Wall-mounted, above the lamp/plant corner — clear of the wardrobe's own
+  // wall-band footprint to its left.
+  const wallTvBox = isoBox(154, 92, 32, 20, 2);
+  // Over the bed, where art goes in a bedroom and the only wall band this room
+  // has free. Drawn at true scale against the bed under it — a pair of prints
+  // spanning about half the bed's width, not one stamp-sized square.
+  const artBox = isoBox(30, 100, 38, 26, 2);
 
   return [
     { id: "bed", label: "Bed", keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
+    { id: "rug", label: "Rug", keywords: BEDROOM_HOTSPOTS[3].keywords, box: rugBox, art: <Rug x={48} yFront={FLOOR_Y - 9} w={66} depth={24} /> },
     {
       id: "nightstand",
       label: "Nightstand",
@@ -64,12 +83,25 @@ function BedroomItems(): RoomItem[] {
     {
       id: "decor",
       label: "Lamp & decor",
-      keywords: BEDROOM_HOTSPOTS[3].keywords,
+      keywords: BEDROOM_HOTSPOTS[4].keywords,
       box: decorBox,
       art: (
         <>
           <LampArt x={158} yFront={ITEMS_Y + 2} />
           <Plant x={172} yFront={ITEMS_Y + 6} r={4} potH={6} canopyR={6} />
+        </>
+      ),
+    },
+    { id: "tv", label: "TV", keywords: BEDROOM_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
+    {
+      id: "art",
+      label: "Wall art",
+      keywords: BEDROOM_HOTSPOTS[6].keywords,
+      box: artBox,
+      art: (
+        <>
+          <FramedArt x={30} yTop={74} w={22} h={26} scene="landscape" />
+          <FramedArt x={55} yTop={80} w={13} h={17} scene="abstract" />
         </>
       ),
     },

@@ -32,6 +32,7 @@ Compiled from a full-repo Explore pass on 2026-07-19, cross-checked against
 | `eval/corpus.jsonl`, `eval/bench-history.jsonl` | `legacy/eval/corpus.jsonl`, `legacy/eval/bench-history.jsonl` |
 | `floorplan-gt/**` | `legacy/data/floorplan-gt/**` |
 | `floorplan_for_training/**` | `legacy/data/floorplan_for_training/**` |
+| `src/lib/import/pdfOpsToGeometry.ts` (2026-08-24) | `legacy/src/lib/import/pdfOpsToGeometry.ts` |
 
 Why each is legacy, briefly:
 - `trace2d/` — classified by import-graph reachability (2026-08-01), not
@@ -97,6 +98,17 @@ Why each is legacy, briefly:
 - `lib/loops.ts` — planar-loop finding typed against trace-draft types; sole consumer is `trace2d/traceToScene.ts`.
 - `scripts/ocr_raster.py`, `propose_raster.py`, `extract_pdf.py` — the Python halves of OCR, classical-CV raster proposal, and PDF vector extraction, invoked by the legacy API routes below.
 - `scripts/eval/*` + `eval/corpus.jsonl` + `eval/bench-history.jsonl` — the old ad hoc benchmark harness (no `package.json` script entries, no CI — confirmed nothing else depends on its location).
+- `lib/import/pdfOpsToGeometry.ts` — moved 2026-08-24, the one entry here that
+  was never part of the Phase 0 sweep. It decoded a pdf.js operator list into
+  plan segments/arcs for the PDF "vector overlay" and the centerline snap
+  magnet, both of which were removed from PDF import: with no auto-detection
+  consuming the geometry its role was purely visual, and on real AutoCAD
+  exports it drew offset from the rendered page (it resolves the CTM stack but
+  not page `/Rotate` or a non-zero `/MediaBox` origin), which made hand-tracing
+  harder rather than easier. Now unreachable from any import graph; kept as
+  reference because it is a verified port of `scripts/extract_pdf.py`'s
+  geometry half. DXF/DWG vectors are untouched — theirs are correctly
+  registered and carry real-world scale.
 - `floorplan-gt/`, `floorplan_for_training/` — old-format hand-traced GT and their source plans. The 10 source plans were also copied (not moved) into `data/corpus/incoming/` and their GT programmatically converted to schema-v1 as a provisional corpus seed — see `docs/labeling-spec.md` and the Phase 0 gate report.
 
 ## Left in place, but now legacy-flagged or legacy-adjacent

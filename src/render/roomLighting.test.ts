@@ -4,8 +4,15 @@
 import type { FixtureItem, Node, Room, Scene, Wall } from "@/schema/scene";
 import { poleOfInaccessibility } from "@/lib/rooms/poleOfInaccessibility";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
-import { computeRoomLights } from "./roomLighting";
-import { ROOM_LIGHT } from "./contract";
+import { computeRoomLights, WALL_FIXTURE_REFERENCE_AREA_M2 } from "./roomLighting";
+import {
+  resolveCeilingHeights,
+  computeWallEffectiveHeights,
+  computeWallRenderHeights,
+  roomsWithCeiling,
+} from "./ceilingHeight";
+import { ROOM_LIGHT, MIN_CASTER_THICKNESS } from "./contract";
+import { WALL_HEIGHT } from "@/schema/constants";
 import { DEFAULT_FIXTURE_LUX, roomFixtureCandela, toRenderIntensity } from "./lightPresets";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 
@@ -63,6 +70,7 @@ console.log("\ncomputeRoomLights — driven by fixtures, no built-in fallback");
     n("d0", 20, 20), n("d1", 20.6, 20), n("d2", 20.6, 20.6), n("d3", 20, 20.6), // sliver
     n("e0", 30, 0), n("e1", 34, 0), n("e2", 34, 4), n("e3", 30, 4), // authored-open
     n("f0", 40, 0), n("f1", 46, 0), n("f2", 46, 3), n("f3", 43, 3), n("f4", 43, 6), n("f5", 40, 6), // L room
+    n("x0", 60, 0), n("x1", 64, 0), // exterior/facade wall — no Room loop ever references it
   ];
   const walls: Wall[] = [
     wall("wa0", "a0", "a1"), wall("wa1", "a1", "a2"), wall("wa2", "a2", "a3"), wall("wa3", "a3", "a0"),
@@ -72,6 +80,7 @@ console.log("\ncomputeRoomLights — driven by fixtures, no built-in fallback");
     wall("we0", "e0", "e1"), wall("we1", "e1", "e2"), wall("we2", "e2", "e3"), wall("we3", "e3", "e0"),
     wall("wf0", "f0", "f1"), wall("wf1", "f1", "f2"), wall("wf2", "f2", "f3"),
     wall("wf3", "f3", "f4"), wall("wf4", "f4", "f5"), wall("wf5", "f5", "f0"),
+    wall("wx0", "x0", "x1"), // exterior facade — not part of any Room
   ];
   const rooms: Room[] = [
     { id: "A", loop: ["a0", "a1", "a2", "a3"] },
@@ -188,6 +197,124 @@ console.log("\ncomputeRoomLights — driven by fixtures, no built-in fallback");
     const litB = computeRoomLights({ ...baseScene, fixtures: [onSideB] });
     check("the SAME wall, side 'b', lights room B instead", litB.some((l) => l.id === "wallB" && l.roomId === "B"));
     check("side 'b' does not also light room A", !litB.some((l) => l.roomId === "A"));
+
+    // --- Sprint 3a: a wall fixture lights its room even when that room is
+    // excluded from eligibleLitRooms (open-ceiling / undersized) — only a
+    // CEILING fixture's default is gated on those.
+    const balconyWallLight: FixtureItem = {
+      id: "wallBalcony", assetId: "fx:sconce", rotation: 0,
+      mount: { kind: "wall", wallId: "wc1", offset: 2, sill: 1.8, side: "a" },
+    };
+    const balconyLit = computeRoomLights({ ...baseScene, fixtures: [balconyWallLight] });
+    check("a wall fixture still lights a rail-bounded (open-ceiling) balcony",
+      balconyLit.some((l) => l.id === "wallBalcony" && l.roomId === "balcony"));
+    check("...but a ceiling fixture in that same balcony still gets no light",
+      computeRoomLights({ ...baseScene, fixtures: [ceilingFixture("fxBalconyCeiling", 2, -2)] }).length === 0);
+
+    const sliverWallLight: FixtureItem = {
+      id: "wallSliver", assetId: "fx:sconce", rotation: 0,
+      mount: { kind: "wall", wallId: "wd0", offset: 0.3, sill: 1.8, side: "a" },
+    };
+    check("a wall fixture also lights an undersized sliver room",
+      computeRoomLights({ ...baseScene, fixtures: [sliverWallLight] })
+        .some((l) => l.id === "wallSliver" && l.roomId === "sliver"));
+
+    // --- Sprint 3c: wall fixtures size themselves off a fixed reference
+    // area, not the actual (very different) room areas above.
+    const wallIntensityA = litA.find((l) => l.id === "wallA")!.intensity;
+    const wallIntensitySliver = computeRoomLights({ ...baseScene, fixtures: [sliverWallLight] })[0].intensity;
+    check("wall fixture intensity is the same fixed-area value regardless of room size",
+      Math.abs(wallIntensityA - wallIntensitySliver) < 1e-9,
+      `A(16m²)=${wallIntensityA} sliver(0.36m²)=${wallIntensitySliver}`);
+    check("...and matches the documented WALL_FIXTURE_REFERENCE_AREA_M2 formula",
+      Math.abs(wallIntensityA - toRenderIntensity(roomFixtureCandela(WALL_FIXTURE_REFERENCE_AREA_M2, DEFAULT_FIXTURE_LUX))) < 1e-9);
+  }
+
+  // -------------------------------------------------------------------------
+  console.log("\nexterior/unenclosed wall fixtures (Sprint 5)");
+  {
+    // wx0 (x0->x1) borders no Room at all — a facade/entrance sconce, exactly
+    // Dan's screenshot: a fixture that renders but was previously left dark.
+    const facadeLight: FixtureItem = {
+      id: "wallFacade", assetId: "fx:sconce", rotation: 0,
+      mount: { kind: "wall", wallId: "wx0", offset: 2, sill: 1.8, side: "a" },
+    };
+    const lit = computeRoomLights({ ...baseScene, fixtures: [facadeLight] });
+    check("a wall fixture with no bordering Room at all still gets a light",
+      lit.some((l) => l.id === "wallFacade"));
+    check("...at its own sill height, not a room ceiling",
+      Math.abs(lit.find((l) => l.id === "wallFacade")!.position[1] - 1.8) < 1e-9);
+    check("...at the same fixed-area candela other wall fixtures use",
+      Math.abs(lit.find((l) => l.id === "wallFacade")!.intensity
+        - toRenderIntensity(roomFixtureCandela(WALL_FIXTURE_REFERENCE_AREA_M2, DEFAULT_FIXTURE_LUX))) < 1e-9);
+
+    // A CEILING fixture with nothing under it is still a genuine no-light
+    // case — unchanged from Sprint 3a. Only wall mounts get the fallback.
+    const orphanCeiling = computeRoomLights({ ...baseScene, fixtures: [ceilingFixture("fxOrphan2", 62, 5)] });
+    check("a ceiling fixture with no room at all still gets nothing (unchanged)",
+      orphanCeiling.length === 0);
+  }
+
+  // -------------------------------------------------------------------------
+  console.log("\nper-room authored ceiling height (Sprint 4)");
+  {
+    const authored: Scene = { ...baseScene, rooms: baseScene.rooms.map((r) => (r.id === "A" ? { ...r, ceilingHeight: 3.6 } : r)) };
+    check("resolveCeilingHeights honors an authored room.ceilingHeight",
+      resolveCeilingHeights(authored).get("A") === 3.6);
+    check("...and leaves an unauthored room on the derived rule",
+      resolveCeilingHeights(authored).get("B") === WALL_HEIGHT);
+
+    const aCeilingLight = computeRoomLights({ ...authored, fixtures: [ceilingFixture("fxA", 2, 2)] })[0];
+    check("a ceiling fixture's height follows the authored ceilingHeight, not the wall default",
+      Math.abs(aCeilingLight.position[1] - (3.6 - ROOM_LIGHT.dropBelowCeilingM)) < 1e-9,
+      `y=${aCeilingLight.position[1]}`);
+
+    // The shared wall (wa1) borders A (authored 3.6) and B (derived WALL_HEIGHT,
+    // shorter) — it must rise to the taller room's height so B's riser rule
+    // (FloorMesh.tsx) can seal the gap on B's side.
+    const wallHeights = computeWallEffectiveHeights(authored, resolveCeilingHeights(authored));
+    check("a wall shared with a taller authored-ceiling room rises to match it",
+      wallHeights.get("wa1") === 3.6, `got ${wallHeights.get("wa1")}`);
+  }
+
+  // -------------------------------------------------------------------------
+  console.log("\nthe wall head hides the ceiling slab");
+  {
+    const roomH = resolveCeilingHeights(baseScene);
+    const effective = computeWallEffectiveHeights(baseScene, roomH);
+    const render = computeWallRenderHeights(baseScene, roomH, effective);
+
+    // The slab is a solid, its underside IS the ceiling plane, so its thickness
+    // lands in the airspace above the wall top unless the wall carries it.
+    check("a roofed room's wall is drawn a slab taller than its ceiling",
+      Math.abs((render.get("wa0") ?? 0) - (WALL_HEIGHT + MIN_CASTER_THICKNESS)) < 1e-9,
+      `got ${render.get("wa0")}`);
+    check("...while the ceiling plane itself does not move",
+      roomH.get("A") === WALL_HEIGHT, `got ${roomH.get("A")}`);
+
+    // The riser rule compares walls against ceiling planes. If the +slab leaked
+    // into the effective heights, EVERY wall would suddenly read as taller than
+    // its room's ceiling and grow a 12 cm riser it does not need.
+    check("the ceiling/riser contract is untouched by it",
+      effective.get("wa0") === WALL_HEIGHT, `got ${effective.get("wa0")}`);
+
+    // A balcony is open to the sky: no slab exists, so there is nothing to hide
+    // and its walls must not sprout a parapet.
+    check("balcony walls stay at their own height", render.get("wc1") === WALL_HEIGHT,
+      `got ${render.get("wc1")}`);
+    check("...and the balcony is correctly counted as roofless",
+      !roomsWithCeiling(baseScene).has("balcony") && roomsWithCeiling(baseScene).has("A"));
+    // Resolved through roomCeiling.ts, so an AUTHORED "open" wins over the
+    // geometry. `Ceilings` used to read rail edges itself and would roof a
+    // room explicitly marked open to the sky (§8.3's warning, in the wild).
+    check("an authored ceiling:\"open\" room is roofless even with no rail on it",
+      !roomsWithCeiling(baseScene).has("authoredOpen"));
+    check("...so its walls get no parapet either", render.get("we0") === WALL_HEIGHT,
+      `got ${render.get("we0")}`);
+
+    // A wall no room references has no slab bearing on it either.
+    check("a facade wall bordering no room is left alone", render.get("wx0") === WALL_HEIGHT,
+      `got ${render.get("wx0")}`);
   }
 
   // -------------------------------------------------------------------------

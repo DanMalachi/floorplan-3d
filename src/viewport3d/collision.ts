@@ -1,9 +1,9 @@
 // Plan-space collision for furniture: rotated-rectangle (OBB) intersection
 // via the separating axis theorem. Everything is 2D — Sims-accurate and cheap.
 
-import type { FurnitureItem, Scene } from "@/schema/scene";
+import type { FurnitureItem, ParametricSpec, Scene } from "@/schema/scene";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
-import { CATALOG_BY_ID } from "@/furniture/catalog";
+import { specOf } from "@/furniture/spec";
 
 export interface OBB {
   cx: number;
@@ -25,6 +25,16 @@ function corners(o: OBB): [number, number][] {
   }
   return pts;
 }
+
+/**
+ * Overlap, in metres, that two rectangles must share before they count as
+ * colliding. Touching is not colliding: a cabinet snapped flush to a wall sits
+ * with its back face exactly ON that wall's face, so the projections meet at a
+ * single value and a strict `<` test found no separating axis — a correctly
+ * placed run reported a collision and glowed red for as long as it existed.
+ * A millimetre is far below any real overlap and far above float noise.
+ */
+const TOUCH_EPS = 1e-3;
 
 /** Separating axis test between two rotated rectangles. */
 export function obbIntersects(a: OBB, b: OBB): boolean {
@@ -49,14 +59,15 @@ export function obbIntersects(a: OBB, b: OBB): boolean {
       bMin = Math.min(bMin, p);
       bMax = Math.max(bMax, p);
     }
-    if (aMax < bMin || bMax < aMin) return false; // found a separating axis
+    // Found a separating axis (they touch, or are apart, on this one).
+    if (aMax - bMin < TOUCH_EPS || bMax - aMin < TOUCH_EPS) return false;
   }
   return true;
 }
 
 /** This item's plan OBB, from its catalog footprint. */
-export function furnitureOBB(item: Pick<FurnitureItem, "assetId" | "x" | "y" | "rotation">): OBB | null {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+export function furnitureOBB(item: Pick<FurnitureItem, "assetId" | "parametric" | "x" | "y" | "rotation">): OBB | null {
+  const spec = specOf(item);
   if (!spec) return null;
   return { cx: item.x, cy: item.y, w: spec.footprint.w, d: spec.footprint.d, angle: item.rotation };
 }
@@ -87,11 +98,11 @@ export function wallOBBs(scene: Scene): OBB[] {
  * Rugs (`noCollide`) neither block nor get blocked.
  */
 export function placementCollides(
-  item: Pick<FurnitureItem, "id" | "assetId" | "x" | "y" | "rotation">,
+  item: Pick<FurnitureItem, "id" | "assetId" | "parametric" | "x" | "y" | "rotation">,
   scene: Scene,
   walls?: OBB[], // pass precomputed OBBs during drags
 ): boolean {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   if (!spec || spec.noCollide) return false;
   const me = furnitureOBB(item);
   if (!me) return false;
@@ -100,7 +111,7 @@ export function placementCollides(
   }
   for (const other of scene.furniture) {
     if (other.id === item.id) continue;
-    if (CATALOG_BY_ID.get(other.assetId)?.noCollide) continue;
+    if (specOf(other)?.noCollide) continue;
     const ob = furnitureOBB(other);
     if (ob && obbIntersects(me, ob)) return true;
   }
@@ -114,16 +125,21 @@ export interface WallSnapResult {
 }
 
 /**
- * Back-to-wall magnetism: if the item's center is within `range` of a wall's
- * face, align the item's back (-Z side) flush against that face, facing into
- * the room. Returns null when no wall is near.
+ * Back-to-wall magnetism: if the item's BACK is within `range` of a wall's
+ * face, align it (-Z side) flush against that face, facing into the room.
+ * Returns null when no wall is near.
+ *
+ * The measure is back-to-face, not centre-to-centerline: measuring from the
+ * centerline made the magnet weaker by half a wall thickness, so a 60cm-deep
+ * cabinet could not stay stuck to a 30cm wall at all — its flush position was
+ * already outside the old range.
  */
 export function snapToWall(
-  item: Pick<FurnitureItem, "assetId" | "x" | "y">,
+  item: { assetId: string; parametric?: ParametricSpec; x: number; y: number },
   scene: Scene,
-  range = 0.45,
+  range = 0.25,
 ): WallSnapResult | null {
-  const spec = CATALOG_BY_ID.get(item.assetId);
+  const spec = specOf(item);
   if (!spec?.wallSnap) return null;
   const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
   let best: { dist: number; res: WallSnapResult } | null = null;
@@ -144,13 +160,16 @@ export function snapToWall(
     const py = a.y + uy * t;
     // Signed side: normal (-uy, ux).
     const side = (item.x - px) * -uy + (item.y - py) * ux;
-    const dist = Math.abs(side);
-    if (dist > range || dist < 1e-9) continue;
+    if (Math.abs(side) < 1e-9) continue;
     const sign = Math.sign(side);
     const nx = -uy * sign; // wall normal pointing toward the item
     const ny = ux * sign;
     const th = w.thickness ?? DEFAULT_THICKNESS;
     const off = th / 2 + spec.footprint.d / 2;
+    // Gap between the item's back and this wall's face (negative = the item
+    // is overlapping the wall, which also snaps — it pops back out flush).
+    const dist = Math.abs(Math.abs(side) - off);
+    if (Math.abs(side) - off > range) continue;
     const res: WallSnapResult = {
       x: px + nx * off,
       y: py + ny * off,

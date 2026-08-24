@@ -44,7 +44,7 @@
 // UNCHANGED — it requires editing pointer handling inside the protected
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement } from "react";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
@@ -56,6 +56,10 @@ import {
 } from "@/furniture/catalog";
 import { useThumbnail } from "@/furniture/thumbnails";
 import { variantGroupFor } from "@/furniture/variants";
+import { GENERATORS } from "@/parametric";
+import { piecesOf, type CustomPiece } from "@/parametric/pieces";
+import type { ParametricSpec } from "@/schema/scene";
+import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
 import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
@@ -106,14 +110,20 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   outdoors: OUTDOORS_HOTSPOTS,
 };
 
-// Item dock resize (Plan Dock P9). Default is sized to comfortably fit 2 full
-// rows of ItemCard out of the box: card ≈ 4(pad-top) + 48(thumb) + 3(gap) +
-// ~11.4(name line, 9.5px/1.2) + 3(gap) + ~9.6(kind line, 8px/1.2) + 4(pad-bottom)
-// ≈ 83px, × 2 rows + 6px row gap ≈ 172px item-grid area; plus the resize
-// handle (12) + gap (6) + tab-icon row (28) + gap (6) + category/search row
-// (22) + inner gap (4) + outer padding (16) ≈ 268px total.
-const DOCK_HEIGHT_KEY = "planDock:dockHeight";
-const DOCK_HEIGHT_DEFAULT = 268;
+// Item dock resize (Plan Dock P9). One ItemCard ≈ 4(pad-top) + 48(thumb) +
+// 3(gap) + ~11.4(name line, 9.5px/1.2) + 3(gap) + ~9.6(kind line, 8px/1.2) +
+// 4(pad-bottom) ≈ 83px; the chrome around the grid (resize handle 12 + gap 6 +
+// tab-icon row 28 + gap 6 + category/search row 22 + inner gap 4 + outer
+// padding 16) ≈ 96px.
+//
+// P9 opened at TWO full rows (268). That reads as a drawer that opened itself:
+// it eats a third of a laptop viewport before you've asked for anything, in
+// every room. Default is now ONE full row plus a slice of the next — enough to
+// show there's more and to invite the resize handle, without covering the room
+// you're decorating. The storage key is versioned so a stored 268 from the old
+// default doesn't survive as a "choice" nobody made.
+const DOCK_HEIGHT_KEY = "planDock:dockHeight2";
+const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
 const DOCK_HEIGHT_MIN = 150; // old single-row height — still collapsible to compact
 const DOCK_HEIGHT_MAX_CAP = 560;
 
@@ -206,6 +216,17 @@ const ROOM_SCENES: { id: RoomType; label: string }[] = [
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
   const text = searchText(item);
+  return hotspot.keywords.some((k) => text.includes(k));
+}
+
+/** One browsable piece: a generator, plus which of its variants this card
+ *  places. A generator with no variants yields a single card. */
+/** Same test as `matchesHotspot`, for a custom piece. Custom cards used to
+ *  ignore the hotspot filter entirely, so clicking "Toilet" in the illustrated
+ *  room still showed every custom card the room had — the picture stopped
+ *  being a navigator. */
+function pieceMatchesHotspot(p: CustomPiece, hotspot: RoomHotspot): boolean {
+  const text = p.keywords.join(" ").toLowerCase();
   return hotspot.keywords.some((k) => text.includes(k));
 }
 
@@ -409,9 +430,108 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   );
 }
 
+
+/** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
+ *  placement of the generator's default spec, same ghost/click-to-place flow
+ *  as a catalog item. */
+function CustomCard({ piece }: { piece: CustomPiece }) {
+  const generator = piece.generator;
+  const placing = useSceneStore((s) => s.placing);
+  const placingRun = useSceneStore((s) => s.placingRun);
+  const placingCounter = useSceneStore((s) => s.placingCounter);
+  const placingWall = useSceneStore((s) => s.placingWall);
+  const assetId = `param:${generator.id}`;
+  // The card places ITS variant, at ITS size — resolved in piecesOf.
+  const spec: ParametricSpec = piece.spec;
+  // kitchenBase/kitchenWall use the run-draw drag tool (RunDrawGhost);
+  // counter items (sink/cooktop/worktop microwave/island hood) use the
+  // snap-onto-a-counter ghost and wall items (mirrors, towel rails, chimney
+  // hoods) the wall-grid ghost (both in CounterItemGhost); everything else
+  // keeps the single-click floor ghost.
+  const isRun = generator.id === "kitchenBase" || generator.id === "kitchenWall";
+  // Mounting follows THIS card's variant — a mirror hangs, the bin that shares
+  // its generator does not; a chimney hood hangs, a fridge does not.
+  const isWall = generator.wallMounted?.(spec) ?? false;
+  const isCounter = generator.counterItem?.(spec) ?? false;
+  // Compare the armed variant too, or all three toilet cards light up at once.
+  const sameVariant = (s: { spec: ParametricSpec } | null) => s?.spec.variant === spec.variant;
+  const active = isRun
+    ? placingRun?.generator === generator.id
+    : isCounter
+      ? placingCounter?.generator === generator.id && sameVariant(placingCounter)
+      : isWall
+        ? placingWall?.generator === generator.id && sameVariant(placingWall)
+        : placing?.assetId === assetId && placing?.parametric?.variant === spec.variant;
+  const Glyph = GENERATOR_GLYPH[piece.glyphKey] ?? GENERATOR_GLYPH[generator.id];
+
+  const arm = () => {
+    const s = useSceneStore.getState();
+    if (s.replaceTarget) return; // Replace flow doesn't support parametric items in v1
+    if (generator.id === "kitchenBase" || generator.id === "kitchenWall") {
+      s.setPlacingRun(active ? null : { generator: generator.id, spec });
+      return;
+    }
+    if (isCounter) {
+      s.setPlacingCounter(active ? null : { generator: generator.id, spec });
+      return;
+    }
+    if (isWall) {
+      s.setPlacingWall(active ? null : { generator: generator.id, spec });
+      return;
+    }
+    s.setPlacing(active ? null : assetId, spec);
+  };
+
+  return (
+    <button
+      onClick={arm}
+      title={piece.label}
+      style={{
+        flex: "0 0 auto",
+        width: 68,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 3,
+        padding: 4,
+        borderRadius: PD.radiusS,
+        border: `1.5px solid ${active ? PD.accent : "transparent"}`,
+        background: active ? PD.accentTint : PD.surfaceMuted,
+        cursor: "pointer",
+        fontFamily: PD.fontUi,
+      }}
+    >
+      <div style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
+        {Glyph && <Glyph size={30} />}
+      </div>
+      <span
+        style={{
+          fontSize: 7.5,
+          fontWeight: 700,
+          color: PD.accentText,
+          background: PD.accentTint,
+          borderRadius: 999,
+          padding: "1px 5px",
+          letterSpacing: 0.2,
+        }}
+      >
+        Custom
+      </span>
+      <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+        {piece.label}
+      </span>
+    </button>
+  );
+}
+
 function PaintTab() {
   const brush = useSceneStore((s) => s.brush);
-  const activeHex = brush?.kind === "paint" ? brush.hex : undefined;
+  // The same palette serves walls and window frames — which one a swatch lands
+  // on is the armed brush, not a second copy of the colour list. Frames take
+  // the colour immediately on pick (there is no surface to click: frame colour
+  // is whole-house), walls arm the brush for the next click.
+  const forFrames = brush?.kind === "frame";
+  const activeHex = brush?.kind === "paint" || brush?.kind === "frame" ? brush.hex : undefined;
   const [colors, setColors] = useState<TambourColor[] | null>(null);
   useEffect(() => {
     let alive = true;
@@ -421,20 +541,23 @@ function PaintTab() {
     };
   }, []);
   const grouped = useMemo(() => groupByFamily(colors ?? []), [colors]);
-  const pick = (hex: string | null) => useSceneStore.getState().setBrush({ kind: "paint", hex });
-  const plasterActive = brush?.kind === "paint" && activeHex === null;
+  const pick = (hex: string | null) =>
+    forFrames
+      ? useSceneStore.getState().setFrameColor(hex)
+      : useSceneStore.getState().setBrush({ kind: "paint", hex });
+  const plasterActive = activeHex === null && (brush?.kind === "paint" || forFrames);
   const families: TambourFamily[] = ["white", "neutral", "red", "orange", "yellow", "green", "blue", "purple"];
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 5, overflowX: "auto", alignItems: "flex-start", padding: "2px 2px" }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
       <button
         onClick={() => pick(null)}
-        title="Plaster (default)"
+        title={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
         style={{
           flex: "0 0 auto",
           width: 30,
           height: 30,
           borderRadius: 7,
-          background: "#d8d2c4",
+          background: "#f3ece1",
           cursor: "pointer",
           border: plasterActive ? `2px solid ${PD.accent}` : "1.5px solid transparent",
         }}
@@ -470,7 +593,7 @@ function FloorsTab() {
   const active = brush?.kind === "floor" ? brush.style : undefined;
   const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 6, overflowX: "auto", alignItems: "flex-start", padding: "2px 2px" }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
       {FAMILY_ORDER.flatMap((family) =>
         FLOOR_MATERIALS.filter((m) => m.family === family).map((m) => {
           const on = active === m.id;
@@ -520,6 +643,27 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   const roomItems = useMemo(() => getItemsForRoom(room), [room]);
   const hotspot = ROOM_HOTSPOTS[room]?.find((h) => h.id === activeHotspot);
 
+  // Pinned first and unaffected by the category chips, but the HOTSPOT filter
+  // does apply: the illustrated room is a navigator, so clicking the toilet in
+  // it has to narrow to toilets, custom cards included.
+  // Room membership is per CARD, not per generator: one appliance generator
+  // covers the Kitchen's fridge and the Laundry's washing machine, and neither
+  // tab should show the other's card.
+  const customGenerators = useMemo(
+    () =>
+      Object.values(GENERATORS)
+        .filter((g) => g.rooms.includes(room))
+        .flatMap(piecesOf)
+        .filter((p) => p.rooms.includes(room)),
+    [room],
+  );
+  const visibleCustom = useMemo(() => {
+    let out = customGenerators;
+    if (hotspot) out = out.filter((p) => pieceMatchesHotspot(p, hotspot));
+    const q = query.trim().toLowerCase();
+    return q ? out.filter((p) => p.label.toLowerCase().includes(q)) : out;
+  }, [customGenerators, hotspot, query]);
+
   const items = useMemo(() => {
     let out = roomItems;
     if (hotspot) out = out.filter((i) => matchesHotspot(i, hotspot));
@@ -546,7 +690,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   }, [roomItems]);
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", gap: 4 }}>
       {searchOpen ? (
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <input
@@ -586,14 +730,17 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               {c}
             </button>
           ))}
-          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{items.length}</span>
+          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start" }}>
-        {items.length === 0 ? (
+        {visibleCustom.length === 0 && items.length === 0 ? (
           <div style={{ padding: "8px 4px", fontSize: 11, color: PD.textTertiary }}>Nothing here yet.</div>
         ) : (
-          items.map((i) => <ItemCard key={i.assetId} item={i} />)
+          <>
+            {visibleCustom.map((p) => <CustomCard key={p.glyphKey} piece={p} />)}
+            {items.map((i) => <ItemCard key={i.assetId} item={i} />)}
+          </>
         )}
       </div>
     </div>
@@ -635,6 +782,7 @@ export function BottomDock() {
           flexDirection: "column",
           padding: "8px 12px",
           gap: 6,
+          overflow: "hidden",
           ...pdGlass(),
         }}
       >
@@ -657,7 +805,9 @@ export function BottomDock() {
           </Tooltip>
           {brush && (
             <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-              {brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop
+              {brush.kind === "frame"
+                ? "Window frames — pick a colour · Esc to stop"
+                : `${brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop`}
             </span>
           )}
           {!brush && replaceTarget && (

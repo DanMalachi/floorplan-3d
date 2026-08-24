@@ -3,10 +3,14 @@
 import { isoBox, Extrusion, ShelfLines, TableWithLegs, DETAIL_LINE, RoomSceneShell, ITEMS_Y, type RoomItem } from "./isoArt";
 import type { RoomHotspot } from "./KitchenScene";
 
+// Keywords are matched as plain substrings (see BottomDock's matchesHotspot),
+// so they have to be chosen with that in mind: bare "tool" matched every
+// bar STOOL in the catalog and showed them as tool racks. IKEA also spells
+// the item type "work bench", not "workbench".
 export const GARAGE_HOTSPOTS: RoomHotspot[] = [
-  { id: "workbench", label: "Workbench", keywords: ["workbench"] },
-  { id: "tools", label: "Tool rack", keywords: ["tool"] },
-  { id: "shelving", label: "Shelving", keywords: ["shelving", "shelf"] },
+  { id: "workbench", label: "Workbench", keywords: ["workbench", "work bench"] },
+  { id: "tools", label: "Tool rack", keywords: ["tool rack", "tool cabinet", "tool chest", "pegboard"] },
+  { id: "shelving", label: "Shelving", keywords: ["shelving", "shelf", "rack with hooks", "metal rack"] },
 ];
 
 export const GARAGE_X0 = 20;
