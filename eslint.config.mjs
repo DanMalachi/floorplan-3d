@@ -8,6 +8,9 @@ export default [
   {
     ignores: [
       "legacy/**", ".next/**", "node_modules/**", "public/**", "scripts/**",
+      // c8's HTML reporter output (docs/TESTING.md) — generated assets, not
+      // source, and regenerated on every `npm run test:coverage`.
+      "coverage/**",
       // The 3D layer is protected (CLAUDE.md rule 1, docs/PROTECTED_PATHS.md):
       // it must not be modified, so a gate over it can only produce findings
       // nobody is allowed to act on. Several rules are also plain wrong here —
