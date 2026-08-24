@@ -238,17 +238,18 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
 
   if (modes.length <= 1) return null; // view-only: no switcher
   return (
-    <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...glass({ borderRadius: 999 }) }}>
+    <nav aria-label="Editor mode" style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...glass({ borderRadius: 999 }) }}>
       {modes.map((m) => (
         <button
           key={m.id}
           onClick={() => setAppMode(m.id)}
+          aria-pressed={appMode === m.id}
           style={chip(appMode === m.id, { borderRadius: 999, border: "none", padding: "6px 18px", background: appMode === m.id ? T.accent : "transparent", color: appMode === m.id ? "#fff" : T.textDim })}
         >
           {m.label}
         </button>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -260,6 +261,7 @@ const SHARE_ROLES: ShareRole[] = ["view", "decorate", "build"];
  *  403. Offer exactly what `held` can actually hand out. */
 function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   const [open, setOpen] = useState(false);
+  const shareBtnRef = useRef<HTMLButtonElement>(null);
   const [role, setRole] = useState<ShareRole>("view");
   const [link, setLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -288,6 +290,21 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     if (open && !link) void makeLink("view");
   }, [open, link, makeLink]);
 
+  // A11y: the popover had no Escape handler, so once open the only way to
+  // dismiss it was to click the Share button again — reachable by keyboard,
+  // but Escape is what everyone reaches for, and it is what the rest of this
+  // app already does (ProjectsOverlay, AccountMenu, ConsentNotice).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      shareBtnRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const copy = async () => {
     await navigator.clipboard.writeText(link).catch(() => {});
     setCopied(true);
@@ -302,29 +319,46 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     <div style={{ position: "relative" }}>
       <div style={{ display: "flex", gap: 6 }}>
         <button onClick={saveCopy} style={chip(false)} title="Fork this plan into your own projects">
-          {saved ? "Saved ✓" : "Save a copy"}
+          {saved ? (
+            <>
+              Saved <span aria-hidden>✓</span>
+            </>
+          ) : (
+            "Save a copy"
+          )}
         </button>
-        <button onClick={() => setOpen((o) => !o)} style={chip(true)}>Share</button>
+        <button
+          ref={shareBtnRef}
+          onClick={() => setOpen((o) => !o)}
+          aria-haspopup="true"
+          aria-expanded={open}
+          style={chip(true)}
+        >
+          Share
+        </button>
       </div>
       {open && (
-        <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...glass({ borderRadius: T.radiusM }) }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Share this plan</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div role="group" aria-labelledby="fp-share-title" style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...glass({ borderRadius: T.radiusM }) }}>
+          <div id="fp-share-title" style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Share this plan</div>
+          <div role="group" aria-label="Link permission" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
               <button
                 key={r}
                 onClick={() => makeLink(r)}
+                // Which role the current link grants was shown by a leading ●
+                // and a border tint only.
+                aria-pressed={role === r}
                 style={{ textAlign: "left", padding: "7px 10px", borderRadius: T.radiusS, cursor: "pointer", fontFamily: T.font, fontSize: 12.5, color: T.text, border: `1px solid ${role === r ? T.accent : T.panelBorder}`, background: role === r ? T.accentSoft : T.inputBg }}
               >
-                {role === r ? "● " : ""}Anyone with the link — <b>{ROLE_LABEL[r]}</b>
+                {role === r ? <span aria-hidden>● </span> : ""}Anyone with the link — <b>{ROLE_LABEL[r]}</b>
               </button>
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input readOnly value={link} style={field({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
+            <input readOnly aria-label="Share link" value={link} style={field({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
             <button onClick={copy} disabled={!link} style={chip(true)}>{copied ? "Copied" : "Copy"}</button>
           </div>
-          {err && <div style={{ fontSize: 11.5, color: T.warn ?? T.textFaint }}>{err}</div>}
+          {err && <div role="alert" style={{ fontSize: 11.5, color: T.warn ?? T.textFaint }}>{err}</div>}
           {held !== "build" && (
             <div style={{ fontSize: 11, color: T.textFaint }}>
               You joined with a {ROLE_LABEL[held].toLowerCase()} link, so you can only
@@ -338,9 +372,11 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
 }
 
 function Avatar({ name, color }: Identity) {
+  // Announced as two stray capitals before; role="img" + the full name makes
+  // "who else is in this room" readable rather than decorative initials.
   return (
-    <div title={name} style={{ width: 28, height: 28, borderRadius: "50%", background: color, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.25)", marginLeft: -6, fontFamily: T.font }}>
-      {initials(name)}
+    <div role="img" aria-label={name} title={name} style={{ width: 28, height: 28, borderRadius: "50%", background: color, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.25)", marginLeft: -6, fontFamily: T.font }}>
+      <span aria-hidden>{initials(name)}</span>
     </div>
   );
 }
@@ -361,13 +397,17 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   };
   return (
     <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
-      <button onClick={leave} style={chip(false)} title="Back to your projects">← Projects</button>
+      <button onClick={leave} style={chip(false)} title="Back to your projects" aria-label="Back to your projects">
+        <span aria-hidden>← </span>Projects
+      </button>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...glass({ borderRadius: 999 }) }}>
-        <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: T.ok, fontSize: 10 }}>●</span> {count} here
+        {/* The head count changes as people join and leave — the one fact in
+            this room that arrives without the user doing anything. */}
+        <span role="status" style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
+          <span aria-hidden style={{ color: T.ok, fontSize: 10 }}>●</span> {count} here
           {role === "view" && <span style={{ color: T.textFaint }}>· view only</span>}
         </span>
-        <div style={{ display: "flex", paddingLeft: 6 }}>
+        <div role="group" aria-label="People in this room" style={{ display: "flex", paddingLeft: 6 }}>
           {me && <Avatar name={me.presence.name} color={me.presence.color} />}
           {others.map(({ connectionId, presence }) => (
             <Avatar key={connectionId} name={presence.name} color={presence.color} />

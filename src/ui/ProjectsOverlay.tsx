@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   listProjects,
   openProject,
@@ -41,6 +41,11 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const currentId = getCurrentProjectId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // What had focus before the gallery covered the editor, so it can be handed
+  // back on close instead of dumping the user at the top of the document.
+  const restoreRef = useRef<HTMLElement | null>(null);
 
   const refresh = () => setItems(listProjects());
 
@@ -68,6 +73,42 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // A11y: this covers the whole editor but was a plain <div> — so it had no
+  // dialog semantics, focus stayed wherever it was in the editor underneath,
+  // and Tab walked straight out of the gallery into chrome the user cannot
+  // see or use. Move focus in on open, keep it inside while open, and give it
+  // back on close. Pointer behaviour is untouched.
+  useEffect(() => {
+    restoreRef.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusable = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !root.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      restoreRef.current?.focus?.();
+    };
+  }, []);
 
   async function handleOpen(id: string) {
     // A card that came from the account but has never been on this computer:
@@ -110,6 +151,10 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fp-projects-title"
       style={{
         position: "fixed",
         inset: 0,
@@ -133,14 +178,21 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-          <span style={{ fontSize: 19, fontWeight: 600, color: T.text }}>Projects</span>
+          {/* h2 rather than span: it is the dialog's title and now names it.
+              Every default heading margin/size is overridden below, so it
+              renders exactly as the span did. */}
+          <h2 id="fp-projects-title" style={{ fontSize: 19, fontWeight: 600, color: T.text, margin: 0 }}>
+            Projects
+          </h2>
           <span style={{ fontSize: 13, color: T.textFaint }}>
             {items.length} {items.length === 1 ? "plan" : "plans"}
           </span>
         </div>
         <button
+          ref={closeRef}
           onClick={onClose}
           title="Close (Esc)"
+          aria-label="Close projects"
           style={{
             border: `1px solid ${T.panelBorder}`,
             background: T.inputBg,
@@ -153,7 +205,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
             lineHeight: 1,
           }}
         >
-          ×
+          <span aria-hidden>×</span>
         </button>
       </div>
 
@@ -187,7 +239,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
               transition: `border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
             }}
           >
-            <span style={{ fontSize: 30, lineHeight: 1 }}>+</span>
+            <span aria-hidden style={{ fontSize: 30, lineHeight: 1 }}>+</span>
             <span style={{ fontSize: 13 }}>New plan</span>
           </button>
 
@@ -197,6 +249,24 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
               <div
                 key={m.id}
                 onClick={() => renaming !== m.id && handleOpen(m.id)}
+                // A11y: the card was a plain div with an onClick, so opening a
+                // project was impossible without a pointer — and this is the
+                // gallery, the only way to reach any saved plan. It cannot be
+                // a <button> because it contains its own buttons (delete,
+                // rename) and a text input, so role="button" plus a key
+                // handler is the correct shape here.
+                role="button"
+                tabIndex={renaming === m.id ? -1 : 0}
+                aria-label={`Open ${m.name}${isCurrent ? " (currently open)" : ""}${m.cloudOnly ? " — in cloud, will download first" : ""}${m.liveRoomId ? " — live shared document" : ""}, last edited ${ago(m.updatedAt)}`}
+                onKeyDown={(e) => {
+                  if (renaming === m.id) return;
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  // Only the card itself; a key press inside the delete or
+                  // rename button belongs to that button.
+                  if (e.target !== e.currentTarget) return;
+                  e.preventDefault();
+                  void handleOpen(m.id);
+                }}
                 style={{
                   cursor: "pointer",
                   display: "flex",
@@ -220,14 +290,17 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   }}
                 >
                   {m.thumb ? (
+                    // Decorative: a snapshot of the 3D view. The card's own
+                    // label already names the plan, and describing the picture
+                    // would mean describing the model, which this cannot do.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={m.thumb}
-                      alt={m.name}
+                      alt=""
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
-                    <span style={{ fontSize: 30, color: T.textFaint }}>▱</span>
+                    <span aria-hidden style={{ fontSize: 30, color: T.textFaint }}>▱</span>
                   )}
                   <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
                     {isCurrent && (
@@ -277,7 +350,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                           gap: 4,
                         }}
                       >
-                        ● LIVE
+                        <span aria-hidden>●</span> LIVE
                       </span>
                     )}
                   </div>
@@ -287,6 +360,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       handleDelete(m);
                     }}
                     title="Delete plan"
+                    aria-label={`Delete ${m.name}`}
                     style={{
                       position: "absolute",
                       top: 8,
@@ -302,7 +376,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       lineHeight: 1,
                     }}
                   >
-                    🗑
+                    <span aria-hidden>🗑</span>
                   </button>
                 </div>
 
@@ -311,6 +385,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   {renaming === m.id ? (
                     <input
                       autoFocus
+                      aria-label={`Rename ${m.name}`}
                       value={draft}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => setDraft(e.target.value)}
@@ -352,6 +427,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                           startRename(m);
                         }}
                         title="Rename"
+                        aria-label={`Rename ${m.name}`}
                         style={{
                           border: "none",
                           background: "transparent",
@@ -362,7 +438,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                           flexShrink: 0,
                         }}
                       >
-                        ✎
+                        <span aria-hidden>✎</span>
                       </button>
                     </div>
                   )}
