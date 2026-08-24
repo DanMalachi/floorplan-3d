@@ -44,3 +44,23 @@ export const dataUrlImageSchema = z
   .string()
   .regex(/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=\s]+$/, "expected a png/jpeg/webp data URL")
   .max(24 * 1024 * 1024);
+
+/**
+ * What an abuse/takedown report can name as its target. Kept in sync by hand
+ * with the `target_kind` check constraint in
+ * supabase/migrations/0003_abuse_reports.sql — change both together. Exported
+ * (not inlined in the report route) because the public report page
+ * (src/app/report/page.tsx) needs the same list to render its form options.
+ */
+export const abuseTargetKindSchema = z.enum(["project", "share_link", "live_room", "asset", "other"]);
+
+/** Mirrors the `reason` check constraint in the same migration. */
+export const abuseReasonSchema = z.enum([
+  "copyright",
+  "privacy",
+  "illegal_content",
+  "harassment",
+  "malware",
+  "spam",
+  "other",
+]);
