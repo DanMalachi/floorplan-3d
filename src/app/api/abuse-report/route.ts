@@ -116,7 +116,10 @@ export async function POST(req: Request) {
       reporter_contact: reporterContact || null,
     });
     if (error) throw new Error(error.message);
-  } catch (e) {
+  } catch {
+    // Binding omitted deliberately: the log below carries a fixed, log-safe
+    // reason rather than the driver's message, which can echo back the
+    // reporter's own free text.
     logRequest({
       route: "abuse-report",
       status: 500,

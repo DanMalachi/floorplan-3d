@@ -128,7 +128,7 @@ export default function ReportPage() {
         <h1 style={{ fontSize: 27, fontWeight: 700, margin: "0 0 6px", letterSpacing: -0.3 }}>Report content</h1>
         <p style={{ fontSize: 13.5, lineHeight: 1.7, color: T.textDim, margin: "0 0 32px" }}>
           Use this form to report a plan, a shared link, a live collaboration room, or an uploaded image on
-          Floorplan → 3D that infringes your rights, exposes someone's private information, or otherwise violates
+          Floorplan → 3D that infringes your rights, exposes someone&apos;s private information, or otherwise violates
           our policies. You do not need an account to file a report, and we do not require your contact
           information.
         </p>
