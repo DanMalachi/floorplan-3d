@@ -131,7 +131,10 @@ export default function AccountPage() {
     // scroll inside it, exactly as src/app/legal/layout.tsx does.
     // No background of its own: globals.css already paints the app surface, and
     // this page is chrome, not a scene, so it inherits it.
-    <div
+    // <main>, not <div>: this page has no other landmark, so without it there
+    // is nothing for a screen reader to jump to. Identical rendering — <main>
+    // is display:block like a div, and every box property here is explicit.
+    <main
       style={{
         position: "fixed",
         inset: 0,
@@ -146,7 +149,7 @@ export default function AccountPage() {
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: PD.textPrimary, margin: 0 }}>Your data</h1>
           <Link href="/" style={{ fontSize: 12.5, color: PD.textTertiary, textDecoration: "none" }}>
-            ← Back to plans
+            <span aria-hidden>← </span>Back to plans
           </Link>
         </div>
 
@@ -212,7 +215,10 @@ export default function AccountPage() {
             >
               <Label>Delete account and data</Label>
               {done ? (
-                <Note>Your account and its data have been deleted. Signing you out…</Note>
+                // The page then reloads on a 1.5s timer, so this sentence is
+                // the only confirmation there will ever be that an
+                // irreversible action succeeded. It has to be announced.
+                <Note role="status">Your account and its data have been deleted. Signing you out…</Note>
               ) : info && !info.deletionAvailable ? (
                 <Note>
                   Deletion is not available on this deployment: the server has no <code>SUPABASE_SERVICE_ROLE_KEY</code>,
@@ -239,13 +245,19 @@ export default function AccountPage() {
                     What it cannot remove: if you shared a plan, that person&apos;s own copy lives in their browser and,
                     if they are signed in, on their own account. It is their data now and we have no way to reach it.
                   </Note>
-                  <Note>
+                  <Note id="fp-delete-confirm-hint">
                     Type <strong style={{ color: PD.textPrimary }}>{expected}</strong> to confirm.
                   </Note>
                   <input
                     value={typed}
                     onChange={(e) => setTyped(e.target.value)}
                     placeholder={expected}
+                    // The single most consequential field in the product had no
+                    // label at all — only a placeholder, which vanishes on the
+                    // first keystroke. The instruction above it is now wired in
+                    // as the field's description as well.
+                    aria-label="Type your email address to confirm account deletion"
+                    aria-describedby="fp-delete-confirm-hint"
                     autoComplete="off"
                     spellCheck={false}
                     style={{
@@ -286,7 +298,13 @@ export default function AccountPage() {
                     <ul style={{ margin: "6px 0 0", paddingLeft: 16 }}>
                       {stages.map((s) => (
                         <li key={s.stage}>
-                          {s.ok ? "✓" : "✗"} {s.stage}: {s.detail}
+                          {/* This list only ever appears when an irreversible
+                              deletion partly failed, so "which steps went
+                              wrong" has to be unambiguous. The tick/cross is
+                              kept exactly as drawn and the word is added
+                              off-screen, changing nothing visually. */}
+                          <span aria-hidden>{s.ok ? "✓" : "✗"}</span>
+                          <span className="fp-sr-only">{s.ok ? "Succeeded:" : "Failed:"}</span> {s.stage}: {s.detail}
                         </li>
                       ))}
                     </ul>
@@ -301,7 +319,7 @@ export default function AccountPage() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -311,14 +329,23 @@ const Card = ({ children }: { children: React.ReactNode }) => (
   <div style={{ ...pdGlass({ borderRadius: PD.radiusM }), padding: 18, display: "grid", gap: 8 }}>{children}</div>
 );
 
-const Label = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: PD.textTertiary }}>
+// A real <h2>, not a styled div: these are the page's section headings, and
+// heading navigation is how a screen-reader user skims a page like this one.
+// Every default heading style (size, weight, margin) is overridden here, so it
+// renders exactly as the div did.
+const Label = ({ id, children }: { id?: string; children: React.ReactNode }) => (
+  <h2
+    id={id}
+    style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: PD.textTertiary, margin: 0 }}
+  >
     {children}
-  </div>
+  </h2>
 );
 
-const Note = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ fontSize: 12.5, lineHeight: 1.6, color: PD.textSecondary }}>{children}</div>
+const Note = ({ id, role, children }: { id?: string; role?: "status"; children: React.ReactNode }) => (
+  <div id={id} role={role} style={{ fontSize: 12.5, lineHeight: 1.6, color: PD.textSecondary }}>
+    {children}
+  </div>
 );
 
 const Row = ({ k, v }: { k: string; v: string }) => (

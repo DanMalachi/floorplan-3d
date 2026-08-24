@@ -16,6 +16,23 @@ body {
   overflow: hidden;
 }
 
+/* Text for assistive technology only: removed from the visual layout without
+   being removed from the accessibility tree (`display:none` and
+   `visibility:hidden` would hide it from both). Used where a glyph carries
+   meaning that the design does not want spelled out on screen — e.g. the
+   tick/cross in the account-deletion stage report. */
+.fp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* An "armed" control: it does something RIGHT NOW and nothing at any other
    time. Only the trace rail's Finish button uses it so far — the one control
    that ends a live drawing gesture, previously indistinguishable from the three

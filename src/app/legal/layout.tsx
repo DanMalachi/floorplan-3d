@@ -20,6 +20,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
     >
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "56px 24px 96px" }}>
         <nav
+          aria-label="Legal"
           style={{
             display: "flex",
             alignItems: "center",
@@ -30,9 +31,9 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
           }}
         >
           <Link href="/" style={{ color: T.textDim, textDecoration: "none" }}>
-            ← Floorplan → 3D
+            <span aria-hidden>← </span>Floorplan → 3D
           </Link>
-          <span style={{ color: T.textFaint }}>·</span>
+          <span aria-hidden style={{ color: T.textFaint }}>·</span>
           <Link href="/legal/privacy" style={{ color: T.text, textDecoration: "none" }}>
             Privacy Policy
           </Link>
@@ -40,7 +41,10 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             Terms of Service
           </Link>
         </nav>
-        {children}
+        {/* These are long documents whose only landmark was the nav above.
+            <main> gives a screen reader somewhere to jump to; it is
+            display:block, so nothing moves. */}
+        <main>{children}</main>
       </div>
     </div>
   );
