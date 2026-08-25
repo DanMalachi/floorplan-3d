@@ -92,11 +92,46 @@ New rooms use full-length IDs and are not guessable.
 
 ---
 
-## 7. Dry-run the cleanup before letting it run for real
+## 7. Dry-run the cleanup
 
-The nightly sweep deletes old files. **Run it in preview mode first** by visiting
-the retention endpoint with `?dryRun=1`. It will report what it *would* delete
-without deleting anything. Read that list before enabling the real run.
+The nightly sweep deletes old files. Run it in preview mode with `?dryRun=1`,
+which reports what it *would* delete and deletes nothing.
+
+**This is not a gate you open.** Once step 4 set `CRON_SECRET`, the sweep is
+scheduled in `vercel.json` and runs by itself at 03:17 every night. The dry run
+tells you what it has been doing, not whether to allow it.
+
+**You cannot do this in a browser** — the route requires an `Authorization`
+header, so a browser visit returns 403. Use curl, and on Windows write
+`curl.exe` explicitly: in PowerShell, bare `curl` is an alias for
+`Invoke-WebRequest`, whose `-H` expects a hashtable and will reject the command.
+
+```
+curl.exe -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  "https://YOUR-PROD-URL/api/account/retention?dryRun=1"
+```
+
+**Read the body, not the status code.** The route returns HTTP 500 whenever
+anything went wrong *as well as* when it crashed, and puts the explanation in the
+response body either way. `Invoke-RestMethod` and `fetch` both throw on a non-2xx
+status and discard that body — which is exactly the diagnosis you need. `curl.exe`
+prints it regardless.
+
+What to look at, in order:
+
+| Field | What it means |
+|---|---|
+| `skipped` | Things it could not read. **Not empty means do not trust any other number here** — it means "I could not look", not "there is nothing there". |
+| `wouldDelete` | The actual list. This is the bit to read. |
+| `capped: true` | It hit the 5,000-item limit. Something is probably wrong. |
+| `purged` / `orphans` | The counts. Meaningless if `skipped` is non-empty. |
+
+**Green light:** `ok: true`, `skipped` empty, and nothing in the list you recognise
+as a live project. **Stop and ask:** anything you recognise, a non-empty `skipped`,
+`capped: true`, or counts in the thousands.
+
+If `skipped` reports `permission denied for table projects`, migration
+`0004_service_role_grants.sql` from step 1 has not been applied.
 
 ---
 
