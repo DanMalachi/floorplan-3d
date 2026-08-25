@@ -9,15 +9,24 @@ Work top to bottom. Steps 1–5 are required. Steps 6–8 are verification.
 
 ---
 
-## 1. Apply the database migration
+## 1. Apply the database migrations
 
-Supabase dashboard → **SQL Editor** → paste the whole contents of
-`supabase/migrations/0002_live_rooms.sql` → Run.
+Supabase dashboard → **SQL Editor**. Paste the whole contents of each file → Run,
+in this order:
 
-This creates the `live_rooms` table that records who owns a shared room.
+1. `supabase/migrations/0002_live_rooms.sql` — creates the `live_rooms` table that
+   records who owns a shared room.
+   **If you skip it:** share links stop working entirely — the server can no longer
+   tell a room's owner from a stranger, so it refuses everyone.
+2. `supabase/migrations/0004_service_role_grants.sql` — gives `service_role` the
+   table privileges it was never granted. RLS bypass is not table permission.
+   **If you skip it:** the nightly retention sweep and "delete my account" both
+   fail `permission denied for table projects`. Deletion fails safe rather than
+   half-finishing, but neither feature works, and the Privacy Policy promises both.
 
-**If you skip it:** share links stop working entirely — the server can no longer
-tell a room's owner from a stranger, so it refuses everyone.
+Applying the second one **re-arms account deletion for real** — it has never yet
+run successfully against the database. Test it on a throwaway Google account
+first; see step 8.
 
 ---
 
