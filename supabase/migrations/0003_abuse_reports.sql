@@ -79,3 +79,18 @@ alter table public.abuse_reports enable row level security;
 -- even if a future migration adds a grant here by copy-paste mistake, RLS
 -- still has no policy to let it through.
 revoke all on public.abuse_reports from anon, authenticated;
+
+-- ...but bypassing RLS is only half of it, and assuming otherwise is what broke
+-- the other two migrations. BYPASSRLS exempts service_role from the row
+-- policies; whether it may touch the table AT ALL is a separate gate, and a
+-- modern Supabase project hands the API roles no blanket privileges on `public`.
+-- 0001 and 0002 both granted to `authenticated` only, so every service-role path
+-- died on "permission denied for table ..." — the nightly retention sweep never
+-- once ran, and account deletion could not get past enumerating. This table is
+-- read and written EXCLUSIVELY by the service role, so without the grant below
+-- it would not merely be restricted, it would be unusable by its only caller.
+--
+-- This does not widen access by one row: anon and authenticated are revoked
+-- above, and RLS still has no policy for anyone. See 0004_service_role_grants.sql
+-- on accounts-cloud-sync, which repairs the two tables that shipped without it.
+grant select, insert, update, delete on public.abuse_reports to service_role;
