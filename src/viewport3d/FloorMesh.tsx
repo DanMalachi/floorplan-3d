@@ -84,6 +84,7 @@ function Floor({ roomId, style, geometry }: {
   const setSel3d = useSceneStore((s) => s.setSel3d);
 
   const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
   const tex = useFloorTexture(style, gl);
 
   // Per-room material (textures are shared) so the highlight stays per-room.
@@ -121,7 +122,10 @@ function Floor({ roomId, style, geometry }: {
   useEffect(() => () => mat.dispose(), [mat]);
   useEffect(() => {
     mat.emissiveIntensity = selected ? 0.25 : hovered ? 0.1 : 0;
-  }, [mat, hovered, selected]);
+    // Imperative material write — invisible to React, so the on-demand loop
+    // needs telling. See WallMesh WallGroup for the full note.
+    invalidate();
+  }, [mat, hovered, selected, invalidate]);
 
   return (
     <mesh

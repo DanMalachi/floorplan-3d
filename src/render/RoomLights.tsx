@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useStore, useThree } from "@react-three/fiber";
 import type { Scene } from "@/schema/scene";
 import { ROOM_LIGHT, SHADOW } from "./contract";
 import { computeRoomLights } from "./roomLighting";
@@ -41,6 +41,11 @@ export function RoomLights({ scene }: { scene: Scene }) {
     [scene.rooms, scene.walls, scene.nodes, scene.fixtures],
   );
   const camera = useThree((s) => s.camera);
+  // The store rather than `useThree(s => s.gl)`: the renderer is mutated below
+  // (shadow refresh), and reaching it through `getState()` keeps that out of the
+  // React Compiler's "don't modify a hook's return value" path — which models
+  // React state, not a retained-mode graphics API.
+  const store = useStore();
   const refs = useRef<(THREE.PointLight | null)[]>([]);
   const casting = useRef<Set<number>>(new Set());
   // Starts already "due" so the first shadow ranking lands on frame one
@@ -94,6 +99,14 @@ export function RoomLights({ scene }: { scene: Scene }) {
     refs.current.forEach((light, i) => {
       if (light) light.castShadow = next.has(i);
     });
+
+    // Shadow maps are refreshed on demand rather than every frame
+    // (`ShadowRefreshRig`), and a light that has just been promoted into a
+    // casting slot has never had its cube map rendered at all. Without this the
+    // newly-promoted lamp would light the room but cast nothing until some
+    // unrelated trigger happened to refresh. This runs only on the frames the
+    // rank actually changed — the early return above already filtered the rest.
+    store.getState().gl.shadowMap.needsUpdate = true;
   });
 
   return (

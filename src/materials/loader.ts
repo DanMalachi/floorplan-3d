@@ -21,6 +21,7 @@
  */
 
 import * as THREE from "three";
+import { invalidate } from "@react-three/fiber";
 import { getFloorMaterial } from "./registry";
 
 export interface FloorTextureSet {
@@ -59,15 +60,20 @@ export function loadFloorTextures(id: string): FloorTextureSet | null {
 
   loader ??= new THREE.TextureLoader();
 
-  const map = loader.load(material.maps.color);
+  // `invalidate` on arrival: the renderer draws on demand, and a texture that
+  // fills itself in later is invisible to React — the material object never
+  // changes identity, so nothing schedules the frame that would show it. Without
+  // this the floor keeps its untextured look until something unrelated happens
+  // to repaint. Harmless under `frameloop="always"`, where it is a no-op.
+  const map = loader.load(material.maps.color, () => invalidate());
   map.colorSpace = THREE.SRGBColorSpace;
   applyTiling(map, material.coverM);
 
-  const normalMap = loader.load(material.maps.normal);
+  const normalMap = loader.load(material.maps.normal, () => invalidate());
   normalMap.colorSpace = THREE.NoColorSpace; // direction data, never sRGB
   applyTiling(normalMap, material.coverM);
 
-  const roughnessMap = loader.load(material.maps.roughness);
+  const roughnessMap = loader.load(material.maps.roughness, () => invalidate());
   roughnessMap.colorSpace = THREE.NoColorSpace; // control signal, never sRGB
   applyTiling(roughnessMap, material.coverM);
 

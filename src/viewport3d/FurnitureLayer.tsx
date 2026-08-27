@@ -1,9 +1,9 @@
 "use client";
 
-import { Component, Suspense, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -44,8 +44,9 @@ interface ModelProps {
 }
 
 /** Clone a loaded GLTF scene and normalize it: plan bbox scaled to the catalog
- *  footprint, floored at y=0, centered. Materials are always cloned per instance
- *  so tinting/opacity never leak into drei's shared GLTF cache. */
+ *  footprint, floored at y=0, centered. Materials are cloned per instance ONLY
+ *  when this instance mutates them, so tinting/opacity still never leak into
+ *  drei's shared GLTF cache — see the ownership note on the traverse below. */
 function normalize(
   gltfScene: THREE.Object3D,
   footprint: { w: number; d: number } | undefined,
@@ -71,25 +72,43 @@ function normalize(
   // full-strength shadow — the known defect the class exists to make fixable in
   // one place (src/render/materialClass.ts), rather than a per-mesh oversight.
   applyShadowClass(clone, opacity !== undefined ? "transient" : "opaqueArchitecture");
-  clone.traverse((o) => {
-    if (!(o instanceof THREE.Mesh)) return;
-    const mats = Array.isArray(o.material) ? o.material : [o.material];
-    o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
-      | THREE.Material
-      | THREE.Material[];
-    const applied = Array.isArray(o.material) ? o.material : [o.material];
-    for (const m of applied) {
-      if (opacity !== undefined) {
-        m.transparent = true;
-        m.opacity = opacity;
-        m.depthWrite = false;
+  // Material ownership, and who is allowed to dispose what.
+  //
+  // Cloning is what makes tint/opacity safe: without it a placement ghost would
+  // write its transparency straight into drei's cached GLTF materials and every
+  // other placement of the same model would go see-through. But an instance with
+  // neither tint nor opacity never writes to its material at all, so it can
+  // reference the cached originals directly — nothing to clone, nothing to leak,
+  // and repeated placements of one model keep sharing a material, which is what
+  // lets three batch them by program instead of rebinding per draw.
+  //
+  // `ownsMaterials` records which of the two branches ran, because the caller
+  // has to know what this group is allowed to free. Geometry is deliberately not
+  // in that set: `Object3D.clone()` copies the graph and shares the underlying
+  // BufferGeometry by reference, so it still belongs to drei's cache.
+  const ownsMaterials = opacity !== undefined || tint === "red";
+  if (ownsMaterials) {
+    clone.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      o.material = (Array.isArray(o.material) ? mats.map((m) => m.clone()) : mats[0].clone()) as
+        | THREE.Material
+        | THREE.Material[];
+      const applied = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of applied) {
+        if (opacity !== undefined) {
+          m.transparent = true;
+          m.opacity = opacity;
+          m.depthWrite = false;
+        }
+        if (tint === "red" && m instanceof THREE.MeshStandardMaterial) {
+          m.emissive = new THREE.Color("#ff3b30");
+          m.emissiveIntensity = 0.55;
+        }
       }
-      if (tint === "red" && m instanceof THREE.MeshStandardMaterial) {
-        m.emissive = new THREE.Color("#ff3b30");
-        m.emissiveIntensity = 0.55;
-      }
-    }
-  });
+    });
+  }
+  wrapper.userData.ownsMaterials = ownsMaterials;
   return wrapper;
 }
 
@@ -110,6 +129,29 @@ function GlbModel({ url, footprint, draco, tint, opacity, rotation }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [gltf.scene, footprint, tint, opacity, rotKey],
   );
+
+  // Free the materials `normalize` cloned when this group is replaced.
+  //
+  // `tint` is in the memo's dep list and flips on every pointermove while a drag
+  // is colliding, so without this each pointer event strands a whole cloned
+  // material set — with its compiled program and texture bindings — on the GPU
+  // for the life of the tab. That is invisible on a card with 6 GB of dedicated
+  // VRAM and is not invisible on a laptop sharing memory with the OS.
+  //
+  // Only materials, and only when we cloned them: geometry is shared by
+  // reference with drei's GLTF cache, so disposing it here would tear it out
+  // from under every other placement of the same model.
+  useEffect(() => {
+    return () => {
+      if (!obj.userData.ownsMaterials) return;
+      obj.traverse((o) => {
+        if (!(o instanceof THREE.Mesh)) return;
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) m.dispose();
+      });
+    };
+  }, [obj]);
+
   return <primitive object={obj} />;
 }
 
@@ -288,6 +330,7 @@ function FurnitureItemView({ item, offset }: {
   // Placement pop: newly mounted furniture springs from 78% to full size.
   const popRef = useRef<THREE.Group>(null);
   const popDone = useRef(false);
+  const invalidate = useThree((s) => s.invalidate);
   useFrame((_, dt) => {
     const g = popRef.current;
     if (!g || popDone.current) return;
@@ -296,7 +339,12 @@ function FurnitureItemView({ item, offset }: {
     if (Math.abs(1 - s) < 1e-3) {
       g.scale.setScalar(1);
       popDone.current = true;
+      return; // settled — stop asking for frames
     }
+    // The pop is driven imperatively on the group, so nothing else schedules
+    // the next frame under demand rendering and the item would freeze at ~85%
+    // of full size. Self-terminating: the branch above stops the chain.
+    invalidate();
   });
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import * as THREE from "three";
+import { invalidate } from "@react-three/fiber";
 import { makeCanvas, mulberry32, heightToNormal, applyTiling } from "@/decorate/proceduralTexture";
 
 // Materials, pictures and mouldings for the wall-art generator.
@@ -84,7 +85,9 @@ function artTexture(art: Artwork): THREE.Texture | null {
   if (!t) {
     // Loaded, not drawn: the decode is async and three swaps the image in when
     // it arrives, so the frame is empty for a frame or two and then hung.
-    t = new THREE.TextureLoader().load(art.url);
+    // `invalidate` on arrival: under demand rendering nothing else schedules
+    // the frame that shows the picture, since no React prop changed.
+    t = new THREE.TextureLoader().load(art.url, () => invalidate());
     t.channel = 1;
     t.colorSpace = THREE.SRGBColorSpace;
     // The picture must never repeat into the mount board or around a canvas's

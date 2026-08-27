@@ -24,12 +24,18 @@ import { assertRenderContract } from "./contract";
  */
 export function RenderContractCheck() {
   const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
   const frame = useRef(0);
   const checked = useRef(false);
   useFrame(() => {
     if (checked.current) return;
     if (frame.current < 1) {
       frame.current++;
+      // Under demand rendering a second frame is not guaranteed to arrive on
+      // its own, and this assertion exists precisely for the case where nobody
+      // is looking. Ask for the frame it needs rather than hoping mount churn
+      // supplies one.
+      invalidate();
       return;
     }
     checked.current = true;

@@ -5,6 +5,7 @@
  *  asynchronous-fill contract and the packed-ORM channel reasoning. */
 
 import * as THREE from "three";
+import { invalidate } from "@react-three/fiber";
 import { getWindowMaterial } from "./registryWindows";
 
 export interface WindowTextureSet {
@@ -34,15 +35,16 @@ export function loadWindowTextures(id: string): WindowTextureSet | null {
 
   loader ??= new THREE.TextureLoader();
 
-  const map = loader.load(material.maps.color);
+  // `invalidate` on arrival — see loaderDoors.ts for why.
+  const map = loader.load(material.maps.color, () => invalidate());
   map.colorSpace = THREE.SRGBColorSpace;
   applyTiling(map, material.coverM);
 
-  const normalMap = loader.load(material.maps.normal);
+  const normalMap = loader.load(material.maps.normal, () => invalidate());
   normalMap.colorSpace = THREE.NoColorSpace;
   applyTiling(normalMap, material.coverM);
 
-  const orm = loader.load(material.maps.orm);
+  const orm = loader.load(material.maps.orm, () => invalidate());
   orm.colorSpace = THREE.NoColorSpace;
   applyTiling(orm, material.coverM);
 

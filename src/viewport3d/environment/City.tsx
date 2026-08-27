@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useThree } from "@react-three/fiber";
 import { useSceneStore } from "@/store/useSceneStore";
 
 // F5.3 — City / high-rise preset. The model reads as the TOP UNIT of an
@@ -153,6 +154,7 @@ function buildSkyline(span: number, halfX: number, halfZ: number) {
 
 export function City({ span, halfX, halfZ }: { span: number; halfX: number; halfZ: number }) {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
+  const invalidate = useThree((s) => s.invalidate);
   const { towers, bhx, bhz, hostTop, hostH, hazeY } = useMemo(
     () => buildSkyline(span, halfX, halfZ),
     [span, halfX, halfZ],
@@ -209,7 +211,8 @@ export function City({ span, halfX, halfZ }: { span: number; halfX: number; half
   useLayoutEffect(() => {
     const g = nightFactor(timeOfDay) * 1.15;
     facadeMats.forEach((m) => { m.emissiveIntensity = g; });
-  }, [timeOfDay, facadeMats]);
+    invalidate(); // imperative material write — see WallMesh WallGroup
+  }, [timeOfDay, facadeMats, invalidate]);
 
   // Host tower under the model: a plain box with the facade on every side, its
   // top flush with the model floor (y=0), capped by a flat deck quad just below

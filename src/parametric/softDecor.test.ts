@@ -685,7 +685,10 @@ console.log("\nthe pictures are real files, and the registry knows their shape")
   // A generator can't ask an <img> for its size synchronously, so the aspect
   // is hard-coded in ARTWORKS — which makes this the check that keeps it
   // honest. Wrong by 10% and the painting is stretched by 10%.
-  const sharp = require("sharp") as typeof import("sharp");
+  // `typeof import("sharp")` is the module NAMESPACE, which is not callable —
+  // sharp exposes the callable as its default export. Under sharp 0.35 this cast
+  // made `sharp(file)` a type error and broke `next build` for the whole app.
+  const sharp = require("sharp") as typeof import("sharp").default;
   for (const art of ARTWORKS) {
     const file = resolve(process.cwd(), "public", art.url.replace(/^\//, ""));
     const there = existsSync(file);

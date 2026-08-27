@@ -61,6 +61,7 @@ function shouldIgnore(e: KeyboardEvent): boolean {
 export function CameraKeyboardRig({ halfX, halfZ }: { halfX: number; halfZ: number }) {
   const controls = useThree((s) => s.controls) as CameraControls | null;
   const rootScene = useThree((s) => s.scene);
+  const invalidate = useThree((s) => s.invalidate);
   const heldRef = useRef({ fwd: false, back: false, left: false, right: false, orbitLeft: false, orbitRight: false });
   // What "T" restores when toggling back OUT of top view — top itself is
   // never a valid "previous" mode to restore into.
@@ -81,7 +82,14 @@ export function CameraKeyboardRig({ halfX, halfZ }: { halfX: number; halfZ: numb
       const orbit = ORBIT_KEYS[e.code];
       if (orbit) held[orbit === "left" ? "orbitLeft" : "orbitRight"] = down;
     };
-    const onKeyDown = (e: KeyboardEvent) => setKey(e, true);
+    const onKeyDown = (e: KeyboardEvent) => {
+      setKey(e, true);
+      // `setKey` only records the held state; the actual truck/orbit happens in
+      // useFrame. Under demand rendering no frame is scheduled by a keypress,
+      // so without this the first key does nothing at all. Once one frame runs,
+      // camera-controls' own events keep the chain alive.
+      invalidate();
+    };
     const onKeyUp = (e: KeyboardEvent) => setKey(e, false);
     // A key held down when focus/window is lost (Alt-tab etc.) never gets
     // its keyup — without this the camera would truck forever in one
@@ -97,7 +105,7 @@ export function CameraKeyboardRig({ halfX, halfZ }: { halfX: number; halfZ: numb
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, []);
+  }, [invalidate]);
 
   // One-shot actions: T / F / Home. Edge-triggered on keydown, separate from
   // the held-key loop above — holding F down shouldn't re-fire a fitToBox

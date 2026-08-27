@@ -13,7 +13,7 @@ import {
   type ProjectMeta,
 } from "@/store/projectPersistence";
 import { ensureDownloaded } from "@/store/syncEngine";
-import { captureViewportThumb } from "@/viewport3d/viewportCapture";
+import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, microLabel } from "@/ui/tokens";
 
@@ -49,11 +49,18 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
   useEffect(() => subscribeProjects(refresh), []);
 
   // Snapshot the open project's 3D view, then list everything.
+  //
+  // The snapshot is awaited now rather than read synchronously: it is served
+  // from inside the render loop (`<ThumbCaptureRig>`) on the next frame, which
+  // is what lets the WebGL context drop `preserveDrawingBuffer` and stop paying
+  // for a readable buffer on every frame of the app's life. It resolves null if
+  // no viewport is mounted or the tab is backgrounded, which is the same
+  // "fall back to a placeholder" case the old path already had.
   useEffect(() => {
     let alive = true;
     const cur = getCurrentProjectId();
-    const thumb = captureViewportThumb();
     (async () => {
+      const thumb = await requestViewportThumb();
       if (cur && thumb) await setProjectThumb(cur, thumb);
       if (alive) refresh();
     })();

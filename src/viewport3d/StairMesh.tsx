@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import type { ThreeEvent } from "@react-three/fiber";
+import { useThree, type ThreeEvent } from "@react-three/fiber";
 import type { Scene, Stair } from "@/schema/scene";
 import { shadowProps } from "@/render/materialClass";
 import { LANDING_SLAB } from "@/schema/constants";
@@ -196,6 +196,7 @@ function buildPieces(stair: Stair): Piece[] {
 function StairMesh({ stair }: { stair: Stair }) {
   const selected = useSceneStore((s) => s.sel3d?.kind === "stair" && s.sel3d.id === stair.id);
   const hovered = useSceneStore((s) => s.hover3d?.kind === "stair" && s.hover3d.id === stair.id);
+  const invalidate = useThree((s) => s.invalidate);
 
   const material = useMemo(
     () =>
@@ -215,7 +216,8 @@ function StairMesh({ stair }: { stair: Stair }) {
   // selected object rather than inventing its own highlight.
   useEffect(() => {
     material.emissiveIntensity = selected ? 0.14 : hovered ? 0.08 : 0;
-  }, [material, selected, hovered]);
+    invalidate(); // imperative write — see WallMesh WallGroup
+  }, [material, selected, hovered, invalidate]);
 
   const pieces = useMemo(() => buildPieces(stair), [stair]);
   useEffect(

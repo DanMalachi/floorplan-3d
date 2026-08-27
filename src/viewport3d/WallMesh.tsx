@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS, RAIL_HEIGHT } from "@/schema/constants";
@@ -162,6 +162,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const invalidate = useThree((s) => s.invalidate);
   const selSide = useSceneStore((s) =>
     isPick(s.sel3d, "wall", wall.id) ? s.sel3d!.side ?? "a" : null,
   );
@@ -293,7 +294,12 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
       selected ? (isTarget ? 0.14 : 0.03) : hovered ? 0.06 : 0;
     matA.emissiveIntensity = face(selSide === "a");
     matB.emissiveIntensity = face(selSide === "b");
-  }, [neutral, matA, matB, selected, hovered, selSide]);
+    // Written straight to the material, so React never sees it and the
+    // on-demand loop has no other reason to draw. Without this, hover glow
+    // simply stops appearing — the one Phase 2 regression that stays invisible
+    // until someone hovers a wall.
+    invalidate();
+  }, [neutral, matA, matB, selected, hovered, selSide, invalidate]);
 
   // Cutaway: fade walls on the camera's side of the model so the interior
   // reads. Smoothly damped per frame; no React re-renders involved.
@@ -317,6 +323,11 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
         m.opacity = o;
         m.depthWrite = dw;
       }
+      // Keep the loop alive until the fade settles. Called from inside useFrame,
+      // R3F schedules one more frame, so the chain sustains itself and stops the
+      // moment the guard above goes false. Without it the fade freezes
+      // half-transparent as soon as the camera stops moving.
+      invalidate();
     }
   });
 
@@ -593,6 +604,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "opening", opening.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "opening", opening.id));
+  const invalidate = useThree((s) => s.invalidate);
   const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<OpeningDrag | null>(null);
 
@@ -758,7 +770,8 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
     mats.frame.emissiveIntensity = g;
     mats.leaf.emissiveIntensity = g;
     mats.mullion.emissiveIntensity = g;
-  }, [mats, selected, hovered]);
+    invalidate(); // imperative write — see WallGroup above
+  }, [mats, selected, hovered, invalidate]);
 
   // Cutaway: fade joinery on the camera's side, mirroring WallGroup. Damped per
   // frame, no re-renders. Top mode hides joinery entirely (walls drop to stubs).
@@ -785,6 +798,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         m.transparent = true;
         m.depthWrite = role === "glass" ? false : o > 0.55;
       }
+      invalidate(); // sustain the fade — see WallGroup above
     }
   });
 
@@ -1029,6 +1043,7 @@ function RailGroup({ wall, a, b, offset }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const invalidate = useThree((s) => s.invalidate);
   const wallMode = useSceneStore((s) => s.wallMode);
   const drag = useRef<DragState | null>(null);
 
@@ -1077,7 +1092,8 @@ function RailGroup({ wall, a, b, offset }: {
   useEffect(() => {
     glass.emissiveIntensity = glow;
     cap.emissiveIntensity = glow;
-  }, [glass, cap, glow]);
+    invalidate(); // imperative write — see WallGroup above
+  }, [glass, cap, glow, invalidate]);
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;
@@ -1220,6 +1236,7 @@ function PortalGroup({ wall, a, b, offset }: {
 }) {
   const hovered = useSceneStore((s) => isPick(s.hover3d, "wall", wall.id));
   const selected = useSceneStore((s) => isPick(s.sel3d, "wall", wall.id));
+  const invalidate = useThree((s) => s.invalidate);
   const appMode = useSceneStore((s) => s.appMode);
   const drag = useRef<DragState | null>(null);
 
@@ -1252,7 +1269,8 @@ function PortalGroup({ wall, a, b, offset }: {
   useEffect(() => {
     band.opacity = selected ? 0.95 : hovered ? 0.75 : 0.42;
     band.emissiveIntensity = selected ? 0.6 : hovered ? 0.4 : 0.22;
-  }, [band, selected, hovered]);
+    invalidate(); // imperative write — see WallGroup above
+  }, [band, selected, hovered, invalidate]);
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (e.button !== 0) return;

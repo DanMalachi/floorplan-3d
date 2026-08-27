@@ -3,9 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { CameraControls, Grid, Html, Line } from "@react-three/drei";
-import { EffectComposer, N8AO, ToneMapping, SMAA } from "@react-three/postprocessing";
+import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
-import { DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
+import { CONTEXT, DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
+import { AmbientOcclusion } from "@/render/AmbientOcclusion";
+import { ShadowRefreshRig } from "@/render/ShadowRefreshRig";
+import { ThumbCaptureRig } from "@/render/ThumbCaptureRig";
+import { PerfRig } from "@/render/perf/PerfRig";
+import { PerfHud } from "@/render/perf/PerfHud";
 import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { RoomLights } from "@/render/RoomLights";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
@@ -323,6 +328,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   const appMode = useSceneStore((s) => s.appMode);
   const wallMode = useSceneStore((s) => s.wallMode);
   const envPreset = useSceneStore((s) => s.envPreset);
+  const weather = useSceneStore((s) => s.weather);
   const brush = useSceneStore((s) => s.brush);
   const walkthroughActive = useSceneStore((s) => s.walkthroughActive);
   const [walkthroughLocked, setWalkthroughLocked] = useState(false);
@@ -342,6 +348,32 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   }, [walkthroughActive]);
   // The CAD grid is an editing aid; hide it in the immersive View presets.
   const showGrid = envPreset === "none" || appMode !== "view";
+
+  // Render on demand unless something is genuinely animating.
+  //
+  // The default R3F loop renders at 60fps forever, so a laptop left sitting on a
+  // finished design draws ~216,000 identical frames an hour. Under "demand" R3F
+  // renders only when something asks it to — and it asks on its own for every
+  // React-driven change (props, mounts, unmounts), which covers drags, undo/redo,
+  // mode switches and the whole scene graph. What it cannot see is code that
+  // mutates three objects imperatively, so each of those paths now calls
+  // `invalidate()` explicitly (hover glow, damped fades, the WASD channel, async
+  // texture arrivals).
+  //
+  // The three exceptions below are continuous by nature and stay on "always":
+  //   - walkthrough is a first-person simulation with pointer-lock mouse-look;
+  //     keyed on `walkthroughMounted` (not `walkthroughActive`) so the exit
+  //     flight still lands and `onExitComplete` fires.
+  //   - Suburb drives a wind shader every frame, unconditionally.
+  //   - Rain drives a streak shader every frame, and only mounts in rain.
+  // These two shaders also clamp their own `dt` with `Math.min(dt, 0.05)`, so
+  // under sparse frames they would time-dilate rather than merely stutter —
+  // which is why they need real frames and not an `invalidate()` on their tick.
+  //
+  // City is deliberately absent: it has no `useFrame` at all (its night glow is
+  // a layout effect on timeOfDay), and the time-of-day slider is event-driven.
+  const needsContinuousFrames =
+    walkthroughMounted || envPreset === "suburb" || (envPreset !== "none" && weather === "rain");
   const offset = useMemo(() => ({ cx, cz }), [cx, cz]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -405,13 +437,20 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         shadows={{ type: SHADOW.type }}
         camera={{ position: [9, 8, 11], fov: 50 }}
         dpr={DPR}
+        frameloop={needsContinuousFrames ? "always" : "demand"}
         // `flat` disables the renderer's own tonemapping so the ToneMapping
         // effect in the composer owns the display transform (avoids double
         // tonemapping). The composer forces NoToneMapping too; this is the
         // belt to its braces.
         flat
-        // preserveDrawingBuffer lets us snapshot the frame for project thumbnails.
-        gl={{ preserveDrawingBuffer: true }}
+        // Context attributes are contract values (§1.1). Note this object
+        // SPREADS over R3F's own defaults, which is exactly how `antialias:
+        // true` was in force here unnoticed, allocating and resolving a 4x MSAA
+        // backbuffer every frame to anti-alias a single fullscreen triangle.
+        // `preserveDrawingBuffer` is gone: thumbnails are captured inside the
+        // render loop by <ThumbCaptureRig>, so the drawing buffer no longer has
+        // to survive compositing on every frame of the app's life.
+        gl={{ antialias: CONTEXT.antialias, alpha: CONTEXT.alpha }}
         onCreated={({ gl }) => registerViewportCanvas(gl.domElement)}
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
@@ -503,14 +542,27 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
           enableNormalPass={false}
           frameBufferType={FRAME_BUFFER_TYPE}
         >
-          {!dragging && wallMode !== "top" ? (
-            <N8AO aoRadius={0.7} intensity={2.4} distanceFalloff={1} halfRes />
-          ) : (
-            <></>
-          )}
+          {/* Stays mounted in every mode; only `enabled` changes. Unmounting it
+              also tore down the composer's depth texture and depth render
+              target, churning ~250MB of allocation at each drag boundary. */}
+          <AmbientOcclusion
+            enabled={!dragging && wallMode !== "top"}
+            aoRadius={0.7}
+            intensity={2.4}
+            distanceFalloff={1}
+            halfRes
+          />
           <ToneMapping mode={TONE_MAPPING.operator} />
           <SMAA />
         </EffectComposer>
+        {/* Shadow maps refresh on change, not every frame. */}
+        <ShadowRefreshRig />
+        {/* Phase 0 instrument. Renders nothing and subscribes to nothing
+            unless the page was opened with `?perf=1`. */}
+        <PerfRig />
+        {/* Serves thumbnail requests from inside the loop, at priority 2 —
+            after the composer, before the browser composites. */}
+        <ThumbCaptureRig />
         <RenderContractCheck />
       </Canvas>
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
@@ -524,6 +576,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       <WallModeToggle />
       <CameraOfferChip />
       <PdToastHost />
+      <PerfHud />
     </div>
   );
 }

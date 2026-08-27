@@ -30,6 +30,39 @@ export const COLOR = {
 export const DPR: [number, number] = [1, 2];
 
 /**
+ * WebGL context attributes (§1.1). Both are OFF, and both are asserted against
+ * the attributes the context actually got — not against what was requested.
+ *
+ * These are recorded because they were, until now, exactly the failure §1.1
+ * exists to catch. `<Canvas gl={{...}}>` SPREADS over R3F's own defaults rather
+ * than replacing them, and those defaults include `antialias: true`. So the app
+ * allocated a 4x MSAA backbuffer, rasterised into it and resolved it every
+ * frame — to anti-alias the composer's final fullscreen triangle, a single
+ * primitive whose three edges are all off-screen. MSAA anti-aliases primitive
+ * edges; there were none to anti-alias. It could not change a pixel, and SMAA
+ * was doing all the actual AA anyway.
+ *
+ * §2.3 already forbade the mirror of this ("Forbids re-enabling composer
+ * `multisampling` while SMAA is present — paying for MSAA and SMAA both is cost
+ * without benefit"). That clause named the composer; the BACKBUFFER slipped
+ * through because it was an unrecorded library default rather than a line of
+ * this repo's code. Recording it is the fix for the class, not just the case.
+ *
+ * `alpha` is off for a related reason: the scene always paints an opaque
+ * background, but an alpha canvas is composited by the browser as a blended
+ * layer regardless, and on a tile-based GPU that costs a read of what is behind
+ * it. Nothing in the app renders anything through the canvas.
+ *
+ * Forbids re-enabling either to "fix" aliasing. If the image aliases, the AA
+ * effect in the composer chain is the lever (§2.3) — a multisampled backbuffer
+ * underneath a fullscreen-triangle blit cannot be.
+ */
+export const CONTEXT = {
+  antialias: false,
+  alpha: false,
+} as const;
+
+/**
  * Tone mapping (§2). The renderer's own tone mapper stays OFF — the composer
  * owns the display transform, so `renderer.toneMapping` must read
  * `NoToneMapping` and `renderer.toneMappingExposure` is inert (it is the uniform
@@ -214,6 +247,12 @@ const EXPECTED = {
   "gl.toneMappingExposure": (gl: THREE.WebGLRenderer) => gl.toneMappingExposure,
   "gl.shadowMap.enabled": (gl: THREE.WebGLRenderer) => gl.shadowMap.enabled,
   "gl.shadowMap.type": (gl: THREE.WebGLRenderer) => gl.shadowMap.type,
+  // Read back from the live context rather than from what was requested: a
+  // driver is free to ignore either flag, and a contract that only checks the
+  // request would certify a context it never actually got.
+  "gl.context.antialias": (gl: THREE.WebGLRenderer) =>
+    gl.getContext().getContextAttributes()?.antialias,
+  "gl.context.alpha": (gl: THREE.WebGLRenderer) => gl.getContext().getContextAttributes()?.alpha,
 } as const;
 
 const WANT: Record<keyof typeof EXPECTED, unknown> = {
@@ -223,6 +262,8 @@ const WANT: Record<keyof typeof EXPECTED, unknown> = {
   "gl.toneMappingExposure": TONE_MAPPING.exposure,
   "gl.shadowMap.enabled": true,
   "gl.shadowMap.type": SHADOW.type,
+  "gl.context.antialias": CONTEXT.antialias,
+  "gl.context.alpha": CONTEXT.alpha,
 };
 
 /**

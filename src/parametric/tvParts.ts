@@ -1,6 +1,7 @@
 "use client";
 
 import * as THREE from "three";
+import { invalidate } from "@react-three/fiber";
 import { makeCanvas, mulberry32, heightToNormal, applyTiling } from "@/decorate/proceduralTexture";
 
 // Materials and small parts for the TV generator.
@@ -250,7 +251,10 @@ export function screenMaterial(on: boolean): THREE.MeshStandardMaterial {
         // when it arrives — the material is already on screen by then, so the
         // set is dark for a frame or two and then lit. No Suspense needed, and
         // nothing else in the generator has to become async.
-        pic = new THREE.TextureLoader().load(BROADCAST_URL);
+        // The `invalidate` callback matters under demand rendering: the swap
+        // three does on arrival changes no React prop, so without it the set
+        // stays dark until something unrelated repaints.
+        pic = new THREE.TextureLoader().load(BROADCAST_URL, () => invalidate());
         // Channel 1: the screen geometry's 0..1 set, which spans the picture
         // area exactly once. Channel 0 is in METRES for the coating grain, so
         // a photograph sent there would tile ~20 times across a 55".

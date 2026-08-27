@@ -15,6 +15,7 @@
  */
 
 import * as THREE from "three";
+import { invalidate } from "@react-three/fiber";
 import { getDoorMaterial } from "./registryDoors";
 
 export interface DoorTextureSet {
@@ -46,15 +47,18 @@ export function loadDoorTextures(id: string): DoorTextureSet | null {
 
   loader ??= new THREE.TextureLoader();
 
-  const map = loader.load(material.maps.color);
+  // `invalidate` on arrival — the renderer draws on demand and a texture that
+  // fills itself in later changes no React prop, so nothing would schedule the
+  // frame that shows it. No-op under `frameloop="always"`.
+  const map = loader.load(material.maps.color, () => invalidate());
   map.colorSpace = THREE.SRGBColorSpace;
   applyTiling(map, material.coverM);
 
-  const normalMap = loader.load(material.maps.normal);
+  const normalMap = loader.load(material.maps.normal, () => invalidate());
   normalMap.colorSpace = THREE.NoColorSpace;
   applyTiling(normalMap, material.coverM);
 
-  const orm = loader.load(material.maps.orm);
+  const orm = loader.load(material.maps.orm, () => invalidate());
   orm.colorSpace = THREE.NoColorSpace;
   applyTiling(orm, material.coverM);
 
