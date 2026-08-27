@@ -8,6 +8,7 @@
     "start": "next start",
     "scrape:tambour": "node scripts/scrape.mjs",
     "normalize:tambour": "node scripts/normalize.mjs",
+    "perf:measure": "tsx scripts/perf/measure.ts",
     "ikea:poc": "tsx scripts/ikea/poc.ts",
     "ikea:extract": "tsx scripts/ikea/extract.ts",
     "ikea:normalize": "tsx scripts/ikea/normalize.ts",

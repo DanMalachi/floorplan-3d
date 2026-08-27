@@ -15,12 +15,35 @@ import { useSyncExternalStore } from "react";
 export const PERF_PARAM = "perf";
 
 /**
+ * Second, narrower gate: `?perf=1&loop=always`.
+ *
+ * Phase 2 put every non-walkthrough mode on `frameloop="demand"`, so an idle
+ * editor renders no frames at all — correct for the product, and fatal for
+ * measurement. A harness that supplies synthetic input to provoke frames ends up
+ * measuring its own input cadence rather than the renderer (a 30 ms "frame time"
+ * that is really the interval between two dispatched mouse moves), which is a
+ * confidently wrong number rather than a missing one.
+ *
+ * With this set, `PerfContinuousLoop` re-invalidates every frame so the mode
+ * renders continuously and frame timing means something again. Deliberately a
+ * SEPARATE flag from `?perf=1`: the HUD must stay usable for observing the app
+ * as it actually behaves, demand-mode idling included.
+ */
+export const PERF_LOOP_PARAM = "loop";
+
+/**
  * Non-reactive read, for code that is already inside an effect or a frame
  * callback. Returns false during SSR, where there is no location to read.
  */
 export function perfEnabled(): boolean {
   if (typeof window === "undefined") return false;
   return new URLSearchParams(window.location.search).get(PERF_PARAM) === "1";
+}
+
+/** `?loop=always`, and only meaningful alongside `?perf=1`. */
+export function perfLoopAlways(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get(PERF_LOOP_PARAM) === "always";
 }
 
 /** Never fires: `?perf=1` cannot change without a page load, so there is nothing
@@ -50,4 +73,9 @@ const serverSnapshot = () => false;
  */
 export function usePerfEnabled(): boolean {
   return useSyncExternalStore(subscribe, perfEnabled, serverSnapshot);
+}
+
+/** Reactive form of `perfLoopAlways`, used as the same kind of mount boundary. */
+export function usePerfLoopAlways(): boolean {
+  return useSyncExternalStore(subscribe, perfLoopAlways, serverSnapshot);
 }

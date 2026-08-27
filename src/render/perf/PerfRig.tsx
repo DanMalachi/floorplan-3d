@@ -1,9 +1,9 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { readGpuInfo } from "./gpuInfo";
-import { usePerfEnabled } from "./usePerfEnabled";
+import { usePerfEnabled, usePerfLoopAlways } from "./usePerfEnabled";
 import { usePerfSampler } from "./usePerfSampler";
 
 /**
@@ -47,7 +47,35 @@ function PerfSampler() {
  * Disabled, this is one component returning null: no frame subscription, no
  * renderer mutation, no GL queries, no store writes.
  */
+/**
+ * Measurement-only continuous render loop — see `perfLoopAlways` for why.
+ *
+ * `invalidate()` called from inside a frame schedules the next one, so in
+ * `frameloop="demand"` this is self-sustaining: one continuous loop for as long
+ * as the component is mounted. In `frameloop="always"` (walkthrough) it is a
+ * no-op, because the loop is already running and `invalidate` only bumps a
+ * counter that mode ignores.
+ *
+ * Priority stays 0. A positive priority would tell R3F that this subscriber has
+ * taken rendering into its own hands and the frame would never be drawn — the
+ * trap documented at length in `usePerfSampler.ts`.
+ */
+function PerfContinuousLoop() {
+  const invalidate = useThree((s) => s.invalidate);
+  useFrame(() => invalidate());
+  return null;
+}
+
 export function PerfRig() {
   const enabled = usePerfEnabled();
-  return enabled ? <PerfSampler /> : null;
+  const loopAlways = usePerfLoopAlways();
+
+  if (!enabled) return null;
+
+  return (
+    <>
+      <PerfSampler />
+      {loopAlways ? <PerfContinuousLoop /> : null}
+    </>
+  );
 }

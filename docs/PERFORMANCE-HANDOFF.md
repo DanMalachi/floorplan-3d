@@ -22,6 +22,96 @@ Dan verified by hand on a GTX 1060: shadows correct, hover works, cutaway fades 
 
 ---
 
+## First real measurements (2026-08-27)
+
+Supersedes "every number in `docs/PERFORMANCE.md` is still estimated from source".
+Two sources: hand readings on Dan's GTX 1060 / 75 Hz display, and
+`npm run perf:measure` (see `scripts/perf/README.md`), which runs vsync-free.
+
+**The scene measured was UNFURNISHED.** Every number below is a floor, not a
+worst case, and none of it bears on Phase 3.
+
+### The hand readings were clamped
+
+All of them came back at 13.3 ms p50 with a p95 0.2 ms above it — 1000/75, the
+refresh interval. Facing a blank wall (42 draw calls) cost exactly as much as
+looking across the house (687). That is vsync, not the app.
+
+**Issue B is not a defect on this hardware.** "Walkthrough hits 60% GPU" is what
+a vsync-capped app that comfortably makes its deadline looks like — 40% of each
+frame the GPU is idle by choice. It should stop being described as a live defect.
+
+### Vsync-free, DPR 1, unfurnished (GTX 1060, 1730x883, 1.53 MP)
+
+| scenario | frame p50 | fps | js p50 | js share | renders | calls | tris | tri/call |
+|---|---|---|---|---|---|---|---|---|
+| editor:city | 1.15 ms | 870 | 1.00 ms | 87% | 12 | 140 | 2943 | 21 |
+| editor:studio | 1.00 ms | 1000 | 0.90 ms | 90% | 12 | 120 | 1483 | 12 |
+| editor:suburb | 1.10 ms | 909 | 1.00 ms | 91% | 12 | 129 | 172055 | 1334 |
+| walk:still | 0.70 ms | 1429 | 0.60 ms | 86% | 12 | 62 | 355 | 6 |
+| walk:forward | 0.60 ms | 1667 | 0.50 ms | 83% | 12 | 38 | 247 | 7 |
+| walk:look | 0.60 ms | 1667 | 0.50 ms | 83% | 12 | 62 | 355 | 6 |
+
+### Findings
+
+**1. The app is CPU-bound, not GPU-bound. `js` is 83–91% of every frame.**
+`jsMs` excludes React render/commit and all GPU execution, so this is pure
+`useFrame` + composer + GL submission cost. The GPU is not the constraint here.
+
+**2. DPR is not "the biggest and most linear lever". It is nearly free.**
+`--dpr 2` quadruples the drawing buffer (1.53 → 6.11 MP, verified in the results
+JSON) and costs **0.05–0.10 ms**: 1.15 → 1.20 ms in editor:city, 0.70 → 0.80 ms
+in walk:still. Lead #2 in the walkthrough section below is refuted on discrete
+hardware. It may still hold on integrated GPUs, where bandwidth and tile memory
+are the scarce resources — but it is now a hypothesis about hardware nobody has
+tested, not an established lever.
+
+**3. Draw calls are pathologically unbatched.** 22 triangles per draw call in the
+hand readings (687 calls / 15.4k tris), and 6–21 across the automated ones.
+Healthy is thousands. Every wall segment, window frame, mullion and rail post is
+its own submission — which is why the frame is CPU-bound. Measured cost is
+**~7.5 µs per draw call over a ~1.28 ms floor**, fitted across four hand readings
+(29 / 42 / 508 / 687 calls). Nothing in Phases 3–5 addresses this; Phase 4 targets
+React commit work, which `jsMs` does not even measure.
+
+**4. `gl.render calls` is 12 per displayed frame, invariant.** Identical in all
+four hand readings and all six automated scenarios, regardless of scene content —
+a fixed 12-pass composer chain. Free on a 1060; this is the cost most likely to
+dominate on an integrated GPU, and the one number here that should transfer
+worst.
+
+**5. Heap sawtooth under motion.** The hand readings swing 83 → 165 MB, roughly
+50 KB of garbage per frame while moving; automated runs show 15–43 MB swings. The
+only bad frame-time number in the entire hand dataset — p95 23.8 ms against a
+13.5 ms baseline, i.e. dropped frames — appeared only while moving. A GC pause of
+that size is the obvious candidate. Unproven: look at per-frame allocation in
+`walkthrough/collision.ts` and `furnitureCollision.ts` first.
+
+**6. Suburb is 172k triangles** against Studio's 1.5k, in only 129 draw calls.
+Well batched, and not a problem at these frame times — noted because it is a 100x
+geometry difference nobody had quantified.
+
+### Corrections to this document
+
+- **"You cannot verify 3D in an MCP browser tab" is WRONG.** The canvas starts at
+  300x150 but sizes to the real 1730x883 once the page settles, and the scene
+  renders correctly. What actually fails is *timing*: the tab is
+  background-throttled, rAF does not tick, and the HUD reports frame periods in
+  the tens of seconds. Resource counts and draw calls from an MCP tab are usable;
+  timing never is.
+- **`?perf=1` works directly on `/v/<id>`.** No need to fight the redirect.
+
+### Open bug found while measuring
+
+`gl.context.alpha: expected false, got true` — the render contract throws this on
+every dev page load on this branch, and the HUD's own device line reads
+`alpha on`. `Viewport.tsx` passes `alpha: CONTEXT.alpha` (false) to the Canvas,
+so either R3F is overriding it or a dependency default changed. Pre-existing, not
+caused by the perf work, and left unfixed because `Viewport.tsx` is a protected
+path. Per `contract.ts`: amend the contract or fix the code, never silence it.
+
+---
+
 ## The two live issues — start here
 
 ### A. Outlines look aliased / "spikey"

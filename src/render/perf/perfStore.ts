@@ -2,6 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 
+import { pushBridgeSample } from "./perfBridge";
+
 /**
  * The one-way channel between the in-Canvas sampler and the DOM HUD.
  *
@@ -118,6 +120,9 @@ export function publishPerfSample(sample: PerfSample): void {
   });
   if (trendRing.length > TREND_LEN) trendRing.splice(0, trendRing.length - TREND_LEN);
   state = { sample, trend: trendRing.slice() };
+  // Automation tap. No-op unless `?perf=1`; see `perfBridge.ts` for why this is
+  // a separate channel rather than something hung off `state`.
+  pushBridgeSample(sample);
   for (const listener of listeners) listener();
 }
 
