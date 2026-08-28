@@ -10,13 +10,13 @@ Branch: `perf-integrated-gpu` (off `accounts-cloud-sync`). Three commits:
 
 # ⚠ START HERE — state at end of session 2026-08-28
 
-**There is a large amount of UNCOMMITTED work in the tree. Dan chose to leave it
-uncommitted; do not commit it without asking him.** It typechecks clean
-(`npx tsc --noEmit`, exit 0) and lints clean apart from one pre-existing
+All of the session's work is **committed** — five commits, `2dce53f` through
+`28946a6`, on top of `6d7704d`. Still unmerged and undeployed. It typechecks
+clean (`npx tsc --noEmit`, exit 0) and lints clean apart from one pre-existing
 `react-hooks/exhaustive-deps` warning in `src/render/RoomLights.tsx` that this
 work did not touch.
 
-| Uncommitted | What it is | State |
+| Landed 2026-08-28 | What it is | State |
 |---|---|---|
 | `src/render/perf/furnish{Plan,Params,Bridge}.ts`, `PerfFurnishRig.tsx` | the `--furnish N` benchmark scene | **works, verified by real runs** |
 | `scripts/perf/measure.ts` | `--furnish` / `--furnish-mix` wiring + loud shortfall warning | works |
@@ -27,8 +27,9 @@ work did not touch.
 | `scripts/perf/baselines/2026-08-28-*.json` | first furnished baselines | reference data |
 | `docs/perf-drawcalls.md` | draw-call inventory | complete |
 
-`docs/NAMING.md` / `docs/NAMING-BRIEF.md` are also untracked but belong to the
-branding work, **not** to this workstream. Leave them alone.
+`docs/NAMING.md` / `docs/NAMING-BRIEF.md` are untracked and belong to the
+branding work, **not** to this workstream. They were deliberately left out of
+these commits. Leave them alone.
 
 Two servers may still be running from that session: dev on `:3000`, a production
 build on `:3001` bound to `0.0.0.0` for measuring from another machine on the
