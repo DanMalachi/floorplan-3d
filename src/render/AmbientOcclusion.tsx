@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 import { N8AO } from "@react-three/postprocessing";
+import { aoDebugMode } from "./renderDebugFlags";
 
 /**
  * The scene's ambient-occlusion pass, with the two behaviours `<N8AO>` does not
@@ -73,6 +74,18 @@ export function AmbientOcclusion({
     // assignment after it is what tears down the transparency render targets in
     // the case where the constructor's own `detectTransparency()` already
     // latched before React ever saw this ref.
+    // `?ao=transparent` puts the pass back the way it was before Phase 1, so the
+    // aliased-outline report can be A/B'd against an eye instead of an argument.
+    // See `renderDebugFlags.ts`. Assign `true` FIRST: the proxy setter clears
+    // `autoDetectTransparency` only on a real change, so writing the flag before
+    // disarming the detector is what allocates the transparency render targets;
+    // disarming first and then assigning would leave the detector to re-latch.
+    if (aoDebugMode() === "transparent") {
+      pass.configuration.transparencyAware = true;
+      pass.autoDetectTransparency = false;
+      return;
+    }
+
     pass.autoDetectTransparency = false;
     pass.configuration.transparencyAware = false;
   }, []);
@@ -90,9 +103,13 @@ export function AmbientOcclusion({
   // The composer already skips passes whose `enabled` is false (`if
   // (!pass.enabled) continue;`), so toggling costs nothing and keeps the
   // allocation steady.
+  // `?ao=off` overrides the prop rather than unmounting the pass, for §2's
+  // reason: the composer already skips a disabled pass, and unmounting would
+  // churn a quarter of a gigabyte of render targets. The debug read lives inside
+  // the effect, not in the deps — it cannot change without a page load.
   useLayoutEffect(() => {
     const pass = ref.current;
-    if (pass) pass.enabled = enabled;
+    if (pass) pass.enabled = aoDebugMode() === "off" ? false : enabled;
   }, [enabled]);
 
   return (
