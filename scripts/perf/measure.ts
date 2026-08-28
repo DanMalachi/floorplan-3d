@@ -38,11 +38,35 @@
  * keeps attributing cost to but has never once measured. Run the same scenario
  * set at `--dpr 1` and `--dpr 2` and the delta is the fill cost, isolated.
  *
+ * ---------------------------------------------------------------------------
+ * `--furnish N`, and why an unfurnished number is a floor
+ * ---------------------------------------------------------------------------
+ * `docs/PERFORMANCE-HANDOFF.md` says it in bold: every number this workstream
+ * has ever measured came off an UNFURNISHED scene. The §5 exit bar is a p95
+ * frame time on a FURNISHED 3-bed, and Phase 3 is sized against ~700 MB of
+ * texture memory — neither of which any existing project can produce, because
+ * the only two live rooms hold zero catalog furniture between them.
+ *
+ * `--furnish N` builds the missing scene: N real catalog items (IKEA's
+ * uncapped-texture models, BlenderKit's 1024px WebP ones, or a deterministic
+ * interleave of both), placed inside the plan's rooms by
+ * `src/render/perf/furnishPlan.ts`. It is perf-gated, it is deterministic, and
+ * it CANNOT reach the live Liveblocks room — the furniture is hung on the
+ * three.js scene graph and never enters `scene.furniture`, so the collab sink
+ * has nothing to diff. See the ownership note at the top of
+ * `src/render/perf/PerfFurnishRig.tsx`.
+ *
+ * The furnish block is written into the results JSON on EVERY run, `--furnish 0`
+ * included, so a furnished run can never be mistaken for an unfurnished one
+ * afterwards.
+ *
  * Usage:
  *   npm run perf:measure -- --room de882e79
  *   npm run perf:measure -- --room de882e79 --dpr 2
  *   npm run perf:measure -- --room de882e79 --only editor:city,editor:studio
  *   npm run perf:measure -- --room de882e79 --vsync        # control run
+ *   npm run perf:measure -- --room de882e79 --furnish 40   # furnished scene
+ *   npm run perf:measure -- --room de882e79 --furnish 40 --furnish-mix ikea
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -80,6 +104,20 @@ interface PerfSample {
   textureMb: number | null;
 }
 
+/** Mirrors `FurnishBridge` in src/render/perf/furnishBridge.ts. Redeclared for
+ *  the same reason as `PerfSample`. */
+interface FurnishStats {
+  requested: number;
+  mix: string;
+  seed: number;
+  planned: number;
+  slots: number;
+  distinctAssets: number;
+  placed: number;
+  failed: number;
+  settled: boolean;
+}
+
 /** Mirrors the tap installed by `src/render/perf/perfBridge.ts`. Redeclared
  *  because the page-context callbacks below are typechecked against Node's lib,
  *  which knows nothing about the app's own global augmentation. */
@@ -90,6 +128,7 @@ declare global {
       drain(): PerfSample[];
       clear(): void;
     };
+    __PERF_FURNISH__?: FurnishStats;
   }
 }
 
@@ -109,6 +148,13 @@ interface Options {
   /** Force a continuous render loop so frame timing is meaningful in demand-mode
    *  editor scenarios. Off means observe the app exactly as it ships. */
   continuousLoop: boolean;
+  /** `?furnish=N` — items in the synthetic furnished benchmark scene. 0 = off. */
+  furnish: number;
+  furnishMix: string;
+  furnishSeed: number;
+  /** How long to wait for every furnished model to load before sampling.
+   *  Generous: the IKEA half of the catalog is fetched from Vercel Blob. */
+  furnishTimeoutMs: number;
   only: string[] | null;
   out: string | null;
 }
@@ -131,6 +177,12 @@ function parseArgs(argv: string[]): Options {
 
   const only = get("--only");
 
+  const furnishMix = get("--furnish-mix") ?? "mix";
+  if (!["mix", "ikea", "blenderkit"].includes(furnishMix)) {
+    console.error(`error: --furnish-mix must be one of mix, ikea, blenderkit (got "${furnishMix}").`);
+    process.exit(1);
+  }
+
   return {
     room,
     base: get("--base") ?? "http://localhost:3000",
@@ -143,6 +195,10 @@ function parseArgs(argv: string[]): Options {
     height: Number(get("--height") ?? 883),
     vsync: argv.includes("--vsync"),
     continuousLoop: !argv.includes("--demand"),
+    furnish: Math.max(0, Math.floor(Number(get("--furnish") ?? 0)) || 0),
+    furnishMix,
+    furnishSeed: Math.floor(Number(get("--furnish-seed") ?? 1)) || 1,
+    furnishTimeoutMs: Number(get("--furnish-timeout") ?? 180_000),
     only: only ? only.split(",").map((s) => s.trim()).filter(Boolean) : null,
     out: get("--out"),
   };
@@ -233,6 +289,24 @@ async function orbitDrag(page: Page, durationMs: number): Promise<void> {
   await page.mouse.up();
 }
 
+/**
+ * Dolly the editor camera back so the WHOLE plan is inside the frustum.
+ *
+ * Without this, the default framing crops a furnished scene and the run reports
+ * whatever fraction of the furniture happened to survive frustum culling — a
+ * number that moves with the camera rather than with the scene, which is the
+ * confound `editor:wide` exists to remove. Wheel-down dollies out in
+ * CameraControls' default map; the amount is fixed so every run frames alike.
+ */
+async function dollyOut(page: Page): Promise<void> {
+  const box = await page.locator("canvas").first().boundingBox();
+  await page.mouse.move(box ? box.x + box.width / 2 : 800, box ? box.y + box.height / 2 : 400);
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, 240);
+    await sleep(60);
+  }
+}
+
 const SCENARIOS: Scenario[] = [
   {
     name: "editor:city",
@@ -258,6 +332,18 @@ const SCENARIOS: Scenario[] = [
     description: "Orbiting the camera, Suburb — drives a wind shader every frame unconditionally.",
     setup: async (page) => {
       await clickControl(page, "Suburb");
+    },
+    during: orbitDrag,
+  },
+  {
+    name: "editor:wide",
+    description:
+      "Orbiting with the whole plan dollied into frame, Studio. The editor's " +
+      "furnished worst case: nothing culls, so draw calls and triangles are the " +
+      "scene's true totals rather than the default framing's crop.",
+    setup: async (page) => {
+      await clickControl(page, "Studio");
+      await dollyOut(page);
     },
     during: orbitDrag,
   },
@@ -305,6 +391,34 @@ const SCENARIOS: Scenario[] = [
       }
     },
   },
+  {
+    name: "walk:spin",
+    description:
+      "Walkthrough turning continuously in one direction from the spawn pose. " +
+      "Every furnished item in the room passes through the frustum during the " +
+      "run, so the p95 catches the worst pose rather than whichever one " +
+      "walk:look's sweep happened to stop at.",
+    setup: async (page) => {
+      await clickControl(page, "Studio");
+      await enterWalkthrough(page);
+    },
+    during: async (page, durationMs) => {
+      // Under pointer lock the camera integrates movementX, so a run of
+      // same-sign moves is a continuous yaw in one direction. The wrap back to
+      // the left edge is one large negative delta every ~40 steps — a single
+      // fast counter-flick, not a bounce, so the camera keeps sweeping the room
+      // the same way rather than oscillating across the same two walls the way
+      // walk:look does.
+      const until = Date.now() + durationMs;
+      let x = 600;
+      while (Date.now() < until) {
+        x += 25;
+        if (x > 1300) x = 300;
+        await page.mouse.move(x, 400);
+        await sleep(16);
+      }
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -346,9 +460,23 @@ interface Aggregate {
   dpr: number;
   megapixels: number;
   shadowAutoUpdate: boolean;
+  /**
+   * Furnished items actually in the scene graph WHILE THIS SCENARIO RAN.
+   *
+   * Per scenario, not just once per run, because each scenario reloads the page
+   * — so a network hiccup can leave one scenario measuring 40 items and the next
+   * measuring 12. Without this the two would be averaged into a single
+   * confident, wrong table row.
+   */
+  furnishPlaced: number;
+  furnishFailed: number;
 }
 
-function aggregate(scenario: Scenario, samples: PerfSample[]): Aggregate {
+function aggregate(
+  scenario: Scenario,
+  samples: PerfSample[],
+  furnish: FurnishStats | null,
+): Aggregate {
   const heaps = samples.map((s) => s.heapMb).filter((h): h is number => h !== null);
   const textureMbs = samples.map((s) => s.textureMb).filter((t): t is number => t !== null);
   const last = samples[samples.length - 1];
@@ -383,6 +511,8 @@ function aggregate(scenario: Scenario, samples: PerfSample[]): Aggregate {
     dpr: last.dpr,
     megapixels: (last.drawingBufferWidth * last.drawingBufferHeight) / 1e6,
     shadowAutoUpdate: last.shadowAutoUpdate,
+    furnishPlaced: furnish?.placed ?? 0,
+    furnishFailed: furnish?.failed ?? 0,
   };
 }
 
@@ -402,6 +532,28 @@ async function waitForFirstSamples(page: Page, timeoutMs = 60_000): Promise<void
     undefined,
     { timeout: timeoutMs },
   );
+}
+
+/**
+ * Block until every furnished model has resolved one way or the other.
+ *
+ * Waiting on a stopwatch instead is failure mode #5 in the README: the IKEA half
+ * of the catalog is fetched from Vercel Blob and Draco-decoded, so a fixed
+ * settle delay measures a half-built scene and files it under a "40 items"
+ * label. `settled` means `placed + failed >= planned`, so this returns as soon
+ * as the scene is final — including when some models failed, which the caller
+ * reports rather than swallows.
+ */
+async function waitForFurnish(page: Page, timeoutMs: number): Promise<FurnishStats | null> {
+  await page.waitForFunction(() => Boolean(window.__PERF_FURNISH__), undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => window.__PERF_FURNISH__?.settled === true, undefined, {
+    timeout: timeoutMs,
+  });
+  return page.evaluate(() => window.__PERF_FURNISH__ ?? null);
+}
+
+async function readFurnish(page: Page): Promise<FurnishStats | null> {
+  return page.evaluate(() => window.__PERF_FURNISH__ ?? null);
 }
 
 async function assertRealGpu(page: Page): Promise<string> {
@@ -439,7 +591,11 @@ async function main(): Promise<void> {
   }
 
   const url =
-    `${opts.base}/v/${opts.room}?perf=1` + (opts.continuousLoop ? "&loop=always" : "");
+    `${opts.base}/v/${opts.room}?perf=1` +
+    (opts.continuousLoop ? "&loop=always" : "") +
+    (opts.furnish > 0
+      ? `&furnish=${opts.furnish}&furnishMix=${opts.furnishMix}&furnishSeed=${opts.furnishSeed}`
+      : "");
 
   console.log(`\nperf harness`);
   console.log(`  url      ${url}`);
@@ -447,6 +603,9 @@ async function main(): Promise<void> {
   console.log(`  viewport ${opts.width}x${opts.height}`);
   console.log(`  vsync    ${opts.vsync ? "ON (control run)" : "OFF"}`);
   console.log(`  loop     ${opts.continuousLoop ? "forced continuous" : "as-shipped (demand)"}`);
+  console.log(
+    `  furnish  ${opts.furnish === 0 ? "0 (UNFURNISHED — a floor, not a worst case)" : `${opts.furnish} items · ${opts.furnishMix} · seed ${opts.furnishSeed}`}`,
+  );
   console.log(`  scenarios ${scenarios.map((s) => s.name).join(", ")}\n`);
 
   let browser: Browser | null = null;
@@ -491,6 +650,7 @@ async function main(): Promise<void> {
     await waitForFirstSamples(page);
 
     const results: Aggregate[] = [];
+    let furnishRun: FurnishStats | null = null;
 
     for (const scenario of scenarios) {
       process.stdout.write(`  ${scenario.name.padEnd(16)} `);
@@ -507,8 +667,24 @@ async function main(): Promise<void> {
         // from whatever ran before.
         await page.goto(url, { waitUntil: "domcontentloaded" });
         await waitForFirstSamples(page);
+
+        // The furnished scene has to be COMPLETE before the camera moves, or
+        // the scenario measures models still arriving over the network.
+        let furnish: FurnishStats | null = null;
+        if (opts.furnish > 0) {
+          const started = Date.now();
+          furnish = await waitForFurnish(page, opts.furnishTimeoutMs);
+          process.stdout.write(
+            `[${furnish?.placed ?? 0}/${furnish?.planned ?? 0} in ${((Date.now() - started) / 1000).toFixed(1)}s] `,
+          );
+        }
+
         if (scenario.setup) await scenario.setup(page);
         await sleep(opts.settleMs);
+        // Re-read AFTER settling: a model can still fail late, and the row must
+        // report what was on screen while the samples were taken.
+        if (opts.furnish > 0) furnish = await readFurnish(page);
+        if (furnish) furnishRun = furnish;
         await page.evaluate(() => window.__PERF__?.clear());
 
         const action = scenario.during?.(page, opts.durationMs);
@@ -524,7 +700,7 @@ async function main(): Promise<void> {
           continue;
         }
 
-        const agg = aggregate(scenario, samples);
+        const agg = aggregate(scenario, samples, furnish);
         results.push(agg);
         console.log(
           `${agg.frameMsP50.toFixed(1)} ms p50 · ${agg.fps.toFixed(0)} fps · ` +
@@ -546,9 +722,14 @@ async function main(): Promise<void> {
 
     const scriptDir = dirname(fileURLToPath(import.meta.url));
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const furnishTag = opts.furnish > 0 ? `-furn${opts.furnish}-${opts.furnishMix}` : "-unfurnished";
     const outPath =
       opts.out ??
-      join(scriptDir, "results", `perf-dpr${opts.dpr}-${opts.vsync ? "vsync" : "novsync"}-${stamp}.json`);
+      join(
+        scriptDir,
+        "results",
+        `perf-dpr${opts.dpr}-${opts.vsync ? "vsync" : "novsync"}${furnishTag}-${stamp}.json`,
+      );
 
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(
@@ -563,6 +744,19 @@ async function main(): Promise<void> {
           continuousLoop: opts.continuousLoop,
           viewport: { width: opts.width, height: opts.height },
           durationMs: opts.durationMs,
+          // ALWAYS written, `--furnish 0` included. An unfurnished number is a
+          // floor and a furnished one is not, and a results file that does not
+          // say which it is will eventually be quoted as the other.
+          furnish: {
+            requested: opts.furnish,
+            mix: opts.furnishMix,
+            seed: opts.furnishSeed,
+            planned: furnishRun?.planned ?? 0,
+            slots: furnishRun?.slots ?? 0,
+            distinctAssets: furnishRun?.distinctAssets ?? 0,
+            placed: furnishRun?.placed ?? 0,
+            failed: furnishRun?.failed ?? 0,
+          },
           results,
         },
         null,
@@ -570,6 +764,24 @@ async function main(): Promise<void> {
       ),
       "utf8",
     );
+
+    // A furnished run whose models all failed to load reports the UNFURNISHED
+    // scene under a furnished label — the exact failure mode this file's header
+    // lists four of. It happened: `--furnish-mix blenderkit` once returned 140
+    // calls and 2943 triangles, byte-identical to an empty house, because every
+    // model threw in the loader and the rig's error boundary swallowed it. The
+    // count was in the JSON the whole time and nobody was looking at the JSON.
+    // Loud, on stderr, after the table, where it cannot be scrolled past.
+    const shortfall = results.filter((r) => r.furnishFailed > 0 || (opts.furnish > 0 && r.furnishPlaced < opts.furnish));
+    if (shortfall.length > 0) {
+      console.error(
+        `\n!! FURNISH INCOMPLETE — these numbers are NOT a furnished scene:\n` +
+          shortfall
+            .map((r) => `     ${r.scenario}: ${r.furnishPlaced}/${opts.furnish} placed, ${r.furnishFailed} failed`)
+            .join("\n") +
+          `\n   Do not promote this run to baselines/ and do not compare it against one.\n`,
+      );
+    }
 
     console.log(`\nwrote ${outPath}\n`);
   } finally {

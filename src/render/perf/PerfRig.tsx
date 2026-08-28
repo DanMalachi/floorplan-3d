@@ -3,6 +3,8 @@
 import { useLayoutEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { readGpuInfo } from "./gpuInfo";
+import { PerfFurnishRig } from "./PerfFurnishRig";
+import { useFurnishOptions } from "./furnishParams";
 import { usePerfEnabled, usePerfLoopAlways } from "./usePerfEnabled";
 import { usePerfSampler } from "./usePerfSampler";
 
@@ -69,6 +71,7 @@ function PerfContinuousLoop() {
 export function PerfRig() {
   const enabled = usePerfEnabled();
   const loopAlways = usePerfLoopAlways();
+  const furnish = useFurnishOptions();
 
   if (!enabled) return null;
 
@@ -76,6 +79,15 @@ export function PerfRig() {
     <>
       <PerfSampler />
       {loopAlways ? <PerfContinuousLoop /> : null}
+      {/* `?furnish=N` — the synthetic furnished benchmark scene. A THIRD mount
+          boundary, for the same reason as the other two and one degree more
+          strictly: this is the only perf-only code in the repo that changes
+          what is in the scene, so at count 0 the component must not exist —
+          no store subscription, no GLB fetch, no scene-graph mutation.
+          It renders furniture into the three.js graph ONLY; nothing it does
+          can reach `scene.furniture`, the Yjs doc or IndexedDB. See the
+          ownership note at the top of PerfFurnishRig.tsx. */}
+      {furnish.count > 0 ? <PerfFurnishRig options={furnish} /> : null}
     </>
   );
 }
