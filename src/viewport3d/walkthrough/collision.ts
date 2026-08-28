@@ -100,15 +100,33 @@ export function buildWallColliders(scene: Scene, offset: { cx: number; cz: numbe
   return segments;
 }
 
-/** Closest point on segment [a,b] to point p, all in the XZ plane. */
+/** Scratch for `closestPointOnSegment`'s result, reused across calls so the
+ *  per-frame depenetration loop allocates nothing (the standard three.js
+ *  module-scratch pattern). Safe to share: the function is module-private with
+ *  a single, non-recursive call site (`resolveWallCollision` below), and that
+ *  caller reads both fields synchronously on the next two lines before any
+ *  further call can overwrite them — so there is no point at which two live
+ *  results exist at once, even if `resolveWallCollision` itself is called
+ *  twice in a frame. */
+const _closest = { x: 0, z: 0 };
+
+/** Closest point on segment [a,b] to point p, all in the XZ plane. Returns the
+ *  shared `_closest` scratch — copy out if you need the value to survive the
+ *  next call. */
 function closestPointOnSegment(px: number, pz: number, seg: Segment2D): { x: number; z: number } {
   const abx = seg.bx - seg.ax;
   const abz = seg.bz - seg.az;
   const lenSq = abx * abx + abz * abz;
-  if (lenSq < 1e-12) return { x: seg.ax, z: seg.az };
+  if (lenSq < 1e-12) {
+    _closest.x = seg.ax;
+    _closest.z = seg.az;
+    return _closest;
+  }
   let t = ((px - seg.ax) * abx + (pz - seg.az) * abz) / lenSq;
   t = Math.min(1, Math.max(0, t));
-  return { x: seg.ax + abx * t, z: seg.az + abz * t };
+  _closest.x = seg.ax + abx * t;
+  _closest.z = seg.az + abz * t;
+  return _closest;
 }
 
 /**
