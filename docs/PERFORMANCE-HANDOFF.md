@@ -8,7 +8,155 @@ Branch: `perf-integrated-gpu` (off `accounts-cloud-sync`). Three commits:
 
 ---
 
-# ⚠ START HERE — state at end of session 2026-08-28
+# ⚠ START HERE — state at end of session 2026-08-30
+
+**9 commits today**, `ca04b7a` through `d402887`, on top of `9cadc65`. Branch
+`perf-integrated-gpu`, **still unmerged and undeployed**. `npx tsc --noEmit`
+exits 0. Working tree is clean apart from `docs/NAMING*.md` (branding work,
+leave alone), `public/furniture/blenderkit/opt-ktx2/` (gitignored assets — see
+BLOCKER 1) and `scripts/blenderkit/.scratch/`.
+
+## What shipped, and how each was verified
+
+| commit | what | verified by |
+|---|---|---|
+| `ca04b7a` | §5.1 wall geometry: 4 redundant neutral groups → 1. 6 draws/wall piece → 3 | `wallJunctions.test.ts` incl. new group-count assertion; **Dan's eye** on per-side wall paint |
+| `c528a89` | door-swing cascade: `doorSig` narrows 3 memos; shadow refresh throttled 10 Hz during a swing | `doorSig.test.ts` — 84 simulated frames, 3 recomputes, asserts a closed door still blocks; **Dan walked into a closed door** |
+| `144a2b2` | §5.2 joinery merge: window 6 pieces → 3 draws, door 9 → 7 | `joinery.test.ts`; **Dan's eye** on frames/mullions/thresholds |
+| `413e014` | measured baseline after the two draw-call changes | harness run, committed to `baselines/` |
+| `ce6ff5d` | kitchen tint scoped to the finish material — handles stay brushed metal | `npm run test:kitchen` green; **Dan's eye** |
+| `8a0da82` | (wrong fix, see `9a73b60`) | — |
+| `d19e43d` | **StrictMode double-invoke made the live room inescapable on the dev server** | reproduced and re-tested in a real browser |
+| `9a73b60` | reverts `8a0da82` — it was written against a wrong diagnosis and was unreachable code | file diffed byte-identical to pre-fix state |
+| `d402887` | KTX2/UASTC for the BlenderKit catalog | harness run, 40/40 placed, committed to `baselines/` |
+
+**Dan ran all five visual checks against the dev server and all five passed:**
+wall paint per side, window/door joinery, closed-door collision + swing shadow,
+kitchen colour wheel, cutaway fade. The wall-paint one was the real trap
+(`faceSide` moved materialIndex 4/5 → 1/2) and it is clear.
+
+## The three measured results
+
+**1. Draw calls, GTX 1060, unfurnished** (`baselines/2026-08-30-…-post-drawcall-collapse.json`
+vs `2026-08-27-…`). A consistent **−38 calls in every editor scenario, −27% to
+−32%**. Frame time did NOT visibly move (1.15 → 1.10 ms) and that is expected:
+the benchmark house is ~140 calls, where the fixed 12-pass composer floor
+dominates. The saving is 3 draws per wall piece so it scales with wall count;
+the 687-call house models ~210 calls saved.
+
+**2. The M2 Air readings — the central finding of this workstream does NOT transfer.**
+Four readings, Safari, DPR 2, 4.44 MP, furnished 40 (mix) where noted:
+
+| reading | frame p50/p95 | fps | js p50/p95 | js share |
+|---|---|---|---|---|
+| unfurnished | 17 / 45 ms | 59 | 1.0 / 4.0 | **6%** |
+| furnished, editor, mid-load | 28 / **1459 ms** | 36 | 3.0 / 207 | 11% |
+| furnished, editor, **settled** | **28 / 29 ms** | 36 | 3.0 / 4.0 | **11%** |
+| furnished, walkthrough | 22 / 25 ms | 45 | 2.0 / 4.0 | 9% |
+
+> **`js` is 6–11% of the frame on the M2, not the 83–94% measured on the 1060.
+> That machine is GPU/memory-bound, not CPU-bound.** Every "the app is CPU-bound"
+> conclusion in this document is 1060-specific. Two consequences: the draw-call
+> work helps the 1060 far more than the M2, and **Phase 5 quality tiers go back
+> on the table** — they were dismissed as "the wrong lever" on CPU-bound
+> reasoning that does not hold here.
+>
+> The 1459 ms p95 was a **load stall**, not steady state — that sample was taken
+> with textures still climbing 1→183. Settled, p95 sits 1 ms from p50: nothing
+> stutters, it is simply capped at 36 fps. Two separate problems: a ~1.5 s freeze
+> while 1328 MB of texture uploads, and a hard 36 fps ceiling at 4.44 MP.
+
+**3. KTX2/UASTC, measured on BlenderKit ×40, 40/40 models placed:**
+
+| | before | after |
+|---|---|---|
+| scene textures | **869 MB** | **232 MB** |
+| textures / triangles | 197 / 973 865 | 197 / 973 141 |
+| frame p50 | 4.8 ms | 4.9 ms |
+
+**3.74x, and it clears the <250 MB bar** — which the pilot predicted it would
+not. Frame time unchanged because the 1060 has VRAM to spare; this is aimed at
+the M2. Extrapolating the real mix (1328 MB) gives ~355 MB, still over — the
+IKEA half is uncapped resolution and needs the 1024 cap as a second multiplier.
+
+UASTC, **not ETC1S**: the pilot measured ETC1S at 96/255 max error on woven
+fabric (visible structured noise) vs UASTC's 11/255. Encoder uses zstd 19 +
+UASTC RDO. Disk size goes 20 MB → 123.5 MB — **UASTC trades download for VRAM**,
+~6x worse on the wire for 3.74x better in memory, and it lands on first load,
+which is the moment that already freezes.
+
+## Blockers — Dan's call, nothing proceeds without them
+
+1. **`opt-ktx2/` hosting.** `MODEL_BASE` now points at
+   `public/furniture/blenderkit/opt-ktx2/`, which `.gitignore` excludes, while
+   the WebP `opt/` it replaces IS tracked (151 files). **A deploy from this
+   branch would 404 every BlenderKit model.** Choose: commit the assets (+124 MB
+   repo) or host on Vercel Blob where the IKEA models already live. Blob is the
+   consistent choice.
+2. **IKEA licensing.** 1692 MB — the bulk of the problem — is the IKEA catalog.
+   Re-encoding a hosted non-CC0 asset is the unresolved redistribution question.
+   The pipeline handles them; it was deliberately run on BlenderKit only.
+3. **Sonnet budget.** The KTX2 worker died on the account session limit
+   (resets 9:30pm). Opus finished the job by hand. Parallel work waits.
+
+## Decisions Dan ANSWERED 2026-08-30
+
+- **KTX2**: conditionally yes — acceptable if quality is unchanged; pilot first.
+  Pilot done, quality cleared, pipeline built and measured.
+- **Wall mode during the 23.8 ms p95 reading**: **SOLID**. So `WallMesh`'s
+  per-frame cutaway material arrays are NOT implicated — drop that suspect.
+- **Kitchen `tagTint`**: approved with a visual check. Done and checked.
+- **Prioritisation rule**: skip anything worth ~2%. Fixture instancing (2.3%)
+  and Phase 5-as-originally-scoped were dropped on this basis — but see the M2
+  finding, which reinstates quality tiers for that hardware.
+
+## Do these next
+
+1. **Resolve BLOCKER 1**, then re-measure the M2 with a rebuilt `:3001`. That
+   "after" reading is the one measurement that would prove KTX2 fixes the freeze.
+   Nothing has yet been measured on the M2 with any of today's work.
+2. **`?dpr=1` hatch.** There is no way to force DPR 1 from Safari — no such URL
+   param exists. One reading at 1.11 MP vs 4.44 MP would size the 36 fps ceiling
+   and say whether quality tiers are worth building.
+3. **The 1024 cap**, now that KTX2 is proven — the two multiply and the earlier
+   "don't bother with the cap" advice is superseded.
+4. Remaining Phase 4: `React.memo` under `src/viewport3d/` (map prop stability
+   first; `jsMs` cannot see it), rAF-throttle the 9 `onPointerMove` sites,
+   code-split the viewport.
+5. §5.3 wall body merge (−16%) and §5.4 dead draws (−3.5%) if the 1060 matters.
+
+## Two dev-server bugs found and fixed (not perf work)
+
+**The live room was inescapable on localhost.** `reactStrictMode` defaults true,
+so `page.tsx`'s startup effect runs twice in dev — and both its escape hatches
+are single-use: `?home=1` is consumed by its own `replaceState`, `live:left` by
+its own `removeItem`. Pass 2 sees neither and redirects into the room. Every
+attempt to open or create another project bounced straight back. **Dev-only** —
+production invokes once, so `done.design` was never affected. Fixed with a ref
+guard (`d19e43d`); the effect's own comment already claimed "Runs once".
+No projects were lost — all of Dan's were written correctly and were simply
+unreachable.
+
+**`next build` broke from a dependency shift.** Adding `@gltf-transform` pulled
+a nested sharp 0.35 and flipped which typings TS resolved, failing
+`softDecor.test.ts`'s cast. That test only calls `.metadata()`, so it now types
+that shape rather than tracking sharp's module form. The same install also
+corrupted the running dev server's module graph mid-flight — symptom is a 500 and
+`Can't resolve 'next/dist/server/…'`; fix is kill the server, delete `.next`,
+restart.
+
+## Process note that keeps paying
+
+Every agent owned a **disjoint file set** and all four landed cleanly in parallel
+with zero conflicts. Two of them also **corrected their own briefs**: the
+handoff's claim that `wardrobe` already used `tagTintOfMaterial` was false, and
+the "112→3 materials" framing was overstated (tinted it is 101 clones → 62, ~39%
+fewer; the real win there is the handle-colouring bug, not perf). Keep briefing
+workers to report what contradicts their instructions.
+
+---
+
+# START HERE — state at end of session 2026-08-28 (previous session)
 
 All of the session's work is **committed** — five commits, `2dce53f` through
 `28946a6`, on top of `6d7704d`. Still unmerged and undeployed. It typechecks
