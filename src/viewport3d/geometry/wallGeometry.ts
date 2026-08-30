@@ -6,9 +6,12 @@ import type { WallEnds } from "./wallJunctions";
 // or butted joint ever is, once you work in wall-local space (x along the wall,
 // +z the side-A face). The ends slant; the long faces stay exactly ±z.
 //
-// It deliberately mimics BoxGeometry: same centred origin, same [+X,-X,+Y,-Y,
-// +Z,-Z] group order. So the existing per-face material array still lines up,
-// group 4 is still side A and group 5 still side B, and paint keeps working.
+// It deliberately mimics BoxGeometry's centred origin and [+X,-X,+Y,-Y,+Z,-Z]
+// face winding. Materials only need 3 slots though — the four end/top/bottom
+// faces share one `neutral` material and are contiguous in the index buffer,
+// so they're emitted as ONE group (perf-drawcalls.md §5.1): group 0 = ends/
+// top/bottom (neutral), group 1 = +Z side A, group 2 = -Z side B. WallMesh's
+// `mats` array and `faceSide` must stay in that order for paint to work.
 
 type V = [number, number, number];
 
@@ -64,7 +67,6 @@ export function buildWallGeometry(size: V, ends: WallEnds): THREE.BufferGeometry
     const base = f * 4;
     for (const v of quad) position.push(v[0], v[1], v[2]);
     index.push(base, base + 1, base + 2, base, base + 2, base + 3);
-    geom.addGroup(f * 6, 6, f); // one material slot per face, as BoxGeometry does
     if (f === 4) {
       // +Z side A: quad order is Ab(BL), Cb(BR), Ct(TR), At(TL).
       const u1 = (xC - xA) / PAINT_TILE_M;
@@ -83,6 +85,15 @@ export function buildWallGeometry(size: V, ends: WallEnds): THREE.BufferGeometry
   geom.setAttribute("position", new THREE.Float32BufferAttribute(position, 3));
   geom.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   geom.setIndex(index);
+  // Faces 0-3 (+X,-X,+Y,-Y — the two ends, top and bottom) are contiguous in
+  // the index buffer and all resolve to the same `neutral` material, so they
+  // collapse into one group/draw instead of four (perf-drawcalls.md §5.1).
+  // Group 1 is +Z (side A, was material slot 4), group 2 is -Z (side B, was
+  // slot 5) — WallMesh's `mats` array and `faceSide` must agree with this
+  // 3-slot order.
+  geom.addGroup(0, 24, 0);
+  geom.addGroup(24, 6, 1);
+  geom.addGroup(30, 6, 2);
   // No vertex is shared between faces, so this stays flat-shaded — and the long
   // faces come out exactly (0,0,±1), which is what face-picking leans on.
   geom.computeVertexNormals();

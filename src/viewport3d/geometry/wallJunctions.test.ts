@@ -3,6 +3,7 @@
 
 import type { Node, Wall } from "@/schema/scene";
 import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./wallJunctions";
+import { buildWallGeometry } from "./wallGeometry";
 
 const T = 0.1;
 const H = T / 2; // half-thickness — every expected corner lands on a multiple
@@ -279,6 +280,36 @@ console.log("\ndegenerate input is survivable");
   ], nodes);
   check("zero-length wall is skipped", ends.get("zero") === undefined);
   check("dangling wall is skipped", ends.get("dangling") === undefined);
+}
+
+// ---------------------------------------------------------------------------
+// perf-drawcalls.md §5.1: the wall box's 4 neutral end/top/bottom faces must
+// stay collapsed into ONE draw-call group, not regress back to 4. This is the
+// single highest-value draw-call cut in the app (~210 of 640 house calls) and
+// nothing else in this file or joinery.test.ts asserted on groups before.
+console.log("\nwall geometry — collapsed neutral groups (perf-drawcalls.md §5.1)");
+{
+  const geom = buildWallGeometry([2, 2.4, 0.1], SQUARE_ENDS);
+  const groups = geom.groups;
+  check("exactly 3 groups (not 6)", groups.length === 3, `got ${groups.length}`);
+  // Group 0: the 4 merged neutral faces (+X,-X,+Y,-Y), 24 indices, materialIndex 0.
+  check("group 0 covers the 4 merged neutral faces", groups[0]?.start === 0 &&
+    groups[0]?.count === 24 && groups[0]?.materialIndex === 0,
+    JSON.stringify(groups[0]));
+  // Group 1: +Z side A, materialIndex 1 — this is what `faceSide` in
+  // WallMesh.tsx reads to know which face got painted/clicked.
+  check("group 1 is side A at materialIndex 1", groups[1]?.start === 24 &&
+    groups[1]?.count === 6 && groups[1]?.materialIndex === 1,
+    JSON.stringify(groups[1]));
+  // Group 2: -Z side B, materialIndex 2.
+  check("group 2 is side B at materialIndex 2", groups[2]?.start === 30 &&
+    groups[2]?.count === 6 && groups[2]?.materialIndex === 2,
+    JSON.stringify(groups[2]));
+  // The groups must still cover every index exactly once — no gaps, no
+  // overlap, no dropped triangles from the merge.
+  const totalCovered = groups.reduce((s, g) => s + g.count, 0);
+  check("groups cover the whole index buffer once", totalCovered === geom.getIndex()!.count,
+    `${totalCovered} vs ${geom.getIndex()!.count}`);
 }
 
 console.log(

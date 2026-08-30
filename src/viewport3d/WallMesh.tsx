@@ -65,9 +65,10 @@ const isPick = (p: PickRef | null, kind: PickRef["kind"], id: string) =>
   p !== null && p.kind === kind && p.id === id;
 
 /**
- * Which painted face did the ray land on? Groups 4 and 5 are the wall's two
- * long faces (see buildWallGeometry, which keeps BoxGeometry's ordering); the
- * ends, top and bottom carry no paint and return undefined.
+ * Which painted face did the ray land on? Groups 1 and 2 are the wall's two
+ * long faces (see buildWallGeometry — group 0 is the merged ends/top/bottom,
+ * perf-drawcalls.md §5.1); the ends, top and bottom carry no paint and return
+ * undefined.
  *
  * Read from the material group rather than the face normal: a mitred end face
  * is slanted, and at a 90-degree corner its normal is far enough round to look
@@ -76,7 +77,7 @@ const isPick = (p: PickRef | null, kind: PickRef["kind"], id: string) =>
  */
 const faceSide = (e: { face?: THREE.Face | null }): "a" | "b" | undefined => {
   const mi = e.face?.materialIndex;
-  return mi === 4 ? "a" : mi === 5 ? "b" : undefined;
+  return mi === 1 ? "a" : mi === 2 ? "b" : undefined;
 };
 
 const fmt = (m: number) => `${m.toFixed(2)} m`;
@@ -274,11 +275,11 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
     [],
   );
   useEffect(() => () => baseboardMat.dispose(), [baseboardMat]);
-  // BoxGeometry face→material order is [+X,-X,+Y,-Y,+Z,-Z]; side A = +Z, B = -Z.
-  const mats = useMemo(
-    () => [neutral, neutral, neutral, neutral, matA, matB],
-    [neutral, matA, matB],
-  );
+  // wallGeometry.ts groups: 0 = ends/top/bottom (neutral), 1 = +Z side A,
+  // 2 = -Z side B (perf-drawcalls.md §5.1 — collapsed from BoxGeometry's
+  // 6-slot [+X,-X,+Y,-Y,+Z,-Z] order into 3, since the first four all share
+  // `neutral`). Must match `faceSide`'s materialIndex mapping below.
+  const mats = useMemo(() => [neutral, matA, matB], [neutral, matA, matB]);
   useEffect(() => {
     matA.color.set(wall.paintA ?? WALL_COLOR);
   }, [matA, wall.paintA]);
