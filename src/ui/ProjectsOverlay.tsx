@@ -17,6 +17,30 @@ import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, microLabel } from "@/ui/tokens";
 
+/** The room id when the gallery is open ON a live-room route (`/v/<id>`), else
+ *  null. Opening or creating a NON-live project from inside a room has to leave
+ *  the room first: `CollabRoom`'s observer keeps writing the room's own scene
+ *  into the store, so the project being opened would be overwritten on the next
+ *  update and never actually appear. */
+function roomIdInPath(): string | null {
+  const m = /^\/v\/([^/?#]+)/.exec(window.location.pathname);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/** Leave the live room back to the plain editor, landing on the project that
+ *  was just made current. Mirrors `CollabRoom`'s Leave button — the `live:left`
+ *  flag stops the home page bouncing straight back into the room — but omits
+ *  `?home=1`, because the caller has already chosen a project and does not want
+ *  the gallery reopened on top of it. */
+function leaveRoomTo(roomId: string): void {
+  try {
+    sessionStorage.setItem("live:left", roomId);
+  } catch {
+    /* private mode: the redirect guard is best-effort, the navigation still works */
+  }
+  window.location.href = "/";
+}
+
 function ago(ts: number): string {
   const s = (Date.now() - ts) / 1000;
   if (s < 45) return "just now";
@@ -94,10 +118,25 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
       await enterLiveRoom(m.liveRoomId, id, { role: m.liveRole ?? "build" });
       return;
     }
+    // Opening a non-live project while standing in a live room: leave the room,
+    // or its observer overwrites the project we just opened.
+    const room = roomIdInPath();
+    if (room) {
+      leaveRoomTo(room);
+      return;
+    }
     onClose();
   }
   async function handleNew() {
     await createProject();
+    // Same trap as handleOpen, and the one that actually bit: a project created
+    // from inside a live room is written to IndexedDB but never reachable — the
+    // room keeps rendering its own scene over it.
+    const room = roomIdInPath();
+    if (room) {
+      leaveRoomTo(room);
+      return;
+    }
     onClose();
   }
   async function handleDelete(m: ProjectMeta) {
