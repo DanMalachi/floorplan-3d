@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { CameraControls } from "@react-three/drei";
-import type { Scene } from "@/schema/scene";
+import type { Opening, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { nodeMap } from "@/lib/rooms/roomArea";
 import { T, glass } from "@/ui/tokens";
@@ -56,6 +56,37 @@ function shortestAngle(a: number, b: number): number {
 /** Smoothstep: eases out of the orbit pose and into the standing one, so the
  *  flight has no visible start or stop, just an arrival. */
 const ease = (t: number) => t * t * (3 - 2 * t);
+
+/** A door's identity for anchor/collider purposes: every field that changes
+ *  its position, size or open/closed STATE — deliberately excluding
+ *  `swingDeg`/`slide.open`, the two fields a door-open animation actually
+ *  animates. Used to build a string key (see `doorSig` below) that a swing
+ *  leaves untouched frame-to-frame even though `scene.openings`'s own array
+ *  identity changes every frame while one is in flight (a fresh `Scene` is
+ *  published each step so the swinging leaf redraws). Gating the expensive
+ *  `buildDoorAnchors`/`buildClosedDoorColliders` recomputes on this instead
+ *  of on `scene` itself is what stops them re-running 60x/sec during a
+ *  swing; keying it off real geometry (not just id) also means a remote
+ *  collaborator resizing or re-hosting a door mid-walkthrough still gets
+ *  picked up, and `isDoorClosed(o)` is folded in so the one field that MUST
+ *  never go stale — whether the door currently blocks the player — is part
+ *  of the key by construction. */
+function doorGeometryKey(o: Opening): string {
+  const s = o.slide;
+  return [
+    o.id,
+    o.wallId,
+    o.offset,
+    o.width,
+    o.height,
+    o.sill,
+    o.hinge ?? "",
+    o.double ? 1 : 0,
+    (o.leafSplit ?? []).join(","),
+    s ? `${s.style}:${s.panels}:${s.glazed ? 1 : 0}:${s.side ?? ""}` : "",
+    isDoorClosed(o) ? 1 : 0,
+  ].join(":");
+}
 
 // e.code, not e.key — layout-independent, and arrows share the same axis.
 const MOVE_KEYS: Record<string, "forward" | "back" | "left" | "right" | "sprint"> = {
@@ -160,12 +191,29 @@ export function WalkthroughRig({
   // so narrowing the deps skips this recompute during the ~1-2s swing.
   const nodes = useMemo(() => nodeMap(scene.nodes), [scene.nodes]);
   const colliders = useMemo(() => buildWallColliders(scene, offset), [scene.nodes, scene.walls, offset]);
+  // Recomputed every frame (cheap: a filter/map/join over the door list, no
+  // wall lookups, no buildJoinery) but byte-identical frame-to-frame during a
+  // swing — see `doorGeometryKey`. `blockingColliders` and `doorAnchors`
+  // below key their expensive recompute off this instead of off `scene`
+  // directly, which is what used to make them redo `buildJoinery` / wall
+  // lookups on every single frame of a door swing (~1-2s, 60x/sec).
+  const doorSig = useMemo(
+    () =>
+      scene.openings
+        .filter((o) => o.type === "door")
+        .map(doorGeometryKey)
+        .join("|"),
+    [scene.openings],
+  );
   const blockingColliders = useMemo(() => {
     const furniture = buildFurnitureColliders(scene, offset);
     const doorLeaves = buildClosedDoorColliders(scene, nodes, offset);
     return [...furniture, ...doorLeaves];
-  }, [scene, offset, nodes]);
-  const doorAnchors = useMemo(() => buildDoorAnchors(scene, nodes, offset), [scene, nodes, offset]);
+  }, [scene.furniture, scene.walls, nodes, offset, doorSig]);
+  const doorAnchors = useMemo(
+    () => buildDoorAnchors(scene, nodes, offset),
+    [scene.walls, nodes, offset, doorSig],
+  );
   // openingId -> target value (degrees for a hinged door, 0..1 for sliding)
   // while its open/close transition is animating. Empty when nothing's mid-swing.
   const doorTargetsRef = useRef(new Map<string, number>());
@@ -186,7 +234,11 @@ export function WalkthroughRig({
   // rig now tracks two vertical values: the height of the surface the player is
   // standing on (a step, a landing, or 0), and the damped eye height chasing
   // it. Everything else about movement stays XZ.
-  const stairGround = useMemo(() => buildStairGround(scene, offset), [scene, offset]);
+  // stairs only — buildStairGround reads nothing else, and a door swing's
+  // per-frame `{...liveScene, openings}` spread keeps `scene.stairs` at its
+  // original reference (same reasoning as `colliders` above), so this now
+  // never recomputes during a swing either.
+  const stairGround = useMemo(() => buildStairGround(scene, offset), [scene.stairs, offset]);
   const groundRef = useRef(0);
   const eyeYRef = useRef(CFG.eyeHeightM);
   // Non-null only while the entry flight is in the air (see the mount effect).

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useFrame, useStore } from "@react-three/fiber";
 import { useSceneStore } from "@/store/useSceneStore";
 
@@ -77,17 +77,56 @@ export function ShadowRefreshRig() {
     refresh();
   }, [refresh, scene, timeOfDay, envPreset, weather, wallMode, showCeilings]);
 
-  // A gesture moves a caster continuously, so for its duration the shadow maps
-  // genuinely do need to refresh every frame — this is the one state where the
-  // old always-on behaviour was the correct behaviour. Door swings in
-  // walkthrough are the same case: the leaf is a caster and it animates over
-  // ~1-2s without the scene identity changing per frame.
-  const animating = gestureBase !== null || doorGestureActive;
+  // A drag gesture (wall/opening/furniture move, etc.) moves a caster
+  // continuously WHILE the user is looking straight at the thing they're
+  // dragging — the old always-on behaviour is genuinely correct for its
+  // duration, so it is untouched here.
+  const dragActive = gestureBase !== null;
   useFrame(() => {
     // Already inside a rendering frame, so only the flag is needed here — but
     // the frame after this one still has to happen, and calling invalidate from
     // within useFrame is exactly how R3F is told to schedule it.
-    if (animating) refresh();
+    if (dragActive) refresh();
+  });
+
+  // A walkthrough door swing is a different animal from a drag: it is a SIDE
+  // EFFECT of walking near a door, not something being actively steered, it
+  // runs a fixed ~1-2s regardless of whether anyone is even looking at it,
+  // and it moves exactly one small caster (a door leaf) — yet refreshing it
+  // the same way as a drag pays the SAME full bill (the 2048^2 sun map plus
+  // all six faces of every casting point-light cube, ~10.5M shadow texels,
+  // see the class doc) on every one of its ~60-120 frames. That reinstates
+  // precisely the per-frame shadow cost Phase 1 removed, for a single leaf
+  // most of the time nobody is looking at.
+  //
+  // Shadows are already PCF-blurred (`SHADOW.radius`/`ROOM_LIGHT.shadow.radius`
+  // in contract.ts) and the leaf itself is moving, both of which hide a few
+  // frames of lag, so the steady state throttles to DOOR_SWING_REFRESH_HZ
+  // instead of every frame. The two edges do NOT throttle: the instant the
+  // swing starts nothing has ever refreshed the moving leaf, so the first
+  // frame can't sit out a throttle window without a visibly stale shadow the
+  // moment the door starts moving; the instant it stops, the resting frame
+  // must land exactly rather than still be catching up. (The scene-identity
+  // `useEffect` above also fires once the swing's `endGesture` commits, so
+  // the stop edge is belt-and-braces, not the only thing landing it.)
+  const DOOR_SWING_REFRESH_HZ = 10; // vs. 60 fps steady-state — ~83% fewer shadow passes while a door is swinging
+  const doorSwingWasActive = useRef(false);
+  const doorSwingElapsedS = useRef(0);
+  useFrame((_state, delta) => {
+    if (!doorGestureActive) {
+      doorSwingWasActive.current = false;
+      return;
+    }
+    if (!doorSwingWasActive.current) {
+      doorSwingWasActive.current = true;
+      doorSwingElapsedS.current = 0;
+      refresh(); // rising edge — refresh immediately, don't wait out the throttle
+      return;
+    }
+    doorSwingElapsedS.current += delta;
+    if (doorSwingElapsedS.current < 1 / DOOR_SWING_REFRESH_HZ) return;
+    doorSwingElapsedS.current = 0;
+    refresh();
   });
 
   // The one trigger with no store event: a GLB that finishes loading adds a
