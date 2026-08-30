@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Viewport } from "@/viewport3d/Viewport";
 import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
@@ -203,7 +203,17 @@ export default function Home() {
   // Dev escape hatch: `?gt=<name>` loads a hand-authored ground-truth plan from
   // floorplan-gt/ straight into the 3D view. It deliberately SKIPS persistence
   // so viewing a GT never overwrites the user's autosaved working plan.
+  // StrictMode runs effects twice in dev, and BOTH of this effect's escape
+  // hatches are single-use: `?home=1` is consumed by the replaceState below and
+  // `live:left` by its removeItem. On a second invocation neither is visible any
+  // more, so the "reopen the live room" branch fires despite the user having just
+  // asked not to — the room becomes inescapable on the dev server while
+  // production (single invocation) behaves correctly. Run the body once per mount.
+  const bootstrapped = useRef(false);
+
   useEffect(() => {
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
     const gt = new URLSearchParams(window.location.search).get("gt");
     if (!gt) {
       (async () => {
