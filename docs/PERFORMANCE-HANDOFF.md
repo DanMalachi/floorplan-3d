@@ -71,15 +71,21 @@ conclusion from it.
 
 1. **KTX2.** Measurement says no uncompressed-RGBA8 path reaches the <250 MB exit
    bar. Dan previously ruled KTX2 out deliberately (`encoder:null` fails closed by
-   design). Asked 2026-08-28, **not yet answered.**
-2. **Wall mode during the 23.8 ms p95 reading** — cutaway or solid? Decides
-   whether `WallMesh`'s per-frame material arrays are a real second source.
-   Asked, **not yet answered.**
+   design). **ANSWERED 2026-08-30: conditionally yes — acceptable if it does not
+   change actual visual quality. Dan asked for a PILOT on a few representative
+   items first, judged by his eye, before it goes near the whole catalog.**
+   Pilot in flight.
+2. **Wall mode during the 23.8 ms p95 reading** — **ANSWERED 2026-08-30: SOLID.**
+   So `WallMesh.tsx` (~:319) allocating a fresh material array per wall per frame
+   during cutaway fades is NOT implicated in that reading — it only runs in
+   `wallMode === "cutaway"`. Drop it as a suspect for the 23.8 ms tail; the
+   door-swing cascade is the remaining candidate. Do not spend effort there.
 3. **`tagTint()` on kitchen generators.** Switching them to the narrower
    `tagTintOfMaterial` (as `wardrobe` already does) would hold the 112→3 material
    win when a user picks a colour — but it changes what the colour wheel *does*
    to a kitchen (tints tagged meshes only, not carcass and handles). A look
-   decision, deliberately not taken. Asked, **not yet answered.**
+   decision. **ANSWERED 2026-08-30: approved, conditional on a visual check** —
+   implement it, then show Dan what changed so he can judge the look in the app.
 
 ## Two process notes worth keeping
 

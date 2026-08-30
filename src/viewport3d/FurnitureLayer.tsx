@@ -8,6 +8,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { applyShadowClass, shadowProps } from "@/render/materialClass";
+import { assertKtx2TexturesResolved, useKtx2ExtendLoader } from "@/render/ktx2";
 import { CATALOG_BY_ID } from "@/furniture/catalog";
 import { specOf } from "@/furniture/spec";
 import { placementCollides, snapToWall, wallOBBs, type OBB } from "./collision";
@@ -122,7 +123,15 @@ function GlbModel({ url, footprint, draco, tint, opacity, rotation }: {
   opacity?: number;
   rotation?: [number, number, number];
 }) {
-  const gltf = useGLTF(url, draco ? "/draco/" : false);
+  // extendLoader is a no-op for any GLB that doesn't declare
+  // KHR_texture_basisu (every IKEA model, and any BlenderKit model not yet
+  // run through scripts/blenderkit/optimize-ktx2.ts) — see src/render/ktx2.ts.
+  const ktx2ExtendLoader = useKtx2ExtendLoader();
+  const gltf = useGLTF(url, draco ? "/draco/" : false, false, ktx2ExtendLoader);
+  // Throws if a KTX2 texture silently failed to transcode — see
+  // assertKtx2TexturesResolved's docstring for why GLTFLoader alone won't
+  // catch this. ModelBoundary below treats the throw exactly like a 404.
+  assertKtx2TexturesResolved(gltf, url);
   const rotKey = rotation?.join(",");
   const obj = useMemo(
     () => normalize(gltf.scene, footprint, tint, opacity, rotation),

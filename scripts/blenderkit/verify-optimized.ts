@@ -7,8 +7,15 @@
  * means the footprint we derived during the audit no longer describes the file
  * the app will actually load.
  *
+ * Always compares against RAW_DIR (the true original download), even when
+ * checking a downstream directory like `opt-ktx2/` — that catches drift
+ * accumulated across the WHOLE pipeline (raw → opt → opt-ktx2), not just
+ * the last hop, which is a stricter check than comparing opt-ktx2/ to opt/
+ * alone.
+ *
  * Run:
  *   npx tsx scripts/blenderkit/verify-optimized.ts
+ *   npx tsx scripts/blenderkit/verify-optimized.ts --dir opt-ktx2
  */
 
 import { existsSync, statSync, readdirSync } from "node:fs";
@@ -16,7 +23,9 @@ import path from "node:path";
 import { geomSize } from "../ikea/glb-geom";
 
 const RAW_DIR = path.resolve("public/furniture/blenderkit");
-const OPT_DIR = path.resolve("public/furniture/blenderkit/opt");
+const dirArg = process.argv.indexOf("--dir");
+const OPT_SUBDIR = dirArg >= 0 ? process.argv[dirArg + 1] : "opt";
+const OPT_DIR = path.resolve("public/furniture/blenderkit", OPT_SUBDIR);
 
 /** Percent AABB drift we tolerate from mesh decimation. */
 const MAX_DRIFT_PCT = 2.0;

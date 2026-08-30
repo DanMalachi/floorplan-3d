@@ -7,6 +7,7 @@ import { CATALOG_BY_ID, type FurnitureAsset } from "@/furniture/catalog";
 import { applyShadowClass } from "@/render/materialClass";
 import { useSceneStore } from "@/store/useSceneStore";
 import { noteItemFailed, noteItemPlaced, noteItemRemoved, notePlan, resetFurnishBridge } from "./furnishBridge";
+import { assertKtx2TexturesResolved, useKtx2ExtendLoader } from "@/render/ktx2";
 import type { FurnishOptions } from "./furnishParams";
 import { planFurnish, type FurnishPlacement } from "./furnishPlan";
 
@@ -99,7 +100,15 @@ function FurnishItem({ placement, spec }: { placement: FurnishPlacement; spec: F
   // `ItemBoundary` swallowed it, and `--furnish-mix blenderkit` reported numbers
   // identical to an unfurnished scene while recording `placed 0 / failed 40`.
   // A decoder path costs nothing on a model that does not need one.
-  const gltf = useGLTF(spec.realModel!, "/draco/");
+  // Same KTX2 hookup as the product path (FurnitureLayer.tsx's GlbModel) —
+  // see src/render/ktx2.ts. A no-op for any GLB without KHR_texture_basisu.
+  const ktx2ExtendLoader = useKtx2ExtendLoader();
+  const gltf = useGLTF(spec.realModel!, "/draco/", false, ktx2ExtendLoader);
+  // Throws on a silently-untextured KTX2 model instead of letting it render
+  // (and count as "placed") with a texture GLTFLoader quietly dropped — the
+  // exact hollow-run shape this rig's own docstring above already warns
+  // about, one layer deeper (per-texture, not per-model).
+  assertKtx2TexturesResolved(gltf, spec.realModel!);
   const rotKey = spec.modelRotation?.join(",");
 
   const object = useMemo(

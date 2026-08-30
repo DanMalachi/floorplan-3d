@@ -1,0 +1,5 @@
+label	width	height	rgba8_mip_bytes	uastc_file_bytes	etc1s_file_bytes	bc7_from_uastc_bytes	astc_from_uastc_bytes	bc7_from_etc1s_bytes	astc_from_etc1s_bytes
+large_sharp_detail__IDANAS_bed_wood_grain	3118	3118	51850261	12982144	1068951	12981600	12981600	12981600	12981600
+smooth_gradient__BILLY_glass_shelf	2033	2033	22043141	5523536	8847	5523008	5523008	5523008	5523008
+fabric_weave__APPLARYD_sofa	2498	2498	33280021	8337696	894031	8337152	8337152	8337152	8337152
+typical_median__NORDKISA_bamboo	1485	1485	11761200	2953520	345155	2952992	2952992	2952992	2952992

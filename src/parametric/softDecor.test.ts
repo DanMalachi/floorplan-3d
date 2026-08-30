@@ -688,7 +688,18 @@ console.log("\nthe pictures are real files, and the registry knows their shape")
   // `typeof import("sharp")` is the module NAMESPACE, which is not callable —
   // sharp exposes the callable as its default export. Under sharp 0.35 this cast
   // made `sharp(file)` a type error and broke `next build` for the whole app.
-  const sharp = require("sharp") as typeof import("sharp").default;
+  //
+  // ...but sharp 0.34 uses `export =` and has no `.default` to point at, so
+  // pinning the cast to either shape breaks under the other, and which one TS
+  // resolves depends on the whole dependency tree: adding @gltf-transform (which
+  // pulls its own nested sharp) was enough to flip it and fail the build. Only
+  // `.metadata()` is ever called here, so type the shape that is actually used
+  // and stop tracking sharp's module form. `.default ?? mod` covers both at
+  // runtime the same way the cast covers both at compile time.
+  const sharpMod = require("sharp") as { default?: unknown };
+  const sharp = (sharpMod.default ?? sharpMod) as (
+    input: string,
+  ) => { metadata(): { width?: number; height?: number } };
   for (const art of ARTWORKS) {
     const file = resolve(process.cwd(), "public", art.url.replace(/^\//, ""));
     const there = existsSync(file);

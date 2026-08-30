@@ -29,8 +29,15 @@ import type { AuditRow } from "./audit";
 const AUDIT = path.resolve("data/furniture-blenderkit.audit.json");
 const OUT = path.resolve("data/furniture-blenderkit.catalog.json");
 
-/** Public path the app serves the optimized models from. */
-const MODEL_BASE = "/furniture/blenderkit/opt";
+/** Public path the app serves the optimized models from.
+ *
+ * `opt-ktx2` (KTX2/UASTC textures, `scripts/blenderkit/optimize-ktx2.ts`)
+ * rather than `opt` (WebP) — the ~4x GPU-resident win Phase 3's texture-
+ * memory bar needs. Every id here must have a matching file in
+ * `public/furniture/blenderkit/opt-ktx2/`; `optimize-ktx2.ts` processes the
+ * exact same `select()` + `isContentRejected()` set this script does, so the
+ * two are kept in lockstep by construction, not by a manual list. */
+const MODEL_BASE = "/furniture/blenderkit/opt-ktx2";
 
 interface CatalogRow {
   assetId: string;
