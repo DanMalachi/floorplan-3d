@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { carcass, frontOf, plinth, countertop, barHandle, knobHandle, handleMat, PLINTH_H, COUNTER_T, COUNTER_OVER, FRONT_T, GAP, REVEAL } from "./parts";
-import { finishMaterial, tagTint } from "./materials";
+import { finishMaterial, tagTintOfMaterial } from "./materials";
 
 const CARCASS_H = 0.72; // base-unit carcass height; counter surface sits at PLINTH_H + CARCASS_H + COUNTER_T = 0.84
 const WALL_CAB_D = 0.32;
@@ -62,7 +62,7 @@ export const kitchenRunGenerator: GeneratorDef = {
     for (let i = 0; i < unitCount; i++) {
       const x = -w / 2 + unitW * (i + 0.5);
       const unit = carcass(unitW, d, CARCASS_H, mat);
-      tagTint(unit, spec.finish, spec.color);
+      tagTintOfMaterial(unit, spec.finish, spec.color, mat);
       unit.position.set(x, PLINTH_H, 0);
       group.add(unit);
 
@@ -74,7 +74,7 @@ export const kitchenRunGenerator: GeneratorDef = {
         for (let j = 0; j < 3; j++) {
           const y = frontBandBottom + j * thirdH + thirdH / 2;
           const front = frontOf(spec.front, frontBandW, thirdH - GAP, mat);
-          tagTint(front, spec.finish, spec.color);
+          tagTintOfMaterial(front, spec.finish, spec.color, mat);
           front.position.set(x, y, frontZ);
           group.add(front);
           const handle = handleFor(spec);
@@ -88,7 +88,7 @@ export const kitchenRunGenerator: GeneratorDef = {
         // Single door, hinge alternating, handle 60mm below the top edge.
         const y = frontBandBottom + frontBandH / 2;
         const front = frontOf(spec.front, frontBandW, frontBandH, mat);
-        tagTint(front, spec.finish, spec.color);
+        tagTintOfMaterial(front, spec.finish, spec.color, mat);
         front.position.set(x, y, frontZ);
         group.add(front);
         const handle = handleFor(spec);
@@ -104,12 +104,12 @@ export const kitchenRunGenerator: GeneratorDef = {
 
     // Plinth + countertop span the full run, backs flush with the carcasses'.
     const plinthMesh = plinth(w, d, mat);
-    tagTint(plinthMesh, spec.finish, spec.color);
+    tagTintOfMaterial(plinthMesh, spec.finish, spec.color, mat);
     plinthMesh.position.set(0, PLINTH_H / 2, -0.015);
     group.add(plinthMesh);
 
     const counter = countertop(w, d, counterMat);
-    tagTint(counter, spec.finish2 ?? "counter-oak", spec.color2);
+    tagTintOfMaterial(counter, spec.finish2 ?? "counter-oak", spec.color2, counterMat);
     counter.position.set(0, PLINTH_H + CARCASS_H + COUNTER_T / 2, COUNTER_OVER / 2);
     group.add(counter);
 
@@ -121,7 +121,7 @@ export const kitchenRunGenerator: GeneratorDef = {
     for (let i = 0; i < wallCabEff; i++) {
       const x = -w / 2 + unitW * (i + 0.5);
       const cab = carcass(unitW, WALL_CAB_D, WALL_CAB_H, mat);
-      tagTint(cab, spec.finish, spec.color);
+      tagTintOfMaterial(cab, spec.finish, spec.color, mat);
       cab.position.set(x, h - WALL_CAB_H, wallCabZ);
       group.add(cab);
 
@@ -129,7 +129,7 @@ export const kitchenRunGenerator: GeneratorDef = {
       const cabFrontH = WALL_CAB_H - 2 * REVEAL;
       const y = h - WALL_CAB_H + WALL_CAB_H / 2;
       const front = frontOf(spec.front, frontBandW, cabFrontH, mat);
-      tagTint(front, spec.finish, spec.color);
+      tagTintOfMaterial(front, spec.finish, spec.color, mat);
       front.position.set(x, y, wallFrontZ);
       group.add(front);
 

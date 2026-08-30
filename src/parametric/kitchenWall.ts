@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { cabinetRow, barHandle, knobHandle, handleMat } from "./parts";
-import { finishMaterial, tagTint } from "./materials";
+import { finishMaterial, tagTintOfMaterial } from "./materials";
 import { pathLegs, rowPlacement } from "./runPath";
 
 function handleFor(spec: ParametricSpec): THREE.Object3D | null {
@@ -63,7 +63,7 @@ export const kitchenWallGenerator: GeneratorDef = {
           handle: () => handleFor(spec),
           handleAt: "bottom", // handle 60mm above the bottom edge, wall-cab convention
         });
-        tagTint(row, spec.finish, spec.color);
+        tagTintOfMaterial(row, spec.finish, spec.color, mat);
         // Front normal, not travel direction — same fix as kitchenBase.
         const at = rowPlacement(leg, lead, trail);
         row.position.set(at.x, 0, at.z);
@@ -76,7 +76,7 @@ export const kitchenWallGenerator: GeneratorDef = {
         const ccz = leg.sz + leg.dz * (d / 2) + leg.fz * (d / 2);
         const blank = new THREE.Mesh(new THREE.BoxGeometry(d, h, d), mat);
         blank.position.set(ccx, h / 2, ccz);
-        tagTint(blank, spec.finish, spec.color);
+        tagTintOfMaterial(blank, spec.finish, spec.color, mat);
         group.add(blank);
       }
     }

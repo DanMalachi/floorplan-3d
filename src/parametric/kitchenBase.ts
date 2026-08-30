@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "./types";
 import { cabinetRow, barHandle, knobHandle, handleMat, PLINTH_H, COUNTER_T, COUNTER_OVER } from "./parts";
-import { finishMaterial, tagTint } from "./materials";
+import { finishMaterial, tagTintOfMaterial } from "./materials";
 import { pathLegs, legAtAlong, rowPlacement, type RunLeg } from "./runPath";
 
 function handleFor(spec: ParametricSpec): THREE.Object3D | null {
@@ -133,7 +133,7 @@ export const kitchenBaseGenerator: GeneratorDef = {
           withPlinth: true,
           openTop: openTop[i],
         });
-        tagTint(row, spec.finish, spec.color);
+        tagTintOfMaterial(row, spec.finish, spec.color, mat);
         // Oriented off the FRONT normal, not the travel direction — see
         // rowPlacement. Taking it from travel mirrored the cabinets onto the
         // far side of the wall whenever a run was drawn backwards along it.
@@ -150,8 +150,8 @@ export const kitchenBaseGenerator: GeneratorDef = {
         blank.position.set(ccx, PLINTH_H + carcassH / 2, ccz);
         const cPlinth = new THREE.Mesh(new THREE.BoxGeometry(d - 0.03, PLINTH_H, d - 0.03), mat);
         cPlinth.position.set(ccx, PLINTH_H / 2, ccz);
-        tagTint(blank, spec.finish, spec.color);
-        tagTint(cPlinth, spec.finish, spec.color);
+        tagTintOfMaterial(blank, spec.finish, spec.color, mat);
+        tagTintOfMaterial(cPlinth, spec.finish, spec.color, mat);
         group.add(blank, cPlinth);
       }
     }
@@ -159,7 +159,7 @@ export const kitchenBaseGenerator: GeneratorDef = {
     // ONE continuous countertop following the whole path — mitred at the
     // corners, front overhang throughout, REAL holes for attached cutouts.
     const counter = counterSlabForPath(legs, d, spec.cutouts ?? [], counterMat);
-    tagTint(counter, spec.finish2 ?? "counter-oak", spec.color2);
+    tagTintOfMaterial(counter, spec.finish2 ?? "counter-oak", spec.color2, counterMat);
     counter.position.y = PLINTH_H + carcassH;
     group.add(counter);
 
