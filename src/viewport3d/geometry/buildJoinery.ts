@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import type { Opening, SlideSpec } from "@/schema/scene";
 import { effectiveSlide, isDoubleDoor, leafWidths } from "@/render/doorStyle";
 
@@ -375,4 +376,67 @@ export function buildJoinery(opening: Opening, f: JoineryFrame): JoineryPiece[] 
   }
 
   return pieces;
+}
+
+// --- Draw-call batching (perf-drawcalls.md §5.2) ----------------------------
+//
+// A unit box's 24 vertices + 36-index winding, read once off a real
+// THREE.BoxGeometry so mergeJoineryBoxes doesn't hand-derive face winding.
+// Template only — never rendered itself.
+const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+const UNIT_POS = UNIT_BOX.attributes.position.array as ArrayLike<number>;
+const UNIT_UV = UNIT_BOX.attributes.uv.array as ArrayLike<number>;
+const UNIT_IDX = UNIT_BOX.index!.array as ArrayLike<number>;
+
+/**
+ * Combine several boxes (as emitted by buildJoinery — a world-space
+ * `position` + a `rotationY` shared by every piece on one straight wall)
+ * into ONE flat-shaded BufferGeometry, baked at an identity transform so the
+ * returned geometry drops straight onto a `<mesh position={[0,0,0]}
+ * rotation={[0,0,0]}>`. This is how an opening's frame casing folds down to a
+ * single draw call.
+ *
+ * NEVER call this on leaf, handle, track or sliding-panel pieces —
+ * buildJoinery re-emits those at a new position every animation frame
+ * mid-gesture (§4.7 of perf-drawcalls.md), and baking a position into vertex
+ * data means rebuilding the whole geometry to move it, instead of just
+ * writing a transform. Only pieces whose position never depends on swing/
+ * slide state (frame, a window's static mullion grid) belong here — a door's
+ * threshold is equally static but is deliberately NOT folded in here: it
+ * carries its own distinct material (mats.threshold), and merging it into
+ * frame's single-material mesh would mean either a second material group
+ * (no draw-call win over leaving it separate — three submits one draw per
+ * group regardless of geometry merging) or unifying its colour with the
+ * frame casing's, which is a real, visible change nothing here signed off on.
+ */
+export function mergeJoineryBoxes(pieces: JoineryPiece[]): THREE.BufferGeometry {
+  const position: number[] = [];
+  const uv: number[] = [];
+  const index: number[] = [];
+  let base = 0;
+  for (const p of pieces) {
+    const [sx, sy, sz] = p.size;
+    const [cx, cy, cz] = p.position;
+    const cos = Math.cos(p.rotationY);
+    const sin = Math.sin(p.rotationY);
+    for (let i = 0; i < 24; i++) {
+      const lx = UNIT_POS[i * 3] * sx;
+      const ly = UNIT_POS[i * 3 + 1] * sy;
+      const lz = UNIT_POS[i * 3 + 2] * sz;
+      // Same rotate-then-translate a <mesh rotation={[0,rotationY,0]}
+      // position={p.position}> would apply to a boxGeometry(sx,sy,sz).
+      position.push(cx + lx * cos + lz * sin, cy + ly, cz - lx * sin + lz * cos);
+      uv.push(UNIT_UV[i * 2], UNIT_UV[i * 2 + 1]);
+    }
+    for (let i = 0; i < UNIT_IDX.length; i++) index.push(base + UNIT_IDX[i]);
+    base += 24;
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute("position", new THREE.Float32BufferAttribute(position, 3));
+  geom.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  geom.setIndex(index);
+  // Faces aren't shared between boxes (or between a box's own faces), so this
+  // stays flat-shaded, same as wallGeometry.ts's own computeVertexNormals.
+  geom.computeVertexNormals();
+  return geom;
 }

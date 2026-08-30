@@ -4,6 +4,7 @@
 import type { Opening, Scene, SlideSpec } from "@/schema/scene";
 import {
   buildJoinery,
+  mergeJoineryBoxes,
   type JoineryFrame,
   type JoineryPiece,
   type JoineryRole,
@@ -267,6 +268,56 @@ console.log("\nfinishes — a patio door is glazing, not joinery");
   check("a double door does NOT", !takesWindowFinish(op({ width: 2.4, double: true })));
   check("every window does", takesWindowFinish(op({ type: "window" })));
   check("a passage never does", !takesWindowFinish(op({ type: "passage", width: 2.4 })));
+}
+
+// ---------------------------------------------------------------------------
+// perf-drawcalls.md §5.2: an opening's frame casing (and a window's mullion
+// grid) merges to ONE draw call. Leaf/handle/threshold/track/sliding-panel
+// pieces must NOT be swept into that merge — they move mid-gesture.
+console.log("\ndraw-call batching — frame casing merges, moving parts don't");
+{
+  // A single swing door (width 1.6 is past PATIO_MIN_WIDTH, so it must be
+  // authored with swingDeg to stay a swing leaf rather than default to a
+  // patio slider — see doorStyle.ts's effectiveSlide): 3 frame + 1 threshold
+  // + 1 leaf + 4 handle = 9 pieces.
+  const swingOp = op({ swingDeg: 0 });
+  const door = buildJoinery(swingOp, F);
+  const frame = of(door, "frame");
+  const rest = door.filter((p) => p.role !== "frame");
+  check("door has exactly 3 frame members to merge", frame.length === 3, `${frame.length}`);
+  check("everything else (threshold+leaf+handle) stays individual", rest.length === 6,
+    `${rest.length}`);
+
+  const merged = mergeJoineryBoxes(frame);
+  check("merged index count is 36 per box", merged.getIndex()!.count === frame.length * 36);
+  check("merged vertex count is 24 per box",
+    merged.getAttribute("position").count === frame.length * 24);
+
+  // Sanity-check the bake: the merged geometry's world-space bounding box
+  // should span from the left jamb's outer face to the right jamb's — i.e.
+  // the per-piece world positions actually landed in the vertex data, not
+  // all piled at the origin.
+  merged.computeBoundingBox();
+  const bb = merged.boundingBox!;
+  const start = swingOp.offset - swingOp.width / 2; // 1.2
+  const end = swingOp.offset + swingOp.width / 2; // 2.8
+  check("merged bbox reaches the left jamb's outer face",
+    Math.abs(bb.min.x - start) < 1e-6, `min.x=${bb.min.x} want ${start}`);
+  check("merged bbox reaches the right jamb's outer face",
+    Math.abs(bb.max.x - end) < 1e-6, `max.x=${bb.max.x} want ${end}`);
+
+  // A default window: 4 frame + 1 glass + 1 mullion = 6 pieces -> 3 draws
+  // (frame merged, glass alone, mullion merged) per perf-drawcalls.md §5.2.
+  const win = buildJoinery(op({ type: "window", sill: 0.9, height: 1.2 }), F);
+  const winFrame = of(win, "frame");
+  const winMullion = of(win, "mullion");
+  const winGlass = of(win, "glass");
+  check("window has 4 frame members (incl. sill ledge)", winFrame.length === 4,
+    `${winFrame.length}`);
+  check("window has exactly 1 glass pane (never merged, never split)",
+    winGlass.length === 1);
+  check("6 window pieces collapse to 3 draws (frame, glass, mullion)",
+    1 + winGlass.length + (winMullion.length > 0 ? 1 : 0) === 3);
 }
 
 console.log(failures === 0 ? "\nall joinery checks passed\n" : `\n${failures} FAILED\n`);

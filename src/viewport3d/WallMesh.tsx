@@ -39,7 +39,7 @@ import {
 } from "./geometry/buildWallSegments";
 import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./geometry/wallJunctions";
 import { buildWallGeometry } from "./geometry/wallGeometry";
-import { buildJoinery, type JoineryRole } from "./geometry/buildJoinery";
+import { buildJoinery, mergeJoineryBoxes, type JoineryRole } from "./geometry/buildJoinery";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
 import { buildToolBlocksSelect } from "./buildTools/gate";
 import { sampleWallFace } from "@/decorate/eyedropper";
@@ -616,6 +616,35 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   // Real door/window geometry filling the gap.
   const pieces = useMemo(() => buildJoinery(opening, frame), [opening, frame]);
 
+  // Draw-call batching (perf-drawcalls.md §5.2): an opening's frame casing
+  // never moves mid-gesture, so every "frame" piece folds into ONE merged
+  // mesh (window: jamb L/R + head [+ sill ledge] x4 -> 1; door/passage: jamb
+  // L/R + head x3 -> 1). A window's mullion grid is equally static and folds
+  // into a second merged mesh. Leaf, handle, track, the threshold and any
+  // sliding-panel piece stay OUT of both — buildJoinery re-emits those at a
+  // new position every frame during a swing or slide (§4.7) — and the
+  // threshold keeps its own distinct material rather than being folded into
+  // `frame`'s, so this merge changes zero pixels, only draw calls.
+  const isWindowOpening = opening.type === "window";
+  const { framePieces, mullionPieces, restPieces } = useMemo(() => {
+    const framePieces = pieces.filter((p) => p.role === "frame");
+    const mullionPieces = isWindowOpening ? pieces.filter((p) => p.role === "mullion") : [];
+    const restPieces = pieces.filter(
+      (p) => p.role !== "frame" && !(isWindowOpening && p.role === "mullion"),
+    );
+    return { framePieces, mullionPieces, restPieces };
+  }, [pieces, isWindowOpening]);
+  const frameGeom = useMemo(
+    () => (framePieces.length > 0 ? mergeJoineryBoxes(framePieces) : null),
+    [framePieces],
+  );
+  useEffect(() => () => frameGeom?.dispose(), [frameGeom]);
+  const mullionGeom = useMemo(
+    () => (mullionPieces.length > 0 ? mergeJoineryBoxes(mullionPieces) : null),
+    [mullionPieces],
+  );
+  useEffect(() => () => mullionGeom?.dispose(), [mullionGeom]);
+
   // One material per joinery role, shared across this opening's pieces. Mutated
   // (emissive glow, cutaway fade) in place — never re-created on interaction.
   const { mats, baseOpacity } = useMemo(() => {
@@ -889,22 +918,52 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
           envMapIntensity={1.2}
         />
       </mesh>
-      {wallMode !== "top" &&
-        pieces.map((p) => (
-          <mesh
-            key={p.key}
-            position={p.position}
-            rotation={[0, p.rotationY, 0]}
-            material={mats[p.role]}
-            raycast={() => null} // visual only — the pick box above handles input
-            // Glass is its own class and does not cast: three's shadow maps are
-            // depth-only, so a casting pane throws a solid black rectangle
-            // across the floor it is meant to be lighting.
-            {...shadowProps(p.role === "glass" ? "glass" : "opaqueArchitecture")}
-          >
-            <boxGeometry args={p.size} />
-          </mesh>
-        ))}
+      {wallMode !== "top" && (
+        <>
+          {/* Merged frame casing — perf-drawcalls.md §5.2. Baked at identity
+              transform: mergeJoineryBoxes already put every piece's world
+              position into the vertex data. */}
+          {frameGeom && (
+            <mesh
+              position={[0, 0, 0]}
+              rotation={[0, 0, 0]}
+              geometry={frameGeom}
+              material={mats.frame}
+              raycast={() => null} // visual only — the pick box above handles input
+              {...shadowProps("opaqueArchitecture")}
+            />
+          )}
+          {/* Merged mullion grid (windows only) — same batching. */}
+          {mullionGeom && (
+            <mesh
+              position={[0, 0, 0]}
+              rotation={[0, 0, 0]}
+              geometry={mullionGeom}
+              material={mats.mullion}
+              raycast={() => null}
+              {...shadowProps("opaqueArchitecture")}
+            />
+          )}
+          {/* Everything that moves mid-gesture (leaf, handle, track, sliding
+              panels) or keeps its own distinct material (threshold) stays an
+              individual mesh, unchanged from before the merge. */}
+          {restPieces.map((p) => (
+            <mesh
+              key={p.key}
+              position={p.position}
+              rotation={[0, p.rotationY, 0]}
+              material={mats[p.role]}
+              raycast={() => null} // visual only — the pick box above handles input
+              // Glass is its own class and does not cast: three's shadow maps are
+              // depth-only, so a casting pane throws a solid black rectangle
+              // across the floor it is meant to be lighting.
+              {...shadowProps(p.role === "glass" ? "glass" : "opaqueArchitecture")}
+            >
+              <boxGeometry args={p.size} />
+            </mesh>
+          ))}
+        </>
+      )}
       {selected && (
         <>
           <EdgeHandle edge="start" opening={opening} siblings={siblings} frame={frame} offset={offset} />
