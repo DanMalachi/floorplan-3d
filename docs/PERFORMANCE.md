@@ -176,6 +176,8 @@ New `src/render/quality.ts` with `detectDefaultTier()` (GPU string + DPR + a fra
 | Rain particles | 2600 | 2600 | 800 |
 | Est. cumulative Mac win | -38% | **-65%** | **-78%** |
 
+**The gate on this phase is one reading, and it is now takeable.** `?dpr=` (2026-08-31, `src/render/renderDebugFlags.ts`) forces the canvas pixel ratio for one page load, clamped to the contract's own bounds. `?perf=1&dpr=1` against `?perf=1` is 1.11 MP against 4.44 MP on a Retina panel: if the frame-rate ceiling moves, this phase is worth building; if it does not, the cap is not fragment-bound and this phase is wasted work. Take that reading before writing `quality.ts`.
+
 **DPR is the single largest and most linear lever** — 2 -> 1.5 is 44% fewer fragments on every full-res pass, and on a Retina panel still reads as "slightly soft", not pixelated.
 
 **Do not vary `SHADOW.mapSize`.** §3.2 forbids scene-dependent shadow resolution, per-tier is the same hazard renamed, and 1024 sits *below* the contract's own stated quality floor (3.4 cm/texel, past the point §3.2 itself calls "a chair leg's contact shadow disappears"). Phase 1 #1 gets the entire shadow win at zero image cost anyway.

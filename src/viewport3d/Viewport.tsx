@@ -7,6 +7,7 @@ import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { CONTEXT, DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
 import { AmbientOcclusion } from "@/render/AmbientOcclusion";
+import { useDprOverride } from "@/render/renderDebugFlags";
 import { ShadowRefreshRig } from "@/render/ShadowRefreshRig";
 import { ThumbCaptureRig } from "@/render/ThumbCaptureRig";
 import { PerfRig } from "@/render/perf/PerfRig";
@@ -349,6 +350,11 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   // The CAD grid is an editing aid; hide it in the immersive View presets.
   const showGrid = envPreset === "none" || appMode !== "view";
 
+  // `?dpr=` diagnostic hatch — null unless the URL asks, in which case the
+  // contract's [1, 2] clamp is replaced by that single clamped value for this
+  // page load only. See renderDebugFlags.ts for the measurement it exists for.
+  const dprOverride = useDprOverride();
+
   // Render on demand unless something is genuinely animating.
   //
   // The default R3F loop renders at 60fps forever, so a laptop left sitting on a
@@ -436,7 +442,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         // decision.
         shadows={{ type: SHADOW.type }}
         camera={{ position: [9, 8, 11], fov: 50 }}
-        dpr={DPR}
+        dpr={dprOverride ?? DPR}
         frameloop={needsContinuousFrames ? "always" : "demand"}
         // `flat` disables the renderer's own tonemapping so the ToneMapping
         // effect in the composer owns the display transform (avoids double

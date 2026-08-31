@@ -8,7 +8,93 @@ Branch: `perf-integrated-gpu` (off `accounts-cloud-sync`). Three commits:
 
 ---
 
-# ⚠ START HERE — state at end of session 2026-08-30
+# ⚠ START HERE — state at end of session 2026-08-31
+
+**Two commits, and both are deliberately small.** Dan had no
+access to the machine for 24 h and asked for whatever could be *finished*
+without him taking a reading or looking at the dev server. Exactly one item on
+the previous session's "Do these next" list qualified: **next-step 2, the
+`?dpr=` hatch**. Everything else on that list is blocked on a decision or on
+his eye — see the table below, which is the real output of this session.
+
+## Shipped: `?dpr=` — next-step 2 is closed
+
+`src/render/renderDebugFlags.ts` gains `DPR_PARAM`, `parseDprParam`,
+`dprOverride` and `useDprOverride`; `src/viewport3d/Viewport.tsx` gains an
+import, a hook call and `dpr={dprOverride ?? DPR}` — three lines in the
+protected file. New `src/render/renderDebugFlags.test.ts`, 19 assertions,
+green. `npx tsc --noEmit` exits 0, eslint clean.
+
+**The two readings to take**, on the M2, same scene, same mode, back to back:
+
+```
+http://<LAN-ip>:3001/v/<room>?perf=1&furnish=40            <- 4.44 MP, the 36 fps reading
+http://<LAN-ip>:3001/v/<room>?perf=1&furnish=40&dpr=1      <- 1.11 MP, 4x fewer fragments
+```
+
+Let the scene **settle** before reading — the 1459 ms p95 in the 2026-08-30
+table was a load stall, not steady state, and reading through it once already
+produced a number that had to be explained away. The HUD's own `dpr` row
+reports `gl.getPixelRatio()`, so each reading records the DPR it was taken at
+and cannot be misfiled later.
+
+**What the answer decides.** If fps rises materially at `dpr=1`, the 36 fps
+ceiling is fragment-bound and **Phase 5's quality tiers are worth building** —
+DPR is the largest and most linear row in that table. If fps barely moves, the
+cap is somewhere else entirely and the tiers are wasted work; the next suspects
+are the 12-pass composer floor (§6) and the 1328 MB texture upload.
+
+Constraints honoured: clamped to the contract's own `DPR` bounds, so §1.1's
+"forbids `dpr` unbounded or above 2 without a recorded amendment" is not routed
+around and **no contract amendment is needed**. Absent, empty and malformed all
+read as "no override" — a bare `?dpr=` does NOT become `Number("") === 0`
+clamped to 1, which would be a forced reading that looks deliberate and is not.
+Not wired into `src/app/calibration/page.tsx`: baselines capture at the contract
+DPR, and a hatch that could change the resolution a baseline was captured at
+would poison the comparison it serves.
+
+## Found on the way in: the render-contract test was dead
+
+`src/render/contract.test.ts` **was failing on a clean tree before any of
+today's work** — verified by stashing. It is not a regression from the `?dpr=`
+change; nothing in it reads that path.
+
+When §1.1's `antialias`/`alpha` clause was added in Phase 1, `EXPECTED` grew two
+entries that call `gl.getContext().getContextAttributes()`. The test's fake
+renderer was never given a `getContext`, so **every case in the file was
+throwing a TypeError out of the fake instead of reaching the assertion.** That
+inverted the whole file: the conforming case "failed", and both corruption cases
+"passed" for the wrong reason — they were catching a missing method, not a
+violated contract. A test that cannot tell those apart certifies nothing, which
+is precisely what §1.3 exists to prevent.
+
+Fixed: the fake models the context attributes, and the two clauses that were
+added without coverage now have it — an antialiased context, an alpha context,
+and a context that reports no attributes at all (a driver is free to ignore
+either flag, and "no answer" must not silently satisfy `antialias: false`).
+8 assertions, green. **The app path was never affected** —
+`RenderContractCheck.tsx` passes a real renderer, which has `getContext`; only
+the test was blind. Worth noting anyway, because the Phase 1 backbuffer bug is
+exactly the class of thing this guard was rebuilt to catch and it would not have
+caught it a second time.
+
+## Why nothing else was touched
+
+| Next-step | Why it did not qualify |
+|---|---|
+| 1. `MODEL_BASE` / `opt-ktx2` hosting | **Dan's call, and only Dan's**: commit +124 MB of assets or push to Vercel Blob. Both are outward-facing and neither is cheaply reversible. Unchanged: a deploy from this branch still 404s every BlenderKit model. |
+| 3. The 1024 texture cap | Already applied on the BlenderKit half — `scripts/blenderkit/optimize.ts:38` caps at 1024 and the KTX2 pass inherits it. The uncapped half is **IKEA**, which is BLOCKER 2, a licensing question. Nothing to build here until that is answered. |
+| 4. `React.memo` under `src/viewport3d/` | The stated first step is "map prop stability first", and the payoff is explicitly invisible to `jsMs`. So no measurement would catch a bad memo — only an eye noticing the 3D view failing to update. Wrong work to do blind. |
+| 4. rAF-throttle the 9 `onPointerMove` sites | Changes drag *feel* by construction. No test can pass or fail on feel. |
+| 4. Code-split the viewport | `next build` proves the bundle moved; only an eye proves the viewport still mounts. Half-verifiable is not verifiable. |
+| 5. §5.3 wall body merge, §5.4 dead draws | §5.1 shipped with a trap (`faceSide` moved materialIndex 4/5 → 1/2) whose absence **only Dan's eye could confirm**. §5.4 changes what is pickable — that is a click test, not an assertion. Same class of risk, same requirement. |
+
+Nothing above is abandoned; all of it is unblocked the moment Dan is back at
+the machine, and next-step 1 is still the highest-value one.
+
+---
+
+# START HERE — state at end of session 2026-08-30 (previous session)
 
 **9 commits today**, `ca04b7a` through `d402887`, on top of `9cadc65`. Branch
 `perf-integrated-gpu`, **still unmerged and undeployed**. `npx tsc --noEmit`
@@ -115,9 +201,11 @@ which is the moment that already freezes.
 1. **Resolve BLOCKER 1**, then re-measure the M2 with a rebuilt `:3001`. That
    "after" reading is the one measurement that would prove KTX2 fixes the freeze.
    Nothing has yet been measured on the M2 with any of today's work.
-2. **`?dpr=1` hatch.** There is no way to force DPR 1 from Safari — no such URL
-   param exists. One reading at 1.11 MP vs 4.44 MP would size the 36 fps ceiling
-   and say whether quality tiers are worth building.
+2. **`?dpr=1` hatch.** ~~There is no way to force DPR 1 from Safari — no such URL
+   param exists.~~ **BUILT 2026-08-31** — `?dpr=` is live in
+   `renderDebugFlags.ts`. The reading itself is still outstanding: one at
+   1.11 MP vs 4.44 MP sizes the 36 fps ceiling and says whether quality tiers
+   are worth building. See the 2026-08-31 block at the top for the two URLs.
 3. **The 1024 cap**, now that KTX2 is proven — the two multiply and the earlier
    "don't bother with the cap" advice is superseded.
 4. Remaining Phase 4: `React.memo` under `src/viewport3d/` (map prop stability
