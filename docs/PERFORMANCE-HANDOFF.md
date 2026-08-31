@@ -10,7 +10,7 @@ Branch: `perf-integrated-gpu` (off `accounts-cloud-sync`). Three commits:
 
 # ⚠ START HERE — state at end of session 2026-08-31
 
-**Two commits, and both are deliberately small.** Dan had no
+**Three commits, and all are deliberately small.** Dan had no
 access to the machine for 24 h and asked for whatever could be *finished*
 without him taking a reading or looking at the dev server. Exactly one item on
 the previous session's "Do these next" list qualified: **next-step 2, the
@@ -53,6 +53,54 @@ Not wired into `src/app/calibration/page.tsx`: baselines capture at the contract
 DPR, and a hatch that could change the resolution a baseline was captured at
 would poison the comparison it serves.
 
+## Shipped: a deploy guard — and BLOCKER 1 was wrong
+
+Asked a second time whether anything else was safe to do blind, the answer was
+yes, but it was not on the list as written. The recorded hazard — "a deploy
+would 404 every BlenderKit model" — is silent, production-affecting, and
+**nothing in the repo could detect it**. A guard for it touches no app code and
+cannot change a pixel, so it needs no eye.
+
+`scripts/verify-catalog-deploy.ts` + `npm run furniture:verify-deploy`. It walks
+every root-relative asset path in `data/*.catalog.json` and asks whether it
+would actually be there in production.
+
+**Building it disproved the blocker.** Two claims in the 2026-08-30 BLOCKER 1
+are false:
+
+- **`opt-ktx2/` is not in `.gitignore`.** No rule matches it. The nearby
+  `/public/furniture/blenderkit/*.glb` is anchored and single-`*`, so it stops
+  at the directory boundary. The 75 files are just **untracked**.
+- **A deploy would not 404 them.** The predicate that governs this repo is
+  `.vercelignore`, not `.gitignore` — `vercel --prod` uploads the working tree
+  minus `.vercelignore`, and that file's own comment says the optimized
+  subdirectories "ARE shipped". Measured: **75/75 would be uploaded.**
+
+The first version of the guard checked git-tracked-ness and duly reported 280
+IKEA thumbnails as broken too. They are not: `.gitignore:72-75` says in as many
+words that they are kept out of git on purpose and ship from local disk. **That
+false positive is what exposed the wrong predicate** — and it is why the guard
+now separates them:
+
+- **FAIL** — missing from disk, or excluded by `.vercelignore`. A real 404.
+- **WARN** — ships from this tree but is not in git. Not reproducible from a
+  clean checkout, another machine, CI, or a Git-integration deploy. Recorded,
+  not enforced, because the repo has chosen it deliberately once already.
+
+Current state: **0 failures**, 2 warnings (75 KTX2 models, 280 IKEA thumbnails).
+
+The guard is proved rather than assumed. Its `.vercelignore` matcher self-tests
+against 10 known cases including the exact `opt/` vs raw-`.glb` boundary the
+blocker turned on, it throws rather than guesses on any pattern form it does not
+implement, and it was run against a synthetic catalog with a missing file and a
+`.vercelignore`d file to confirm it exits 1 on both. A guard that has never
+rejected anything certifies nothing.
+
+**What is still Dan's call, and what changed about it.** Commit +124 MB or move
+to Blob — unchanged, still worth deciding. What changed is that it is a
+*durability* decision with no deadline, not a gate. Merging and deploying this
+branch were never blocked on it.
+
 ## Found on the way in: the render-contract test was dead
 
 `src/render/contract.test.ts` **was failing on a clean tree before any of
@@ -82,7 +130,7 @@ caught it a second time.
 
 | Next-step | Why it did not qualify |
 |---|---|
-| 1. `MODEL_BASE` / `opt-ktx2` hosting | **Dan's call, and only Dan's**: commit +124 MB of assets or push to Vercel Blob. Both are outward-facing and neither is cheaply reversible. Unchanged: a deploy from this branch still 404s every BlenderKit model. |
+| 1. `MODEL_BASE` / `opt-ktx2` hosting | The *decision* is Dan's — commit +124 MB or move to Blob. But the urgency rested on a wrong fact, corrected below: it is **not** a deploy blocker. |
 | 3. The 1024 texture cap | Already applied on the BlenderKit half — `scripts/blenderkit/optimize.ts:38` caps at 1024 and the KTX2 pass inherits it. The uncapped half is **IKEA**, which is BLOCKER 2, a licensing question. Nothing to build here until that is answered. |
 | 4. `React.memo` under `src/viewport3d/` | The stated first step is "map prop stability first", and the payoff is explicitly invisible to `jsMs`. So no measurement would catch a bad memo — only an eye noticing the 3D view failing to update. Wrong work to do blind. |
 | 4. rAF-throttle the 9 `onPointerMove` sites | Changes drag *feel* by construction. No test can pass or fail on feel. |
@@ -179,6 +227,33 @@ which is the moment that already freezes.
    branch would 404 every BlenderKit model.** Choose: commit the assets (+124 MB
    repo) or host on Vercel Blob where the IKEA models already live. Blob is the
    consistent choice.
+
+   > **CORRECTED 2026-08-31 — both factual claims above are wrong.** `opt-ktx2/`
+   > is **not** in `.gitignore` (checked: no rule matches it; the nearby rule
+   > `/public/furniture/blenderkit/*.glb` is anchored and single-`*`, so it
+   > stops at the directory boundary and never reaches a subdirectory). The 75
+   > files are simply **untracked** — nobody ran `git add`.
+   >
+   > And a deploy would **not** 404 them. This repo ships with
+   > `vercel --prod`, and the CLI uploads the working tree minus
+   > **`.vercelignore`** — `.gitignore` does not govern it. `.vercelignore`
+   > excludes `public/furniture/blenderkit/*.glb`, with its own comment saying
+   > "the optimized copies under opt/ and the picker thumbnails under thumb/ ARE
+   > shipped — the glob stops at the directory boundary". `opt-ktx2/` is on the
+   > shipped side of that line. Verified by `npm run furniture:verify-deploy`:
+   > **75/75 would be uploaded.**
+   >
+   > This is the same arrangement the IKEA thumbnails already run on
+   > deliberately (`.gitignore:72-75`: "kept out of git… still shipped to prod
+   > because the CLI deploy uploads them from local disk").
+   >
+   > **So this is not a deploy blocker and never was.** What is real is
+   > narrower: 75 models ship *only from Dan's working tree*. A clean checkout,
+   > another machine, CI, or a Vercel Git-integration deploy has none of them —
+   > exactly the "reproducible from a clean checkout" property `.gitignore`
+   > invokes as the reason `opt/` is committed. The choice (commit +124 MB, or
+   > move to Blob) is still Dan's and still worth making; it is a durability
+   > decision with no deadline, not a gate on merging or deploying.
 2. **IKEA licensing.** 1692 MB — the bulk of the problem — is the IKEA catalog.
    Re-encoding a hosted non-CC0 asset is the unresolved redistribution question.
    The pipeline handles them; it was deliberately run on BlenderKit only.
