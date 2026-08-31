@@ -31,3 +31,33 @@ extraction dependencies.
 
 - The only sanctioned integration point is a new `extraction/adapter/` module (Python side) plus new, additive TS glue that maps the new pipeline's schema-v1 JSON output into a `Scene` — modeled on the existing `legacy/src/trace2d/traceToScene.ts` and `src/dev/gtToScene.ts` conversion pattern, but as new files, not edits to the above.
 - `src/store/useSceneStore.ts` is **not** in this list — it's app state (shared), not 3D-viewer code, even though the viewer reads from it. See `docs/LEGACY_PATHS.md` for how its legacy-coupled slices are being untangled.
+
+## Approved exceptions
+
+Changes to files above that Dan signed off on before they were made. Anything
+not listed here still falls under CLAUDE.md rule 1 — stop and ask.
+
+- **2026-08-31, `src/viewport3d/Viewport.tsx` — added the `chrome?: boolean`
+  prop** (branch `feat/landing-page`). The marketing hero needs the real
+  renderer with Viewport's own panels suppressed, so it can present a curated,
+  brand-styled subset of controls instead of the app's full panel set;
+  `ScenePanel` and `WallModeToggle` are the only chrome in this file that
+  renders unconditionally, so they are the only two the flag gates. Additive
+  and default-`true`: every existing call site keeps today's behaviour, and no
+  app-facing behaviour changed. See `docs/LANDING.md`.
+- **2026-08-31, `src/viewport3d/Viewport.tsx` — `chrome={false}` now also hides
+  the CAD grid** (same branch, same approval). `showGrid` previously read
+  `envPreset === "none" || appMode !== "view"`, which is exactly the state a
+  presentation embed sits in, so the marketing hero rendered the editing grid.
+  Widening the existing flag rather than adding a second one, per the note on
+  the prop: the grid is described in that file as "an editing aid", which is
+  what this flag means. Default `true` keeps the app unchanged.
+- **2026-08-31, `src/viewport3d/environment/Environment3d.tsx` — added the
+  `groundFade?: boolean` prop** (same branch, same approval; passed down from
+  `Viewport` as `groundFade={!chrome}`). The studio preset's shadow-catcher
+  disc is sized `max(span * 3, 30)`, so its rim draws a hard horizon line
+  across a presentation embed. With the flag on it becomes `max(span * 60,
+  600)` — past the fog's `span * 11` far plane — so the ground dissolves into
+  the background instead of ending. Deliberately not "hide the ground":
+  deleting the disc would take the model's contact shadow with it. Additive and
+  default-off; every existing caller is unchanged.

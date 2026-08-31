@@ -30,7 +30,35 @@ const col = (hex: string) => new THREE.Color(hex);
 // intensities by the single global exposure in src/render/lightPresets.ts.
 // The old eye-tuned intensities are gone, not converted — see contract §4.2.
 
-export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: number; halfZ: number }) {
+/**
+ * `groundFade` — extend the studio shadow-catcher far beyond the fog's far
+ * plane, so it dissolves into the background instead of ending at a visible
+ * rim.
+ *
+ * At its normal size the disc's edge draws a hard horizon line across the
+ * frame. That is correct for the editor, where the disc reads as a work
+ * surface the model sits on. It is wrong for a presentation embed, where the
+ * model should appear to sit in nothing at all.
+ *
+ * Deliberately not "hide the ground": deleting the disc would take the contact
+ * shadow with it and leave the model floating. Making it effectively infinite
+ * keeps every shadow and lets the existing fog do the disappearing.
+ *
+ * PROTECTED FILE (docs/PROTECTED_PATHS.md, CLAUDE.md rule 1) — approved by Dan,
+ * see "Approved exceptions" there. Additive and default-off: every existing
+ * caller renders exactly what it rendered before.
+ */
+export function Environment3d({
+  span,
+  halfX,
+  halfZ,
+  groundFade = false,
+}: {
+  span: number;
+  halfX: number;
+  halfZ: number;
+  groundFade?: boolean;
+}) {
   const preset = useSceneStore((s) => s.envPreset);
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
   const weather = useSceneStore((s) => s.weather);
@@ -154,7 +182,10 @@ export function Environment3d({ span, halfX, halfZ }: { span: number; halfX: num
         <City span={span} halfX={halfX} halfZ={halfZ} />
       ) : (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-          <circleGeometry args={[Math.max(span * 3, 30), 64]} />
+          {/* `fogFar` above is span * 11 indoors, so a radius of span * 60 is
+              fully fogged to the background long before its rim — the ground
+              simply stops existing, with no horizon to see. */}
+          <circleGeometry args={[groundFade ? Math.max(span * 60, 600) : Math.max(span * 3, 30), 64]} />
           <meshStandardMaterial color="#1d1d22" roughness={0.95} metalness={0} />
         </mesh>
       )}
