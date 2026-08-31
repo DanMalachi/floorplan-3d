@@ -37,7 +37,35 @@ const OUT = path.resolve("data/furniture-blenderkit.catalog.json");
  * `public/furniture/blenderkit/opt-ktx2/`; `optimize-ktx2.ts` processes the
  * exact same `select()` + `isContentRejected()` set this script does, so the
  * two are kept in lockstep by construction, not by a manual list. */
-const MODEL_BASE = "/furniture/blenderkit/opt-ktx2";
+/**
+ * HELD AT `opt` FOR PRODUCTION, 2026-08-31. The KTX2 pipeline is built,
+ * measured (869 MB -> 232 MB scene textures, 3.74x) and wired end to end, and
+ * `perf-integrated-gpu` carries it pointed at `opt-ktx2`. It is deliberately
+ * NOT what production serves yet, for three reasons that are about evidence,
+ * not about the code:
+ *
+ *  - Nobody has LOOKED at it. The five visual checks that cleared the rest of
+ *    that branch were wall paint, joinery, door collision, the kitchen colour
+ *    wheel and cutaway fade. None of them was "do the BlenderKit models still
+ *    look right", and KTX2 re-encoded the textures on all 75.
+ *  - Its justification is unmeasured on the machine it is FOR. The M2 has had
+ *    no reading with any of this work on it; that reading is the one thing that
+ *    would prove KTX2 fixes the ~1.5 s load freeze.
+ *  - Its cost is certain while its benefit is not: UASTC trades download for
+ *    VRAM, 20 MB -> 123.5 MB on the wire, and that lands on first load — the
+ *    exact moment that already stalls.
+ *
+ * `opt` is the WebP set that has been in production since 2026-07-28, and it is
+ * tracked in git (75 files, ~20 MB), so a deploy of it is reproducible from a
+ * clean checkout — which `opt-ktx2` is not, being untracked.
+ *
+ * To ship KTX2 once it has been looked at: change this one constant back to
+ * `/furniture/blenderkit/opt-ktx2`, re-run `npm run bk:catalog`, and check
+ * `npm run furniture:verify-deploy` before deploying. Nothing else moves — the
+ * loader wiring in `src/render/ktx2.ts` stays registered either way and is a
+ * documented no-op for any GLB that does not declare `KHR_texture_basisu`.
+ */
+const MODEL_BASE = "/furniture/blenderkit/opt";
 
 interface CatalogRow {
   assetId: string;
