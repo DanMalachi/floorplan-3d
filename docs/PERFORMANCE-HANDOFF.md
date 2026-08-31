@@ -101,6 +101,61 @@ to Blob — unchanged, still worth deciding. What changed is that it is a
 *durability* decision with no deadline, not a gate. Merging and deploying this
 branch were never blocked on it.
 
+## Shipped to production 2026-08-31 — everything except KTX2
+
+`main` fast-forwarded to `perf-integrated-gpu` (22 commits) plus two commits
+that hold KTX2 back, and deployed. **`main` is now 25 commits ahead of where it
+sat this morning and IS what `done.design` serves.**
+
+**Live:** the −27–32% draw-call collapse, the door-swing cascade fix, the
+kitchen tint scoping, both dev-server bug fixes, `?dpr=`, the contract-test
+repair and the deploy guard.
+
+**Held:** `d402887`'s catalog pointer. `MODEL_BASE` is back at the tracked WebP
+`opt/` set (`f587a57`), and `opt-ktx2/` is now `.vercelignore`d so the deploy
+does not carry 124 MB it never references (`41d8821`). All the KTX2 machinery —
+`src/render/ktx2.ts`, the loader registration, the transcode-loss assertion — is
+still wired and inert, because it is a documented no-op for any GLB without
+`KHR_texture_basisu`. `perf-integrated-gpu` still carries the KTX2 pointer, so
+it is the branch to test from tomorrow.
+
+Verified against the live site, not inferred: `done.design` 200,
+`/furniture/blenderkit/opt/<id>.glb` **200 (138 KB)**,
+`/furniture/blenderkit/opt-ktx2/<id>.glb` **404** (correctly not uploaded),
+`/basis/basis_transcoder.wasm` **200** (ready for when KTX2 ships), and
+`get("dpr")` present in the shipped chunks.
+
+**To take the M2 reading without the PC** — the perf HUD and `?furnish=` are not
+dev-gated, so this works against production:
+
+```
+https://done.design/v/<room>?perf=1&furnish=40
+https://done.design/v/<room>?perf=1&furnish=40&dpr=1
+```
+
+### To ship KTX2, once it has been looked at
+
+Three steps, in this order, and the guard catches the mistake if the middle one
+is missed:
+
+1. `MODEL_BASE` → `/furniture/blenderkit/opt-ktx2` in `build-catalog.ts`, then
+   `npm run bk:catalog`.
+2. **Delete the `opt-ktx2/` rule from `.vercelignore`.** Leaving it 404s all 75.
+3. `npm run furniture:verify-deploy` — it fails loudly on exactly the
+   step-2-forgotten combination, reporting "EXCLUDED BY .vercelignore".
+
+Then decide the durability question separately: those 124 MB are still untracked
+and would exist only on Dan's disk.
+
+### `git push origin main` deploys production
+
+Observed, not assumed: the two `main` pushes each produced their own **Production**
+deployment before the CLI deploy ran (`kg9mel452`, `j2nsv9e7l`, then
+`nq3g476xr`). Vercel's Git integration is live on this repo, so **a push to
+`main` is itself a production deploy** — the CLI is not the only route, and
+pushing `main` is not a staging action. Branch pushes produce Previews and are
+harmless.
+
 ## Found on the way in: the render-contract test was dead
 
 `src/render/contract.test.ts` **was failing on a clean tree before any of
