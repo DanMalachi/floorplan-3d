@@ -147,14 +147,44 @@ is missed:
 Then decide the durability question separately: those 124 MB are still untracked
 and would exist only on Dan's disk.
 
-### `git push origin main` deploys production
+### ⚠ `git push origin main` deploys production — and ships a DIFFERENT tree
 
-Observed, not assumed: the two `main` pushes each produced their own **Production**
-deployment before the CLI deploy ran (`kg9mel452`, `j2nsv9e7l`, then
-`nq3g476xr`). Vercel's Git integration is live on this repo, so **a push to
-`main` is itself a production deploy** — the CLI is not the only route, and
-pushing `main` is not a staging action. Branch pushes produce Previews and are
-harmless.
+Observed, not assumed, and it bit during this very session. Each `main` push
+produced its own **Production** deployment (`kg9mel452`, `j2nsv9e7l`,
+`81bha14o3`) alongside the CLI one. Vercel's Git integration is live, so **a
+push to `main` is itself a production deploy** — the CLI is not the only route,
+and pushing `main` is not a staging action. Branch pushes produce Previews and
+are harmless.
+
+**The two routes do not ship the same files, and the difference is silent:**
+
+| | uploads | has the 280 untracked IKEA thumbnails |
+|---|---|---|
+| `vercel --prod` (CLI) | working tree minus `.vercelignore` | **yes** |
+| `git push origin main` | the commit only | **no** |
+
+**This happened.** The docs push after the CLI deploy handed `done.design` to a
+Git-built deployment, and `/furniture/ikea/thumb/00069768.png` and 279 others
+went **404 in production** — 280 of 374 IKEA picker thumbnails, three quarters
+of the browser, broken. Caught by re-testing the live site rather than trusting
+the earlier green reading (the first probe returned 200 off a stale CDN read,
+which is exactly how this stays invisible). Restored by re-running
+`vercel --prod`; re-verified 200 on four thumbnails plus the whole asset
+contract.
+
+**Operational rule until this is fixed: any `main` push must be followed by
+`vercel --prod`.** The push alone silently degrades production.
+
+**The durable fix is Dan's call**, and the arrangement `.gitignore:72-75`
+describes ("kept out of git… still shipped because the CLI uploads them from
+local disk") was only ever safe while the CLI was the *only* route. It is not.
+Three options: commit the 280 referenced thumbnails (**6.9 MB** — measured, not
+the whole 18 MB directory; ends the split outright and is the cheapest of the
+three), turn off
+Git-integration production deploys so the CLI is genuinely the only route, or
+keep the rule above and accept that every push needs a follow-up deploy.
+`npm run furniture:verify-deploy` names exactly which assets sit on the wrong
+side of this line — that WARN list is not cosmetic.
 
 ## Found on the way in: the render-contract test was dead
 
