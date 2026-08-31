@@ -1,0 +1,175 @@
+# The done.design marketing site
+
+Written 2026-08-31, branch `feat/landing-page`. Nothing here is merged.
+
+## What shipped on this branch
+
+A public marketing site at `/`, `/about` and `/faq`, and the editor moved off
+the site root to `/design`.
+
+| Path | What it is |
+|---|---|
+| `/` | Homepage: hero with the live 3D demo room, how-it-works, positioning, short FAQ, closing CTA |
+| `/about` | Long-form: why the product asks you to draw rather than skip |
+| `/faq` | The full FAQ (the homepage shows the first five of the same table) |
+| `/design` | The editor. Unchanged code — the file moved, nothing inside it did |
+
+## The flag
+
+`NEXT_PUBLIC_LANDING_ENABLED` (see `src/lib/featureFlags.ts`). **Off by
+default.** While off, every marketing route redirects to `/design`, so a
+deployment behaves exactly as it did before this branch existed: done.design
+puts you straight into the editor.
+
+This matters more here than for most flags: a push to `main` **is** a
+production deploy on this project, so the flag is the only thing between an
+unfinished marketing page and done.design's front door. Verified in both
+positions — off gives `/about → 307 → /design`, on gives `200`.
+
+The editor is served from `/design` **regardless** of the flag, so the new URL
+is real and warm before it becomes the only one.
+
+## Where to change things
+
+| To change | Edit |
+|---|---|
+| Colours, type scale, spacing, motion, CTA styling | `src/brand/tokens.ts` — the whole look is this one file |
+| The logo | `src/brand/Wordmark.tsx` |
+| Every visible string on the homepage + the FAQ | `src/landing/content.ts` |
+| The menu | `src/landing/nav.ts` |
+| The demo apartment's furniture and layout | `src/landing/demoScene.ts` |
+| The two hero controls | `src/landing/DemoStage.tsx` |
+
+### The brand is deliberately provisional
+
+Brand Book Rev C recommends Study 03 (Manrope 800 lowercase, copper square
+period) but explicitly says to live with it before deciding, and that the logo
+is the *last* thing to draw. `Wordmark.tsx` documents how to swap to the
+alternative (Study 02) if 03 reads as too soft after a week.
+
+The brand tokens are **scoped to the marketing routes**. They do not touch
+`src/ui/tokens.ts` (`T`) or `src/ui/planDock/tokens.ts` (`PD`), both of which
+still carry the pre-naming blue accent. The app-wide copper migration is one
+separate job — including the two contrast bugs the brand book caught, which are
+still live: `PD.textTertiary` measures 3.78:1 (under the 4.5:1 floor) and
+`PD.accentText` is outside sRGB and silently clipping.
+
+Also still stale and left alone on purpose: `src/app/legal/layout.tsx`'s back
+link reads "← Floorplan → 3D".
+
+## The demo room
+
+A live render of the real product — the actual `Viewport`, the actual scene
+store — not a screenshot or a video. Orbit, pan and zoom are live. It is mounted
+as `<Viewport chrome={false} />`, which hides the app's own `ScenePanel` and
+`WallModeToggle` and the CAD grid, and the page supplies two brand-styled
+controls instead: **Ceiling on/off** and **Daylight/Evening**. Ceilings start
+OFF, so the visitor arrives at an open doll's house and turning them on is the
+reveal.
+
+Walkthrough is deliberately absent: it takes the page over with pointer lock and
+needs an obvious way back out, which is a product decision rather than a hero
+one.
+
+Constraints it was built under:
+
+- **`Viewport.tsx` WAS modified**, with Dan's approval, to add the additive
+  `chrome?: boolean` prop — see the "Approved exceptions" section of
+  `docs/PROTECTED_PATHS.md`. Nothing else protected was touched.
+- **Only BlenderKit assets**, served from `public/furniture/blenderkit/opt/`.
+  No IKEA asset appears: those GLBs live on Vercel Blob, are excluded from the
+  git deploy, and 404'd in production once already (2026-08-31). All 18 asset
+  ids used were verified present in both the catalog and on disk.
+- **Furniture swaps are built but NOT rendered.** `demoSwaps.ts` is kept and
+  marked dormant: every id in it was verified against the catalog and collision-
+  checked at its target's pose, so re-enabling a swap strip is a UI change, not
+  a data exercise. Note furniture is not click-selectable in `view` mode
+  (`FurnitureLayer.tsx` bails unless `appMode` is `"furnish"`), so any such strip
+  has to drive `replaceFurnitureAsset` itself rather than fight that gate.
+- Initial payload is ~2.0 MB of GLB across 11 models, fetched only once the
+  hero scrolls into view.
+
+### Pixel density is not capped here
+
+`Viewport` exposes no `dpr` prop; the only override channel is the `?dpr=` URL
+query hatch. Driving that from the marketing page would mean mutating the
+address bar so the homepage reads `/?dpr=1` — a debug flag in every URL a
+visitor copies. The default `DPR=[1,2]` already clamps to the device's ratio
+and is what the app ships for far heavier scenes. If this hero ever measures
+too expensive, the fix is a real prop on the render contract (Dan's call, since
+`src/render/contract.ts` is protected), not a query-string hack.
+
+## Why the page ground is #101014
+
+The hero canvas CANNOT be transparent: `src/render/contract.ts` sets `alpha:
+false` on the GL context deliberately, and `Environment3d.tsx` paints an opaque
+`studioBg` = `#101014` behind the model whenever `envPreset` is "none". So the
+only way the room sits ON the page instead of inside a visible rectangle is for
+the page to be that exact colour. `B.ground` is therefore `#101014`, not the
+brand book's `#111315` — an imperceptible shift that removes a full-width seam,
+and it needs no change to protected render code. If `studioBg` ever moves, move
+`B.ground` with it.
+
+**Known limitation: this only works in the dark theme.** In light theme the page
+is `#F8F7F4` and the canvas still paints `#101014`, so the hero would show a
+dark band. There is no light-theme toggle shipped yet, so nothing exposes this
+today. Fixing it properly needs either a light `studioBg` or a transparent
+canvas, both of which are protected-file changes.
+
+## Open finding: 408 KB of three.js on every page
+
+**Not introduced by this branch — it is already true on `main`, and it is the
+single biggest thing standing between this and a fast marketing page.**
+
+    src/app/layout.tsx  (root layout, every route)
+      → ConsentNotice
+        → useSceneStore
+          → @/parametric        (furniture generators)
+            → three
+
+`ConsentNotice` reads exactly one value from the store —
+`const appMode = useSceneStore((s) => s.appMode)` at
+`src/ui/consent/ConsentNotice.tsx:42` — used once, at line 71, to hide the
+banner in furnish mode. That single import puts the whole 3D layer into a
+shared chunk loaded by every route in the app.
+
+Measured on the production build of this branch:
+
+| Route | Initial JS (gzipped) |
+|---|---|
+| `/` (homepage) | 738 KB, of which **408 KB is the three-bearing shared chunk** |
+| `/about`, `/faq` | ~735 KB — same chunk, and these pages have no 3D at all |
+| `/legal/privacy` | same chunk, and it predates this branch entirely |
+
+Splitting the hero's own 3D behind a dynamic import (`DemoRoom` →
+`DemoStage`) was necessary and done — the homepage is only ~7 KB heavier than
+`/about` — but it cannot help with this, because the cost arrives through the
+root layout rather than through the hero.
+
+**Not fixed here, deliberately.** Every available fix changes app-wide,
+legally-relevant consent UI: dropping the `appMode` dependency changes when the
+banner shows, and lazy-loading `ConsentNotice` delays when it appears. That is
+Dan's call, not a landing-page change. Candidate fixes, cheapest first:
+
+1. Give `appMode` a home outside the three-coupled store, or read it through a
+   narrow selector module that doesn't import `@/parametric`.
+2. `next/dynamic` the `ConsentNotice` in the root layout — smallest diff, but
+   it delays the banner, which may matter for consent timing.
+3. Render `ConsentNotice` from the editor's layout and the marketing layout
+   separately, so each imports only what it needs.
+
+## Not done
+
+- **Pricing.** `/pricing` and `/legal/refunds` are built and working on the
+  unmerged `feat/pricing-ui` branch. The menu item and the footer link are
+  already written and gate themselves on that branch's own
+  `NEXT_PUBLIC_PRICING_UI_ENABLED`, so they appear by themselves once the two
+  branches meet — no follow-up edit needed.
+- **Visual review.** Verified over HTTP and by production build; the Chrome
+  extension was not connected, so no screenshots were taken. Nobody has looked
+  at this page yet.
+- **No catalogue brand is named anywhere public.** The copy says "a real
+  furniture catalogue", never IKEA, and never a paint brand — the brand book
+  flags IKEA licensing as unresolved *and* load-bearing for the "what you
+  choose, you can buy" pillar. Settle that before writing the brand name onto a
+  public page.
