@@ -14,14 +14,43 @@ const check = (name: string, cond: boolean, detail = "") => {
   }
 };
 
-// Only the properties assertRenderContract reads.
-const conformingGl = () =>
-  ({
+/**
+ * Only the properties assertRenderContract reads.
+ *
+ * `getContext` is one of them and used to be missing. When §1.1's
+ * `antialias`/`alpha` clause was added, `EXPECTED` grew two entries that call
+ * `gl.getContext().getContextAttributes()` and this fake did not grow with
+ * them — so every case in this file was throwing a TypeError out of the fake
+ * instead of exercising the assertion. That inverted the file: the conforming
+ * case "failed" and the two corruption cases "passed" for the wrong reason,
+ * catching a missing method rather than a violated contract. A guard whose own
+ * test cannot tell those apart is not a guard, which is the whole point of
+ * §1.3 — so the attributes are modelled here and corrupted below like any
+ * other clause.
+ */
+const conformingGl = () => {
+  const attrs = { antialias: false, alpha: false };
+  return {
     outputColorSpace: THREE.SRGBColorSpace,
     toneMapping: THREE.NoToneMapping,
     toneMappingExposure: 1,
     shadowMap: { enabled: true, type: THREE.PCFShadowMap },
-  }) as unknown as THREE.WebGLRenderer;
+    getContext: () => ({ getContextAttributes: () => attrs }),
+    // Handle for the corruption cases: the object the getter closes over, so a
+    // test can change what the "driver" reports rather than replace the getter.
+    _attrs: attrs,
+  } as unknown as THREE.WebGLRenderer & { _attrs: { antialias: boolean; alpha: boolean } };
+};
+
+/** Runs the assertion and reports whether it threw, and with what message. */
+const assertResult = (gl: THREE.WebGLRenderer) => {
+  try {
+    assertRenderContract(gl);
+    return { threw: false, message: "" };
+  } catch (e) {
+    return { threw: true, message: (e as Error).message };
+  }
+};
 
 const env = process.env as { NODE_ENV: string };
 const wasDev = env.NODE_ENV;
@@ -29,13 +58,8 @@ env.NODE_ENV = "development";
 THREE.ColorManagement.enabled = true;
 
 {
-  let threw = false;
-  try {
-    assertRenderContract(conformingGl());
-  } catch {
-    threw = true;
-  }
-  check("conforming renderer state does not throw", !threw);
+  const { threw, message } = assertResult(conformingGl());
+  check("conforming renderer state does not throw", !threw, message);
 }
 
 {
@@ -43,14 +67,7 @@ THREE.ColorManagement.enabled = true;
   // during the first shadow pass — the exact case §1.3 must catch.
   const gl = conformingGl();
   gl.shadowMap.type = THREE.BasicShadowMap;
-  let threw = false;
-  let message = "";
-  try {
-    assertRenderContract(gl);
-  } catch (e) {
-    threw = true;
-    message = (e as Error).message;
-  }
+  const { threw, message } = assertResult(gl);
   check("corrupted gl.shadowMap.type throws in development", threw);
   check("throw message names the offending key", message.includes("gl.shadowMap.type"));
 }
@@ -58,13 +75,39 @@ THREE.ColorManagement.enabled = true;
 {
   const gl = conformingGl();
   gl.toneMapping = THREE.ACESFilmicToneMapping;
-  let threw = false;
-  try {
-    assertRenderContract(gl);
-  } catch {
-    threw = true;
-  }
-  check("corrupted gl.toneMapping throws in development", threw);
+  check("corrupted gl.toneMapping throws in development", assertResult(gl).threw);
+}
+
+{
+  // §1.1's own origin story: `<Canvas gl={{...}}>` spreads over R3F's defaults,
+  // which include `antialias: true`, so the app allocated and resolved a 4x MSAA
+  // backbuffer every frame to anti-alias a single fullscreen triangle. That is
+  // the case this clause exists to catch, and it was the one case the file did
+  // not cover.
+  const gl = conformingGl();
+  gl._attrs.antialias = true;
+  const { threw, message } = assertResult(gl);
+  check("a context that came back antialiased throws", threw);
+  check("throw message names gl.context.antialias", message.includes("gl.context.antialias"));
+}
+
+{
+  const gl = conformingGl();
+  gl._attrs.alpha = true;
+  check("a context that came back with alpha throws", assertResult(gl).threw);
+}
+
+{
+  // The read is deliberately of the LIVE context, not of what was requested —
+  // a driver is free to ignore either flag. Modelled here as attributes the
+  // getter reports absent, which is what a context that answered nothing looks
+  // like; it must not silently satisfy `antialias: false`.
+  const gl = conformingGl() as unknown as { getContext: () => unknown };
+  gl.getContext = () => ({ getContextAttributes: () => null });
+  check(
+    "a context reporting no attributes throws rather than passing",
+    assertResult(gl as unknown as THREE.WebGLRenderer).threw,
+  );
 }
 
 env.NODE_ENV = wasDev;
