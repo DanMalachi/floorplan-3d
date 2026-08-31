@@ -357,7 +357,7 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
     } catch {
       /* ignore */
     }
-    window.location.href = "/?home=1";
+    window.location.href = "/design?home=1";
   };
   return (
     <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
