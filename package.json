@@ -73,7 +73,7 @@
     "pdfjs-dist": "^6.1.200",
     "postprocessing": "6.39.2",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react-dom": "19.2.8",
     "react-konva": "^19.2.5",
     "three": "0.185.0",
     "yjs": "^13.6.31",
