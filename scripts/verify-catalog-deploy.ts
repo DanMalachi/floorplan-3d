@@ -80,12 +80,15 @@ function compileIgnore(text: string): (repoRelPath: string) => boolean {
 /** Self-test: a guard whose own matcher is untested certifies whatever it is fed. */
 function assertMatcherIsHonest(isIgnored: (p: string) => boolean) {
   const cases: [string, boolean][] = [
-    // The distinction the whole BLOCKER-1 question turns on: the glob stops at
-    // the directory boundary, so raw top-level GLBs are excluded and the
-    // optimized subdirectories are not.
+    // The distinction the whole BLOCKER-1 question turns on: the `*.glb` glob
+    // stops at the directory boundary, so raw top-level GLBs are excluded and
+    // the optimized subdirectories are not.
     ["public/furniture/blenderkit/raw.glb", true],
-    ["public/furniture/blenderkit/opt-ktx2/x.glb", false],
     ["public/furniture/blenderkit/opt/x.glb", false],
+    // opt-ktx2 is excluded by its OWN rule, not by the glob above — added when
+    // KTX2 was held back, and the rule to delete when it ships. If MODEL_BASE
+    // is flipped without deleting it, this script fails on all 75.
+    ["public/furniture/blenderkit/opt-ktx2/x.glb", true],
     ["public/furniture/ikea/00069768.glb", true],
     ["public/furniture/ikea/thumb/00069768.png", false],
     ["docs/PERFORMANCE.md", true],

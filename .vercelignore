@@ -19,5 +19,14 @@ public/furniture/ikea/*.glb
 # boundary, so only the top-level raw files are excluded here.
 public/furniture/blenderkit/*.glb
 
+# The KTX2 re-encode (124 MB), held out of production 2026-08-31 — see the
+# MODEL_BASE comment in scripts/blenderkit/build-catalog.ts for why. The
+# catalog points at opt/, so uploading these would be 124 MB of dead weight on
+# every deploy. WHEN KTX2 SHIPS, DELETE THIS RULE: leaving it while MODEL_BASE
+# points at opt-ktx2 would 404 all 75 models. `npm run furniture:verify-deploy`
+# fails loudly on exactly that combination, so the mistake is caught, not
+# discovered in production.
+public/furniture/blenderkit/opt-ktx2/
+
 # Regenerable IKEA raw API cache — never needed at build/runtime.
 data/raw/
