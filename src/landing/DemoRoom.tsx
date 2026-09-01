@@ -76,7 +76,7 @@ function DemoPlaceholder() {
  * is what clipped the panel's last row: any single value is right at one window
  * size and short at another.
  */
-export function DemoRoom({ minHeight = "clamp(340px, 52vh, 560px)" }: { minHeight?: string }) {
+export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeight?: string }) {
   const [mounted, setMounted] = useState(false); // avoids an SSR/client hydration mismatch
   const [capable, setCapable] = useState(false); // WebGL present + motion not reduced
   const [visible, setVisible] = useState(false); // hero has scrolled near the viewport
@@ -138,11 +138,10 @@ export function DemoRoom({ minHeight = "clamp(340px, 52vh, 560px)" }: { minHeigh
 
 const ROOT_CLASS = "done-demo-room";
 
-// The camera is hands-off (see DemoStage.tsx) and the canvas is taken out of
-// hit-testing there, so nothing in this subtree competes for a gesture any
-// more. That replaced the `touch-action: pan-y` rule this wrapper used to
-// carry, which only ever solved the touch half of the scroll conflict and left
-// the wheel and the middle button still captured on desktop.
-
+// The camera rules live in DemoStage.tsx / AutoOrbitRig.tsx: drag orbits, and
+// the wheel plus every touch gesture are dead, so nothing in this subtree can
+// take a scroll away from the page. The `touch-action: pan-y` override that
+// makes the touch half of that true is in STAGE_CSS, because enabling
+// camera-controls writes `touch-action: none` onto the canvas itself.
 
 export default DemoRoom;

@@ -163,40 +163,34 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
 
       <div style={{ fontFamily: B.fontUi, fontSize: ty.small, color: B.ink4 }}>{HERO.note}</div>
 
-      {/* Full-bleed, and deliberately unframed. A border, a radius and a shadow
-          would present the room as an application docked inside the page — the
-          exact "small window of my app" reading this hero exists to avoid. Edge
-          to edge, the render simply becomes the page.
-
-          `100vw` + the negative margin breaks out of this section's centred
-          column; the marketing layout sets `overflowX: hidden`, so the extra
-          width a scrollbar can introduce is clipped rather than scrollable.
-
-          Height is a viewport clamp rather than an aspect ratio on purpose: a
-          16/10 box collapses to a letterbox strip on a phone, which is what
-          made the demo feel like a preview thumbnail instead of a room. */}
+      {/* Deliberately unframed. A border, a radius and a shadow would present
+          the room as an application docked inside the page — the exact "small
+          window of my app" reading this hero exists to avoid. The canvas's own
+          edges are masked to transparent instead (DemoStage.tsx), so it
+          dissolves into the page wherever it stops and needs no frame and no
+          full-bleed breakout to avoid looking like a box. */}
       {demo && (
         <div
           style={{
-            // A WIDE content column, not a 100vw breakout. The demo is now a
-            // room beside a control card, and a full-bleed one would push the
-            // card against the viewport edge with nothing to hold it. This is
-            // wider than the section's own `B.maxWidth` (1120) because two
-            // columns need the room: the model would otherwise be narrower
-            // here than it was as a single full-width band.
+            // The FRAME column (`B.maxWidthWide`), not a 100vw breakout and not
+            // an arbitrary width of its own. The header, the footer and this
+            // demo are the three things that span it, and they have to agree:
+            // at 1400 against a 1120 header, the nav's CTA sat visibly inset
+            // from the control panel directly beneath it.
             //
-            // The canvas no longer needs to reach the edge to avoid looking
-            // like a box — its edges are masked to transparent instead, so it
-            // dissolves into the page wherever it stops. See DemoStage.tsx.
-            // Breaks out of the section's 1120 column to a wider one, without
-            // reaching the viewport edge. `left: 50%` + a -50% translate
-            // centres an element wider than its parent whatever that parent's
-            // width is; the marketing layout's `overflowX: hidden` never has
-            // anything to clip because the width already subtracts the gutters.
+            // Wider than the reading column because two columns need the room,
+            // narrower than full-bleed because a card pushed against the
+            // viewport edge has nothing holding it.
+            //
+            // `left: 50%` + a -50% translate centres an element wider than its
+            // parent whatever that parent's width is — the section's own column
+            // is the narrower reading one. The marketing layout's
+            // `overflowX: hidden` never has anything to clip, because the width
+            // already subtracts both gutters.
             position: "relative",
             left: "50%",
             transform: "translateX(-50%)",
-            width: `min(1400px, calc(100vw - ${B.gutter * 2}px))`,
+            width: `min(${B.maxWidthWide}px, calc(100vw - ${B.gutter * 2}px))`,
             marginTop: "clamp(28px, 5vw, 60px)",
             // Deliberately NO height. The demo sizes itself to the taller of
             // the room and the control card (DemoStage's STAGE_CSS); imposing

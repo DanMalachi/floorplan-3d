@@ -86,7 +86,7 @@ const RADIUS_OF_SPAN = 0.72;
 
 /** Breathing room around the fitted sphere. 1.0 would put the model's extreme
  *  corner exactly on the frame edge at every aspect ratio. */
-const FIT_MARGIN = 1.18;
+const FIT_MARGIN = 1.10;
 
 /** A frame this long means the tab was backgrounded (a hidden tab gets zero
  *  rAF ticks, so `delta` on return is however long the visitor was away).

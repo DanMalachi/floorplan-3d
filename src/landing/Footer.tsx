@@ -14,7 +14,7 @@ export function Footer() {
     <footer style={{ borderTop: `1px solid ${B.hairline}`, background: B.ground }}>
       <div
         style={{
-          maxWidth: B.maxWidth,
+          maxWidth: B.maxWidthWide,
           margin: "0 auto",
           padding: `48px ${B.gutter}px 40px`,
           display: "flex",
@@ -61,7 +61,7 @@ export function Footer() {
 
       <div
         style={{
-          maxWidth: B.maxWidth,
+          maxWidth: B.maxWidthWide,
           margin: "0 auto",
           padding: `0 ${B.gutter}px 40px`,
         }}

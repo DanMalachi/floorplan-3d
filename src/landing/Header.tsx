@@ -60,7 +60,7 @@ export function Header() {
     >
       <div
         style={{
-          maxWidth: B.maxWidth,
+          maxWidth: B.maxWidthWide,
           margin: "0 auto",
           padding: `14px ${B.gutter}px`,
           display: "flex",

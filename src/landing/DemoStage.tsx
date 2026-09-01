@@ -309,7 +309,7 @@ function ControlRow({ label, children }: { label: string; children: ReactNode })
 /** The narrowest an option may be before its row wraps. Sized on the longest
  *  label any row carries ("See through") at this font, plus the swatch, the gap
  *  and the padding — so the widest case still fits rather than truncating. */
-const OPTION_MIN_PX = 112;
+const OPTION_MIN_PX = 104;
 
 /**
  * The five controls, in a card beside the room.
@@ -594,24 +594,24 @@ const STAGE_CSS = `
    others, with no way to tell from the code which one you had. */
 .${STAGE_CLASS} {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(316px, 30%, 400px);
-  gap: clamp(20px, 3vw, 44px);
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 31%, 404px);
+  gap: clamp(20px, 2.5vw, 36px);
   align-items: stretch;
   width: 100%;
 }
 .${CANVAS_CLASS} {
   position: relative;
   min-width: 0;
-  min-height: clamp(340px, 52vh, 560px);
+  min-height: clamp(400px, 62vh, 680px);
 }
 .${STAGE_CLASS} canvas {
   touch-action: pan-y !important;
   -webkit-mask-image:
     linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 6%, #000 91%, transparent 100%);
+    linear-gradient(to bottom, transparent 0%, #000 4%, #000 94%, transparent 100%);
   mask-image:
     linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 6%, #000 91%, transparent 100%);
+    linear-gradient(to bottom, transparent 0%, #000 4%, #000 94%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
