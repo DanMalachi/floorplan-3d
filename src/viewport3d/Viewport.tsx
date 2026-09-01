@@ -313,7 +313,25 @@ const BRUSH_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g transform="rotate(45 14 14)"><rect x="11" y="3" width="6" height="11" rx="1.5" fill="#3a3a3a" stroke="#ffffff" stroke-width="1.3"/><rect x="10.5" y="13" width="7" height="4" fill="#ffffff" stroke="#3a3a3a" stroke-width="0.9"/><path d="M11 17 h6 l-1.2 6 h-3.6 z" fill="#0a84ff" stroke="#ffffff" stroke-width="0.9"/></g></svg>',
 )}") 14 25, crosshair`;
 
-export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } = {}) {
+/**
+ * `chrome` — set false to mount the scene with Viewport's OWN control panels
+ * suppressed (`ScenePanel`, `WallModeToggle`), leaving the caller to supply its
+ * own. Added 2026-08-31 for the marketing site's hero demo (src/landing/), which
+ * needs the real renderer but a curated, brand-styled subset of controls rather
+ * than the app's full panel set — the two panels above are the only chrome here
+ * that renders unconditionally, so they are the only two gated.
+ *
+ * PROTECTED FILE (docs/PROTECTED_PATHS.md, CLAUDE.md rule 1): this edit was
+ * approved by Dan before being made. It is deliberately additive — the default
+ * is `true`, so every existing call site (src/app/design/page.tsx,
+ * src/collab/CollabRoom.tsx) keeps exactly today's behaviour and nothing about
+ * the app changes. If you need to hide more chrome, prefer widening this flag's
+ * meaning over adding a second one, and ask first.
+ */
+export function Viewport({
+  collabOverlay,
+  chrome = true,
+}: { collabOverlay?: React.ReactNode; chrome?: boolean } = {}) {
   const scene = useSceneStore((s) => s.scene);
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -347,8 +365,11 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
   useEffect(() => {
     if (walkthroughActive) setWalkthroughMounted(true);
   }, [walkthroughActive]);
-  // The CAD grid is an editing aid; hide it in the immersive View presets.
-  const showGrid = envPreset === "none" || appMode !== "view";
+  // The CAD grid is an editing aid; hide it in the immersive View presets, and
+  // whenever the caller has asked for no chrome at all — the grid is an
+  // affordance for someone editing, not part of the model, so a presentation
+  // embed showing it reads as a screenshot of a tool rather than a home.
+  const showGrid = chrome && (envPreset === "none" || appMode !== "view");
 
   // `?dpr=` diagnostic hatch — null unless the URL asks, in which case the
   // contract's [1, 2] clamp is replaced by that single clamped value for this
@@ -461,7 +482,7 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
         {/* Sky, sun, fog, IBL and ground — driven by the Scene preset + time. */}
-        <Environment3d span={span} halfX={halfX} halfZ={halfZ} />
+        <Environment3d span={span} halfX={halfX} halfZ={halfZ} groundFade={!chrome} />
 
         {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
@@ -576,10 +597,10 @@ export function Viewport({ collabOverlay }: { collabOverlay?: React.ReactNode } 
       {appMode === "build" && <BuildToolbar />}
       {appMode === "build" && <BuildNavigator />}
       {appMode === "furnish" && <BottomDock />}
-      {appMode === "view" && <ScenePanel />}
+      {chrome && appMode === "view" && <ScenePanel />}
       <WalkthroughHint active={walkthroughActive} locked={walkthroughLocked} />
       <WalkthroughFovControl active={walkthroughActive} fovDeg={walkthroughFov} onChange={setWalkthroughFov} />
-      <WallModeToggle />
+      {chrome && <WallModeToggle />}
       <CameraOfferChip />
       <PdToastHost />
       <PerfHud />

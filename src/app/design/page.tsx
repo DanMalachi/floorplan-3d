@@ -225,7 +225,7 @@ export default function Home() {
         const home = new URLSearchParams(window.location.search).get("home");
         const justLeft = sessionStorage.getItem("live:left");
         if (justLeft) sessionStorage.removeItem("live:left");
-        if (home) window.history.replaceState({}, "", "/"); // don't leave it sticky
+        if (home) window.history.replaceState({}, "", "/design"); // don't leave it sticky
         if (roomId && !home && justLeft !== roomId) {
           try {
             const projectId = getCurrentProjectId();

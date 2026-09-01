@@ -30,3 +30,29 @@ export const legacyExtractionEnabled =
  */
 export const ktx2FloorsEnabled =
   process.env.NEXT_PUBLIC_KTX2_FLOORS_ENABLED === "true";
+
+/**
+ * The done.design marketing site (`/`, `/about`, `/faq` — everything under the
+ * `(marketing)` route group) and the editor's move off the site root to
+ * `/design`.
+ *
+ * Default OFF, and while off `/` simply redirects to `/design`, so production
+ * behaves exactly as it does today: visiting done.design puts you straight in
+ * the editor. That default is load-bearing rather than cautious — a push to
+ * `main` IS a production deploy on this project (Vercel Git integration), so
+ * an unflagged marketing page would go live the moment the branch merged,
+ * regardless of whether the copy, pricing or brand had been signed off.
+ *
+ * One flag covers the whole marketing surface rather than one per page: the
+ * pages cross-link to each other and to the header, and a live About page
+ * linking to a 404 homepage reads worse than no marketing site at all. It also
+ * gates the route MOVE, which is the part that cannot be half-shipped.
+ *
+ * Note the editor lives at `/design` unconditionally, flag or no flag — that
+ * way the new URL is real and warm before it becomes the only one, and
+ * flipping this flag never changes where the app itself is served from.
+ *
+ * Turn on for local/preview: NEXT_PUBLIC_LANDING_ENABLED=true.
+ */
+export const landingEnabled =
+  process.env.NEXT_PUBLIC_LANDING_ENABLED === "true";

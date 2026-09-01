@@ -145,7 +145,7 @@ export default function AccountPage() {
       <div style={{ maxWidth: 660, margin: "0 auto", display: "grid", gap: 18 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: PD.textPrimary, margin: 0 }}>Your data</h1>
-          <Link href="/" style={{ fontSize: 12.5, color: PD.textTertiary, textDecoration: "none" }}>
+          <Link href="/design" style={{ fontSize: 12.5, color: PD.textTertiary, textDecoration: "none" }}>
             ← Back to plans
           </Link>
         </div>
