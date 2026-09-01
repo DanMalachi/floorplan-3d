@@ -105,6 +105,14 @@ export const B = {
 
   // ── Layout ──────────────────────────────────────────────────────────────
   maxWidth: 1120, // content column
+  /** The FRAME column: the header, the footer and the hero's demo.
+   *
+   *  Wider than the reading column on purpose — nav and full-width media want
+   *  the screen, running text does not (that is what `maxWidthText` is for).
+   *  The three that use it must agree, or the header's CTA sits visibly inset
+   *  from the panel directly beneath it, which is what it did at 1120 against a
+   *  1400 demo. */
+  maxWidthWide: 1320,
   maxWidthText: 680, // long-form column (About, FAQ), ~75ch at 18px
   gutter: 24,
 } as const;

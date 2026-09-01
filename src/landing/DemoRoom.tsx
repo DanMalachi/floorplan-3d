@@ -64,12 +64,19 @@ function DemoPlaceholder() {
         background: "transparent",
       }}
     >
-      <span style={microLabel({ color: B.ink3 })}>Interactive 3D — scroll to explore</span>
+      <span style={microLabel({ color: B.ink3 })}>Interactive 3D — loading the room</span>
     </div>
   );
 }
 
-export function DemoRoom({ height = "600px" }: { height?: string }) {
+/**
+ * `minHeight` sizes the PLACEHOLDER and sets a floor for the stage; it is not a
+ * fixed height. Once DemoStage mounts, the taller of the room and the control
+ * panel decides how tall this gets (see STAGE_CSS). Handing this a hard height
+ * is what clipped the panel's last row: any single value is right at one window
+ * size and short at another.
+ */
+export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeight?: string }) {
   const [mounted, setMounted] = useState(false); // avoids an SSR/client hydration mismatch
   const [capable, setCapable] = useState(false); // WebGL present + motion not reduced
   const [visible, setVisible] = useState(false); // hero has scrolled near the viewport
@@ -110,63 +117,31 @@ export function DemoRoom({ height = "600px" }: { height?: string }) {
       style={{
         position: "relative",
         width: "100%",
-        height,
-        overflow: "hidden",
+        minHeight,
+        // No `overflow: hidden`. It existed to clip a full-bleed canvas, and
+        // now it would crop the control panel the moment its content is taller
+        // than the room beside it — which is the whole failure this layout is
+        // built to make impossible.
         // No border, radius, shadow or raised ground: the room is meant to read
         // as part of the page, not as a panel sitting on it.
         background: "transparent",
-        // Vertical swipes belong to the PAGE, not the camera. Without this the
-        // canvas swallows every touch drag and a phone visitor is trapped at
-        // the hero with no way to scroll past it. See the style block below,
-        // which is the half that actually does the work.
-        touchAction: "pan-y",
       }}
     >
-      <style dangerouslySetInnerHTML={{ __html: TOUCH_CSS }} />
-
       {mounted && capable && visible ? (
         <DemoStage fallback={<DemoPlaceholder />} />
       ) : (
         <DemoPlaceholder />
       )}
-
-      {/* Edge fades.
-          The horizon itself is gone — `<Viewport chrome={false}>` passes
-          `groundFade` to Environment3d, which extends the shadow-catcher past
-          the fog's far plane so the ground dissolves rather than ending at a
-          rim. What is left is the seam between the canvas's own background and
-          the page, and that cannot be matched from CSS: the composer tone-maps
-          the background, so what lands on screen is not the hex the source
-          names. These two gradients cover the join instead of chasing it, and
-          keep working if any of those colours change. */}
-      <div style={fade("top")} />
-      <div style={fade("bottom")} />
     </div>
   );
 }
 
 const ROOT_CLASS = "done-demo-room";
 
-// R3F sets `touch-action: none` on the canvas element itself, which is why the
-// wrapper's own touch-action isn't enough. Inline styles can't reach a child, so
-// this is the one place the marketing site needs a real stylesheet rule.
-// `pan-y` hands vertical drags to the browser (the page scrolls) while
-// horizontal drags still reach the camera — so on a phone the model orbits
-// left/right and the page scrolls up/down, which is the trade a hero should
-// make. Desktop is unaffected: mouse drag and wheel are not touch actions.
-const TOUCH_CSS = `.${ROOT_CLASS} canvas { touch-action: pan-y !important; }`;
-
-const fade = (edge: "top" | "bottom"): React.CSSProperties => ({
-  position: "absolute",
-  left: 0,
-  right: 0,
-  [edge]: 0,
-  // Only as deep as the join needs now that there is no horizon to bury —
-  // a heavier top fade would start dimming the model itself.
-  height: edge === "top" ? "18%" : "14%",
-  background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${B.ground} 0%, ${B.ground} 18%, transparent 100%)`,
-  pointerEvents: "none",
-  zIndex: 2,
-});
+// The camera rules live in DemoStage.tsx / AutoOrbitRig.tsx: drag orbits, and
+// the wheel plus every touch gesture are dead, so nothing in this subtree can
+// take a scroll away from the page. The `touch-action: pan-y` override that
+// makes the touch half of that true is in STAGE_CSS, because enabling
+// camera-controls writes `touch-action: none` onto the canvas itself.
 
 export default DemoRoom;

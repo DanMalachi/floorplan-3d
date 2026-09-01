@@ -60,12 +60,33 @@ link reads "← Floorplan → 3D".
 ## The demo room
 
 A live render of the real product — the actual `Viewport`, the actual scene
-store — not a screenshot or a video. Orbit, pan and zoom are live. It is mounted
-as `<Viewport chrome={false} />`, which hides the app's own `ScenePanel` and
-`WallModeToggle` and the CAD grid, and the page supplies two brand-styled
-controls instead: **Ceiling on/off** and **Daylight/Evening**. Ceilings start
-OFF, so the visitor arrives at an open doll's house and turning them on is the
-reveal.
+store — not a screenshot or a video. It is mounted as
+`<Viewport chrome={false} autoOrbit />`, which hides the app's own `ScenePanel`,
+`WallModeToggle` and CAD grid, and replaces the camera with a slow automatic
+orbit.
+
+**The room sits in the left column and five controls in the right** (revised
+2026-09-01): **Walls** solid/see-through, **Ceiling** on/off, **Light**
+white/warm, **Floor** oak/concrete/terrazzo, **Windows** white/grey/black. Every
+one writes straight onto the scene rather than through `commitScene`, so idly
+trying floors on a marketing page does not build an undo stack in the store the
+editor shares. Ceilings start OFF, so the visitor arrives at an open doll's
+house and turning them on is the reveal.
+
+### Why the visitor cannot drive the camera
+
+This is a scroll fix, not a style choice, and it was Dan's call after seeing the
+first version. `CameraControls` binds the wheel on the canvas, so a hero that
+owns the camera also owns the page's scroll — you scroll, the model dollies, and
+the page stays where it is. The middle mouse button collides the same way: TRUCK
+in the app's input map, autoscroll in every browser.
+
+So the hero stops competing for the pointer at all. The camera moves itself, the
+canvas is `pointer-events: none`, and every gesture over the hero belongs to the
+page. What the visitor drives instead is the *state* of the room, which is the
+better demo anyway: five controls that each visibly change the thing they are
+looking at. This replaced a `touch-action: pan-y` compromise that only ever
+fixed the touch half of the problem and left the wheel captured on desktop.
 
 Walkthrough is deliberately absent: it takes the page over with pointer lock and
 needs an obvious way back out, which is a product decision rather than a hero
@@ -73,9 +94,10 @@ one.
 
 Constraints it was built under:
 
-- **`Viewport.tsx` WAS modified**, with Dan's approval, to add the additive
-  `chrome?: boolean` prop — see the "Approved exceptions" section of
-  `docs/PROTECTED_PATHS.md`. Nothing else protected was touched.
+- **`Viewport.tsx` WAS modified**, with Dan's approval, twice — the additive
+  `chrome?: boolean` prop and, on 2026-09-01, `autoOrbit?: boolean`. See the
+  "Approved exceptions" section of `docs/PROTECTED_PATHS.md` for what each one
+  gates and why. Nothing else protected was touched.
 - **Only BlenderKit assets**, served from `public/furniture/blenderkit/opt/`.
   No IKEA asset appears: those GLBs live on Vercel Blob, are excluded from the
   git deploy, and 404'd in production once already (2026-08-31). All 18 asset

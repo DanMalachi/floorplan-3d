@@ -37,6 +37,7 @@ import { CameraOfferChip } from "@/ui/planDock/cameraOffer";
 import { StairLayer } from "./StairMesh";
 import { CameraFocusRig } from "./CameraFocusRig";
 import { CameraRig } from "./CameraRig";
+import { AutoOrbitRig } from "./AutoOrbitRig";
 import { CameraKeyboardRig } from "./CameraKeyboardRig";
 import { CameraDoubleClickRig } from "./CameraDoubleClickRig";
 import { CameraOfferRig } from "./CameraOfferRig";
@@ -327,11 +328,33 @@ const BRUSH_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
  * src/collab/CollabRoom.tsx) keeps exactly today's behaviour and nothing about
  * the app changes. If you need to hide more chrome, prefer widening this flag's
  * meaning over adding a second one, and ask first.
+ *
+ * `autoOrbit` — set true to take the camera away from the user entirely and
+ * orbit the model slowly instead (see AutoOrbitRig.tsx). Added 2026-09-01, also
+ * approved by Dan, and deliberately NOT folded into `chrome`: they are separate
+ * axes, and a chrome-less embed that still wants a camera the visitor can drive
+ * has to remain expressible.
+ *
+ * The reason it exists is scroll, not style. CameraControls binds the wheel on
+ * the canvas, so a hero that owns the camera also owns the page's scroll —
+ * the visitor scrolls, the model dollies, the page stays put. Turning the
+ * camera off is what hands scrolling back to the document.
+ *
+ * It suppresses THREE things, all required (AutoOrbitRig.tsx explains why each
+ * one is load-bearing): `CameraControls`' input, `<CameraRig>` (which writes
+ * the mouse/touch map in an effect), and `<CameraKeyboardRig>` (which binds
+ * keydown on WINDOW, so on a marketing page it would eat WASD for the whole
+ * document). Default `false` — every existing call site is unchanged.
  */
 export function Viewport({
   collabOverlay,
   chrome = true,
-}: { collabOverlay?: React.ReactNode; chrome?: boolean } = {}) {
+  autoOrbit = false,
+}: {
+  collabOverlay?: React.ReactNode;
+  chrome?: boolean;
+  autoOrbit?: boolean;
+} = {}) {
   const scene = useSceneStore((s) => s.scene);
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -482,7 +505,7 @@ export function Viewport({
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
         {/* Sky, sun, fog, IBL and ground — driven by the Scene preset + time. */}
-        <Environment3d span={span} halfX={halfX} halfZ={halfZ} groundFade={!chrome} />
+        <Environment3d span={span} halfX={halfX} halfZ={halfZ} groundFade={!chrome} groundShadow={!autoOrbit} />
 
         {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
@@ -538,11 +561,13 @@ export function Viewport({
         <FitCamera span={span} />
         {/* After FitCamera: the rig's far plane is derived from the dolly
             limit and must win over FitCamera's opening-shot value. */}
-        <CameraRig span={span} halfX={halfX} halfZ={halfZ} />
+        {!autoOrbit && <CameraRig span={span} halfX={halfX} halfZ={halfZ} />}
         {/* P2 T2/T3: double-click-to-frame and the WASD/QE/T/F/Home keyboard
             channel. Separate files, not folded into CameraRig, so its own
             diff stays the button-map/envelope it already was. */}
-        <CameraKeyboardRig halfX={halfX} halfZ={halfZ} />
+        {!autoOrbit && <CameraKeyboardRig halfX={halfX} halfZ={halfZ} />}
+        {/* Mounted after FitCamera so its opening shot is the one that lands. */}
+        {autoOrbit && <AutoOrbitRig span={span} />}
         <CameraDoubleClickRig />
         <CameraOfferRig />
         {walkthroughMounted && (
