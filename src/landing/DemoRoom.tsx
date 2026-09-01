@@ -64,7 +64,7 @@ function DemoPlaceholder() {
         background: "transparent",
       }}
     >
-      <span style={microLabel({ color: B.ink3 })}>Interactive 3D — scroll to explore</span>
+      <span style={microLabel({ color: B.ink3 })}>Interactive 3D — loading the room</span>
     </div>
   );
 }
@@ -115,58 +115,24 @@ export function DemoRoom({ height = "600px" }: { height?: string }) {
         // No border, radius, shadow or raised ground: the room is meant to read
         // as part of the page, not as a panel sitting on it.
         background: "transparent",
-        // Vertical swipes belong to the PAGE, not the camera. Without this the
-        // canvas swallows every touch drag and a phone visitor is trapped at
-        // the hero with no way to scroll past it. See the style block below,
-        // which is the half that actually does the work.
-        touchAction: "pan-y",
       }}
     >
-      <style dangerouslySetInnerHTML={{ __html: TOUCH_CSS }} />
-
       {mounted && capable && visible ? (
         <DemoStage fallback={<DemoPlaceholder />} />
       ) : (
         <DemoPlaceholder />
       )}
-
-      {/* Edge fades.
-          The horizon itself is gone — `<Viewport chrome={false}>` passes
-          `groundFade` to Environment3d, which extends the shadow-catcher past
-          the fog's far plane so the ground dissolves rather than ending at a
-          rim. What is left is the seam between the canvas's own background and
-          the page, and that cannot be matched from CSS: the composer tone-maps
-          the background, so what lands on screen is not the hex the source
-          names. These two gradients cover the join instead of chasing it, and
-          keep working if any of those colours change. */}
-      <div style={fade("top")} />
-      <div style={fade("bottom")} />
     </div>
   );
 }
 
 const ROOT_CLASS = "done-demo-room";
 
-// R3F sets `touch-action: none` on the canvas element itself, which is why the
-// wrapper's own touch-action isn't enough. Inline styles can't reach a child, so
-// this is the one place the marketing site needs a real stylesheet rule.
-// `pan-y` hands vertical drags to the browser (the page scrolls) while
-// horizontal drags still reach the camera — so on a phone the model orbits
-// left/right and the page scrolls up/down, which is the trade a hero should
-// make. Desktop is unaffected: mouse drag and wheel are not touch actions.
-const TOUCH_CSS = `.${ROOT_CLASS} canvas { touch-action: pan-y !important; }`;
+// The camera is hands-off (see DemoStage.tsx) and the canvas is taken out of
+// hit-testing there, so nothing in this subtree competes for a gesture any
+// more. That replaced the `touch-action: pan-y` rule this wrapper used to
+// carry, which only ever solved the touch half of the scroll conflict and left
+// the wheel and the middle button still captured on desktop.
 
-const fade = (edge: "top" | "bottom"): React.CSSProperties => ({
-  position: "absolute",
-  left: 0,
-  right: 0,
-  [edge]: 0,
-  // Only as deep as the join needs now that there is no horizon to bury —
-  // a heavier top fade would start dimming the model itself.
-  height: edge === "top" ? "18%" : "14%",
-  background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${B.ground} 0%, ${B.ground} 18%, transparent 100%)`,
-  pointerEvents: "none",
-  zIndex: 2,
-});
 
 export default DemoRoom;

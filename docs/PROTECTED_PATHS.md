@@ -52,6 +52,25 @@ not listed here still falls under CLAUDE.md rule 1 — stop and ask.
   Widening the existing flag rather than adding a second one, per the note on
   the prop: the grid is described in that file as "an editing aid", which is
   what this flag means. Default `true` keeps the app unchanged.
+- **2026-09-01, `src/viewport3d/Viewport.tsx` — added the `autoOrbit?: boolean`
+  prop** (branch `feat/landing-hero-showcase`). Approved by Dan before the edit.
+  The marketing hero must not compete with the page for the pointer:
+  `CameraControls` binds the wheel on the canvas, so a hero that owns the camera
+  owns the page's scroll — the visitor scrolls, the model dollies, the page
+  stays put. The middle button collides the same way (TRUCK in `CameraRig`,
+  autoscroll in the browser). With the flag on, the camera is taken away
+  entirely and `<AutoOrbitRig>` moves it instead.
+
+  Deliberately a SECOND flag rather than widening `chrome`: they are separate
+  axes, and a chrome-less embed that still wants a camera the visitor can drive
+  has to stay expressible. It gates three things, all required — `enabled` on
+  `CameraControls`, and mounting `<CameraRig>` (which writes the mouse/touch map
+  in an effect, so neutralising it from outside would be undone) and
+  `<CameraKeyboardRig>` (which binds keydown on WINDOW, so on a marketing page
+  it would eat WASD/QE/T/F/Home for the whole document). Additive and
+  default-`false`; every existing call site is unchanged. The asymmetry it rests
+  on is that camera-controls' `update()` does not read `_enabled` — only its DOM
+  handlers do — so programmatic camera moves survive disabling user input.
 - **2026-08-31, `src/viewport3d/environment/Environment3d.tsx` — added the
   `groundFade?: boolean` prop** (same branch, same approval; passed down from
   `Viewport` as `groundFade={!chrome}`). The studio preset's shadow-catcher
