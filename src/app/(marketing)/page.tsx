@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <Hero demo={<DemoRoom height="100%" />} />
+      <Hero demo={<DemoRoom />} />
 
       {/* A ground change is the only separator between sections — no rules, no
           dividers. Quiet is an attribute the brand actually commits to. */}

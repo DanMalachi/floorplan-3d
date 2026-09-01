@@ -69,7 +69,14 @@ function DemoPlaceholder() {
   );
 }
 
-export function DemoRoom({ height = "600px" }: { height?: string }) {
+/**
+ * `minHeight` sizes the PLACEHOLDER and sets a floor for the stage; it is not a
+ * fixed height. Once DemoStage mounts, the taller of the room and the control
+ * panel decides how tall this gets (see STAGE_CSS). Handing this a hard height
+ * is what clipped the panel's last row: any single value is right at one window
+ * size and short at another.
+ */
+export function DemoRoom({ minHeight = "clamp(340px, 52vh, 560px)" }: { minHeight?: string }) {
   const [mounted, setMounted] = useState(false); // avoids an SSR/client hydration mismatch
   const [capable, setCapable] = useState(false); // WebGL present + motion not reduced
   const [visible, setVisible] = useState(false); // hero has scrolled near the viewport
@@ -110,8 +117,11 @@ export function DemoRoom({ height = "600px" }: { height?: string }) {
       style={{
         position: "relative",
         width: "100%",
-        height,
-        overflow: "hidden",
+        minHeight,
+        // No `overflow: hidden`. It existed to clip a full-bleed canvas, and
+        // now it would crop the control panel the moment its content is taller
+        // than the room beside it — which is the whole failure this layout is
+        // built to make impossible.
         // No border, radius, shadow or raised ground: the room is meant to read
         // as part of the page, not as a panel sitting on it.
         background: "transparent",

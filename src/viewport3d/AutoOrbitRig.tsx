@@ -71,35 +71,22 @@ const ELEVATION_DEG = 26;
  *  reads as an elevation drawing, and the corner view is what shows depth. */
 const START_AZIMUTH_DEG = 38;
 
-/** Orbit radius as a multiple of the model's span, plus a fixed margin so small
- *  rooms don't end up with the camera inside the wall.
- *
- *  TIGHTER than `FitCamera`'s 1.6, deliberately. The model's apparent quality
- *  on this page is just how many pixels it covers — there is no LOD and no
- *  dpr change between here and the editor — so a hero that frames the room
- *  small looks lower-resolution than the same room in the app, which is
- *  exactly the regression a half-width column caused. The canvas is full-bleed
- *  and the room is the only subject, so it can afford to fill the frame. */
-const DIST_FACTOR = 1.28;
-const DIST_MARGIN = 1.8;
-
-/** How far left of centre the room sits, as a fraction of the visible width,
- *  so the floating controls on the right have empty ground to sit over rather
- *  than the model. Applied as a camera focal offset rather than by moving or
- *  widening the canvas: shifting a 100vw canvas would either reveal its edge
- *  (the "box" this hero must not have) or mean rendering pixels that are
- *  scrolled off-screen. */
-const OFFSET_FRACTION = 0.13;
-
-/** Below this canvas width the controls stack UNDER the room instead of beside
- *  it (see DemoStage's media query), so there is nothing to make room for and
- *  the model should be centred. Matches that breakpoint. */
-const WIDE_PX = 900;
-
 /** Vertical field of view of the Canvas, in degrees — set in Viewport.tsx and
- *  not exposed, so it is mirrored here. Only used to size the offset above; if
- *  the two ever disagree the room drifts off-centre, nothing worse. */
+ *  not exposed, so it is mirrored here. */
 const FOV_DEG = 50;
+
+/** The model's bounding-sphere radius as a multiple of `span`.
+ *
+ *  `span` is the larger PLAN dimension, so it misses both the other plan axis
+ *  and the wall height. For a room, half the span plus those two contributions
+ *  lands a little over 0.7; 0.72 is that with room to spare. Over-estimating
+ *  costs a slightly wider frame, under-estimating clips the model — so it
+ *  rounds up. */
+const RADIUS_OF_SPAN = 0.72;
+
+/** Breathing room around the fitted sphere. 1.0 would put the model's extreme
+ *  corner exactly on the frame edge at every aspect ratio. */
+const FIT_MARGIN = 1.18;
 
 /** A frame this long means the tab was backgrounded (a hidden tab gets zero
  *  rAF ticks, so `delta` on return is however long the visitor was away).
@@ -123,6 +110,10 @@ export function AutoOrbitRig({ span }: { span: number }) {
   /** Read in `useFrame` rather than as state: this changes at most once in a
    *  visit, and a re-render per change would remount nothing useful. */
   const reduced = useRef(false);
+
+  /** True between `controlstart` and `controlend` — see the listener below for
+   *  why this is tracked here instead of read from `controls.active`. */
+  const dragging = useRef(false);
 
   const playing = useSyncExternalStore(
     subscribeOrbitPlaying,
@@ -152,11 +143,29 @@ export function AutoOrbitRig({ span }: { span: number }) {
   // them for the camera — and it STAYS stopped, because that is what makes the
   // play button mean something. Resuming automatically after a drag would turn
   // it into a control that undoes itself a second later.
+  //
+  // `dragging` is tracked from these two events rather than read off
+  // `controls.active`, and that is a bug fix, not a preference. `active` is
+  // `!_hasRested`, and `_hasRested` is only restored to true inside update()'s
+  // `else if (updated)` branch (camera-controls.module.js:2280) — so if
+  // `_needsUpdate` goes false before the rest threshold is met, which a settling
+  // drag can do, it stays false FOREVER and `active` never returns to false
+  // again. Gating the orbit on it meant Play did nothing once you had dragged.
   useEffect(() => {
     if (!controls) return;
-    const onStart = () => setOrbitPlaying(false);
+    const onStart = () => {
+      dragging.current = true;
+      setOrbitPlaying(false);
+    };
+    const onEnd = () => {
+      dragging.current = false;
+    };
     controls.addEventListener("controlstart", onStart);
-    return () => controls.removeEventListener("controlstart", onStart);
+    controls.addEventListener("controlend", onEnd);
+    return () => {
+      controls.removeEventListener("controlstart", onStart);
+      controls.removeEventListener("controlend", onEnd);
+    };
   }, [controls]);
 
   useEffect(() => {
@@ -174,7 +183,24 @@ export function AutoOrbitRig({ span }: { span: number }) {
   // target it was given — so this wins without FitCamera needing to know.
   useEffect(() => {
     if (!controls) return;
-    const dist = Math.max(span * DIST_FACTOR, 5) + DIST_MARGIN;
+
+    // FIT the model, rather than placing the camera at a hand-tuned multiple of
+    // span. A fixed distance only frames correctly at the one aspect ratio it
+    // was chosen against: make the window narrower, or zoom the page, and the
+    // horizontal field shrinks while the distance does not, so the room runs
+    // off the sides. Solving for the frame instead is correct at every viewport
+    // size, zoom level and device.
+    //
+    // Fit a sphere of radius R in a frustum: the limiting half-angle is the
+    // SMALLER of the two, which is horizontal on a portrait-ish canvas and
+    // vertical on a wide one. `d = R / sin(halfAngle)` is the distance at which
+    // the sphere exactly touches that edge.
+    const aspect = size.width / Math.max(size.height, 1);
+    const vHalf = (FOV_DEG * DEG) / 2;
+    const hHalf = Math.atan(Math.tan(vHalf) * aspect);
+    const radiusOfModel = span * RADIUS_OF_SPAN;
+    const dist = (radiusOfModel / Math.sin(Math.min(vHalf, hHalf))) * FIT_MARGIN;
+
     const y = dist * Math.sin(ELEVATION_DEG * DEG);
     const radius = dist * Math.cos(ELEVATION_DEG * DEG);
     const az = START_AZIMUTH_DEG * DEG;
@@ -191,22 +217,16 @@ export function AutoOrbitRig({ span }: { span: number }) {
       true,
     );
 
-    // Slide the room left of centre by offsetting the camera rather than the
-    // target: the target stays the model, so the orbit still turns around the
-    // room and not around a point beside it. The offset is in camera-local
-    // space, so it stays "left on screen" for the whole revolution.
-    const visibleWidth =
-      2 * dist * Math.tan((FOV_DEG * DEG) / 2) * (size.width / Math.max(size.height, 1));
-    const offset = size.width >= WIDE_PX ? visibleWidth * OFFSET_FRACTION : 0;
-    void controls.setFocalOffset(offset, 0, 0, true);
+    // Centred, with no focal offset. The controls used to float ON the canvas,
+    // so the room was pushed left to clear them; they now occupy their own grid
+    // column (DemoStage.tsx), and an offset that no longer has anything to
+    // avoid just walks the model towards the edge it eventually falls off.
   }, [controls, span, size.width, size.height]);
 
   useFrame((_, delta) => {
-    if (!controls || reduced.current || !playing) return;
-    // `controls.active` is true while a drag is settling. Adding rotation on
-    // top of the visitor's own would read as the model sliding out from under
-    // the cursor.
-    if (controls.active) return;
+    // Adding rotation on top of the visitor's own drag would read as the model
+    // sliding out from under the cursor.
+    if (!controls || reduced.current || !playing || dragging.current) return;
     // `false` = no easing on top of the step. The rotation IS the animation;
     // routing it through camera-controls' transition would add a lag that
     // reads as drift when the step is this small.

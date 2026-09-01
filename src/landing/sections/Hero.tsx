@@ -198,10 +198,10 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
             transform: "translateX(-50%)",
             width: `min(1400px, calc(100vw - ${B.gutter * 2}px))`,
             marginTop: "clamp(28px, 5vw, 60px)",
-            // Tall enough for the control card's five rows without it having to
-            // scroll — that scroll is exactly what made the last version read
-            // as a cramped menu rather than part of the page.
-            height: "clamp(430px, 56vh, 600px)",
+            // Deliberately NO height. The demo sizes itself to the taller of
+            // the room and the control card (DemoStage's STAGE_CSS); imposing
+            // one here is what clipped the card's last row, because any single
+            // value is right at one window size and short at another.
           }}
         >
           {demo}

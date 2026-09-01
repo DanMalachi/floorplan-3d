@@ -231,15 +231,14 @@ function ControlButton({
       data-active={active || undefined}
       style={{
         fontFamily: B.fontUi,
-        fontSize: 13.5,
+        fontSize: 13,
         fontWeight: 500,
         lineHeight: 1,
         display: "flex",
-        flex: "1 1 0",
         minWidth: 0,
         alignItems: "center",
-        gap: 8,
-        padding: "0 11px",
+        gap: 7,
+        padding: "0 10px",
         height: 42,
         borderRadius: B.radiusS + 2,
         border: `1px solid ${active ? B.accent : B.hairline}`,
@@ -272,20 +271,45 @@ function ControlButton({
           }}
         />
       )}
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+      {/* `title` is the last line of defence only: the row above is sized so a
+          label never has to truncate, and this exists for a font-fallback or a
+          text-zoom setting that makes one wider than measured. */}
+      <span title={label} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {label}
+      </span>
     </button>
   );
 }
 
-/** One labelled row: a micro-label over a set of equal-width options. */
+/** One labelled row: a micro-label over a set of equal-width options.
+ *
+ *  `auto-fit` + a `minmax` floor rather than a plain flex row. A flex row keeps
+ *  three options side by side however narrow the panel gets, which is what
+ *  clipped "Concrete" to "Concr…". This gives every option a width it is
+ *  guaranteed to fit its label in, and when the panel cannot afford three of
+ *  them it wraps to two, then one — so the label is never the thing that
+ *  gives way. */
 function ControlRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <span style={microLabel()}>{label}</span>
-      <div style={{ display: "flex", gap: 8 }}>{children}</div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(auto-fit, minmax(${OPTION_MIN_PX}px, 1fr))`,
+          gap: 8,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
+
+/** The narrowest an option may be before its row wraps. Sized on the longest
+ *  label any row carries ("See through") at this font, plus the swatch, the gap
+ *  and the padding — so the widest case still fits rather than truncating. */
+const OPTION_MIN_PX = 112;
 
 /**
  * The five controls, in a card beside the room.
@@ -562,23 +586,32 @@ const BTN_CLASS = "done-demo-btn";
    the action map says, so this has to win it back. Vertical swipes scroll the
    page; nothing else on touch does anything, by design. */
 const STAGE_CSS = `
+/* NO fixed height anywhere in here. The row is as tall as the taller of its two
+   children: the canvas contributes a min-height, the panel contributes whatever
+   its five rows actually need, and the grid takes the max. That is what stops
+   the panel being clipped at the bottom — it was previously poured into a
+   viewport-derived height that was correct at one window size and too short at
+   others, with no way to tell from the code which one you had. */
 .${STAGE_CLASS} {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 30%, 380px);
+  grid-template-columns: minmax(0, 1fr) clamp(316px, 30%, 400px);
   gap: clamp(20px, 3vw, 44px);
   align-items: stretch;
   width: 100%;
-  height: 100%;
 }
-.${CANVAS_CLASS} { position: relative; min-width: 0; height: 100%; }
+.${CANVAS_CLASS} {
+  position: relative;
+  min-width: 0;
+  min-height: clamp(340px, 52vh, 560px);
+}
 .${STAGE_CLASS} canvas {
   touch-action: pan-y !important;
   -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 9%, #000 88%, transparent 100%);
+    linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 91%, transparent 100%);
   mask-image:
-    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 9%, #000 88%, transparent 100%);
+    linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 91%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
@@ -623,9 +656,12 @@ const STAGE_CSS = `
 @media (max-width: 900px) {
   .${STAGE_CLASS} {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     gap: 14px;
   }
+  /* Shorter, because the room now has the full width to be legible in and the
+     panel below it needs to be reachable without a long scroll past the hero. */
+  .${CANVAS_CLASS} { min-height: clamp(260px, 42vh, 400px); }
   .${STAGE_CLASS} canvas {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
