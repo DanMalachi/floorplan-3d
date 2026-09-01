@@ -25,20 +25,23 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 // Resolves relative URLs in page metadata (e.g. opengraph-image) to absolute
-// ones. Vercel always sets VERCEL_URL on its deployments; NEXT_PUBLIC_SITE_URL
-// isn't defined anywhere in this repo, so that branch is a fallback for a
-// future custom domain. `new URL()` throws on a malformed string, so the last
-// resort has to be an actually-valid URL, not a bracketed placeholder token —
-// localhost is the standard safe default for local dev (no real domain is
-// invented; this is never shown to a user, only used to resolve relative
-// metadata URLs). See src/app/robots.ts / sitemap.ts for the same logic,
-// which is safe to keep a literal `[[PLACEHOLDER]]` string since those only
-// ever get template-interpolated, never parsed by `new URL()`.
+// ones. Vercel always sets VERCEL_URL on its deployments, but on a production
+// deployment that is the per-deployment *.vercel.app alias, so the real domain
+// has to win there or canonical and OG URLs would point at a host nobody
+// visits; VERCEL_URL still resolves previews against themselves.
+// NEXT_PUBLIC_SITE_URL remains the explicit override. `new URL()` throws on a
+// malformed string, so the last resort has to be an actually-valid URL, not a
+// bracketed placeholder token — localhost is the standard safe default for
+// local dev (no real domain is invented; this is never shown to a user, only
+// used to resolve relative metadata URLs). See src/app/robots.ts and
+// sitemap.ts for the same resolution order.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   ? process.env.NEXT_PUBLIC_SITE_URL
-  : process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  : process.env.VERCEL_ENV === "production"
+    ? "https://done.design"
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

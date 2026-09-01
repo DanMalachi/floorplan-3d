@@ -35,6 +35,10 @@ export default function robots(): MetadataRoute.Robots {
 
 function siteUrl(): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  // Production must advertise the real domain: a `Sitemap:` line pointing at a
+  // *.vercel.app alias sends crawlers to a host that is not the verified
+  // Search Console property. VERCEL_URL stays the right answer for previews.
+  if (process.env.VERCEL_ENV === "production") return "https://done.design";
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   // The production domain, live since 2026-08-27 (Namecheap DNS → Vercel).
   // NEXT_PUBLIC_SITE_URL is still the override for preview deployments and
