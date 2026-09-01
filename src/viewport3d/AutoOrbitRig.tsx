@@ -51,12 +51,35 @@ const ELEVATION_DEG = 26;
  *  reads as an elevation drawing, and the corner view is what shows depth. */
 const START_AZIMUTH_DEG = 38;
 
-/** Orbit radius as a multiple of the model's span, plus a fixed margin so
- *  small rooms don't end up with the camera inside the wall. Wider than
- *  `FitCamera`'s 1.6 would put it, because the room is framed in a half-width
- *  column here and needs the headroom. */
-const DIST_FACTOR = 1.5;
-const DIST_MARGIN = 2.5;
+/** Orbit radius as a multiple of the model's span, plus a fixed margin so small
+ *  rooms don't end up with the camera inside the wall.
+ *
+ *  TIGHTER than `FitCamera`'s 1.6, deliberately. The model's apparent quality
+ *  on this page is just how many pixels it covers — there is no LOD and no
+ *  dpr change between here and the editor — so a hero that frames the room
+ *  small looks lower-resolution than the same room in the app, which is
+ *  exactly the regression a half-width column caused. The canvas is full-bleed
+ *  and the room is the only subject, so it can afford to fill the frame. */
+const DIST_FACTOR = 1.28;
+const DIST_MARGIN = 1.8;
+
+/** How far left of centre the room sits, as a fraction of the visible width,
+ *  so the floating controls on the right have empty ground to sit over rather
+ *  than the model. Applied as a camera focal offset rather than by moving or
+ *  widening the canvas: shifting a 100vw canvas would either reveal its edge
+ *  (the "box" this hero must not have) or mean rendering pixels that are
+ *  scrolled off-screen. */
+const OFFSET_FRACTION = 0.13;
+
+/** Below this canvas width the controls stack UNDER the room instead of beside
+ *  it (see DemoStage's media query), so there is nothing to make room for and
+ *  the model should be centred. Matches that breakpoint. */
+const WIDE_PX = 900;
+
+/** Vertical field of view of the Canvas, in degrees — set in Viewport.tsx and
+ *  not exposed, so it is mirrored here. Only used to size the offset above; if
+ *  the two ever disagree the room drifts off-centre, nothing worse. */
+const FOV_DEG = 50;
 
 /** A frame this long means the tab was backgrounded (a hidden tab gets zero
  *  rAF ticks, so `delta` on return is however long the visitor was away).
@@ -73,6 +96,9 @@ const MAX_FRAME = 0.1;
  */
 export function AutoOrbitRig({ span }: { span: number }) {
   const controls = useThree((s) => s.controls) as CameraControls | null;
+  // The canvas's own pixel size, so the rig can tell the beside-the-room layout
+  // from the stacked one without the page having to tell it.
+  const size = useThree((s) => s.size);
 
   /** Read in `useFrame` rather than as state: this changes at most once in a
    *  visit, and a re-render per change would remount nothing useful. */
@@ -109,7 +135,16 @@ export function AutoOrbitRig({ span }: { span: number }) {
       0,
       true,
     );
-  }, [controls, span]);
+
+    // Slide the room left of centre by offsetting the camera rather than the
+    // target: the target stays the model, so the orbit still turns around the
+    // room and not around a point beside it. The offset is in camera-local
+    // space, so it stays "left on screen" for the whole revolution.
+    const visibleWidth =
+      2 * dist * Math.tan((FOV_DEG * DEG) / 2) * (size.width / Math.max(size.height, 1));
+    const offset = size.width >= WIDE_PX ? visibleWidth * OFFSET_FRACTION : 0;
+    void controls.setFocalOffset(offset, 0, 0, true);
+  }, [controls, span, size.width, size.height]);
 
   useFrame((_, delta) => {
     if (!controls || reduced.current) return;

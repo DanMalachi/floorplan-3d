@@ -35,9 +35,9 @@ import { demoScene } from "./demoScene";
 // the same collision (TRUCK in the app, autoscroll in the browser).
 //
 // So the hero stops competing for the pointer altogether. The camera moves on
-// its own, the canvas is `pointer-events: none` (see CANVAS_CSS), and every
+// its own, the canvas is `pointer-events: none` (see STAGE_CSS), and every
 // gesture a visitor makes over the hero belongs to the page. What the visitor
-// drives instead is the STATE of the room — five controls beside it, each of
+// drives instead is the STATE of the room — five controls floating over it, each
 // which visibly changes the thing they are looking at. That reads as a product
 // demo rather than a toy, and it cannot trap anyone.
 //
@@ -197,6 +197,31 @@ function DemoControls() {
   const floor = rooms?.[0]?.floor ?? DEFAULT_FLOOR;
   const frame = openings?.find((o) => o.frameColor)?.frameColor ?? DEFAULT_FRAME;
 
+  // The ceiling only renders in Full wall-mode — `FloorMesh.tsx:343` gates it
+  // as `!show || wallMode !== "full"`, so Cutaway can always see in. Reading
+  // the SAME condition here is what stops the Ceiling row from lighting "On"
+  // over a room with no ceiling in it, which is what made the control look
+  // broken. The two rows are coerced into agreement below, but the display
+  // still has to tell the truth about what is actually on screen.
+  const ceilingOn = showCeilings && wallMode === "full";
+
+  /** Ceiling on implies solid walls, because there is no such thing as a
+   *  visible ceiling without them. Rather than disable the row or show a
+   *  tooltip explaining a coupling nobody asked about, the control just brings
+   *  the walls with it — every button stays live and does the obvious thing. */
+  const setCeiling = (on: boolean) => {
+    setShowCeilings(on);
+    if (on) setWallMode("full");
+  };
+
+  /** The same agreement from the other side: asking to see through the walls
+   *  while a ceiling is on would otherwise leave `showCeilings` true and
+   *  silently re-roof the room the moment Solid came back. */
+  const setWalls = (mode: "full" | "cutaway") => {
+    setWallMode(mode);
+    if (mode === "cutaway") setShowCeilings(false);
+  };
+
   /** Retint every ceiling fixture. */
   const setLightK = (colorK: number) => {
     const s = useSceneStore.getState();
@@ -226,17 +251,17 @@ function DemoControls() {
       <span style={microLabel({ padding: "0 0 0 4px", color: B.ink3 })}>Try it</span>
 
       <ControlRow label="Walls">
-        <ControlButton label="Solid" active={wallMode === "full"} onClick={() => setWallMode("full")} />
+        <ControlButton label="Solid" active={wallMode === "full"} onClick={() => setWalls("full")} />
         <ControlButton
           label="See through"
           active={wallMode === "cutaway"}
-          onClick={() => setWallMode("cutaway")}
+          onClick={() => setWalls("cutaway")}
         />
       </ControlRow>
 
       <ControlRow label="Ceiling">
-        <ControlButton label="On" active={showCeilings} onClick={() => setShowCeilings(true)} />
-        <ControlButton label="Off" active={!showCeilings} onClick={() => setShowCeilings(false)} />
+        <ControlButton label="On" active={ceilingOn} onClick={() => setCeiling(true)} />
+        <ControlButton label="Off" active={!ceilingOn} onClick={() => setCeiling(false)} />
       </ControlRow>
 
       <ControlRow label="Light">
@@ -314,6 +339,12 @@ export default function DemoStage({ fallback }: { fallback: ReactNode }) {
           <Viewport chrome={false} autoOrbit />
         </CanvasBoundary>
         {/* Edge fades. The horizon itself is gone — `chrome={false}` passes
+            NOTE: these cover the TOP and BOTTOM only. The left and right edges
+            need no treatment because the canvas is full-bleed — it runs off
+            both sides of the viewport, so there is no vertical seam to hide.
+            That is the whole reason this is not a two-column grid: a canvas
+            that stops short of the edge reads as a box sitting on the page,
+            which is exactly what this hero must not look like.
             `groundFade` to Environment3d, which extends the shadow-catcher past
             the fog's far plane so the ground dissolves rather than ending at a
             rim. What is left is the seam between the canvas's own background
@@ -378,57 +409,63 @@ const fade = (edge: "top" | "bottom"): React.CSSProperties => ({
   background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${rampStops(GROUND_RGB)})`,
 });
 
-// The room sits in the left column and the controls in the right, because a
-// control the visitor has to look away from the model to find does not read as
-// controlling the model. Under 900px they stack, model first — on a phone the
-// column would otherwise be too narrow for the room to be legible at all.
-//
-// `pointer-events: none` on the canvas is the guarantee behind the scroll
-// promise at the top of this file: with the camera hands-off there is nothing
-// left for the canvas to receive, and taking it out of hit-testing means no
-// device — wheel, trackpad, touch or middle-drag — can have its gesture eaten
-// by the hero. It replaces the `touch-action: pan-y` compromise this page used
-// to need, which only ever fixed the touch half of the problem.
+/* The canvas fills the whole stage and the controls float ON it. There is no
+   column, no panel and no scroll container anywhere in here, and that is the
+   point: a canvas that stops short of the viewport edge reads as a box sitting
+   on the page, and a bordered control panel reads as an application docked
+   inside it. Both are the "small window of my app" impression this hero exists
+   to avoid.
+
+   `pointer-events: none` on the canvas is the guarantee behind the scroll
+   promise at the top of this file — with the camera hands-off there is nothing
+   left for it to receive, so taking it out of hit-testing means no device can
+   have its gesture eaten by the hero. The controls opt back IN, since they are
+   the only thing here a visitor is meant to hit. */
 const STAGE_CSS = `
-.${STAGE_CLASS} {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(232px, 24%, 288px);
-  gap: clamp(12px, 3vw, 40px);
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  /* The canvas keeps bleeding off the left edge — that is what makes the room
-     read as part of the page rather than an object in a box. Only the panel is
-     pulled in, so it does not sit hard against the viewport edge. */
-  padding-right: clamp(16px, 5vw, 72px);
-}
-.${CANVAS_CLASS} { position: relative; min-width: 0; height: 100%; }
+.${STAGE_CLASS} { position: relative; width: 100%; height: 100%; }
+.${CANVAS_CLASS} { position: absolute; inset: 0; }
 .${STAGE_CLASS} canvas { pointer-events: none !important; }
 .${PANEL_CLASS} {
+  position: absolute;
+  right: clamp(20px, 6vw, 88px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 16px;
-  border-radius: 18px;
-  background: ${B.raised};
-  border: 1px solid ${B.hairline};
-  box-shadow: ${B.shadow};
-  max-height: 100%;
-  overflow-y: auto;
+  gap: 15px;
+  pointer-events: auto;
+  /* The room is dark but not uniformly so, and it turns. A soft shadow on the
+     text costs nothing and keeps every label legible whichever wall happens to
+     be behind it, without putting a plate under the controls. */
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
 }
+
+/* Stacked under the room, where there is no empty ground to float over. The
+   controls get a real surface here ONLY because they now sit against the page
+   rather than the render — floating text on the page background would read as
+   body copy that happens to be clickable. */
 @media (max-width: 900px) {
-  .${STAGE_CLASS} {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 10px;
-    align-items: stretch;
-    padding: 0 clamp(16px, 5vw, 24px);
-  }
   .${PANEL_CLASS} {
+    position: static;
+    transform: none;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
-    gap: 10px 14px;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 12px 16px;
+    margin: 0 clamp(16px, 5vw, 24px);
     padding: 14px;
+    border-radius: 16px;
+    background: ${B.raised};
+    border: 1px solid ${B.hairline};
+    text-shadow: none;
   }
+  .${STAGE_CLASS} {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-bottom: 14px;
+  }
+  .${CANVAS_CLASS} { position: relative; inset: auto; flex: 1; min-height: 0; }
 }
 `;
