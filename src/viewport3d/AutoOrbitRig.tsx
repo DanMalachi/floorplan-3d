@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import CameraControlsImpl from "camera-controls";
 import type CameraControls from "camera-controls";
+import {
+  getOrbitPlaying,
+  getOrbitPlayingServer,
+  setOrbitPlaying,
+  subscribeOrbitPlaying,
+} from "./autoOrbitPlayback";
 
 // -----------------------------------------------------------------------------
 // A slow, hands-off orbit for presentation embeds — the marketing hero today.
@@ -19,19 +26,32 @@ import type CameraControls from "camera-controls";
 // camera you control, and `Viewport`'s default keeps it that way — see the
 // `autoOrbit` prop's note there.
 //
-// ── How the input actually goes quiet ───────────────────────────────────────
-// `Viewport` mounts this INSTEAD of <CameraRig> and <CameraKeyboardRig>, and
-// passes `enabled={false}` to CameraControls. All three parts are needed:
+// ── What the visitor keeps, and what is taken away ──────────────────────────
+// Drag orbits. Everything else is off. That split is the whole design:
 //
-//   * CameraRig writes `mouseButtons`/`touches` in an effect, so neutralising
-//     the input map from out here would be undone the next time it re-runs.
+//   * LEFT DRAG  → ROTATE. A drag is not a scroll on any device's desktop
+//     input, so orbiting costs the page nothing.
+//   * WHEEL      → NONE. This is the one that mattered. camera-controls'
+//     wheel handler returns on `mouseButtons.wheel === ACTION.NONE` BEFORE it
+//     calls preventDefault (camera-controls.module.js:797), so the event
+//     reaches the document untouched and the page scrolls normally.
+//   * MIDDLE/RIGHT → NONE. Middle is TRUCK in the app and autoscroll in the
+//     browser; right is a context menu a visitor did not ask to lose.
+//   * TOUCH      → NONE, all finger counts. One finger has to stay page-scroll
+//     on a phone, and once one-finger is gone the other gestures have no
+//     coherent story. The canvas ALSO needs `touch-action: pan-y` in CSS
+//     (DemoStage.tsx): enabling camera-controls sets `touch-action: none` on
+//     the element itself (line 1199), which blocks scrolling regardless of
+//     what the action map says.
+//
+// `Viewport` mounts this INSTEAD of <CameraRig> and <CameraKeyboardRig>, and
+// both omissions are load-bearing:
+//
+//   * CameraRig writes `mouseButtons`/`touches` in an effect, so the map set
+//     below would be silently undone the next time it re-ran.
 //   * CameraKeyboardRig binds `keydown` on WINDOW, not the canvas — mounted on
 //     a marketing page it would eat WASD/QE/T/F/Home for the whole document,
 //     including anything a visitor types further down the page.
-//   * `enabled={false}` gates only camera-controls' DOM handlers; `update()`
-//     (camera-controls.module.js:2101) does not read `_enabled` at all, so the
-//     programmatic `rotate()` below keeps working while every user gesture is
-//     dead. That asymmetry is what makes this component possible.
 // -----------------------------------------------------------------------------
 
 const DEG = Math.PI / 180;
@@ -104,6 +124,41 @@ export function AutoOrbitRig({ span }: { span: number }) {
    *  visit, and a re-render per change would remount nothing useful. */
   const reduced = useRef(false);
 
+  const playing = useSyncExternalStore(
+    subscribeOrbitPlaying,
+    getOrbitPlaying,
+    getOrbitPlayingServer,
+  );
+
+  // Restrict the input map. This is the only writer of it while autoOrbit is on
+  // — <CameraRig>, which owns it in the app, is not mounted (see the header).
+  useEffect(() => {
+    if (!controls) return;
+    const A = CameraControlsImpl.ACTION;
+    controls.mouseButtons.left = A.ROTATE;
+    controls.mouseButtons.middle = A.NONE;
+    controls.mouseButtons.right = A.NONE;
+    controls.mouseButtons.wheel = A.NONE;
+    controls.touches.one = A.NONE;
+    controls.touches.two = A.NONE;
+    controls.touches.three = A.NONE;
+    // The app turns this on so a wheel-zoom pulls toward the cursor. With the
+    // wheel disabled it has nothing to act on, and leaving it set would only
+    // matter if a later change re-enabled dollying without revisiting this.
+    controls.dollyToCursor = false;
+  }, [controls]);
+
+  // A drag is the visitor taking over, so the orbit stops rather than fighting
+  // them for the camera — and it STAYS stopped, because that is what makes the
+  // play button mean something. Resuming automatically after a drag would turn
+  // it into a control that undoes itself a second later.
+  useEffect(() => {
+    if (!controls) return;
+    const onStart = () => setOrbitPlaying(false);
+    controls.addEventListener("controlstart", onStart);
+    return () => controls.removeEventListener("controlstart", onStart);
+  }, [controls]);
+
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     reduced.current = mq.matches;
@@ -147,7 +202,11 @@ export function AutoOrbitRig({ span }: { span: number }) {
   }, [controls, span, size.width, size.height]);
 
   useFrame((_, delta) => {
-    if (!controls || reduced.current) return;
+    if (!controls || reduced.current || !playing) return;
+    // `controls.active` is true while a drag is settling. Adding rotation on
+    // top of the visitor's own would read as the model sliding out from under
+    // the cursor.
+    if (controls.active) return;
     // `false` = no easing on top of the step. The rotation IS the animation;
     // routing it through camera-controls' transition would add a lag that
     // reads as drift when the step is this small.

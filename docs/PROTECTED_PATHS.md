@@ -71,6 +71,19 @@ not listed here still falls under CLAUDE.md rule 1 — stop and ask.
   default-`false`; every existing call site is unchanged. The asymmetry it rests
   on is that camera-controls' `update()` does not read `_enabled` — only its DOM
   handlers do — so programmatic camera moves survive disabling user input.
+- **2026-09-01, `src/viewport3d/environment/Environment3d.tsx` — added the
+  `groundShadow?: boolean` prop** (branch `feat/landing-hero-showcase`, passed
+  from `Viewport` as `groundShadow={!autoOrbit}`). Approved by Dan before the
+  edit. `groundFade` makes the studio disc effectively infinite, which removes
+  the horizon but leaves the room's own cast shadow lying across it as a large,
+  hard-edged dark slab — on a marketing page the most prominent object after the
+  model, and it reads as an artefact rather than as light. With this off the
+  room floats on the background instead.
+
+  It is the DISC that stops receiving (`receiveShadow={groundShadow}`), not the
+  lights that stop casting, so everything inside the room still shades and
+  self-shadows exactly as before. Additive and default-`true`; every existing
+  caller renders what it rendered before.
 - **2026-08-31, `src/viewport3d/environment/Environment3d.tsx` — added the
   `groundFade?: boolean` prop** (same branch, same approval; passed down from
   `Viewport` as `groundFade={!chrome}`). The studio preset's shadow-catcher

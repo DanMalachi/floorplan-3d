@@ -44,20 +44,37 @@ const col = (hex: string) => new THREE.Color(hex);
  * shadow with it and leave the model floating. Making it effectively infinite
  * keeps every shadow and lets the existing fog do the disappearing.
  *
- * PROTECTED FILE (docs/PROTECTED_PATHS.md, CLAUDE.md rule 1) — approved by Dan,
- * see "Approved exceptions" there. Additive and default-off: every existing
- * caller renders exactly what it rendered before.
+ * `groundShadow` — set false to stop the studio disc receiving the sun's
+ * shadow. Added 2026-09-01, approved by Dan.
+ *
+ * `groundFade` above makes the disc effectively infinite, which removes the
+ * horizon but leaves the room's own cast shadow lying across it as a large,
+ * hard-edged dark slab. On a marketing page that slab is the most visually
+ * prominent object after the model itself, and it reads as a rendering
+ * artefact rather than as light. With this off the room floats on the
+ * background instead, which is the presentation reading.
+ *
+ * It is the DISC that stops receiving, not the lights that stop casting — so
+ * everything inside the room still shades and self-shadows exactly as before.
+ * The only thing that goes is the shadow thrown onto the ground plane.
+ *
+ * PROTECTED FILE (docs/PROTECTED_PATHS.md, CLAUDE.md rule 1) — both props
+ * approved by Dan, see "Approved exceptions" there. Additive, and each defaults
+ * to the value that keeps every existing caller rendering what it rendered
+ * before.
  */
 export function Environment3d({
   span,
   halfX,
   halfZ,
   groundFade = false,
+  groundShadow = true,
 }: {
   span: number;
   halfX: number;
   halfZ: number;
   groundFade?: boolean;
+  groundShadow?: boolean;
 }) {
   const preset = useSceneStore((s) => s.envPreset);
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
@@ -181,7 +198,7 @@ export function Environment3d({
       ) : preset === "city" ? (
         <City span={span} halfX={halfX} halfZ={halfZ} />
       ) : (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow={groundShadow}>
           {/* `fogFar` above is span * 11 indoors, so a radius of span * 60 is
               fully fogged to the background long before its rim — the ground
               simply stops existing, with no horizon to see. */}

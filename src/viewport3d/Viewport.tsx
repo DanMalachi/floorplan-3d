@@ -505,7 +505,7 @@ export function Viewport({
         onPointerMissed={() => useSceneStore.getState().setSel3d(null)}
       >
         {/* Sky, sun, fog, IBL and ground — driven by the Scene preset + time. */}
-        <Environment3d span={span} halfX={halfX} halfZ={halfZ} groundFade={!chrome} />
+        <Environment3d span={span} halfX={halfX} halfZ={halfZ} groundFade={!chrome} groundShadow={!autoOrbit} />
 
         {/* Recenter the model over the origin (reframes only on scene load). */}
         <group position={[-cx, 0, -cz]}>
@@ -554,7 +554,7 @@ export function Viewport({
           // exit flight lands) would let a stray drag during the outro move
           // CameraControls' target, so the handoff snapped to wherever THAT
           // went instead of where the flight just visually landed.
-          enabled={!walkthroughMounted && !autoOrbit}
+          enabled={!walkthroughMounted}
           smoothTime={0.18}
           draggingSmoothTime={0.06}
         />

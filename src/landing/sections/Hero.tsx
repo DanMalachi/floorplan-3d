@@ -178,14 +178,30 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
       {demo && (
         <div
           style={{
-            width: "100vw",
-            maxWidth: "100vw",
-            marginLeft: "calc(50% - 50vw)",
+            // A WIDE content column, not a 100vw breakout. The demo is now a
+            // room beside a control card, and a full-bleed one would push the
+            // card against the viewport edge with nothing to hold it. This is
+            // wider than the section's own `B.maxWidth` (1120) because two
+            // columns need the room: the model would otherwise be narrower
+            // here than it was as a single full-width band.
+            //
+            // The canvas no longer needs to reach the edge to avoid looking
+            // like a box — its edges are masked to transparent instead, so it
+            // dissolves into the page wherever it stops. See DemoStage.tsx.
+            // Breaks out of the section's 1120 column to a wider one, without
+            // reaching the viewport edge. `left: 50%` + a -50% translate
+            // centres an element wider than its parent whatever that parent's
+            // width is; the marketing layout's `overflowX: hidden` never has
+            // anything to clip because the width already subtracts the gutters.
+            position: "relative",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: `min(1400px, calc(100vw - ${B.gutter * 2}px))`,
             marginTop: "clamp(28px, 5vw, 60px)",
-            // Deliberately NOT full-height. At 68vh the room filled a phone
-            // screen edge to edge, which made it read as a wall to get past
-            // rather than an object on the page.
-            height: "clamp(300px, 52vh, 560px)",
+            // Tall enough for the control card's five rows without it having to
+            // scroll — that scroll is exactly what made the last version read
+            // as a cramped menu rather than part of the page.
+            height: "clamp(430px, 56vh, 600px)",
           }}
         >
           {demo}

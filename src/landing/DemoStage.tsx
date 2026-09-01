@@ -1,10 +1,17 @@
 "use client";
 
-import { Component, useState, type ReactNode } from "react";
+import { Component, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Viewport } from "@/viewport3d/Viewport";
 import { useSceneStore } from "@/store/useSceneStore";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { frameColorPatch } from "@/render/frameFinish";
+import {
+  getOrbitPlaying,
+  getOrbitPlayingServer,
+  resetOrbitPlaying,
+  setOrbitPlaying,
+  subscribeOrbitPlaying,
+} from "@/viewport3d/autoOrbitPlayback";
 import { B, microLabel } from "@/brand/tokens";
 import { demoScene } from "./demoScene";
 
@@ -27,27 +34,23 @@ import { demoScene } from "./demoScene";
 // with no visible error, so if you change either file, re-check that the
 // homepage's initial chunks are still three-free.
 //
-// ── Why the visitor cannot touch the camera ─────────────────────────────────
-// `<Viewport autoOrbit />` takes the camera away and orbits it slowly instead.
-// The reason is scroll, not style: CameraControls binds the wheel on the canvas,
-// so a hero that owns the camera also owns the page's scroll — you scroll, the
-// model dollies, and the page stays where it was. The middle mouse button has
-// the same collision (TRUCK in the app, autoscroll in the browser).
+// ── The camera bargain ──────────────────────────────────────────────────────
+// Drag orbits the room. The wheel, the middle button and every touch gesture do
+// not — see AutoOrbitRig.tsx, which owns the input map and explains each one.
+// The short version is that the wheel was the whole problem: a hero that zooms
+// on scroll owns the page's scroll, and the visitor is stuck at the top of the
+// site. A drag costs the page nothing, so it stays.
 //
-// So the hero stops competing for the pointer altogether. The camera moves on
-// its own, the canvas is `pointer-events: none` (see STAGE_CSS), and every
-// gesture a visitor makes over the hero belongs to the page. What the visitor
-// drives instead is the STATE of the room — five controls floating over it, each
-// which visibly changes the thing they are looking at. That reads as a product
-// demo rather than a toy, and it cannot trap anyone.
+// On top of that the room turns by itself, and the toolbar under it can stop
+// and start that. Dragging also stops it, because a camera that fights the
+// pointer is worse than one that does nothing.
 //
 // ── Why the app's own panels are hidden ─────────────────────────────────────
 // `<Viewport chrome={false} />` suppresses `ScenePanel`, `WallModeToggle` and
-// the CAD grid. This is a demo, not the product embedded in a box: a visitor who
-// has not bought into anything yet should meet a short row of controls that look
-// like the page, not fifteen that look like an application docked inside it.
-// Both props are Dan-approved additive changes to a protected file — see
-// docs/PROTECTED_PATHS.md's "Approved exceptions".
+// the CAD grid, and `autoOrbit` additionally drops the ground's cast shadow
+// (Environment3d's `groundShadow`) so the room floats rather than sitting on a
+// large hard slab. All of them are Dan-approved additive changes to protected
+// files — see docs/PROTECTED_PATHS.md's "Approved exceptions".
 //
 // Walkthrough is deliberately NOT here — it takes over the page with pointer
 // lock and needs an obvious way back out, which is a product decision rather
@@ -91,7 +94,11 @@ const WARM_K = 2400;
 /** Three floors from the real registry (data/materials-floors.manifest.json),
  *  chosen to read as obviously different at orbit distance: warm wood, cool
  *  stone, and a pattern. A control whose effect a visitor has to hunt for is
- *  worse than no control. */
+ *  worse than no control.
+ *
+ *  Each carries its OWN texture as the swatch, served from the same directory
+ *  the renderer loads the material from — so the chip is a picture of the thing
+ *  it applies, and cannot drift from it the way a hand-picked hex would. */
 const FLOORS = [
   { id: "wood-oak-natural", label: "Oak" },
   { id: "concrete-light", label: "Concrete" },
@@ -110,74 +117,178 @@ const FRAMES = [
 const DEFAULT_FLOOR = FLOORS[0].id;
 const DEFAULT_FRAME = FRAMES[0].hex;
 
-/** A pill button. `active` is the whole visual language of this panel: one
- *  option per row is always on, so the panel reads as the room's current state
- *  rather than as a set of things you could do to it. */
+// ── Icons ────────────────────────────────────────────────────────────────────
+// Inline, 16px, `currentColor`, 1.5 stroke — so each one inherits the copper of
+// an active button with no second colour to keep in sync. Drawn here rather
+// than pulled from a set because a handful of glyphs do not justify an icon
+// dependency on a page whose whole budget argument is in the header above.
+
+const ICON = { width: 16, height: 16, viewBox: "0 0 16 16", fill: "none", "aria-hidden": true } as const;
+const STROKE = {
+  stroke: "currentColor",
+  strokeWidth: 1.5,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+} as const;
+
+const IconSolid = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M8 1.8 14 5v6l-6 3.2L2 11V5z" />
+    <path {...STROKE} d="M2 5l6 3.2L14 5M8 8.2v6" />
+  </svg>
+);
+
+const IconSeeThrough = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M1.3 8S3.7 3.6 8 3.6 14.7 8 14.7 8 12.3 12.4 8 12.4 1.3 8 1.3 8z" />
+    <circle {...STROKE} cx="8" cy="8" r="2.1" />
+  </svg>
+);
+
+const IconCeilingOn = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M2 3h12" />
+    <path {...STROKE} d="M8 5.4v1.8M5.2 6.1l1 1.4M10.8 6.1l-1 1.4" />
+    <circle {...STROKE} cx="8" cy="10.8" r="2.2" />
+  </svg>
+);
+
+const IconCeilingOff = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M2 3h12" />
+    <path {...STROKE} d="M4.3 13.1 11.7 5.7" />
+    <path {...STROKE} d="M9.9 8.4a2.2 2.2 0 0 1-2.9 2.9" />
+    <path {...STROKE} d="M6.6 6.9a2.2 2.2 0 0 1 2.9.6" />
+  </svg>
+);
+
+const IconWhiteLight = () => (
+  <svg {...ICON}>
+    <circle {...STROKE} cx="8" cy="8" r="4.2" />
+  </svg>
+);
+
+const IconWarmLight = () => (
+  <svg {...ICON}>
+    <circle {...STROKE} cx="8" cy="8" r="2.8" />
+    <path
+      {...STROKE}
+      d="M8 1.4v1.5M8 13.1v1.5M1.4 8h1.5M13.1 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1"
+    />
+  </svg>
+);
+
+const IconPlay = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M5.5 3.4 12 8l-6.5 4.6z" />
+  </svg>
+);
+
+const IconPause = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M6 3.5v9M10 3.5v9" />
+  </svg>
+);
+
+const IconDrag = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M8 7.2V3.5a1 1 0 0 1 2 0v3.5" />
+    <path {...STROKE} d="M10 7.2V4.8a1 1 0 0 1 2 0v2.9" />
+    <path {...STROKE} d="M6 7.6V6.2a1 1 0 0 1 2 0" />
+    <path {...STROKE} d="M6 7.6V9L4.8 7.9a1 1 0 0 0-1.4 1.4l2.3 3A3.4 3.4 0 0 0 8.4 13H10a2 2 0 0 0 2-2V7.7" />
+  </svg>
+);
+
+/**
+ * One option in a row.
+ *
+ * A bordered rectangle that shares the row's width equally with its siblings,
+ * NOT a pill. The difference matters: pills size to their label, so a row reads
+ * as a ragged group of separate things, while equal rectangles read as one
+ * segmented control with a current position. Active is a copper OUTLINE with a
+ * copper label rather than a copper fill — a filled chip at this size is the
+ * loudest thing on the page, and there are eleven of them.
+ */
 function ControlButton({
   label,
   active,
   onClick,
+  icon,
   swatch,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
-  /** Optional colour chip, for rows where the value IS a colour. */
-  swatch?: string;
+  icon?: ReactNode;
+  /** A colour chip, or a texture URL. Mutually exclusive with `icon`. */
+  swatch?: { color: string } | { image: string };
 }) {
   return (
     <button
       onClick={onClick}
       aria-pressed={active}
+      className={BTN_CLASS}
+      data-active={active || undefined}
       style={{
         fontFamily: B.fontUi,
-        fontSize: 13,
-        fontWeight: active ? 700 : 500,
+        fontSize: 13.5,
+        fontWeight: 500,
         lineHeight: 1,
-        display: "inline-flex",
+        display: "flex",
+        flex: "1 1 0",
+        minWidth: 0,
         alignItems: "center",
-        gap: 7,
-        padding: swatch ? "8px 12px 8px 9px" : "9px 13px",
-        borderRadius: 999,
-        border: "none",
+        gap: 8,
+        padding: "0 11px",
+        height: 42,
+        borderRadius: B.radiusS + 2,
+        border: `1px solid ${active ? B.accent : B.hairline}`,
         background: active ? B.accentTint : "transparent",
-        color: active ? B.accentText : B.ink2,
+        color: active ? B.accentText : B.ink,
         cursor: "pointer",
-        whiteSpace: "nowrap",
-        transition: `background ${B.dur} ${B.ease}, color ${B.dur} ${B.ease}`,
+        transition: `border-color ${B.dur} ${B.ease}, color ${B.dur} ${B.ease}, background ${B.dur} ${B.ease}`,
       }}
     >
+      {icon}
       {swatch && (
         <span
           aria-hidden
           style={{
-            width: 13,
-            height: 13,
-            borderRadius: "50%",
-            background: swatch,
-            // The white chip needs an edge or it dissolves into the pill.
-            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.28)",
+            width: 17,
+            height: 17,
+            borderRadius: 5,
             flex: "none",
+            ...("color" in swatch
+              ? { background: swatch.color }
+              : {
+                  backgroundImage: `url(${swatch.image})`,
+                  // The tile is a full material sample; `cover` keeps the grain
+                  // readable at 17px instead of squeezing a whole plank in.
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }),
+            // A white chip on a dark panel needs an edge or it dissolves.
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.30)",
           }}
         />
       )}
-      {label}
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
     </button>
   );
 }
 
-/** One labelled row of the panel. */
+/** One labelled row: a micro-label over a set of equal-width options. */
 function ControlRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <span style={microLabel({ padding: "0 0 0 4px" })}>{label}</span>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>{children}</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <span style={microLabel()}>{label}</span>
+      <div style={{ display: "flex", gap: 8 }}>{children}</div>
     </div>
   );
 }
 
 /**
- * The five controls, in a column beside the room.
+ * The five controls, in a card beside the room.
  *
  * Every write here goes STRAIGHT onto the scene rather than through
  * `commitScene`. The store is shared with the editor and `commitScene` pushes an
@@ -248,30 +359,50 @@ function DemoControls() {
 
   return (
     <div className={PANEL_CLASS}>
-      <span style={microLabel({ padding: "0 0 0 4px", color: B.ink3 })}>Try it</span>
-
       <ControlRow label="Walls">
-        <ControlButton label="Solid" active={wallMode === "full"} onClick={() => setWalls("full")} />
+        <ControlButton
+          label="Solid"
+          icon={<IconSolid />}
+          active={wallMode === "full"}
+          onClick={() => setWalls("full")}
+        />
         <ControlButton
           label="See through"
+          icon={<IconSeeThrough />}
           active={wallMode === "cutaway"}
           onClick={() => setWalls("cutaway")}
         />
       </ControlRow>
 
       <ControlRow label="Ceiling">
-        <ControlButton label="On" active={ceilingOn} onClick={() => setCeiling(true)} />
-        <ControlButton label="Off" active={!ceilingOn} onClick={() => setCeiling(false)} />
+        <ControlButton label="On" icon={<IconCeilingOn />} active={ceilingOn} onClick={() => setCeiling(true)} />
+        <ControlButton
+          label="Off"
+          icon={<IconCeilingOff />}
+          active={!ceilingOn}
+          onClick={() => setCeiling(false)}
+        />
       </ControlRow>
 
-      <ControlRow label="Light">
-        <ControlButton label="White" active={!warm} onClick={() => setLightK(WHITE_K)} />
-        <ControlButton label="Warm" active={warm} onClick={() => setLightK(WARM_K)} />
+      <ControlRow label="Lighting">
+        <ControlButton
+          label="White"
+          icon={<IconWhiteLight />}
+          active={!warm}
+          onClick={() => setLightK(WHITE_K)}
+        />
+        <ControlButton label="Warm" icon={<IconWarmLight />} active={warm} onClick={() => setLightK(WARM_K)} />
       </ControlRow>
 
       <ControlRow label="Floor">
         {FLOORS.map((f) => (
-          <ControlButton key={f.id} label={f.label} active={floor === f.id} onClick={() => setFloor(f.id)} />
+          <ControlButton
+            key={f.id}
+            label={f.label}
+            swatch={{ image: `/materials/floors/${f.id}/thumb.webp` }}
+            active={floor === f.id}
+            onClick={() => setFloor(f.id)}
+          />
         ))}
       </ControlRow>
 
@@ -280,7 +411,7 @@ function DemoControls() {
           <ControlButton
             key={f.hex}
             label={f.label}
-            swatch={f.hex}
+            swatch={{ color: f.hex }}
             active={frame.toLowerCase() === f.hex.toLowerCase()}
             onClick={() => setFrame(f.hex)}
           />
@@ -291,13 +422,63 @@ function DemoControls() {
 }
 
 /**
+ * The bar under the room: what the visitor can do to it, and a stop/start for
+ * the orbit.
+ *
+ * The hint is not decoration. Drag is the ONLY camera gesture left — the wheel
+ * and every touch gesture are deliberately dead (AutoOrbitRig.tsx) — and an
+ * affordance nobody can see is the same as one that isn't there.
+ */
+function DemoToolbar() {
+  const playing = useSyncExternalStore(subscribeOrbitPlaying, getOrbitPlaying, getOrbitPlayingServer);
+  return (
+    <div className={TOOLBAR_CLASS}>
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          fontFamily: B.fontUi,
+          fontSize: 13,
+          color: B.ink3,
+        }}
+      >
+        <IconDrag />
+        Drag to orbit
+      </span>
+      <button
+        onClick={() => setOrbitPlaying(!playing)}
+        aria-label={playing ? "Pause the orbit" : "Resume the orbit"}
+        className={BTN_CLASS}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 34,
+          height: 34,
+          borderRadius: B.radiusS,
+          border: `1px solid ${B.hairline}`,
+          background: "transparent",
+          color: B.ink,
+          cursor: "pointer",
+          flex: "none",
+          transition: `border-color ${B.dur} ${B.ease}, color ${B.dur} ${B.ease}`,
+        }}
+      >
+        {playing ? <IconPause /> : <IconPlay />}
+      </button>
+    </div>
+  );
+}
+
+/**
  * Put the demo scene into the shared store.
  *
  * Ceilings start OFF so the room reads as an open doll's house on arrival,
  * which makes turning them on the reveal rather than something the visitor has
  * to undo. Floor and frame colour are seeded to the first option of their row
- * so every row opens with exactly one pill lit — an all-dark row would read as
- * broken.
+ * so every row opens with exactly one option lit — an all-dark row would read
+ * as broken.
  *
  * Returns null so it can be used as a `useState` initializer — see below.
  */
@@ -331,6 +512,12 @@ export default function DemoStage({ fallback }: { fallback: ReactNode }) {
   // unmount, since the marketing page never shares a session with the editor.
   useState(seedDemoScene);
 
+  // The orbit's play state lives in a module singleton (it has to cross the
+  // Canvas boundary), so unlike the scene it survives an unmount. Reset it, or
+  // a visitor who paused, navigated away and came back would meet a hero that
+  // never moves.
+  useEffect(() => resetOrbitPlaying(), []);
+
   return (
     <div className={STAGE_CLASS}>
       <style dangerouslySetInnerHTML={{ __html: STAGE_CSS }} />
@@ -338,22 +525,7 @@ export default function DemoStage({ fallback }: { fallback: ReactNode }) {
         <CanvasBoundary fallback={fallback}>
           <Viewport chrome={false} autoOrbit />
         </CanvasBoundary>
-        {/* Edge fades. The horizon itself is gone — `chrome={false}` passes
-            NOTE: these cover the TOP and BOTTOM only. The left and right edges
-            need no treatment because the canvas is full-bleed — it runs off
-            both sides of the viewport, so there is no vertical seam to hide.
-            That is the whole reason this is not a two-column grid: a canvas
-            that stops short of the edge reads as a box sitting on the page,
-            which is exactly what this hero must not look like.
-            `groundFade` to Environment3d, which extends the shadow-catcher past
-            the fog's far plane so the ground dissolves rather than ending at a
-            rim. What is left is the seam between the canvas's own background
-            and the page, and that cannot be matched from CSS: the composer
-            tone-maps the background, so what lands on screen is not the hex the
-            source names. These gradients cover the join instead of chasing it,
-            and keep working if any of those colours change. */}
-        <div style={fade("top")} />
-        <div style={fade("bottom")} />
+        <DemoToolbar />
       </div>
       <DemoControls />
     </div>
@@ -363,109 +535,101 @@ export default function DemoStage({ fallback }: { fallback: ReactNode }) {
 const STAGE_CLASS = "done-demo-stage";
 const CANVAS_CLASS = "done-demo-canvas";
 const PANEL_CLASS = "done-demo-panel";
+const TOOLBAR_CLASS = "done-demo-toolbar";
+const BTN_CLASS = "done-demo-btn";
 
-/** An EASED ramp, not a linear one.
- *
- *  A two-stop `linear-gradient` is linear in alpha, and the eye does not read
- *  alpha linearly — the last few percent of a fade over a near-black ground
- *  stay visible as a distinct edge, which is the hard line between the two
- *  darks. These intermediate stops approximate an ease-out curve, so the last
- *  of the fade is spread over most of its length and there is no point at
- *  which the change becomes a boundary.
- *
- *  The stops are on `B.ground` at decreasing alpha rather than on `transparent`
- *  on purpose: `transparent` is `rgba(0,0,0,0)` in most engines, so a ramp to
- *  it drags every midpoint toward black and leaves a dirty band across a
- *  coloured ground. */
-const rampStops = (rgb: string) =>
-  [
-    `${rgb} 0%`,
-    `${rgb} 14%`,
-    `rgba(${rgb.slice(4, -1)}, 0.86) 30%`,
-    `rgba(${rgb.slice(4, -1)}, 0.62) 45%`,
-    `rgba(${rgb.slice(4, -1)}, 0.38) 60%`,
-    `rgba(${rgb.slice(4, -1)}, 0.18) 76%`,
-    `rgba(${rgb.slice(4, -1)}, 0.06) 88%`,
-    `rgba(${rgb.slice(4, -1)}, 0) 100%`,
-  ].join(", ");
+/* ── Why the canvas is MASKED rather than colour-matched ─────────────────────
+   The room has to float on the page with no rectangle around it, and the canvas
+   cannot simply BE the page's colour: `src/render/contract.ts` sets
+   `alpha: false` on the GL context, and the composer tone-maps the background,
+   so what lands on screen is never exactly the hex the source names. Chasing
+   that with a matching page colour is what left a visible box.
 
-/** `B.ground` as an `rgb()` triple, so the stops above can vary only the alpha
- *  and stay correct if the token changes. */
-const GROUND_RGB = (() => {
-  const hex = B.ground.replace("#", "");
-  const n = parseInt(hex.length === 3 ? hex.replace(/./g, (c) => c + c) : hex, 16);
-  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
-})();
+   So the canvas's own edges are masked to transparent and the page shows
+   through. That is exact by construction — there is no colour to match — and it
+   survives any change to the tone mapping, the studio background or the brand
+   ground. Two linear gradients composited with `intersect` give a soft-edged
+   rectangle; a browser without `mask-composite` applies the vertical ramp
+   alone, which is no worse than the DOM overlay this replaced.
 
-const fade = (edge: "top" | "bottom"): React.CSSProperties => ({
-  position: "absolute",
-  left: 0,
-  right: 0,
-  [edge]: 0,
-  // Deep enough that the ramp has room to disappear into. The bottom carries
-  // more because that is the edge a visitor scrolls the page past.
-  height: edge === "top" ? 90 : 150,
-  pointerEvents: "none",
-  background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${rampStops(GROUND_RGB)})`,
-});
+   The horizontal inset is smaller than the vertical because the room is framed
+   to fill the column: fading 6% from each side stays clear of the model, while
+   a heavier ramp would start dimming the walls themselves.
 
-/* The canvas fills the whole stage and the controls float ON it. There is no
-   column, no panel and no scroll container anywhere in here, and that is the
-   point: a canvas that stops short of the viewport edge reads as a box sitting
-   on the page, and a bordered control panel reads as an application docked
-   inside it. Both are the "small window of my app" impression this hero exists
-   to avoid.
-
-   `pointer-events: none` on the canvas is the guarantee behind the scroll
-   promise at the top of this file — with the camera hands-off there is nothing
-   left for it to receive, so taking it out of hit-testing means no device can
-   have its gesture eaten by the hero. The controls opt back IN, since they are
-   the only thing here a visitor is meant to hit. */
+   `touch-action: pan-y` is NOT redundant with the dead touch map. Enabling
+   camera-controls writes `touch-action: none` onto the canvas element itself
+   (camera-controls.module.js:1199), which blocks page scrolling no matter what
+   the action map says, so this has to win it back. Vertical swipes scroll the
+   page; nothing else on touch does anything, by design. */
 const STAGE_CSS = `
-.${STAGE_CLASS} { position: relative; width: 100%; height: 100%; }
-.${CANVAS_CLASS} { position: absolute; inset: 0; }
-.${STAGE_CLASS} canvas { pointer-events: none !important; }
-.${PANEL_CLASS} {
-  position: absolute;
-  right: clamp(20px, 6vw, 88px);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  pointer-events: auto;
-  /* The room is dark but not uniformly so, and it turns. A soft shadow on the
-     text costs nothing and keeps every label legible whichever wall happens to
-     be behind it, without putting a plate under the controls. */
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
+.${STAGE_CLASS} {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 30%, 380px);
+  gap: clamp(20px, 3vw, 44px);
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+}
+.${CANVAS_CLASS} { position: relative; min-width: 0; height: 100%; }
+.${STAGE_CLASS} canvas {
+  touch-action: pan-y !important;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 9%, #000 88%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 9%, #000 88%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
-/* Stacked under the room, where there is no empty ground to float over. The
-   controls get a real surface here ONLY because they now sit against the page
-   rather than the render — floating text on the page background would read as
-   body copy that happens to be clickable. */
+.${PANEL_CLASS} {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: clamp(18px, 2vw, 26px);
+  border-radius: ${B.radiusM}px;
+  background: ${B.raised};
+  border: 1px solid ${B.hairline};
+}
+
+.${BTN_CLASS}:hover { border-color: ${B.hairline2} !important; }
+.${BTN_CLASS}[data-active]:hover { border-color: ${B.accent} !important; }
+.${BTN_CLASS}:focus-visible { outline: 2px solid ${B.accent}; outline-offset: 2px; }
+
+.${TOOLBAR_CLASS} {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(10px, 2vw, 22px);
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px 7px 13px;
+  border-radius: 999px;
+  background: ${B.raised};
+  border: 1px solid ${B.hairline};
+  box-shadow: ${B.shadow};
+  white-space: nowrap;
+}
+
+/* Stacked, model first. Below this width the panel beside the room would be too
+   narrow for a three-option row to hold its labels, and the room too narrow to
+   be legible at all. The side masks go with it: at this size the canvas spans
+   the full viewport, so its side edges are off-screen and fading them would
+   only eat the model. */
 @media (max-width: 900px) {
-  .${PANEL_CLASS} {
-    position: static;
-    transform: none;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-    gap: 12px 16px;
-    margin: 0 clamp(16px, 5vw, 24px);
-    padding: 14px;
-    border-radius: 16px;
-    background: ${B.raised};
-    border: 1px solid ${B.hairline};
-    text-shadow: none;
-  }
   .${STAGE_CLASS} {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 12px;
-    padding-bottom: 14px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 14px;
   }
-  .${CANVAS_CLASS} { position: relative; inset: auto; flex: 1; min-height: 0; }
+  .${STAGE_CLASS} canvas {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  }
+  .${PANEL_CLASS} { gap: 14px; }
 }
 `;
