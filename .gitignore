@@ -69,10 +69,12 @@ floorplan_for_training/dxf_dwg/
 # locally with `npm run ikea:models`; upload with `npm run ikea:upload`.
 /public/furniture/ikea/*.glb
 
-# Thumbnails are regenerable (`npm run ikea:thumbnails`) and kept out of git to
-# avoid hundreds of binaries in history; they're still shipped to prod because the
-# CLI deploy uploads them from local disk (see .vercelignore, which keeps them in).
-/public/furniture/ikea/thumb/
+# The IKEA picker thumbnails ARE committed (637 files, ~18 MB). They were ignored
+# here until 2026-09-01, which made the two deploy paths disagree: `vercel --prod`
+# uploads them off local disk, a Git-integration deploy could not, and 280 catalog
+# references 404'd on production the first time main was pushed. Regenerable with
+# `npm run ikea:thumbnails`, but regenerable is not the test — a deploy has to be
+# reproducible from a clean checkout, same reasoning as the BlenderKit opt/ set.
 
 # BlenderKit raw downloads (~412 MB of undecimated archviz .glb with 4K textures).
 # Regenerable with `npm run bk:models`. Only the OPTIMIZED copies under opt/ are

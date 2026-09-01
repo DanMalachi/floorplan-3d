@@ -7,11 +7,16 @@
  *
  * The predicate that governs THIS repo is `.vercelignore`, not `.gitignore`.
  * Deploys ship with `vercel --prod --yes --scope dans-projects7`, and the CLI
- * uploads the working tree minus `.vercelignore`. Two asset classes sit in
- * git's blind spot and ship anyway: the IKEA picker thumbnails (.gitignore:72-75
- * says so in as many words) and, currently, the KTX2 models. A guard that
- * equated "in the commit" with "in production" would report both as broken and
- * be wrong twice.
+ * uploads the working tree minus `.vercelignore`. One asset class sits in git's
+ * blind spot and ships anyway: the held-back KTX2 models, which `.vercelignore`
+ * excludes in any case. A guard that equated "in the commit" with "in
+ * production" would report it as broken and be wrong.
+ *
+ * The IKEA picker thumbnails USED to be a second such class, ignored by git and
+ * shipped by the CLI. That made a `git push origin main` — a Git-integration
+ * deploy, which has only the commit — 404 all 280 of them on production, on
+ * 2026-08-31. They are committed as of 2026-09-01, so the WARN below should now
+ * be silent, and a WARN is a finding rather than expected noise.
  *
  * So there are two findings, and they are NOT the same severity:
  *
@@ -19,8 +24,8 @@
  *          would 404 in production. A deploy blocker.
  *   WARN - it ships from this working tree but is not in git, so a clean
  *          checkout, another machine, CI, or a Vercel Git-integration deploy
- *          would not have it. The repo has chosen this knowingly for the
- *          thumbnails; it is recorded here, not enforced.
+ *          would not have it. No asset class is exempt from this any more:
+ *          treat every line as something to commit or to justify.
  *
  * Absolute URLs are skipped. The IKEA models live on Vercel Blob and are not in
  * this repo at all, so neither predicate has anything to say about them; proving
@@ -179,8 +184,9 @@ if (warnings.length) {
   for (const w of warnings) console.log(`    ${String(w.count).padStart(4)}  ${w.dir}`);
   console.log(
     "    A `vercel --prod` from this machine serves these. A clean checkout,\n" +
-      "    another machine, CI or a Git-integration deploy would not. Intended for\n" +
-      "    the IKEA thumbnails (.gitignore:72-75); a decision for anything else.",
+      "    another machine, CI or a Git-integration deploy would not. Nothing is\n" +
+      "    expected here now that the IKEA thumbnails are committed: add these to\n" +
+      "    git, or record why they are exempt.",
   );
 }
 
