@@ -190,10 +190,15 @@ export const FAQ: FaqItem[] = [
     a: "Walking through a finished room does — pinch to zoom, drag to orbit, the same as any map app. Drawing your walls wants a steadier hand than a phone screen gives you, so that part is better on a laptop or tablet, for now.",
   },
   {
-    // Source: src/furniture/catalog.ts — real IKEA models with real names
-    // and dimensions, real-model-only policy. No in-app checkout exists.
+    // Source: src/furniture/catalog.ts — real models with real names and
+    // dimensions, real-model-only policy. No in-app checkout exists.
+    //
+    // The catalogue's brand is deliberately NOT named here. Licensing for it
+    // is unresolved and load-bearing for this exact claim (docs/LANDING.md,
+    // "Not done"), and a trademark on a commercial page is the one part of
+    // this answer that cannot be walked back. Name it once that is settled.
     q: "Can I buy the furniture I place?",
-    a: "The catalogue is real furniture — actual IKEA products, at their real dimensions and their real names. What you place is something you can go find and buy today. There's no checkout inside done. yet, so think of it as a very accurate shopping list.",
+    a: "The catalogue is real furniture — actual products, at their real dimensions and under their real names. What you place is something you can go find and buy today. There's no checkout inside done. yet, so think of it as a very accurate shopping list.",
   },
   {
     // Source: no billing/pricing code exists in this repo; src/landing/nav.ts
