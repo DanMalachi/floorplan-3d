@@ -21,7 +21,16 @@ import { grantSchema, roomSchema } from "@/lib/api/schemas";
 // (server-side record or signed owner cookie — see src/lib/api/rooms.ts).
 export const runtime = "nodejs";
 
-const liveblocks = new Liveblocks({ secret: process.env.LIVEBLOCKS_SECRET_KEY ?? "" });
+// Built on first use, NOT at module scope. `new Liveblocks()` validates the key
+// format in its constructor, so with the variable unset it threw on `secret: ""`
+// while Next was collecting page data — failing the whole production build in
+// CI and in any clone without the secret, even though the handler below already
+// answers "live collaboration is not configured" for exactly that case. A build
+// must not require a runtime secret. The other two Liveblocks routes
+// (api/account/delete, api/account/retention) already construct inside their
+// handlers; this brings the third into line.
+let client: Liveblocks | null = null;
+const liveblocks = () => (client ??= new Liveblocks({ secret: process.env.LIVEBLOCKS_SECRET_KEY! }));
 
 const bodySchema = z.object({
   room: roomSchema,
@@ -77,13 +86,13 @@ export async function POST(req: Request) {
   }
 
   const session = user
-    ? liveblocks.prepareSession(user.id, {
+    ? liveblocks().prepareSession(user.id, {
         userInfo: { name: displayName(user), avatar: avatarUrl(user) ?? undefined },
       })
     // A stable id per browser, not a fresh one per request: Liveblocks counts
     // distinct user ids as monthly active users, so minting one each call billed
     // a single guest once per page load.
-    : liveblocks.prepareSession(await stableAnonId());
+    : liveblocks().prepareSession(await stableAnonId());
   session.allow(room, role === "view" ? session.READ_ACCESS : session.FULL_ACCESS);
   const { body, status } = await session.authorize();
   return new Response(body, { status });
