@@ -338,7 +338,19 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
         // Back to the OPAQUE pass the moment the wall is solid again, so it
         // renders before (and writes depth for) the transparent ghosts and
         // selection rings instead of sorting against them by distance.
-        m.transparent = o < 1;
+        const wantsBlend = o < 1;
+        if (m.transparent !== wantsBlend) {
+          m.transparent = wantsBlend;
+          // three BAKES this flag into the shader: `opaque` is a program
+          // parameter (WebGLPrograms) and `#define OPAQUE` makes
+          // opaque_fragment.glsl force `diffuseColor.a = 1.0`. Flipping the
+          // flag alone moves the mesh into the blend pass but keeps the
+          // program that ignores alpha, so the wall blends a fully opaque
+          // colour and cutaway looks like it does nothing at all. Only on the
+          // transition — recompiling every wall's shader 60x/sec would cost
+          // far more than the pass it saves.
+          m.needsUpdate = true;
+        }
       }
       // Keep the loop alive until the fade settles. Called from inside useFrame,
       // R3F schedules one more frame, so the chain sustains itself and stops the
@@ -846,8 +858,13 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         // Was unconditionally `true`, which left every frame, leaf and mullion
         // permanently in the blend pass after the first cutaway — the same
         // "wall paints over the furniture ghost" defect as WallGroup. Glass
-        // (baseOpacity 0.22) stays transparent by construction.
-        m.transparent = op < 1;
+        // (baseOpacity 0.22) stays transparent by construction. The recompile
+        // on transition is required, not optional — see WallGroup above.
+        const wantsBlend = op < 1;
+        if (m.transparent !== wantsBlend) {
+          m.transparent = wantsBlend;
+          m.needsUpdate = true;
+        }
         m.depthWrite = role === "glass" ? false : o > 0.55;
       }
       invalidate(); // sustain the fade — see WallGroup above

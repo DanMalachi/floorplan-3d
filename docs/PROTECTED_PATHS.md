@@ -37,6 +37,32 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-03, `src/viewport3d/WallMesh.tsx` — the two cutaway fades now set
+  `needsUpdate` when they flip `transparent`.** Approved by Dan before the edit.
+  Fixes a regression shipped by the 2026-09-02 WallMesh entry below.
+
+  That change stopped building wall, baseboard and joinery materials
+  `transparent: true` and started flipping the flag from the live opacity
+  instead. `transparent` is not a runtime-only flag: three folds it into the
+  program as the `opaque` parameter (`WebGLPrograms.getParameters`, and
+  `_programLayers.enable(17)` in the cache key), and `#define OPAQUE` makes
+  `opaque_fragment.glsl` execute `diffuseColor.a = 1.0`. A material born
+  `transparent: false` therefore compiles a shader that FORCES alpha to 1, and
+  flipping the flag later moves the mesh into the blend pass while leaving that
+  shader in place — so the fade ran, the opacity really did fall to 0.13, and
+  the wall still drew fully solid. Cutaway looked like it did nothing.
+
+  Both loops now compare before assigning and set `m.needsUpdate = true` only
+  on the transition, which is twice per fade rather than sixty times a second —
+  a per-frame recompile of every wall shader would cost far more than the render
+  pass the original change was buying back. Glass was never affected: it is
+  created `transparent: true`, so its program never had the define.
+
+  Caught in production by Dan, not by the /calibration check in the entry below
+  — that harness compares two still renders, and both stills were of a wall that
+  had already finished fading, so the pixels matched while the transition
+  between them was broken.
+
 - **2026-09-02, `src/viewport3d/walkthrough/doors.ts` and
   `WalkthroughMode.tsx` — the walkthrough now asks `effectiveSlide()` what kind
   of door it is looking at instead of reading the raw `slide` field, and hands
