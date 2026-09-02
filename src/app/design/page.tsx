@@ -15,11 +15,14 @@ import { enterLiveRoom } from "@/collab/enterLive";
 import { T } from "@/ui/tokens";
 import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
 import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
+import { ProjectBar } from "@/ui/ProjectBar";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
  *  button into the Projects gallery. State is persisted to IndexedDB, so a
- *  refresh or reopened tab resumes the same plan. */
-function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
+ *  refresh or reopened tab resumes the same plan. The status wording lives
+ *  here (not in the shared ProjectBar) because it reads the editor's own
+ *  sync store — the live room has no such store, so it renders no status. */
+function EditorProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
   const savedAt = useSceneStore((s) => s.projectSavedAt);
   const restored = useSceneStore((s) => s.projectRestored);
   const name = useSceneStore((s) => s.projectName);
@@ -39,48 +42,7 @@ function ProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
             : sync === "conflict"
               ? "Kept both versions"
               : `${local} · Synced`;
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 14,
-        left: 14,
-        zIndex: 30,
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: 4,
-        ...pdGlass({ borderRadius: 999 }),
-      }}
-    >
-      <button
-        onClick={onOpenProjects}
-        title="Browse projects"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          border: "none",
-          background: "transparent",
-          color: PD.textPrimary,
-          cursor: "pointer",
-          fontSize: 13,
-          fontFamily: PD.fontUi,
-          padding: "4px 10px",
-          borderRadius: 999,
-        }}
-      >
-        <span style={{ fontSize: 14, color: PD.textTertiary }}>▚</span>
-        <span style={{ fontWeight: 500, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {name}
-        </span>
-      </button>
-      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}>
-        <span style={{ color: PD.accentText }}>●</span>
-        {status}
-      </span>
-    </div>
-  );
+  return <ProjectBar name={name} status={status} onOpenProjects={onOpenProjects} />;
 }
 
 /** Top-right "Go live" / "Open live". Going live turns the OPEN project into a
@@ -285,7 +247,7 @@ export default function Home() {
       <PdThemeStyle />
       <CloudSync />
       <ModeSwitcher />
-      <ProjectBar onOpenProjects={() => setProjectsOpen(true)} />
+      <EditorProjectBar onOpenProjects={() => setProjectsOpen(true)} />
       <div
         style={{
           position: "absolute",

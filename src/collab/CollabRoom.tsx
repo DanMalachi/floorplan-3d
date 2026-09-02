@@ -30,6 +30,8 @@ import {
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
 import { T, glass, chip, field } from "@/ui/tokens";
+import { ProjectBar } from "@/ui/ProjectBar";
+import { PdThemeStyle } from "@/ui/planDock/theme";
 import { randomIdentity, identityForUser, initials, type Identity } from "./identity";
 import { displayName } from "@/lib/auth/profile";
 import { useSession } from "@/lib/auth/useSession";
@@ -349,19 +351,8 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   const others = useOthers();
   const me = useSelf();
   const count = others.length + (me ? 1 : 0);
-  // Leave back to the projects gallery. The `live:left` flag + `?home=1` tell the
-  // home page to show the gallery instead of auto-reopening this room.
-  const leave = () => {
-    try {
-      sessionStorage.setItem("live:left", roomId);
-    } catch {
-      /* ignore */
-    }
-    window.location.href = "/design?home=1";
-  };
   return (
     <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
-      <button onClick={leave} style={chip(false)} title="Back to your projects">← Projects</button>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...glass({ borderRadius: 999 }) }}>
         <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: T.ok, fontSize: 10 }}>●</span> {count} here
@@ -382,6 +373,31 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
 function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
   useRoomBinding(roomId, role);
 
+  // useSceneStore.projectName is NOT set on /v — persistence never initializes
+  // on this route, so it stays stuck at the local-editor default. The room's
+  // display name is the shared doc's own title instead, read directly (not
+  // via useRoomBinding, which doesn't expose it). It arrives asynchronously —
+  // the doc syncs in after mount — so read on mount AND keep observing.
+  const room = useRoom();
+  const [title, setTitle] = useState<string | null>(null);
+  useEffect(() => {
+    const doc = getYjsProviderForRoom(room).getYDoc();
+    const read = () => setTitle(readSceneTitle(doc));
+    read();
+    return observeSceneDoc(doc, read);
+  }, [room]);
+
+  // Back to the projects gallery. The `live:left` flag + `?home=1` tell the
+  // home page to show the gallery instead of auto-reopening this room.
+  const leave = () => {
+    try {
+      sessionStorage.setItem("live:left", roomId);
+    } catch {
+      /* ignore */
+    }
+    window.location.href = "/design?home=1";
+  };
+
   const updateMyPresence = useUpdateMyPresence();
   const sel3d = useSceneStore((s) => s.sel3d);
   useEffect(() => {
@@ -396,8 +412,12 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", background: T.bg, overflow: "hidden" }}>
+      {/* PD tokens (the shared ProjectBar) need their light-theme vars defined
+          here too — this route never mounts src/app/design/page.tsx's copy. */}
+      <PdThemeStyle />
       <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
       <ModeSwitcher role={role} />
+      <ProjectBar name={title ?? "Shared plan"} onOpenProjects={leave} />
       <TopBar roomId={roomId} role={role} />
     </div>
   );
