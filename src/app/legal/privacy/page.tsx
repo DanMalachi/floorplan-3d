@@ -15,7 +15,7 @@ import {
 } from "../legalKit";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Floorplan → 3D",
+  title: "Privacy Policy · done.",
   description: "How Floorplan → 3D collects, stores, and shares data.",
 };
 

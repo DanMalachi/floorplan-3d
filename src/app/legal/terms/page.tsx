@@ -13,7 +13,7 @@ import {
 } from "../legalKit";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · Floorplan → 3D",
+  title: "Terms of Service · done.",
   description: "The terms governing use of Floorplan → 3D.",
 };
 

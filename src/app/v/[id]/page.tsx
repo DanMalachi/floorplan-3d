@@ -4,7 +4,7 @@ import { CollabRoom } from "@/collab/CollabRoom";
 // Share links shouldn't be indexed; give them a friendly unfurl (og image is the
 // sibling opengraph-image.tsx).
 export const metadata: Metadata = {
-  title: "A live shared home design · Floorplan → 3D",
+  title: "A live shared home design · done.",
   description: "Open to explore this home in 3D — and design your own.",
   robots: { index: false, follow: false },
 };

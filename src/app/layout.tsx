@@ -45,7 +45,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Floorplan → 3D",
+  title: "done. — model your house",
   description: "Phase 1: trace a 2D plan into an editable 3D model",
 };
 

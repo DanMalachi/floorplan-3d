@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 // render needed — the funnel win is any rich card vs a bare URL. (A future step
 // can draw the actual plan by reading the room's Yjs doc server-side.)
 export const runtime = "nodejs";
-export const alt = "A live shared home design — Floorplan → 3D";
+export const alt = "A live shared home design — done.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -26,7 +26,7 @@ export default function Image() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: "#0a84ff" }} />
-          <div style={{ fontSize: 30, color: "#9a9aa3", letterSpacing: 1 }}>Floorplan → 3D</div>
+          <div style={{ fontSize: 30, color: "#9a9aa3", letterSpacing: 1 }}>done.</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ fontSize: 66, fontWeight: 700, lineHeight: 1.1 }}>A live shared home design</div>
