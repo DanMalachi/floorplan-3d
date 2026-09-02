@@ -37,6 +37,34 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-02, `src/viewport3d/WallMesh.tsx` — wall, baseboard and joinery
+  materials now set `transparent` from their opacity instead of leaving it
+  permanently `true`.** Approved by Dan AFTER the edit, not before: this rule
+  reached the session mid-task, once the change was already in the working
+  tree. Flagged rather than committed quietly; noted here so the exception
+  list stays a true record of how each one happened.
+
+  The bug: a furniture ghost or selection ring drawn against a wall was cut off
+  along the wall's face. Wall materials were built `transparent: true, opacity:
+  1`, which parks a solid wall in three's TRANSPARENT render list — sorted
+  back-to-front by object distance, drawn after everything opaque. Ghosts and
+  rings draw with `depthWrite: false`, so they leave no depth behind them, and
+  any wall whose centre is nearer the camera than the ghost's therefore sorts
+  last and paints over it. `OpeningPick`'s cutaway loop was worse: it set
+  `m.transparent = true` unconditionally and never set it back, so every frame,
+  leaf and mullion stayed in the blend pass permanently after the first
+  cutaway.
+
+  Both fade loops now also land exactly on their target instead of stopping
+  within 1e-3 of it — `damp` only approaches 1 asymptotically, and a wall
+  parked at 0.999 never becomes opaque again.
+
+  Behaviour-neutral for the walls themselves: `transparent: true` at opacity 1
+  is NormalBlending with src alpha 1, which is what opaque already draws.
+  Verified on `/calibration` in both `full` and `cutaway` — renders before and
+  after differ on 0.03%/0.05% of channels at mean delta 0.01 (antialiasing on
+  edges), and the cutaway fade still fades.
+
 - **2026-08-31, `src/viewport3d/Viewport.tsx` — added the `chrome?: boolean`
   prop** (branch `feat/landing-page`). The marketing hero needs the real
   renderer with Viewport's own panels suppressed, so it can present a curated,

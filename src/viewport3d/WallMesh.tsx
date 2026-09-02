@@ -236,7 +236,14 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
         color: WALL_COLOR,
         emissive: new THREE.Color(ACCENT),
         emissiveIntensity: 0,
-        transparent: true,
+        // Opaque until the cutaway fade actually needs blending (the useFrame
+        // below flips this with the opacity). A solid wall left in the
+        // TRANSPARENT pass renders after every furniture ghost and selection
+        // ring — those draw with depthWrite:false, so they leave no depth for
+        // the wall to test against, and a wall nearer the camera than the ghost
+        // sorts last and paints straight over it. That is the "glow just cuts
+        // at the wall" defect; `transparent: true, opacity: 1` was the cause.
+        transparent: false,
         opacity: 1,
         roughness: 0.85, // matte painted plaster — the roughness map (below) varies around this base
         metalness: 0,
@@ -269,7 +276,7 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
         color: "#efe9dc",
         roughness: 0.55,
         metalness: 0,
-        transparent: true,
+        transparent: false, // opaque until the cutaway fade — see the wall materials above
         opacity: 1,
       }),
     [],
@@ -317,12 +324,21 @@ function WallGroup({ wall, a, b, ops, ends, bbEnds, offset, effectiveHeight }: {
         target = 0.13;
       }
     }
-    if (Math.abs(neutral.opacity - target) > 1e-3) {
-      const o = THREE.MathUtils.damp(neutral.opacity, target, 10, dt);
+    // Land EXACTLY on the target rather than stopping inside an epsilon of it:
+    // `damp` only approaches 1 asymptotically, and a wall parked at 0.999 is
+    // still a blended wall, which is the whole thing the opaque path below
+    // exists to avoid.
+    if (neutral.opacity !== target) {
+      let o = THREE.MathUtils.damp(neutral.opacity, target, 10, dt);
+      if (Math.abs(o - target) <= 1e-3) o = target;
       const dw = o > 0.55;
       for (const m of [neutral, matA, matB, baseboardMat]) {
         m.opacity = o;
         m.depthWrite = dw;
+        // Back to the OPAQUE pass the moment the wall is solid again, so it
+        // renders before (and writes depth for) the transparent ghosts and
+        // selection rings instead of sorting against them by distance.
+        m.transparent = o < 1;
       }
       // Keep the loop alive until the fade settles. Called from inside useFrame,
       // R3F schedules one more frame, so the chain sustains itself and stops the
@@ -819,13 +835,19 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
         target = 0.13;
       }
     }
-    if (Math.abs(fade.current - target) > 1e-3) {
-      const o = THREE.MathUtils.damp(fade.current, target, 10, dt);
+    if (fade.current !== target) {
+      let o = THREE.MathUtils.damp(fade.current, target, 10, dt);
+      if (Math.abs(o - target) <= 1e-3) o = target; // land exactly — see WallGroup
       fade.current = o;
       for (const role of Object.keys(mats) as JoineryRole[]) {
         const m = mats[role];
-        m.opacity = baseOpacity[role] * o;
-        m.transparent = true;
+        const op = baseOpacity[role] * o;
+        m.opacity = op;
+        // Was unconditionally `true`, which left every frame, leaf and mullion
+        // permanently in the blend pass after the first cutaway — the same
+        // "wall paints over the furniture ghost" defect as WallGroup. Glass
+        // (baseOpacity 0.22) stays transparent by construction.
+        m.transparent = op < 1;
         m.depthWrite = role === "glass" ? false : o > 0.55;
       }
       invalidate(); // sustain the fade — see WallGroup above
