@@ -58,10 +58,6 @@ export const CAMERA = {
    *  the under-the-floor view (unlit backfaces) while still allowing a
    *  near-eye-level hero shot before the floor goes edge-on and vanishes. */
   maxPolarDeg: 85,
-  /** Top wall mode is a camera state, not only a wall-render toggle — this is
-   *  what makes Full/Cutaway/Top read as three ways of looking at the house
-   *  rather than a render switch sitting next to an unrelated camera. */
-  topModeMaxPolarDeg: 28,
   /** Meters of slack around the footprint that the orbit TARGET may be
    *  trucked to. The camera itself is deliberately not enclosed (see
    *  boundaryEnclosesCamera below), so viewing the house from outside still
@@ -108,7 +104,6 @@ export function CameraRig({ span, halfX, halfZ }: {
 }) {
   const controls = useThree((s) => s.controls) as CameraControlsImpl | null;
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
-  const wallMode = useSceneStore((s) => s.wallMode);
 
   /** Touch has no hover to gate on, so one finger is claimed by the whole
    *  editing mode instead: one finger acts, two fingers navigate. Without
@@ -199,13 +194,17 @@ export function CameraRig({ span, halfX, halfZ }: {
     camera.updateProjectionMatrix();
   }, [controls, camera, span, halfX, halfZ]);
 
-  // Top view is a camera state. Clamping here (rather than only restyling the
-  // walls) is what stops "Top" from being a render toggle the camera ignores.
+  // One polar limit in every wall mode. Top used to clamp to 28 deg from
+  // vertical on the theory that "Top" should be a camera state rather than a
+  // render toggle — Dan's call, 2026-09-03: in the hand it read as the camera
+  // being stuck rather than as a point of view, because the clamp kills the
+  // orbit gesture without explaining itself. Top is now purely a render mode
+  // (walls drop to stubs in WallMesh) and the camera moves exactly as it does
+  // in Full and Cutaway. Don't reinstate the clamp without asking him.
   useEffect(() => {
     if (!controls) return;
-    const deg = wallMode === "top" ? CAMERA.topModeMaxPolarDeg : CAMERA.maxPolarDeg;
-    controls.maxPolarAngle = THREE.MathUtils.degToRad(deg);
-  }, [controls, wallMode]);
+    controls.maxPolarAngle = THREE.MathUtils.degToRad(CAMERA.maxPolarDeg);
+  }, [controls]);
 
   // --- orbit does NOT re-pivot on the cursor -------------------------------
   // There used to be a `controlstart` handler here that raycast under the
