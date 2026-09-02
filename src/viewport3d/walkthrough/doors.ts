@@ -8,6 +8,7 @@
 import * as THREE from "three";
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { DEFAULT_THICKNESS, WALL_HEIGHT } from "@/schema/constants";
+import { effectiveSlide } from "@/render/doorStyle";
 import { buildJoinery, type JoineryFrame } from "../geometry/buildJoinery";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
 import type { FurnitureOBB } from "./furnitureCollision";
@@ -43,29 +44,44 @@ function hostFrame(wall: Wall, nodes: Map<string, Node>): JoineryFrame | null {
   };
 }
 
+// Every "is this a slider?" question below goes through `effectiveSlide`, never
+// the raw `opening.slide` field. A wide door that was never styled by hand HAS
+// no `slide` field — its patio gear is derived from the width at render time
+// (src/render/doorStyle.ts) — so reading the field directly classifies exactly
+// those doors as hinged, animates the wrong one of the two fields, and thereby
+// writes the swing angle that permanently converts them into single leaves.
+
 /** Is this door currently closed? Swing doors: swingDeg ~0. Sliding doors
- *  (opening.slide present): slide.open ~0. */
+ *  (a slide spec, authored or derived): slide.open ~0. */
 export function isDoorClosed(opening: Opening): boolean {
-  if (opening.slide) return (opening.slide.open ?? 0) <= 1e-3;
+  const slide = effectiveSlide(opening);
+  if (slide) return (slide.open ?? 0) <= 1e-3;
   return (opening.swingDeg ?? 0) <= 1e-3;
 }
 
 /** The door's own live position value: swingDeg (degrees) for a hinged door,
  *  slide.open (0..1 fraction) for a sliding one — whichever field applies. */
 export function currentOpeningValue(opening: Opening): number {
-  if (opening.slide) return opening.slide.open ?? 0;
+  const slide = effectiveSlide(opening);
+  if (slide) return slide.open ?? 0;
   return opening.swingDeg ?? 0;
 }
 
 /** The rest-value this door animates toward when fully open — a fixed swing
  *  angle for a hinged door, fully-slid (1) for a sliding one. */
 export function targetOpenValue(opening: Opening): number {
-  return opening.slide ? 1 : CFG.doorOpenSwingDeg;
+  return effectiveSlide(opening) ? 1 : CFG.doorOpenSwingDeg;
 }
 
-/** Write `value` into whichever field this door type uses. */
+/** Write `value` into whichever field this door type uses.
+ *
+ *  For a door whose slide is DERIVED this necessarily materialises the derived
+ *  spec into the scene — the renderer animates the stored field, so there is
+ *  nowhere else to put the position. That write is only safe because the
+ *  caller puts it back: see WalkthroughMode's `derivedDoorsRef`. */
 export function applyOpeningValue(opening: Opening, value: number): Partial<Opening> {
-  if (opening.slide) return { slide: { ...opening.slide, open: value } };
+  const slide = effectiveSlide(opening);
+  if (slide) return { slide: { ...slide, open: value } };
   return { swingDeg: value };
 }
 
@@ -82,7 +98,7 @@ export function dampOpeningValue(
   delta: number,
 ): { value: number; settled: boolean } {
   const current = currentOpeningValue(opening);
-  const eps = opening.slide ? SLIDE_SETTLE_FRAC : SWING_SETTLE_DEG;
+  const eps = effectiveSlide(opening) ? SLIDE_SETTLE_FRAC : SWING_SETTLE_DEG;
   if (Math.abs(current - target) <= eps) return { value: target, settled: true };
   return { value: THREE.MathUtils.damp(current, target, CFG.doorSwingLambda, delta), settled: false };
 }
@@ -106,7 +122,7 @@ export function buildDoorAnchors(
     if (!f) continue;
 
     let s: number;
-    if (opening.slide) {
+    if (effectiveSlide(opening)) {
       s = opening.offset;
     } else {
       const hinge = opening.hinge ?? "start";
@@ -143,8 +159,11 @@ export function buildClosedDoorColliders(
     const f = hostFrame(wall, nodes);
     if (!f) continue;
 
-    const closed: Opening = opening.slide
-      ? { ...opening, slide: { ...opening.slide, open: 0 } }
+    // Local only — handed straight to buildJoinery and never stored, so
+    // materialising a derived slide here cannot author anything.
+    const slide = effectiveSlide(opening);
+    const closed: Opening = slide
+      ? { ...opening, slide: { ...slide, open: 0 } }
       : { ...opening, swingDeg: 0 };
     const pieces = buildJoinery(closed, f);
     for (const p of pieces) {

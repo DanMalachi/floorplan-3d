@@ -5,6 +5,7 @@ import type { CameraControls } from "@react-three/drei";
 import type { Opening, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { nodeMap } from "@/lib/rooms/roomArea";
+import { effectiveSlide, hasDerivedSlide, withoutAuthoredDoorStyle } from "@/render/doorStyle";
 import { T, glass } from "@/ui/tokens";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
 import { buildWallColliders, resolveWallCollision } from "./collision";
@@ -72,7 +73,11 @@ const ease = (t: number) => t * t * (3 - 2 * t);
  *  never go stale — whether the door currently blocks the player — is part
  *  of the key by construction. */
 function doorGeometryKey(o: Opening): string {
-  const s = o.slide;
+  // The DERIVED slide, not the raw field: a wide unstyled door genuinely has
+  // sliding-panel collider geometry, and keying off the stored field alone
+  // would also miss the moment a resize carries a door across the patio
+  // threshold and changes what its leaves are.
+  const s = effectiveSlide(o);
   return [
     o.id,
     o.wallId,
@@ -217,6 +222,16 @@ export function WalkthroughRig({
   // openingId -> target value (degrees for a hinged door, 0..1 for sliding)
   // while its open/close transition is animating. Empty when nothing's mid-swing.
   const doorTargetsRef = useRef(new Map<string, number>());
+  // Ids of doors whose sliding gear was DERIVED from their width rather than
+  // stored (src/render/doorStyle.ts). Opening one has to materialise that spec
+  // into the scene — the renderer animates the stored field, there is nowhere
+  // else to put the position — and the mere presence of `slide`/`swingDeg` is
+  // what `hasAuthoredDoorStyle` reads as "the user chose this by hand". So the
+  // rig remembers which doors it borrowed and hands them back unstyled, either
+  // when they settle shut or when the walkthrough ends. Without that, walking
+  // through a patio door converts it into a single hinged leaf for good — the
+  // write is committed, autosaved and synced like any other edit.
+  const derivedDoorsRef = useRef(new Set<string>());
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
   const lockedRef = useRef(false);
@@ -249,8 +264,31 @@ export function WalkthroughRig({
   // Exiting walkthrough mid-swing (Esc, or leaving the mode entirely) would
   // otherwise leave doorGestureActive stuck true, permanently suppressing
   // N8AO for the rest of the session — clear it unconditionally on unmount.
+  //
+  // The same teardown hands back any door still standing open on a slide spec
+  // this rig materialised (see `derivedDoorsRef`). Walking out through a patio
+  // door and pressing Esc leaves it open and therefore authored, which is the
+  // one path the settle-shut restore below can't catch; the door closing on
+  // the way out is the cheaper surprise of the two, since the alternative is a
+  // slider silently demoted to a single hinged leaf.
   useEffect(() => {
-    return () => useSceneStore.getState().setDoorGestureActive(false);
+    const derived = derivedDoorsRef.current;
+    return () => {
+      const store = useSceneStore.getState();
+      if (derived.size > 0) {
+        const scene = store.scene;
+        const openings = scene.openings.map((o) => (derived.has(o.id) ? withoutAuthoredDoorStyle(o) : o));
+        derived.clear();
+        // Folded into the swing gesture already in flight when there is one
+        // (beginGesture is a no-op then), so the whole visit is still a single
+        // undo entry and a single collab commit.
+        store.beginGesture();
+        store.setDoorGestureActive(true);
+        store.updateGesture({ ...scene, openings });
+        store.endGesture("Door open/close (walkthrough)");
+      }
+      store.setDoorGestureActive(false);
+    };
   }, []);
 
   useEffect(() => {
@@ -551,6 +589,9 @@ export function WalkthroughRig({
       if (!liveOpening) continue;
       if (dist <= CFG.doorOpenDistanceM && isDoorClosed(liveOpening)) {
         targets.set(anchor.openingId, targetOpenValue(liveOpening));
+        // Recorded BEFORE the first write materialises the derived spec —
+        // afterwards this door is indistinguishable from a hand-styled one.
+        if (hasDerivedSlide(liveOpening)) derivedDoorsRef.current.add(anchor.openingId);
       } else if (dist >= CFG.doorCloseDistanceM && !isDoorClosed(liveOpening)) {
         targets.set(anchor.openingId, 0);
       }
@@ -566,11 +607,19 @@ export function WalkthroughRig({
       store.beginGesture();
       if (!store.doorGestureActive) store.setDoorGestureActive(true);
       const liveScene = store.scene;
+      const derived = derivedDoorsRef.current;
       const nextOpenings = liveScene.openings.map((o) => {
         const target = targets.get(o.id);
         if (target === undefined) return o;
         const { value, settled } = dampOpeningValue(o, target, delta);
         if (settled) targets.delete(o.id);
+        // A borrowed door that has finished shutting has no position left worth
+        // storing, so give it back the way it was found — otherwise the spec
+        // this rig materialised stays in the scene as an authored style.
+        if (settled && target === 0 && derived.has(o.id)) {
+          derived.delete(o.id);
+          return withoutAuthoredDoorStyle(o);
+        }
         return { ...o, ...applyOpeningValue(o, value) };
       });
       store.updateGesture({ ...liveScene, openings: nextOpenings });

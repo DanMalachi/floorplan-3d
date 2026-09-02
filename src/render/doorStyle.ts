@@ -48,6 +48,37 @@ export function effectiveSlide(o: Opening): SlideSpec | undefined {
   return o.width >= PATIO_MIN_WIDTH ? PATIO_SLIDE : undefined;
 }
 
+/**
+ * Does this door slide only because of the rule above — is its sliding gear
+ * DERIVED rather than stored?
+ *
+ * The walkthrough needs the distinction because opening a door WRITES to the
+ * scene, and both fields it could write (`slide`, `swingDeg`) are exactly what
+ * `hasAuthoredDoorStyle` reads. Without this, a patio door the player merely
+ * walked through comes out the other side hand-styled: frozen as whatever the
+ * animation last wrote, and no longer answering to its width.
+ */
+export function hasDerivedSlide(o: Opening): boolean {
+  return o.slide == null && effectiveSlide(o) != null;
+}
+
+/**
+ * The same opening with every hand-authored style field REMOVED, so the width
+ * default above gets to decide again.
+ *
+ * The keys are deleted rather than set to `undefined`: an explicit undefined
+ * still travels as a field through the Yjs scene diff and the IndexedDB clone,
+ * and a door restored to "never styled" has to be indistinguishable from one
+ * that never was.
+ */
+export function withoutAuthoredDoorStyle(o: Opening): Opening {
+  if (o.slide === undefined && o.swingDeg === undefined) return o;
+  const next = { ...o };
+  delete next.slide;
+  delete next.swingDeg;
+  return next;
+}
+
 /** A pair of hinged leaves meeting mid-opening. `slide` wins if both are set. */
 export function isDoubleDoor(o: Opening): boolean {
   return o.type === "door" && o.double === true && o.slide == null;

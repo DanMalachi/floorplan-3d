@@ -37,6 +37,46 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-02, `src/viewport3d/walkthrough/doors.ts` and
+  `WalkthroughMode.tsx` — the walkthrough now asks `effectiveSlide()` what kind
+  of door it is looking at instead of reading the raw `slide` field, and hands
+  back any slide spec it had to materialise.** Approved by Dan before the edit.
+
+  The bug: a patio slider is a DERIVED default. `effectiveSlide()`
+  (`src/render/doorStyle.ts`) gives any door at or past `PATIO_MIN_WIDTH` two
+  glazed sliding panels, and nothing is written to the scene to record that —
+  which is the whole point, so narrowing the door returns it to a swing leaf.
+  Both files branched on the raw `opening.slide` field instead, so exactly those
+  doors were classified as hinged and `applyOpeningValue` wrote `swingDeg` into
+  them. `swingDeg` is one of the three fields `hasAuthoredDoorStyle()` reads as
+  "the user chose this by hand", so a single approach demoted a patio door to a
+  single hinged leaf permanently, and cost it its window-frame finish
+  (`isGlazedDoor` goes false with it). Not cosmetic: the writes go through the
+  store's gesture path, so they were committed, autosaved to IndexedDB and
+  mirrored into the shared doc like any other edit.
+
+  Two changes. Every door-TYPE question in these files now routes through
+  `effectiveSlide()` — `isDoorClosed`, `currentOpeningValue`, `targetOpenValue`,
+  `applyOpeningValue`, `dampOpeningValue`'s settle epsilon, the anchor branch,
+  the closed-collider branch and `doorGeometryKey`. And because animating a
+  derived door still has to put its position SOMEWHERE (the renderer reads the
+  stored field), `WalkthroughMode` records which doors it borrowed in a local
+  `derivedDoorsRef` and strips `slide`/`swingDeg` back off them when they settle
+  shut, or on unmount if the player leaves with one open. The keys are deleted
+  rather than set to `undefined`, so nothing travels through the Yjs diff or the
+  IndexedDB clone that the scene never had.
+
+  The same root cause fixed one layer down: `buildClosedDoorColliders` was
+  building a derived patio door's collider from `{...opening, swingDeg: 0}`, so
+  the player collided with one swing leaf instead of two sliding panels.
+
+  New logic that could live outside these files does —
+  `hasDerivedSlide`/`withoutAuthoredDoorStyle` are in `src/render/doorStyle.ts`,
+  which is not protected. No refactors, no import churn, nothing else in either
+  file. Covered by a new headless regression test,
+  `src/viewport3d/walkthrough/derivedPatioDoor.test.ts`, confirmed to fail
+  against the old branch and pass against the new.
+
 - **2026-09-02, `src/viewport3d/WallMesh.tsx` — wall, baseboard and joinery
   materials now set `transparent` from their opacity instead of leaving it
   permanently `true`.** Approved by Dan AFTER the edit, not before: this rule

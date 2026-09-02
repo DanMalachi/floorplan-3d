@@ -18,6 +18,7 @@
 
 import type { Node, Opening, Scene, Wall } from "@/schema/scene";
 import { nodeMap } from "@/lib/rooms/roomArea";
+import { effectiveSlide } from "@/render/doorStyle";
 import { isDoorClosed, dampOpeningValue, targetOpenValue, buildClosedDoorColliders } from "./doors";
 
 let fails = 0;
@@ -29,7 +30,7 @@ const ok = (cond: boolean, msg: string) => {
 // Mirrors WalkthroughMode.tsx's `doorGeometryKey` — see that file for the
 // full rationale. Keep in sync if the real one's field list changes.
 function doorGeometryKey(o: Opening): string {
-  const s = o.slide;
+  const s = effectiveSlide(o);
   return [
     o.id,
     o.wallId,
