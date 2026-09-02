@@ -16,6 +16,8 @@ import { ensureDownloaded } from "@/store/syncEngine";
 import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, microLabel } from "@/ui/tokens";
+import { Wordmark } from "@/brand/Wordmark";
+import { landingEnabled } from "@/lib/featureFlags";
 
 function ago(ts: number): string {
   const s = (Date.now() - ts) / 1000;
@@ -139,11 +141,47 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
           borderBottom: `1px solid ${T.panelBorder}`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-          <span style={{ fontSize: 19, fontWeight: 600, color: T.text }}>Projects</span>
-          <span style={{ fontSize: 13, color: T.textFaint }}>
-            {items.length} {items.length === 1 ? "plan" : "plans"}
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {/* The only way back to the marketing site from inside the editor.
+              A plain <a>, not next/link: a client-side nav would unmount the
+              editor without firing pagehide, and autosave is debounced
+              (src/store/projectPersistence.ts:40/:387), so the last edits would
+              never reach IndexedDB. That is also why the Next rule below is
+              off for this one line — leaving the editor is exactly the case
+              where a full document load is the point, not an oversight.
+              Unlinked while landingEnabled is off, because "/" just redirects
+              straight back to /design in that state
+              (src/app/(marketing)/layout.tsx:32) and a link here would only
+              bounce. */}
+          {landingEnabled ? (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages
+            <a
+              href="/"
+              aria-label="done. home"
+              style={{ display: "flex", flexDirection: "column", gap: 2, textDecoration: "none" }}
+            >
+              <Wordmark size={20} style={{ color: T.text }} />
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: T.textFaint,
+                }}
+              >
+                back to site
+              </span>
+            </a>
+          ) : (
+            <Wordmark size={20} style={{ color: T.text }} />
+          )}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <span style={{ fontSize: 19, fontWeight: 600, color: T.text }}>Projects</span>
+            <span style={{ fontSize: 13, color: T.textFaint }}>
+              {items.length} {items.length === 1 ? "plan" : "plans"}
+            </span>
+          </div>
         </div>
         <button
           onClick={onClose}
