@@ -83,6 +83,11 @@ floorplan_for_training/dxf_dwg/
 # the 400 MB IKEA set which had to go to Blob.
 /public/furniture/blenderkit/*.glb
 
+# .blend and alternate-export downloads that `recover-blend-textures.ts` carves
+# the missing maps out of (~10 MB). Same principle as the raw .glb set above:
+# re-fetchable from BlenderKit, and only the optimized output is committed.
+/scripts/blenderkit/.scratch/
+
 # ambientCG intermediate JPEGs (~38 MB) unpacked from the source zips. The
 # committed artifact is the repacked WebP under public/materials/.
 # Regenerable with `npm run mat:fetch`.
