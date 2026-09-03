@@ -106,18 +106,33 @@ the loop would:
 __doneTraceSeek(7.4)   // then screenshot
 ```
 
-### Known limits
+### The drawing ends ON the press, and why there is no tilt
 
-- **Replay lands the tilt less precisely than the first play.** The orbit is
-  stopped while tracing so the tilt has a fixed pose to meet, but on a replay
-  the camera resumes from wherever the orbit left it. `AutoOrbitRig` frames once
-  on mount and exposes no way to re-frame; giving it one is an additive change
-  to a protected file, so it needs Dan.
-- **The wall growth has not been seen running.** It is written and typechecks,
-  but the two constraints above meant it could not be watched locally. Its
-  frame function quantises heights to 2 cm and skips writes when nothing
-  changed, because every write re-runs `computeWallEffectiveHeights` and
-  re-meshes; that cost is the thing to watch first on a preview deploy.
+There used to be one: the plan swung to the camera's pose over 0.9s and
+dissolved under the arriving room. **It never once ran.** Pressing Generate
+moves the sequence to `"building"`, which flips `TraceOverlay`'s `running` prop
+false, which tears its effect down mid-flight and re-runs it on the parked
+branch — so the traced lines snapped back to nothing and the *grey reference
+plan* sat at full opacity on top of the finished room until the stage unmounted
+it. Measured through the reveal, `planOpacity` was 1 and `rotateX` 0 the whole
+way while the canvas faded up underneath. That was the clunk.
+
+The fix is also what the reveal wanted: the overlay is mounted only while
+`stage` is `"idle"` or `"tracing"`, so the drawing is gone on the press. One
+thing leaves, one thing arrives, neither waits for the other, and the canvas
+fade is 220ms with no delay because there is no longer anything to cross-fade
+*with*. This also retired a known limitation — replaying no longer has to land
+a tilt on a camera pose that has drifted, so `AutoOrbitRig` needs no re-framing
+hook and no protected-file change.
+
+### Known limit
+
+**The build's smoothness is measured, not eyeballed.** The clock is quantised
+to 25Hz and furniture arrives in three batches, because every scene write
+re-runs `computeWallEffectiveHeights` and re-meshes — at 60fps that is the whole
+frame budget spent re-solving geometry between states the eye cannot separate.
+The finished room has been seen; the 1.55s of growth getting there has not been
+watched frame by frame, since it needs a foreground window.
 
 ## The demo room
 

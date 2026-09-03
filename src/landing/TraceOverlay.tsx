@@ -15,10 +15,10 @@ import {
 // -----------------------------------------------------------------------------
 // The hand that traces the hero's plan.
 //
-// The first ten seconds of the hero: a reference floorplan is traced wall by
+// The first nine seconds of the hero: a reference floorplan is traced wall by
 // wall, four windows and two doors are placed, and "Generate model" is pressed.
-// Then the drawing tilts to the 3D camera's pose and dissolves into the real
-// Viewport, which is what actually builds the room.
+// The drawing ends there — on the press, not after it. The real Viewport takes
+// over from that instant and builds the room.
 //
 // ── Why this is SVG and not the 3D layer ────────────────────────────────────
 // Everything here happens before there is a model to render. Drawing it in the
@@ -82,7 +82,7 @@ function frameOf(o: HeroOpening) {
 type StepKind =
   | "sheet" | "travel" | "draw" | "pause"
   | "otravel" | "tap" | "pop"
-  | "gtravel" | "ghover" | "gpress" | "tilt";
+  | "gtravel" | "ghover" | "gpress";
 
 interface Step { kind: StepKind; t0: number; t1: number; dur: number; seg?: number; op?: number }
 interface SegTiming { drawStart: number; drawEnd: number; draw: number; pulseAt: number; pulseDur: number }
@@ -118,17 +118,29 @@ const OP_T: OpTiming[] = [];
   push("gtravel", 0.5);
   push("ghover", 0.22);
   push("gpress", 0.16);
-  // Shorter than it was, and it now dissolves rather than lingering: the
-  // drawing used to hold at 15% opacity over the finished room until the whole
-  // build finished, which is most of what read as clunky.
-  push("tilt", 0.9);
 })();
 
-const PRESS_AT = STEPS[STEPS.length - 2].t0;
-const TILT0 = STEPS[STEPS.length - 1].t0;
-const TILT1 = STEPS[STEPS.length - 1].t1;
-export const TRACE_DURATION = TILT1;
-export const TRACE_GENERATE_AT = PRESS_AT;
+/**
+ * The drawing ends AT the press. There is no tilt and no dissolve.
+ *
+ * There used to be: the plan swung to the camera's pose over 0.9s and faded
+ * out under the arriving room. It never actually ran. Pressing Generate moves
+ * the sequence to "building", which flips this component's `running` prop
+ * false, which tears the effect down mid-flight and re-runs it on the parked
+ * branch — so the traced lines snapped back to nothing and the grey reference
+ * plan sat at full opacity ON TOP of the finished room until the stage
+ * unmounted it. The measured trace of that: planOpacity 1 and rotateX 0 for
+ * the whole reveal while the canvas faded up underneath.
+ *
+ * Rather than keep the overlay alive through a hand-off it was never able to
+ * finish, the drawing now simply ends when the button is pressed — which is
+ * also what the reveal should do. One thing leaves, one thing arrives, and
+ * neither waits for the other.
+ */
+const PRESS_AT = STEPS[STEPS.length - 1].t0;
+export const TRACE_DURATION = STEPS[STEPS.length - 1].t1;
+/** The press is the last frame of the drawing, so both are the same instant. */
+export const TRACE_GENERATE_AT = TRACE_DURATION;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -216,7 +228,6 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
     let last = 0;
     let t = 0;
     let fired = false;
-    let finished = false;
 
     const draw = (time: number) => {
       const st = stepAt(time);
@@ -309,40 +320,23 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
         } else tapRef.current.setAttribute("opacity", "0");
       }
 
+      // The button presses for the whole of `gpress` and the drawing ends with
+      // it, so the visitor sees the press land before anything disappears.
       const hovering = st.kind === "ghover";
-      const pressed = time >= PRESS_AT && time < TILT0;
+      const pressed = time >= PRESS_AT;
+      const pressDur = STEPS[STEPS.length - 1].dur;
       if (btnRef.current) {
         btnRef.current.setAttribute("fill", pressed ? B.accent : hovering ? B.accentTint : B.raised);
         btnRef.current.setAttribute("stroke", hovering || pressed ? B.accent : B.hairline2);
       }
       if (btnTextRef.current) btnTextRef.current.setAttribute("fill", pressed ? "#FFFFFF" : B.ink);
       if (rippleRef.current) {
-        if (time >= PRESS_AT && time < PRESS_AT + 0.5) {
-          const q = (time - PRESS_AT) / 0.5;
+        if (pressed) {
+          const q = clamp01((time - PRESS_AT) / pressDur);
           rippleRef.current.setAttribute("opacity", String(1 - q));
-          rippleRef.current.setAttribute("transform", `scale(${1 + q * 0.12})`);
+          rippleRef.current.setAttribute("transform", `scale(${1 + q * 0.14})`);
         } else rippleRef.current.setAttribute("opacity", "0");
       }
-
-      // The hand-off. Elevation 26 degrees above the horizon is a 64-degree
-      // rotateX and azimuth 38 is the rotateZ — AutoOrbitRig's own constants,
-      // mirrored the way it already mirrors FOV_DEG from Viewport.tsx.
-      //
-      // The drawing is GONE by 80% of the tilt rather than fading to a ghost
-      // that outlives it. A dissolve where one layer finishes arriving before
-      // the other has finished leaving reads as a cut; this one crosses.
-      const q = clamp01((time - TILT0) / (TILT1 - TILT0));
-      const e = smooth(q);
-      if (planRef.current) {
-        planRef.current.style.transform =
-          q > 0
-            ? `perspective(1500px) rotateX(${64 * e}deg) rotateZ(${-38 * e}deg) scale(${1 - 0.12 * e})`
-            : "none";
-        planRef.current.style.opacity = String(1 - smooth(q / 0.8));
-      }
-      // The toolbar and pointer are page chrome, not drawing: they leave first
-      // and quickly, so nothing 2D is still sliding while the room arrives.
-      if (hudRef.current) hudRef.current.style.opacity = String(1 - clamp01(q / 0.35));
     };
 
     if (process.env.NODE_ENV === "development") {
@@ -359,15 +353,15 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       t += dt;
-      if (!fired && t >= PRESS_AT) {
-        fired = true;
-        cb.current.onGenerate?.();
-      }
       if (t >= TRACE_DURATION) {
-        t = TRACE_DURATION;
-        draw(t);
-        if (!finished) {
-          finished = true;
+        // Draw the pressed button one last time, THEN hand over. The parent
+        // unmounts this overlay on that signal, so this is the final frame the
+        // drawing ever paints — which is exactly the intent: the moment the
+        // button goes down, the drawing is gone.
+        draw(TRACE_DURATION);
+        if (!fired) {
+          fired = true;
+          cb.current.onGenerate?.();
           cb.current.onComplete?.();
         }
         return;

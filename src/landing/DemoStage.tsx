@@ -557,14 +557,17 @@ let BASE_SCENE: Scene | null = null;
      taller than the wall it is in is undefined.
    - Ceiling fixtures arrive with the openings, for the same reason: they hang
      at ceiling height, and while the walls are 2 cm tall that is the floor. */
+// The drawing is gone on the press, so the build starts essentially at once —
+// there is no dissolve left to hide its first frames behind, and any wait here
+// is a held empty floor.
 const BUILD = {
-  wallsFrom: 0.3, // after the dissolve has started, so the first frames are veiled
-  wallEach: 0.55, // one wall's own rise
-  wallsDone: 1.25, // every wall at full height by here
-  furnitureFrom: 1.3,
+  wallsFrom: 0.06,
+  wallEach: 0.5, // one wall's own rise
+  wallsDone: 0.95, // every wall at full height by here
+  furnitureFrom: 1.0,
   furnitureBatches: 3, // batches, NOT one write per item — see below
-  furnitureEach: 0.16,
-  total: 1.95,
+  furnitureEach: 0.15,
+  total: 1.55,
 };
 
 /** Writes per second while the walls grow.
@@ -773,7 +776,11 @@ export default function DemoStage({
           </CanvasBoundary>
         </div>
 
-        {!reduced && stage !== "done" && (
+        {/* Mounted ONLY while there is a drawing to show. The moment Generate
+            is pressed the sequence moves to "building" and this unmounts, so
+            the trace is gone on the press rather than lingering over the room
+            it has been replaced by. */}
+        {!reduced && (stage === "idle" || stage === "tracing") && (
           <TraceOverlay running={stage === "tracing"} onGenerate={() => onStage("building")} />
         )}
 
@@ -925,15 +932,17 @@ ${PLAN_TEXT_CSS}
 /* The canvas, dark until Generate is pressed. Opacity only: the element keeps
    its box, so the room is laid out and the camera has settled at its resting
    pose long before it is ever seen — which is what the tilt has to land on. */
-/* Delayed by a beat so the room is never seen arriving UNDER a plan that has
-   not started leaving yet — that overlap is most of what read as clunky. The
-   drawing begins tilting ~0.16s after Generate and is gone by ~0.9s; the room
-   is fully in by ~0.72s, so the two genuinely cross rather than stack. */
+/* No delay and short. The drawing is unmounted on the press, so there is
+   nothing left to cross-fade WITH — anything slower than this is just a dark
+   gap where the plan used to be. It stays a fade rather than a hard cut only
+   so the room reads as coming up rather than as a jump cut; the ground behind
+   it is the same colour, so what the eye sees is the model resolving out of
+   the dark. */
 .${CANVAS_FADE_CLASS} {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 600ms ${B.ease} 120ms;
+  transition: opacity 220ms ${B.ease};
 }
 .${CANVAS_FADE_CLASS}.is-lit { opacity: 1; }
 
