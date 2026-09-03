@@ -57,6 +57,68 @@ still live: `PD.textTertiary` measures 3.78:1 (under the 4.5:1 floor) and
 Also still stale and left alone on purpose: `src/app/legal/layout.tsx`'s back
 link reads "← Floorplan → 3D".
 
+## The hero sequence: "see how it's done."
+
+The hero's secondary button no longer goes anywhere. It plays the product's
+core loop in place: the plan is traced by hand, four windows and two doors are
+placed, "Generate model" is pressed, and the room stands up. Roughly 9 s of
+tracing and 3 s of building, ~12 s in all.
+
+**The build is real.** `Wall.height` is a per-wall schema field
+(`src/schema/scene.ts`), so growing a wall is an ordinary scene patch — the same
+kind of write the five controls already make. Nothing in the protected
+`viewport3d/` tree is touched. Three ordering rules, each a bug avoided: walls
+start at 0.02 m (zero is degenerate geometry); openings arrive only once the
+walls are full height (W2's head is at 2.20 m, and a hole taller than its wall
+is undefined); ceiling fixtures arrive with them, because they hang at ceiling
+height and while the walls are 2 cm tall that is the floor.
+
+| File | Role |
+|---|---|
+| `src/landing/heroPlan.ts` | The geometry, **once**. `demoScene` derives from it. |
+| `src/landing/heroSequence.ts` | `idle → tracing → building → done`. |
+| `src/landing/TraceOverlay.tsx` | The SVG trace. Pure — no store, no three. |
+
+### Three traps this sequence sits on
+
+**A module singleton cannot cross the dynamic import.** `heroSequence` was first
+imported by both the page's main chunk and `DemoStage`'s lazy chunk. A module
+imported by two chunks is instantiated **once per chunk**, so `stage` was two
+variables: the button wrote one, the animation read the other, and nothing
+threw — the label changed while the trace sat still. `DemoRoom` now subscribes
+on the light side and passes `stage` and the setter across as props. Note that
+`viewport3d/autoOrbitPlayback.ts` gets away with being a singleton *only*
+because both of its ends live inside the lazy chunk. Do not generalise from it.
+
+**The button is above the fold; the plan is below it.** Pressing it therefore
+has to mount the stage itself (the `IntersectionObserver` has not fired yet at
+the top of the page) and scroll the plan into view. `scrollIntoView` finds the
+marketing layout's own fixed `overflow-y` region — never aim this at `window`.
+
+**You cannot watch this in an automated browser.** An occluded or background tab
+gets **zero** `requestAnimationFrame` callbacks, so the trace sits at t=0 and
+looks broken while being perfectly correct; a screenshot forces a paint but not
+a frame. `TraceOverlay` therefore exposes a dev-only `__doneTraceSeek(seconds)`.
+`draw()` is a pure function of time, so seeking renders any instant exactly as
+the loop would:
+
+```js
+__doneTraceSeek(7.4)   // then screenshot
+```
+
+### Known limits
+
+- **Replay lands the tilt less precisely than the first play.** The orbit is
+  stopped while tracing so the tilt has a fixed pose to meet, but on a replay
+  the camera resumes from wherever the orbit left it. `AutoOrbitRig` frames once
+  on mount and exposes no way to re-frame; giving it one is an additive change
+  to a protected file, so it needs Dan.
+- **The wall growth has not been seen running.** It is written and typechecks,
+  but the two constraints above meant it could not be watched locally. Its
+  frame function quantises heights to 2 cm and skips writes when nothing
+  changed, because every write re-runs `computeWallEffectiveHeights` and
+  re-meshes; that cost is the thing to watch first on a preview deploy.
+
 ## The demo room
 
 A live render of the real product — the actual `Viewport`, the actual scene
@@ -137,6 +199,35 @@ is `#F8F7F4` and the canvas still paints `#101014`, so the hero would show a
 dark band. There is no light-theme toggle shipped yet, so nothing exposes this
 today. Fixing it properly needs either a light `studioBg` or a transparent
 canvas, both of which are protected-file changes.
+
+## Open finding: the render contract is failing, and local dev shows it
+
+Found 2026-09-03 while running the page in a real browser for the first time.
+Present on `main` before any hero work — **not** introduced by it.
+
+```
+Render contract violated — see docs/render-contract.md
+  gl.context.alpha: expected false, got true
+```
+
+`Viewport.tsx` asks for `gl={{ alpha: CONTEXT.alpha }}` and `CONTEXT.alpha` is
+`false`, but the context that comes back reports `alpha: true`. This is exactly
+the class of drift §1.1 exists to catch — a construction-time context attribute
+that a dependency bump stopped honouring — and the contract caught it.
+
+What it costs, in two very different amounts:
+
+- **Production: mild.** `assertRenderContract` throws in development but only
+  *logs once* in production (`contract.ts`), so the hero renders. The real cost
+  is the one the contract's own comment names: an alpha canvas is composited by
+  the browser as a blended layer whether or not anything is drawn through it.
+- **Local dev: the hero's 3D does not render at all.** The throw kills the frame
+  loop and the room falls back to the placeholder, which reads as
+  "Loading the plan" forever. Anyone developing this page locally sees no room.
+
+**Not fixed here.** Both candidate fixes — changing how the canvas is
+constructed, or amending the contract — land in `src/render/` and
+`src/viewport3d/`, which CLAUDE.md rule 1 protects. Dan's call.
 
 ## Open finding: 408 KB of three.js on every page
 

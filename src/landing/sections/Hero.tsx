@@ -2,11 +2,18 @@
 
 import type React from "react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
 import { APP_HREF } from "../nav";
 import { HERO, SLOGANS } from "../content";
+import {
+  advanceHeroStage,
+  getHeroStage,
+  getHeroStageServer,
+  resetHeroStage,
+  subscribeHeroStage,
+} from "../heroSequence";
 
 // How long a line holds before the crossfade to the next one starts, and how
 // long the crossfade itself takes. Both slower than the app's own 180ms
@@ -40,6 +47,43 @@ const slotStyle: React.CSSProperties = {
   transition: `opacity ${FADE_MS}ms ${B.ease}`,
 };
 
+const TRACE_BTN_CLASS = "done-hero-trace-btn";
+
+/* Inline styles cannot reach `:hover` or `:focus-visible`, and this repo styles
+   with inline objects — so the one rule the button needs that they can't
+   express lives here, the same bargain DemoStage's STAGE_CSS makes. */
+const TRACE_BTN_CSS = `
+.${TRACE_BTN_CLASS}:hover { border-color: ${B.hairline2}; background: ${B.canvas}; }
+.${TRACE_BTN_CLASS}:focus-visible { outline: 2px solid ${B.accent}; outline-offset: 3px; }
+`;
+
+/** What a screen reader is told as the sequence moves. */
+const STAGE_ANNOUNCEMENT: Record<string, string> = {
+  idle: "",
+  tracing: "Drawing the floorplan: walls, then windows and doors.",
+  building: "Generating the three-dimensional model.",
+  done: "The room is built. Open done. to draw your own.",
+};
+
+/** Signals that this button PLAYS something rather than navigating. */
+function IconPlay() {
+  return (
+    <svg width="13" height="14" viewBox="0 0 13 14" fill="none" aria-hidden="true">
+      <path d="M2 1.6 11 7 2 12.4z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Skip to the end — the escape hatch a long animation owes its viewer. */
+function IconSkip() {
+  return (
+    <svg width="13" height="14" viewBox="0 0 13 14" fill="none" aria-hidden="true">
+      <path d="M1.5 1.8 9 7l-7.5 5.2z" fill="currentColor" />
+      <path d="M11.2 1.8v10.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /**
  * The hero.
  *
@@ -61,6 +105,22 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const reducedRef = useRef(false);
+
+  // Which stage of the opening sequence is on screen. Held in a module
+  // singleton because the animation it drives lives inside the `demo` slot,
+  // which reaches this component as an opaque ReactNode — there is no prop
+  // path between the two, and giving it one would mean importing the 3D half.
+  const stage = useSyncExternalStore(subscribeHeroStage, getHeroStage, getHeroStageServer);
+  const running = stage === "tracing" || stage === "building";
+  const label = running
+    ? HERO.ctaGhostLabelRunning
+    : stage === "done"
+      ? HERO.ctaGhostLabelDone
+      : HERO.ctaGhostLabel;
+
+  // A client-side navigation back to the homepage must not inherit a finished
+  // sequence — the hero would open on a built room with no story behind it.
+  useEffect(() => resetHeroStage(), []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -104,6 +164,7 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
     <section
       style={{
         ...section(),
+        position: "relative", // anchors the visually-hidden live region below
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -152,13 +213,49 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
         {HERO.subhead}
       </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
-        <Link href={APP_HREF} style={ctaPrimary()}>
+      <style dangerouslySetInnerHTML={{ __html: TRACE_BTN_CSS }} />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", alignItems: "center" }}>
+        <Link href={APP_HREF} style={ctaPrimary({ padding: "15px 26px", fontSize: 16.5 })}>
           {HERO.ctaPrimaryLabel}
         </Link>
-        <Link href="#how" style={ctaGhost()}>
-          {HERO.ctaGhostLabel}
-        </Link>
+        {/* Not a link. It plays the hero's own animation in place — see
+            ../heroSequence.ts for why the two ends talk through a module
+            singleton rather than a prop. Deliberately the same size as the
+            primary and NOT copper: the brand allows exactly two copper objects
+            on the page (brand/tokens.ts), and a third would break the identity
+            rule. What makes it inviting instead is the fill, the play glyph and
+            the size — it looks like something that runs, not somewhere to go. */}
+        <button
+          type="button"
+          className={TRACE_BTN_CLASS}
+          onClick={advanceHeroStage}
+          style={ctaGhost({
+            padding: "15px 26px",
+            fontSize: 16.5,
+            background: B.raised,
+            gap: 11,
+          })}
+        >
+          {running ? <IconSkip /> : <IconPlay />}
+          {label}
+        </button>
+      </div>
+
+      {/* A thirteen-second animation with no text has to say what it is doing
+          to anyone not watching it. Polite, so it never interrupts. */}
+      <div
+        aria-live="polite"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          clipPath: "inset(50%)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {STAGE_ANNOUNCEMENT[stage]}
       </div>
 
       <div style={{ fontFamily: B.fontUi, fontSize: ty.small, color: B.ink4 }}>{HERO.note}</div>
@@ -182,14 +279,21 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
             // narrower than full-bleed because a card pushed against the
             // viewport edge has nothing holding it.
             //
-            // `left: 50%` + a -50% translate centres an element wider than its
-            // parent whatever that parent's width is — the section's own column
-            // is the narrower reading one. The marketing layout's
-            // `overflowX: hidden` never has anything to clip, because the width
-            // already subtracts both gutters.
+            // This used to add `left: 50%` + `translateX(-50%)` to centre an
+            // element wider than its parent. That is the right trick under a
+            // BLOCK parent, where the element's static position is the parent's
+            // left content edge — but this section is a flex column with
+            // `align-items: center`, which has already centred it. The two
+            // centrings compounded, and the demo sat
+            // (elementWidth - parentWidth) / 2 too far left: 102px at a 1325px
+            // viewport, far enough that the stage's left edge landed at x = -86
+            // and the room was clipped by the layout's `overflowX: hidden`.
+            //
+            // So: no offset. The flex parent centres it, and the width still
+            // subtracts both gutters so it never actually overflows. If this
+            // section ever stops being a centred flex container, the old trick
+            // becomes correct again — check the parent before re-adding it.
             position: "relative",
-            left: "50%",
-            transform: "translateX(-50%)",
             width: `min(${B.maxWidthWide}px, calc(100vw - ${B.gutter * 2}px))`,
             marginTop: "clamp(28px, 5vw, 60px)",
             // Deliberately NO height. The demo sizes itself to the taller of

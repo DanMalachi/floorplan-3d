@@ -1,10 +1,13 @@
 "use client";
 
 import { Component, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import Link from "next/link";
 import { Viewport } from "@/viewport3d/Viewport";
 import { useSceneStore } from "@/store/useSceneStore";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { frameColorPatch } from "@/render/frameFinish";
+import { WALL_HEIGHT } from "@/schema/constants";
+import type { Scene } from "@/schema/scene";
 import {
   getOrbitPlaying,
   getOrbitPlayingServer,
@@ -12,8 +15,12 @@ import {
   setOrbitPlaying,
   subscribeOrbitPlaying,
 } from "@/viewport3d/autoOrbitPlayback";
-import { B, microLabel } from "@/brand/tokens";
+import { B, microLabel, ctaPrimary } from "@/brand/tokens";
 import { demoScene } from "./demoScene";
+import { TraceOverlay } from "./TraceOverlay";
+import type { HeroStage } from "./heroSequence";
+import { APP_HREF } from "./nav";
+import { HERO } from "./content";
 
 // -----------------------------------------------------------------------------
 // Everything heavy about the hero demo, isolated behind one dynamic import.
@@ -319,7 +326,7 @@ const OPTION_MIN_PX = 104;
  * undo entry; a visitor idly trying floors should not be building a history
  * stack on a marketing page.
  */
-function DemoControls() {
+function DemoControls({ dimmed }: { dimmed: boolean }) {
   const showCeilings = useSceneStore((s) => s.showCeilings);
   const setShowCeilings = useSceneStore((s) => s.setShowCeilings);
   const wallMode = useSceneStore((s) => s.wallMode);
@@ -382,7 +389,11 @@ function DemoControls() {
   };
 
   return (
-    <div className={PANEL_CLASS}>
+    /* Present but inert until the room exists, never unmounted: the grid row is
+       as tall as the taller of the room and this panel, so a panel that arrived
+       late would grow the row and shove the page down at the exact moment the
+       visitor is watching the reveal. */
+    <div className={`${PANEL_CLASS}${dimmed ? " is-dimmed" : ""}`} inert={dimmed || undefined}>
       <ControlRow label="Walls">
         <ControlButton
           label="Solid"
@@ -506,13 +517,15 @@ function DemoToolbar() {
  *
  * Returns null so it can be used as a `useState` initializer — see below.
  */
-function seedDemoScene() {
+function seedDemoScene(flat: boolean) {
   const seeded = seedRoomFixtures(demoScene);
+  const dressed = frameColorPatch(
+    { ...seeded, rooms: seeded.rooms.map((r) => ({ ...r, floor: DEFAULT_FLOOR })) },
+    DEFAULT_FRAME,
+  );
+  BASE_SCENE = dressed;
   useSceneStore.setState({
-    scene: frameColorPatch(
-      { ...seeded, rooms: seeded.rooms.map((r) => ({ ...r, floor: DEFAULT_FLOOR })) },
-      DEFAULT_FRAME,
-    ),
+    scene: flat ? buildFrame(dressed, 0) : dressed,
     appMode: "view",
     wallMode: "full",
     showCeilings: false,
@@ -524,7 +537,107 @@ function seedDemoScene() {
   return null;
 }
 
-export default function DemoStage({ fallback }: { fallback: ReactNode }) {
+/** The finished scene, kept so each build frame can be derived from it rather
+ *  than from the partially-built one already in the store. */
+let BASE_SCENE: Scene | null = null;
+
+/* ── How the room stands up ─────────────────────────────────────────────────
+   The walls really extrude. `Wall.height` is a per-wall schema field
+   (src/schema/scene.ts) that falls back to WALL_HEIGHT, so growing a wall is an
+   ordinary scene patch — the same shape of write the five controls beside the
+   room already make (see `setFloor` above). Nothing in the protected viewport3d/
+   tree is touched, and what the visitor watches rise is the real renderer
+   building the real model, not a picture of one.
+
+   Three ordering rules, each of them a bug avoided:
+
+   - Walls start at 0.02 m, not 0. A zero-height wall is degenerate geometry.
+   - Openings arrive only once the walls are full height. Window W2's head sits
+     at 2.20 m, so a wall shorter than that cannot carry it, and cutting a hole
+     taller than the wall it is in is undefined.
+   - Ceiling fixtures arrive with the openings, for the same reason: they hang
+     at ceiling height, and while the walls are 2 cm tall that is the floor. */
+const BUILD = {
+  wallEach: 0.55, // one wall's own rise
+  wallsDone: 1.3, // every wall at full height by here
+  furnitureFrom: 1.55,
+  furnitureEach: 0.11,
+  total: 3.0,
+};
+
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const easeOut = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
+
+/**
+ * The scene as it looks `t` seconds into the build.
+ *
+ * A pure function of the finished scene and the clock, so the frame the store
+ * holds is never derived from the frame before it — a build that drops a frame
+ * cannot end up short of a wall.
+ *
+ * Heights are quantised to 2 cm. Every write re-runs `computeWallEffectiveHeights`
+ * and re-meshes the walls, so writing a fresh float sixty times a second would
+ * spend the whole budget re-solving geometry the eye cannot tell apart; at 2 cm
+ * a 2.4 m wall still gets 120 distinct steps on the way up.
+ */
+function buildFrame(base: Scene, t: number): Scene {
+  const stagger = base.walls.length > 1 ? (BUILD.wallsDone - BUILD.wallEach) / (base.walls.length - 1) : 0;
+  const walls = base.walls.map((w, i) => {
+    const p = easeOut((t - i * stagger) / BUILD.wallEach);
+    const h = Math.max(0.02, Math.round(p * WALL_HEIGHT * 50) / 50);
+    return { ...w, height: h };
+  });
+  const built = t >= BUILD.wallsDone;
+  const shown = t < BUILD.furnitureFrom
+    ? 0
+    : Math.min(base.furniture.length, Math.floor((t - BUILD.furnitureFrom) / BUILD.furnitureEach) + 1);
+  return {
+    ...base,
+    walls,
+    openings: built ? base.openings : [],
+    fixtures: built ? base.fixtures : [],
+    furniture: base.furniture.slice(0, shown),
+  };
+}
+
+/** Cheap signature of a build frame — lets the loop skip a write when nothing
+ *  the renderer cares about has actually changed since the last one. */
+function frameKey(s: Scene): string {
+  return `${s.walls.map((w) => w.height).join(",")}|${s.openings.length}|${s.furniture.length}`;
+}
+
+/**
+ * `stage` and `onStage` are PROPS, not reads of the module singleton in
+ * ./heroSequence, and that is not a style preference — it is the bug this file
+ * exists on the far side of.
+ *
+ * This module is only ever reached through `dynamic(() => import("./DemoStage"))`,
+ * so it lands in its own chunk. A module imported by BOTH that chunk and the
+ * page's main chunk gets instantiated once per chunk, so `heroSequence`'s
+ * module-level `stage` was two variables: Hero's button wrote one, this file
+ * read the other, and the animation never started while the button happily
+ * changed its own label. There is no error when this happens — it just quietly
+ * does nothing.
+ *
+ * `viewport3d/autoOrbitPlayback.ts` gets away with being a singleton because
+ * both of its ends (the toolbar below and AutoOrbitRig) live inside THIS chunk.
+ * Nothing that has to cross the dynamic import may rely on that.
+ *
+ * So DemoRoom.tsx — which sits on the light side and already subscribes — owns
+ * the subscription, and hands the value and the setter across the boundary the
+ * one way a boundary can be crossed safely.
+ */
+export default function DemoStage({
+  fallback,
+  reduced = false,
+  stage,
+  onStage,
+}: {
+  fallback: ReactNode;
+  reduced?: boolean;
+  stage: HeroStage;
+  onStage: (next: HeroStage) => void;
+}) {
   // Seeded through a useState initializer rather than an effect, because the
   // store has to hold the demo scene BEFORE the Viewport below first renders —
   // an effect runs after children mount, which would show one frame of the
@@ -534,24 +647,111 @@ export default function DemoStage({ fallback }: { fallback: ReactNode }) {
   // A remount is a new component instance, so this runs again then; there is no
   // separate cleanup or re-seed path to keep in sync. Nothing is restored on
   // unmount, since the marketing page never shares a session with the editor.
-  useState(seedDemoScene);
+  useState(() => seedDemoScene(!reduced));
+
+  const built = stage === "done";
+  const lit = stage === "building" || built;
 
   // The orbit's play state lives in a module singleton (it has to cross the
   // Canvas boundary), so unlike the scene it survives an unmount. Reset it, or
   // a visitor who paused, navigated away and came back would meet a hero that
   // never moves.
-  useEffect(() => resetOrbitPlaying(), []);
+  //
+  // It then STOPS until the room exists. The trace hands the plan over at a
+  // fixed camera pose, and a camera that has been drifting for however long the
+  // visitor spent reading the page would not be at that pose when it arrived.
+  useEffect(() => {
+    resetOrbitPlaying();
+    setOrbitPlaying(false);
+  }, []);
+
+  // Reduced motion: the room, immediately, with nothing moving. The scene was
+  // already seeded whole, so this only has to skip the sequence.
+  useEffect(() => {
+    if (reduced && (stage === "tracing" || stage === "building")) onStage("done");
+  }, [reduced, stage]);
+
+  // Going back to the plan — a replay. The orbit stops again so the tilt has a
+  // fixed pose to land on, and the scene is flattened so the walls have
+  // somewhere to grow from.
+  //
+  // KNOWN LIMIT on replay only: the camera resumes from wherever the orbit left
+  // it, not from the pose the first play started at, so the plan's tilt lands
+  // less precisely the second time. AutoOrbitRig frames once on mount and
+  // exposes no way to re-frame; giving it one is an additive change to a
+  // protected file, which needs Dan (CLAUDE.md rule 1) — so it is flagged
+  // rather than done.
+  useEffect(() => {
+    if (stage !== "tracing" || reduced) return;
+    setOrbitPlaying(false);
+    if (BASE_SCENE) useSceneStore.setState({ scene: buildFrame(BASE_SCENE, 0) });
+  }, [stage, reduced]);
+
+  // The build: walls rise, then openings are cut, then the furniture arrives.
+  useEffect(() => {
+    if (stage !== "building" || reduced) return;
+    const base = BASE_SCENE;
+    if (!base) return;
+    let raf = 0;
+    let start = 0;
+    let lastKey = "";
+    const tick = (now: number) => {
+      if (!start) start = now;
+      const t = Math.min((now - start) / 1000, BUILD.total);
+      const next = buildFrame(base, t);
+      const key = frameKey(next);
+      if (key !== lastKey) {
+        lastKey = key;
+        useSceneStore.setState({ scene: next });
+      }
+      if (t >= BUILD.total) {
+        onStage("done");
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [stage, reduced]);
+
+  // Arriving at the finished room — whether the build got there on its own or
+  // the visitor pressed Skip half way through. Restoring the whole scene is
+  // what makes Skip land on the same room the animation would have built.
+  useEffect(() => {
+    if (stage !== "done") return;
+    if (BASE_SCENE) useSceneStore.setState({ scene: BASE_SCENE });
+    setOrbitPlaying(true);
+  }, [stage]);
 
   return (
     <div className={STAGE_CLASS}>
       <style dangerouslySetInnerHTML={{ __html: STAGE_CSS }} />
       <div className={CANVAS_CLASS}>
-        <CanvasBoundary fallback={fallback}>
-          <Viewport chrome={false} autoOrbit />
-        </CanvasBoundary>
-        <DemoToolbar />
+        {/* The canvas is dark until Generate is pressed, so the resting hero is
+            the flat plan and nothing else. It then fades up UNDER the tilting
+            plan, which is what makes the drawing and the model read as one
+            object rather than two states of a slideshow. */}
+        <div className={`${CANVAS_FADE_CLASS}${lit ? " is-lit" : ""}`}>
+          <CanvasBoundary fallback={fallback}>
+            <Viewport chrome={false} autoOrbit />
+          </CanvasBoundary>
+        </div>
+
+        {!reduced && stage !== "done" && (
+          <TraceOverlay running={stage === "tracing"} onGenerate={() => onStage("building")} />
+        )}
+
+        {/* Both only mean anything once there is a room: "Drag to orbit" over a
+            drawing is a lie, and a call to action before the payoff is a nag. */}
+        {built && <DemoToolbar />}
+        {built && (
+          <Link href={APP_HREF} className={REVEAL_CLASS} style={ctaPrimary()}>
+            {HERO.revealCta}
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        )}
       </div>
-      <DemoControls />
+      <DemoControls dimmed={!built} />
     </div>
   );
 }
@@ -561,6 +761,8 @@ const CANVAS_CLASS = "done-demo-canvas";
 const PANEL_CLASS = "done-demo-panel";
 const TOOLBAR_CLASS = "done-demo-toolbar";
 const BTN_CLASS = "done-demo-btn";
+const CANVAS_FADE_CLASS = "done-demo-canvas-fade";
+const REVEAL_CLASS = "done-demo-reveal";
 
 /* ── Why the canvas is MASKED rather than colour-matched ─────────────────────
    The room has to float on the page with no rectangle around it, and the canvas
@@ -625,6 +827,41 @@ const STAGE_CSS = `
   border-radius: ${B.radiusM}px;
   background: ${B.raised};
   border: 1px solid ${B.hairline};
+  transition: opacity ${B.durSlow} ${B.ease};
+}
+/* Holds its space, so the grid row never changes height — see DemoControls. */
+.${PANEL_CLASS}.is-dimmed { opacity: 0.28; }
+
+/* The canvas, dark until Generate is pressed. Opacity only: the element keeps
+   its box, so the room is laid out and the camera has settled at its resting
+   pose long before it is ever seen — which is what the tilt has to land on. */
+.${CANVAS_FADE_CLASS} {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 620ms ${B.ease};
+}
+.${CANVAS_FADE_CLASS}.is-lit { opacity: 1; }
+
+/* The closing call to action, over the finished room and clear of the toolbar
+   below it. Fades up rather than appearing, so it reads as the end of the
+   animation rather than as a new piece of page furniture. */
+.${REVEAL_CLASS} {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(66px, 9vw, 86px);
+  transform: translateX(-50%);
+  z-index: 3;
+  animation: done-demo-reveal-in ${B.durSlow} ${B.ease} both;
+}
+@keyframes done-demo-reveal-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .${REVEAL_CLASS} { animation: none; }
+  .${CANVAS_FADE_CLASS} { transition: none; }
+  .${PANEL_CLASS} { transition: none; }
 }
 
 .${BTN_CLASS}:hover { border-color: ${B.hairline2} !important; }

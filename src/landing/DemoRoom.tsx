@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { B, microLabel } from "@/brand/tokens";
+import { getHeroStage, getHeroStageServer, setHeroStage, subscribeHeroStage } from "./heroSequence";
 
 // -----------------------------------------------------------------------------
 // The hero's interactive room — the light half.
@@ -48,8 +49,9 @@ function prefersReducedMotion(): boolean {
   }
 }
 
-/** The quiet, same-size stand-in shown before the canvas mounts, while it is
- *  loading, and permanently on any no-WebGL or reduced-motion browser. */
+/** The quiet, same-size stand-in shown before the stage mounts, while it is
+ *  loading, and permanently on any browser without WebGL. What replaces it is
+ *  the plan, not the room — the room is what the plan turns into. */
 function DemoPlaceholder() {
   return (
     <div
@@ -64,7 +66,7 @@ function DemoPlaceholder() {
         background: "transparent",
       }}
     >
-      <span style={microLabel({ color: B.ink3 })}>Interactive 3D — loading the room</span>
+      <span style={microLabel({ color: B.ink3 })}>Loading the plan</span>
     </div>
   );
 }
@@ -78,15 +80,24 @@ function DemoPlaceholder() {
  */
 export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeight?: string }) {
   const [mounted, setMounted] = useState(false); // avoids an SSR/client hydration mismatch
-  const [capable, setCapable] = useState(false); // WebGL present + motion not reduced
+  const [capable, setCapable] = useState(false); // WebGL present
+  const [reduced, setReduced] = useState(false); // the OS asked for less motion
   const [visible, setVisible] = useState(false); // hero has scrolled near the viewport
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Client-only capability check. Runs once; a browser's WebGL support and its
   // reduced-motion preference don't change mid-session.
+  //
+  // Reduced motion no longer blocks the room. It used to, which meant those
+  // visitors sat in front of "Interactive 3D — loading the room" that never
+  // resolved — a worse outcome than the room itself, which holds perfectly
+  // still for them: AutoOrbitRig's per-frame step already bails under reduced
+  // motion, and DemoStage skips the trace animation entirely. What the
+  // preference turns off is movement, not the product.
   useEffect(() => {
     setMounted(true);
-    setCapable(hasWebGL() && !prefersReducedMotion());
+    setCapable(hasWebGL());
+    setReduced(prefersReducedMotion());
   }, []);
 
   // Fetch and mount the stage only once the hero is ~200px from the viewport,
@@ -110,6 +121,31 @@ export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeigh
     return () => io.disconnect();
   }, [mounted, capable, visible]);
 
+  // The button that starts the sequence sits in the hero's copy, ABOVE this —
+  // and on most screens the plan is below the fold when it is pressed. Two
+  // things follow, and without either the visitor presses "see how it's done."
+  // and watches nothing happen:
+  //
+  //   1. Pressing it has to mount the stage, whatever the observer thinks. The
+  //      observer only fires when the plan is already near the viewport, which
+  //      it is not at the top of the page.
+  //   2. The plan has to come into view. This is not the "scroll to another
+  //      section" the old anchor CTA did — the animation still plays in place,
+  //      in the hero; it just cannot play off-screen.
+  //
+  // `scrollIntoView` finds the marketing layout's own scroll container (a fixed
+  // `overflow-y: auto` region, because globals.css pins the body for the WebGL
+  // canvas) on its own, so this must NOT be aimed at `window`.
+  const stage = useSyncExternalStore(subscribeHeroStage, getHeroStage, getHeroStageServer);
+  useEffect(() => {
+    if (stage === "idle") return;
+    setVisible(true);
+  }, [stage]);
+  useEffect(() => {
+    if (stage !== "tracing") return;
+    rootRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  }, [stage, reduced]);
+
   return (
     <div
       ref={rootRef}
@@ -128,7 +164,18 @@ export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeigh
       }}
     >
       {mounted && capable && visible ? (
-        <DemoStage fallback={<DemoPlaceholder />} />
+        // `stage` and `onStage` are handed ACROSS the dynamic import rather
+        // than read from ./heroSequence on the far side. DemoStage lands in its
+        // own chunk, and a module imported by both chunks is instantiated once
+        // per chunk — so the "singleton" was two variables, and the animation
+        // sat still while the button changed its own label. See DemoStage's
+        // props doc.
+        <DemoStage
+          fallback={<DemoPlaceholder />}
+          reduced={reduced}
+          stage={stage}
+          onStage={setHeroStage}
+        />
       ) : (
         <DemoPlaceholder />
       )}

@@ -82,8 +82,17 @@ export const HERO = {
    *  in src/app/design; see FAQ "Do I need an account?" below. */
   note: "No account needed to start.",
   ctaPrimaryLabel: "Open done.",
-  /** Points at HowItWorks's `id="how"`. */
-  ctaGhostLabel: "See how it works",
+  /**
+   * The secondary button no longer goes anywhere — it plays the hero's own
+   * animation in place (see landing/heroSequence.ts). One button has to mean
+   * something at every stage of a thirteen-second sequence, so it has three
+   * labels rather than going dead once it has been pressed.
+   */
+  ctaGhostLabel: "see how it's done.",
+  ctaGhostLabelRunning: "Skip to the room",
+  ctaGhostLabelDone: "Watch it again",
+  /** Fades in over the finished room once it is standing and orbiting. */
+  revealCta: "Open done.",
 };
 
 export const HOW_IT_WORKS = {
