@@ -3,8 +3,7 @@
 import { Component, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { Viewport } from "@/viewport3d/Viewport";
-import { useSceneStore } from "@/store/useSceneStore";
-import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
+import { useSceneStore, type StoreState } from "@/store/useSceneStore";
 import { frameColorPatch } from "@/render/frameFinish";
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
@@ -16,7 +15,7 @@ import {
   subscribeOrbitPlaying,
 } from "@/viewport3d/autoOrbitPlayback";
 import { B, microLabel, ctaPrimary } from "@/brand/tokens";
-import { demoScene } from "./demoScene";
+import { demoScene, heroDressedScene, HERO_FLOOR, HERO_FRAME } from "./demoScene";
 import { TraceOverlay, PLAN_TEXT_CSS } from "./TraceOverlay";
 import type { HeroStage } from "./heroSequence";
 import { APP_HREF } from "./nav";
@@ -121,8 +120,10 @@ const FRAMES = [
   { hex: "#1C1D1F", label: "Black" },
 ] as const;
 
-const DEFAULT_FLOOR = FLOORS[0].id;
-const DEFAULT_FRAME = FRAMES[0].hex;
+// Tied to the hero scene rather than re-stated, so the control panel opening
+// with exactly one option lit cannot drift from what the scene was dressed in.
+const DEFAULT_FLOOR: string = HERO_FLOOR;
+const DEFAULT_FRAME: string = HERO_FRAME;
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 // Inline, 16px, `currentColor`, 1.5 stroke — so each one inherits the copper of
@@ -517,12 +518,19 @@ function DemoToolbar() {
  *
  * Returns null so it can be used as a `useState` initializer — see below.
  */
-function seedDemoScene(flat: boolean) {
-  const seeded = seedRoomFixtures(demoScene);
-  const dressed = frameColorPatch(
-    { ...seeded, rooms: seeded.rooms.map((r) => ({ ...r, floor: DEFAULT_FLOOR })) },
-    DEFAULT_FRAME,
-  );
+/** Everything `seedDemoScene` overwrites — so it can all be put back. */
+const SEEDED_KEYS = [
+  "scene", "appMode", "wallMode", "showCeilings",
+  "timeOfDay", "envPreset", "weather", "walkthroughActive",
+] as const;
+
+type SeededSlice = Pick<StoreState, (typeof SEEDED_KEYS)[number]>;
+
+function seedDemoScene(flat: boolean): SeededSlice {
+  const before = useSceneStore.getState();
+  const prior = Object.fromEntries(SEEDED_KEYS.map((k) => [k, before[k]])) as SeededSlice;
+
+  const dressed = heroDressedScene();
   BASE_SCENE = dressed;
   useSceneStore.setState({
     scene: flat ? buildFrame(dressed, 0) : dressed,
@@ -534,7 +542,7 @@ function seedDemoScene(flat: boolean) {
     weather: "clear",
     walkthroughActive: false,
   });
-  return null;
+  return prior;
 }
 
 /** The finished scene, kept so each build frame can be derived from it rather
@@ -668,7 +676,22 @@ export default function DemoStage({
   // A remount is a new component instance, so this runs again then; there is no
   // separate cleanup or re-seed path to keep in sync. Nothing is restored on
   // unmount, since the marketing page never shares a session with the editor.
-  useState(() => seedDemoScene(!reduced));
+  const priorSlice = useState(() => seedDemoScene(!reduced))[0];
+
+  // PUT THE STORE BACK. This file writes the hero's apartment into the SAME
+  // store the editor uses, and the marketing site and the editor share a
+  // client-side session: /design is one <Link> away, so whatever is left here
+  // is what the editor boots on top of.
+  //
+  // It used to leave it, on the stated grounds that "the marketing page never
+  // shares a session with the editor". That was wrong, and it corrupted user
+  // data rather than just looking odd: `projectPersistence.doInit` captured its
+  // pristine defaults from the live store, so the hero's flat became the
+  // document written for every new project — including the first one a
+  // brand-new visitor is given. That has been fixed at the source too
+  // (getInitialState, not getState), but the hero has no business leaving its
+  // demo in a shared store either way.
+  useEffect(() => () => useSceneStore.setState(priorSlice), [priorSlice]);
 
   const built = stage === "done";
   const lit = stage === "building" || built;

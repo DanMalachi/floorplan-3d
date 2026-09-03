@@ -332,8 +332,21 @@ async function doInit(): Promise<void> {
   if (initialized) return;
   initialized = true;
 
-  // Capture pristine defaults BEFORE restoring, so New Project can reset to them.
-  defaults = snapshot(useSceneStore.getState());
+  // Pristine defaults, so New Project can reset to them.
+  //
+  // `getInitialState()`, NOT `getState()`. This used to read the live store on
+  // the grounds that nothing had touched it yet before init — which stopped
+  // being true the moment another route seeded the store before the editor
+  // booted. The marketing hero does exactly that: it puts its demo apartment
+  // into this same store, and a client-side navigation to /design keeps it, so
+  // `defaults` became the hero's flat. Every new project was then WRITTEN as
+  // that flat (see `createProjectMeta`), including the first project a
+  // brand-new visitor ever gets — the hero's home saved as their own.
+  //
+  // The initial state is what the store was created with, and no amount of
+  // scribbling by another page can move it. Anything that needs the live scene
+  // preserved has to save it itself; defaults are defaults.
+  defaults = snapshot(useSceneStore.getInitialState());
 
   try {
     manifest = await hydrateManifest();

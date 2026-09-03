@@ -107,6 +107,61 @@ function GoLiveButton() {
   );
 }
 
+/**
+ * `/design?hero=1` — furnish the marketing hero's apartment.
+ *
+ * The hero's room is authored by hand in `src/landing/demoScene.ts`, which is a
+ * terrible way to place furniture: you are typing coordinates at a room you
+ * cannot see. This opens that exact scene in the real editor, in Decorate mode,
+ * so it can be furnished by dragging — then hands the result back as the
+ * literal array to paste into that file.
+ *
+ * It deliberately SKIPS project persistence, the same way `?gt=` does, so a
+ * furnishing session can never overwrite a real project. That also means
+ * nothing here is saved: the copy button is the only way out, which is why it
+ * says so on screen rather than hoping.
+ */
+function HeroFurnishBar() {
+  const [msg, setMsg] = useState("Copy furniture →");
+  const copy = async () => {
+    const furniture = useSceneStore.getState().scene.furniture;
+    const text = JSON.stringify(furniture, null, 2);
+    try {
+      await navigator.clipboard.writeText(text);
+      setMsg(`Copied ${furniture.length} pieces`);
+    } catch {
+      console.log("[hero] furniture:\n" + text);
+      setMsg("Clipboard blocked — logged to console");
+    }
+    setTimeout(() => setMsg("Copy furniture →"), 2600);
+  };
+  return (
+    <div
+      style={{
+        // Top-left, under the wall-mode row. Bottom-left is where the Plan Dock
+        // and the dev overlay's badge both live, and this bar has to stay
+        // readable — it is the only thing telling you the session is unsaved.
+        position: "absolute",
+        top: 112,
+        left: 14,
+        zIndex: 40,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        ...pdGlass({ borderRadius: 10 }),
+        padding: "10px 12px",
+      }}
+    >
+      <span style={{ fontFamily: PD.fontMono ?? PD.fontUi, fontSize: 11, letterSpacing: "0.1em", color: PD.textSecondary }}>
+        HERO SCENE · NOT SAVED
+      </span>
+      <button onClick={copy} style={pdChip(true, { padding: "6px 14px", fontSize: 12 })}>
+        {msg}
+      </button>
+    </div>
+  );
+}
+
 const ALL_MODES: { id: AppMode; label: string; key: string }[] = [
   { id: "trace", label: "Trace", key: "1" },
   { id: "build", label: "Build", key: "2" },
@@ -160,6 +215,7 @@ function ModeSwitcher() {
 export default function Home() {
   const appMode = useSceneStore((s) => s.appMode);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [heroFurnish, setHeroFurnish] = useState(false);
 
   // Restore the saved project (if any) and start autosaving. Runs once.
   // Dev escape hatch: `?gt=<name>` loads a hand-authored ground-truth plan from
@@ -176,7 +232,44 @@ export default function Home() {
   useEffect(() => {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
-    const gt = new URLSearchParams(window.location.search).get("gt");
+    const params = new URLSearchParams(window.location.search);
+
+    // Furnishing the marketing hero. Checked FIRST and returns without ever
+    // calling initProjectPersistence, so this session has no project attached
+    // and cannot autosave over one — see HeroFurnishBar.
+    if (params.get("hero")) {
+      setHeroFurnish(true);
+      (async () => {
+        const { heroDressedScene } = await import("@/landing/demoScene");
+        useSceneStore.getState().setScene(heroDressedScene());
+        useSceneStore.getState().setAppMode("furnish");
+        // Ceilings off so the room can be seen into while it is furnished, and
+        // a name that admits what this is — the project bar would otherwise sit
+        // there claiming "Autosaving…" over a scene nothing is saving.
+        //
+        // `frameToken` is the load-bearing one. Opening a project bumps it so
+        // the viewport reframes onto that model (see `loadIntoStore`), and this
+        // route skips persistence entirely — so without it the camera keeps its
+        // default bounds, the hero's plan sits off-origin, and the viewport is
+        // simply black. It looks like the scene failed to load; it has loaded
+        // and nothing is pointing at it.
+        // `top` wall mode, not the default `full`. Two reasons, and the first
+        // is not cosmetic: this plan spans x -1.8..6, so its centre is nowhere
+        // near the origin the editor's environment is built around, and in
+        // `full` the framed camera lands somewhere that renders black — the
+        // scene is there, nothing is looking at it. `top` frames it correctly.
+        // It is also simply the right mode for the job: furniture is placed
+        // from above.
+        useSceneStore.setState({
+          showCeilings: false,
+          wallMode: "top",
+          projectName: "Hero scene (unsaved)",
+        });
+      })();
+      return;
+    }
+
+    const gt = params.get("gt");
     if (!gt) {
       (async () => {
         await initProjectPersistence();
@@ -184,7 +277,7 @@ export default function Home() {
         // unless we just left that room (guarded so we land on the gallery, not
         // bounce back). `?home=1` also forces the gallery (used by the room's Leave).
         const roomId = useSceneStore.getState().liveRoomId;
-        const home = new URLSearchParams(window.location.search).get("home");
+        const home = params.get("home");
         const justLeft = sessionStorage.getItem("live:left");
         if (justLeft) sessionStorage.removeItem("live:left");
         if (home) window.history.replaceState({}, "", "/design"); // don't leave it sticky
@@ -274,6 +367,7 @@ export default function Home() {
       {projectsOpen && <ProjectsOverlay onClose={() => setProjectsOpen(false)} />}
       {/* Secret dev tool: Shift+G to drop GT files and save each as a project. */}
       <GtLab />
+      {heroFurnish && <HeroFurnishBar />}
     </main>
   );
 }

@@ -27,29 +27,45 @@ import { DEFAULT_THICKNESS } from "@/schema/constants";
 // is the one demoScene calls "blank, bed backs onto it": splitting it costs
 // nothing, while every other wall carries an opening or furniture.
 //
-//        n9(-1.8,5)      n3(0,5)                              n2(6,5)
+//      n9(-3.9,2.5)   n3(-2.1,2.5)                        n2(3.9,2.5)
 //            +--------------+---------------------------------+
 //            |     bath     |                                 |
 //            |              |                              [ W2 patio ]
-//   n8(-1.8,3.2)------------+ n7(0,3.2)                        |
+//   n8(-3.9,0.7)------------+ n7(-2.1,0.7)                     |
 //                           |                                  |
 //                           |            studio                |
 //                           +---------------------------------+
-//                        n0(0,0)      [ W1 ]   [ D1 ]      n1(6,0)
+//                   n0(-2.1,-2.5)   [ W1 ]   [ D1 ]     n1(3.9,-2.5)
 // -----------------------------------------------------------------------------
 
+// ── The plan is CENTRED ON THE ORIGIN, and that is load-bearing ─────────────
+// Both cameras that ever look at this model aim at (0,0,0): AutoOrbitRig's
+// `setLookAt(..., 0, 0, 0)` in the hero, and the editor's FitCamera on
+// /design. The renderer's environment is origin-centred too — `loadIntoStore`
+// warns in as many words that an off-origin model "floats away from the
+// origin-centred environment".
+//
+// This plan used to run x 0..6 with the bathroom out to -1.8, putting its
+// centre at (2.1, 2.5). Nothing crashed; it just sat off to one side of every
+// camera that framed it, low in the hero's frame, and on /design it framed so
+// far off that the viewport rendered black and looked like a scene that had
+// failed to load. Subtracting the centre once fixes both.
+//
+// The SVG is unaffected: `TraceOverlay` projects through HERO_BOUNDS, so it
+// normalises whatever range these coordinates cover. Shifting them all by the
+// same amount changes the drawing by exactly nothing.
 export const HERO_NODES: Node[] = [
-  { id: "n0", x: 0, y: 0 },
-  { id: "n1", x: 6, y: 0 },
-  { id: "n2", x: 6, y: 5 },
-  { id: "n3", x: 0, y: 5 },
-  { id: "n7", x: 0, y: 3.2 }, // splits the left wall for the bathroom
-  { id: "n8", x: -1.8, y: 3.2 },
-  { id: "n9", x: -1.8, y: 5 },
+  { id: "n0", x: -2.1, y: -2.5 },
+  { id: "n1", x: 3.9, y: -2.5 },
+  { id: "n2", x: 3.9, y: 2.5 },
+  { id: "n3", x: -2.1, y: 2.5 },
+  { id: "n7", x: -2.1, y: 0.7 }, // splits the left wall for the bathroom
+  { id: "n8", x: -3.9, y: 0.7 },
+  { id: "n9", x: -3.9, y: 2.5 },
 ];
 
 /** The drawing area the plan occupies, in metres. Drives the SVG viewBox. */
-export const HERO_BOUNDS = { minX: -1.8, maxX: 6, minY: 0, maxY: 5 };
+export const HERO_BOUNDS = { minX: -3.9, maxX: 3.9, minY: -2.5, maxY: 2.5 };
 
 /**
  * A wall segment, plus everything the trace animation needs to draw it by hand.

@@ -35,8 +35,21 @@ export const NAV: NavItem[] = [
 
 export const navItems = (): NavItem[] => NAV.filter((i) => i.enabled !== false);
 
-/** Where "Open done." goes. The editor, which is served here flag or no flag. */
-export const APP_HREF = "/design";
+/**
+ * Where "Open done." goes: the PROJECT LIBRARY, every time, signed in or not.
+ *
+ * `?home=1` is the editor's own "show me the gallery" hatch (src/app/design/page.tsx
+ * consumes it, opens the Projects overlay and strips it from the URL so it is
+ * not sticky). Landing in the library rather than straight into whatever
+ * project happened to be open last is what makes the CTA mean the same thing
+ * on every visit — a returning user picks up deliberately instead of being
+ * dropped into a plan they may not have wanted, and a first-time visitor sees
+ * that projects are a thing at all.
+ *
+ * It also skips auto-rejoining a live room, which a marketing CTA should never
+ * do on its own.
+ */
+export const APP_HREF = "/design?home=1";
 
 export const FOOTER_LEGAL: NavItem[] = [
   { label: "Privacy", href: "/legal/privacy" },

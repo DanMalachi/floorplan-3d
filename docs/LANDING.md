@@ -134,6 +134,64 @@ frame budget spent re-solving geometry between states the eye cannot separate.
 The finished room has been seen; the 1.55s of growth getting there has not been
 watched frame by frame, since it needs a foreground window.
 
+## The hero shares the editor's store, and that corrupted user data
+
+Found 2026-09-03. The hero writes its apartment into `useSceneStore` — the same
+store the editor uses — and this file used to say "the marketing page never
+shares a session with the editor". That is false: `/design` is one `<Link>`
+away, so a client-side navigation carries whatever the hero left behind.
+
+What it cost was not cosmetic. `projectPersistence.doInit` captured its pristine
+defaults as `snapshot(useSceneStore.getState())`, on the reasonable-sounding
+grounds that nothing had touched the store before the editor booted. Coming from
+the hero, that snapshot **was the hero's flat** — and `createProjectMeta` writes
+`defaults` as the document for every new project. So:
+
+- a first-time visitor pressing "Open done." was given the hero's apartment as
+  their own first project, and
+- every "New plan" after that was the hero's apartment too.
+
+Three fixes, deliberately overlapping:
+
+1. `defaults` now comes from `useSceneStore.getInitialState()`, not `getState()`.
+   The initial state is what the store was *created* with and no other route can
+   move it. This is the one that actually protects the data.
+2. `DemoStage` snapshots the slice it overwrites and **puts it back on unmount**.
+   The hero has no business leaving its demo in a shared store regardless.
+3. `APP_HREF` is `/design?home=1`, so the CTA lands on the project library every
+   time, signed in or guest, rather than dropping someone into whatever project
+   was last open.
+
+Verified from a wiped IndexedDB, taking the client-side path: the first project
+and a subsequent "New plan" both come out as the pristine sample scene
+(`L-room`/`Balcony`, 8 nodes), not the hero.
+
+### `/design?hero=1` — furnishing the hero
+
+The hero's furniture is hand-authored in `src/landing/demoScene.ts`, which means
+typing coordinates at a room you cannot see. This route opens that exact scene
+(through the shared `heroDressedScene()`, so it is dressed identically) in the
+real editor, in Decorate mode, and gives you a **Copy furniture →** button that
+puts the `furniture` array on the clipboard ready to paste back into that file.
+
+It skips project persistence the same way `?gt=` does, so a furnishing session
+can never autosave over a real project — which also means nothing here is saved,
+and the bar says so.
+
+### Why the plan is centred on the origin
+
+Every camera that frames this model looks at `(0,0,0)`: `AutoOrbitRig`'s
+`setLookAt(..., 0, 0, 0)` in the hero, and `FitCamera` on `/design`. The
+renderer's environment is origin-centred too — `loadIntoStore` warns that an
+off-origin model "floats away from the origin-centred environment".
+
+The plan originally ran x 0..6 with the bathroom out to −1.8, centre (2.1, 2.5).
+It sat low in the hero's frame, and on `/design` it framed so far off that the
+viewport rendered **black** and looked like a scene that had failed to load.
+Subtracting the centre from every node and every furniture coordinate fixed
+both. `TraceOverlay` projects through `HERO_BOUNDS`, so the drawing is
+pixel-identical either way — confirmed by screenshot.
+
 ## The demo room
 
 A live render of the real product — the actual `Viewport`, the actual scene
