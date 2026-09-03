@@ -17,7 +17,7 @@ import {
 } from "@/viewport3d/autoOrbitPlayback";
 import { B, microLabel, ctaPrimary } from "@/brand/tokens";
 import { demoScene } from "./demoScene";
-import { TraceOverlay } from "./TraceOverlay";
+import { TraceOverlay, PLAN_TEXT_CSS } from "./TraceOverlay";
 import type { HeroStage } from "./heroSequence";
 import { APP_HREF } from "./nav";
 import { HERO } from "./content";
@@ -558,12 +558,24 @@ let BASE_SCENE: Scene | null = null;
    - Ceiling fixtures arrive with the openings, for the same reason: they hang
      at ceiling height, and while the walls are 2 cm tall that is the floor. */
 const BUILD = {
+  wallsFrom: 0.3, // after the dissolve has started, so the first frames are veiled
   wallEach: 0.55, // one wall's own rise
-  wallsDone: 1.3, // every wall at full height by here
-  furnitureFrom: 1.55,
-  furnitureEach: 0.11,
-  total: 3.0,
+  wallsDone: 1.25, // every wall at full height by here
+  furnitureFrom: 1.3,
+  furnitureBatches: 3, // batches, NOT one write per item — see below
+  furnitureEach: 0.16,
+  total: 1.95,
 };
+
+/** Writes per second while the walls grow.
+ *
+ *  Every write replaces the scene, which re-runs `computeWallEffectiveHeights`
+ *  and re-meshes; at 60 fps that is the whole frame budget spent re-solving
+ *  geometry between states the eye cannot separate, and it is what made the
+ *  reveal stutter. Quantising the CLOCK (rather than only the heights) puts a
+ *  hard ceiling on how many scene rebuilds the growth can ever cost, and 25
+ *  steps a second still reads as continuous motion. */
+const BUILD_HZ = 25;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const easeOut = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
@@ -581,16 +593,22 @@ const easeOut = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
  * a 2.4 m wall still gets 120 distinct steps on the way up.
  */
 function buildFrame(base: Scene, t: number): Scene {
-  const stagger = base.walls.length > 1 ? (BUILD.wallsDone - BUILD.wallEach) / (base.walls.length - 1) : 0;
+  const n = base.walls.length;
+  const span = BUILD.wallsDone - BUILD.wallsFrom - BUILD.wallEach;
+  const stagger = n > 1 ? span / (n - 1) : 0;
   const walls = base.walls.map((w, i) => {
-    const p = easeOut((t - i * stagger) / BUILD.wallEach);
-    const h = Math.max(0.02, Math.round(p * WALL_HEIGHT * 50) / 50);
+    const p = easeOut((t - BUILD.wallsFrom - i * stagger) / BUILD.wallEach);
+    const h = Math.max(0.02, Math.round(p * WALL_HEIGHT * 25) / 25);
     return { ...w, height: h };
   });
   const built = t >= BUILD.wallsDone;
-  const shown = t < BUILD.furnitureFrom
+  // Furniture arrives in three batches rather than thirteen. One write per item
+  // was thirteen full scene rebuilds inside 1.4s, which both stuttered and read
+  // as objects being dealt onto the floor one at a time.
+  const batch = t < BUILD.furnitureFrom
     ? 0
-    : Math.min(base.furniture.length, Math.floor((t - BUILD.furnitureFrom) / BUILD.furnitureEach) + 1);
+    : Math.min(BUILD.furnitureBatches, Math.floor((t - BUILD.furnitureFrom) / BUILD.furnitureEach) + 1);
+  const shown = Math.ceil((base.furniture.length * batch) / BUILD.furnitureBatches);
   return {
     ...base,
     walls,
@@ -697,7 +715,11 @@ export default function DemoStage({
     let lastKey = "";
     const tick = (now: number) => {
       if (!start) start = now;
-      const t = Math.min((now - start) / 1000, BUILD.total);
+      const raw = Math.min((now - start) / 1000, BUILD.total);
+      // Snap the clock to BUILD_HZ so the number of scene rebuilds is bounded
+      // by time rather than by display refresh rate — a 120Hz monitor must not
+      // pay twice for the same animation.
+      const t = Math.round(raw * BUILD_HZ) / BUILD_HZ;
       const next = buildFrame(base, t);
       const key = frameKey(next);
       if (key !== lastKey) {
@@ -724,9 +746,23 @@ export default function DemoStage({
   }, [stage]);
 
   return (
-    <div className={STAGE_CLASS}>
+    /* The whole demo sits in a window, so the hero reads as a small, real copy
+       of the app rather than as two panels laid on a marketing page. The title
+       bar is chrome, not decoration: it is what tells a visitor that the thing
+       below it is an application they could be using. */
+    <div className={WINDOW_CLASS}>
       <style dangerouslySetInnerHTML={{ __html: STAGE_CSS }} />
-      <div className={CANVAS_CLASS}>
+      <div className={TITLEBAR_CLASS}>
+        <span className={LIGHTS_CLASS} aria-hidden="true">
+          <i style={{ background: "#FF5F57" }} />
+          <i style={{ background: "#FEBC2E" }} />
+          <i style={{ background: "#28C840" }} />
+        </span>
+        <span className={TITLE_CLASS}>Studio apartment</span>
+      </div>
+      <div className={BODY_CLASS}>
+        <div className={STAGE_CLASS}>
+          <div className={CANVAS_CLASS}>
         {/* The canvas is dark until Generate is pressed, so the resting hero is
             the flat plan and nothing else. It then fades up UNDER the tilting
             plan, which is what makes the drawing and the model read as one
@@ -750,8 +786,10 @@ export default function DemoStage({
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
+          </div>
+          <DemoControls dimmed={!built} />
+        </div>
       </div>
-      <DemoControls dimmed={!built} />
     </div>
   );
 }
@@ -763,6 +801,11 @@ const TOOLBAR_CLASS = "done-demo-toolbar";
 const BTN_CLASS = "done-demo-btn";
 const CANVAS_FADE_CLASS = "done-demo-canvas-fade";
 const REVEAL_CLASS = "done-demo-reveal";
+const WINDOW_CLASS = "done-demo-window";
+const TITLEBAR_CLASS = "done-demo-titlebar";
+const LIGHTS_CLASS = "done-demo-lights";
+const TITLE_CLASS = "done-demo-title";
+const BODY_CLASS = "done-demo-body";
 
 /* ── Why the canvas is MASKED rather than colour-matched ─────────────────────
    The room has to float on the page with no rectangle around it, and the canvas
@@ -788,6 +831,47 @@ const REVEAL_CLASS = "done-demo-reveal";
    the action map says, so this has to win it back. Vertical swipes scroll the
    page; nothing else on touch does anything, by design. */
 const STAGE_CSS = `
+${PLAN_TEXT_CSS}
+
+/* ── The window ────────────────────────────────────────────────────────────
+   The hero's demo is presented as an application window. The title bar is the
+   only fixed height in this file and it is allowed to be: it is chrome with
+   fixed contents, not the content row whose height has to come from what is
+   actually in it. */
+.${WINDOW_CLASS} {
+  border-radius: 12px;
+  border: 1px solid ${B.hairline};
+  background: ${B.canvas};
+  box-shadow: ${B.shadow};
+  overflow: hidden;
+}
+.${TITLEBAR_CLASS} {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  background: ${B.raised};
+  border-bottom: 1px solid ${B.hairline};
+}
+.${LIGHTS_CLASS} { display: flex; gap: 8px; position: relative; z-index: 1; }
+.${LIGHTS_CLASS} i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+/* Centred on the WINDOW, not in the leftover space beside the lights — an
+   off-centre title is the tell that a window chrome was faked. */
+.${TITLE_CLASS} {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ${B.fontMono};
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  color: ${B.ink4};
+  pointer-events: none;
+}
+.${BODY_CLASS} { padding: clamp(12px, 1.6vw, 20px); }
+
 /* NO fixed height anywhere in here. The row is as tall as the taller of its two
    children: the canvas contributes a min-height, the panel contributes whatever
    its five rows actually need, and the grid takes the max. That is what stops
@@ -801,22 +885,28 @@ const STAGE_CSS = `
   align-items: stretch;
   width: 100%;
 }
+/* The canvas is now a VIEWPORT INSIDE A WINDOW, so it is a panel on purpose and
+   the edge mask is gone. That mask existed for one reason — the canvas cannot
+   be transparent (alpha:false in src/render/contract.ts) and can never exactly
+   match the page, so two attempts at colour-matching both left a visible box,
+   and fading the edges to nothing was the only exact answer. Inside a window
+   frame the premise is inverted: a crisp rectangle of darker ground is what an
+   application's 3D view looks like, and a canvas whose edges dissolve into the
+   panel around it would read as a smudge. Radius plus overflow:hidden on the
+   cell replaces it.
+
+   touch-action:pan-y is NOT redundant with the dead touch map and stays.
+   Enabling camera-controls writes touch-action:none onto the canvas element
+   itself, which blocks page scrolling no matter what the action map says. */
 .${CANVAS_CLASS} {
   position: relative;
   min-width: 0;
   min-height: clamp(400px, 62vh, 680px);
+  border-radius: 8px;
+  overflow: hidden;
+  background: ${B.ground};
 }
-.${STAGE_CLASS} canvas {
-  touch-action: pan-y !important;
-  -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 4%, #000 94%, transparent 100%);
-  mask-image:
-    linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 4%, #000 94%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-}
+.${STAGE_CLASS} canvas { touch-action: pan-y !important; }
 
 .${PANEL_CLASS} {
   display: flex;
@@ -835,11 +925,15 @@ const STAGE_CSS = `
 /* The canvas, dark until Generate is pressed. Opacity only: the element keeps
    its box, so the room is laid out and the camera has settled at its resting
    pose long before it is ever seen — which is what the tilt has to land on. */
+/* Delayed by a beat so the room is never seen arriving UNDER a plan that has
+   not started leaving yet — that overlap is most of what read as clunky. The
+   drawing begins tilting ~0.16s after Generate and is gone by ~0.9s; the room
+   is fully in by ~0.72s, so the two genuinely cross rather than stack. */
 .${CANVAS_FADE_CLASS} {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 620ms ${B.ease};
+  transition: opacity 600ms ${B.ease} 120ms;
 }
 .${CANVAS_FADE_CLASS}.is-lit { opacity: 1; }
 
