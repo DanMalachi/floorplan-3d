@@ -48,10 +48,31 @@ export const DPR: [number, number] = [1, 2];
  * through because it was an unrecorded library default rather than a line of
  * this repo's code. Recording it is the fix for the class, not just the case.
  *
- * `alpha` is off for a related reason: the scene always paints an opaque
- * background, but an alpha canvas is composited by the browser as a blended
- * layer regardless, and on a tile-based GPU that costs a read of what is behind
- * it. Nothing in the app renders anything through the canvas.
+ * `alpha` was recorded off for a related reason: the scene always paints an
+ * opaque background, but an alpha canvas is composited by the browser as a
+ * blended layer regardless, and on a tile-based GPU that costs a read of what
+ * is behind it. Nothing in the app renders anything through the canvas.
+ *
+ * We still REQUEST it off — `CONTEXT.alpha` below is what Viewport passes — but
+ * since three r163 the request no longer reaches the context: `WebGLRenderer`
+ * hard-codes `alpha: true` in its own contextAttributes (three 0.185.0,
+ * three.module.js:16366) and honours the parameter through the clear alpha
+ * instead. So the clause is asserted against `CONTEXT_ALPHA_ACTUAL`, what the
+ * context can actually report, rather than against what we asked for.
+ *
+ * That is not the clause going soft. It stays a live tripwire in the other
+ * direction: if a future three restores the parameter, the context starts
+ * reporting false, this fires, and someone revisits it.
+ *
+ * Getting this wrong was expensive, so it is worth naming the failure mode.
+ * The assertion runs inside `RenderContractCheck`'s `useFrame`, i.e. inside
+ * R3F's frame loop, and in development it THROWS. An uncaught throw there
+ * breaks the loop during startup: the canvas is never sized past its 300x150
+ * default, no R3F child ever mounts, and the canvas keeps whatever pixels it
+ * last held. The symptom is not an error — it is a black viewport, or worse a
+ * stale image of furniture that no longer exists, which cannot be clicked or
+ * deleted because no geometry is there. Production only logs, so this was
+ * invisible on done.design and reproduced on every dev machine.
  *
  * Forbids re-enabling either to "fix" aliasing. If the image aliases, the AA
  * effect in the composer chain is the lever (§2.3) — a multisampled backbuffer
@@ -61,6 +82,11 @@ export const CONTEXT = {
   antialias: false,
   alpha: false,
 } as const;
+
+/** What the context REPORTS, as opposed to what we ask for above. three
+ *  hard-codes the context's alpha to true, so this deliberately differs from
+ *  `CONTEXT.alpha` — see the note above. */
+const CONTEXT_ALPHA_ACTUAL = true;
 
 /**
  * Tone mapping (§2). The renderer's own tone mapper stays OFF — the composer
@@ -263,7 +289,7 @@ const WANT: Record<keyof typeof EXPECTED, unknown> = {
   "gl.shadowMap.enabled": true,
   "gl.shadowMap.type": SHADOW.type,
   "gl.context.antialias": CONTEXT.antialias,
-  "gl.context.alpha": CONTEXT.alpha,
+  "gl.context.alpha": CONTEXT_ALPHA_ACTUAL,
 };
 
 /**

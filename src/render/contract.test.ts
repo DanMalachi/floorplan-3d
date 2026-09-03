@@ -29,7 +29,10 @@ const check = (name: string, cond: boolean, detail = "") => {
  * other clause.
  */
 const conformingGl = () => {
-  const attrs = { antialias: false, alpha: false };
+  // alpha TRUE is the conforming state: three hard-codes the context's alpha
+  // to true and no longer routes the constructor parameter to it, so true is
+  // what a healthy context reports. See contract.ts's CONTEXT_ALPHA_ACTUAL.
+  const attrs = { antialias: false, alpha: true };
   return {
     outputColorSpace: THREE.SRGBColorSpace,
     toneMapping: THREE.NoToneMapping,
@@ -92,9 +95,12 @@ THREE.ColorManagement.enabled = true;
 }
 
 {
+  // The tripwire now points the other way: if a future three restores the
+  // `alpha` constructor parameter, the context starts reporting false again
+  // and this must fire so someone revisits the clause.
   const gl = conformingGl();
-  gl._attrs.alpha = true;
-  check("a context that came back with alpha throws", assertResult(gl).threw);
+  gl._attrs.alpha = false;
+  check("a context that came back WITHOUT alpha throws", assertResult(gl).threw);
 }
 
 {
