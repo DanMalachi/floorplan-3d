@@ -44,7 +44,7 @@
 // UNCHANGED — it requires editing pointer handling inside the protected
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
-import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
@@ -77,6 +77,7 @@ import { KidsScene, KIDS_HOTSPOTS } from "./KidsScene";
 import { GarageScene, GARAGE_HOTSPOTS } from "./GarageScene";
 import { OutdoorsScene, OUTDOORS_HOTSPOTS } from "./OutdoorsScene";
 import { Tooltip } from "./Tooltip";
+import { useHover } from "./useHover";
 import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "./icons";
 import { EyedropperController } from "@/decorate/EyedropperController";
 
@@ -153,12 +154,96 @@ function useDockHeight(): [number, (h: number) => void] {
   return [height, setHeight];
 }
 
+// ── Hover-owning wrappers ───────────────────────────────────────────────────
+// Both of these hold their own `useHover()` flag. That is the point: calling
+// the hook once in a parent and threading the flag down would make one
+// cursor-over re-render the parent — for the tab row that is the whole dock,
+// and for the category chips it is every card in the rail below them.
+
+/** `pdIconBtn`-shaped button with its own hover state. */
+function DockIconBtn({
+  onClick,
+  active = false,
+  size = 28,
+  title,
+  children,
+}: {
+  onClick: () => void;
+  active?: boolean;
+  size?: number;
+  title?: string;
+  children: ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button {...hoverBind} onClick={onClick} title={title} style={pdIconBtn(active, size, hovered)}>
+      {children}
+    </button>
+  );
+}
+
+/** `pdChip`-shaped button with its own hover state. `extra` is forwarded to
+ *  `pdChip` exactly as the call sites passed it before — which means it is
+ *  still dropped there (see the note in tokens.ts); spreading it is a separate,
+ *  reviewable change, not part of the hover sweep. */
+function DockChip({
+  onClick,
+  active,
+  extra,
+  children,
+}: {
+  onClick: () => void;
+  active: boolean;
+  extra?: React.CSSProperties;
+  children: ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button {...hoverBind} onClick={onClick} style={pdChip(active, extra, hovered)}>
+      {children}
+    </button>
+  );
+}
+
+/** A flat colour/material tile (paint swatch, floor sample). These carry their
+ *  selected state as a border, so hover uses the same channel — a neutral grey
+ *  ring, distinct from the accent ring that means "picked". `hairline` is too
+ *  faint to read against an arbitrary swatch colour, which is why this is the
+ *  one place the hover value isn't `surfaceMutedHover`. Before this, a grid of
+ *  ~200 near-identical squares gave no feedback at all under the cursor. */
+function SwatchButton({
+  onClick,
+  active,
+  title,
+  style,
+}: {
+  onClick: () => void;
+  active: boolean;
+  title: string;
+  style: React.CSSProperties;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      {...hoverBind}
+      onClick={onClick}
+      title={title}
+      style={{
+        ...style,
+        border: active ? `2px solid ${PD.accent}` : hovered ? `1.5px solid ${PD.textSecondary}` : "1.5px solid transparent",
+        transition: "border-color 140ms ease",
+      }}
+    />
+  );
+}
+
 /** Thin full-width strip pinned above the tab-icon row. Dragging it up grows
  *  the panel (the panel's `bottom` is pinned, so the top edge must move up as
  *  the mouse moves up — hence `startHeight + (startY - clientY)`). Plain DOM
  *  pointermove/pointerup listeners, not R3F — this is regular HTML, no
  *  Three.js raycasting involved. */
 function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; setDockHeight: (h: number) => void }) {
+  const [hovered, hoverBind] = useHover();
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     const startY = e.clientY;
@@ -173,6 +258,7 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
   };
   return (
     <div
+      {...hoverBind}
       onPointerDown={onPointerDown}
       title="Drag to resize"
       style={{
@@ -185,7 +271,16 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
         touchAction: "none",
       }}
     >
-      <div style={{ width: 32, height: 3, borderRadius: 999, background: PD.textTertiary, opacity: 0.6 }} />
+      <div
+        style={{
+          width: 32,
+          height: 3,
+          borderRadius: 999,
+          background: hovered ? PD.textSecondary : PD.textTertiary,
+          opacity: hovered ? 1 : 0.6,
+          transition: "background 140ms ease, opacity 140ms ease",
+        }}
+      />
     </div>
   );
 }
@@ -234,40 +329,27 @@ function pieceMatchesHotspot(p: CustomPiece, hotspot: RoomHotspot): boolean {
  *  (English, normalized by enrich-catalog.ts) instead. */
 const isHebrew = (s: string) => /[֐-׿]/.test(s);
 
-// Which Building Knowledge Layer semantic types (src/lib/rooms/roomTaxonomy.ts's
-// open vocabulary) count as a match for each Navigator room tag. "kids" has no
-// entry — there's no matching semantic type — so it's a no-op focus click by
-// design rather than a wrong guess. "study"->"office" mirrors catalog.ts's own
-// "study is the renamed office RoomSection id" convention.
-const FOCUS_SEMANTIC_TYPES: Partial<Record<RoomType, string[]>> = {
-  kitchen: ["kitchen"],
-  bathroom: ["bathroom"],
-  bedroom: ["bedroom", "master_bedroom"],
-  living: ["living"],
-  dining: ["dining"],
-  study: ["office"],
-  laundry: ["laundry"],
-  closet: ["closet"],
-  garage: ["garage"],
-  outdoors: ["balcony"],
-};
+// Clicking a Navigator room used to also move the 3D camera (Plan Dock P8's
+// `focusRoomForTag`): it looked up the first scene.rooms entry whose Building
+// Knowledge Layer verdict matched the tab and armed CameraFocusRig at its
+// centroid. Removed — the room tabs are a CATALOG filter, and hijacking the
+// camera on a filter click took the view away from whatever the user had
+// framed, often landing on a room the classifier had guessed wrong anyway.
+// Nothing writes `focusTarget` now, so CameraFocusRig stays mounted but inert.
 
-/** Plan Dock P8: camera focus on room click. Finds the first scene.rooms
- *  entry whose Building Knowledge Layer verdict matches `tag`, computes its
- *  loop centroid, and arms CameraFocusRig — a no-op (not a wrong guess) when
- *  nothing in the built scene has been classified as that room type yet. */
-function focusRoomForTag(tag: RoomType) {
-  const types = FOCUS_SEMANTIC_TYPES[tag];
-  if (!types) return;
-  const { scene, setFocusTarget } = useSceneStore.getState();
-  const room = scene.rooms.find((r) => r.semantics && types.includes(r.semantics.type));
-  if (!room) return;
-  const nodes = new Map(scene.nodes.map((n) => [n.id, n]));
-  const pts = room.loop.map((id) => nodes.get(id)).filter((n): n is NonNullable<typeof n> => !!n);
-  if (pts.length === 0) return;
-  const x = pts.reduce((sum, p) => sum + p.x, 0) / pts.length;
-  const y = pts.reduce((sum, p) => sum + p.y, 0) / pts.length;
-  setFocusTarget({ x, y });
+/** One room tab. Its own component so `useHover` lives per BUTTON — 11
+ *  buttons sharing one hover flag in NavigatorPanel would re-render the whole
+ *  row (and the illustrated scene under it) on every cursor move. */
+function NavRoomButton({ id, label, active, onPick }: { id: RoomType; label: string; active: boolean; onPick: (r: RoomType) => void }) {
+  const Icon = ROOM_ICON[id];
+  const [hovered, hoverBind] = useHover();
+  return (
+    <Tooltip label={label}>
+      <button {...hoverBind} onClick={() => onPick(id)} style={pdIconBtn(active, 28, hovered)}>
+        <Icon size={15} />
+      </button>
+    </Tooltip>
+  );
 }
 
 /** Separate floating panel: room-icon switcher on top, illustrated scene
@@ -291,23 +373,18 @@ function NavigatorPanel({
   return (
     <div style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
       <div style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
-        {ROOM_SCENES.map((r) => {
-          const Icon = ROOM_ICON[r.id];
-          return (
-            <Tooltip key={r.id} label={r.label}>
-              <button
-                onClick={() => {
-                  setRoom(r.id);
-                  setActiveHotspot(null);
-                  focusRoomForTag(r.id);
-                }}
-                style={pdIconBtn(room === r.id)}
-              >
-                <Icon size={15} />
-              </button>
-            </Tooltip>
-          );
-        })}
+        {ROOM_SCENES.map((r) => (
+          <NavRoomButton
+            key={r.id}
+            id={r.id}
+            label={r.label}
+            active={room === r.id}
+            onPick={(id) => {
+              setRoom(id);
+              setActiveHotspot(null);
+            }}
+          />
+        ))}
       </div>
       <div style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
         {Scene ? (
@@ -328,6 +405,9 @@ function NavigatorPanel({
 function ItemCard({ item }: { item: FurnitureAsset }) {
   const placing = useSceneStore((s) => s.placing);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
+  // Per CARD, not per rail: these render in lists of hundreds, so one hover
+  // flag held in FurnitureItemsForRoom would re-render every card in the row.
+  const [hovered, hoverBind] = useHover();
   // Color/finish variant group (Plan Dock P6) — null for the vast majority of
   // items (~11 real groups out of hundreds). `activeVariant` is which sibling
   // THIS card currently represents; a dot click swaps it without leaving the
@@ -356,6 +436,7 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
 
   return (
     <button
+      {...hoverBind}
       onClick={() => arm(activeSpec.assetId)}
       title={`${activeSpec.name} · ${activeSpec.footprint.w}×${activeSpec.footprint.d} m`}
       style={{
@@ -367,10 +448,11 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
         gap: 3,
         padding: 4,
         borderRadius: PD.radiusS,
-        border: `1.5px solid ${active ? PD.accent : "transparent"}`,
-        background: active ? PD.accentTint : PD.surfaceMuted,
+        border: `1.5px solid ${active ? PD.accent : hovered ? PD.hairline : "transparent"}`,
+        background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : PD.surfaceMuted,
         cursor: "pointer",
         fontFamily: PD.fontUi,
+        transition: "background 140ms ease, border-color 140ms ease",
       }}
     >
       <div
@@ -463,6 +545,8 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
         ? placingWall?.generator === generator.id && sameVariant(placingWall)
         : placing?.assetId === assetId && placing?.parametric?.variant === spec.variant;
   const Glyph = GENERATOR_GLYPH[piece.glyphKey] ?? GENERATOR_GLYPH[generator.id];
+  // Per card, same reasoning as ItemCard.
+  const [hovered, hoverBind] = useHover();
 
   const arm = () => {
     const s = useSceneStore.getState();
@@ -484,6 +568,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
 
   return (
     <button
+      {...hoverBind}
       onClick={arm}
       title={piece.label}
       style={{
@@ -495,10 +580,11 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
         gap: 3,
         padding: 4,
         borderRadius: PD.radiusS,
-        border: `1.5px solid ${active ? PD.accent : "transparent"}`,
-        background: active ? PD.accentTint : PD.surfaceMuted,
+        border: `1.5px solid ${active ? PD.accent : hovered ? PD.hairline : "transparent"}`,
+        background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : PD.surfaceMuted,
         cursor: "pointer",
         fontFamily: PD.fontUi,
+        transition: "background 140ms ease, border-color 140ms ease",
       }}
     >
       <div style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
@@ -549,37 +635,22 @@ function PaintTab() {
   const families: TambourFamily[] = ["white", "neutral", "red", "orange", "yellow", "green", "blue", "purple"];
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
-      <button
+      <SwatchButton
         onClick={() => pick(null)}
+        active={plasterActive}
         title={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
-        style={{
-          flex: "0 0 auto",
-          width: 30,
-          height: 30,
-          borderRadius: 7,
-          background: "#f3ece1",
-          cursor: "pointer",
-          border: plasterActive ? `2px solid ${PD.accent}` : "1.5px solid transparent",
-        }}
+        style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: "#f3ece1", cursor: "pointer" }}
       />
       {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>Loading…</span>}
       {families.flatMap((slug) =>
         (grouped[slug] ?? []).map((c) => {
-          const active = activeHex === c.hex;
           return (
-            <button
+            <SwatchButton
               key={c.code}
               title={`${c.code} · ${c.nameEn}`}
               onClick={() => pick(c.hex)}
-              style={{
-                flex: "0 0 auto",
-                width: 30,
-                height: 30,
-                borderRadius: 7,
-                background: c.hex,
-                cursor: "pointer",
-                border: active ? `2px solid ${PD.accent}` : "1.5px solid transparent",
-              }}
+              active={activeHex === c.hex}
+              style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: c.hex, cursor: "pointer" }}
             />
           );
         }),
@@ -595,27 +666,24 @@ function FloorsTab() {
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
       {FAMILY_ORDER.flatMap((family) =>
-        FLOOR_MATERIALS.filter((m) => m.family === family).map((m) => {
-          const on = active === m.id;
-          return (
-            <button
-              key={m.id}
-              onClick={() => pick(m.id)}
-              title={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
-              style={{
-                flex: "0 0 auto",
-                width: 44,
-                height: 44,
-                borderRadius: 7,
-                backgroundImage: `url(${m.thumb})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                cursor: "pointer",
-                border: on ? `2px solid ${PD.accent}` : "1.5px solid transparent",
-              }}
-            />
-          );
-        }),
+        FLOOR_MATERIALS.filter((m) => m.family === family).map((m) => (
+          <SwatchButton
+            key={m.id}
+            onClick={() => pick(m.id)}
+            active={active === m.id}
+            title={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
+            style={{
+              flex: "0 0 auto",
+              width: 44,
+              height: 44,
+              borderRadius: 7,
+              backgroundImage: `url(${m.thumb})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              cursor: "pointer",
+            }}
+          />
+        )),
       )}
     </div>
   );
@@ -711,24 +779,24 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               outline: "none",
             }}
           />
-          <button onClick={closeSearch} style={pdIconBtn(false, 22)}>
+          <DockIconBtn onClick={closeSearch} size={22} title="Close search">
             <CloseIcon size={12} />
-          </button>
+          </DockIconBtn>
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 3, overflowX: "auto" }}>
           <Tooltip label="Search">
-            <button onClick={() => setSearchOpen(true)} style={pdIconBtn(false, 22)}>
+            <DockIconBtn onClick={() => setSearchOpen(true)} size={22}>
               <SearchIcon size={13} />
-            </button>
+            </DockIconBtn>
           </Tooltip>
-          <button onClick={() => setActiveCategory(null)} style={pdChip(activeCategory === null, { padding: "3px 8px", fontSize: 10.5 })}>
+          <DockChip onClick={() => setActiveCategory(null)} active={activeCategory === null} extra={{ padding: "3px 8px", fontSize: 10.5 }}>
             All
-          </button>
+          </DockChip>
           {roomCategories.map((c) => (
-            <button key={c} onClick={() => setActiveCategory(c)} style={pdChip(activeCategory === c, { padding: "3px 8px", fontSize: 10.5 })}>
+            <DockChip key={c} onClick={() => setActiveCategory(c)} active={activeCategory === c} extra={{ padding: "3px 8px", fontSize: 10.5 }}>
               {c}
-            </button>
+            </DockChip>
           ))}
           <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
         </div>
@@ -792,16 +860,16 @@ export function BottomDock() {
             const Icon = SECTION_ICON[t.id];
             return (
               <Tooltip key={t.id} label={t.label}>
-                <button onClick={() => setTab(t.id)} style={pdIconBtn(tab === t.id)}>
+                <DockIconBtn onClick={() => setTab(t.id)} active={tab === t.id}>
                   <Icon size={15} />
-                </button>
+                </DockIconBtn>
               </Tooltip>
             );
           })}
           <Tooltip label={eyedropper ? "Eyedropper armed (E)" : "Eyedropper (E)"}>
-            <button onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} style={pdIconBtn(eyedropper)}>
+            <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
               <EyedropperIcon size={14} />
-            </button>
+            </DockIconBtn>
           </Tooltip>
           {brush && (
             <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>

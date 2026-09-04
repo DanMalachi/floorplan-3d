@@ -9,13 +9,14 @@
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
-import { PD, pdChip } from "../tokens";
+import { PD } from "../tokens";
 import { pdToast } from "../toast";
 import {
   pdInspectorPanel,
   PdSectionTitle,
   PdHelpText,
   PdNumField,
+  PdChip,
   pdChipFlex,
   PdSwatch,
   PdActionButton,
@@ -85,8 +86,11 @@ export function WallSection({ wall }: { wall: Wall }) {
     wall.paintA === wall.paintB
       ? [{ hex: wall.paintA, label: "Paint every wall" }]
       : [
-          { hex: wall.paintA, label: "All walls ← A" },
-          { hex: wall.paintB, label: "All walls ← B" },
+          // Worded rather than arrowed: "← A" put a directional glyph inside a
+          // user-facing label, which reads as decoration and would have to
+          // mirror under RTL in wave 2.
+          { hex: wall.paintA, label: "All walls from A" },
+          { hex: wall.paintB, label: "All walls from B" },
         ];
 
   return (
@@ -94,9 +98,10 @@ export function WallSection({ wall }: { wall: Wall }) {
       <PdSectionTitle title={KIND_LABEL[kind]} meta={`${len.toFixed(2)} m`} />
       <div style={{ display: "flex", gap: 4 }}>
         {(["wall", "rail", "portal"] as const).map((k) => (
-          <button
+          <PdChip
             key={k}
-            style={pdChip(kind === k, pdChipFlex)}
+            active={kind === k}
+            extra={pdChipFlex}
             onClick={() => setKind(k)}
             title={
               k === "portal"
@@ -107,7 +112,7 @@ export function WallSection({ wall }: { wall: Wall }) {
             }
           >
             {k === "portal" ? "⇿ Open" : k === "rail" ? "▭ Rail" : "▉ Wall"}
-          </button>
+          </PdChip>
         ))}
       </div>
       {isPortal ? (

@@ -16,6 +16,8 @@ import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { RoomLights } from "@/render/RoomLights";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import { T, glass, chip } from "@/ui/tokens";
+import { tChipHover, useHover } from "@/ui/hoverT";
+import { CloudIcon, MoonIcon, RainIcon, SunIcon, WalkIcon } from "@/ui/planDock/icons";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
 import { Environment3d } from "./environment/Environment3d";
@@ -140,11 +142,39 @@ const ENV_PRESETS: { id: EnvPreset; label: string }[] = [
   { id: "city", label: "City" },
 ];
 
-const WEATHERS: { id: Weather; label: string }[] = [
-  { id: "clear", label: "☀ Clear" },
-  { id: "cloudy", label: "☁ Cloudy" },
-  { id: "rain", label: "🌧 Rain" },
+// `label` is the word and nothing else. The weather emoji used to be baked into
+// the label string itself (`"<rain emoji> Rain"`), which made the label
+// untranslatable and un-restylable at once — the icon is a separate field now,
+// so the render site draws it and the label stays a word.
+const WEATHERS: { id: Weather; label: string; Icon: (p: { size?: number }) => React.ReactElement }[] = [
+  { id: "clear", label: "Clear", Icon: SunIcon },
+  { id: "cloudy", label: "Cloudy", Icon: CloudIcon },
+  { id: "rain", label: "Rain", Icon: RainIcon },
 ];
+
+/** A `chip()` button in Viewport's own panels, with hover. `useHover` is a
+ *  hook, so each chip in a row needs its own component to hold the flag.
+ *  Presentation only — every one of these is a store setter it already had. */
+function PanelChip({
+  active,
+  extra,
+  onClick,
+  title,
+  children,
+}: {
+  active: boolean;
+  extra?: React.CSSProperties;
+  onClick: () => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button {...bind} onClick={onClick} title={title} style={chip(active, { ...extra, ...tChipHover(hov, active) })}>
+      {children}
+    </button>
+  );
+}
 
 /** 13.5 → "1:30 PM" for the time slider readout. */
 function fmtHour(t: number): string {
@@ -165,36 +195,55 @@ function ScenePanel() {
   const setWeather = useSceneStore((s) => s.setWeather);
   const walkthroughActive = useSceneStore((s) => s.walkthroughActive);
   const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
-  const icon = time >= 6 && time < 19 ? "☀️" : "🌙";
+  const DayNightIcon = time >= 6 && time < 19 ? SunIcon : MoonIcon;
   return (
     <div style={{ position: "absolute", left: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
-      <button
+      <PanelChip
+        active={walkthroughActive}
         onClick={() => setWalkthroughActive(!walkthroughActive)}
-        style={chip(walkthroughActive, { borderRadius: 8, border: "none", fontSize: 12, padding: "7px 10px" })}
+        extra={{
+          borderRadius: 8,
+          border: "none",
+          fontSize: 12,
+          padding: "7px 10px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+        }}
       >
-        {walkthroughActive ? "Exit walkthrough (Esc)" : "🚶 Walk through"}
-      </button>
+        {walkthroughActive ? (
+          "Exit walkthrough (Esc)"
+        ) : (
+          <>
+            <WalkIcon size={14} /> Walk through
+          </>
+        )}
+      </PanelChip>
       <div style={{ display: "flex", gap: 4 }}>
         {ENV_PRESETS.map((p) => (
-          <button
+          <PanelChip
             key={p.id}
+            active={preset === p.id}
             onClick={() => setEnvPreset(p.id)}
-            style={chip(preset === p.id, {
+            extra={{
               flex: 1, fontSize: 11.5, borderRadius: 999, border: "none",
               background: preset === p.id ? T.accent : T.inputBg,
               color: preset === p.id ? "#fff" : T.textDim,
-            })}
+            }}
           >
             {p.label}
-          </button>
+          </PanelChip>
         ))}
       </div>
       <div
         style={{ display: "flex", alignItems: "center", gap: 8, opacity: preset === "none" ? 0.4 : 1 }}
         title={preset === "none" ? "Time of day has no effect in the Studio preset" : undefined}
       >
-        <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+        <span style={{ lineHeight: 0, color: T.textDim }}>
+          <DayNightIcon size={16} />
+        </span>
         <input
           type="range"
           min={0}
@@ -212,17 +261,20 @@ function ScenePanel() {
       {preset !== "none" && (
         <div style={{ display: "flex", gap: 4 }}>
           {WEATHERS.map((w) => (
-            <button
+            <PanelChip
               key={w.id}
+              active={weather === w.id}
               onClick={() => setWeather(w.id)}
-              style={chip(weather === w.id, {
+              extra={{
                 flex: 1, fontSize: 11, borderRadius: 999, border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                padding: "5px 6px",
                 background: weather === w.id ? T.accent : T.inputBg,
                 color: weather === w.id ? "#fff" : T.textDim,
-              })}
+              }}
             >
-              {w.label}
-            </button>
+              <w.Icon size={12} /> {w.label}
+            </PanelChip>
           ))}
         </div>
       )}
@@ -249,27 +301,29 @@ function WallModeToggle() {
       }}
     >
       {WALL_MODES.map((m) => (
-        <button
+        <PanelChip
           key={m.id}
-          style={chip(wallMode === m.id, { borderRadius: 999, border: "none", fontSize: 11.5 })}
+          active={wallMode === m.id}
+          extra={{ borderRadius: 999, border: "none", fontSize: 11.5 }}
           onClick={() => setWallMode(m.id)}
         >
           {m.label}
-        </button>
+        </PanelChip>
       ))}
       <span style={{ width: 1, alignSelf: "stretch", margin: "3px 2px", background: T.panelBorder }} />
-      <button
+      <PanelChip
+        active={showCeilings}
         title="Show ceilings (Full view only)"
-        style={chip(showCeilings, {
+        extra={{
           borderRadius: 999,
           border: "none",
           fontSize: 11.5,
           opacity: wallMode === "full" ? 1 : 0.5,
-        })}
+        }}
         onClick={() => setShowCeilings(!showCeilings)}
       >
         Ceiling
-      </button>
+      </PanelChip>
     </div>
   );
 }

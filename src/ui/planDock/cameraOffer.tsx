@@ -13,7 +13,9 @@
 // this host renders in the DOM overlay beside PdToastHost.
 
 import { useEffect, useState } from "react";
-import { PD, pdGlass } from "./tokens";
+import { PD, pdGlass, pdIconBtn } from "./tokens";
+import { useHover } from "./useHover";
+import { CloseIcon } from "./icons";
 import { ACCEPT_KEY } from "@/viewport3d/camera/offerPolicy";
 
 export interface CameraOffer {
@@ -44,6 +46,10 @@ export function setCameraOffer(o: CameraOffer | null) {
  *  Sibling, not variant. */
 export function CameraOfferChip() {
   const [offer, setOffer] = useState<CameraOffer | null>(current);
+  // Two independent flags rather than one per-button component: this chip
+  // renders nothing but the two buttons, so a re-render here is the buttons.
+  const [acceptHovered, acceptHover] = useHover();
+  const [dismissHovered, dismissHover] = useHover();
 
   useEffect(() => {
     listeners.add(setOffer);
@@ -88,6 +94,7 @@ export function CameraOfferChip() {
           printing the verb twice makes a two-word chip read like a warning. */}
       <span style={{ fontSize: 12.5, color: PD.textPrimary }}>{offer.reason}</span>
       <button
+        {...acceptHover}
         onClick={offer.accept}
         style={{
           display: "flex",
@@ -102,6 +109,11 @@ export function CameraOfferChip() {
           fontWeight: 600,
           background: PD.accentTint,
           color: PD.accentText,
+          // The accent tint is already the rest state, so hover rings it
+          // rather than deepening it — a deeper tint on an already-tinted
+          // primary action reads as "pressed", not "under the cursor".
+          boxShadow: acceptHovered ? `0 0 0 1.5px ${PD.accent}` : "none",
+          transition: "box-shadow 140ms ease",
         }}
       >
         {offer.label}
@@ -118,21 +130,8 @@ export function CameraOfferChip() {
           ⏎
         </kbd>
       </button>
-      <button
-        onClick={offer.dismiss}
-        aria-label="Dismiss"
-        title="Dismiss"
-        style={{
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-          color: PD.textSecondary,
-          fontSize: 15,
-          lineHeight: 1,
-          padding: "4px 8px",
-        }}
-      >
-        ×
+      <button {...dismissHover} onClick={offer.dismiss} aria-label="Dismiss" title="Dismiss" style={pdIconBtn(false, 26, dismissHovered)}>
+        <CloseIcon size={13} />
       </button>
     </div>
   );

@@ -86,6 +86,28 @@ export const pdGlass = (extra?: React.CSSProperties): React.CSSProperties => ({
 // `hovered` is deliberately the LAST parameter everywhere so all existing call
 // sites keep compiling untouched.
 
+/** Fast in, slow out.
+ *
+ *  A symmetric 140ms in both directions is what shipped first, and it read as
+ *  the highlight being yanked away — Dan's "hover disappears too soon". The
+ *  asymmetry is the fix and it is not a preference: arriving under the cursor
+ *  should feel immediate (the control is answering you), while leaving should
+ *  decay, so that sweeping across a row of chips does not strobe and a hand
+ *  that drifts a few pixels off a target does not lose it instantly.
+ *
+ *  It works because the transition is re-declared on every render: the style
+ *  that lands when `hovered` flips to true carries the fast duration, and the
+ *  one that lands when it flips to false carries the slow one. So the SAME
+ *  property animates at two different speeds depending on direction, which a
+ *  single static `transition` string cannot express. */
+const HOVER_IN = "110ms";
+const HOVER_OUT = "320ms";
+export const pdHoverTransition = (hovered: boolean): string => {
+  const d = hovered ? HOVER_IN : HOVER_OUT;
+  // ease-out both ways: the motion should settle, never accelerate into place.
+  return `background ${d} ease-out, color ${d} ease-out, border-color ${d} ease-out, box-shadow ${d} ease-out`;
+};
+
 /** Accent-tintable chip/pill, glass family. */
 export const pdChip = (
   active = false,
@@ -104,7 +126,7 @@ export const pdChip = (
   background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : "transparent",
   color: active ? PD.accentText : hovered ? PD.textPrimary : PD.textSecondary,
   cursor: "pointer",
-  transition: "background 160ms ease, color 160ms ease",
+  transition: pdHoverTransition(hovered),
   userSelect: "none",
   whiteSpace: "nowrap",
   // NOTE: `extra` is deliberately NOT spread here. It never has been — this
@@ -133,7 +155,7 @@ export const pdIconBtn = (
   background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : "transparent",
   color: active ? PD.accentText : hovered ? PD.textPrimary : PD.textSecondary,
   cursor: "pointer",
-  transition: "background 140ms ease, color 140ms ease",
+  transition: pdHoverTransition(hovered),
   flex: "0 0 auto",
   padding: 0,
 });
@@ -159,7 +181,7 @@ export const pdGhostBtn = (
   background: hovered ? PD.surfaceMutedHover : "transparent",
   color: hovered ? PD.textPrimary : PD.textSecondary,
   cursor: "pointer",
-  transition: "background 140ms ease, color 140ms ease",
+  transition: pdHoverTransition(hovered),
   ...extra,
 });
 

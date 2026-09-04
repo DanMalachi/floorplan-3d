@@ -10,6 +10,8 @@
 
 import { useEffect, useState } from "react";
 import { PD, pdGlass } from "./tokens";
+import { useHover } from "./useHover";
+import { SunIcon, MoonIcon } from "./icons";
 
 export type PdTheme = "dark" | "light";
 
@@ -83,12 +85,18 @@ export function usePdTheme(): [PdTheme, (t: PdTheme) => void] {
   return [theme, setTheme];
 }
 
-/** Small sun/moon toggle for the top bar. */
+/** Small sun/moon toggle for the top bar. The glyph names the theme you are
+ *  IN, the tooltip names the theme you'd switch TO — unchanged from when
+ *  these were the text characters `☀` / `☾`, which are now real icons so they
+ *  match the rest of the chrome instead of reflowing with the system font. */
 export function ThemeToggle() {
   const [theme, setTheme] = usePdTheme();
+  const [hovered, hoverBind] = useHover();
   const isLight = theme === "light";
+  const Icon = isLight ? SunIcon : MoonIcon;
   return (
     <button
+      {...hoverBind}
       onClick={() => setTheme(isLight ? "dark" : "light")}
       title={isLight ? "Switch to dark" : "Switch to light"}
       style={{
@@ -99,12 +107,15 @@ export function ThemeToggle() {
         justifyContent: "center",
         border: "none",
         cursor: "pointer",
-        fontSize: 14,
-        color: PD.textSecondary,
         ...pdGlass({ borderRadius: 999, padding: 0 }),
+        // AFTER the spread on purpose: pdGlass() sets `color: PD.textPrimary`,
+        // so the `color: PD.textSecondary` that used to sit above it was being
+        // silently overridden and no hover value could take effect either.
+        color: hovered ? PD.textPrimary : PD.textSecondary,
+        transition: "color 140ms ease",
       }}
     >
-      {isLight ? "☀" : "☾"}
+      <Icon size={15} />
     </button>
   );
 }

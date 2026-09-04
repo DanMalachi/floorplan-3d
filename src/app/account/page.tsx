@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSession, displayName } from "@/lib/auth/useSession";
 import { wipeLocalData } from "@/store/projectPersistence";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { CheckIcon, ChevronLeftIcon, CloseIcon } from "@/ui/planDock/icons";
 import { PdThemeStyle } from "@/ui/planDock/theme";
 
 // -----------------------------------------------------------------------------
@@ -145,9 +147,7 @@ export default function AccountPage() {
       <div style={{ maxWidth: 660, margin: "0 auto", display: "grid", gap: 18 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: PD.textPrimary, margin: 0 }}>Your data</h1>
-          <Link href="/design" style={{ fontSize: 12.5, color: PD.textTertiary, textDecoration: "none" }}>
-            ← Back to plans
-          </Link>
+          <BackToPlans />
         </div>
 
         {!configured && <Card>Accounts are not configured on this deployment. Nothing is stored on a server.</Card>}
@@ -196,9 +196,9 @@ export default function AccountPage() {
                 One JSON file with your profile, every plan&apos;s geometry, and the plan images and thumbnails
                 themselves, inlined. Large accounts take a moment — the images are included in full, not linked.
               </Note>
-              <button onClick={() => void onExport()} disabled={busy !== null} style={btn(busy === "export")}>
+              <ActionButton onClick={() => void onExport()} disabled={busy !== null} dim={busy === "export"}>
                 {busy === "export" ? "Preparing…" : "Export my data"}
-              </button>
+              </ActionButton>
             </Card>
 
             <div
@@ -259,13 +259,14 @@ export default function AccountPage() {
                       outline: "none",
                     }}
                   />
-                  <button
+                  <ActionButton
                     onClick={() => void onDelete()}
                     disabled={!armed || busy !== null}
-                    style={{ ...btn(!armed || busy !== null), color: armed ? PD.warnText : PD.textTertiary }}
+                    dim={!armed || busy !== null}
+                    extra={{ color: armed ? PD.warnText : PD.textTertiary }}
                   >
                     {busy === "delete" ? "Deleting…" : "Permanently delete my account and data"}
-                  </button>
+                  </ActionButton>
                 </>
               )}
 
@@ -285,8 +286,13 @@ export default function AccountPage() {
                   {stages && (
                     <ul style={{ margin: "6px 0 0", paddingLeft: 16 }}>
                       {stages.map((s) => (
-                        <li key={s.stage}>
-                          {s.ok ? "✓" : "✗"} {s.stage}: {s.detail}
+                        <li key={s.stage} style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
+                          <span style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 2 }}>
+                            {s.ok ? <CheckIcon size={11} /> : <CloseIcon size={11} />}
+                          </span>
+                          <span>
+                            {s.stage}: {s.detail}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -328,19 +334,71 @@ const Row = ({ k, v }: { k: string; v: string }) => (
   </div>
 );
 
-const btn = (disabled: boolean): React.CSSProperties => ({
+const btn = (disabled: boolean, hovered = false): React.CSSProperties => ({
   justifySelf: "start",
   padding: "9px 14px",
   fontSize: 12.5,
   fontWeight: 600,
   fontFamily: PD.fontUi,
   color: PD.textPrimary,
-  background: PD.surfaceMuted,
+  background: hovered && !disabled ? PD.surfaceMutedHover : PD.surfaceMuted,
   border: "none",
   borderRadius: PD.radiusS,
   cursor: disabled ? "default" : "pointer",
   opacity: disabled ? 0.5 : 1,
+  transition: "background 140ms ease",
 });
+
+/** Export / delete. Its own component so it can hold a hover flag; `dim` is
+ *  the old `btn(disabled)` argument, kept separate from the real `disabled`
+ *  attribute because the two were already used independently here. */
+function ActionButton({
+  onClick,
+  disabled,
+  dim,
+  extra,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  dim: boolean;
+  extra?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      {...hoverBind}
+      style={{ ...btn(dim, hovered && !disabled), ...extra }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Back to the editor. */
+function BackToPlans() {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <Link
+      href="/design"
+      {...hoverBind}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 12.5,
+        color: hovered ? PD.textPrimary : PD.textTertiary,
+        textDecoration: "none",
+        transition: "color 140ms ease",
+      }}
+    >
+      <ChevronLeftIcon size={13} /> Back to plans
+    </Link>
+  );
+}
 
 function formatBytes(n: number): string {
   if (!n) return "0 B";

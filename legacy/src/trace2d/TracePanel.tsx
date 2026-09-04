@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSceneStore } from "@/store/useSceneStore";
 import { T, glass } from "@/ui/tokens";
+import { useHover } from "@/ui/hoverT";
+import { PlanMapIcon } from "@/ui/planDock/icons";
 import { TraceRail } from "./TraceRail";
 
 // Konva touches `window`/`canvas`, so the Stage must never render on the server.
@@ -20,8 +22,10 @@ const TraceCanvas = dynamic(() => import("./TraceCanvas"), {
 function DropZone() {
   const importBusy = useSceneStore((s) => s.importBusy);
   const importMsg = useSceneStore((s) => s.importMsg);
+  const importStatus = useSceneStore((s) => s.importStatus);
   const importPlanFile = useSceneStore((s) => s.importPlanFile);
   const [over, setOver] = useState(false);
+  const [hov, hoverBind] = useHover();
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -60,28 +64,34 @@ function DropZone() {
       <button
         onClick={() => fileRef.current?.click()}
         disabled={importBusy}
+        {...hoverBind}
         style={{
           ...glass({ borderRadius: T.radiusL }),
           borderStyle: over ? "dashed" : "solid",
-          borderColor: over ? T.accent : T.panelBorder,
+          borderColor: over || hov ? T.accent : T.panelBorder,
           padding: "44px 56px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           gap: 10,
           cursor: "pointer",
-          transition: `border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}`,
-          transform: over ? "scale(1.02)" : "none",
+          transition: `border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
+          transform: over ? "scale(1.02)" : hov ? "scale(1.01)" : "none",
         }}
       >
-        <span style={{ fontSize: 34 }}>🗺</span>
+        {/* The empty state's one illustration, at 34px rather than the 16px the
+            icon set is drawn for. The stroke is set locally because the 24px
+            viewBox scales UP by 34/24, which would render the shared 1.6 at an
+            apparent ~2.3px and read as chunky beside the 15px type; 1.4 lands
+            at ~2.0px, which has presence at this size without going heavy. */}
+        <PlanMapIcon size={34} strokeWidth={1.4} style={{ color: hov ? T.text : T.textDim }} />
         <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>
           {importBusy ? "Importing…" : "Drop a floor plan"}
         </span>
         <span style={{ fontSize: 12, color: T.textDim }}>
           image, PDF, or CAD (DXF/DWG) — or click to browse
         </span>
-        {importMsg && !importMsg.startsWith("✓") && (
+        {importMsg && importStatus !== "ok" && (
           <span style={{ fontSize: 12, color: T.warn, maxWidth: 360 }}>{importMsg}</span>
         )}
       </button>

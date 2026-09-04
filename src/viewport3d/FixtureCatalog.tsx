@@ -4,17 +4,44 @@ import { useMemo, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
 import { FIXTURE_CATALOG, type FixtureAsset, type FixtureCategory } from "@/fixtures/catalog";
 import { PD, pdChip } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { DiscLightIcon, PendantIcon, SconceIcon } from "@/ui/planDock/icons";
 
-/** A flat icon per shape — no GLB thumbnail machinery here (that's furniture-
+/** A drawn icon per shape — no GLB thumbnail machinery here (that's furniture-
  *  specific, coupled to CATALOG_BY_ID/spec.model): these are procedural
- *  primitives, not downloaded models. */
-const SHAPE_ICON: Record<FixtureAsset["shape"], string> = {
-  flushDisc: "●", // ●
-  pendant: "☀",   // ☀ — stands in for a shade + bulb glow
-  sconce: "◨",    // ◨ — a plate on a wall
+ *  primitives, not downloaded models.
+ *
+ *  These were three text characters (● ☀ ◨) until the icon sweep. Being text
+ *  meant they reflowed between fonts and platforms and never matched the SVG
+ *  icons in the dock beside them; the three glyphs here were drawn for exactly
+ *  this row. */
+const SHAPE_ICON: Record<FixtureAsset["shape"], (p: { size?: number }) => React.ReactElement> = {
+  flushDisc: DiscLightIcon,
+  pendant: PendantIcon,
+  sconce: SconceIcon,
 };
 
 const CATEGORIES: FixtureCategory[] = ["Ceiling", "Wall"];
+
+/** All / Ceiling / Wall. Its own component so each chip can hold a hover flag.
+ *  (`pdChip` drops its `extra` argument — it always has; see tokens.ts — so the
+ *  padding/fontSize below render exactly as they did before.) */
+function CategoryChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button onClick={onClick} {...hoverBind} style={pdChip(active, { padding: "3px 8px", fontSize: 10.5 }, hovered)}>
+      {children}
+    </button>
+  );
+}
 
 /** Same 68px item-card shape as Plan Dock's furniture `ItemCard`, so Lighting
  *  reads as one system with Furniture/Paint/Floors instead of a leftover
@@ -22,10 +49,13 @@ const CATEGORIES: FixtureCategory[] = ["Ceiling", "Wall"];
 function FixtureTile({ asset }: { asset: FixtureAsset }) {
   const placing = useSceneStore((s) => s.placing);
   const active = placing?.assetId === asset.assetId;
+  const [hovered, hoverBind] = useHover();
+  const Icon = SHAPE_ICON[asset.shape];
   return (
     <button
       onClick={() => useSceneStore.getState().setPlacing(active ? null : asset.assetId)}
       title={asset.name}
+      {...hoverBind}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -35,10 +65,11 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
         gap: 3,
         padding: 4,
         borderRadius: PD.radiusS,
-        border: `1.5px solid ${active ? PD.accent : "transparent"}`,
-        background: active ? PD.accentTint : PD.surfaceMuted,
+        border: `1.5px solid ${active ? PD.accent : hovered ? PD.hairline : "transparent"}`,
+        background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : PD.surfaceMuted,
         cursor: "pointer",
         fontFamily: PD.fontUi,
+        transition: "background 140ms ease, border-color 140ms ease",
       }}
     >
       <div
@@ -49,11 +80,10 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 20,
           color: active ? PD.accentText : "oklch(0.82 0.1 75)",
         }}
       >
-        {SHAPE_ICON[asset.shape]}
+        <Icon size={26} />
       </div>
       <span
         style={{
@@ -87,13 +117,13 @@ export function FixtureCatalog() {
   return (
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-        <button onClick={() => setActiveCategory(null)} style={pdChip(activeCategory === null, { padding: "3px 8px", fontSize: 10.5 })}>
+        <CategoryChip active={activeCategory === null} onClick={() => setActiveCategory(null)}>
           All
-        </button>
+        </CategoryChip>
         {CATEGORIES.map((c) => (
-          <button key={c} onClick={() => setActiveCategory(c)} style={pdChip(activeCategory === c, { padding: "3px 8px", fontSize: 10.5 })}>
+          <CategoryChip key={c} active={activeCategory === c} onClick={() => setActiveCategory(c)}>
             {c}
-          </button>
+          </CategoryChip>
         ))}
         {placing && (
           <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>

@@ -99,3 +99,7 @@ floorplan_for_training/dxf_dwg/
 
 .vercel
 .venv
+
+# per-agent incremental build info (parallel typechecks would race on the
+# single tsconfig.tsbuildinfo; each run gets its own via --tsBuildInfoFile)
+.tsbuildinfo.*

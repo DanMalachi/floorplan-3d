@@ -41,7 +41,7 @@ export function BuildNavigator() {
       case "doors":
         s.setBuildTool("opening");
         s.setOpeningType("door");
-        pdToast("Door armed — click a wall to place it");
+        pdToast("Door / patio armed — click a wall to place it");
         break;
       case "windows":
         s.setBuildTool("opening");

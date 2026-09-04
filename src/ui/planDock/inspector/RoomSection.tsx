@@ -1,23 +1,37 @@
 "use client";
 
-// Room inspector (Plan Dock P5) — PD port of Viewport.tsx's old MiniInspector
-// room block: area, semantics verdict + evidence, door/window/exterior-wall
-// counts. The "Understand rooms" VLM trigger was retired — see the
-// classify-routes removal commit.
+// Room inspector (Plan Dock P5) — MEASUREMENTS ONLY.
+//
+// This panel used to lead with the Building Knowledge Layer's verdict: a
+// room-type chip, a confidence percentage, its evidence list and the
+// door/window/exterior-wall counts behind it. All of it is gone, along with
+// the guess that produced it (see the note at the end of
+// legacy/src/trace2d/traceToScene.ts). Dan's call, and it is the right one:
+// a type nobody asked for is a claim the panel has to defend, whereas
+// "3.40 × 2.85 m · 9.7 m²" is a fact — it is measured off the loop the user
+// drew themselves, so it is never wrong and never needs correcting.
+//
+// There is deliberately no name field and no type picker either. Labelling a
+// room buys nothing here: every consumer that once read the type is either
+// gone or has its own fallback, and the room you are pointing at is already
+// identified by being highlighted in the viewport.
 
 import type { Room } from "@/schema/scene";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
-import { roomArea, nodeMap } from "@/lib/rooms/roomArea";
-import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
+import { roomArea, roomBBox, nodeMap } from "@/lib/rooms/roomArea";
 import { resolveCeilingHeights } from "@/render/ceilingHeight";
-import { PD, pdChip } from "../tokens";
+import { PD } from "../tokens";
 import { pdInspectorPanel, PdSectionTitle, PdHelpText, PdNumField } from "./panelKit";
 
 export function RoomSection({ room }: { room: Room }) {
   const scene = useSceneStore((s) => s.scene);
-  const area = roomArea(room.loop, nodeMap(scene.nodes));
-  const sem = room.semantics;
+  const nodes = nodeMap(scene.nodes);
+  const area = roomArea(room.loop, nodes);
+  // Bounding box, not the loop's own extents: an L-shaped room has no single
+  // width, and the box is the number you reach for when you are asking
+  // "does the sofa fit along there".
+  const { w, h } = roomBBox(room.loop, nodes);
   // Derived (wall-height) fallback when unauthored — same resolver the 3D
   // layer renders from, so this field always shows what's actually built.
   const derivedCeilingHeight = resolveCeilingHeights(scene).get(room.id) ?? WALL_HEIGHT;
@@ -30,7 +44,7 @@ export function RoomSection({ room }: { room: Room }) {
   };
   return (
     <div style={pdInspectorPanel}>
-      <PdSectionTitle title={room.name ?? "Room"} meta={`${area.toFixed(1)} m²`} />
+      <PdSectionTitle title={`${w.toFixed(2)} × ${h.toFixed(2)} m`} meta={`${area.toFixed(1)} m²`} />
       <PdNumField
         label="Ceiling height"
         value={room.ceilingHeight ?? derivedCeilingHeight}
@@ -38,34 +52,6 @@ export function RoomSection({ room }: { room: Room }) {
         displayScale={100}
         unit="cm"
       />
-      {sem && (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={pdChip(true, { textTransform: "capitalize" })}>{displayRoomType(sem.type)}</span>
-            <span style={{ color: PD.textTertiary, fontSize: 11 }}>
-              {Math.round(sem.confidence * 100)}% · {sem.source}
-              {sem.function ? ` · ${sem.function.replace(/_/g, " ")}` : ""}
-            </span>
-          </div>
-          {sem.evidence.length > 0 && (
-            <div style={{ color: PD.textTertiary, fontSize: 11, lineHeight: 1.5 }}>
-              {sem.evidence.slice(0, 4).map((e, i) => (
-                <div key={i}>
-                  · {e.feature}
-                  {e.value !== undefined && e.value !== true ? `: ${e.value}` : ""}
-                  <span style={{ opacity: 0.6 }}> ({e.source})</span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{ color: PD.textTertiary, fontSize: 11 }}>
-            {sem.features.doorCount} door{sem.features.doorCount === 1 ? "" : "s"} · {sem.features.windowCount} window
-            {sem.features.windowCount === 1 ? "" : "s"} · {sem.features.exteriorWallCount} ext wall
-            {sem.features.exteriorWallCount === 1 ? "" : "s"}
-            {sem.features.hasCloset ? " · closet" : ""}
-          </div>
-        </>
-      )}
       <PdHelpText>
         Change the floor in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Decorate</b>: pick a material, click the floor.
       </PdHelpText>

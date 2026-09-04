@@ -19,6 +19,7 @@ import { heroDressedScene, HERO_FLOOR, HERO_FRAME, HERO_MAIN_ROOM_ID } from "./d
 import { TraceOverlay, PLAN_TEXT_CSS } from "./TraceOverlay";
 import type { HeroStage } from "./heroSequence";
 import { APP_HREF } from "./nav";
+import { CTA_CLASS } from "./hoverCss";
 import { HERO } from "./content";
 
 // -----------------------------------------------------------------------------
@@ -783,7 +784,7 @@ export default function DemoStage({
             drawing is a lie, and a call to action before the payoff is a nag. */}
         {built && <DemoToolbar />}
         {built && (
-          <Link href={APP_HREF} className={REVEAL_CLASS} style={ctaPrimary()}>
+          <Link href={APP_HREF} className={`${REVEAL_CLASS} ${CTA_CLASS}`} style={ctaPrimary()}>
             {HERO.revealCta}
             <span aria-hidden="true">&rarr;</span>
           </Link>

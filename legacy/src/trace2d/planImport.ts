@@ -7,11 +7,27 @@ export const MIN_IMAGE_PX = 600;
 // Below this, detection quality degrades noticeably — load, but say so.
 export const WARN_IMAGE_PX = 1000;
 
-export function rasterQualityMsg(w: number, h: number, what: string): string {
+/** Prose plus a status — never prose with a status glyph typed into the front
+ *  of it.
+ *
+ *  The caller picks the icon. A `⚠`/`✓` baked into the message renders in
+ *  whatever face the surrounding text uses (so it never matched the app's SVG
+ *  icons), and it is also the exact thing that has to survive translation
+ *  later. The store used to strip these back off with a regex at its own
+ *  boundary; returning the status properly removes both the glyph and the
+ *  regex. */
+export function rasterQualityMsg(
+  w: number,
+  h: number,
+  what: string,
+): { msg: string; status: "ok" | "warn" } {
   const long = Math.max(w, h);
   if (long < WARN_IMAGE_PX)
-    return `⚠ ${what} (${w}×${h}px) — low resolution, wall suggestions may be poor. ≥${WARN_IMAGE_PX}px on the long edge works much better.`;
-  return `✓ ${what} (${w}×${h}px)`;
+    return {
+      msg: `${what} (${w}×${h}px) — low resolution, wall suggestions may be poor. ≥${WARN_IMAGE_PX}px on the long edge works much better.`,
+      status: "warn",
+    };
+  return { msg: `${what} (${w}×${h}px)`, status: "ok" };
 }
 
 export const isPdfFile = (f: File) =>

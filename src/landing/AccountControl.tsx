@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { B, type as ty } from "@/brand/tokens";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
+import { MENU_ITEM_CLASS, OUTLINE_BTN_CLASS, TEXT_BTN_CLASS } from "./hoverCss";
 
 // -----------------------------------------------------------------------------
 // Sign-in for the marketing header.
@@ -55,6 +56,7 @@ export function AccountControl() {
           void signInWithGoogle();
         }}
         disabled={busy}
+        className={TEXT_BTN_CLASS}
         style={{
           fontFamily: B.fontUi,
           fontSize: ty.small,
@@ -81,6 +83,7 @@ export function AccountControl() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Account"
         aria-expanded={open}
+        className={OUTLINE_BTN_CLASS}
         style={{
           width: 30,
           height: 30,
@@ -142,7 +145,7 @@ export function AccountControl() {
               </div>
             )}
           </div>
-          <Link href="/account" style={itemStyle} onClick={() => setOpen(false)}>
+          <Link href="/account" className={MENU_ITEM_CLASS} style={itemStyle} onClick={() => setOpen(false)}>
             Your data
           </Link>
           <button
@@ -150,6 +153,7 @@ export function AccountControl() {
               setOpen(false);
               void signOut();
             }}
+            className={MENU_ITEM_CLASS}
             style={{ ...itemStyle, width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer" }}
           >
             Sign out

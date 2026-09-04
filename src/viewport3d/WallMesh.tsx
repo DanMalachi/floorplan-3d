@@ -13,7 +13,7 @@ import {
   computeWallEffectiveHeights,
   computeWallRenderHeights,
 } from "@/render/ceilingHeight";
-import { takesWindowFinish } from "@/render/doorStyle";
+import { openingDisplayName, takesWindowFinish } from "@/render/doorStyle";
 import { frameFinishOf } from "@/render/frameFinish";
 import {
   frameMatteFinish,
@@ -1017,7 +1017,7 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
             style={{ pointerEvents: "none" }}
           >
             <div style={dimLabelStyle}>
-              {opening.type} · {fmt(opening.width)}
+              {openingDisplayName(opening)} · {fmt(opening.width)}
             </div>
           </Html>
         </>

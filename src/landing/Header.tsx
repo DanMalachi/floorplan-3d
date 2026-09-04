@@ -6,6 +6,7 @@ import { B, type as ty, ctaPrimary } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
 import { APP_HREF, navItems } from "./nav";
 import { AccountControl } from "./AccountControl";
+import { CTA_CLASS, MENU_ITEM_CLASS, NAV_LINK_CLASS, OUTLINE_BTN_CLASS } from "./hoverCss";
 
 // -----------------------------------------------------------------------------
 // The marketing header.
@@ -80,6 +81,7 @@ export function Header() {
               <Link
                 key={i.href}
                 href={i.href}
+                className={NAV_LINK_CLASS}
                 style={{
                   fontFamily: B.fontUi,
                   fontSize: ty.small,
@@ -98,7 +100,7 @@ export function Header() {
         {!narrow && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 10 }}>
             <AccountControl />
-            <Link href={APP_HREF} style={ctaPrimary({ padding: "10px 18px", fontSize: 14 })}>
+            <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary({ padding: "10px 18px", fontSize: 14 })}>
               Open done.
             </Link>
           </div>
@@ -128,6 +130,7 @@ export function Header() {
               key={i.href}
               href={i.href}
               onClick={() => setOpen(false)}
+              className={MENU_ITEM_CLASS}
               style={{
                 fontFamily: B.fontUi,
                 fontSize: 17,
@@ -144,6 +147,7 @@ export function Header() {
           <Link
             href={APP_HREF}
             onClick={() => setOpen(false)}
+            className={CTA_CLASS}
             style={ctaPrimary({ marginTop: 18, justifyContent: "center" })}
           >
             Open done.
@@ -172,6 +176,7 @@ function MenuButton({ open, onClick }: { open: boolean; onClick: () => void }) {
       aria-label={open ? "Close menu" : "Open menu"}
       aria-expanded={open}
       aria-controls="site-menu"
+      className={OUTLINE_BTN_CLASS}
       style={{
         width: 40,
         height: 40,

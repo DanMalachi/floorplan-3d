@@ -14,6 +14,8 @@ import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectL
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T } from "@/ui/tokens";
 import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { LiveIcon } from "@/ui/planDock/icons";
 import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
 import { ProjectBar } from "@/ui/ProjectBar";
 
@@ -51,6 +53,7 @@ function EditorProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
  *  time it seeds the room from this project; afterwards it just rejoins. */
 function GoLiveButton() {
   const [busy, setBusy] = useState(false);
+  const [hovered, hoverBind] = useHover();
   const liveRoomId = useSceneStore((s) => s.liveRoomId);
   const goLive = async () => {
     setBusy(true);
@@ -78,17 +81,21 @@ function GoLiveButton() {
       setBusy(false);
     }
   };
-  const label = busy ? "Starting…" : liveRoomId ? "◈ Open live" : "◈ Go live";
+  const label = busy ? "Starting…" : liveRoomId ? "Open live" : "Go live";
   return (
     <button
       onClick={goLive}
       disabled={busy}
+      {...hoverBind}
       title={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
       style={{
         position: "absolute",
         top: 14,
         right: 14,
         zIndex: 30,
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
         padding: "8px 16px",
         fontSize: 13,
         fontWeight: 600,
@@ -97,11 +104,19 @@ function GoLiveButton() {
         border: "none",
         background: PD.accent,
         color: "#fff",
-        cursor: "pointer",
+        cursor: busy ? "default" : "pointer",
         opacity: busy ? 0.6 : 1,
-        boxShadow: "0 8px 20px -10px oklch(0.62 0.15 258 / 0.6)",
+        // A filled accent button cannot lift its surface the way the ghost
+        // helpers do, so it brightens and its own glow deepens instead.
+        filter: hovered && !busy ? "brightness(1.1)" : "none",
+        boxShadow:
+          hovered && !busy
+            ? "0 10px 26px -10px oklch(0.62 0.15 258 / 0.85)"
+            : "0 8px 20px -10px oklch(0.62 0.15 258 / 0.6)",
+        transition: "filter 140ms ease, box-shadow 140ms ease",
       }}
     >
+      {!busy && <LiveIcon size={14} />}
       {label}
     </button>
   );
@@ -123,6 +138,7 @@ function GoLiveButton() {
  */
 function HeroFurnishBar() {
   const [msg, setMsg] = useState("Copy furniture →");
+  const [hovered, hoverBind] = useHover();
   const copy = async () => {
     const furniture = useSceneStore.getState().scene.furniture;
     const text = JSON.stringify(furniture, null, 2);
@@ -155,7 +171,7 @@ function HeroFurnishBar() {
       <span style={{ fontFamily: PD.fontMono ?? PD.fontUi, fontSize: 11, letterSpacing: "0.1em", color: PD.textSecondary }}>
         HERO SCENE · NOT SAVED
       </span>
-      <button onClick={copy} style={pdChip(true, { padding: "6px 14px", fontSize: 12 })}>
+      <button onClick={copy} {...hoverBind} style={pdChip(true, { padding: "6px 14px", fontSize: 12 }, hovered)}>
         {msg}
       </button>
     </div>
@@ -195,20 +211,37 @@ function ModeSwitcher() {
         ...pdGlass({ borderRadius: 999 }),
       }}
     >
-      {MODES.map((m) => {
-        const active = appMode === m.id;
-        return (
-          <button
-            key={m.id}
-            onClick={() => setAppMode(m.id)}
-            title={`${m.label} (${m.key})`}
-            style={pdChip(active, { padding: "6px 18px", fontSize: 13 })}
-          >
-            {m.label}
-          </button>
-        );
-      })}
+      {MODES.map((m) => (
+        <ModeButton key={m.id} mode={m} active={appMode === m.id} onSelect={() => setAppMode(m.id)} />
+      ))}
     </div>
+  );
+}
+
+/** One tab of the mode switcher. Its own component because `useHover` is a
+ *  hook and these are rendered in a loop — and this row, the app's primary
+ *  navigation, is the single most visible thing that had no hover state.
+ *  (`pdChip` drops its `extra` argument and always has, so the padding/fontSize
+ *  below render exactly as they did before this change.) */
+function ModeButton({
+  mode,
+  active,
+  onSelect,
+}: {
+  mode: { id: AppMode; label: string; key: string };
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      onClick={onSelect}
+      {...hoverBind}
+      title={`${mode.label} (${mode.key})`}
+      style={pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered)}
+    >
+      {mode.label}
+    </button>
   );
 }
 

@@ -7,7 +7,7 @@
 // split is the layer's core contract: geometry -> features -> classification.
 
 import type { Id, RoomFeatures, RoomRelationships, Scene } from "../../schema/scene";
-import { nodeMap, roomArea } from "./roomArea";
+import { nodeMap, roomArea, roomBBox } from "./roomArea";
 
 /** One room's deterministic description. The `features`/`relationships` halves
  *  are persisted into Room.semantics; the extras below feed the rule classifier
@@ -97,20 +97,16 @@ export function buildRoomGraph(scene: Scene): RoomGraph {
     // Shape: perimeter, longest single wall edge, bbox aspect ratio.
     let perimeterM = 0;
     let longestWallM = 0;
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (let i = 0; i < loopPts.length; i++) {
       const p = loopPts[i];
       const q = loopPts[(i + 1) % loopPts.length];
       const len = Math.hypot(q.x - p.x, q.y - p.y);
       perimeterM += len;
       if (len > longestWallM) longestWallM = len;
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
     }
-    const w = maxX - minX;
-    const h = maxY - minY;
+    // The bbox itself lives in roomArea.ts — the room inspector prints the same
+    // w x h, so there is one implementation rather than two that can drift.
+    const { w, h } = roomBBox(room.loop, nodes);
     const aspectRatio =
       w > 1e-9 && h > 1e-9 ? Math.max(w, h) / Math.min(w, h) : 1;
 

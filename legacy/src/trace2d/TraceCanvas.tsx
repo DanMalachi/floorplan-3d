@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type Konva from "konva";
 import { Circle, Group, Image as KImage, Layer, Line, Shape, Stage, Text } from "react-konva";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -16,6 +16,8 @@ import {
 import type { StairMetrics } from "@/lib/stairs/stairGeometry";
 import { analyzeLoops } from "../lib/loops";
 import { snapWallPoint } from "./snapWall";
+import { useHover } from "@/ui/hoverT";
+import { FitIcon, MinusIcon, PlusIcon } from "@/ui/planDock/icons";
 
 // Group raw import segments by stroke color so the overlay draws each color in a
 // single canvas path (fast redraws even with ~16k segments).
@@ -118,17 +120,40 @@ function stairDrawing(stair: TraceStair, mpp: number): StairDrawing {
   return { flights, landings, metrics };
 }
 
-const zbtn: CSSProperties = {
+const zbtn = (hovered = false): CSSProperties => ({
   width: 30,
   height: 30,
-  fontSize: 16,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   lineHeight: "1",
   borderRadius: 6,
-  border: "1px solid #3a3a40",
-  background: "rgba(38,38,43,0.85)",
-  color: "#e6e6e6",
+  border: `1px solid ${hovered ? "#55555e" : "#3a3a40"}`,
+  background: hovered ? "rgba(56,56,63,0.92)" : "rgba(38,38,43,0.85)",
+  color: hovered ? "#ffffff" : "#e6e6e6",
   cursor: "pointer",
-};
+  transition: "background 140ms ease, border-color 140ms ease, color 140ms ease",
+});
+
+/** One of the three canvas zoom controls. Its own component so it can hold a
+ *  hover flag: these float over the plan with nothing else to say they are
+ *  live. */
+function ZoomButton({
+  title,
+  onClick,
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button style={zbtn(hov)} title={title} onClick={onClick} {...bind}>
+      {children}
+    </button>
+  );
+}
 
 function useContainerSize() {
   const ref = useRef<HTMLDivElement>(null);
@@ -930,15 +955,15 @@ export default function TraceCanvas() {
             gap: 4,
           }}
         >
-          <button style={zbtn} title="Zoom in" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.2)}>
-            ＋
-          </button>
-          <button style={zbtn} title="Zoom out" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.2)}>
-            －
-          </button>
-          <button style={zbtn} title="Reset view (fit)" onClick={() => setView(null)}>
-            ⤢
-          </button>
+          <ZoomButton title="Zoom in" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.2)}>
+            <PlusIcon size={15} />
+          </ZoomButton>
+          <ZoomButton title="Zoom out" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.2)}>
+            <MinusIcon size={15} />
+          </ZoomButton>
+          <ZoomButton title="Reset view (fit)" onClick={() => setView(null)}>
+            <FitIcon size={15} />
+          </ZoomButton>
         </div>
       )}
     </div>

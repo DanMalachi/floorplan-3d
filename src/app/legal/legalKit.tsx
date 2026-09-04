@@ -1,6 +1,7 @@
 import type React from "react";
 import type { ReactNode } from "react";
 import { T } from "@/ui/tokens";
+import { WarnIcon } from "@/ui/planDock/icons";
 
 // Shared typography + placeholder markers for the /legal pages. Kept separate
 // from src/ui/tokens.ts (which drives app chrome) because these are plain
@@ -86,8 +87,8 @@ export function DraftBanner() {
         lineHeight: 1.6,
       }}
     >
-      <span aria-hidden style={{ fontSize: 15 }}>
-        ⚠
+      <span aria-hidden style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 2 }}>
+        <WarnIcon size={15} />
       </span>
       <span>
         <b>Draft — not legal advice.</b> This page was generated from the

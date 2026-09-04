@@ -16,6 +16,8 @@ import type { Stair } from "@/schema/scene";
 import { DEFAULT_STAIR } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { PD, pdChip } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { StairsIcon, StairsSolidIcon, WarnIcon } from "@/ui/planDock/icons";
 import {
   pdInspectorPanel,
   PdSectionTitle,
@@ -28,18 +30,46 @@ import {
   stairMetrics,
 } from "@/lib/stairs/stairGeometry";
 
+// `label` is the word alone — the ▉ / ▤ that used to lead each string is now a
+// drawn icon, so the label can be translated and the two chips match the rest
+// of the inspector instead of reflowing with the font.
 const STYLES = [
   {
     key: "solid" as const,
-    label: "▉ Solid",
+    label: "Solid",
+    Icon: StairsSolidIcon,
     title: "Closed stringer — a boxed-in flight sitting on the floor, landings built down with it.",
   },
   {
     key: "open" as const,
-    label: "▤ Open",
+    label: "Open",
+    Icon: StairsIcon,
     title: "Open riser — floating treads on two side stringers. You can see through and under it.",
   },
 ];
+
+/** One of the two style chips, and the Auto button. Its own component so it can
+ *  hold a hover flag. */
+function StairChip({
+  active,
+  title,
+  onClick,
+  extra,
+  children,
+}: {
+  active: boolean;
+  title?: string;
+  onClick: () => void;
+  extra?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button {...hoverBind} title={title} onClick={onClick} style={{ ...pdChip(active, undefined, hovered), ...extra }}>
+      {children}
+    </button>
+  );
+}
 
 export function StairInspector({ stair }: { stair: Stair }) {
   const m = stairMetrics(stair);
@@ -77,14 +107,15 @@ export function StairInspector({ stair }: { stair: Stair }) {
 
       <div style={{ display: "flex", gap: 4 }}>
         {STYLES.map((s) => (
-          <button
+          <StairChip
             key={s.key}
-            style={{ ...pdChip(style === s.key), flex: 1, textAlign: "center" }}
+            active={style === s.key}
+            extra={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
             title={s.title}
             onClick={() => style !== s.key && patch(`Stair: ${s.key}`, { style: s.key })}
           >
-            {s.label}
-          </button>
+            <s.Icon size={13} /> {s.label}
+          </StairChip>
         ))}
       </div>
 
@@ -112,13 +143,13 @@ export function StairInspector({ stair }: { stair: Stair }) {
             onCommit={(v) => patch("Stair steps", { steps: Math.max(1, Math.round(v)) })}
           />
         </div>
-        <button
-          style={pdChip(stair.steps == null)}
+        <StairChip
+          active={stair.steps == null}
           title={`Derive the step count from the rise (${DEFAULT_STAIR.rise} m climb ≈ 14 steps)`}
           onClick={setAutoSteps}
         >
           Auto
-        </button>
+        </StairChip>
       </div>
 
       <div style={{ fontSize: 11, color: PD.textSecondary, lineHeight: 1.5 }}>
@@ -128,8 +159,21 @@ export function StairInspector({ stair }: { stair: Stair }) {
       {/* Advisory only — a plan can legitimately show a stair that fails a rule
           of thumb, so nothing here blocks or clamps. */}
       {m.warnings.map((w, i) => (
-        <div key={i} style={{ fontSize: 10.5, color: PD.warnText, lineHeight: 1.45 }}>
-          ⚠ {w}
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 5,
+            fontSize: 10.5,
+            color: PD.warnText,
+            lineHeight: 1.45,
+          }}
+        >
+          <span style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 1 }}>
+            <WarnIcon size={12} />
+          </span>
+          <span>{w}</span>
         </div>
       ))}
 

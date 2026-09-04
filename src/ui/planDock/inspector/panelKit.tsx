@@ -9,6 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { PD, pdGlass, pdChip } from "../tokens";
+import { useHover } from "../useHover";
 
 /** Docked top-right, same slot the old inspector used — every selection kind
  *  renders inside one of these. */
@@ -35,13 +36,23 @@ export const pdInspectorRow: React.CSSProperties = {
   justifyContent: "space-between",
 };
 
+// Why `meta` and the help text are textSECONDARY, not textTertiary:
+//
+// `PD.textTertiary` is oklch(0.55 …) — a colour picked against a SOLID ground.
+// Every inspector section renders on `pdGlass()`, which is translucent, so the
+// scene shows through and eats most of the remaining contrast. The result was
+// that the two lines carrying actual measurements (a room's m², a wall's
+// length) and every hint line in the panel were the least readable text in the
+// app. These are shared primitives, so moving them up one step fixes the same
+// bug in all nine sections at once rather than nine times.
+
 /** "Wall · 3.20 m" / "Sofa · 2.1 × 0.95 m" — the panel's first line. */
 export function PdSectionTitle({ title, meta }: { title: string; meta?: string }) {
   return (
     <div style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>
       {title}
       {meta && (
-        <span style={{ color: PD.textTertiary, fontWeight: 400, textTransform: "none" }}> · {meta}</span>
+        <span style={{ color: PD.textSecondary, fontWeight: 400, textTransform: "none" }}> · {meta}</span>
       )}
     </div>
   );
@@ -49,7 +60,7 @@ export function PdSectionTitle({ title, meta }: { title: string; meta?: string }
 
 /** Faint trailing hint line ("drag to move · R rotates · Delete removes"). */
 export function PdHelpText({ children }: { children: ReactNode }) {
-  return <div style={{ fontSize: 10.5, color: PD.textTertiary, lineHeight: 1.5 }}>{children}</div>;
+  return <div style={{ fontSize: 10.5, color: PD.textSecondary, lineHeight: 1.5 }}>{children}</div>;
 }
 
 const round = (n: number, decimals: number) => {
@@ -124,6 +135,78 @@ export function PdNumField({
   );
 }
 
+/** A chip-styled `<button>` with hover feedback.
+ *
+ *  The reason this is a component and not a style helper: `pdChip()` takes
+ *  `hovered` as an argument, and the hover state has to come from a hook —
+ *  which cannot be called inside the `.map()` callbacks that render most chip
+ *  rows (a variable number of hooks per render). Wrapping the button is the
+ *  only way to give a mapped chip its own state, and doing it here means every
+ *  section inherits hover instead of nine files each growing a local copy.
+ *
+ *  `extra` is forwarded to `pdChip`, which deliberately DROPS it today (see
+ *  the note in tokens.ts — spreading it would silently restyle ~26 call sites).
+ *  Forwarding rather than spreading keeps each call site's intent on record, so
+ *  the one-line fix in tokens.ts lights all of them up at once. */
+export function PdChip({
+  active = false,
+  extra,
+  title,
+  disabled,
+  onClick,
+  children,
+}: {
+  active?: boolean;
+  extra?: React.CSSProperties;
+  title?: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      {...hoverBind}
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+      style={pdChip(active, extra, hovered && !disabled)}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Icon + label inside a chip, on one baseline. Chips carry no `display`, so
+ *  an SVG dropped straight into one sits on the text baseline and rides low. */
+export function PdChipLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+/** One +/- key of a stepper. Its own component so it can hold hover state. */
+function PdStepBtn({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      {...hoverBind}
+      onClick={onClick}
+      style={{
+        ...pdChip(false, undefined, hovered),
+        padding: "1px 9px",
+        fontSize: 14,
+        lineHeight: 1.2,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Small integer +/- stepper (mullion grid, slide panel count). */
 export function PdStepper({
   label,
@@ -139,25 +222,15 @@ export function PdStepper({
   onSet: (v: number) => void;
 }) {
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
-  const btn: React.CSSProperties = {
-    ...pdChip(false),
-    padding: "1px 9px",
-    fontSize: 14,
-    lineHeight: 1.2,
-  };
   return (
     <label style={pdInspectorRow}>
       <span style={{ color: PD.textSecondary }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button style={btn} onClick={() => onSet(clamp(value - 1))}>
-          –
-        </button>
+        <PdStepBtn onClick={() => onSet(clamp(value - 1))}>–</PdStepBtn>
         <span style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: PD.fontMono }}>
           {value}
         </span>
-        <button style={btn} onClick={() => onSet(clamp(value + 1))}>
-          +
-        </button>
+        <PdStepBtn onClick={() => onSet(clamp(value + 1))}>+</PdStepBtn>
       </span>
     </label>
   );
@@ -229,8 +302,10 @@ export function PdSwatch({
   onClick: () => void;
   size?: number;
 }) {
+  const [hovered, hoverBind] = useHover();
   return (
     <button
+      {...hoverBind}
       onClick={onClick}
       title={title}
       style={{
@@ -238,8 +313,18 @@ export function PdSwatch({
         height: size,
         borderRadius: "50%",
         background: img ? `center / cover no-repeat url(${img})` : (hex ?? "#d8d2c4"),
-        border: active ? `2px solid ${PD.accent}` : `1.5px solid ${PD.hairline}`,
-        boxShadow: active ? `0 0 0 2px ${PD.accentTint}` : "none",
+        // A swatch IS its colour, so hover cannot recolour it — it lifts the
+        // ring instead, and the active ring stays the accent so "selected" and
+        // "under the cursor" never look like the same thing.
+        border: active
+          ? `2px solid ${PD.accent}`
+          : `1.5px solid ${hovered ? PD.textSecondary : PD.hairline}`,
+        boxShadow: active
+          ? `0 0 0 2px ${PD.accentTint}`
+          : hovered
+            ? `0 0 0 2px ${PD.surfaceMutedHover}`
+            : "none",
+        transition: "border-color 140ms ease, box-shadow 140ms ease",
         cursor: "pointer",
         padding: 0,
         flex: "0 0 auto",
@@ -262,20 +347,40 @@ export function PdActionButton({
   onClick: () => void;
   tone?: "default" | "danger";
 }) {
+  const [hovered, hoverBind] = useHover();
   return (
     <button
+      {...hoverBind}
       onClick={onClick}
       style={{
         flex: 1,
         padding: "6px 4px",
         borderRadius: PD.radiusS,
         border: "none",
-        background: tone === "danger" ? "oklch(0.32 0.1 25 / 0.35)" : PD.surfaceMuted,
-        color: tone === "danger" ? "oklch(0.82 0.1 25)" : PD.textSecondary,
+        // Danger keeps its own red family on hover — deepened, not swapped for
+        // the neutral grey, or the destructive button would stop reading as one
+        // at the exact moment the cursor is on it.
+        background:
+          tone === "danger"
+            ? hovered
+              ? "oklch(0.32 0.1 25 / 0.55)"
+              : "oklch(0.32 0.1 25 / 0.35)"
+            : hovered
+              ? PD.surfaceMutedHover
+              : PD.surfaceMuted,
+        color:
+          tone === "danger"
+            ? hovered
+              ? "oklch(0.9 0.09 25)"
+              : "oklch(0.82 0.1 25)"
+            : hovered
+              ? PD.textPrimary
+              : PD.textSecondary,
         fontFamily: PD.fontUi,
         fontSize: 11,
         fontWeight: 600,
         cursor: "pointer",
+        transition: "background 140ms ease, color 140ms ease",
       }}
     >
       {label}

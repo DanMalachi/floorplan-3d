@@ -30,6 +30,8 @@ import {
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
 import { T, glass, chip, field } from "@/ui/tokens";
+import { tChipHover, useHover } from "@/ui/hoverT";
+import { CheckIcon } from "@/ui/planDock/icons";
 import { ProjectBar } from "@/ui/ProjectBar";
 import { PdThemeStyle } from "@/ui/planDock/theme";
 import { randomIdentity, identityForUser, initials, type Identity } from "./identity";
@@ -242,15 +244,58 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
   return (
     <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...glass({ borderRadius: 999 }) }}>
       {modes.map((m) => (
-        <button
+        <RoomChip
           key={m.id}
+          active={appMode === m.id}
           onClick={() => setAppMode(m.id)}
-          style={chip(appMode === m.id, { borderRadius: 999, border: "none", padding: "6px 18px", background: appMode === m.id ? T.accent : "transparent", color: appMode === m.id ? "#fff" : T.textDim })}
+          extra={{ borderRadius: 999, border: "none", padding: "6px 18px", background: appMode === m.id ? T.accent : "transparent", color: appMode === m.id ? "#fff" : T.textDim }}
         >
           {m.label}
-        </button>
+        </RoomChip>
       ))}
     </div>
+  );
+}
+
+/** A `chip()` in the room's chrome, with hover. Its own component because
+ *  `useHover` is a hook and the mode tabs / role rows are rendered in loops. */
+function RoomChip({
+  active = false,
+  onClick,
+  disabled,
+  title,
+  extra,
+  children,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  extra?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      {...bind}
+      style={chip(active, { ...extra, ...(disabled ? {} : tChipHover(hov, active)) })}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** The green presence light. A drawn circle rather than the `●` character it
+ *  replaces — a text bullet reflows with the font. */
+function Pip({ color, size = 7 }: { color: string; size?: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{ width: size, height: size, borderRadius: 999, background: color, flex: "0 0 auto" }}
+    />
   );
 }
 
@@ -303,28 +348,36 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   return (
     <div style={{ position: "relative" }}>
       <div style={{ display: "flex", gap: 6 }}>
-        <button onClick={saveCopy} style={chip(false)} title="Fork this plan into your own projects">
-          {saved ? "Saved ✓" : "Save a copy"}
-        </button>
-        <button onClick={() => setOpen((o) => !o)} style={chip(true)}>Share</button>
+        <RoomChip
+          onClick={saveCopy}
+          title="Fork this plan into your own projects"
+          extra={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+        >
+          {saved ? (
+            <>
+              Saved <CheckIcon size={12} />
+            </>
+          ) : (
+            "Save a copy"
+          )}
+        </RoomChip>
+        <RoomChip active onClick={() => setOpen((o) => !o)}>
+          Share
+        </RoomChip>
       </div>
       {open && (
         <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...glass({ borderRadius: T.radiusM }) }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Share this plan</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
-              <button
-                key={r}
-                onClick={() => makeLink(r)}
-                style={{ textAlign: "left", padding: "7px 10px", borderRadius: T.radiusS, cursor: "pointer", fontFamily: T.font, fontSize: 12.5, color: T.text, border: `1px solid ${role === r ? T.accent : T.panelBorder}`, background: role === r ? T.accentSoft : T.inputBg }}
-              >
-                {role === r ? "● " : ""}Anyone with the link — <b>{ROLE_LABEL[r]}</b>
-              </button>
+              <RoleRow key={r} selected={role === r} label={ROLE_LABEL[r]} onClick={() => makeLink(r)} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <input readOnly value={link} style={field({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
-            <button onClick={copy} disabled={!link} style={chip(true)}>{copied ? "Copied" : "Copy"}</button>
+            <RoomChip active onClick={copy} disabled={!link}>
+              {copied ? "Copied" : "Copy"}
+            </RoomChip>
           </div>
           {err && <div style={{ fontSize: 11.5, color: T.warn ?? T.textFaint }}>{err}</div>}
           {held !== "build" && (
@@ -336,6 +389,46 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** One row of the share-role menu. The selected row led with a `● `; it is a
+ *  tick now, which is what a selected menu row means. */
+function RoleRow({
+  selected,
+  label,
+  onClick,
+}: {
+  selected: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      {...bind}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        textAlign: "left",
+        padding: "7px 10px",
+        borderRadius: T.radiusS,
+        cursor: "pointer",
+        fontFamily: T.font,
+        fontSize: 12.5,
+        color: T.text,
+        border: `1px solid ${selected ? T.accent : hov ? "rgba(255,255,255,0.18)" : T.panelBorder}`,
+        background: selected ? T.accentSoft : hov ? "rgba(255,255,255,0.12)" : T.inputBg,
+        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}`,
+      }}
+    >
+      {selected && <CheckIcon size={12} />}
+      <span>
+        Anyone with the link — <b>{label}</b>
+      </span>
+    </button>
   );
 }
 
@@ -355,7 +448,7 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
     <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...glass({ borderRadius: 999 }) }}>
         <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: T.ok, fontSize: 10 }}>●</span> {count} here
+          <Pip color={T.ok} /> {count} here
           {role === "view" && <span style={{ color: T.textFaint }}>· view only</span>}
         </span>
         <div style={{ display: "flex", paddingLeft: 6 }}>

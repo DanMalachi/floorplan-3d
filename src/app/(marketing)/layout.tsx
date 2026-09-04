@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { B, BRAND_THEME_CSS } from "@/brand/tokens";
+import { LANDING_HOVER_CSS } from "@/landing/hoverCss";
 import { Header } from "@/landing/Header";
 import { Footer } from "@/landing/Footer";
 import { landingEnabled } from "@/lib/featureFlags";
@@ -50,6 +51,12 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           (style-src 'unsafe-inline'), which the app needs anyway because it
           styles with inline objects throughout. */}
       <style dangerouslySetInnerHTML={{ __html: BRAND_THEME_CSS }} />
+      {/* Hover/focus for every control on the site. Inline styles cannot reach
+          `:hover`, and this is the idiom the marketing pages already use for
+          that (Hero's TRACE_BTN_CSS, DemoStage's STAGE_CSS) — hoisted here so
+          one stylesheet serves every route instead of each page inventing its
+          own. See src/landing/hoverCss.ts. */}
+      <style dangerouslySetInnerHTML={{ __html: LANDING_HOVER_CSS }} />
       <Header />
       <main>{children}</main>
       <Footer />

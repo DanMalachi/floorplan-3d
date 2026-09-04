@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { B, type as ty, ctaPrimary, microLabel } from "@/brand/tokens";
 import { APP_HREF } from "@/landing/nav";
+import { CTA_CLASS, CTA_GHOST_CLASS } from "@/landing/hoverCss";
 
 export const metadata: Metadata = {
   title: "About — done.",
@@ -92,11 +93,12 @@ export default function AboutPage() {
       </P>
 
       <div style={{ marginTop: 44, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <Link href={APP_HREF} style={ctaPrimary()}>
+        <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary()}>
           Open done.
         </Link>
         <Link
           href="/faq"
+          className={CTA_GHOST_CLASS}
           style={{
             ...ctaPrimary({ background: "transparent", color: B.ink }),
             border: `1px solid ${B.hairline2}`,

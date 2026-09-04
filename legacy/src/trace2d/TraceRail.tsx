@@ -9,6 +9,24 @@ import { useSceneStore } from "@/store/useSceneStore";
 import type { SegmentKind } from "./types";
 import { analyzeLoops } from "../lib/loops";
 import { T, glass, chip, field, microLabel } from "@/ui/tokens";
+import { tChipHover, tGhostBtn, useHover } from "@/ui/hoverT";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  DoorIcon,
+  DownloadIcon,
+  MagnetIcon,
+  MeasureIcon,
+  OrthoIcon,
+  PassageIcon,
+  PencilIcon,
+  RailIcon,
+  UndoIcon,
+  WallToolIcon,
+  WarnIcon,
+  WindowIcon,
+} from "@/ui/planDock/icons";
 import { NumField } from "@/ui/NumField";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { MAX_STAIR_WIDTH, MIN_STAIR_WIDTH, stairMetrics } from "@/lib/stairs/stairGeometry";
@@ -25,6 +43,21 @@ const EXTERIOR_THICKNESS = 0.2;
 
 const railBtn = (active = false, extra?: React.CSSProperties): React.CSSProperties =>
   chip(active, { width: "100%", textAlign: "left", padding: "7px 11px", ...extra });
+
+/** Shared shape for the "Draw by hand" tool strip — five equal chips, each an
+ *  icon plus a word. Tighter than the default chip on purpose: the rail has
+ *  ~196px of content width, and "Door / Patio" has to sit beside "Window". */
+const toolChip: React.CSSProperties = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 4,
+  padding: "5px 6px",
+  fontSize: 11.5,
+  minWidth: 0,
+  whiteSpace: "nowrap",
+};
 
 const primaryBtn = (enabled = true): React.CSSProperties => ({
   ...chip(enabled),
@@ -46,7 +79,14 @@ const primaryBtn = (enabled = true): React.CSSProperties => ({
  * Idle it dims, which is honest: clicking it then does nothing.
  */
 const finishBtn = (armed: boolean): React.CSSProperties => ({
-  ...chip(false, { flex: 1, textAlign: "center" }),
+  ...chip(false, {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    whiteSpace: "nowrap",
+  }),
   // `border` (shorthand), never `borderColor`: `chip` already sets the
   // shorthand, and React warns — correctly — that dropping a longhand on
   // rerender while a conflicting shorthand stays is how stale borders happen.
@@ -57,29 +97,168 @@ const finishBtn = (armed: boolean): React.CSSProperties => ({
 
 const hintText: React.CSSProperties = { fontSize: 11.5, lineHeight: 1.45, color: T.textFaint };
 const statusText = (ok: boolean): React.CSSProperties => ({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 5,
   fontSize: 11.5,
   lineHeight: 1.45,
   color: ok ? T.ok : T.warn,
 });
 
+/** The ✓ / ⚠ that used to be typed into the front of a status string. Kept as
+ *  one component so every status line in the rail reads the same, and so the
+ *  MESSAGE stays a plain sentence — the store no longer bakes a glyph into it
+ *  (see useSceneStore.importStatus). */
+function StatusIcon({ ok }: { ok: boolean }) {
+  return (
+    <span style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 1 }}>
+      {ok ? <CheckIcon size={12} /> : <WarnIcon size={12} />}
+    </span>
+  );
+}
+
+/** A `chip()` button with hover. `useHover` is a hook, so every chip rendered
+ *  in a loop (or simply repeated) needs its own component to hold the flag —
+ *  that is the whole reason this wrapper exists. */
+function Chip({
+  active = false,
+  extra,
+  styler = chip,
+  children,
+  ...rest
+}: {
+  active?: boolean;
+  extra?: React.CSSProperties;
+  /** `chip` (default) or `railBtn` / `primaryBtn`-shaped variants. */
+  styler?: (active: boolean, extra?: React.CSSProperties) => React.CSSProperties;
+  children: React.ReactNode;
+} & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style">) {
+  const [hov, bind] = useHover();
+  return (
+    <button {...rest} {...bind} style={styler(active, { ...extra, ...tChipHover(hov, active) })}>
+      {children}
+    </button>
+  );
+}
+
+/** The step's primary action (Import plan / Set scale / Generate). Enabled-ness
+ *  rides on `active` here because that is what `primaryBtn` already keyed off. */
+function PrimaryButton({
+  enabled = true,
+  children,
+  ...rest
+}: { enabled?: boolean; children: React.ReactNode } & Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "style"
+>) {
+  const [hov, bind] = useHover();
+  return (
+    <button {...rest} {...bind} style={{ ...primaryBtn(enabled), ...(enabled ? tChipHover(hov, true) : {}) }}>
+      {children}
+    </button>
+  );
+}
+
+/** A text-only action that is styled like a hint line (Clear the trace, Export
+ *  ground truth). */
+function TextAction({
+  children,
+  extra,
+  ...rest
+}: { children: React.ReactNode; extra?: React.CSSProperties } & Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "style"
+>) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      {...rest}
+      {...bind}
+      style={{
+        ...hintText,
+        ...tGhostBtn(hov, {
+          justifyContent: "flex-start",
+          textAlign: "left",
+          padding: "2px 4px",
+          margin: "0 -4px",
+          fontSize: 11.5,
+          color: hov ? T.textDim : T.textFaint,
+        }),
+        ...extra,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** The wrapping four-chip action row (90° · Undo · Finish · Delete). */
+const rowChip: React.CSSProperties = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 4,
+  whiteSpace: "nowrap",
+};
+
+/** "Finish" — the one control in the rail whose moment matters. Armed it turns
+ *  green and grows a tick; idle it dims, which is honest. */
+function FinishButton({
+  armed,
+  onClick,
+  kind,
+}: {
+  armed: boolean;
+  onClick: () => void;
+  kind: "walls" | "stair";
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      className={armed ? "fp-armed" : undefined}
+      onClick={onClick}
+      {...bind}
+      style={{ ...finishBtn(armed), ...(hov ? { filter: "brightness(1.1)" } : {}) }}
+      title={
+        kind === "walls"
+          ? armed
+            ? "End this run of walls — the next click starts a fresh one (Esc does the same)"
+            : "Ends a run of walls once you've started one"
+          : armed
+            ? "Commit this staircase (Esc does the same)"
+            : "Commits a staircase once you've started one"
+      }
+    >
+      {armed && <CheckIcon size={13} />} Finish
+    </button>
+  );
+}
+
 /** Collapsible secondary controls ("AI assist", "Advanced"). */
 function Disclosure({ label, children }: { label: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [hov, bind] = useHover();
   return (
     <div>
       <button
         onClick={() => setOpen(!open)}
+        {...bind}
         style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
           background: "none",
           border: "none",
-          color: T.textDim,
+          color: hov ? T.text : T.textDim,
           fontSize: 11.5,
           cursor: "pointer",
           padding: 0,
           fontFamily: T.font,
+          transition: `color ${T.dur} ${T.ease}`,
         }}
       >
-        {open ? "▾" : "▸"} {label}
+        {open ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />} {label}
       </button>
       {open && <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>{children}</div>}
     </div>
@@ -105,7 +284,13 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   const selectedOpeningId = useSceneStore((s) => s.selectedOpeningId);
   // A wall chain is open: every further click extends it until Finish (or Esc).
   const drawingChain = useSceneStore((s) => s.activeLastPointId) != null;
-  const icons = { door: "🚪 Door", window: "🪟 Window" } as const;
+  // "Door / Patio", not "Door": `effectiveSlide()` (src/render/doorStyle.ts)
+  // turns any door at or past PATIO_MIN_WIDTH into a glazed patio slider, so
+  // this one tool genuinely places either. The stored enum stays `"door"`.
+  const openings = {
+    door: { Icon: DoorIcon, label: "Door / Patio" },
+    window: { Icon: WindowIcon, label: "Window" },
+  } as const;
   const pickWall = (kind: SegmentKind) => {
     setMode("wall");
     setDrawKind(kind);
@@ -116,56 +301,65 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
       <div style={{ display: "flex", gap: 4 }}>
         {tools.includes("wall") && (
           <>
-            <button
-              style={chip(mode === "wall" && drawKind === "wall", { flex: 1, textAlign: "center" })}
+            <Chip
+              active={mode === "wall" && drawKind === "wall"}
+              extra={toolChip}
               onClick={() => pickWall("wall")}
             >
-              ✏️ Wall
-            </button>
-            <button
-              style={chip(mode === "wall" && drawKind === "rail", { flex: 1, textAlign: "center" })}
+              <WallToolIcon size={13} /> Wall
+            </Chip>
+            <Chip
+              active={mode === "wall" && drawKind === "rail"}
+              extra={toolChip}
               onClick={() => pickWall("rail")}
               title="Balcony/terrace railing — low, see-through barrier that bounds an outdoor space"
             >
-              ▭ Rail
-            </button>
-            <button
-              style={chip(mode === "wall" && drawKind === "portal", { flex: 1, textAlign: "center" })}
+              <RailIcon size={13} /> Rail
+            </Chip>
+            <Chip
+              active={mode === "wall" && drawKind === "portal"}
+              extra={toolChip}
               onClick={() => pickWall("portal")}
               title="Open boundary — closes the room without building anything. Use where a space simply gives onto the next (living room to corridor); no wall, no door needed."
             >
-              ⇿ Open
-            </button>
+              <PassageIcon size={13} /> Open
+            </Chip>
           </>
         )}
-        {tools.filter((t) => t !== "wall").map((t) => (
-          <button
-            key={t}
-            style={chip(mode === t, { flex: 1, textAlign: "center" })}
-            onClick={() => {
-              setMode(t);
-              setDrawKind("wall");
-            }}
-          >
-            {icons[t as "door" | "window"]}
-          </button>
-        ))}
+        {tools.filter((t) => t !== "wall").map((t) => {
+          const { Icon, label } = openings[t as "door" | "window"];
+          return (
+            <Chip
+              key={t}
+              active={mode === t}
+              extra={toolChip}
+              onClick={() => {
+                setMode(t);
+                setDrawKind("wall");
+              }}
+            >
+              <Icon size={13} /> {label}
+            </Chip>
+          );
+        })}
       </div>
       {tools.includes("wall") && drawKind !== "portal" && (
         <>
           <div style={{ display: "flex", gap: 4 }}>
-            <button
-              style={chip(drawThickness === DEFAULT_THICKNESS, { flex: 1, textAlign: "center" })}
+            <Chip
+              active={drawThickness === DEFAULT_THICKNESS}
+              extra={{ flex: 1, textAlign: "center" }}
               onClick={() => setDrawThickness(DEFAULT_THICKNESS)}
             >
               Interior
-            </button>
-            <button
-              style={chip(drawThickness === EXTERIOR_THICKNESS, { flex: 1, textAlign: "center" })}
+            </Chip>
+            <Chip
+              active={drawThickness === EXTERIOR_THICKNESS}
+              extra={{ flex: 1, textAlign: "center" }}
               onClick={() => setDrawThickness(EXTERIOR_THICKNESS)}
             >
               Exterior
-            </button>
+            </Chip>
           </div>
           <NumField
             label="Height"
@@ -188,29 +382,20 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
           fix — and required now that Finish grows a tick mark when armed. */}
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {tools.includes("wall") && (
-          <button style={chip(ortho, { flex: 1 })} onClick={() => setOrtho(!ortho)} title="Constrain walls to 90° (Shift inverts per click)">
-            ⊾ 90°
-          </button>
+          <Chip active={ortho} extra={rowChip} onClick={() => setOrtho(!ortho)} title="Constrain walls to 90° (Shift inverts per click)">
+            <OrthoIcon size={13} /> 90°
+          </Chip>
         )}
-        <button style={chip(false, { flex: 1 })} onClick={undo}>↶ Undo</button>
-        <button
-          className={drawingChain ? "fp-armed" : undefined}
-          style={finishBtn(drawingChain)}
-          onClick={finishChain}
-          title={
-            drawingChain
-              ? "End this run of walls — the next click starts a fresh one (Esc does the same)"
-              : "Ends a run of walls once you've started one"
-          }
-        >
-          {drawingChain ? "✓ Finish" : "Finish"}
-        </button>
-        <button
-          style={chip(false, { flex: 1, opacity: selectedPointId || selectedOpeningId ? 1 : 0.4 })}
+        <Chip extra={rowChip} onClick={undo}>
+          <UndoIcon size={13} /> Undo
+        </Chip>
+        <FinishButton armed={drawingChain} onClick={finishChain} kind="walls" />
+        <Chip
+          extra={{ ...rowChip, opacity: selectedPointId || selectedOpeningId ? 1 : 0.4 }}
           onClick={deleteSelected}
         >
           Delete
-        </button>
+        </Chip>
       </div>
     </div>
   );
@@ -224,6 +409,72 @@ interface StepDef {
   status?: string;
 }
 
+/** One row of the rail's step list. Its own component so it can hold a hover
+ *  flag — the six step headers are the rail's navigation and had none. */
+function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; onOpen: () => void }) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onOpen}
+      {...bind}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        width: "100%",
+        padding: "8px 9px",
+        borderRadius: T.radiusS,
+        border: "none",
+        background: active
+          ? "rgba(255,255,255,0.07)"
+          : hov && !step.locked
+            ? "rgba(255,255,255,0.045)"
+            : "transparent",
+        cursor: step.locked ? "default" : "pointer",
+        opacity: step.locked ? 0.38 : 1,
+        textAlign: "left",
+        fontFamily: T.font,
+        transition: `background ${T.dur} ${T.ease}`,
+      }}
+    >
+      <span
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 11,
+          fontWeight: 700,
+          flexShrink: 0,
+          background: step.done ? T.ok : active ? T.accent : T.inputBg,
+          color: step.done || active ? "#fff" : T.textDim,
+        }}
+      >
+        {step.done ? <CheckIcon size={13} /> : step.n}
+      </span>
+      <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, color: T.text }}>{step.label}</span>
+        {step.status && (
+          <span
+            style={{
+              fontSize: 10.5,
+              color: T.textFaint,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: 180,
+            }}
+          >
+            {step.status}
+          </span>
+        )}
+      </span>
+    </button>
+  );
+}
+
 export function TraceRail() {
   const image = useSceneStore((s) => s.image);
   const imageOpacity = useSceneStore((s) => s.imageOpacity);
@@ -233,6 +484,7 @@ export function TraceRail() {
   const setShowImport = useSceneStore((s) => s.setShowImport);
   const importBusy = useSceneStore((s) => s.importBusy);
   const importMsg = useSceneStore((s) => s.importMsg);
+  const importStatus = useSceneStore((s) => s.importStatus);
   const importPlanFile = useSceneStore((s) => s.importPlanFile);
   const sourcePdfName = useSceneStore((s) => s.sourcePdfName);
 
@@ -405,11 +657,16 @@ export function TraceRail() {
                 e.target.value = "";
               }}
             />
-            <button style={primaryBtn(!importBusy)} disabled={importBusy} onClick={() => fileRef.current?.click()}>
+            <PrimaryButton enabled={!importBusy} disabled={importBusy} onClick={() => fileRef.current?.click()}>
               {importBusy ? "Importing…" : image ? "Replace plan…" : "Import plan…"}
-            </button>
+            </PrimaryButton>
             <div style={hintText}>Image (PNG/JPG/WebP) or PDF — every PDF imports as a page you trace over. CAD vectors come from DXF/DWG.</div>
-            {importMsg && <div style={statusText(importMsg.startsWith("✓"))}>{importMsg}</div>}
+            {importMsg && (
+              <div style={statusText(importStatus === "ok")}>
+                <StatusIcon ok={importStatus === "ok"} />
+                <span>{importMsg}</span>
+              </div>
+            )}
             {image && (
               <>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: T.textDim }}>
@@ -423,9 +680,14 @@ export function TraceRail() {
                   />
                 </label>
                 {hasVectors && (
-                  <button style={railBtn(showImport)} onClick={() => setShowImport(!showImport)}>
-                    {showImport ? "✓ " : ""}CAD vector overlay
-                  </button>
+                  <Chip
+                    styler={railBtn}
+                    active={showImport}
+                    extra={{ display: "flex", alignItems: "center", gap: 5 }}
+                    onClick={() => setShowImport(!showImport)}
+                  >
+                    {showImport && <CheckIcon size={12} />} CAD vector overlay
+                  </Chip>
                 )}
               </>
             )}
@@ -436,13 +698,28 @@ export function TraceRail() {
           <>
             {scaleSet && mode !== "calibrate" ? (
               <>
-                <div style={statusText(true)}>✓ Scale set — 1 m ≈ {(1 / metersPerPixel!).toFixed(1)} px</div>
-                <button style={railBtn()} onClick={() => setMode("calibrate")}>📏 Redo scale</button>
+                <div style={statusText(true)}>
+                  <StatusIcon ok />
+                  <span>Scale set — 1 m ≈ {(1 / metersPerPixel!).toFixed(1)} px</span>
+                </div>
+                <Chip
+                  styler={railBtn}
+                  extra={{ display: "flex", alignItems: "center", gap: 6 }}
+                  onClick={() => setMode("calibrate")}
+                >
+                  <MeasureIcon size={13} /> Redo scale
+                </Chip>
               </>
             ) : (
               <>
                 {mode !== "calibrate" && (
-                  <button style={primaryBtn()} onClick={() => setMode("calibrate")}>📏 Set scale</button>
+                  <PrimaryButton
+                    onClick={() => setMode("calibrate")}
+                  >
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <MeasureIcon size={13} /> Set scale
+                    </span>
+                  </PrimaryButton>
                 )}
                 {mode === "calibrate" && calibrationPts.length < 2 && (
                   <div style={{ ...statusText(false), fontWeight: 600 }}>
@@ -468,8 +745,8 @@ export function TraceRail() {
                         style={field({ width: 90 })}
                       />
                       <span style={{ color: T.textFaint, fontSize: 11.5 }}>cm</span>
-                      <button style={chip(true)} onClick={applyScale}>Apply</button>
-                      <button style={chip(false)} onClick={cancelCalibration}>Cancel</button>
+                      <Chip active onClick={applyScale}>Apply</Chip>
+                      <Chip onClick={cancelCalibration}>Cancel</Chip>
                     </div>
                   </>
                 )}
@@ -483,15 +760,19 @@ export function TraceRail() {
           <>
             {hasVectors && (
               <Disclosure label="Advanced (CAD)">
-                <button style={railBtn(wallSnap)} onClick={() => setWallSnap(!wallSnap)}>
-                  🧲 Snap tracing to CAD centerlines
-                </button>
+                <Chip
+                  styler={railBtn}
+                  active={wallSnap}
+                  extra={{ display: "flex", alignItems: "center", gap: 6 }}
+                  onClick={() => setWallSnap(!wallSnap)}
+                >
+                  <MagnetIcon size={13} />
+                  <span>Snap tracing to CAD centerlines</span>
+                </Chip>
               </Disclosure>
             )}
             <DrawTools tools={["wall"]} />
-            <button style={{ ...hintText, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }} onClick={clearTrace}>
-              Clear the whole trace…
-            </button>
+            <TextAction onClick={clearTrace}>Clear the whole trace…</TextAction>
           </>
         );
       case 4:
@@ -512,30 +793,16 @@ export function TraceRail() {
               two of them becomes the landing. Esc finishes the staircase.
             </div>
             <div style={{ display: "flex", gap: 4 }}>
-              <button
-                style={chip(mode === "stair", { flex: 1, textAlign: "center" })}
-                onClick={() => setMode("stair")}
-              >
-                ✎ Stair
-              </button>
-              <button
-                className={stairDrafting ? "fp-armed" : undefined}
-                style={finishBtn(stairDrafting)}
-                onClick={finishChain}
-                title={
-                  stairDrafting
-                    ? "Commit this staircase (Esc does the same)"
-                    : "Commits a staircase once you've started one"
-                }
-              >
-                {stairDrafting ? "✓ Finish" : "Finish"}
-              </button>
-              <button
-                style={chip(false, { flex: 1, textAlign: "center", opacity: selectedStair ? 1 : 0.4 })}
+              <Chip active={mode === "stair"} extra={rowChip} onClick={() => setMode("stair")}>
+                <PencilIcon size={13} /> Stair
+              </Chip>
+              <FinishButton armed={stairDrafting} onClick={finishChain} kind="stair" />
+              <Chip
+                extra={{ ...rowChip, opacity: selectedStair ? 1 : 0.4 }}
                 onClick={deleteSelected}
               >
                 Delete
-              </button>
+              </Chip>
             </div>
             <NumField label="Width" value={stairWidth} onCommit={commitStairWidth} displayScale={100} unit="cm" />
             <NumField label="Rise" value={stairRise} onCommit={commitStairRise} displayScale={100} unit="cm" />
@@ -558,13 +825,14 @@ export function TraceRail() {
                       }
                     />
                   </div>
-                  <button
-                    style={chip(stairTarget.stair.steps == null, { opacity: selectedStair ? 1 : 0.4 })}
+                  <Chip
+                    active={stairTarget.stair.steps == null}
+                    extra={{ opacity: selectedStair ? 1 : 0.4 }}
                     title="Derive the step count from the rise again"
                     onClick={() => selectedStair && updateStair(selectedStair.id, { steps: null })}
                   >
                     Auto
-                  </button>
+                  </Chip>
                 </div>
                 <div style={hintText}>
                   Nudge Steps until the ladder on the canvas lines up with the treads
@@ -584,7 +852,10 @@ export function TraceRail() {
                 {/* Advisory only: a plan may legitimately show a stair that
                     fails a rule of thumb, so nothing here blocks Generate. */}
                 {stairTarget.metrics.warnings.map((w, i) => (
-                  <div key={i} style={statusText(false)}>⚠ {w}</div>
+                  <div key={i} style={statusText(false)}>
+                    <StatusIcon ok={false} />
+                    <span>{w}</span>
+                  </div>
                 ))}
               </>
             )}
@@ -612,12 +883,12 @@ export function TraceRail() {
               through whenever you click onto an existing corner or the plan underneath.
               Genuinely angled walls are left as drawn.
             </div>
-            <button style={primaryBtn(canGenerate)} disabled={!canGenerate} onClick={generate}>
+            <PrimaryButton enabled={canGenerate} disabled={!canGenerate} onClick={generate}>
               Generate 3D model →
-            </button>
+            </PrimaryButton>
             <div style={hintText}>Builds the model and takes you to Build mode. Everything stays editable in 3D.</div>
-            <button
-              style={{ ...hintText, background: "none", border: "none", cursor: segments.length ? "pointer" : "default", textAlign: "left", padding: 0, opacity: segments.length ? 1 : 0.4 }}
+            <TextAction
+              extra={{ cursor: segments.length ? "pointer" : "default", opacity: segments.length ? 1 : 0.4 }}
               disabled={!segments.length}
               onClick={() =>
                 downloadGroundTruth(
@@ -632,8 +903,8 @@ export function TraceRail() {
                 )
               }
             >
-              ⬇ Export ground truth (eval)
-            </button>
+              <DownloadIcon size={12} /> Export ground truth (eval)
+            </TextAction>
           </>
         );
       default:
@@ -657,62 +928,16 @@ export function TraceRail() {
         ...glass(),
       }}
     >
-      {steps.map((s) => {
-        const active = traceStep === s.n;
-        return (
-          <div key={s.n}>
-            <button
-              onClick={() => !s.locked && setTraceStep(s.n)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                width: "100%",
-                padding: "8px 9px",
-                borderRadius: T.radiusS,
-                border: "none",
-                background: active ? "rgba(255,255,255,0.07)" : "transparent",
-                cursor: s.locked ? "default" : "pointer",
-                opacity: s.locked ? 0.38 : 1,
-                textAlign: "left",
-                fontFamily: T.font,
-                transition: `background ${T.dur} ${T.ease}`,
-              }}
-            >
-              <span
-                style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: 999,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  flexShrink: 0,
-                  background: s.done ? T.ok : active ? T.accent : T.inputBg,
-                  color: s.done || active ? "#fff" : T.textDim,
-                }}
-              >
-                {s.done ? "✓" : s.n}
-              </span>
-              <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, color: T.text }}>{s.label}</span>
-                {s.status && (
-                  <span style={{ fontSize: 10.5, color: T.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>
-                    {s.status}
-                  </span>
-                )}
-              </span>
-            </button>
-            {active && !s.locked && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 9px 12px 41px" }}>
-                {stepBody(s.n)}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {steps.map((s) => (
+        <div key={s.n}>
+          <StepHeader step={s} active={traceStep === s.n} onOpen={() => !s.locked && setTraceStep(s.n)} />
+          {traceStep === s.n && !s.locked && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 9px 12px 41px" }}>
+              {stepBody(s.n)}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

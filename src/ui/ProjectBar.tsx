@@ -10,6 +10,7 @@
 
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
+import { ChevronLeftIcon } from "./planDock/icons";
 
 export function ProjectBar({
   name,
@@ -56,14 +57,21 @@ export function ProjectBar({
           transition: "background 140ms ease",
         }}
       >
-        <span style={{ fontSize: 15, lineHeight: 1, color: hover ? PD.textSecondary : PD.textTertiary }}>‹</span>
+        <span style={{ lineHeight: 0, color: hover ? PD.textSecondary : PD.textTertiary, transition: "color 140ms ease" }}>
+          <ChevronLeftIcon size={14} />
+        </span>
         <span style={{ fontWeight: 500, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {name}
         </span>
       </button>
       {status && (
         <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}>
-          <span style={{ color: PD.accentText }}>●</span>
+          {/* A status light, so it is a drawn circle rather than the `●`
+              character it replaces — a text bullet reflows with the font. */}
+          <span
+            aria-hidden
+            style={{ width: 6, height: 6, borderRadius: 999, background: PD.accentText, flex: "0 0 auto" }}
+          />
           {status}
         </span>
       )}

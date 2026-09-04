@@ -177,6 +177,24 @@ export type EnvPreset = "none" | "suburb" | "city";
 /** Sky/atmosphere state, layered on top of the time-of-day rig. */
 export type Weather = "clear" | "cloudy" | "rain";
 
+/** How the plan-import status line reads: `ok` succeeded, `warn` loaded but
+ *  with a caveat (a low-resolution raster), `error` did not load. The icon and
+ *  the colour are chosen from this at the RENDER site, never baked into the
+ *  message — this module is not React and wave 2 has to translate the message
+ *  from outside it. */
+export type ImportStatus = "ok" | "warn" | "error";
+
+/** Adapts an importer's `{ msg, status }` to the two store fields.
+ *
+ *  The importers used to type a `✓`/`⚠` into the front of the message and the
+ *  store stripped it back off with a regex. Both ends are gone: the status is
+ *  a field now, so the render site picks the icon (CheckIcon / WarnIcon) and
+ *  the message is plain prose — which is also what makes it translatable. */
+const asImport = (r: { msg: string; status: "ok" | "warn" }) => ({
+  importMsg: r.msg,
+  importStatus: r.status as ImportStatus,
+});
+
 /** One undo step: the scene as it was before the command ran. */
 interface HistoryEntry {
   label: string;
@@ -440,7 +458,15 @@ export interface StoreState {
   /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
   traceStep: number;
   importBusy: boolean;
+  /** Plain prose. No leading ✓ / ⚠ / ✗ — see `importStatus`. */
   importMsg: string | null;
+  /** How `importMsg` should read: which icon the render site draws, and which
+   *  colour it uses. The glyph used to be typed into the front of the message
+   *  string, which two things made untenable: this module is not React, so it
+   *  cannot pick an icon component, and a message that carries its own glyph
+   *  cannot be handed to a translator. So the STATUS is data and the icon
+   *  belongs to whoever renders it (TraceRail / TracePanel). */
+  importStatus: ImportStatus;
   // Project persistence status (autosaved to IndexedDB; see projectPersistence.ts).
   projectRestored: boolean; // this session's state was rehydrated from disk
   projectSavedAt: number | null; // epoch ms of last successful autosave
@@ -728,6 +754,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     traceStep: 1,
     importBusy: false,
     importMsg: null,
+    importStatus: "ok",
     projectRestored: false,
     projectSavedAt: null,
     currentProjectId: null,
@@ -744,6 +771,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({
         importBusy: true,
         importMsg: null,
+        importStatus: "ok",
         points: [],
         segments: [],
         openings: [],
@@ -775,11 +803,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
             importedTexts: r.texts,
             showImport: false,
             imageOpacity: 0.8,
-            importMsg: rasterQualityMsg(
-              r.image.width,
-              r.image.height,
-              `Plan loaded${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
-            ),
+            ...asImport(rasterQualityMsg(
+                r.image.width,
+                r.image.height,
+                `Plan loaded${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
+              )),
           });
         } else if (isDxfFile(file) || isDwgFile(file)) {
           const { importDxf, dxfTextToResult } = await import("@legacy/trace2d/importDxf");
@@ -803,7 +831,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
               throw new Error(j.error ? `${j.error}${j.detail ? `: ${j.detail}` : ""}` : `HTTP ${res.status}`);
             }
             r = dxfTextToResult(j.dxf);
-            r.summary = r.summary.replace("✓ DXF", "✓ DWG→DXF");
+            r.summary = r.summary.replace("DXF —", "DWG→DXF —");
           } else {
             r = await importDxf(file);
           }
@@ -815,6 +843,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             importedTexts: r.texts,
             showImport: true,
             importMsg: r.summary,
+            importStatus: "ok",
           });
           // A DXF with known units gives us real scale for free — no calibration.
           if (r.metersPerPixel != null) set({ metersPerPixel: r.metersPerPixel });
@@ -823,7 +852,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
           if (Math.max(img.width, img.height) < MIN_IMAGE_PX) {
             set({
               importBusy: false,
-              importMsg: `✗ Image too small (${img.width}×${img.height}px) — plans need ≥${MIN_IMAGE_PX}px on the long edge.`,
+              importMsg: `Image too small (${img.width}×${img.height}px) — plans need ≥${MIN_IMAGE_PX}px on the long edge.`,
+              importStatus: "error",
             });
             return;
           }
@@ -833,17 +863,21 @@ export const useSceneStore = create<StoreState>((set, get) => {
             importedArcs: [],
             importedTexts: [],
             imageOpacity: 0.8,
-            importMsg: rasterQualityMsg(img.width, img.height, "Image loaded"),
+            ...asImport(rasterQualityMsg(img.width, img.height, "Image loaded")),
           });
         } else {
-          set({ importBusy: false, importMsg: "✗ Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG)." });
+          set({
+            importBusy: false,
+            importMsg: "Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG).",
+            importStatus: "error",
+          });
           return;
         }
         // A fresh plan needs a scale before anything else can happen.
         if (get().metersPerPixel == null) get().setMode("calibrate");
         set({ traceStep: 2 });
       } catch (e) {
-        set({ importMsg: "✗ Import failed: " + (e as Error).message });
+        set({ importMsg: "Import failed: " + (e as Error).message, importStatus: "error" });
       } finally {
         set({ importBusy: false });
       }

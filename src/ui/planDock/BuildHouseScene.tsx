@@ -37,9 +37,12 @@ export interface BuildHotspot {
   label: string;
 }
 
+// `id: "doors"` stays — it is a local UI key that BuildNavigator dispatches on
+// and isoArt's HitArea feeds to `aria-label`. Only the visible label changes,
+// because a door at or past PATIO_MIN_WIDTH is drawn as a glazed patio slider.
 export const BUILD_HOTSPOTS: BuildHotspot[] = [
   { id: "walls", label: "Walls" },
-  { id: "doors", label: "Doors" },
+  { id: "doors", label: "Doors & patios" },
   { id: "windows", label: "Windows" },
   { id: "measure", label: "Measure" },
   { id: "floors", label: "Floors" },
@@ -179,7 +182,7 @@ export function BuildHouseScene({
 
   const items: HotspotDef[] = [
     { id: "walls", label: "Walls — draw new walls", box: wallBox, art: <WallSegment box={wallBox} /> },
-    { id: "doors", label: "Doors — drop on a wall", box: doorBox, art: <DoorSegment box={doorBox} /> },
+    { id: "doors", label: "Doors & patios — drop on a wall", box: doorBox, art: <DoorSegment box={doorBox} /> },
     { id: "windows", label: "Windows — drop on a wall", box: windowBox, art: <WindowSegment box={windowBox} /> },
     { id: "floors", label: "Floor — pick a material", box: floor, art: <></> },
     { id: "paint", label: "Paint — pick a colour", box: paintBox, art: <PaintRollerArt x={30} yFront={FLOOR_Y - 6} /> },

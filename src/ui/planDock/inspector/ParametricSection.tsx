@@ -15,12 +15,14 @@ import { nearestLinkableBase } from "@/parametric/kitchenAttach";
 import { ARTWORKS } from "@/parametric/wallArtParts";
 import { pdToast } from "../toast";
 import { PD, pdChip } from "../tokens";
+import { useHover } from "../useHover";
 import {
   pdInspectorPanel,
   pdInspectorRow,
   PdSectionTitle,
   PdNumField,
   PdStepper,
+  PdChip,
   PdChipGroup,
   pdChipFlex,
   PdSwatch,
@@ -107,6 +109,11 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
 }
 
 export function ParametricSection({ item }: { item: FurnitureItem }) {
+  // Before the early return: the "Match run below" toggle spreads pdChip by
+  // hand (it layers a disabled look on top), so it can't use the shared PdChip
+  // wrapper and needs its own hover state — and a hook cannot sit behind a
+  // conditional return.
+  const [linkHovered, linkHoverBind] = useHover();
   const spec = item.parametric;
   if (!spec) return null;
   const g = GENERATORS[spec.generator];
@@ -144,13 +151,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           />
           <PdChipGroup>
             {g.sizeInches.presets.map((p) => (
-              <button
+              <PdChip
                 key={p}
-                style={pdChip(Math.abs(g.sizeInches!.of(spec) - p) < 0.6, pdChipFlex)}
+                active={Math.abs(g.sizeInches!.of(spec) - p) < 0.6}
+                extra={pdChipFlex}
                 onClick={() => update({ dims: g.sizeInches!.dims(spec, p) })}
               >
                 {p}&quot;
-              </button>
+              </PdChip>
             ))}
           </PdChipGroup>
         </>
@@ -192,13 +200,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           return (
             <PdChipGroup key={m.key}>
               {([1, 0] as const).map((v) => (
-                <button
+                <PdChip
                   key={v}
-                  style={pdChip(value >= 1 === (v === 1), pdChipFlex)}
+                  active={value >= 1 === (v === 1)}
+                  extra={pdChipFlex}
                   onClick={() => update({ modules: { [m.key]: v } })}
                 >
                   {v === 1 ? m.toggle!.on : m.toggle!.off}
-                </button>
+                </PdChip>
               ))}
             </PdChipGroup>
           );
@@ -218,13 +227,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.variants && g.variants.length > 1 && !g.variantIsProduct && (
         <PdChipGroup>
           {g.variants.map((v) => (
-            <button
+            <PdChip
               key={v.id}
-              style={pdChip((spec.variant ?? g.variants![0].id) === v.id, pdChipFlex)}
+              active={(spec.variant ?? g.variants![0].id) === v.id}
+              extra={pdChipFlex}
               onClick={() => update({ variant: v.id })}
             >
               {v.label}
-            </button>
+            </PdChip>
           ))}
         </PdChipGroup>
       )}
@@ -232,9 +242,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.fronts.length > 1 && (g.showFronts?.(spec) ?? true) && (
         <PdChipGroup>
           {g.fronts.map((f) => (
-            <button key={f} style={pdChip(spec.front === f, pdChipFlex)} onClick={() => update({ front: f })}>
+            <PdChip key={f} active={spec.front === f} extra={pdChipFlex} onClick={() => update({ front: f })}>
               {FRONT_LABEL[f]}
-            </button>
+            </PdChip>
           ))}
         </PdChipGroup>
       )}
@@ -242,9 +252,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.handles.length > 1 && (
         <PdChipGroup>
           {g.handles.map((h) => (
-            <button key={h} style={pdChip(spec.handle === h, pdChipFlex)} onClick={() => update({ handle: h })}>
+            <PdChip key={h} active={spec.handle === h} extra={pdChipFlex} onClick={() => update({ handle: h })}>
               {HANDLE_LABEL[h]}
-            </button>
+            </PdChip>
           ))}
         </PdChipGroup>
       )}
@@ -305,6 +315,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         <label style={pdInspectorRow}>
           <span style={{ color: PD.textSecondary }}>Match run below</span>
           <button
+            {...linkHoverBind}
             disabled={!isLinked && !linkHost}
             onClick={() => {
               const store = useSceneStore.getState();
@@ -312,7 +323,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               else if (linkHost) store.setKitchenWallLink(item.id, linkHost.id);
             }}
             style={{
-              ...pdChip(isLinked),
+              // A disabled control must not light up under the cursor — that
+              // reads as "clickable" and it isn't.
+              ...pdChip(isLinked, undefined, linkHovered && (isLinked || !!linkHost)),
               opacity: !isLinked && !linkHost ? 0.4 : 1,
               cursor: !isLinked && !linkHost ? "default" : "pointer",
             }}

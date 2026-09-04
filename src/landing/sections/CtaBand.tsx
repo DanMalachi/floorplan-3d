@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { APP_HREF } from "../nav";
+import { CTA_CLASS, CTA_GHOST_CLASS } from "../hoverCss";
 import { CTA_BAND } from "../content";
 
 /**
@@ -47,10 +48,10 @@ export function CtaBand() {
           {CTA_BAND.subhead}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", marginTop: 8 }}>
-          <Link href={APP_HREF} style={ctaPrimary()}>
+          <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary()}>
             {CTA_BAND.ctaPrimaryLabel}
           </Link>
-          <Link href="/faq" style={ctaGhost()}>
+          <Link href="/faq" className={CTA_GHOST_CLASS} style={ctaGhost()}>
             {CTA_BAND.ctaGhostLabel}
           </Link>
         </div>

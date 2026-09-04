@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
 import { APP_HREF } from "../nav";
+import { CTA_CLASS } from "../hoverCss";
 import { HERO, SLOGANS } from "../content";
 import {
   advanceHeroStage,
@@ -215,7 +216,7 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
 
       <style dangerouslySetInnerHTML={{ __html: TRACE_BTN_CSS }} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", alignItems: "center" }}>
-        <Link href={APP_HREF} style={ctaPrimary({ padding: "15px 26px", fontSize: 16.5 })}>
+        <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary({ padding: "15px 26px", fontSize: 16.5 })}>
           {HERO.ctaPrimaryLabel}
         </Link>
         {/* Not a link. It plays the hero's own animation in place — see

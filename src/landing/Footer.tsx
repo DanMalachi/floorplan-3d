@@ -2,6 +2,7 @@ import Link from "next/link";
 import { B, type as ty, microLabel } from "@/brand/tokens";
 import { WordmarkLockup } from "@/brand/Wordmark";
 import { APP_HREF, footerLegal, navItems } from "./nav";
+import { NAV_LINK_CLASS } from "./hoverCss";
 
 /**
  * The footer is the one place the page says the whole brand unit out loud —
@@ -95,6 +96,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
   return (
     <Link
       href={href}
+      className={NAV_LINK_CLASS}
       style={{
         fontFamily: B.fontUi,
         fontSize: ty.small,

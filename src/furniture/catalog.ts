@@ -142,26 +142,30 @@ export const CATEGORIES: FurnitureCategory[] = [
 export interface RoomSection {
   id: string;
   label: string;
-  icon: string; // emoji tab glyph
   assetIds: string[];
 }
 
 // Every RoomType the Plan Dock shows a tab for needs a section here, or
 // `roomTagsByAssetId` below never tags anything for it and the tab renders
 // empty no matter what the catalog contains — which is exactly why laundry/
-// closet/kids/garage/outdoors shipped empty. Icons match BottomDock's tabs.
+// closet/kids/garage/outdoors shipped empty.
+//
+// There used to be an `icon` field here carrying an emoji per room. It was dead:
+// the dock's tabs moved to the drawn `ROOM_ICON` set (src/ui/planDock/icons.tsx)
+// and nothing read `.icon` afterwards. `ROOMS` below is consumed at exactly one
+// place — `roomTagsByAssetId` — so the array itself stays.
 const BASE_ROOMS: RoomSection[] = [
-  { id: "living", label: "Living", icon: "🛋", assetIds: [] },
-  { id: "bedroom", label: "Bedroom", icon: "🛏", assetIds: [] },
-  { id: "kitchen", label: "Kitchen", icon: "🍳", assetIds: [] },
-  { id: "dining", label: "Dining", icon: "🍽", assetIds: [] },
-  { id: "bathroom", label: "Bath", icon: "🛁", assetIds: [] },
-  { id: "office", label: "Office", icon: "💻", assetIds: [] },
-  { id: "laundry", label: "Laundry", icon: "🧺", assetIds: [] },
-  { id: "closet", label: "Closet", icon: "🧥", assetIds: [] },
-  { id: "kids", label: "Kids", icon: "🧸", assetIds: [] },
-  { id: "garage", label: "Garage", icon: "🔧", assetIds: [] },
-  { id: "outdoors", label: "Outdoors", icon: "🌳", assetIds: [] },
+  { id: "living", label: "Living", assetIds: [] },
+  { id: "bedroom", label: "Bedroom", assetIds: [] },
+  { id: "kitchen", label: "Kitchen", assetIds: [] },
+  { id: "dining", label: "Dining", assetIds: [] },
+  { id: "bathroom", label: "Bath", assetIds: [] },
+  { id: "office", label: "Office", assetIds: [] },
+  { id: "laundry", label: "Laundry", assetIds: [] },
+  { id: "closet", label: "Closet", assetIds: [] },
+  { id: "kids", label: "Kids", assetIds: [] },
+  { id: "garage", label: "Garage", assetIds: [] },
+  { id: "outdoors", label: "Outdoors", assetIds: [] },
 ];
 
 // Final room sections: curated CC0 items first, then the realistic BlenderKit

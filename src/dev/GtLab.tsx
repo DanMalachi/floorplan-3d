@@ -16,6 +16,8 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { importProject, openProject } from "@/store/projectPersistence";
 import { gtFileToProject } from "./gtFileToScene";
 import { T, glass, chip, microLabel } from "@/ui/tokens";
+import { tChipHover, useHover } from "@/ui/hoverT";
+import { CloseIcon, FlaskIcon, UploadIcon } from "@/ui/planDock/icons";
 
 interface Model {
   name: string; // source file name (de-dupe key)
@@ -120,36 +122,27 @@ export function GtLab() {
         {/* header */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>
-              <span style={{ color: T.warn }}>⚗</span> GT Lab
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 16, fontWeight: 600, color: T.text }}>
+              <span style={{ lineHeight: 0, color: T.warn }}>
+                <FlaskIcon size={16} />
+              </span>
+              GT Lab
             </div>
             <div style={{ fontSize: 12, color: T.textDim, marginTop: 3 }}>
               Drag ground-truth <code>.json</code> files here — each is saved as its own project.
             </div>
           </div>
-          <button onClick={() => setOpen(false)} style={{ ...chip(false), padding: "3px 9px" }} title="Close (Esc)">
-            ✕
-          </button>
+          <LabChip
+            onClick={() => setOpen(false)}
+            title="Close (Esc)"
+            extra={{ padding: "5px 9px", display: "flex", alignItems: "center" }}
+          >
+            <CloseIcon size={13} />
+          </LabChip>
         </div>
 
         {/* dropzone */}
-        <button
-          onClick={() => inputRef.current?.click()}
-          style={{
-            border: `1.5px dashed ${dragOver ? T.accent : T.panelBorder}`,
-            background: dragOver ? T.accentSoft : T.inputBg,
-            borderRadius: T.radiusM,
-            color: T.textDim,
-            padding: "22px 16px",
-            cursor: "pointer",
-            fontFamily: T.font,
-            fontSize: 13,
-            transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}`,
-          }}
-        >
-          <div style={{ fontSize: 22, marginBottom: 6 }}>⇪</div>
-          Drop GT files — or click to browse. Drop as many as you like.
-        </button>
+        <DropZoneButton dragOver={dragOver} onClick={() => inputRef.current?.click()} />
         <input
           ref={inputRef}
           type="file"
@@ -166,35 +159,15 @@ export function GtLab() {
         {models.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" }}>
             <div style={microLabel()}>{models.length} imported · saved to your projects</div>
-            {models.map((m) => {
-              const active = m.projectId === currentProjectId;
-              return (
-                <button
-                  key={m.projectId}
-                  onClick={() => void openModel(m)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    textAlign: "left",
-                    padding: "8px 12px",
-                    borderRadius: T.radiusS,
-                    border: `1px solid ${active ? T.accent : T.panelBorder}`,
-                    background: active ? T.accentSoft : T.inputBg,
-                    color: T.text,
-                    cursor: "pointer",
-                    fontFamily: T.font,
-                  }}
-                >
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {active && <span style={{ color: T.accent }}>● </span>}
-                    {m.name.replace(/\.gt\.json$|\.json$/i, "")}
-                  </span>
-                  <span style={{ fontSize: 11, color: T.textFaint, flexShrink: 0 }}>{m.stats}</span>
-                </button>
-              );
-            })}
+            {models.map((m) => (
+              <ModelRow
+                key={m.projectId}
+                active={m.projectId === currentProjectId}
+                name={m.name.replace(/\.gt\.json$|\.json$/i, "")}
+                stats={m.stats}
+                onClick={() => void openModel(m)}
+              />
+            ))}
           </div>
         )}
 
@@ -211,5 +184,114 @@ export function GtLab() {
         )}
       </div>
     </div>
+  );
+}
+
+// ── Hover-aware pieces ──────────────────────────────────────────────────────
+// Dev-only chrome, but it shares the app's tokens, so it follows the same rule:
+// each of these is its own component only so it can hold a `useHover` flag.
+
+function LabChip({
+  onClick,
+  title,
+  extra,
+  children,
+}: {
+  onClick: () => void;
+  title?: string;
+  extra?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button onClick={onClick} title={title} {...bind} style={chip(false, { ...extra, ...tChipHover(hov) })}>
+      {children}
+    </button>
+  );
+}
+
+function DropZoneButton({ dragOver, onClick }: { dragOver: boolean; onClick: () => void }) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      {...bind}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 6,
+        border: `1.5px dashed ${dragOver || hov ? T.accent : T.panelBorder}`,
+        background: dragOver ? T.accentSoft : hov ? "rgba(255,255,255,0.09)" : T.inputBg,
+        borderRadius: T.radiusM,
+        color: hov ? T.text : T.textDim,
+        padding: "22px 16px",
+        cursor: "pointer",
+        fontFamily: T.font,
+        fontSize: 13,
+        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
+      }}
+    >
+      <UploadIcon size={22} strokeWidth={1.4} />
+      Drop GT files — or click to browse. Drop as many as you like.
+    </button>
+  );
+}
+
+/** One imported GT. The open one used to be marked with a `● ` in the label; it
+ *  is a drawn pip now, so the name stays a plain string. */
+function ModelRow({
+  active,
+  name,
+  stats,
+  onClick,
+}: {
+  active: boolean;
+  name: string;
+  stats: string;
+  onClick: () => void;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      {...bind}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        textAlign: "left",
+        padding: "8px 12px",
+        borderRadius: T.radiusS,
+        border: `1px solid ${active ? T.accent : hov ? "rgba(255,255,255,0.18)" : T.panelBorder}`,
+        background: active ? T.accentSoft : hov ? "rgba(255,255,255,0.11)" : T.inputBg,
+        color: T.text,
+        cursor: "pointer",
+        fontFamily: T.font,
+        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}`,
+      }}
+    >
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {active && (
+          <span
+            aria-hidden
+            style={{ width: 6, height: 6, borderRadius: 999, background: T.accent, flex: "0 0 auto" }}
+          />
+        )}
+        {name}
+      </span>
+      <span style={{ fontSize: 11, color: T.textFaint, flexShrink: 0 }}>{stats}</span>
+    </button>
   );
 }

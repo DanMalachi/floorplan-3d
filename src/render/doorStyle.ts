@@ -103,6 +103,32 @@ export function takesWindowFinish(o: Opening): boolean {
   return o.type === "window" || isGlazedDoor(o);
 }
 
+/**
+ * What to CALL this opening in the UI — the one place that decides.
+ *
+ * Never print `opening.type`. The stored enum is three words long
+ * ("door" | "window" | "passage") and one of them lies: `effectiveSlide`
+ * above turns any unstyled door at or past PATIO_MIN_WIDTH into a glazed
+ * patio slider, DERIVED and never written back. So a badge or a panel title
+ * reading the raw enum says "door" while the renderer is drawing a balcony
+ * slider, and it says it in lowercase.
+ *
+ * The inspector panel title and the 3D selection badge both come through
+ * here so they cannot drift apart, and so the derived-patio rule is stated
+ * once alongside the function that derives it.
+ *
+ * Returns exactly one of: "Double door", "Patio door", "Door", "Window",
+ * "Passage". This is the name of THIS element; the name of the type a user
+ * picks or places is "Door / Patio" and lives in the toolbar/type chips.
+ */
+export function openingDisplayName(o: Opening): string {
+  if (o.type === "window") return "Window";
+  if (o.type === "passage") return "Passage";
+  if (isDoubleDoor(o)) return "Double door";
+  if (isGlazedDoor(o)) return "Patio door";
+  return "Door";
+}
+
 /** How many leaves/panels an opening divides into (1 = a single leaf). */
 export function leafCount(o: Opening): number {
   const slide = effectiveSlide(o);

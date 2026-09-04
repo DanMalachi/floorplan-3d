@@ -523,3 +523,138 @@ export function StairsIcon(p: IconProps) {
     </Base>
   );
 }
+
+/** ▉ (in the stair inspector) — a closed-stringer flight: the same profile,
+ *  boxed in down to the floor. Paired with StairsIcon, which is the open one. */
+export function StairsSolidIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3 20.5v-4h4.5v-4H12v-4h4.5v-4H21" />
+      <path d="M3 20.5h18" />
+      <path d="M21 4.5v16" />
+    </Base>
+  );
+}
+
+// ── Trace rail (legacy/src/trace2d) ─────────────────────────────────────────
+// The guided trace rail was missed by the first icon sweep because it lives
+// under legacy/ and only src/ was scanned. Its "Draw by hand" row is one strip
+// of five buttons, so all five need to be the same kind of thing.
+
+/** ▭ — a balcony/terrace railing: posts under a top rail (schema/scene.ts
+ *  `kind: "rail"`). Low and see-through, which is the whole distinction from a
+ *  wall. */
+export function RailIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M2.5 8.5h19" />
+      <path d="M2.5 19.5h19" />
+      <path d="M6.5 8.5v11M12 8.5v11M17.5 8.5v11" />
+    </Base>
+  );
+}
+
+/** ⊾ — the ortho lock: constrain the next wall to 90°. */
+export function OrthoIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M4.5 3.5v17h16" />
+      <path d="M4.5 15.5h5v5" />
+    </Base>
+  );
+}
+
+/** ↶ — undo. */
+export function UndoIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M4 9.5h9.5a5.5 5.5 0 1 1 0 11H8" />
+      <path d="M7.5 5.5L3.5 9.5l4 4" />
+    </Base>
+  );
+}
+
+/** ⬇ — download a file (the eval ground-truth export). */
+export function DownloadIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M12 3.5v12" />
+      <path d="M7.5 11.5L12 16l4.5-4.5" />
+      <path d="M4 20.5h16" />
+    </Base>
+  );
+}
+
+/** ▾ — a disclosure that is closed/open. One glyph, rotated by the caller when
+ *  it needs to point right (see ChevronRightIcon). */
+export function ChevronDownIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M4.5 8.5L12 16l7.5-7.5" />
+    </Base>
+  );
+}
+
+/** ▸ — a collapsed disclosure. */
+export function ChevronRightIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M8.5 4.5L16 12l-7.5 7.5" />
+    </Base>
+  );
+}
+
+// ── Canvas + gallery controls ───────────────────────────────────────────────
+
+/** ＋ — zoom in / add. */
+export function PlusIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M12 4.5v15M4.5 12h15" />
+    </Base>
+  );
+}
+
+/** － — zoom out. */
+export function MinusIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M4.5 12h15" />
+    </Base>
+  );
+}
+
+/** ⤢ — reset the view so the whole plan fits. */
+export function FitIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M9.5 3.5h-6v6" />
+      <path d="M14.5 20.5h6v-6" />
+      <path d="M3.5 3.5l7 7M20.5 20.5l-7-7" />
+    </Base>
+  );
+}
+
+// ── Dev tools (src/dev/GtLab.tsx) ───────────────────────────────────────────
+
+/** ⚗ — the ground-truth lab. Dev-only chrome. */
+export function FlaskIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M9 3.5h6" />
+      <path d="M10 3.5v6L4.5 19a1.6 1.6 0 0 0 1.4 2.4h12.2a1.6 1.6 0 0 0 1.4-2.4L14 9.5v-6" />
+      <path d="M7 15.5h10" />
+    </Base>
+  );
+}
+
+/** ⇪ — drop files here. */
+export function UploadIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M12 16.5v-12" />
+      <path d="M7.5 9L12 4.5 16.5 9" />
+      <path d="M4 20.5h16" />
+    </Base>
+  );
+}

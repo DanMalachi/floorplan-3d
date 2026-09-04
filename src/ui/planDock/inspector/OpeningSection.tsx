@@ -12,6 +12,7 @@
 // "zero lost controls" bar applied honestly — nothing the schema/geometry
 // already supports should stay orphaned without a control.
 
+import type { ComponentType } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Opening, OpeningType, SlideSpec } from "@/schema/scene";
 import { DEFAULT_WINDOW } from "@/schema/constants";
@@ -20,11 +21,12 @@ import {
   isDoubleDoor,
   leafCount,
   leafWidths,
+  openingDisplayName,
   takesWindowFinish,
   withLeafWidth,
 } from "@/render/doorStyle";
 import { frameFinishOf, type FrameFinish } from "@/render/frameFinish";
-import { pdChip } from "../tokens";
+import { DoorIcon, PassageIcon, WindowIcon, PaintIcon } from "../icons";
 import {
   pdInspectorPanel,
   PdSectionTitle,
@@ -32,6 +34,8 @@ import {
   PdNumField,
   PdStepper,
   PdSwatch,
+  PdChip,
+  PdChipLabel,
   pdChipFlex,
 } from "./panelKit";
 import { pdMicroLabel } from "../tokens";
@@ -57,6 +61,33 @@ const SLIDE_PRESETS: { key: string; label: string; title: string; spec: SlideSpe
     title: "One leaf sliding along the face of the wall",
     spec: { style: "surface", panels: 1, glazed: false, open: 0, side: "end" },
   },
+];
+
+/** The three types this panel can switch between, as the user picks them.
+ *
+ *  "Door / Patio", not "Door": `effectiveSlide()` turns any unstyled door at or
+ *  past PATIO_MIN_WIDTH into a glazed patio slider, derived from width alone —
+ *  so this one chip genuinely places either, and the old bare "Door" was the
+ *  single place the vocabulary misled. (The *element's* own name is contextual
+ *  and comes from `openingDisplayName`; this is the name of the TYPE.)
+ *
+ *  "Passage", not "Open": the Build toolbar has always called this type
+ *  Passage, and the tooltip below already reads "an open way through a wall".
+ *  Two names for one type was a slip, not a distinction. */
+const OPENING_TYPES: {
+  type: OpeningType;
+  label: string;
+  Icon: ComponentType<{ size?: number }>;
+  title?: string;
+}[] = [
+  { type: "door", label: "Door / Patio", Icon: DoorIcon },
+  {
+    type: "passage",
+    label: "Passage",
+    Icon: PassageIcon,
+    title: "Keep the opening, lose the door — an open way through a wall",
+  },
+  { type: "window", label: "Window", Icon: WindowIcon },
 ];
 
 const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
@@ -102,13 +133,14 @@ function FramePaintRow({ opening }: { opening: Opening }) {
         title={opening.frameColor ?? "Natural — the finish's own colour"}
         onClick={openPalette}
       />
-      <button
-        style={pdChip(armed, { flex: 1, textAlign: "center" })}
+      <PdChip
+        active={armed}
+        extra={{ flex: 1, textAlign: "center" }}
         onClick={openPalette}
         title="Pick a colour in the Decorate palette — it applies to every window and patio door"
       >
-        {armed ? "Picking…" : "🎨 Paint"}
-      </button>
+        {armed ? "Picking…" : <PdChipLabel icon={<PaintIcon size={13} />}>Paint</PdChipLabel>}
+      </PdChip>
     </div>
   );
 }
@@ -133,11 +165,23 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       double: undefined,
       leafSplit: undefined,
     };
-    patch(
-      type === "passage" ? "Remove door" : `Make ${type}`,
+    const fields: Partial<Opening> =
       type === "window"
         ? { ...base, sill: opening.sill > 0 ? opening.sill : DEFAULT_WINDOW.sill, mullions: opening.mullions }
-        : { ...base, sill: 0, mullions: undefined },
+        : { ...base, sill: 0, mullions: undefined };
+    // Name the RESULT, never the enum. `Make ${type}` printed the stored
+    // lowercase value, which for a wide door is a lie — clearing the style
+    // fields hands it straight back to the width rule, so what you actually
+    // get is a patio slider. Lower-cased mid-sentence, matching WallSection's
+    // own `Make ${KIND_LABEL[next].toLowerCase()}`.
+    patch(
+      // "Remove door", not "Remove opening": switching to `passage` KEEPS the
+      // opening and takes the leaf out of it — which is what the chip's own
+      // tooltip says ("Keep the opening, lose the door"). This is the case the
+      // naming rule reserves for the word "door", because a door leaf is
+      // exactly what is being removed.
+      type === "passage" ? "Remove door" : `Make ${openingDisplayName({ ...opening, ...fields }).toLowerCase()}`,
+      fields,
     );
   };
   // The slide gear this door RENDERS with, which for a wide unstyled door is
@@ -159,21 +203,25 @@ export function OpeningSection({ opening }: { opening: Opening }) {
 
   return (
     <div style={pdInspectorPanel}>
+      {/* One name for this element, shared with the 3D selection badge — the
+          two used to disagree, and the fallthrough here printed the raw
+          lowercase enum. */}
       <PdSectionTitle
-        title={double ? "Double door" : glazedDoor ? "Patio door" : opening.type}
+        title={openingDisplayName(opening)}
         meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
       />
 
-      <div style={{ display: "flex", gap: 4 }}>
-        {(["door", "passage", "window"] as const).map((t) => (
-          <button
-            key={t}
-            style={pdChip(opening.type === t, pdChipFlex)}
-            onClick={() => setType(t)}
-            title={t === "passage" ? "Keep the opening, lose the door — an open way through a wall" : undefined}
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {OPENING_TYPES.map(({ type, label, Icon, title }) => (
+          <PdChip
+            key={type}
+            active={opening.type === type}
+            extra={pdChipFlex}
+            onClick={() => setType(type)}
+            title={title}
           >
-            {t === "door" ? "🚪 Door" : t === "passage" ? "⌷ Open" : "🪟 Window"}
-          </button>
+            <PdChipLabel icon={<Icon size={13} />}>{label}</PdChipLabel>
+          </PdChip>
         ))}
       </div>
 
@@ -186,13 +234,14 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               <div style={pdMicroLabel()}>Material</div>
               <div style={{ display: "flex", gap: 4 }}>
                 {DOOR_MATERIALS.map((m) => (
-                  <button
+                  <PdChip
                     key={m.key}
-                    style={pdChip((opening.doorMaterial ?? "painted-white") === m.key, pdChipFlex)}
+                    active={(opening.doorMaterial ?? "painted-white") === m.key}
+                    extra={pdChipFlex}
                     onClick={() => patch(`Door material: ${m.label}`, { doorMaterial: m.key })}
                   >
                     {m.label}
-                  </button>
+                  </PdChip>
                 ))}
               </div>
             </>
@@ -203,8 +252,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 an EXPLICIT choice — otherwise a door past PATIO_MIN_WIDTH
                 would fall straight back to the derived patio slider and the
                 chip would refuse to stick. */}
-            <button
-              style={pdChip(!slide && !double, pdChipFlex)}
+            <PdChip
+              active={!slide && !double}
+              extra={pdChipFlex}
               onClick={() =>
                 patch("Swing door", {
                   slide: undefined,
@@ -216,9 +266,10 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               title="One hinged leaf"
             >
               ↷ Swing
-            </button>
-            <button
-              style={pdChip(double, pdChipFlex)}
+            </PdChip>
+            <PdChip
+              active={double}
+              extra={pdChipFlex}
               onClick={() =>
                 patch("Double doors", {
                   double: true,
@@ -231,11 +282,12 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               title="A pair of hinged leaves meeting in the middle — French doors"
             >
               ⁘ Double
-            </button>
+            </PdChip>
             {SLIDE_PRESETS.map((p) => (
-              <button
+              <PdChip
                 key={p.key}
-                style={pdChip(!!slide && matchesPreset(slide, p.spec), pdChipFlex)}
+                active={!!slide && matchesPreset(slide, p.spec)}
+                extra={pdChipFlex}
                 onClick={() =>
                   patch(`${p.label} slider`, {
                     slide: { ...p.spec, open: slide?.open ?? 0, side: slide?.side ?? "end" },
@@ -248,7 +300,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 title={p.title}
               >
                 {p.label}
-              </button>
+              </PdChip>
             ))}
           </div>
         </>
@@ -267,9 +319,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {!double && (
             <div style={{ display: "flex", gap: 4 }}>
               {(["start", "end"] as const).map((h) => (
-                <button key={h} style={pdChip((opening.hinge ?? "start") === h, pdChipFlex)} onClick={() => patch("Door hinge", { hinge: h })}>
+                <PdChip key={h} active={(opening.hinge ?? "start") === h} extra={pdChipFlex} onClick={() => patch("Door hinge", { hinge: h })}>
                   Hinge {h}
-                </button>
+                </PdChip>
               ))}
             </div>
           )}
@@ -289,14 +341,15 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           )}
           <div style={{ display: "flex", gap: 4 }}>
             {(["start", "end"] as const).map((sd) => (
-              <button
+              <PdChip
                 key={sd}
-                style={pdChip((slide.side ?? "end") === sd, pdChipFlex)}
+                active={(slide.side ?? "end") === sd}
+                extra={pdChipFlex}
                 onClick={() => patch("Slide side", { slide: { ...slide, side: sd } })}
                 title="Which jamb the panels stack at"
               >
                 Slides {sd}
-              </button>
+              </PdChip>
             ))}
           </div>
         </>
@@ -320,12 +373,12 @@ export function OpeningSection({ opening }: { opening: Opening }) {
             />
           ))}
           {opening.leafSplit && (
-            <button
-              style={pdChip(false, { alignSelf: "flex-start", padding: "3px 8px", fontSize: 11 })}
+            <PdChip
+              extra={{ alignSelf: "flex-start", padding: "3px 8px", fontSize: 11 }}
               onClick={() => patch("Even leaves", { leafSplit: undefined })}
             >
               Even them up
-            </button>
+            </PdChip>
           )}
         </>
       )}
@@ -333,14 +386,15 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       {opening.type === "passage" && (
         <div style={{ display: "flex", gap: 4 }}>
           {([true, false] as const).map((l) => (
-            <button
+            <PdChip
               key={String(l)}
-              style={pdChip((opening.lining ?? true) === l, pdChipFlex)}
+              active={(opening.lining ?? true) === l}
+              extra={pdChipFlex}
               onClick={() => patch("Passage lining", { lining: l })}
               title={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
             >
               {l ? "Cased" : "Bare"}
-            </button>
+            </PdChip>
           ))}
         </div>
       )}
@@ -366,14 +420,15 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           <div style={pdMicroLabel()}>Frame finish · whole house</div>
           <div style={{ display: "flex", gap: 4 }}>
             {WINDOW_FRAME_MATERIALS.map((m) => (
-              <button
+              <PdChip
                 key={m.key}
-                style={pdChip(frameFinishOf(opening) === m.key, pdChipFlex)}
+                active={frameFinishOf(opening) === m.key}
+                extra={pdChipFlex}
                 onClick={() => useSceneStore.getState().setFrameFinish(m.key)}
                 title={m.title}
               >
                 {m.label}
-              </button>
+              </PdChip>
             ))}
           </div>
           <div style={pdMicroLabel()}>Frame colour · whole house</div>

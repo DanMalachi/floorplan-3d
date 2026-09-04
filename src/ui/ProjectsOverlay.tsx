@@ -16,8 +16,22 @@ import { ensureDownloaded } from "@/store/syncEngine";
 import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
 import { T, glass, microLabel } from "@/ui/tokens";
+import { tGhostBtn, useHover } from "@/ui/hoverT";
+import { CloseIcon, PencilIcon, PlanMapIcon, PlusIcon, TrashIcon } from "@/ui/planDock/icons";
 import { Wordmark } from "@/brand/Wordmark";
 import { landingEnabled } from "@/lib/featureFlags";
+
+/** The green "live" pip on a card badge. A real circle, not the `●` character
+ *  it replaces: a text bullet reflows with the font and never matches the drawn
+ *  icons beside it, and this is a status light rather than an icon. */
+function Pip({ size = 7, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <span
+      aria-hidden
+      style={{ width: size, height: size, borderRadius: 999, background: color, flex: "0 0 auto" }}
+    />
+  );
+}
 
 function ago(ts: number): string {
   const s = (Date.now() - ts) / 1000;
@@ -142,37 +156,10 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {/* The only way back to the marketing site from inside the editor.
-              A plain <a>, not next/link: a client-side nav would unmount the
-              editor without firing pagehide, and autosave is debounced
-              (src/store/projectPersistence.ts:40/:387), so the last edits would
-              never reach IndexedDB. That is also why the Next rule below is
-              off for this one line — leaving the editor is exactly the case
-              where a full document load is the point, not an oversight.
-              Unlinked while landingEnabled is off, because "/" just redirects
-              straight back to /design in that state
-              (src/app/(marketing)/layout.tsx:32) and a link here would only
-              bounce. */}
+          {/* See BackToSite at the bottom of this file for why this is a plain
+              <a> and why it is hidden while landingEnabled is off. */}
           {landingEnabled ? (
-            // eslint-disable-next-line @next/next/no-html-link-for-pages
-            <a
-              href="/"
-              aria-label="done. home"
-              style={{ display: "flex", flexDirection: "column", gap: 2, textDecoration: "none" }}
-            >
-              <Wordmark size={20} style={{ color: T.text }} />
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: T.textFaint,
-                }}
-              >
-                back to site
-              </span>
-            </a>
+            <BackToSite />
           ) : (
             <Wordmark size={20} style={{ color: T.text }} />
           )}
@@ -183,23 +170,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
             </span>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          title="Close (Esc)"
-          style={{
-            border: `1px solid ${T.panelBorder}`,
-            background: T.inputBg,
-            color: T.textDim,
-            cursor: "pointer",
-            width: 30,
-            height: 30,
-            borderRadius: 999,
-            fontSize: 16,
-            lineHeight: 1,
-          }}
-        >
-          ×
-        </button>
+        <CloseButton onClose={onClose} />
       </div>
 
       {/* grid */}
@@ -214,44 +185,15 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
           }}
         >
           {/* new-plan tile */}
-          <button
-            onClick={handleNew}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              aspectRatio: "1 / 1",
-              border: `1.5px dashed ${T.panelBorder}`,
-              borderRadius: T.radiusL,
-              background: "transparent",
-              color: T.textDim,
-              cursor: "pointer",
-              fontFamily: T.font,
-              transition: `border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
-            }}
-          >
-            <span style={{ fontSize: 30, lineHeight: 1 }}>+</span>
-            <span style={{ fontSize: 13 }}>New plan</span>
-          </button>
+          <NewPlanTile onClick={handleNew} />
 
           {items.map((m) => {
             const isCurrent = m.id === currentId;
             return (
-              <div
+              <ProjectCard
                 key={m.id}
+                isCurrent={isCurrent}
                 onClick={() => renaming !== m.id && handleOpen(m.id)}
-                style={{
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  ...glass({
-                    borderRadius: T.radiusL,
-                    overflow: "hidden",
-                    border: `1px solid ${isCurrent ? T.accent : T.panelBorder}`,
-                  }),
-                }}
               >
                 {/* thumbnail */}
                 <div
@@ -272,7 +214,9 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
-                    <span style={{ fontSize: 30, color: T.textFaint }}>▱</span>
+                    // No snapshot yet (never opened on this computer). The plan
+                    // glyph, not the `▱` character it replaces.
+                    <PlanMapIcon size={30} strokeWidth={1.35} style={{ color: T.textFaint }} />
                   )}
                   <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
                     {isCurrent && (
@@ -322,33 +266,16 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                           gap: 4,
                         }}
                       >
-                        ● LIVE
+                        <Pip color="#fff" size={6} /> LIVE
                       </span>
                     )}
                   </div>
-                  <button
+                  <DeleteButton
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(m);
                     }}
-                    title="Delete plan"
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      width: 24,
-                      height: 24,
-                      borderRadius: 999,
-                      border: "none",
-                      background: "rgba(0,0,0,0.5)",
-                      color: "#fff",
-                      cursor: "pointer",
-                      fontSize: 12,
-                      lineHeight: 1,
-                    }}
-                  >
-                    🗑
-                  </button>
+                  />
                 </div>
 
                 {/* meta */}
@@ -391,33 +318,211 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       >
                         {m.name}
                       </span>
-                      <button
+                      <RenameButton
                         onClick={(e) => {
                           e.stopPropagation();
                           startRename(m);
                         }}
-                        title="Rename"
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          color: T.textFaint,
-                          cursor: "pointer",
-                          fontSize: 12,
-                          padding: 0,
-                          flexShrink: 0,
-                        }}
-                      >
-                        ✎
-                      </button>
+                      />
                     </div>
                   )}
                   <span style={microLabel(T.textFaint)}>{ago(m.updatedAt)}</span>
                 </div>
-              </div>
+              </ProjectCard>
             );
           })}
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Hover-aware pieces ──────────────────────────────────────────────────────
+// The gallery is the app's front door and had no hover feedback anywhere: not
+// on the cards, not on their rename/delete buttons, not on Close. Each of these
+// is its own component purely so it can hold a `useHover` flag — the cards are
+// rendered in a loop, and a hook cannot be called inside one.
+
+/** Close (Esc). */
+function CloseButton({ onClose }: { onClose: () => void }) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClose}
+      title="Close (Esc)"
+      aria-label="Close projects"
+      {...bind}
+      style={{
+        border: `1px solid ${hov ? "rgba(255,255,255,0.2)" : T.panelBorder}`,
+        background: hov ? "rgba(255,255,255,0.12)" : T.inputBg,
+        color: hov ? T.text : T.textDim,
+        cursor: "pointer",
+        width: 30,
+        height: 30,
+        borderRadius: 999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
+      }}
+    >
+      <CloseIcon size={15} />
+    </button>
+  );
+}
+
+/** The dashed "New plan" tile. It already declared a border-color/color
+ *  transition and had nothing to trigger it. */
+function NewPlanTile({ onClick }: { onClick: () => void }) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      {...bind}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        aspectRatio: "1 / 1",
+        border: `1.5px dashed ${hov ? T.accent : T.panelBorder}`,
+        borderRadius: T.radiusL,
+        background: hov ? "rgba(255,255,255,0.04)" : "transparent",
+        color: hov ? T.text : T.textDim,
+        cursor: "pointer",
+        fontFamily: T.font,
+        transition: `border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}, background ${T.dur} ${T.ease}`,
+      }}
+    >
+      <PlusIcon size={28} strokeWidth={1.4} />
+      <span style={{ fontSize: 13 }}>New plan</span>
+    </button>
+  );
+}
+
+/** A project card. The whole tile is the click target, so the whole tile is
+ *  what has to answer the cursor. */
+function ProjectCard({
+  isCurrent,
+  onClick,
+  children,
+}: {
+  isCurrent: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const [hov, bind] = useHover();
+  return (
+    <div
+      onClick={onClick}
+      {...bind}
+      style={{
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        transition: `border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}, box-shadow ${T.dur} ${T.ease}`,
+        transform: hov ? "translateY(-2px)" : "none",
+        ...glass({
+          borderRadius: T.radiusL,
+          overflow: "hidden",
+          border: `1px solid ${isCurrent ? T.accent : hov ? "rgba(255,255,255,0.22)" : T.panelBorder}`,
+          boxShadow: hov ? "0 16px 40px rgba(0,0,0,0.45)" : T.shadow,
+        }),
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Delete, over the thumbnail. Red on hover — it is the one destructive
+ *  control in the gallery and should say so before it is clicked. */
+function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      title="Delete plan"
+      aria-label="Delete plan"
+      {...bind}
+      style={{
+        position: "absolute",
+        top: 8,
+        right: 8,
+        width: 24,
+        height: 24,
+        borderRadius: 999,
+        border: "none",
+        background: hov ? T.danger : "rgba(0,0,0,0.5)",
+        color: "#fff",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: `background ${T.dur} ${T.ease}`,
+      }}
+    >
+      <TrashIcon size={13} />
+    </button>
+  );
+}
+
+/** Rename, beside the plan's name. */
+function RenameButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  const [hov, bind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      title="Rename"
+      aria-label="Rename plan"
+      {...bind}
+      style={tGhostBtn(hov, {
+        padding: 3,
+        flexShrink: 0,
+        color: hov ? T.text : T.textFaint,
+      })}
+    >
+      <PencilIcon size={13} />
+    </button>
+  );
+}
+
+/** The only way back to the marketing site from inside the editor.
+ *
+ *  A plain `<a>`, not next/link: a client-side nav would unmount the editor
+ *  without firing pagehide, and autosave is debounced
+ *  (src/store/projectPersistence.ts:40/:387), so the last edits would never
+ *  reach IndexedDB. That is also why the Next rule below is disabled for this
+ *  one line — leaving the editor is exactly the case where a full document load
+ *  is the point, not an oversight.
+ *
+ *  Rendered only while `landingEnabled` is on: with the flag off, "/" just
+ *  redirects straight back to /design (src/app/(marketing)/layout.tsx:32) and a
+ *  link here would only bounce. */
+function BackToSite() {
+  const [hov, bind] = useHover();
+  return (
+    // eslint-disable-next-line @next/next/no-html-link-for-pages
+    <a
+      href="/"
+      aria-label="done. home"
+      {...bind}
+      style={{ display: "flex", flexDirection: "column", gap: 2, textDecoration: "none" }}
+    >
+      <Wordmark size={20} style={{ color: T.text }} />
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: hov ? T.text : T.textFaint,
+          transition: `color ${T.dur} ${T.ease}`,
+        }}
+      >
+        back to site
+      </span>
+    </a>
   );
 }

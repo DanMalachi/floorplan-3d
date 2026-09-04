@@ -166,7 +166,9 @@ export function dxfTextToResult(text: string): DxfImportResult {
 
   const stats = { ...parsed.stats, unitsKnown: metersPerPixel != null };
   const dropNote = droppedSeg > 0 ? `, dropped ${droppedSeg} stray` : "";
-  const summary = `✓ DXF — ${segments.length} lines, ${arcs.length} arcs, ${texts.length} labels${dropNote} · ${scaleNote}`;
+  // No leading `✓`: the status travels as a field, not as a character in the
+  // prose (see rasterQualityMsg in planImport.ts).
+  const summary = `DXF — ${segments.length} lines, ${arcs.length} arcs, ${texts.length} labels${dropNote} · ${scaleNote}`;
 
   return { isVector: true, image, segments, arcs, texts, metersPerPixel, stats, summary };
 }

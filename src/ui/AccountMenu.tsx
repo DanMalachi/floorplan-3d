@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PD, pdGlass } from "./planDock/tokens";
+import { useHover } from "./planDock/useHover";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 
 // -----------------------------------------------------------------------------
@@ -22,6 +23,11 @@ export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  // Both hooks are called unconditionally, before the early returns below — one
+  // for the signed-out sign-in pill, one for the signed-in avatar trigger. They
+  // are separate flags because only ever one of the two is rendered.
+  const [signInHover, signInHoverBind] = useHover();
+  const [triggerHover, triggerHoverBind] = useHover();
   const ref = useRef<HTMLDivElement>(null);
 
   // A failed sign-in comes back as ?authError=… from the callback route. Show it
@@ -62,6 +68,7 @@ export function AccountMenu() {
             void signInWithGoogle().catch(() => setBusy(false));
           }}
           disabled={busy}
+          {...signInHoverBind}
           title="Sign in so your projects follow you to any computer"
           style={{
             display: "flex",
@@ -76,6 +83,10 @@ export function AccountMenu() {
             cursor: busy ? "default" : "pointer",
             opacity: busy ? 0.6 : 1,
             ...pdGlass({ borderRadius: 999 }),
+            // The glass recipe owns `background`, so hover lifts it after the
+            // spread rather than through the helper.
+            background: signInHover && !busy ? PD.surfaceMutedHover : PD.glassBg,
+            transition: "background 140ms ease",
           }}
         >
           <GoogleMark />
@@ -113,6 +124,7 @@ export function AccountMenu() {
     <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen((v) => !v)}
+        {...triggerHoverBind}
         title={name}
         style={{
           width: SIZE + 6,
@@ -123,6 +135,10 @@ export function AccountMenu() {
           cursor: "pointer",
           overflow: "hidden",
           ...pdGlass({ borderRadius: 999 }),
+          // An avatar fills the button, so the only surface hover can touch is
+          // the ring around it.
+          border: `1px solid ${triggerHover || open ? "oklch(1 0 0 / 0.28)" : "oklch(1 0 0 / 0.09)"}`,
+          transition: "border-color 140ms ease",
         }}
       >
         {avatar ? (
@@ -169,46 +185,61 @@ export function AccountMenu() {
           </div>
           {/* The data page (export + account deletion). Reachable from here
               because a right-to-erasure control nobody can find is not one. */}
-          <a
-            href="/account"
-            onClick={() => setOpen(false)}
-            style={{
-              display: "block",
-              padding: "8px 10px",
-              marginBottom: 4,
-              fontSize: 12.5,
-              fontFamily: PD.fontUi,
-              color: PD.textSecondary,
-              background: PD.surfaceMuted,
-              borderRadius: PD.radiusS,
-              textDecoration: "none",
-            }}
-          >
+          <MenuRow href="/account" onSelect={() => setOpen(false)}>
             Your data
-          </a>
-          <button
-            onClick={() => {
+          </MenuRow>
+          <MenuRow
+            onSelect={() => {
               setOpen(false);
               void signOut();
             }}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              padding: "8px 10px",
-              fontSize: 12.5,
-              fontFamily: PD.fontUi,
-              color: PD.textSecondary,
-              background: PD.surfaceMuted,
-              border: "none",
-              borderRadius: PD.radiusS,
-              cursor: "pointer",
-            }}
           >
             Sign out
-          </button>
+          </MenuRow>
         </div>
       )}
     </div>
+  );
+}
+
+/** One row of the dropdown. The two rows were an `<a>` and a `<button>` with
+ *  the same 14 style properties duplicated and no hover on either; this is that
+ *  style once, with the flag. `href` picks the element — the data page is a
+ *  real navigation and must stay a link. */
+function MenuRow({
+  href,
+  onSelect,
+  children,
+}: {
+  href?: string;
+  onSelect: () => void;
+  children: React.ReactNode;
+}) {
+  const [hovered, hoverBind] = useHover();
+  const style: React.CSSProperties = {
+    display: "block",
+    width: href ? undefined : "100%",
+    textAlign: "left",
+    padding: "8px 10px",
+    marginBottom: 4,
+    fontSize: 12.5,
+    fontFamily: PD.fontUi,
+    color: hovered ? PD.textPrimary : PD.textSecondary,
+    background: hovered ? PD.surfaceMutedHover : PD.surfaceMuted,
+    border: "none",
+    borderRadius: PD.radiusS,
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: "background 140ms ease, color 140ms ease",
+  };
+  return href ? (
+    <a href={href} onClick={onSelect} {...hoverBind} style={style}>
+      {children}
+    </a>
+  ) : (
+    <button onClick={onSelect} {...hoverBind} style={style}>
+      {children}
+    </button>
   );
 }
 

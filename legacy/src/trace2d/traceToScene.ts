@@ -2,10 +2,6 @@ import type { Node, Opening, Room, Scene, Stair, Wall } from "@/schema/scene";
 import type { TraceOpening, TracePoint, TraceSegment, TraceStair } from "./types";
 import { DEFAULT_THICKNESS } from "@/schema/constants";
 import { analyzeLoops } from "../lib/loops";
-import { pointInPolygon } from "@/lib/rooms/roomArea";
-import { buildRoomGraph } from "@/lib/rooms/semanticGraph";
-import { classifyRoomsByRules, RULE_CONFIDENCE_GATE } from "@/lib/rooms/roomClassifier";
-import { displayRoomType } from "@/lib/rooms/roomTaxonomy";
 
 /** A text span from the plan (vector-PDF OCR), in image-pixel space. */
 export interface PlanText {
@@ -20,7 +16,12 @@ export interface TraceToSceneInput {
   openings: TraceOpening[];
   stairs?: TraceStair[];
   metersPerPixel: number;
-  texts?: PlanText[]; // optional room-label tokens for the knowledge layer
+  /** Optional room-label tokens from the plan. Currently UNCONSUMED: it fed
+   *  the room-type guess that was removed (see the note at the end of
+   *  traceToScene). Kept on the input so TraceRail can keep handing OCR text
+   *  through until there is a use for it that the user can actually see and
+   *  correct. */
+  texts?: PlanText[];
 }
 
 /**
@@ -109,48 +110,20 @@ export function traceToScene(input: TraceToSceneInput): Scene {
     ...(stairs.length > 0 ? { stairs } : {}),
   };
 
-  // Building Knowledge Layer — free pass. Deterministic features + rule labels
-  // are computed for every generated scene; the paid VLM escalation is a
-  // separate explicit action (store.understandRooms).
-  const graph = buildRoomGraph(scene);
-  const ocr = input.texts?.length
-    ? assignTextsToRooms(input.texts, rooms, pointMap)
-    : undefined;
-  const { rooms: semantics, building } = classifyRoomsByRules(graph, ocr);
-  scene.rooms = rooms.map((r) => {
-    const sem = semantics.get(r.id);
-    if (!sem) return r;
-    // Confident types also become the display name ("Room 3" -> "Bedroom").
-    const name =
-      sem.type !== "unknown" && sem.confidence >= RULE_CONFIDENCE_GATE
-        ? displayRoomType(sem.type)
-        : r.name;
-    return { ...r, name, semantics: sem };
-  });
-  scene.building = building;
+  // Room TYPE is deliberately never guessed here.
+  //
+  // This used to run the Building Knowledge Layer on every generated scene
+  // (buildRoomGraph -> classifyRoomsByRules) and then write the winning label
+  // straight into `Room.name`, so a rule that fired wrongly did not merely
+  // mislabel a room in one panel — it BECAME the room's persisted name, with
+  // nothing in the UI showing that a guess had happened or offering a way to
+  // correct it. A wrong guess you cannot see is worse than no guess, so the
+  // whole pass is gone: rooms keep the neutral "Room N" that the loop pass
+  // above gives them, and `Room.semantics` / `Scene.building` are left unset.
+  //
+  // Nothing downstream requires them: the walkthrough's spawn picker already
+  // falls back to the exterior door and then to the largest room, and the
+  // room inspector now shows measured dimensions instead of a verdict.
 
   return scene;
-}
-
-/** Assign plan text spans to the room whose loop (in px space) contains them. */
-function assignTextsToRooms(
-  texts: PlanText[],
-  rooms: Room[],
-  pointMap: Map<string, TracePoint>,
-): Map<string, string[]> {
-  const polys = rooms.map((r) => ({
-    id: r.id,
-    poly: r.loop
-      .map((id) => pointMap.get(id))
-      .filter((p): p is TracePoint => p != null),
-  }));
-  const out = new Map<string, string[]>();
-  for (const t of texts) {
-    const hit = polys.find((r) => r.poly.length >= 3 && pointInPolygon(t.x, t.y, r.poly));
-    if (!hit) continue;
-    const arr = out.get(hit.id);
-    if (arr) arr.push(t.text);
-    else out.set(hit.id, [t.text]);
-  }
-  return out;
 }

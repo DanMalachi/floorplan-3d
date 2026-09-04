@@ -3,6 +3,7 @@ import Link from "next/link";
 import { B, type as ty, ctaPrimary, microLabel } from "@/brand/tokens";
 import { Faq } from "@/landing/sections/Faq";
 import { APP_HREF } from "@/landing/nav";
+import { CTA_CLASS, CTA_GHOST_CLASS } from "@/landing/hoverCss";
 
 export const metadata: Metadata = {
   title: "Questions — done.",
@@ -40,11 +41,12 @@ export default function FaqPage() {
       <Faq />
 
       <div style={{ marginTop: 48, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <Link href={APP_HREF} style={ctaPrimary()}>
+        <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary()}>
           Open done.
         </Link>
         <Link
           href="/about"
+          className={CTA_GHOST_CLASS}
           style={{
             ...ctaPrimary({ background: "transparent", color: B.ink }),
             border: `1px solid ${B.hairline2}`,

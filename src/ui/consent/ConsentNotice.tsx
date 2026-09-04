@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { CloseIcon } from "@/ui/planDock/icons";
 import { useSceneStore } from "@/store/useSceneStore";
 
 // -----------------------------------------------------------------------------
@@ -97,23 +99,36 @@ export function ConsentNotice() {
         </a>
         .
       </div>
-      <button
-        onClick={dismiss}
-        aria-label="Dismiss cookie notice"
-        title="Dismiss"
-        style={{
-          flex: "0 0 auto",
-          border: "none",
-          background: "transparent",
-          color: PD.textTertiary,
-          cursor: "pointer",
-          fontSize: 16,
-          lineHeight: 1,
-          padding: 2,
-        }}
-      >
-        ×
-      </button>
+      <DismissButton onClick={dismiss} />
     </div>
+  );
+}
+
+/** Dismiss. Its own component so it can hold a hover flag — this is a 20px
+ *  target and needed one more than most. */
+function DismissButton({ onClick }: { onClick: () => void }) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Dismiss cookie notice"
+      title="Dismiss"
+      {...hoverBind}
+      style={{
+        flex: "0 0 auto",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        border: "none",
+        background: hovered ? PD.surfaceMutedHover : "transparent",
+        color: hovered ? PD.textPrimary : PD.textTertiary,
+        cursor: "pointer",
+        borderRadius: PD.radiusS,
+        padding: 3,
+        transition: "background 140ms ease, color 140ms ease",
+      }}
+    >
+      <CloseIcon size={14} />
+    </button>
   );
 }
