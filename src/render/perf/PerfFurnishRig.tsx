@@ -3,6 +3,7 @@
 import { Component, Suspense, useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
+import { clone as cloneWithSkeletons } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { CATALOG_BY_ID, type FurnitureAsset } from "@/furniture/catalog";
 import { applyShadowClass } from "@/render/materialClass";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -74,7 +75,11 @@ function normalizeForPerf(
   footprint: { w: number; d: number } | undefined,
   rotation: [number, number, number] | undefined,
 ): THREE.Group {
-  const clone = gltfScene.clone(true);
+  // Skeleton-aware clone, matching FurnitureLayer's — see the long note there.
+  // A skinned model cloned with `Object3D.clone(true)` keeps the cache's bones
+  // and draws at the world origin, which in a furnish benchmark would stack
+  // every repeat of that model on one spot and quietly change the numbers.
+  const clone = cloneWithSkeletons(gltfScene);
   if (rotation) clone.rotation.set(rotation[0], rotation[1], rotation[2]);
   const box = new THREE.Box3().setFromObject(clone);
   const size = box.getSize(new THREE.Vector3());

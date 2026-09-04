@@ -37,6 +37,37 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-04, `src/viewport3d/FurnitureLayer.tsx` — `normalize()` clones with
+  `SkeletonUtils.clone` instead of `Object3D.clone(true)`.** Approved by Dan
+  before the edit. Fixes the "phantom oven" in the marketing hero.
+
+  `Object3D.clone(true)` copies a `SkinnedMesh` but not its `Skeleton`, so every
+  copy stayed bound to the ORIGINAL bones — which live inside drei's `useGLTF`
+  cache, are never added to any scene, and therefore sit at the world origin for
+  the life of the tab. The GPU skins by those bones, so a skinned item drew in
+  the middle of the model no matter where it was placed, while its `matrixWorld`,
+  its `Box3`, and `Mesh.raycast` all correctly reported the placed position.
+
+  That split is the whole reason it read as a phantom rather than a misplaced
+  item: it could not be selected, and every measurement said there was no
+  geometry where it was visibly drawn. Two hours of the previous session were
+  spent on the resulting false negatives, so it is worth stating plainly —
+  **a bounding box or a raycast is not evidence about where a skinned mesh is
+  drawn.** (The second false negative, unrelated to skinning: a raycast from the
+  orbit camera hits the near cutaway wall first, because cutaway fades walls in
+  the shader rather than removing the geometry.)
+
+  Exactly one catalog model is skinned today — the BlenderKit Electric Stove,
+  `76e31f48-a0f7-4854-868a-c2f692b68f67`, 1 of 465 GLBs (75 BlenderKit + 390
+  IKEA, all scanned for `skins`) — which is why this reached production
+  unnoticed. It is a latent trap for any skinned model added later, so the fix
+  is unconditional rather than special-cased: on an unskinned model
+  `SkeletonUtils.clone` is an ordinary deep clone.
+
+  `src/render/perf/PerfFurnishRig.tsx`'s `normalizeForPerf` is a deliberate copy
+  of this function (see its doc comment) and carried the same bug; it was fixed
+  in the same change to keep the two in step.
+
 - **2026-09-03, `src/viewport3d/WallMesh.tsx` — the two cutaway fades now set
   `needsUpdate` when they flip `transparent`.** Approved by Dan before the edit.
   Fixes a regression shipped by the 2026-09-02 WallMesh entry below.

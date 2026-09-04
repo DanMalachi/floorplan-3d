@@ -3,6 +3,7 @@
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
+import { clone as cloneWithSkeletons } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { FurnitureItem, Scene } from "@/schema/scene";
@@ -55,7 +56,20 @@ function normalize(
   opacity?: number,
   rotation?: [number, number, number],
 ): THREE.Group {
-  const clone = gltfScene.clone(true);
+  // SkeletonUtils.clone, NOT Object3D.clone. `clone(true)` copies a SkinnedMesh
+  // but not its Skeleton, so the copy stays bound to the ORIGINAL bones — which
+  // live in drei's useGLTF cache, are never added to any scene, and so sit at the
+  // world origin forever. The GPU skins by those bones, so such an item draws in
+  // the middle of the model wherever it is placed, while its `matrixWorld`,
+  // bounding box and raycast all correctly report the placed position. That split
+  // is what made this look like a phantom: an object with "no geometry" anywhere
+  // near it, that nothing could select.
+  //
+  // Exactly one catalog model is skinned today (the BlenderKit Electric Stove,
+  // 1 of 465 GLBs), which is why it survived this long. SkeletonUtils.clone
+  // clones the bone hierarchy and re-binds each SkinnedMesh to it; on an
+  // unskinned model it is an ordinary deep clone.
+  const clone = cloneWithSkeletons(gltfScene);
   // Stand up models authored lying down BEFORE measuring, so the bbox we center,
   // floor, and scale to the footprint is the corrected (upright) one.
   if (rotation) clone.rotation.set(rotation[0], rotation[1], rotation[2]);

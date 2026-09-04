@@ -2,7 +2,7 @@
 
 Written 2026-09-04. Delete this file when the branch merges.
 
-**Branch:** `feat/hero-trace`, 5 commits, **nothing pushed**. Working tree clean.
+**Branch:** `feat/hero-trace`, 6 commits, **nothing pushed**. Working tree clean.
 A push to `main` is a production deploy, so this branch is the safe place to sit.
 
 Three paths are untracked and were deliberately left alone — they were already
@@ -54,52 +54,72 @@ reading it:
 
 ---
 
-## The one open bug: the phantom oven
+## The phantom oven — FIXED 2026-09-04
 
-An oven renders in the middle of the hero scene. **Not fixed.**
+It was the Electric Stove (`f7`), drawn at the **world origin** instead of at the
+wall. The stove is the only skinned model in the catalog — 1 of 465 GLBs (75
+BlenderKit + 390 IKEA, all scanned for `skins`) — and `normalize()` cloned it
+with `Object3D.clone(true)`, which copies a `SkinnedMesh` but **not** its
+`Skeleton`. Every copy therefore stayed bound to the original bones, which live
+in drei's `useGLTF` cache, are never added to any scene, and so sit at (0,0,0)
+for the life of the tab. The GPU skins by those bones.
 
-What is established, all measured:
+Fixed by cloning with `SkeletonUtils.clone` in `FurnitureLayer.tsx` (protected —
+Dan approved before the edit, logged in `docs/PROTECTED_PATHS.md`) and in
+`PerfFurnishRig.tsx`'s deliberate copy of that function. Verified: the phantom
+is gone, the stove stands against the right wall, and the skeleton diagnostics
+flip from `boneRootIsAppScene: false` / `boneWorld [0,0,0]` / one shared skeleton
+to `true` / `[3.5, 0, -1.9]` / 20 own skeletons.
 
-- It is **not in `scene.furniture`** — nearest item 2.74 m away.
-- **No geometry exists at its location** — confirmed by raycasting through its
-  exact pixel with the app's own camera, and by a world-bounding-box sweep.
-  Both find only whatever is genuinely behind it.
-- It is **unselectable**. With the object behind it deleted, clicking it selects
-  nothing at all.
-- **Not a placement ghost** — Escape does not clear it, and ghosts render at 0.55
-  opacity while this is opaque.
-- It appears on a **fresh load with zero interaction**, and on a clean dev server
-  with no HMR history.
-- It survived the render-contract fix, so it is **not** stale-buffer residue.
-- **Absent on done.design** (Dan confirmed), so it is not hurting users.
+### The two false negatives that cost the previous session hours
 
-**Strongest lead, not yet chased:** when the scene was measured, only **7 of 11**
-BlenderKit GLBs had mounted, and the Electric Stove (`f7`,
-`blenderkit:76e31f48-…`) was one of the four missing. An oven appearing where no
-oven is listed, while the stove that *is* listed has not mounted, points at the
-**asset-loading path** (`FurnitureLayer`'s `AssetModel` / drei's `useGLTF` cache)
-rather than the scene graph. Start there.
+Both are worth remembering, because both look like solid evidence:
 
-Note those measurements were taken while the contract bug was breaking Canvas
-startup, so the "7 of 11" figure needs re-taking now that rendering works.
+1. **A bounding box or a raycast says nothing about where a skinned mesh is
+   drawn.** `Box3.setFromObject` and `Mesh.raycast` read `matrixWorld`; skinning
+   happens after that, on the GPU. So every measurement correctly reported the
+   stove at the wall while it was visibly drawn in the middle of the room. That
+   contradiction *was* the diagnosis, and it read as "there is no geometry here".
+2. **A raycast from the orbit camera hits the near cutaway wall first.** Cutaway
+   fades walls in the shader; it does not remove the geometry. So the nearest hit
+   is always a wall, and anything past it looks like "only what is genuinely
+   behind it".
 
-### How to look at it
+### How to get a probe into the scene without editing a protected file
 
-`CounterItemGhost.tsx` is one of the few non-protected components mounted INSIDE
-the Canvas, which makes it the only practical injection point for a probe:
+three dispatches every `Scene` and `WebGLRenderer` it constructs to
+`window.__THREE_DEVTOOLS__` if that exists. Install an `EventTarget` there before
+the page loads (Playwright `addInitScript`) and you get the renderer with no code
+change at all. Note `three` assigns `this.render` as an **own** property
+(`three.module.js:17603`), so patch the instance, not the prototype:
 
-```tsx
-import { useStore } from "@react-three/fiber";
-function DevSceneProbe() {
-  const store = useStore();
-  useEffect(() => { (window as any).__done3D = store; }, [store]);
-  return null;
-}
+```js
+const hook = new EventTarget();
+hook.addEventListener("observe", (e) => {
+  const o = e.detail;
+  if (!o?.isWebGLRenderer || window.__patched) return;
+  window.__patched = true;
+  const orig = o.render.bind(o);
+  o.render = (scene, camera) => {
+    if (scene.children.length > 3) { window.__appScene = scene; window.__appCamera = camera; }
+    return orig(scene, camera);
+  };
+});
+window.__THREE_DEVTOOLS__ = hook;
 ```
 
-Then `window.__done3D.getState()` gives `scene`, `camera`, `gl`, `raycaster`.
-Turbopack did not always pick this up on edit — restart the dev server if
-`__done3D` stays undefined.
+Two more things that made this tractable, both reusable:
+
+- **Pin the camera.** `cam.position.set(...); cam.lookAt(...)`, then override
+  `cam.updateMatrixWorld` to re-copy that pose each frame. Auto-orbit otherwise
+  moves the shot between runs and a pixel stops meaning the same thing twice.
+- **Identify by elimination, not by picking.** Toggling `visible` on every mesh
+  matching a material name and re-shooting settles in one frame what a raycast
+  argued about for hours.
+
+`Mesh.raycast` only reads `raycaster.ray.origin`, `.direction`, `.near` and
+`.far`, so a duck-typed raycaster object is enough — no need to reach the `THREE`
+namespace from outside the bundle.
 
 ---
 
