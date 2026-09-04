@@ -44,8 +44,8 @@ export const B = {
   // src/app/layout.tsx (variable mode), so naming them literally here is
   // enough — the @font-face rules are on the page already. Manrope is loaded
   // as a variable font with no weight array, so 800 is available.
-  fontDisplay: `Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
-  fontUi: `Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  fontDisplay: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  fontUi: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
   fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace`,
 
   // ── Grounds ─────────────────────────────────────────────────────────────

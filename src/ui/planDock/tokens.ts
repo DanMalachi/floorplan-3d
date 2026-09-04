@@ -27,7 +27,7 @@ import type React from "react";
 const v = (name: string, dark: string) => `var(--pd-${name}, ${dark})`;
 
 export const PD = {
-  fontUi: `Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  fontUi: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
   fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace`,
 
   accent: v("accent", "oklch(0.62 0.15 258)"),

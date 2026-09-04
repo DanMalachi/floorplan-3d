@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Points next-intl at src/i18n/request.ts (its default lookup does not include
+// a `src/` prefix). Applied INSIDE the Sentry wrapper below, so the merged
+// config Sentry returns is the one that ships — same reasoning as the note on
+// `withSentryConfig` at the bottom of this file.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // -----------------------------------------------------------------------------
 // Security headers
@@ -180,7 +187,7 @@ const nextConfig: NextConfig = {
 // The wrapper must stay OUTSIDE `nextConfig` rather than replace it: it returns
 // a merged config, and the `headers()` above (every security header, including
 // the CSP) has to survive that merge.
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withNextIntl(nextConfig), {
   silent: !process.env.CI,
   // Only set when Dan has created the project; absent means "skip the upload"
   // rather than "fail the build".
