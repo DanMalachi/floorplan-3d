@@ -55,9 +55,42 @@ export const PD = {
   surfaceMutedHover: v("surface-muted-hover", "oklch(1 0 0 / 0.09)"),
   inputBg: v("input-bg", "oklch(1 0 0 / 0.07)"),
 
+  // ── Added 2026-09-04, to absorb src/ui/tokens.ts (`T`) ──────────────────
+  //
+  // Two token sets were live and they disagreed about the same control: `T`
+  // filled an active chip SOLID #0a84ff with white text while `pdChip` used a
+  // 22% tint of oklch(0.62 .15 258). Dan saw that as "Full/Cutaway is a
+  // different shade of blue"; it was really two design languages side by side.
+  // Everything moves to this set, which means these four roles `T` had and
+  // this set did not now need to exist here — otherwise the migration would
+  // invent ad-hoc values, which is worse than two token sets.
+  //
+  // Note what is deliberately NOT unified: the SURFACE recipe. `pdGlass` is
+  // 38% opacity + blur, which is right for a small panel floating over the
+  // model and wrong for a full-screen project gallery — read through a
+  // fullscreen sheet and the 3D scene behind it competes with the text. So
+  // `panelBg`/`surfaceSolid` keep `T`'s heavier surfaces available while the
+  // palette, the accent and the interactive states unify. Same language,
+  // different weight of paper.
+  bg: v("bg", "oklch(0.19 0.006 285)"), // app/page ground
+  canvas: v("canvas", "oklch(0.21 0.007 285)"), // one step up
+  panelBg: v("panel-bg", "oklch(0.235 0.008 285 / 0.72)"), // heavier glass, for sheets
+  surfaceSolid: v("surface-solid", "oklch(0.24 0.008 285)"), // fully opaque panel
+
+  // `T.danger` had no counterpart here at all, and delete is the one action
+  // that must not borrow the neutral hover treatment.
+  danger: v("danger", "oklch(0.64 0.22 27)"),
+  dangerText: v("danger-text", "oklch(0.74 0.17 25)"),
+  dangerTint: v("danger-tint", "oklch(0.64 0.22 27 / 0.18)"),
+
   radiusS: 10,
   radiusM: 14,
   radiusL: 20,
+
+  // For non-hover transitions (panel entrances, opacity). Hover timing is
+  // asymmetric and lives in `pdHoverTransition` below, not here.
+  dur: "180ms",
+  ease: "cubic-bezier(0.22, 1, 0.36, 1)",
 } as const;
 
 /** The shared "Liquid Glass" surface recipe (README §3), dark + more

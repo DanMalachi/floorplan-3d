@@ -44,6 +44,22 @@ const LIGHT_VARS: Record<string, string> = {
   "--pd-surface-muted": "oklch(0 0 0 / 0.045)",
   "--pd-surface-muted-hover": "oklch(0 0 0 / 0.08)",
   "--pd-input-bg": "oklch(0 0 0 / 0.05)",
+
+  // The grounds and the danger role, added when src/ui/tokens.ts (`T`) was
+  // absorbed. These have to be here as well as in tokens.ts or the light
+  // theme would keep painting the project gallery and the legal pages in
+  // near-black while everything around them went light.
+  "--pd-bg": "oklch(0.975 0.004 90)",
+  "--pd-canvas": "oklch(0.995 0.003 90)",
+  "--pd-panel-bg": "oklch(1 0 0 / 0.78)",
+  "--pd-surface-solid": "oklch(1 0 0)",
+
+  // Darker than the dark-theme red, not lighter: #ff453a-ish measures well
+  // under 4.5:1 as text on white. Same trap the brand book caught in two
+  // shipping app tokens, so it is worth stating rather than mirroring blindly.
+  "--pd-danger": "oklch(0.52 0.21 27)",
+  "--pd-danger-text": "oklch(0.47 0.2 27)",
+  "--pd-danger-tint": "oklch(0.52 0.21 27 / 0.12)",
 };
 
 /** Injects the light-theme CSS variables, scoped to `[data-pd-theme="light"]`
