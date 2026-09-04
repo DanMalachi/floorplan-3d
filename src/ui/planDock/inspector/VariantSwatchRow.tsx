@@ -21,7 +21,7 @@ export function VariantSwatchRow({ item }: { item: FurnitureItem }) {
           key={v.assetId}
           hex={v.colors?.[0]?.hex ?? null}
           active={v.assetId === item.assetId}
-          title={v.colors?.[0]?.name}
+          tip={v.colors?.[0]?.name}
           size={16}
           onClick={() => useSceneStore.getState().replaceFurnitureAsset(item.id, v.assetId)}
         />

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { T } from "@/ui/tokens";
+import { PD } from "@/ui/planDock/tokens";
 import { ChevronLeftIcon } from "@/ui/planDock/icons";
 
 // globals.css pins `body { overflow: hidden; height: 100% }` for the 3D app's
@@ -10,13 +10,18 @@ import { ChevronLeftIcon } from "@/ui/planDock/icons";
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <div
+      // Opaque, deliberately: a policy is long-form reading, so this page
+      // keeps a solid `PD.bg` ground rather than the `pdGlass()` recipe the
+      // floating dock panels use. Note these pages never mount `PdThemeStyle`,
+      // so every PD colour resolves to its dark fallback — which is what this
+      // page has always been.
       style={{
         position: "fixed",
         inset: 0,
         overflowY: "auto",
-        background: T.bg,
-        color: T.text,
-        fontFamily: T.font,
+        background: PD.bg,
+        color: PD.textPrimary,
+        fontFamily: PD.fontUi,
       }}
     >
       {/* These are long-form documents whose only controls are links, and every
@@ -29,8 +34,8 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
         dangerouslySetInnerHTML={{
           __html: `
 .fp-legal a { transition: color 180ms ease, text-decoration-color 180ms ease; }
-.fp-legal a:hover { color: ${T.accent}; text-decoration: underline; text-underline-offset: 3px; }
-.fp-legal a:focus-visible { outline: 2px solid ${T.accent}; outline-offset: 3px; border-radius: 3px; }
+.fp-legal a:hover { color: ${PD.accent}; text-decoration: underline; text-underline-offset: 3px; }
+.fp-legal a:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 3px; border-radius: 3px; }
 `,
         }}
       />
@@ -42,7 +47,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             gap: 16,
             marginBottom: 40,
             fontSize: 13,
-            color: T.textDim,
+            color: PD.textSecondary,
           }}
         >
           {/* The "Floorplan → 3D" wording is the OLD product name; the app is
@@ -51,15 +56,15 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
               icon change being made here. */}
           <Link
             href="/"
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, color: T.textDim, textDecoration: "none" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, color: PD.textSecondary, textDecoration: "none" }}
           >
             <ChevronLeftIcon size={13} /> Floorplan → 3D
           </Link>
-          <span style={{ color: T.textFaint }}>·</span>
-          <Link href="/legal/privacy" style={{ color: T.text, textDecoration: "none" }}>
+          <span style={{ color: PD.textTertiary }}>·</span>
+          <Link href="/legal/privacy" style={{ color: PD.textPrimary, textDecoration: "none" }}>
             Privacy Policy
           </Link>
-          <Link href="/legal/terms" style={{ color: T.text, textDecoration: "none" }}>
+          <Link href="/legal/terms" style={{ color: PD.textPrimary, textDecoration: "none" }}>
             Terms of Service
           </Link>
         </nav>

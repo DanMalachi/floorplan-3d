@@ -266,10 +266,12 @@ function ControlButton({
           }}
         />
       )}
-      {/* `title` is the last line of defence only: the row above is sized so a
-          label never has to truncate, and this exists for a font-fallback or a
-          text-zoom setting that makes one wider than measured. */}
-      <span title={label} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      {/* No `title` here. It used to carry one as a truncation safety net, but
+          the label is already on screen, so all the native tooltip could ever
+          do was restate it in a browser-styled white box that matches nothing
+          in the page — the exact case Dan flagged. The row above is sized so a
+          label does not truncate; the ellipsis stays as the visual fallback. */}
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {label}
       </span>
     </button>

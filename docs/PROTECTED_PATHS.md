@@ -37,6 +37,31 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-04, `src/viewport3d/walkthrough/WalkthroughMode.tsx` — its five
+  `T` token references now read from the Plan Dock set** (branch
+  `fix/ui-sweep`). Approved by Dan before the edit, asked for specifically
+  because this file is not covered by the Viewport/WallMesh entry below and a
+  logged exception must never be widened to a file it does not name.
+
+  Two token sets were live and disagreed about the same control: `src/ui/tokens.ts`
+  (`T`) fills an active chip SOLID `#0a84ff` with white text, while
+  `pdChip` uses a 22% tint of `oklch(0.62 0.15 258)`. Dan read the result as
+  "Full/Cutaway is a different shade of blue"; it was really two design
+  languages side by side. Everything moves to `PD`.
+
+  This file mattered out of proportion to its five references, because it was
+  the **last consumer of `src/ui/tokens.ts`** — while it stood, that whole
+  file, and therefore the second design language, had to stay in the repo.
+  With it migrated the file is deleted and there is genuinely one token set,
+  which also makes the pending copper rebrand a single-file change instead of
+  a hunt.
+
+  Presentation only, and all five are walkthrough HUD chrome: `T.textDim` → 
+  `PD.textSecondary` on two labels, `glass()` → `pdGlass()` on two floating
+  panels, and `accentColor: T.accent` → `PD.accent` on the FOV range input.
+  Nothing touching the first-person camera, collision, spawn, door animation
+  or config. No import churn beyond swapping the one token import.
+
 - **2026-09-04, `src/viewport3d/WallMesh.tsx` — the selected-opening badge
   renders a display name instead of the raw enum** (branch `fix/ui-sweep`).
   Approved by Dan before the edit.

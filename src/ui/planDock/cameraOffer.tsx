@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { PD, pdGlass, pdIconBtn } from "./tokens";
 import { useHover } from "./useHover";
 import { CloseIcon } from "./icons";
+import { Tooltip } from "./Tooltip";
 import { ACCEPT_KEY } from "@/viewport3d/camera/offerPolicy";
 
 export interface CameraOffer {
@@ -130,9 +131,11 @@ export function CameraOfferChip() {
           ⏎
         </kbd>
       </button>
-      <button {...dismissHover} onClick={offer.dismiss} aria-label="Dismiss" title="Dismiss" style={pdIconBtn(false, 26, dismissHovered)}>
-        <CloseIcon size={13} />
-      </button>
+      <Tooltip label="Dismiss">
+        <button {...dismissHover} onClick={offer.dismiss} aria-label="Dismiss" style={pdIconBtn(false, 26, dismissHovered)}>
+          <CloseIcon size={13} />
+        </button>
+      </Tooltip>
     </div>
   );
 }

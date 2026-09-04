@@ -10,6 +10,27 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { PD, pdGlass, pdChip } from "../tokens";
 import { useHover } from "../useHover";
+import { Tooltip } from "../Tooltip";
+
+// Why the hover-label prop is `tip` and not `title`:
+//
+// A native `title` is a browser-drawn white window that matches nothing in this
+// app (Dan's review: "a chrome white window pops ... does not match the
+// aesthetic"). Both primitives below used to forward one straight to the DOM, so
+// every chip and swatch in all nine inspector sections rendered one. They take
+// `tip` now and render ../Tooltip instead — same information, the app's own
+// glass, and it clones `aria-label` onto the button so an icon-only swatch keeps
+// its accessible name.
+//
+// The rename is deliberate rather than incidental: `title` was doing two
+// unrelated jobs in this kit — a tooltip on the controls and the visible heading
+// on `PdSectionTitle` — so one grep could not tell a hover label from body text.
+// Tooltips are `tip`, text is `label`, matching `PdNumField`/`PdActionButton`.
+//
+// Placement defaults to BELOW the control. `pdInspectorPanel` is docked at
+// `top: 64`, so a tooltip above a control in the panel's first rows would be
+// clipped off the top of the window.
+type TipPlacement = "top" | "bottom";
 
 /** Docked top-right, same slot the old inspector used — every selection kind
  *  renders inside one of these. */
@@ -46,11 +67,15 @@ export const pdInspectorRow: React.CSSProperties = {
 // app. These are shared primitives, so moving them up one step fixes the same
 // bug in all nine sections at once rather than nine times.
 
-/** "Wall · 3.20 m" / "Sofa · 2.1 × 0.95 m" — the panel's first line. */
-export function PdSectionTitle({ title, meta }: { title: string; meta?: string }) {
+/** "Wall · 3.20 m" / "Sofa · 2.1 × 0.95 m" — the panel's first line.
+ *
+ *  `label`, not `title`: this is the heading you can read on screen, and while
+ *  it shared a prop name with the controls' hover text there was no way to grep
+ *  the difference. */
+export function PdSectionTitle({ label, meta }: { label: string; meta?: string }) {
   return (
     <div style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>
-      {title}
+      {label}
       {meta && (
         <span style={{ color: PD.textSecondary, fontWeight: 400, textTransform: "none" }}> · {meta}</span>
       )}
@@ -151,29 +176,38 @@ export function PdNumField({
 export function PdChip({
   active = false,
   extra,
-  title,
+  tip,
+  tipPlacement = "bottom",
   disabled,
   onClick,
   children,
 }: {
   active?: boolean;
   extra?: React.CSSProperties;
-  title?: string;
+  /** Hover explanation, drawn as the app's own glass tooltip. */
+  tip?: string;
+  tipPlacement?: TipPlacement;
   disabled?: boolean;
   onClick: () => void;
   children: ReactNode;
 }) {
   const [hovered, hoverBind] = useHover();
-  return (
+  const button = (
     <button
       {...hoverBind}
-      title={title}
       disabled={disabled}
       onClick={onClick}
       style={pdChip(active, extra, hovered && !disabled)}
     >
       {children}
     </button>
+  );
+  return tip ? (
+    <Tooltip label={tip} placement={tipPlacement}>
+      {button}
+    </Tooltip>
+  ) : (
+    button
   );
 }
 
@@ -288,7 +322,8 @@ export function PdSwatch({
   hex,
   img,
   active,
-  title,
+  tip,
+  tipPlacement = "bottom",
   onClick,
   size = 20,
 }: {
@@ -298,16 +333,18 @@ export function PdSwatch({
    *  choice nobody can make — you have to see which picture you are picking. */
   img?: string;
   active?: boolean;
-  title?: string;
+  /** The colour/finish name. A swatch has no text of its own, so this is also
+   *  what the Tooltip clones on as the button's accessible name. */
+  tip?: string;
+  tipPlacement?: TipPlacement;
   onClick: () => void;
   size?: number;
 }) {
   const [hovered, hoverBind] = useHover();
-  return (
+  const button = (
     <button
       {...hoverBind}
       onClick={onClick}
-      title={title}
       style={{
         width: size,
         height: size,
@@ -330,6 +367,13 @@ export function PdSwatch({
         flex: "0 0 auto",
       }}
     />
+  );
+  return tip ? (
+    <Tooltip label={tip} placement={tipPlacement}>
+      {button}
+    </Tooltip>
+  ) : (
+    button
   );
 }
 

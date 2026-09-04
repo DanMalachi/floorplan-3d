@@ -102,7 +102,7 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
         }}
       />
       {COLOR_PRESETS.map((hex) => (
-        <PdSwatch key={hex} hex={hex} active={value === hex} title={hex} onClick={() => onCommit(hex)} size={16} />
+        <PdSwatch key={hex} hex={hex} active={value === hex} tip={hex} onClick={() => onCommit(hex)} size={16} />
       ))}
     </div>
   );
@@ -136,7 +136,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
 
   return (
     <div style={pdInspectorPanel}>
-      <PdSectionTitle title={g.label} meta="Custom" />
+      <PdSectionTitle label={g.label} meta="Custom" />
 
       {/* A television is sold by its screen diagonal, and its width and height
           are that one number at 16:9 — so it gets inches and the standard
@@ -271,7 +271,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               hex={FINISH_HEX[f] ?? null}
               img={art?.url}
               active={spec.finish === f}
-              title={art?.label ?? f}
+              tip={art?.label ?? f}
               onClick={() => update({ finish: f })}
             />
           );
@@ -292,7 +292,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
                 key={f}
                 hex={FINISH_HEX[f] ?? null}
                 active={spec.finish2 === f}
-                title={f}
+                tip={f}
                 onClick={() => update({ finish2: f })}
               />
             ))}

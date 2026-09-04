@@ -1,7 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { T, field } from "@/ui/tokens";
+import { PD } from "@/ui/planDock/tokens";
+
+// On PD tokens (2026-09-04). This is the Trace rail's numeric field — the last
+// thing in that panel still wearing the `T` set, which filled an active control
+// solid #0a84ff while every Build/Decorate control used a soft tint of
+// oklch(0.62 .15 258). Two token sets meant two design languages in one app, so
+// everything reads from PD now and `src/ui/tokens.ts` goes away.
+//
+// There is no `pdField()` helper to swap `field()` for, and inventing one for a
+// single input would be a third recipe rather than a second. The three lines it
+// contributed are composed inline from the same tokens `PdNumField` uses
+// (inspector/panelKit.tsx), which is the shape this one is a sibling of.
+const field = (extra?: React.CSSProperties): React.CSSProperties => ({
+  background: PD.inputBg,
+  border: `1px solid ${PD.hairline}`,
+  borderRadius: PD.radiusS,
+  color: PD.textPrimary,
+  padding: "4px 8px",
+  fontSize: 12.5,
+  fontFamily: PD.fontUi,
+  outline: "none",
+  ...extra,
+});
 
 const inspectorRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" };
 
@@ -35,7 +57,7 @@ export function NumField({ label, value, onCommit, disabled, unit = "m", display
   };
   return (
     <label style={inspectorRow}>
-      <span style={{ color: T.textDim }}>{label}</span>
+      <span style={{ color: PD.textSecondary }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
         <input
           style={field({ width: 58, opacity: disabled ? 0.4 : 1 })}
@@ -54,7 +76,7 @@ export function NumField({ label, value, onCommit, disabled, unit = "m", display
             onCommit(round((displayValue + dir) / displayScale, 6));
           }}
         />
-        <span style={{ color: T.textFaint }}>{unit}</span>
+        <span style={{ color: PD.textTertiary }}>{unit}</span>
       </span>
     </label>
   );

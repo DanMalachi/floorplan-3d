@@ -17,6 +17,7 @@ import { DEFAULT_STAIR } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
 import { PD, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { StairsIcon, StairsSolidIcon, WarnIcon } from "@/ui/planDock/icons";
 import {
   pdInspectorPanel,
@@ -38,36 +39,48 @@ const STYLES = [
     key: "solid" as const,
     label: "Solid",
     Icon: StairsSolidIcon,
-    title: "Closed stringer — a boxed-in flight sitting on the floor, landings built down with it.",
+    tip: "Closed stringer — a boxed-in flight sitting on the floor, landings built down with it.",
   },
   {
     key: "open" as const,
     label: "Open",
     Icon: StairsIcon,
-    title: "Open riser — floating treads on two side stringers. You can see through and under it.",
+    tip: "Open riser — floating treads on two side stringers. You can see through and under it.",
   },
 ];
 
 /** One of the two style chips, and the Auto button. Its own component so it can
- *  hold a hover flag. */
+ *  hold a hover flag.
+ *
+ *  `tip` renders through the shared glass Tooltip rather than a native `title`:
+ *  the browser's own tooltip is a white window that matches nothing else here.
+ *  Placement is BELOW the chip because this panel is docked at `top: 64`, so a
+ *  tooltip above the first rows would be clipped off the top of the window. */
 function StairChip({
   active,
-  title,
+  tip,
   onClick,
   extra,
   children,
 }: {
   active: boolean;
-  title?: string;
+  tip?: string;
   onClick: () => void;
   extra?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   const [hovered, hoverBind] = useHover();
-  return (
-    <button {...hoverBind} title={title} onClick={onClick} style={{ ...pdChip(active, undefined, hovered), ...extra }}>
+  const button = (
+    <button {...hoverBind} onClick={onClick} style={{ ...pdChip(active, undefined, hovered), ...extra }}>
       {children}
     </button>
+  );
+  return tip ? (
+    <Tooltip label={tip} placement="bottom">
+      {button}
+    </Tooltip>
+  ) : (
+    button
   );
 }
 
@@ -101,7 +114,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
   return (
     <div style={pdInspectorPanel}>
       <PdSectionTitle
-        title="Stair"
+        label="Stair"
         meta={`${stair.flights.length} flight${stair.flights.length === 1 ? "" : "s"} · ${m.run.toFixed(2)} m`}
       />
 
@@ -111,7 +124,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
             key={s.key}
             active={style === s.key}
             extra={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
-            title={s.title}
+            tip={s.tip}
             onClick={() => style !== s.key && patch(`Stair: ${s.key}`, { style: s.key })}
           >
             <s.Icon size={13} /> {s.label}
@@ -145,7 +158,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
         </div>
         <StairChip
           active={stair.steps == null}
-          title={`Derive the step count from the rise (${DEFAULT_STAIR.rise} m climb ≈ 14 steps)`}
+          tip={`Derive the step count from the rise (${DEFAULT_STAIR.rise} m climb ≈ 14 steps)`}
           onClick={setAutoSteps}
         >
           Auto

@@ -6,7 +6,7 @@ import type { Opening, Scene } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { nodeMap } from "@/lib/rooms/roomArea";
 import { effectiveSlide, hasDerivedSlide, withoutAuthoredDoorStyle } from "@/render/doorStyle";
-import { T, glass } from "@/ui/tokens";
+import { PD, pdGlass } from "@/ui/planDock/tokens";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
 import { buildWallColliders, resolveWallCollision } from "./collision";
 import { buildStairGround, groundHeightAt } from "./stairGround";
@@ -720,8 +720,8 @@ export function WalkthroughHint({ active, locked }: { active: boolean; locked: b
         transform: "translateX(-50%)",
         padding: "8px 14px",
         fontSize: 12,
-        color: T.textDim,
-        ...glass({ borderRadius: 999 }),
+        color: PD.textSecondary,
+        ...pdGlass({ borderRadius: 999 }),
       }}
     >
       {locked ? "Walking · Esc to exit" : "Click to walk · WASD/Arrows to move · Esc to exit"}
@@ -751,10 +751,10 @@ export function WalkthroughFovControl({
         flexDirection: "column",
         gap: 4,
         padding: "8px 12px",
-        ...glass({ borderRadius: 10 }),
+        ...pdGlass({ borderRadius: PD.radiusS }),
       }}
     >
-      <span style={{ fontSize: 11, color: T.textDim }}>FOV {Math.round(fovDeg)}°</span>
+      <span style={{ fontSize: 11, color: PD.textSecondary }}>FOV {Math.round(fovDeg)}°</span>
       <input
         type="range"
         min={CFG.fovMinDeg}
@@ -762,7 +762,7 @@ export function WalkthroughFovControl({
         step={1}
         value={fovDeg}
         onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: 140, accentColor: T.accent }}
+        style={{ width: 140, accentColor: PD.accent }}
       />
     </div>
   );

@@ -15,8 +15,9 @@ import { PerfHud } from "@/render/perf/PerfHud";
 import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { RoomLights } from "@/render/RoomLights";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
-import { T, glass, chip } from "@/ui/tokens";
-import { tChipHover, useHover } from "@/ui/hoverT";
+import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { CloudIcon, MoonIcon, RainIcon, SunIcon, WalkIcon } from "@/ui/planDock/icons";
 import { Walls, dimLabelStyle } from "./WallMesh";
 import { Floors, Ceilings } from "./FloorMesh";
@@ -105,7 +106,7 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
           <Line
             key={i}
             points={[[g.value, 0.02, cz - ext], [g.value, 0.02, cz + ext]]}
-            color={T.accent}
+            color={PD.accent}
             transparent
             opacity={0.65}
             lineWidth={1.5}
@@ -114,7 +115,7 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
           <Line
             key={i}
             points={[[cx - ext, 0.02, g.value], [cx + ext, 0.02, g.value]]}
-            color={T.accent}
+            color={PD.accent}
             transparent
             opacity={0.65}
             lineWidth={1.5}
@@ -152,27 +153,43 @@ const WEATHERS: { id: Weather; label: string; Icon: (p: { size?: number }) => Re
   { id: "rain", label: "Rain", Icon: RainIcon },
 ];
 
-/** A `chip()` button in Viewport's own panels, with hover. `useHover` is a
- *  hook, so each chip in a row needs its own component to hold the flag.
- *  Presentation only — every one of these is a store setter it already had. */
+/** A chip button in Viewport's own panels, with hover. `useHover` is a hook, so
+ *  each chip in a row needs its own component to hold the flag.
+ *  Presentation only — every one of these is a store setter it already had.
+ *
+ *  Note the manual spread. `pdChip` accepts an `extra` argument and DROPS it
+ *  (see tokens.ts), unlike the `chip()` this replaced, which spread it — so
+ *  passing `extra` straight through would silently lose every override here. */
 function PanelChip({
   active,
   extra,
   onClick,
-  title,
+  tip,
   children,
 }: {
   active: boolean;
   extra?: React.CSSProperties;
   onClick: () => void;
-  title?: string;
+  /** Hover explanation, rendered in the app's glass Tooltip. Never a native
+   *  `title` — that is the white Chrome window Dan asked us to get rid of. */
+  tip?: string;
   children: React.ReactNode;
 }) {
   const [hov, bind] = useHover();
-  return (
-    <button {...bind} onClick={onClick} title={title} style={chip(active, { ...extra, ...tChipHover(hov, active) })}>
+  const btn = (
+    <button {...bind} onClick={onClick} style={{ ...pdChip(active, undefined, hov), ...extra }}>
       {children}
     </button>
+  );
+  // `bottom`, not the default `top`: every panel that uses this chip lives in
+  // the upper-left of the viewport — WallModeToggle sits just under ProjectBar
+  // — so a tooltip placed above collides with the bar instead of clearing it.
+  return tip ? (
+    <Tooltip label={tip} placement="bottom">
+      {btn}
+    </Tooltip>
+  ) : (
+    btn
   );
 }
 
@@ -197,7 +214,7 @@ function ScenePanel() {
   const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const DayNightIcon = time >= 6 && time < 19 ? SunIcon : MoonIcon;
   return (
-    <div style={{ position: "absolute", left: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...glass() }}>
+    <div style={{ position: "absolute", left: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...pdGlass() }}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
       <PanelChip
         active={walkthroughActive}
@@ -227,23 +244,32 @@ function ScenePanel() {
             key={p.id}
             active={preset === p.id}
             onClick={() => setEnvPreset(p.id)}
-            extra={{
-              flex: 1, fontSize: 11.5, borderRadius: 999, border: "none",
-              background: preset === p.id ? T.accent : T.inputBg,
-              color: preset === p.id ? "#fff" : T.textDim,
-            }}
+            // No background/color override: the active state is `pdChip`'s
+            // accent TINT, the same as every chip in the dock. These used to
+            // force a solid #0a84ff fill with white text, which is precisely
+            // why Dan read this panel as belonging to a different app.
+            extra={{ flex: 1, fontSize: 11.5, borderRadius: 999 }}
           >
             {p.label}
           </PanelChip>
         ))}
       </div>
-      <div
-        style={{ display: "flex", alignItems: "center", gap: 8, opacity: preset === "none" ? 0.4 : 1 }}
-        title={preset === "none" ? "Time of day has no effect in the Studio preset" : undefined}
-      >
-        <span style={{ lineHeight: 0, color: T.textDim }}>
-          <DayNightIcon size={16} />
-        </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, opacity: preset === "none" ? 0.4 : 1 }}>
+        {/* The explanation hangs off the ICON, not the row. Tooltip wraps its
+            child in an inline-flex span, which on this row would collapse a
+            flex item that is meant to stretch — and the icon is where the eye
+            goes when the slider looks disabled anyway. */}
+        {preset === "none" ? (
+          <Tooltip label="Time of day has no effect in the Studio preset">
+            <span style={{ lineHeight: 0, color: PD.textSecondary }}>
+              <DayNightIcon size={16} />
+            </span>
+          </Tooltip>
+        ) : (
+          <span style={{ lineHeight: 0, color: PD.textSecondary }}>
+            <DayNightIcon size={16} />
+          </span>
+        )}
         <input
           type="range"
           min={0}
@@ -252,10 +278,10 @@ function ScenePanel() {
           value={time}
           onChange={(e) => setTimeOfDay(Number(e.target.value))}
           disabled={preset === "none"}
-          style={{ flex: 1, accentColor: T.accent }}
+          style={{ flex: 1, accentColor: PD.accent }}
         />
       </div>
-      <div style={{ fontSize: 11, color: T.textFaint, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ fontSize: 11, color: PD.textTertiary, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
         {fmtHour(time)}
       </div>
       {preset !== "none" && (
@@ -265,12 +291,12 @@ function ScenePanel() {
               key={w.id}
               active={weather === w.id}
               onClick={() => setWeather(w.id)}
+              // Same as the preset row: the tint carries "active". `display:
+              // flex` stays because the icon needs to sit on the text baseline.
               extra={{
-                flex: 1, fontSize: 11, borderRadius: 999, border: "none",
+                flex: 1, fontSize: 11, borderRadius: 999,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                 padding: "5px 6px",
-                background: weather === w.id ? T.accent : T.inputBg,
-                color: weather === w.id ? "#fff" : T.textDim,
               }}
             >
               <w.Icon size={12} /> {w.label}
@@ -297,7 +323,7 @@ function WallModeToggle() {
         display: "flex",
         gap: 3,
         padding: 4,
-        ...glass({ borderRadius: 999 }),
+        ...pdGlass({ borderRadius: 999 }),
       }}
     >
       {WALL_MODES.map((m) => (
@@ -310,10 +336,10 @@ function WallModeToggle() {
           {m.label}
         </PanelChip>
       ))}
-      <span style={{ width: 1, alignSelf: "stretch", margin: "3px 2px", background: T.panelBorder }} />
+      <span style={{ width: 1, alignSelf: "stretch", margin: "3px 2px", background: PD.hairline }} />
       <PanelChip
         active={showCeilings}
-        title="Show ceilings (Full view only)"
+        tip="Show ceilings (Full view only)"
         extra={{
           borderRadius: 999,
           border: "none",
@@ -345,17 +371,17 @@ function StatusOverlay() {
         pointerEvents: "none",
         display: "flex",
         gap: 12,
-        ...glass({ borderRadius: 999 }),
+        ...pdGlass({ borderRadius: 999 }),
       }}
     >
       {sel3d ? (
-        <span style={{ color: T.accent }}>
+        <span style={{ color: PD.accent }}>
           {sel3d.kind} selected — drag to move, Delete removes, Esc deselects
         </span>
       ) : (
-        <span style={{ color: T.textDim }}>nothing selected</span>
+        <span style={{ color: PD.textSecondary }}>nothing selected</span>
       )}
-      <span style={{ color: T.textFaint }}>
+      <span style={{ color: PD.textTertiary }}>
         ⌘Z undo ({past}) · ⌘Y redo ({future})
       </span>
     </div>

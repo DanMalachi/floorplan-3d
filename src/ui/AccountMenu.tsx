@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
+import { Tooltip } from "./planDock/Tooltip";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 
 // -----------------------------------------------------------------------------
@@ -61,37 +62,40 @@ export function AccountMenu() {
   if (!user) {
     return (
       <div style={{ position: "relative" }}>
-        <button
-          onClick={() => {
-            setAuthError(null);
-            setBusy(true);
-            void signInWithGoogle().catch(() => setBusy(false));
-          }}
-          disabled={busy}
-          {...signInHoverBind}
-          title="Sign in so your projects follow you to any computer"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 7,
-            height: SIZE + 6,
-            padding: "0 14px",
-            fontSize: 12.5,
-            fontWeight: 600,
-            fontFamily: PD.fontUi,
-            color: PD.textPrimary,
-            cursor: busy ? "default" : "pointer",
-            opacity: busy ? 0.6 : 1,
-            ...pdGlass({ borderRadius: 999 }),
-            // The glass recipe owns `background`, so hover lifts it after the
-            // spread rather than through the helper.
-            background: signInHover && !busy ? PD.surfaceMutedHover : PD.glassBg,
-            transition: "background 140ms ease",
-          }}
-        >
-          <GoogleMark />
-          {busy ? "Opening…" : "Sign in"}
-        </button>
+        {/* `placement="bottom"`: this control sits in the top-right chrome, so a
+            tooltip above it would be clipped off the top of the window. */}
+        <Tooltip label="Sign in so your projects follow you to any computer" placement="bottom">
+          <button
+            onClick={() => {
+              setAuthError(null);
+              setBusy(true);
+              void signInWithGoogle().catch(() => setBusy(false));
+            }}
+            disabled={busy}
+            {...signInHoverBind}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              height: SIZE + 6,
+              padding: "0 14px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              fontFamily: PD.fontUi,
+              color: PD.textPrimary,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.6 : 1,
+              ...pdGlass({ borderRadius: 999 }),
+              // The glass recipe owns `background`, so hover lifts it after the
+              // spread rather than through the helper.
+              background: signInHover && !busy ? PD.surfaceMutedHover : PD.glassBg,
+              transition: "background 140ms ease",
+            }}
+          >
+            <GoogleMark />
+            {busy ? "Opening…" : "Sign in"}
+          </button>
+        </Tooltip>
         {authError && (
           <div
             role="alert"
@@ -122,34 +126,35 @@ export function AccountMenu() {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        {...triggerHoverBind}
-        title={name}
-        style={{
-          width: SIZE + 6,
-          height: SIZE + 6,
-          display: "grid",
-          placeItems: "center",
-          padding: 0,
-          cursor: "pointer",
-          overflow: "hidden",
-          ...pdGlass({ borderRadius: 999 }),
-          // An avatar fills the button, so the only surface hover can touch is
-          // the ring around it.
-          border: `1px solid ${triggerHover || open ? "oklch(1 0 0 / 0.28)" : "oklch(1 0 0 / 0.09)"}`,
-          transition: "border-color 140ms ease",
-        }}
-      >
-        {avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element -- a remote avatar of unknown host; next/image would need a domain allowlist per provider
-          <img src={avatar} alt="" width={SIZE} height={SIZE} style={{ borderRadius: 999, display: "block" }} />
-        ) : (
-          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: PD.fontUi, color: PD.textPrimary }}>
-            {name.slice(0, 1).toUpperCase()}
-          </span>
-        )}
-      </button>
+      <Tooltip label={name} placement="bottom">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          {...triggerHoverBind}
+          style={{
+            width: SIZE + 6,
+            height: SIZE + 6,
+            display: "grid",
+            placeItems: "center",
+            padding: 0,
+            cursor: "pointer",
+            overflow: "hidden",
+            ...pdGlass({ borderRadius: 999 }),
+            // An avatar fills the button, so the only surface hover can touch is
+            // the ring around it.
+            border: `1px solid ${triggerHover || open ? "oklch(1 0 0 / 0.28)" : "oklch(1 0 0 / 0.09)"}`,
+            transition: "border-color 140ms ease",
+          }}
+        >
+          {avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a remote avatar of unknown host; next/image would need a domain allowlist per provider
+            <img src={avatar} alt="" width={SIZE} height={SIZE} style={{ borderRadius: 999, display: "block" }} />
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: 700, fontFamily: PD.fontUi, color: PD.textPrimary }}>
+              {name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+        </button>
+      </Tooltip>
 
       {open && (
         <div

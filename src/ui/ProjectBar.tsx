@@ -10,6 +10,7 @@
 
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
+import { Tooltip } from "./planDock/Tooltip";
 import { ChevronLeftIcon } from "./planDock/icons";
 
 export function ProjectBar({
@@ -38,32 +39,35 @@ export function ProjectBar({
         ...pdGlass({ borderRadius: 999 }),
       }}
     >
-      <button
-        onClick={onOpenProjects}
-        {...hoverBind}
-        title="Back to your projects"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          border: "none",
-          background: hover ? PD.surfaceMuted : "transparent",
-          color: PD.textPrimary,
-          cursor: "pointer",
-          fontSize: 13,
-          fontFamily: PD.fontUi,
-          padding: "4px 10px",
-          borderRadius: 999,
-          transition: "background 140ms ease",
-        }}
-      >
-        <span style={{ lineHeight: 0, color: hover ? PD.textSecondary : PD.textTertiary, transition: "color 140ms ease" }}>
-          <ChevronLeftIcon size={14} />
-        </span>
-        <span style={{ fontWeight: 500, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {name}
-        </span>
-      </button>
+      {/* `placement="bottom"`: this pill is pinned at top:14, so a tooltip above
+          it would be clipped off the top of the window. */}
+      <Tooltip label="Back to your projects" placement="bottom">
+        <button
+          onClick={onOpenProjects}
+          {...hoverBind}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            border: "none",
+            background: hover ? PD.surfaceMuted : "transparent",
+            color: PD.textPrimary,
+            cursor: "pointer",
+            fontSize: 13,
+            fontFamily: PD.fontUi,
+            padding: "4px 10px",
+            borderRadius: 999,
+            transition: "background 140ms ease",
+          }}
+        >
+          <span style={{ lineHeight: 0, color: hover ? PD.textSecondary : PD.textTertiary, transition: "color 140ms ease" }}>
+            <ChevronLeftIcon size={14} />
+          </span>
+          <span style={{ fontWeight: 500, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {name}
+          </span>
+        </button>
+      </Tooltip>
       {status && (
         <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}>
           {/* A status light, so it is a drawn circle rather than the `●`

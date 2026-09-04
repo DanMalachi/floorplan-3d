@@ -12,9 +12,9 @@ import { useSyncStore } from "@/store/useSyncStore";
 import { CloudSync } from "@/ui/CloudSync";
 import { initProjectPersistence, goLivePersist, getCurrentProjectId, getProjectLiveRole } from "@/store/projectPersistence";
 import { enterLiveRoom } from "@/collab/enterLive";
-import { T } from "@/ui/tokens";
 import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { LiveIcon } from "@/ui/planDock/icons";
 import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
 import { ProjectBar } from "@/ui/ProjectBar";
@@ -82,17 +82,18 @@ function GoLiveButton() {
     }
   };
   const label = busy ? "Starting…" : liveRoomId ? "Open live" : "Go live";
-  return (
+  // What "going live" actually does is not obvious from two words, so this one
+  // keeps its explanation — through the app's own glass Tooltip. The positioning
+  // moves to a wrapper: Tooltip anchors its label to the element it wraps, and
+  // an absolutely-positioned child would leave that anchor collapsed at the top
+  // of `<main>` with the label drawn nowhere near the button. `bottom` because
+  // the button sits at `top: 14`, where a tooltip above it is off-screen.
+  const button = (
     <button
       onClick={goLive}
       disabled={busy}
       {...hoverBind}
-      title={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
       style={{
-        position: "absolute",
-        top: 14,
-        right: 14,
-        zIndex: 30,
         display: "flex",
         alignItems: "center",
         gap: 7,
@@ -119,6 +120,16 @@ function GoLiveButton() {
       {!busy && <LiveIcon size={14} />}
       {label}
     </button>
+  );
+  return (
+    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 30 }}>
+      <Tooltip
+        label={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
+        placement="bottom"
+      >
+        {button}
+      </Tooltip>
+    </div>
   );
 }
 
@@ -222,7 +233,15 @@ function ModeSwitcher() {
  *  hook and these are rendered in a loop — and this row, the app's primary
  *  navigation, is the single most visible thing that had no hover state.
  *  (`pdChip` drops its `extra` argument and always has, so the padding/fontSize
- *  below render exactly as they did before this change.) */
+ *  below render exactly as they did before this change.)
+ *
+ *  No tooltip, deliberately. `title={`${mode.label} (${mode.key})`}` popped a
+ *  white browser window over the app's glass to tell you that the button
+ *  reading "View" was View — the exact case Dan called out ("hovering over view
+ *  tells you its view ... unnecessary"). The label is already on the button, so
+ *  restating it in ANY tooltip, native or glass, is noise; the 1-4 shortcuts
+ *  still work (see the keydown effect in Home) and belong in a shortcuts list,
+ *  not on the thing they are a shortcut for. */
 function ModeButton({
   mode,
   active,
@@ -237,7 +256,6 @@ function ModeButton({
     <button
       onClick={onSelect}
       {...hoverBind}
-      title={`${mode.label} (${mode.key})`}
       style={pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered)}
     >
       {mode.label}
@@ -369,8 +387,11 @@ export default function Home() {
         position: "relative",
         height: "100vh",
         width: "100vw",
-        background: T.bg,
-        fontFamily: T.font,
+        // The editor's ground and type come from the Plan Dock set like
+        // everything drawn on top of them. `T.bg`/`T.font` were the last thing
+        // here reading the second token file.
+        background: PD.bg,
+        fontFamily: PD.fontUi,
         overflow: "hidden",
       }}
     >

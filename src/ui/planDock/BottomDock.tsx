@@ -160,23 +160,26 @@ function useDockHeight(): [number, (h: number) => void] {
 // cursor-over re-render the parent — for the tab row that is the whole dock,
 // and for the category chips it is every card in the rail below them.
 
-/** `pdIconBtn`-shaped button with its own hover state. */
+/** `pdIconBtn`-shaped button with its own hover state.
+ *
+ *  No `title` prop: an icon-only button's label belongs in the glass `Tooltip`
+ *  the tab row and the navigator already wrap these in, not in a browser-drawn
+ *  white window. Wrap the call site — `Tooltip` holds its own state, so it is
+ *  safe inside a `.map()`. */
 function DockIconBtn({
   onClick,
   active = false,
   size = 28,
-  title,
   children,
 }: {
   onClick: () => void;
   active?: boolean;
   size?: number;
-  title?: string;
   children: ReactNode;
 }) {
   const [hovered, hoverBind] = useHover();
   return (
-    <button {...hoverBind} onClick={onClick} title={title} style={pdIconBtn(active, size, hovered)}>
+    <button {...hoverBind} onClick={onClick} style={pdIconBtn(active, size, hovered)}>
       {children}
     </button>
   );
@@ -214,26 +217,36 @@ function DockChip({
 function SwatchButton({
   onClick,
   active,
-  title,
+  tip,
   style,
 }: {
   onClick: () => void;
   active: boolean;
-  title: string;
+  /** The paint code / material name. This is the tooltip Dan singled out as one
+   *  worth keeping ("good, like for getting the paint code") — it is the only
+   *  place a swatch's identity is written down, since the tile is pure colour.
+   *  It renders through the app's own glass now instead of the browser's white
+   *  window, and `Tooltip` clones it on as the button's accessible name, which
+   *  a bare coloured `<button>` otherwise has none of.
+   *
+   *  Placed BELOW: these grids scroll, and their first row sits flush against
+   *  the scroll container's top edge, so a tooltip drawn above it is clipped. */
+  tip: string;
   style: React.CSSProperties;
 }) {
   const [hovered, hoverBind] = useHover();
   return (
-    <button
-      {...hoverBind}
-      onClick={onClick}
-      title={title}
-      style={{
-        ...style,
-        border: active ? `2px solid ${PD.accent}` : hovered ? `1.5px solid ${PD.textSecondary}` : "1.5px solid transparent",
-        transition: "border-color 140ms ease",
-      }}
-    />
+    <Tooltip label={tip} placement="bottom">
+      <button
+        {...hoverBind}
+        onClick={onClick}
+        style={{
+          ...style,
+          border: active ? `2px solid ${PD.accent}` : hovered ? `1.5px solid ${PD.textSecondary}` : "1.5px solid transparent",
+          transition: "border-color 140ms ease",
+        }}
+      />
+    </Tooltip>
   );
 }
 
@@ -256,13 +269,16 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   };
-  return (
+  const strip = (
     <div
       {...hoverBind}
       onPointerDown={onPointerDown}
-      title="Drag to resize"
       style={{
         flex: "0 0 auto",
+        // `width: 100%` is load-bearing now that a Tooltip wraps this: the
+        // wrapper is an inline-flex span, so without it the strip would shrink
+        // to the 32px pill inside and stop being a full-width drag target.
+        width: "100%",
         height: 13,
         display: "flex",
         alignItems: "center",
@@ -282,6 +298,13 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
         }}
       />
     </div>
+  );
+  // Below, not above: this strip is the topmost thing inside a panel with
+  // `overflow: hidden`, so a tooltip over it would be clipped away entirely.
+  return (
+    <Tooltip label="Drag to resize" placement="bottom">
+      {strip}
+    </Tooltip>
   );
 }
 
@@ -434,11 +457,10 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
     s.setPlacing(placing?.assetId === assetId ? null : assetId);
   };
 
-  return (
+  const card = (
     <button
       {...hoverBind}
       onClick={() => arm(activeSpec.assetId)}
-      title={`${activeSpec.name} · ${activeSpec.footprint.w}×${activeSpec.footprint.d} m`}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -484,7 +506,11 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
                 setActiveVariantId(v.assetId);
                 arm(v.assetId);
               }}
-              title={v.colors?.[0]?.name}
+              // No tooltip of its own, and no `title`. The colour name is
+              // already this dot's `aria-label` above, and a 9px target nested
+              // INSIDE a card that carries its own tooltip would fire both at
+              // once — two labels for one cursor. Clicking it swaps the card's
+              // caption to that variant, which is the same answer, immediately.
               style={{
                 width: 9,
                 height: 9,
@@ -509,6 +535,18 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
         </span>
       )}
     </button>
+  );
+  // The footprint is the other tooltip Dan kept ("the chair measurments") — the
+  // caption is ellipsized at 68px and the size appears nowhere else on the
+  // card. BELOW the card: this grid scrolls and its first row is flush with the
+  // container's top edge, which clips anything drawn above it.
+  return (
+    <Tooltip
+      label={`${activeSpec.name} · ${activeSpec.footprint.w}×${activeSpec.footprint.d} m`}
+      placement="bottom"
+    >
+      {card}
+    </Tooltip>
   );
 }
 
@@ -566,11 +604,10 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
     s.setPlacing(active ? null : assetId, spec);
   };
 
-  return (
+  const card = (
     <button
       {...hoverBind}
       onClick={arm}
-      title={piece.label}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -608,6 +645,13 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       </span>
     </button>
   );
+  // Same reasoning as ItemCard: the caption below is ellipsized at 68px, so the
+  // full name is worth a hover label, drawn below because the grid scrolls.
+  return (
+    <Tooltip label={piece.label} placement="bottom">
+      {card}
+    </Tooltip>
+  );
 }
 
 function PaintTab() {
@@ -638,7 +682,7 @@ function PaintTab() {
       <SwatchButton
         onClick={() => pick(null)}
         active={plasterActive}
-        title={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
+        tip={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
         style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: "#f3ece1", cursor: "pointer" }}
       />
       {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>Loading…</span>}
@@ -647,7 +691,7 @@ function PaintTab() {
           return (
             <SwatchButton
               key={c.code}
-              title={`${c.code} · ${c.nameEn}`}
+              tip={`${c.code} · ${c.nameEn}`}
               onClick={() => pick(c.hex)}
               active={activeHex === c.hex}
               style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: c.hex, cursor: "pointer" }}
@@ -671,7 +715,7 @@ function FloorsTab() {
             key={m.id}
             onClick={() => pick(m.id)}
             active={active === m.id}
-            title={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
+            tip={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
             style={{
               flex: "0 0 auto",
               width: 44,
@@ -779,9 +823,11 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               outline: "none",
             }}
           />
-          <DockIconBtn onClick={closeSearch} size={22} title="Close search">
-            <CloseIcon size={12} />
-          </DockIconBtn>
+          <Tooltip label="Close search">
+            <DockIconBtn onClick={closeSearch} size={22}>
+              <CloseIcon size={12} />
+            </DockIconBtn>
+          </Tooltip>
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 3, overflowX: "auto" }}>

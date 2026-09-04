@@ -29,8 +29,9 @@ import {
 } from "@/store/projectPersistence";
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
-import { T, glass, chip, field } from "@/ui/tokens";
-import { tChipHover, useHover } from "@/ui/hoverT";
+import { PD, pdChip, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { CheckIcon } from "@/ui/planDock/icons";
 import { ProjectBar } from "@/ui/ProjectBar";
 import { PdThemeStyle } from "@/ui/planDock/theme";
@@ -210,7 +211,7 @@ function SelectionMarkers({ remote }: { remote: RemotePick[] }) {
               <meshBasicMaterial color={r.color} />
             </mesh>
             <Html center distanceFactor={12} style={{ pointerEvents: "none" }}>
-              <div style={{ background: r.color, color: "#fff", fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6, whiteSpace: "nowrap", fontFamily: T.font, transform: "translateY(-16px)" }}>
+              <div style={{ background: r.color, color: "#fff", fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6, whiteSpace: "nowrap", fontFamily: PD.fontUi, transform: "translateY(-16px)" }}>
                 {r.name}
               </div>
             </Html>
@@ -222,6 +223,40 @@ function SelectionMarkers({ remote }: { remote: RemotePick[] }) {
 }
 
 // -- room chrome --------------------------------------------------------------
+
+/** The share popover's surface.
+ *
+ *  Deliberately NOT `pdGlass()`. That recipe is 38% opacity, and this panel
+ *  carries a share URL at 11px plus a role menu — at 38% the 3D scene reads
+ *  straight through the one string in this app that has to be copied
+ *  correctly. `PD.panelBg` (72%) is the same design language at the weight
+ *  type this small needs. The mode switcher and the presence pill beside it DO
+ *  use `pdGlass()`: those are short labels floating over the model, which is
+ *  exactly what that recipe is for. */
+const roomPanel = (extra?: React.CSSProperties): React.CSSProperties => ({
+  background: PD.panelBg,
+  backdropFilter: PD.glassBlur,
+  WebkitBackdropFilter: PD.glassBlur,
+  border: `1px solid ${PD.hairline}`,
+  boxShadow: PD.glassShadow,
+  color: PD.textPrimary,
+  fontFamily: PD.fontUi,
+  ...extra,
+});
+
+/** `field()` had no PD counterpart, so this is the same three ingredients —
+ *  input ground, hairline, UI font — named in PD terms. */
+const roomField = (extra?: React.CSSProperties): React.CSSProperties => ({
+  background: PD.inputBg,
+  border: `1px solid ${PD.hairline}`,
+  borderRadius: PD.radiusS,
+  color: PD.textPrimary,
+  padding: "4px 8px",
+  fontSize: 12.5,
+  fontFamily: PD.fontUi,
+  outline: "none",
+  ...extra,
+});
 
 const ROOM_MODES: { id: AppMode; label: string }[] = [
   { id: "build", label: "Build" },
@@ -242,13 +277,17 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
 
   if (modes.length <= 1) return null; // view-only: no switcher
   return (
-    <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...glass({ borderRadius: 999 }) }}>
+    <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
       {modes.map((m) => (
         <RoomChip
           key={m.id}
           active={appMode === m.id}
           onClick={() => setAppMode(m.id)}
-          extra={{ borderRadius: 999, border: "none", padding: "6px 18px", background: appMode === m.id ? T.accent : "transparent", color: appMode === m.id ? "#fff" : T.textDim }}
+          // Only the shape is overridden now. The active fill used to be a
+          // hand-set solid `T.accent` with white text — the exact "different
+          // shade of blue" Dan flagged — and it is `pdChip`'s accent tint here
+          // like every other control in the app.
+          extra={{ borderRadius: 999, padding: "6px 18px" }}
         >
           {m.label}
         </RoomChip>
@@ -257,34 +296,48 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
   );
 }
 
-/** A `chip()` in the room's chrome, with hover. Its own component because
- *  `useHover` is a hook and the mode tabs / role rows are rendered in loops. */
+/** A `pdChip()` in the room's chrome, with hover. Its own component because
+ *  `useHover` is a hook and the mode tabs / role rows are rendered in loops.
+ *
+ *  `extra` is spread AFTER `pdChip(...)`, never passed INTO it: `pdChip` accepts
+ *  an `extra` argument and deliberately drops it (see the note in
+ *  planDock/tokens.ts), so `pdChip(active, extra)` would silently lose every
+ *  override — this chip's pill radius and padding among them.
+ *
+ *  `tooltip` replaces what was a native `title`. The room chrome is pinned at
+ *  top:14, so it opens downward or it is clipped off the top of the window. */
 function RoomChip({
   active = false,
   onClick,
   disabled,
-  title,
+  tooltip,
   extra,
   children,
 }: {
   active?: boolean;
   onClick: () => void;
   disabled?: boolean;
-  title?: string;
+  tooltip?: string;
   extra?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   const [hov, bind] = useHover();
-  return (
+  const button = (
     <button
       onClick={onClick}
       disabled={disabled}
-      title={title}
       {...bind}
-      style={chip(active, { ...extra, ...(disabled ? {} : tChipHover(hov, active)) })}
+      style={{ ...pdChip(active, undefined, !disabled && hov), ...extra }}
     >
       {children}
     </button>
+  );
+  return tooltip ? (
+    <Tooltip label={tooltip} placement="bottom">
+      {button}
+    </Tooltip>
+  ) : (
+    button
   );
 }
 
@@ -350,7 +403,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       <div style={{ display: "flex", gap: 6 }}>
         <RoomChip
           onClick={saveCopy}
-          title="Fork this plan into your own projects"
+          tooltip="Fork this plan into your own projects"
           extra={{ display: "inline-flex", alignItems: "center", gap: 5 }}
         >
           {saved ? (
@@ -366,22 +419,22 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
         </RoomChip>
       </div>
       {open && (
-        <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...glass({ borderRadius: T.radiusM }) }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Share this plan</div>
+        <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>Share this plan</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
               <RoleRow key={r} selected={role === r} label={ROLE_LABEL[r]} onClick={() => makeLink(r)} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input readOnly value={link} style={field({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
+            <input readOnly value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
             <RoomChip active onClick={copy} disabled={!link}>
               {copied ? "Copied" : "Copy"}
             </RoomChip>
           </div>
-          {err && <div style={{ fontSize: 11.5, color: T.warn ?? T.textFaint }}>{err}</div>}
+          {err && <div style={{ fontSize: 11.5, color: PD.warnText }}>{err}</div>}
           {held !== "build" && (
-            <div style={{ fontSize: 11, color: T.textFaint }}>
+            <div style={{ fontSize: 11, color: PD.textTertiary }}>
               You joined with a {ROLE_LABEL[held].toLowerCase()} link, so you can only
               share at that level or below.
             </div>
@@ -414,14 +467,14 @@ function RoleRow({
         gap: 6,
         textAlign: "left",
         padding: "7px 10px",
-        borderRadius: T.radiusS,
+        borderRadius: PD.radiusS,
         cursor: "pointer",
-        fontFamily: T.font,
+        fontFamily: PD.fontUi,
         fontSize: 12.5,
-        color: T.text,
-        border: `1px solid ${selected ? T.accent : hov ? "rgba(255,255,255,0.18)" : T.panelBorder}`,
-        background: selected ? T.accentSoft : hov ? "rgba(255,255,255,0.12)" : T.inputBg,
-        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}`,
+        color: PD.textPrimary,
+        border: `1px solid ${selected ? PD.accent : hov ? PD.surfaceMutedHover : PD.hairline}`,
+        background: selected ? PD.accentTint : hov ? PD.surfaceMutedHover : PD.inputBg,
+        transition: pdHoverTransition(hov),
       }}
     >
       {selected && <CheckIcon size={12} />}
@@ -432,11 +485,22 @@ function RoleRow({
   );
 }
 
+/** One face in the presence stack.
+ *
+ *  `marginLeft: -6` is what makes the pile overlap, and it has to stay on the
+ *  OUTERMOST element: `Tooltip` wraps its child in an `inline-flex` span, so
+ *  leaving the negative margin on the inner circle would shrink that span to
+ *  22px and shift the stack instead of overlapping it. The margin therefore
+ *  moves to a wrapper around the tooltip, and the circle keeps its own box. */
 function Avatar({ name, color }: Identity) {
   return (
-    <div title={name} style={{ width: 28, height: 28, borderRadius: "50%", background: color, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.25)", marginLeft: -6, fontFamily: T.font }}>
-      {initials(name)}
-    </div>
+    <span style={{ marginLeft: -6, display: "inline-flex", flex: "0 0 auto" }}>
+      <Tooltip label={name} placement="bottom">
+        <div style={{ width: 28, height: 28, borderRadius: "50%", background: color, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid oklch(1 0 0 / 0.25)", fontFamily: PD.fontUi }}>
+          {initials(name)}
+        </div>
+      </Tooltip>
+    </span>
   );
 }
 
@@ -445,11 +509,11 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   const me = useSelf();
   const count = others.length + (me ? 1 : 0);
   return (
-    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: T.font }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...glass({ borderRadius: 999 }) }}>
-        <span style={{ fontSize: 12.5, color: T.text, display: "flex", alignItems: "center", gap: 6 }}>
-          <Pip color={T.ok} /> {count} here
-          {role === "view" && <span style={{ color: T.textFaint }}>· view only</span>}
+    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: PD.fontUi }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...pdGlass({ borderRadius: 999 }) }}>
+        <span style={{ fontSize: 12.5, color: PD.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
+          <Pip color={PD.ok} /> {count} here
+          {role === "view" && <span style={{ color: PD.textTertiary }}>· view only</span>}
         </span>
         <div style={{ display: "flex", paddingLeft: 6 }}>
           {me && <Avatar name={me.presence.name} color={me.presence.color} />}
@@ -504,7 +568,7 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
   );
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", background: T.bg, overflow: "hidden" }}>
+    <div style={{ position: "relative", width: "100vw", height: "100vh", background: PD.bg, overflow: "hidden" }}>
       {/* PD tokens (the shared ProjectBar) need their light-theme vars defined
           here too — this route never mounts src/app/design/page.tsx's copy. */}
       <PdThemeStyle />
@@ -548,7 +612,7 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     return res.json();
   }, []);
 
-  if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: T.bg }} />;
+  if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: PD.bg }} />;
 
   return (
     <LiveblocksProvider authEndpoint={authEndpoint} throttle={16}>

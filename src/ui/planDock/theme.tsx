@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { PD, pdGlass } from "./tokens";
 import { useHover } from "./useHover";
 import { SunIcon, MoonIcon } from "./icons";
+import { Tooltip } from "./Tooltip";
 
 export type PdTheme = "dark" | "light";
 
@@ -111,27 +112,28 @@ export function ThemeToggle() {
   const isLight = theme === "light";
   const Icon = isLight ? SunIcon : MoonIcon;
   return (
-    <button
-      {...hoverBind}
-      onClick={() => setTheme(isLight ? "dark" : "light")}
-      title={isLight ? "Switch to dark" : "Switch to light"}
-      style={{
-        width: 32,
-        height: 32,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "none",
-        cursor: "pointer",
-        ...pdGlass({ borderRadius: 999, padding: 0 }),
-        // AFTER the spread on purpose: pdGlass() sets `color: PD.textPrimary`,
-        // so the `color: PD.textSecondary` that used to sit above it was being
-        // silently overridden and no hover value could take effect either.
-        color: hovered ? PD.textPrimary : PD.textSecondary,
-        transition: "color 140ms ease",
-      }}
-    >
-      <Icon size={15} />
-    </button>
+    <Tooltip label={isLight ? "Switch to dark" : "Switch to light"}>
+      <button
+        {...hoverBind}
+        onClick={() => setTheme(isLight ? "dark" : "light")}
+        style={{
+          width: 32,
+          height: 32,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          cursor: "pointer",
+          ...pdGlass({ borderRadius: 999, padding: 0 }),
+          // AFTER the spread on purpose: pdGlass() sets `color: PD.textPrimary`,
+          // so the `color: PD.textSecondary` that used to sit above it was being
+          // silently overridden and no hover value could take effect either.
+          color: hovered ? PD.textPrimary : PD.textSecondary,
+          transition: "color 140ms ease",
+        }}
+      >
+        <Icon size={15} />
+      </button>
+    </Tooltip>
   );
 }

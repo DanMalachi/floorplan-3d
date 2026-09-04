@@ -16,7 +16,8 @@ import {
 import type { StairMetrics } from "@/lib/stairs/stairGeometry";
 import { analyzeLoops } from "../lib/loops";
 import { snapWallPoint } from "./snapWall";
-import { useHover } from "@/ui/hoverT";
+import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { FitIcon, MinusIcon, PlusIcon } from "@/ui/planDock/icons";
 
 // Group raw import segments by stroke color so the overlay draws each color in a
@@ -139,19 +140,25 @@ const zbtn = (hovered = false): CSSProperties => ({
  *  hover flag: these float over the plan with nothing else to say they are
  *  live. */
 function ZoomButton({
-  title,
+  tip,
   onClick,
   children,
 }: {
-  title: string;
+  /** Rendered in the app's glass Tooltip, never as a native `title`. These
+   *  float directly over the plan, and a white browser window on top of a
+   *  floorplan is the exact mismatch Dan flagged. Icon-only, so the tooltip
+   *  IS the label — Tooltip also clones it on as `aria-label`. */
+  tip: string;
   onClick: () => void;
   children: ReactNode;
 }) {
   const [hov, bind] = useHover();
   return (
-    <button style={zbtn(hov)} title={title} onClick={onClick} {...bind}>
-      {children}
-    </button>
+    <Tooltip label={tip}>
+      <button style={zbtn(hov)} onClick={onClick} {...bind}>
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -955,13 +962,13 @@ export default function TraceCanvas() {
             gap: 4,
           }}
         >
-          <ZoomButton title="Zoom in" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.2)}>
+          <ZoomButton tip="Zoom in" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.2)}>
             <PlusIcon size={15} />
           </ZoomButton>
-          <ZoomButton title="Zoom out" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.2)}>
+          <ZoomButton tip="Zoom out" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.2)}>
             <MinusIcon size={15} />
           </ZoomButton>
-          <ZoomButton title="Reset view (fit)" onClick={() => setView(null)}>
+          <ZoomButton tip="Reset view (fit)" onClick={() => setView(null)}>
             <FitIcon size={15} />
           </ZoomButton>
         </div>

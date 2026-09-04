@@ -41,7 +41,7 @@ export function Footer() {
           </p>
         </div>
 
-        <FooterCol title="Product">
+        <FooterCol heading="Product">
           <FooterLink href={APP_HREF}>Open done.</FooterLink>
           {navItems().map((i) => (
             <FooterLink key={i.href} href={i.href}>
@@ -50,7 +50,7 @@ export function Footer() {
           ))}
         </FooterCol>
 
-        <FooterCol title="Legal">
+        <FooterCol heading="Legal">
           {footerLegal().map((i) => (
             <FooterLink key={i.href} href={i.href}>
               {i.label}
@@ -83,10 +83,13 @@ export function Footer() {
   );
 }
 
-function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
+/** A footer column. The prop is `heading`, not `title`: it renders the visible
+ *  column heading, and calling it `title` made it read like a native tooltip
+ *  attribute — it never was one, and this file has none. */
+function FooterCol({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
     <div style={{ flex: "0 1 160px", display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={microLabel({ marginBottom: 2 })}>{title}</div>
+      <div style={microLabel({ marginBottom: 2 })}>{heading}</div>
       {children}
     </div>
   );

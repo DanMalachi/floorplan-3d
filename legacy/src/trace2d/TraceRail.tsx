@@ -8,8 +8,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { SegmentKind } from "./types";
 import { analyzeLoops } from "../lib/loops";
-import { T, glass, chip, field, microLabel } from "@/ui/tokens";
-import { tChipHover, tGhostBtn, useHover } from "@/ui/hoverT";
+import type React from "react";
+import { PD, pdGlass, pdChip, pdMicroLabel, pdGhostBtn, pdHoverTransition } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -40,6 +42,44 @@ import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
 // Precedent pair from src/dev/gtToScene.ts (interior 0.1 / exterior 0.2) —
 // not a new number, just reused as the Exterior preset here.
 const EXTERIOR_THICKNESS = 0.2;
+
+// ── Local shims onto the Plan Dock token set ────────────────────────────────
+// This file used to compose src/ui/tokens.ts (`T`), the app's second design
+// language — the one that painted an active chip a SOLID #0a84ff while the
+// dock painted the same control a 22% tint. Everything is on `PD` now.
+//
+// `chip` and `field` are shimmed rather than swapped at each call site for one
+// specific reason: **`pdChip` accepts an `extra` argument and DROPS it**, while
+// the `chip()` these seven call sites were written against SPREAD it. A bare
+// substitution would have silently lost every override in this file. Spreading
+// once, here, is safer than rewriting seven call sites into the
+// `{ ...pdChip(a), ...extra }` form and hoping none was missed.
+const chip = (active = false, extra?: React.CSSProperties): React.CSSProperties => ({
+  ...pdChip(active),
+  ...extra,
+});
+const glass = pdGlass;
+const microLabel = pdMicroLabel;
+const field = (extra?: React.CSSProperties): React.CSSProperties => ({
+  background: PD.inputBg,
+  border: `1px solid ${PD.hairline}`,
+  borderRadius: PD.radiusS,
+  color: PD.textPrimary,
+  padding: "4px 8px",
+  fontSize: 12.5,
+  fontFamily: PD.fontUi,
+  outline: "none",
+  ...extra,
+});
+/** Hover overlay for a `chip()`-shaped button. Replaces hoverT's `tChipHover`:
+ *  an active chip is already tinted, so hover only lifts the REST state —
+ *  deepening an active tint reads as "pressed", not "under the cursor". */
+const tChipHover = (hovered: boolean, active: boolean): React.CSSProperties =>
+  active || !hovered
+    ? { transition: pdHoverTransition(hovered) }
+    : { background: PD.surfaceMutedHover, color: PD.textPrimary, transition: pdHoverTransition(hovered) };
+const tGhostBtn = (hovered: boolean, extra?: React.CSSProperties): React.CSSProperties =>
+  pdGhostBtn(hovered, extra);
 
 const railBtn = (active = false, extra?: React.CSSProperties): React.CSSProperties =>
   chip(active, { width: "100%", textAlign: "left", padding: "7px 11px", ...extra });
@@ -91,18 +131,18 @@ const finishBtn = (armed: boolean): React.CSSProperties => ({
   // shorthand, and React warns — correctly — that dropping a longhand on
   // rerender while a conflicting shorthand stays is how stale borders happen.
   ...(armed
-    ? { background: T.ok, border: "1px solid transparent", color: "#0a2e14", fontWeight: 700 }
+    ? { background: PD.ok, border: "1px solid transparent", color: "#0a2e14", fontWeight: 700 }
     : { opacity: 0.5 }),
 });
 
-const hintText: React.CSSProperties = { fontSize: 11.5, lineHeight: 1.45, color: T.textFaint };
+const hintText: React.CSSProperties = { fontSize: 11.5, lineHeight: 1.45, color: PD.textTertiary };
 const statusText = (ok: boolean): React.CSSProperties => ({
   display: "flex",
   alignItems: "flex-start",
   gap: 5,
   fontSize: 11.5,
   lineHeight: 1.45,
-  color: ok ? T.ok : T.warn,
+  color: ok ? PD.ok : PD.warnText,
 });
 
 /** The ✓ / ⚠ that used to be typed into the front of a status string. Kept as
@@ -124,6 +164,7 @@ function Chip({
   active = false,
   extra,
   styler = chip,
+  tip,
   children,
   ...rest
 }: {
@@ -131,14 +172,20 @@ function Chip({
   extra?: React.CSSProperties;
   /** `chip` (default) or `railBtn` / `primaryBtn`-shaped variants. */
   styler?: (active: boolean, extra?: React.CSSProperties) => React.CSSProperties;
+  /** Hover explanation, rendered in the app's glass Tooltip. Deliberately not
+   *  `title`: a native title is the white browser window that matches nothing
+   *  in the app, and several of these are full sentences that it renders in a
+   *  single unwrapped line. */
+  tip?: string;
   children: React.ReactNode;
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style">) {
   const [hov, bind] = useHover();
-  return (
+  const btn = (
     <button {...rest} {...bind} style={styler(active, { ...extra, ...tChipHover(hov, active) })}>
       {children}
     </button>
   );
+  return tip ? <Tooltip label={tip}>{btn}</Tooltip> : btn;
 }
 
 /** The step's primary action (Import plan / Set scale / Generate). Enabled-ness
@@ -182,7 +229,7 @@ function TextAction({
           padding: "2px 4px",
           margin: "0 -4px",
           fontSize: 11.5,
-          color: hov ? T.textDim : T.textFaint,
+          color: hov ? PD.textSecondary : PD.textTertiary,
         }),
         ...extra,
       }}
@@ -214,24 +261,25 @@ function FinishButton({
   kind: "walls" | "stair";
 }) {
   const [hov, bind] = useHover();
+  const tip =
+    kind === "walls"
+      ? armed
+        ? "End this run of walls — the next click starts a fresh one (Esc does the same)"
+        : "Ends a run of walls once you've started one"
+      : armed
+        ? "Commit this staircase (Esc does the same)"
+        : "Commits a staircase once you've started one";
   return (
-    <button
-      className={armed ? "fp-armed" : undefined}
-      onClick={onClick}
-      {...bind}
-      style={{ ...finishBtn(armed), ...(hov ? { filter: "brightness(1.1)" } : {}) }}
-      title={
-        kind === "walls"
-          ? armed
-            ? "End this run of walls — the next click starts a fresh one (Esc does the same)"
-            : "Ends a run of walls once you've started one"
-          : armed
-            ? "Commit this staircase (Esc does the same)"
-            : "Commits a staircase once you've started one"
-      }
-    >
-      {armed && <CheckIcon size={13} />} Finish
-    </button>
+    <Tooltip label={tip}>
+      <button
+        className={armed ? "fp-armed" : undefined}
+        onClick={onClick}
+        {...bind}
+        style={{ ...finishBtn(armed), ...(hov ? { filter: "brightness(1.1)" } : {}) }}
+      >
+        {armed && <CheckIcon size={13} />} Finish
+      </button>
+    </Tooltip>
   );
 }
 
@@ -250,12 +298,12 @@ function Disclosure({ label, children }: { label: string; children: React.ReactN
           gap: 5,
           background: "none",
           border: "none",
-          color: hov ? T.text : T.textDim,
+          color: hov ? PD.textPrimary : PD.textSecondary,
           fontSize: 11.5,
           cursor: "pointer",
           padding: 0,
-          fontFamily: T.font,
-          transition: `color ${T.dur} ${T.ease}`,
+          fontFamily: PD.fontUi,
+          transition: `color ${PD.dur} ${PD.ease}`,
         }}
       >
         {open ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />} {label}
@@ -312,7 +360,7 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
               active={mode === "wall" && drawKind === "rail"}
               extra={toolChip}
               onClick={() => pickWall("rail")}
-              title="Balcony/terrace railing — low, see-through barrier that bounds an outdoor space"
+              tip="Balcony/terrace railing — low, see-through barrier that bounds an outdoor space"
             >
               <RailIcon size={13} /> Rail
             </Chip>
@@ -320,7 +368,7 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
               active={mode === "wall" && drawKind === "portal"}
               extra={toolChip}
               onClick={() => pickWall("portal")}
-              title="Open boundary — closes the room without building anything. Use where a space simply gives onto the next (living room to corridor); no wall, no door needed."
+              tip="Open boundary — closes the room without building anything. Use where a space simply gives onto the next (living room to corridor); no wall, no door needed."
             >
               <PassageIcon size={13} /> Open
             </Chip>
@@ -382,7 +430,7 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
           fix — and required now that Finish grows a tick mark when armed. */}
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {tools.includes("wall") && (
-          <Chip active={ortho} extra={rowChip} onClick={() => setOrtho(!ortho)} title="Constrain walls to 90° (Shift inverts per click)">
+          <Chip active={ortho} extra={rowChip} onClick={() => setOrtho(!ortho)} tip="Constrain walls to 90° (Shift inverts per click)">
             <OrthoIcon size={13} /> 90°
           </Chip>
         )}
@@ -423,7 +471,7 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
         gap: 10,
         width: "100%",
         padding: "8px 9px",
-        borderRadius: T.radiusS,
+        borderRadius: PD.radiusS,
         border: "none",
         background: active
           ? "rgba(255,255,255,0.07)"
@@ -433,8 +481,8 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
         cursor: step.locked ? "default" : "pointer",
         opacity: step.locked ? 0.38 : 1,
         textAlign: "left",
-        fontFamily: T.font,
-        transition: `background ${T.dur} ${T.ease}`,
+        fontFamily: PD.fontUi,
+        transition: `background ${PD.dur} ${PD.ease}`,
       }}
     >
       <span
@@ -448,19 +496,19 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
           fontSize: 11,
           fontWeight: 700,
           flexShrink: 0,
-          background: step.done ? T.ok : active ? T.accent : T.inputBg,
-          color: step.done || active ? "#fff" : T.textDim,
+          background: step.done ? PD.ok : active ? PD.accent : PD.inputBg,
+          color: step.done || active ? "#fff" : PD.textSecondary,
         }}
       >
         {step.done ? <CheckIcon size={13} /> : step.n}
       </span>
       <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, color: T.text }}>{step.label}</span>
+        <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, color: PD.textPrimary }}>{step.label}</span>
         {step.status && (
           <span
             style={{
               fontSize: 10.5,
-              color: T.textFaint,
+              color: PD.textTertiary,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -669,7 +717,7 @@ export function TraceRail() {
             )}
             {image && (
               <>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: T.textDim }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: PD.textSecondary }}>
                   Plan opacity
                   <input
                     type="range"
@@ -744,7 +792,7 @@ export function TraceRail() {
                         }}
                         style={field({ width: 90 })}
                       />
-                      <span style={{ color: T.textFaint, fontSize: 11.5 }}>cm</span>
+                      <span style={{ color: PD.textTertiary, fontSize: 11.5 }}>cm</span>
                       <Chip active onClick={applyScale}>Apply</Chip>
                       <Chip onClick={cancelCalibration}>Cancel</Chip>
                     </div>
@@ -828,7 +876,7 @@ export function TraceRail() {
                   <Chip
                     active={stairTarget.stair.steps == null}
                     extra={{ opacity: selectedStair ? 1 : 0.4 }}
-                    title="Derive the step count from the rise again"
+                    tip="Derive the step count from the rise again"
                     onClick={() => selectedStair && updateStair(selectedStair.id, { steps: null })}
                   >
                     Auto
@@ -838,7 +886,7 @@ export function TraceRail() {
                   Nudge Steps until the ladder on the canvas lines up with the treads
                   drawn on the plan — then the model matches the drawing.
                 </div>
-                <div style={{ fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
+                <div style={{ fontSize: 12, color: PD.textSecondary, lineHeight: 1.6 }}>
                   {stairTarget.stair.flights.length} flight
                   {stairTarget.stair.flights.length === 1 ? "" : "s"} ·{" "}
                   {stairTarget.metrics.steps} steps · riser{" "}
@@ -864,17 +912,17 @@ export function TraceRail() {
       case 6:
         return (
           <>
-            <div style={{ fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: PD.textSecondary, lineHeight: 1.6 }}>
               {segments.length} wall{segments.length === 1 ? "" : "s"} · {openings.length} opening{openings.length === 1 ? "" : "s"} ·{" "}
-              <span style={{ color: analysis.loops.length ? T.ok : T.warn }}>
+              <span style={{ color: analysis.loops.length ? PD.ok : PD.warnText }}>
                 {analysis.loops.length} room{analysis.loops.length === 1 ? "" : "s"}
               </span>
-              {analysis.hasOpenChain && <span style={{ color: T.warn }}> · open chain</span>}
+              {analysis.hasOpenChain && <span style={{ color: PD.warnText }}> · open chain</span>}
             </div>
             {!canGenerate && (
               <div style={hintText}>Close at least one room loop — walls must connect back on themselves to make a floor.</div>
             )}
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: T.textDim }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: PD.textSecondary }}>
               <input type="checkbox" checked={squareUp} onChange={(e) => setSquareUp(e.target.checked)} />
               Square up near-square walls
             </label>

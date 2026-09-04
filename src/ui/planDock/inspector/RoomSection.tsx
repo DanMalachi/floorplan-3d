@@ -44,7 +44,7 @@ export function RoomSection({ room }: { room: Room }) {
   };
   return (
     <div style={pdInspectorPanel}>
-      <PdSectionTitle title={`${w.toFixed(2)} × ${h.toFixed(2)} m`} meta={`${area.toFixed(1)} m²`} />
+      <PdSectionTitle label={`${w.toFixed(2)} × ${h.toFixed(2)} m`} meta={`${area.toFixed(1)} m²`} />
       <PdNumField
         label="Ceiling height"
         value={room.ceilingHeight ?? derivedCeilingHeight}

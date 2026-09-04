@@ -42,23 +42,25 @@ import { pdMicroLabel } from "../tokens";
 
 // The sliding presets, as the product thinks of them. Each is just a point in
 // the one SlideSpec parameterisation — see buildJoinery.
-const SLIDE_PRESETS: { key: string; label: string; title: string; spec: SlideSpec }[] = [
+// `tip`, not `title`: these are hover explanations, and they render through the
+// app's own glass Tooltip now instead of the browser's white `title` window.
+const SLIDE_PRESETS: { key: string; label: string; tip: string; spec: SlideSpec }[] = [
   {
     key: "patio",
     label: "Patio",
-    title: "Two glazed panels sliding past each other — the balcony door",
+    tip: "Two glazed panels sliding past each other — the balcony door",
     spec: { style: "bypass", panels: 2, glazed: true, open: 0, side: "end" },
   },
   {
     key: "closet",
     label: "Closet",
-    title: "Solid panels sliding past each other — wardrobe bypass doors",
+    tip: "Solid panels sliding past each other — wardrobe bypass doors",
     spec: { style: "bypass", panels: 2, glazed: false, open: 0, side: "end" },
   },
   {
     key: "barn",
     label: "Barn",
-    title: "One leaf sliding along the face of the wall",
+    tip: "One leaf sliding along the face of the wall",
     spec: { style: "surface", panels: 1, glazed: false, open: 0, side: "end" },
   },
 ];
@@ -78,14 +80,14 @@ const OPENING_TYPES: {
   type: OpeningType;
   label: string;
   Icon: ComponentType<{ size?: number }>;
-  title?: string;
+  tip?: string;
 }[] = [
   { type: "door", label: "Door / Patio", Icon: DoorIcon },
   {
     type: "passage",
     label: "Passage",
     Icon: PassageIcon,
-    title: "Keep the opening, lose the door — an open way through a wall",
+    tip: "Keep the opening, lose the door — an open way through a wall",
   },
   { type: "window", label: "Window", Icon: WindowIcon },
 ];
@@ -104,9 +106,9 @@ const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; label: string
 // it offered a choice that changed nothing (it survives in the schema for
 // saved projects — see `frameFinishOf`). Colour is orthogonal to both and
 // comes from the Decorate palette. Like colour, the finish is whole-house.
-const WINDOW_FRAME_MATERIALS: { key: FrameFinish; label: string; title: string }[] = [
-  { key: "matte", label: "Matte", title: "Powder-coated — fine grain, almost no reflection. Applies to every window and patio door." },
-  { key: "glossy", label: "Glossy", title: "Polished anodised aluminium — sharp reflections. Applies to every window and patio door." },
+const WINDOW_FRAME_MATERIALS: { key: FrameFinish; label: string; tip: string }[] = [
+  { key: "matte", label: "Matte", tip: "Powder-coated — fine grain, almost no reflection. Applies to every window and patio door." },
+  { key: "glossy", label: "Glossy", tip: "Polished anodised aluminium — sharp reflections. Applies to every window and patio door." },
 ];
 
 /** The frame's current colour, plus the one button that changes it.
@@ -130,14 +132,14 @@ function FramePaintRow({ opening }: { opening: Opening }) {
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <PdSwatch
         hex={opening.frameColor ?? null}
-        title={opening.frameColor ?? "Natural — the finish's own colour"}
+        tip={opening.frameColor ?? "Natural — the finish's own colour"}
         onClick={openPalette}
       />
       <PdChip
         active={armed}
         extra={{ flex: 1, textAlign: "center" }}
         onClick={openPalette}
-        title="Pick a colour in the Decorate palette — it applies to every window and patio door"
+        tip="Pick a colour in the Decorate palette — it applies to every window and patio door"
       >
         {armed ? "Picking…" : <PdChipLabel icon={<PaintIcon size={13} />}>Paint</PdChipLabel>}
       </PdChip>
@@ -207,18 +209,18 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           two used to disagree, and the fallthrough here printed the raw
           lowercase enum. */}
       <PdSectionTitle
-        title={openingDisplayName(opening)}
+        label={openingDisplayName(opening)}
         meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
       />
 
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-        {OPENING_TYPES.map(({ type, label, Icon, title }) => (
+        {OPENING_TYPES.map(({ type, label, Icon, tip }) => (
           <PdChip
             key={type}
             active={opening.type === type}
             extra={pdChipFlex}
             onClick={() => setType(type)}
-            title={title}
+            tip={tip}
           >
             <PdChipLabel icon={<Icon size={13} />}>{label}</PdChipLabel>
           </PdChip>
@@ -263,7 +265,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                   leafSplit: undefined,
                 })
               }
-              title="One hinged leaf"
+              tip="One hinged leaf"
             >
               ↷ Swing
             </PdChip>
@@ -279,7 +281,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                   leafSplit: undefined,
                 })
               }
-              title="A pair of hinged leaves meeting in the middle — French doors"
+              tip="A pair of hinged leaves meeting in the middle — French doors"
             >
               ⁘ Double
             </PdChip>
@@ -297,7 +299,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                     leafSplit: undefined,
                   })
                 }
-                title={p.title}
+                tip={p.tip}
               >
                 {p.label}
               </PdChip>
@@ -346,7 +348,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 active={(slide.side ?? "end") === sd}
                 extra={pdChipFlex}
                 onClick={() => patch("Slide side", { slide: { ...slide, side: sd } })}
-                title="Which jamb the panels stack at"
+                tip="Which jamb the panels stack at"
               >
                 Slides {sd}
               </PdChip>
@@ -391,7 +393,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               active={(opening.lining ?? true) === l}
               extra={pdChipFlex}
               onClick={() => patch("Passage lining", { lining: l })}
-              title={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
+              tip={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
             >
               {l ? "Cased" : "Bare"}
             </PdChip>
@@ -425,7 +427,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 active={frameFinishOf(opening) === m.key}
                 extra={pdChipFlex}
                 onClick={() => useSceneStore.getState().setFrameFinish(m.key)}
-                title={m.title}
+                tip={m.tip}
               >
                 {m.label}
               </PdChip>

@@ -5,6 +5,7 @@ import { useSceneStore } from "@/store/useSceneStore";
 import { FIXTURE_CATALOG, type FixtureAsset, type FixtureCategory } from "@/fixtures/catalog";
 import { PD, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { DiscLightIcon, PendantIcon, SconceIcon } from "@/ui/planDock/icons";
 
 /** A drawn icon per shape — no GLB thumbnail machinery here (that's furniture-
@@ -51,10 +52,14 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
   const active = placing?.assetId === asset.assetId;
   const [hovered, hoverBind] = useHover();
   const Icon = SHAPE_ICON[asset.shape];
-  return (
+  // The caption below is ellipsized at 68px, so the full name is worth a hover
+  // label — through the app's own glass Tooltip, not the browser's white
+  // `title` window. BELOW the tile: these grids scroll, and the first row sits
+  // flush against the scroll container's top edge, which would clip a tooltip
+  // drawn above it.
+  const tile = (
     <button
       onClick={() => useSceneStore.getState().setPlacing(active ? null : asset.assetId)}
-      title={asset.name}
       {...hoverBind}
       style={{
         flex: "0 0 auto",
@@ -99,6 +104,11 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
         {asset.name}
       </span>
     </button>
+  );
+  return (
+    <Tooltip label={asset.name} placement="bottom">
+      {tile}
+    </Tooltip>
   );
 }
 

@@ -15,11 +15,32 @@ import {
 import { ensureDownloaded } from "@/store/syncEngine";
 import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
-import { T, glass, microLabel } from "@/ui/tokens";
-import { tGhostBtn, useHover } from "@/ui/hoverT";
+import { PD, pdGhostBtn, pdHoverTransition, pdMicroLabel } from "@/ui/planDock/tokens";
+import { useHover } from "@/ui/planDock/useHover";
+import { Tooltip } from "@/ui/planDock/Tooltip";
 import { CloseIcon, PencilIcon, PlanMapIcon, PlusIcon, TrashIcon } from "@/ui/planDock/icons";
 import { Wordmark } from "@/brand/Wordmark";
 import { landingEnabled } from "@/lib/featureFlags";
+
+/** The gallery's card surface.
+ *
+ *  Deliberately NOT `pdGlass()`. That recipe is 38% opacity, which is right for
+ *  a small panel floating over the 3D model and wrong here: this is a
+ *  full-screen sheet, the cards carry plan names and timestamps, and at 38% the
+ *  scrim and the editor behind it read through the text. `PD.panelBg` (72%) is
+ *  the same design language at the weight this surface needs — see the surface
+ *  note in planDock/tokens.ts. */
+const cardSurface = (extra?: React.CSSProperties): React.CSSProperties => ({
+  background: PD.panelBg,
+  backdropFilter: PD.glassBlur,
+  WebkitBackdropFilter: PD.glassBlur,
+  border: `1px solid ${PD.hairline}`,
+  borderRadius: PD.radiusL,
+  boxShadow: PD.glassShadow,
+  color: PD.textPrimary,
+  fontFamily: PD.fontUi,
+  ...extra,
+});
 
 /** The green "live" pip on a card badge. A real circle, not the `●` character
  *  it replaces: a text bullet reflows with the font and never matches the drawn
@@ -142,7 +163,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
         WebkitBackdropFilter: "blur(24px) saturate(1.3)",
         display: "flex",
         flexDirection: "column",
-        fontFamily: T.font,
+        fontFamily: PD.fontUi,
       }}
     >
       {/* header */}
@@ -152,7 +173,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "20px 28px",
-          borderBottom: `1px solid ${T.panelBorder}`,
+          borderBottom: `1px solid ${PD.hairline}`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -161,11 +182,11 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
           {landingEnabled ? (
             <BackToSite />
           ) : (
-            <Wordmark size={20} style={{ color: T.text }} />
+            <Wordmark size={20} style={{ color: PD.textPrimary }} />
           )}
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <span style={{ fontSize: 19, fontWeight: 600, color: T.text }}>Projects</span>
-            <span style={{ fontSize: 13, color: T.textFaint }}>
+            <span style={{ fontSize: 19, fontWeight: 600, color: PD.textPrimary }}>Projects</span>
+            <span style={{ fontSize: 13, color: PD.textTertiary }}>
               {items.length} {items.length === 1 ? "plan" : "plans"}
             </span>
           </div>
@@ -200,7 +221,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   style={{
                     position: "relative",
                     aspectRatio: "4 / 3",
-                    background: T.bgCanvas,
+                    background: PD.canvas,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -216,7 +237,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   ) : (
                     // No snapshot yet (never opened on this computer). The plan
                     // glyph, not the `▱` character it replaces.
-                    <PlanMapIcon size={30} strokeWidth={1.35} style={{ color: T.textFaint }} />
+                    <PlanMapIcon size={30} strokeWidth={1.35} style={{ color: PD.textTertiary }} />
                   )}
                   <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
                     {isCurrent && (
@@ -224,7 +245,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         style={{
                           padding: "3px 8px",
                           borderRadius: 999,
-                          background: T.accent,
+                          background: PD.accent,
                           color: "#fff",
                           fontSize: 10,
                           fontWeight: 700,
@@ -235,39 +256,47 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       </span>
                     )}
                     {m.cloudOnly && (
-                      <span
-                        title="Saved to your account — click to bring it onto this computer"
-                        style={{
-                          padding: "3px 8px",
-                          borderRadius: 999,
-                          background: T.panelBorder,
-                          color: T.text,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: 0.4,
-                        }}
+                      // `placement="bottom"`: the badges sit at the top of the
+                      // card, inside the gallery's own scroll container, so a
+                      // tooltip above them is clipped on the first row.
+                      <Tooltip
+                        label="Saved to your account — click to bring it onto this computer"
+                        placement="bottom"
                       >
-                        {busyId === m.id ? "DOWNLOADING…" : "IN CLOUD"}
-                      </span>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 999,
+                            background: PD.hairline,
+                            color: PD.textPrimary,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          {busyId === m.id ? "DOWNLOADING…" : "IN CLOUD"}
+                        </span>
+                      </Tooltip>
                     )}
                     {m.liveRoomId && (
-                      <span
-                        title="Live shared document — opens into its room"
-                        style={{
-                          padding: "3px 8px",
-                          borderRadius: 999,
-                          background: T.ok,
-                          color: "#fff",
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: 0.4,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <Pip color="#fff" size={6} /> LIVE
-                      </span>
+                      <Tooltip label="Live shared document — opens into its room" placement="bottom">
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 999,
+                            background: PD.ok,
+                            color: "#fff",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: 0.4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <Pip color="#fff" size={6} /> LIVE
+                        </span>
+                      </Tooltip>
                     )}
                   </div>
                   <DeleteButton
@@ -292,13 +321,13 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         if (e.key === "Escape") setRenaming(null);
                       }}
                       style={{
-                        background: T.inputBg,
-                        border: `1px solid ${T.accent}`,
-                        borderRadius: T.radiusS,
-                        color: T.text,
+                        background: PD.inputBg,
+                        border: `1px solid ${PD.accent}`,
+                        borderRadius: PD.radiusS,
+                        color: PD.textPrimary,
                         padding: "3px 6px",
                         fontSize: 13,
-                        fontFamily: T.font,
+                        fontFamily: PD.fontUi,
                         outline: "none",
                         width: "100%",
                         boxSizing: "border-box",
@@ -310,7 +339,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         style={{
                           fontSize: 13.5,
                           fontWeight: 500,
-                          color: T.text,
+                          color: PD.textPrimary,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -326,7 +355,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       />
                     </div>
                   )}
-                  <span style={microLabel(T.textFaint)}>{ago(m.updatedAt)}</span>
+                  <span style={pdMicroLabel(PD.textTertiary)}>{ago(m.updatedAt)}</span>
                 </div>
               </ProjectCard>
             );
@@ -343,31 +372,33 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
 // is its own component purely so it can hold a `useHover` flag — the cards are
 // rendered in a loop, and a hook cannot be called inside one.
 
-/** Close (Esc). */
+/** Close (Esc). `placement="bottom"` — it lives in the sheet's top bar, where a
+ *  tooltip above it would sit off the top of the window. */
 function CloseButton({ onClose }: { onClose: () => void }) {
   const [hov, bind] = useHover();
   return (
-    <button
-      onClick={onClose}
-      title="Close (Esc)"
-      aria-label="Close projects"
-      {...bind}
-      style={{
-        border: `1px solid ${hov ? "rgba(255,255,255,0.2)" : T.panelBorder}`,
-        background: hov ? "rgba(255,255,255,0.12)" : T.inputBg,
-        color: hov ? T.text : T.textDim,
-        cursor: "pointer",
-        width: 30,
-        height: 30,
-        borderRadius: 999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: `background ${T.dur} ${T.ease}, border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}`,
-      }}
-    >
-      <CloseIcon size={15} />
-    </button>
+    <Tooltip label="Close (Esc)" placement="bottom">
+      <button
+        onClick={onClose}
+        aria-label="Close projects"
+        {...bind}
+        style={{
+          border: `1px solid ${hov ? PD.surfaceMutedHover : PD.hairline}`,
+          background: hov ? PD.surfaceMutedHover : PD.inputBg,
+          color: hov ? PD.textPrimary : PD.textSecondary,
+          cursor: "pointer",
+          width: 30,
+          height: 30,
+          borderRadius: 999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: pdHoverTransition(hov),
+        }}
+      >
+        <CloseIcon size={15} />
+      </button>
+    </Tooltip>
   );
 }
 
@@ -386,13 +417,13 @@ function NewPlanTile({ onClick }: { onClick: () => void }) {
         justifyContent: "center",
         gap: 8,
         aspectRatio: "1 / 1",
-        border: `1.5px dashed ${hov ? T.accent : T.panelBorder}`,
-        borderRadius: T.radiusL,
-        background: hov ? "rgba(255,255,255,0.04)" : "transparent",
-        color: hov ? T.text : T.textDim,
+        border: `1.5px dashed ${hov ? PD.accent : PD.hairline}`,
+        borderRadius: PD.radiusL,
+        background: hov ? PD.surfaceMuted : "transparent",
+        color: hov ? PD.textPrimary : PD.textSecondary,
         cursor: "pointer",
-        fontFamily: T.font,
-        transition: `border-color ${T.dur} ${T.ease}, color ${T.dur} ${T.ease}, background ${T.dur} ${T.ease}`,
+        fontFamily: PD.fontUi,
+        transition: pdHoverTransition(hov),
       }}
     >
       <PlusIcon size={28} strokeWidth={1.4} />
@@ -421,13 +452,12 @@ function ProjectCard({
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
-        transition: `border-color ${T.dur} ${T.ease}, transform ${T.dur} ${T.ease}, box-shadow ${T.dur} ${T.ease}`,
+        transition: `${pdHoverTransition(hov)}, transform ${PD.dur} ${PD.ease}`,
         transform: hov ? "translateY(-2px)" : "none",
-        ...glass({
-          borderRadius: T.radiusL,
+        ...cardSurface({
           overflow: "hidden",
-          border: `1px solid ${isCurrent ? T.accent : hov ? "rgba(255,255,255,0.22)" : T.panelBorder}`,
-          boxShadow: hov ? "0 16px 40px rgba(0,0,0,0.45)" : T.shadow,
+          border: `1px solid ${isCurrent ? PD.accent : hov ? PD.surfaceMutedHover : PD.hairline}`,
+          boxShadow: hov ? "0 16px 40px oklch(0 0 0 / 0.45)" : PD.glassShadow,
         }),
       }}
     >
@@ -437,34 +467,39 @@ function ProjectCard({
 }
 
 /** Delete, over the thumbnail. Red on hover — it is the one destructive
- *  control in the gallery and should say so before it is clicked. */
+ *  control in the gallery and should say so before it is clicked.
+ *
+ *  The absolute positioning lives on the WRAPPER, not the button: `Tooltip`
+ *  renders a `position: relative` span around its child, so leaving `top/right`
+ *  on the button would anchor it to that span instead of to the thumbnail. */
 function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   const [hov, bind] = useHover();
   return (
-    <button
-      onClick={onClick}
-      title="Delete plan"
-      aria-label="Delete plan"
-      {...bind}
-      style={{
-        position: "absolute",
-        top: 8,
-        right: 8,
-        width: 24,
-        height: 24,
-        borderRadius: 999,
-        border: "none",
-        background: hov ? T.danger : "rgba(0,0,0,0.5)",
-        color: "#fff",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: `background ${T.dur} ${T.ease}`,
-      }}
-    >
-      <TrashIcon size={13} />
-    </button>
+    <div style={{ position: "absolute", top: 8, right: 8 }}>
+      <Tooltip label="Delete plan" placement="bottom">
+        <button
+          onClick={onClick}
+          aria-label="Delete plan"
+          {...bind}
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 999,
+            border: "none",
+            background: hov ? PD.danger : "oklch(0 0 0 / 0.5)",
+            color: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            transition: pdHoverTransition(hov),
+          }}
+        >
+          <TrashIcon size={13} />
+        </button>
+      </Tooltip>
+    </div>
   );
 }
 
@@ -472,19 +507,21 @@ function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
 function RenameButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   const [hov, bind] = useHover();
   return (
-    <button
-      onClick={onClick}
-      title="Rename"
-      aria-label="Rename plan"
-      {...bind}
-      style={tGhostBtn(hov, {
-        padding: 3,
-        flexShrink: 0,
-        color: hov ? T.text : T.textFaint,
-      })}
-    >
-      <PencilIcon size={13} />
-    </button>
+    <Tooltip label="Rename">
+      <button
+        onClick={onClick}
+        aria-label="Rename plan"
+        {...bind}
+        style={pdGhostBtn(hov, {
+          justifyContent: "center",
+          padding: 3,
+          flexShrink: 0,
+          color: hov ? PD.textPrimary : PD.textTertiary,
+        })}
+      >
+        <PencilIcon size={13} />
+      </button>
+    </Tooltip>
   );
 }
 
@@ -510,15 +547,15 @@ function BackToSite() {
       {...bind}
       style={{ display: "flex", flexDirection: "column", gap: 2, textDecoration: "none" }}
     >
-      <Wordmark size={20} style={{ color: T.text }} />
+      <Wordmark size={20} style={{ color: PD.textPrimary }} />
       <span
         style={{
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
-          color: hov ? T.text : T.textFaint,
-          transition: `color ${T.dur} ${T.ease}`,
+          color: hov ? PD.textPrimary : PD.textTertiary,
+          transition: pdHoverTransition(hov),
         }}
       >
         back to site

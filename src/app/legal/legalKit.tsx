@@ -1,47 +1,52 @@
 import type React from "react";
 import type { ReactNode } from "react";
-import { T } from "@/ui/tokens";
+import { PD } from "@/ui/planDock/tokens";
 import { WarnIcon } from "@/ui/planDock/icons";
 
-// Shared typography + placeholder markers for the /legal pages. Kept separate
-// from src/ui/tokens.ts (which drives app chrome) because these are plain
-// document styles for long-form text, not panel/button chrome.
+// Shared typography + placeholder markers for the /legal pages.
+//
+// These are plain document styles for long-form text, not panel/button chrome,
+// but they read the SAME palette as the rest of the app now: they used to come
+// from src/ui/tokens.ts (`T`), a second token set whose accent and greys did not
+// match the dock's, so /legal was quietly a different-coloured product.
+// Nothing here is glass — a policy is a page to read, so it sits on the opaque
+// `PD.bg` ground its layout paints.
 
 export const legalH1: React.CSSProperties = {
   fontSize: 27,
   fontWeight: 700,
   margin: "0 0 6px",
-  color: T.text,
+  color: PD.textPrimary,
   letterSpacing: -0.3,
 };
 
 export const legalMeta: React.CSSProperties = {
   fontSize: 12.5,
-  color: T.textFaint,
+  color: PD.textTertiary,
   marginBottom: 20,
 };
 
 export const legalIntro: React.CSSProperties = {
   fontSize: 13.5,
   lineHeight: 1.7,
-  color: T.textDim,
+  color: PD.textSecondary,
   margin: "0 0 32px",
   paddingBottom: 24,
-  borderBottom: `1px solid ${T.panelBorder}`,
+  borderBottom: `1px solid ${PD.hairline}`,
 };
 
 export const legalH2: React.CSSProperties = {
   fontSize: 16.5,
   fontWeight: 700,
   margin: "34px 0 10px",
-  color: T.text,
+  color: PD.textPrimary,
 };
 
 export const legalH3: React.CSSProperties = {
   fontSize: 12.5,
   fontWeight: 700,
   margin: "20px 0 6px",
-  color: T.textDim,
+  color: PD.textSecondary,
   textTransform: "uppercase",
   letterSpacing: 0.5,
 };
@@ -49,7 +54,7 @@ export const legalH3: React.CSSProperties = {
 export const legalP: React.CSSProperties = {
   fontSize: 14,
   lineHeight: 1.75,
-  color: T.textDim,
+  color: PD.textSecondary,
   margin: "0 0 14px",
 };
 
@@ -64,7 +69,7 @@ export const legalUl: React.CSSProperties = {
 export const legalLi: React.CSSProperties = {
   fontSize: 14,
   lineHeight: 1.7,
-  color: T.textDim,
+  color: PD.textSecondary,
 };
 
 /** A visible-on-page echo of the source DRAFT comment — belt and suspenders,
@@ -79,10 +84,10 @@ export function DraftBanner() {
         alignItems: "flex-start",
         padding: "12px 14px",
         marginBottom: 28,
-        borderRadius: T.radiusM,
-        border: `1px solid ${T.warn}`,
-        background: "rgba(255,214,10,0.08)",
-        color: T.warn,
+        borderRadius: PD.radiusM,
+        border: `1px solid ${PD.warnText}`,
+        background: PD.warnBg,
+        color: PD.warnText,
         fontSize: 12.5,
         lineHeight: 1.6,
       }}
@@ -104,7 +109,7 @@ export function DraftBanner() {
  *  Never invented (no company name, address, jurisdiction, or contact). */
 export function Placeholder({ children }: { children: ReactNode }) {
   return (
-    <span style={{ color: T.warn, fontWeight: 700 }}>
+    <span style={{ color: PD.warnText, fontWeight: 700 }}>
       [[PLACEHOLDER: {children}]]
     </span>
   );
@@ -114,7 +119,7 @@ export function Placeholder({ children }: { children: ReactNode }) {
  *  drafting this page; confirm before relying on it. */
 export function Verify({ children }: { children: ReactNode }) {
   return (
-    <span style={{ color: T.accent, fontWeight: 700 }}>
+    <span style={{ color: PD.accent, fontWeight: 700 }}>
       [[VERIFY: {children}]]
     </span>
   );
@@ -124,7 +129,7 @@ export function Verify({ children }: { children: ReactNode }) {
  *  shipped yet. */
 export function Pending({ children }: { children: ReactNode }) {
   return (
-    <span style={{ color: T.ok, fontWeight: 700 }}>
+    <span style={{ color: PD.ok, fontWeight: 700 }}>
       [[PENDING: {children}]]
     </span>
   );
