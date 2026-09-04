@@ -6,7 +6,7 @@ import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
 import { AccountMenu } from "@/ui/AccountMenu";
 import { GtLab } from "@/dev/GtLab";
-import { legacyExtractionEnabled } from "@/lib/featureFlags";
+import { devToolsEnabled, legacyExtractionEnabled } from "@/lib/featureFlags";
 import { useSceneStore, type AppMode } from "@/store/useSceneStore";
 import { useSyncStore } from "@/store/useSyncStore";
 import { CloudSync } from "@/ui/CloudSync";
@@ -237,7 +237,7 @@ export default function Home() {
     // Furnishing the marketing hero. Checked FIRST and returns without ever
     // calling initProjectPersistence, so this session has no project attached
     // and cannot autosave over one — see HeroFurnishBar.
-    if (params.get("hero")) {
+    if (devToolsEnabled && params.get("hero")) {
       setHeroFurnish(true);
       (async () => {
         const { heroDressedScene } = await import("@/landing/demoScene");
@@ -269,7 +269,11 @@ export default function Home() {
       return;
     }
 
-    const gt = params.get("gt");
+    // Dev-only, and this one is not merely untidy in production: the `?gt=`
+    // branch skips project restore, and the store it leaves behind then
+    // autosaves into whatever project is current. Off the dev server it must
+    // read as an ordinary visit — see `devToolsEnabled`.
+    const gt = devToolsEnabled ? params.get("gt") : null;
     if (!gt) {
       (async () => {
         await initProjectPersistence();

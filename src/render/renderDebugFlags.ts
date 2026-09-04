@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 import { DPR } from "./contract";
+import { devToolsEnabled } from "@/lib/featureFlags";
 
 /**
  * Per-page-load debug hatches for A/B-ing a render decision against someone's
@@ -50,6 +51,7 @@ export const AO_PARAM = "ao";
  */
 export function aoDebugMode(): AoDebugMode {
   if (typeof window === "undefined") return "default";
+  if (!devToolsEnabled) return "default";
   const v = new URLSearchParams(window.location.search).get(AO_PARAM);
   return v === "transparent" || v === "off" ? v : "default";
 }
@@ -107,9 +109,13 @@ export function parseDprParam(search: string | null | undefined): number | null 
   return Math.min(Math.max(n, DPR[0]), DPR[1]);
 }
 
-/** Non-reactive read, matching `aoDebugMode` above. Null during SSR. */
+/** Non-reactive read, matching `aoDebugMode` above. Null during SSR, and null in
+ *  production — the gate lives HERE and not in `parseDprParam`, which stays a
+ *  pure function of its argument so `renderDebugFlags.test.ts` keeps testing the
+ *  parse rather than the environment it happens to run in. */
 export function dprOverride(): number | null {
   if (typeof window === "undefined") return null;
+  if (!devToolsEnabled) return null;
   return parseDprParam(window.location.search);
 }
 

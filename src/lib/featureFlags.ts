@@ -56,3 +56,40 @@ export const ktx2FloorsEnabled =
  */
 export const landingEnabled =
   process.env.NEXT_PUBLIC_LANDING_ENABLED === "true";
+
+/**
+ * The developer query-parameter hatches, as ONE switch: `?hero=1`, `?gt=`,
+ * `?perf=1` (with `?loop=` and `?furnish=`), `?ao=` and `?dpr=`.
+ *
+ * Each was written for a different job and each was reachable on done.design,
+ * because none of them ever had an environment check — they are gated on the
+ * parameter being present, and a parameter is present wherever someone types
+ * it. Dan's call (2026-09-04): these are dev tools and the public site should
+ * not answer to them.
+ *
+ * `?gt=` is the one that was more than untidy. It skips project restore, which
+ * leaves the store on its initial state — and then AUTOSAVES that into whatever
+ * project is current. On the live site that is a stranger's saved work.
+ *
+ * ONE flag rather than one per hatch, deliberately: the failure mode being
+ * closed off is "a dev surface is reachable in production", and that is a
+ * property of the set, not of any single parameter. A new hatch should join
+ * this flag rather than invent its own.
+ *
+ * `NODE_ENV` rather than `VERCEL_ENV`, so this is off in ANY production build —
+ * including `npm run build && npm start` locally, and including preview
+ * deployments. Both halves fold to constants at build time, so in production
+ * the parameter reads are dead code rather than a runtime branch.
+ *
+ * THE COST, stated plainly because it is a real one: `?perf=1` and `?dpr=` were
+ * designed for production measurement — the HUD's own doc says the numbers get
+ * read "on someone else's MacBook against the live done.design deployment", and
+ * that is how the M2 readings behind docs/PERFORMANCE.md were taken. Measuring
+ * production now needs `NEXT_PUBLIC_DEV_TOOLS_ENABLED=true` set in Vercel and a
+ * redeploy, then unset afterwards. If that friction turns out to cost more than
+ * the exposure it removes, split `?perf=1`/`?dpr=` back out — they are the two
+ * that read nothing and write nothing.
+ */
+export const devToolsEnabled =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_DEV_TOOLS_ENABLED === "true";

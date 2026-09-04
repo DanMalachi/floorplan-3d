@@ -1,5 +1,5 @@
 import type { Scene } from "@/schema/scene";
-import { GENERATORS, sanitizeSpec } from "@/parametric";
+import { sanitizeSpec } from "@/parametric";
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { frameColorPatch } from "@/render/frameFinish";
 import { HERO_NODES, HERO_ROOMS, heroOpenings, heroWalls } from "./heroPlan";
@@ -23,41 +23,50 @@ import { HERO_NODES, HERO_ROOMS, heroOpenings, heroWalls } from "./heroPlan";
 // that is not cosmetic (every camera that frames this model looks at 0,0,0).
 //
 //    y
-//  2.5  n9 ---------- n3 ------------------------------- n2
-//       |   bathroom   |          sofa + coffee table     |
-//       |  vanity/wc   |                                  |
-//  0.7  n8 ---------- n7                           [ W2 patio window ]
-//       |              | bed                             |   2.55 m
-//       |              | + nightstand      dining   cabinet
-// -2.5                n0 ------------------------------- n1   stove
+//  2.5  n9 ---------- n3 ------- dining -------------------- n2
+//       |   bathroom   |     table + 2 chairs, art above      |
+//       |  bath · wc   |                         sofa · TV    |
+//       |  vanity      |                       coffee table   |
+//  0.7  n8 ---------- n7                       [ W2 patio window ]
+//       |              | hood                      sofa   |   2.55 m
+//       |              | cooker      side table           |
+//       |              | fridge · bin                     |
+// -2.5                n0 ---- kitchen run + sink -------- n1
 //                   -2.1   [ W1 ]      [ D1 ]         3.9     x
 //
-// Every `assetId` below is a real BlenderKit model, verified against
-// data/furniture-blenderkit.catalog.json and public/furniture/blenderkit/opt/.
-// The two bathroom fixtures are PARAMETRIC instead — generated in code by
-// src/parametric, so they add two pieces of furniture and zero bytes of
-// download. The BlenderKit catalog has no toilet or basin, and the IKEA models
-// that might are served from Vercel Blob, which is excluded from the git
-// deploy and has 404'd in production once already.
+// ── Where these values come from ────────────────────────────────────────────
+// NOT typed by hand. `/design?hero=1` opens this exact scene in the real
+// editor, in Decorate mode, and its "Copy furniture →" button hands back
+// `scene.furniture` as JSON — the array below is that dump, with ids renamed to
+// `f0…fN` in render order, coordinates rounded to 0.1 mm, and rotations written
+// as `Math.PI` expressions. Re-furnish there rather than nudging numbers here.
+// That route saves NOTHING: the copy button is the only way out of a session.
+//
+// Two ASSET FAMILIES are in play and they ship differently:
+//
+//   `param:*`  — generated in code by src/parametric. Zero bytes of download
+//                and nothing to 404, which is why every fixture, every piece of
+//                wall art and both rugs is one of these.
+//   `ikea:*`   — real GLBs served from VERCEL BLOB, deliberately excluded from
+//                the deployment upload (~400 MB; see .vercelignore) and
+//                resolved by URL through data/furniture-ikea.blob.json.
+//
+// The IKEA dependency is the one that can break the hero from outside the
+// repo, and `npm run furniture:verify-deploy` will NOT catch it — that script
+// skips absolute URLs by design. All six were checked live on 2026-09-04 and
+// returned 206. If the hero ever renders grey placeholder boxes where the
+// sofas are, check Blob before anything else.
+//
+// Every `parametric` spec below is passed through `sanitizeSpec`, so an invalid
+// finish or variant can never reach the marketing page — verified as a no-op
+// against this exact array, i.e. nothing here is being silently rewritten.
 // -----------------------------------------------------------------------------
 
-/** A parametric fixture at its generator's own defaults, placed by hand. */
-function fixture(
-  id: string,
-  generator: "toilet" | "vanity",
-  x: number,
-  y: number,
-  rotation: number,
-) {
-  return {
-    id,
-    assetId: `param:${generator}`,
-    x,
-    y,
-    rotation,
-    parametric: sanitizeSpec(GENERATORS[generator].defaultSpec),
-  };
-}
+/** Shorthand for the sanitizer, so each spec below reads as one line of data
+ *  rather than a function call wrapped around one. See the header note: this is
+ *  a no-op on the current array by measurement, and stays here so it cannot
+ *  stop being one unnoticed. */
+const spec = sanitizeSpec;
 
 export const demoScene: Scene = {
   schemaVersion: 2,
@@ -66,41 +75,48 @@ export const demoScene: Scene = {
   walls: heroWalls(),
   openings: heroOpenings(),
   rooms: HERO_ROOMS,
-  // 13 pieces — sleeping, living, dining, a kitchenette corner and a bathroom,
-  // so the home reads as lived-in rather than as a showroom.
+  // 30 pieces — a bathroom, a kitchen, a dining corner and a living end, so
+  // the home reads as lived-in rather than as a showroom. No bed: this is a
+  // studio, and Dan has not found one in the catalog worth putting on the
+  // marketing page.
   furniture: [
-    // Sleep nook — back against the left wall, below the bathroom.
-    { id: "f0", assetId: "blenderkit:3a845132-df64-4f02-8da6-44229fe774e4", x: -0.93, y: -1, rotation: Math.PI / 2 }, // Master bed
-    { id: "f1", assetId: "blenderkit:9c201695-6847-410f-89df-7cdc0ec14f23", x: -1.79, y: 0.28, rotation: Math.PI / 2 }, // Painted Wooden Nightstand
+    // Bathroom — top-left, x -3.9..-2.1 by y 0.7..2.5.
+    { id: "f0", assetId: "param:bathtub", x: -3.5, y: 1.5841, rotation: -Math.PI / 2, parametric: spec({ generator: "bathtub", dims: { w: 1.7, d: 0.7, h: 0.55 }, modules: { tap: 1 }, front: "slab", handle: "none", finish: "acrylic", variant: "alcove" }) },
+    { id: "f1", assetId: "param:vanity", x: -2.5739, y: 2.22, rotation: Math.PI, parametric: spec({ generator: "vanity", dims: { w: 0.8, d: 0.46, h: 0.85 }, modules: { doors: 2 }, front: "slab", handle: "bar", finish: "oak", variant: "countertop" }) },
+    { id: "f2", assetId: "param:mirror", x: -2.5853, y: 2.425, rotation: Math.PI, elevation: 1.2, parametric: spec({ generator: "mirror", dims: { w: 0.7, d: 0.05, h: 0.7 }, modules: {}, front: "slab", handle: "none", finish: "steel", variant: "round" }) },
+    { id: "f3", assetId: "param:toilet", x: -2.698, y: 1.08, rotation: 0, parametric: spec({ generator: "toilet", dims: { w: 0.36, d: 0.66, h: 0.78 }, modules: { lidOpen: 1 }, front: "slab", handle: "none", finish: "ceramic", variant: "wall-hung" }) },
+    { id: "f4", assetId: "param:towelRail", x: -3.4929, y: 0.81, rotation: 0, elevation: 0.9, parametric: spec({ generator: "towelRail", dims: { w: 0.5, d: 0.12, h: 1.1 }, modules: {}, front: "slab", handle: "none", finish: "painted", variant: "ladder" }) },
+    { id: "f5", assetId: "param:towelRail", x: -2.2, y: 2.2252, rotation: Math.PI / 2, elevation: 1, parametric: spec({ generator: "towelRail", dims: { w: 0.18, d: 0.1, h: 0.34 }, modules: {}, front: "slab", handle: "none", finish: "painted", variant: "ring" }) },
+    { id: "f6", assetId: "param:rug", x: -2.6, y: 1.7, rotation: 0, parametric: spec({ generator: "rug", dims: { w: 0.6, d: 0.6, h: 0.038 }, modules: {}, front: "slab", handle: "none", finish: "rug-shag", variant: "round" }) },
+    { id: "f7", assetId: "param:wallArt", x: -2.6792, y: 0.7725, rotation: 0, elevation: 1.4, parametric: spec({ generator: "wallArt", dims: { w: 0.72, d: 0.045, h: 0.52 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-wave", finish2: "walnut", variant: "framed-landscape" }) },
 
-    // Living area — back against the top wall, under window W3.
-    { id: "f2", assetId: "blenderkit:d19dd7b1-6573-41c7-b12c-b3eccdb7047d", x: 1.1, y: 1.9, rotation: Math.PI }, // Cotton Mini Sofa — y leaves headroom for the deepest swap option (Leather Sofa, d=1.004m)
-    { id: "f3", assetId: "blenderkit:4db96473-72ed-4947-80d8-af6dc1c4dee8", x: 1.1, y: 0.67, rotation: 0 }, // Coffee Table
-    { id: "f4", assetId: "blenderkit:6122afb7-3fb5-441e-9fa3-f57de7ebed93", x: -0.35, y: 0.5, rotation: Math.PI / 2 }, // Ikea Onnestad Red Armchair
-    // Floor lamp — now stands IN FRONT of the patio glazing rather than beside
-    // a blank wall, which is where a floor lamp actually goes.
-    { id: "f5", assetId: "blenderkit:cd259516-4f81-48a5-9097-77789637cbf4", x: 3.2, y: 1.8, rotation: 0 }, // ÅRSTID Floor lamp
+    // Kitchen — an L-run along the bottom wall with a return up the left one.
+    { id: "f8", assetId: "param:kitchenBase", x: -0.675, y: -2.15, rotation: 0, parametric: spec({ generator: "kitchenBase", dims: { w: 2.75, d: 0.6, h: 0.84 }, modules: { drawerUnits: 0 }, front: "shaker", handle: "knob", finish: "painted", finish2: "counter-white", cutouts: [{ along: 1.2, w: 0.64, d: 0.45 }], extraLegs: [{ turn: -1, w: 1.3 }], legDir: -1 }) },
+    { id: "f9", assetId: "param:sink", x: -0.5, y: -2.15, rotation: 0, elevation: 0.84, attach: { hostId: "f8", along: 1.2 }, parametric: spec({ generator: "sink", dims: { w: 0.67, d: 0.48, h: 0.02 }, modules: { bowls: 1 }, front: "slab", handle: "none", finish: "steel" }) },
+    { id: "f10", assetId: "param:appliance", x: -1.75, y: -1.4, rotation: -Math.PI / 2, elevation: 0.84, attach: { hostId: "f8", along: 3.8 }, parametric: spec({ generator: "appliance", dims: { w: 0.5, d: 0.38, h: 0.3 }, modules: { doorOpen: 0, burners: 5 }, front: "slab", handle: "none", finish: "steel", variant: "microwave" }) },
+    { id: "f11", assetId: "param:appliance", x: -1.725, y: -0.2381, rotation: -Math.PI / 2, parametric: spec({ generator: "appliance", dims: { w: 0.61, d: 0.65, h: 0.87 }, modules: { doorOpen: 0, burners: 5 }, front: "slab", handle: "none", finish: "steel", variant: "range-cooker" }) },
+    { id: "f12", assetId: "param:rangeHood", x: -1.8, y: -0.2408, rotation: -Math.PI / 2, elevation: 1.68, parametric: spec({ generator: "rangeHood", dims: { w: 0.6, d: 0.5, h: 0.72 }, modules: { lights: 1 }, front: "slab", handle: "none", finish: "steel", variant: "chimney" }) },
+    { id: "f13", assetId: "param:appliance", x: 1.1629, y: -2.09, rotation: 0, parametric: spec({ generator: "appliance", dims: { w: 0.91, d: 0.72, h: 1.78 }, modules: { doorOpen: 0, burners: 5 }, front: "slab", handle: "none", finish: "steel", variant: "fridge-side-by-side" }) },
+    { id: "f14", assetId: "param:bin", x: -1.8, y: 0.3, rotation: 0, parametric: spec({ generator: "bin", dims: { w: 0.35, d: 0.35, h: 0.7 }, modules: {}, front: "slab", handle: "none", finish: "steel", variant: "kitchen" }) },
+    { id: "f15", assetId: "param:rug", x: -0.5163, y: -1.5927, rotation: -Math.PI / 2, parametric: spec({ generator: "rug", dims: { w: 0.6, d: 0.8, h: 0.014 }, modules: {}, front: "slab", handle: "none", finish: "rug-persian", variant: "persian" }) },
+    { id: "f16", assetId: "param:wallClock", x: -1.5527, y: -2.425, rotation: 0, elevation: 1.5, parametric: spec({ generator: "wallClock", dims: { w: 0.3, d: 0.05, h: 0.3 }, modules: { secondHand: 1 }, front: "slab", handle: "none", finish: "painted", color: "#23262b", variant: "minimal" }) },
+    { id: "f17", assetId: "param:wallArt", x: -2.029, y: -1.5657, rotation: -Math.PI / 2, elevation: 1.3, parametric: spec({ generator: "wallArt", dims: { w: 1.35, d: 0.042, h: 0.78 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-cannons", finish2: "painted", color2: "#23252b", variant: "gallery-3" }) },
 
-    // Right wall. The cabinet MOVED from y 2.50 to y 1.55: the patio window
-    // spans y 2.18-4.73 down to a 0.10 m sill, so its old spot is now glass.
-    // It lost nothing by moving — it was placed under the small window that
-    // the patio unit replaced, and y 1.55 is the only clear span left between
-    // the stove and the glazing.
-    { id: "f6", assetId: "blenderkit:30a3d1c5-6554-42fd-a8d0-a1efdff162b3", x: 3.54, y: -0.95, rotation: -Math.PI / 2 }, // Painted Wooden Cabinet
-    { id: "f7", assetId: "blenderkit:76e31f48-a0f7-4854-868a-c2f692b68f67", x: 3.52, y: -1.9, rotation: -Math.PI / 2 }, // Electric Stove
+    // Dining — table centred on the top wall, a chair to each side.
+    { id: "f18", assetId: "ikea:40563776", x: -0.7, y: 2, rotation: 0 },
+    { id: "f19", assetId: "ikea:40423559", x: -0.2, y: 2, rotation: Math.PI / 2 },
+    { id: "f20", assetId: "ikea:40423559", x: -1.1, y: 2, rotation: -Math.PI / 2 },
+    { id: "f21", assetId: "param:wallArt", x: -0.6759, y: 2.4225, rotation: Math.PI, elevation: 1.2, parametric: spec({ generator: "wallArt", dims: { w: 1.1, d: 0.055, h: 0.85 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-bedroom", finish2: "painted", color2: "#23252b", variant: "framed-large" }) },
 
-    // Small dining nook, clear of the door swing.
-    { id: "f8", assetId: "blenderkit:4fd0b237-9527-45d5-b82a-4cfec427f673", x: 0.9, y: -1.4, rotation: 0 }, // Round Wooden Table 02
-    { id: "f9", assetId: "blenderkit:0d05c301-90b9-469a-8d52-91f9e9010244", x: 0.9, y: -2.15, rotation: 0 }, // Wooden Chair
-    { id: "f10", assetId: "blenderkit:0d05c301-90b9-469a-8d52-91f9e9010244", x: 0.9, y: -0.59, rotation: Math.PI }, // Wooden Chair
-
-    // Bathroom. Interior is x -1.75..-0.05, y 3.25..4.95 once wall thickness is
-    // taken off. The toilet backs onto the outer wall (rotation +PI/2, the same
-    // facing as the bed against the left wall); the vanity backs onto the top
-    // wall (rotation PI, the same facing as the sofa). Both sit clear of the
-    // bathroom door and below window W4, whose 1.20 m sill clears them.
-    fixture("f11", "toilet", -3.52, 1.12, Math.PI / 2),
-    fixture("f12", "vanity", -3.15, 2.22, Math.PI),
+    // Living — two sofas around a coffee table, TV on the cabinet.
+    { id: "f22", assetId: "ikea:40399314", x: 2.3, y: -0.2, rotation: 0 },
+    { id: "f23", assetId: "ikea:40399314", x: 0.9, y: 1.3, rotation: -Math.PI / 2 },
+    { id: "f24", assetId: "param:rug", x: 2.1, y: 1.1, rotation: 0, parametric: spec({ generator: "rug", dims: { w: 2.51, d: 2.5, h: 0.016 }, modules: {}, front: "slab", handle: "none", finish: "rug-modern", variant: "modern" }) },
+    { id: "f25", assetId: "ikea:90500121", x: 2.1, y: 0.9, rotation: 0 },
+    { id: "f26", assetId: "ikea:60340389", x: 1.2, y: 0.2, rotation: 0 },
+    { id: "f27", assetId: "ikea:00489236", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4 },
+    { id: "f28", assetId: "param:tv", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4, elevation: 0.9024, attach: { hostId: "f27", along: 0.41 }, parametric: spec({ generator: "tv", dims: { w: 1.1249, d: 0.2435, h: 0.7506 }, modules: { screenOn: 1 }, front: "slab", handle: "none", finish: "glass-black", finish2: "steel", variant: "pedestal-55" }) },
+    { id: "f29", assetId: "param:wallArt", x: 3.79, y: -1.52, rotation: Math.PI / 2, elevation: 1.31, parametric: spec({ generator: "wallArt", dims: { w: 1.5, d: 0.12, h: 0.52 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-mono", finish2: "oak", variant: "ledge" }) },
   ],
 };
 

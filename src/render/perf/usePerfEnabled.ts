@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { devToolsEnabled } from "@/lib/featureFlags";
 
 /**
  * The `?perf=1` gate for the Phase 0 HUD (`docs/PERFORMANCE.md` §3, Phase 0).
@@ -9,8 +10,15 @@ import { useSyncExternalStore } from "react";
  * setting, deliberately: Phase 0 exists to measure the app, and a measuring
  * apparatus that can be left switched on becomes part of what later phases
  * measure. A query parameter also survives being pasted into a message, which
- * is the actual workflow here — the numbers are being read on someone else's
- * MacBook against the live `done.design` deployment, not on a dev machine.
+ * is the actual workflow here.
+ *
+ * SINCE 2026-09-04 it is ALSO gated on `devToolsEnabled`, so it does nothing on
+ * done.design. That is a deliberate trade and it costs something real: this HUD
+ * was written to be read on someone else's MacBook against the live deployment,
+ * and the M2 numbers behind docs/PERFORMANCE.md were taken exactly that way. To
+ * do that again, set `NEXT_PUBLIC_DEV_TOOLS_ENABLED=true` in Vercel, redeploy,
+ * measure, then unset it. See `devToolsEnabled` for why the gate is one switch
+ * across every hatch rather than one per parameter.
  */
 export const PERF_PARAM = "perf";
 
@@ -37,12 +45,14 @@ export const PERF_LOOP_PARAM = "loop";
  */
 export function perfEnabled(): boolean {
   if (typeof window === "undefined") return false;
+  if (!devToolsEnabled) return false;
   return new URLSearchParams(window.location.search).get(PERF_PARAM) === "1";
 }
 
 /** `?loop=always`, and only meaningful alongside `?perf=1`. */
 export function perfLoopAlways(): boolean {
   if (typeof window === "undefined") return false;
+  if (!devToolsEnabled) return false;
   return new URLSearchParams(window.location.search).get(PERF_LOOP_PARAM) === "always";
 }
 

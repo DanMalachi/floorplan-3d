@@ -1,9 +1,20 @@
-// NOT CURRENTLY RENDERED. The hero shipped with a deliberately minimal control
-// set (ceiling, time of day) — Dan's call, so a visitor meets two controls
-// rather than a furniture picker. This table is kept rather than deleted
-// because every assetId in it was verified against the catalog AND checked for
-// wall/furniture collisions at its target's pose; re-enabling a swap strip is
-// a UI change, not a data exercise. Delete it if that stops being true.
+// NOT CURRENTLY RENDERED, and as of 2026-09-04 NOT RE-USABLE AS DATA EITHER.
+//
+// It used to be kept on the grounds that every assetId here was verified
+// against the catalog AND collision-checked at its target's pose, so
+// re-enabling a swap strip would be a UI change rather than a data exercise.
+// That is no longer true. The hero was re-furnished from `/design?hero=1` and
+// now holds no BlenderKit models at all, so:
+//
+//   - the `itemId`s below (f2, f3, f4, f6) still EXIST but mean entirely
+//     different things — a mirror, a toilet, a towel rail and a bathroom rug.
+//     Wiring this up as-is would offer to swap a toilet for a sofa.
+//   - the poses every collision check was made against are gone.
+//
+// Nothing imports this file, so it is inert; it is left in place only so the
+// alternate-asset research is not thrown away silently. Re-doing the swap strip
+// means re-picking targets and re-checking collisions against the CURRENT
+// demoScene.ts, not editing the ids below.
 
 // -----------------------------------------------------------------------------
 // The hero's swap strip: a handful of alternate BlenderKit assets a visitor
