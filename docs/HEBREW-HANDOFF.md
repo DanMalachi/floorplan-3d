@@ -11,6 +11,41 @@ one is the argument.
 
 ---
 
+## Start here (session of 2026-09-04 → next)
+
+**Working tree is clean, everything is committed, nothing is pushed.** The only
+untracked paths are the three that are untracked on purpose: `docs/NAMING.md`,
+`docs/NAMING-BRIEF.md`, `public/furniture/blenderkit/opt-ktx2/`. Never
+`git add -A` here.
+
+**Step 1 is done and verified** (locale routing, internal links, sitemap/robots,
+per-page hreflang). Steps 2–5 are untouched. Nothing is translated yet — both
+locales still render English copy; `/he` differs only by `dir="rtl"`.
+
+**Next task: Step 2, the locale switcher.** Then Step 3, which is the checkpoint
+Dan asked to see.
+
+**Two things waiting on Dan, neither blocking Step 2:**
+
+1. **Does the mirrored landing page read right to a Hebrew reader?** He has
+   phone screenshots of `/he` and `/` at 390px from 2026-09-04. Layout
+   correctness is already verified mechanically (no overflow either direction,
+   header mirrors, English byte-identical); what is open is product judgment —
+   section order, where the eye lands, whether the hero still works with the
+   CTA stack on that side.
+2. **Whether to push `feat/hebrew` for a Vercel preview URL.** Offered, not
+   answered. A branch push is a preview deploy, not production — only a `main`
+   push deploys production — but it is still a push to the remote, so ask
+   before doing it. Dan works from his phone and is not on the PC's Wi-Fi, so a
+   preview is the only way he can actually tap through the site; screenshots
+   are the fallback (drive Playwright locally against `npm start`).
+
+**Do not re-litigate:** the middleware/proxy question is settled — see Step 1
+below. `npm run build` alone does NOT verify i18n routing; read
+`src/i18n/README-static.md` before touching any route.
+
+---
+
 ## Dan's decisions — do not re-open these
 
 | | |
@@ -162,6 +197,18 @@ is ~62 strings and it is the whole job for this step. Then the five sections
 (`Hero`, `HowItWorks`, `Different`, `Faq`, `CtaBand`), `about/page.tsx` and
 `faq/page.tsx`.
 
+**Don't forget the page titles.** Each marketing page carries its own static
+English `title` in `export const metadata`, which overrides the translated
+`meta.title` from `[locale]/layout.tsx`. So `/he` currently serves an ENGLISH
+`<title>` while `/he/design` (which inherits) serves the Hebrew one. Confirmed
+2026-09-04. Those static objects have to become `generateMetadata` reading
+`getTranslations` — keeping `alternates: alternatesFor(...)`, which is already
+correct and must not be dropped in the rewrite.
+
+**Do the `done.` isolation as part of this step**, not Step 4 — see the
+Wordmark entry below. Step 3 is when this copy gets rewritten, so it is the
+cheap moment to route every textual `done.` through one isolated component.
+
 **Stop here and show Dan.** The bar: landing fully Hebrew and correctly laid
 out, editor still English and still working.
 
@@ -204,6 +251,27 @@ for **all nine** inspector sections) and `BottomDock`'s three
   `direction: "ltr"; unicodeBidi: "isolate"` and **leave the physical
   `marginLeft` alone** — it positions a glyph inside a Latin lockup, not a page.
 
+  **CONFIRMED ON SCREEN 2026-09-04, and the scope is wider than this entry
+  said.** The square does land on the wrong side — but so does the period of
+  every *textual* `done.` in the copy, because the same bidi rule applies to
+  any Latin run with trailing punctuation inside an RTL line. At `/he` today
+  the CTA reads `.Open done`, the ghost button `.see how it's done`, the
+  footnote `.No account needed to start`.
+
+  Sort those into two piles before fixing anything, because only one is a bug:
+
+  - **Ordinary prose** (`.you can buy, a walkthrough that's yours`) is bidi
+    working CORRECTLY on English text that happens to sit in an RTL container.
+    It resolves itself the moment that copy becomes Hebrew in Step 3. Do not
+    "fix" it — you would be fighting the algorithm on text that is about to
+    stop existing.
+  - **`done.` itself stays broken forever**, because Dan's decision is that the
+    wordmark stays Latin. So it needs the isolation treatment **everywhere it
+    appears in running text** — CTA labels, slogans, `content.ts` strings — not
+    only in `Wordmark.tsx`. Cheapest shape is probably a tiny `<Brand />` that
+    wraps the isolation, used wherever the copy says the name, so Step 3's
+    translated strings interpolate it instead of spelling `done.` inline.
+
 ### Step 5 — editor strings (~700–850 keys)
 
 Namespaces mirroring the UI: `nav`, `hero`, `howItWorks`, `different`, `faq`,
@@ -241,6 +309,23 @@ already shows Hebrew dates today.
 ---
 
 ## Verification
+
+**Already run once, 2026-09-04, worth reusing rather than rebuilding.** A
+throwaway Playwright script shot `/he`, `/`, `/he/about`, `/he/faq` and both
+editors at a 390px phone viewport against `npm start`, and asserted
+`scrollWidth <= clientWidth` on each — **no overflow in either direction**, and
+`lang`/`dir`/`title` read back correct. Two things that came out of doing it
+visually and would not have come out of curl:
+
+- The mirrored header is right (hamburger and Sign in move left, wordmark
+  right), and English is byte-identical to what is live.
+- **The editor at 390px is badly overlapped — in BOTH locales.** That is a
+  pre-existing mobile-layout collision, not RTL, and not part of this work.
+  Shoot the English twin before filing any editor layout bug, or you will
+  attribute a mobile problem to the translation.
+
+The script lived in the scratchpad and was deleted; it is ~30 lines. Note it
+has to run from *inside* the repo to resolve `playwright` from `node_modules`.
 
 - **Pseudo-locale.** Add a dev-only `en-XA` that brackets every string and pads
   it ~40%. It exposes unextracted strings and truncation instantly and is far
