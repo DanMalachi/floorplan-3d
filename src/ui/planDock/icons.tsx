@@ -245,3 +245,281 @@ export function CloseIcon(p: IconProps) {
     </Base>
   );
 }
+
+// ── Replacing the emoji and the typographic symbols ──────────────────────────
+//
+// Everything below exists to retire a character that was standing in for an
+// icon: 25 real emoji (🚪 🪟 🎨 🗑 🌧 🌙 🚶 🗺 📏 🧲 …) and ~40 dingbats
+// (◇ ▤ ⬓ ↔ ☀ ☾ ✓ ✗ ⚠ ✎ ◈ ‹ ● ◨). Both fail the same way: they are TEXT, so
+// they pick a different face on every platform, ignore `strokeWidth`, sit on
+// the text baseline instead of the icon grid, and never match the SVG glyphs
+// beside them.
+//
+// Same `Base` contract as the icons above — 24×24, currentColor, 1.6 stroke,
+// one `size` prop — so a call site swaps a string for a component and changes
+// nothing else. Reused rather than redrawn where one already fit: PaintIcon
+// for 🎨, CloseIcon for ✕/✗/×.
+
+/** 🚪 — a door leaf in its frame. The type the user places, not the tool. */
+export function DoorIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M6 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17" />
+      <path d="M3.5 21h17" />
+      <circle cx={14} cy={12.5} r={0.9} fill="currentColor" stroke="none" />
+    </Base>
+  );
+}
+
+/** 🪟 — sash and mullions. */
+export function WindowIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <rect x={4} y={4} width={16} height={16} rx={1} />
+      <path d="M12 4v16M4 12h16" />
+    </Base>
+  );
+}
+
+/** ⌷ — a cased opening: the same frame as a door with nothing hung in it, plus
+ *  an arrow, because the point of a passage is that you walk through it. The
+ *  arrow is what keeps it distinct from DoorIcon at 15px, where a door's knob
+ *  is close to invisible. */
+export function PassageIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M6 21V4h12v17" />
+      <path d="M2.5 21h19" />
+      <path d="M9.5 12.5h5M12.5 10.5l2 2-2 2" />
+    </Base>
+  );
+}
+
+/** ⬓ — the Build tool. This is a wall IN PLAN with an opening cut through it:
+ *  two parallel faces, broken in the middle, with the jambs closed off. Which
+ *  is exactly how the tool is used and exactly what the trace canvas shows, so
+ *  it borrows the drafting convention instead of inventing a metaphor.
+ *
+ *  Two filled stubs were tried first and read as a chain link. */
+export function OpeningToolIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M2 8.5h7M15 8.5h7" />
+      <path d="M2 15.5h7M15 15.5h7" />
+      <path d="M9 8.5v7M15 8.5v7" />
+    </Base>
+  );
+}
+
+/** ◇ — the select tool. A pointer, because that is what it does. */
+export function SelectIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M5.5 3.5l13.5 7.6-6.1 1.5-2.6 6z" />
+    </Base>
+  );
+}
+
+/** ▤ — the wall tool. Courses, so it cannot be confused with a plain box. */
+export function WallToolIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <rect x={3} y={5.5} width={18} height={13} rx={1} />
+      <path d="M3 12h18M9 5.5v6.5M15 12v6.5" />
+    </Base>
+  );
+}
+
+/** ↔ / 📏 — the measure tool, and "set/redo scale" in the trace rail. */
+export function MeasureIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3 12h18" />
+      <path d="M6.5 8.5L3 12l3.5 3.5M17.5 8.5L21 12l-3.5 3.5" />
+      <path d="M9.5 9.5v5M14.5 9.5v5" />
+    </Base>
+  );
+}
+
+/** 🧲 — snapping to CAD centrelines. */
+export function MagnetIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M6 4v8a6 6 0 0 0 12 0V4" />
+      <path d="M6 4h4v8a2 2 0 0 0 4 0V4h4" />
+      <path d="M6 9h4M14 9h4" />
+    </Base>
+  );
+}
+
+/** 🗺 — the trace panel's empty state. Drawn to read at 34px, not 16. */
+export function PlanMapIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3 6.5l6-2.5 6 2.5 6-2.5v14l-6 2.5-6-2.5-6 2.5z" />
+      <path d="M9 4v15M15 6.5v15" />
+    </Base>
+  );
+}
+
+// ── Weather / time of day (Viewport) ────────────────────────────────────────
+
+/** ☀ — clear. Also the light half of the theme toggle. */
+export function SunIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <circle cx={12} cy={12} r={4} />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4" />
+    </Base>
+  );
+}
+
+/** ☁ — cloudy. */
+export function CloudIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M7 18.5a4.2 4.2 0 0 1 .7-8.35 5.4 5.4 0 0 1 10.2 1.65A3.6 3.6 0 0 1 17.4 18.5z" />
+    </Base>
+  );
+}
+
+/** 🌧 — rain. */
+export function RainIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M7 15.5a4 4 0 0 1 .7-7.95 5.2 5.2 0 0 1 9.8 1.6A3.5 3.5 0 0 1 17.1 15.5z" />
+      <path d="M8.5 18.5l-1 2.5M12.5 18.5l-1 2.5M16.5 18.5l-1 2.5" />
+    </Base>
+  );
+}
+
+/** 🌙 / ☾ — night, and the dark half of the theme toggle. */
+export function MoonIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M20 14.6A8.6 8.6 0 0 1 9.4 4a8.6 8.6 0 1 0 10.6 10.6z" />
+    </Base>
+  );
+}
+
+/** 🚶 — enter the walkthrough. */
+export function WalkIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <circle cx={13.5} cy={4.2} r={1.7} />
+      <path d="M13.8 8l-3.3 1.6-1 4.4" />
+      <path d="M13.8 8l1.7 3.4 2.5 1.2" />
+      <path d="M13 11.4l-2.4 4.2L8.5 21M13 11.4l1.6 4.2 1.4 5.4" />
+    </Base>
+  );
+}
+
+// ── Light fixtures (FixtureCatalog SHAPE_ICON) ──────────────────────────────
+
+/** ● — flush-mounted disc. */
+export function DiscLightIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <circle cx={12} cy={12} r={7.5} />
+      <circle cx={12} cy={12} r={3} />
+    </Base>
+  );
+}
+
+/** ☀ (as a fixture) — a pendant on its drop. */
+export function PendantIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M12 3v6" />
+      <path d="M5.5 16.5a6.5 6.5 0 0 1 13 0z" />
+      <path d="M9 20h6" />
+    </Base>
+  );
+}
+
+/** ◨ — a wall sconce: the wall it hangs on, the arm, and a half-shade. The
+ *  shade carries the shape, so it is sized to fill the grid rather than sit
+ *  politely beside the wall line. */
+export function SconceIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3.5 3v18" />
+      <path d="M3.5 12h3.5" />
+      <path d="M7 16.5a5.8 5.8 0 0 1 11.6 0z" />
+    </Base>
+  );
+}
+
+// ── Status and actions ──────────────────────────────────────────────────────
+
+/** ✓ — succeeded. (✗ / ✕ / × reuse CloseIcon above.) */
+export function CheckIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M4.5 12.5l5 5 10-11" />
+    </Base>
+  );
+}
+
+/** ⚠ — a warning that is not an error. */
+export function WarnIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M12 3.5L2.5 20.5h19z" />
+      <path d="M12 10v4.6" />
+      <circle cx={12} cy={17.6} r={0.85} fill="currentColor" stroke="none" />
+    </Base>
+  );
+}
+
+/** ✎ — rename. */
+export function PencilIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M4 20.5h4.2L20.5 8.2l-4.2-4.2L4 16.3z" />
+      <path d="M14.8 5.5l4.2 4.2" />
+    </Base>
+  );
+}
+
+/** 🗑 — delete. */
+export function TrashIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3.5 6.5h17" />
+      <path d="M9.5 3.5h5" />
+      <path d="M5.8 6.5l1 14h10.4l1-14" />
+      <path d="M10 10.5v6.5M14 10.5v6.5" />
+    </Base>
+  );
+}
+
+/** ‹ — back to the project library. */
+export function ChevronLeftIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M15 4.5l-7.5 7.5L15 19.5" />
+    </Base>
+  );
+}
+
+/** ◈ — go live / open live. A shared room broadcasting. */
+export function LiveIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <circle cx={12} cy={12} r={2.6} />
+      <path d="M6.9 6.9a7.2 7.2 0 0 0 0 10.2M17.1 6.9a7.2 7.2 0 0 1 0 10.2" />
+      <path d="M3.6 3.6a11.9 11.9 0 0 0 0 16.8M20.4 3.6a11.9 11.9 0 0 1 0 16.8" />
+    </Base>
+  );
+}
+
+/** ▤ (in the stair inspector) — a flight of stairs. */
+export function StairsIcon(p: IconProps) {
+  return (
+    <Base {...p}>
+      <path d="M3 20.5v-4h4.5v-4H12v-4h4.5v-4H21" />
+      <path d="M3 20.5h18" />
+    </Base>
+  );
+}

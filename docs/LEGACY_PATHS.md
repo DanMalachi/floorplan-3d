@@ -126,3 +126,42 @@ Why each is legacy, briefly:
 - `src/dev/GtLab.tsx`, `src/dev/gtToScene.ts` — decoupled GT-authoring tool (AUTHORED format only imports `@/schema/scene` + `@/schema/constants`).
 - `src/lib/rooms/roomArea.ts`, `roomTaxonomy.ts`, `semanticGraph.ts`, `roomClassifier.ts`, `roomReason.ts` — the Building Knowledge Layer; operates on finished `Scene` objects, imported by protected `viewport3d/walkthrough/*`. `roomReason.ts`'s one-constant dependency on `vlmClassify.ts` (`DEFAULT_VLM_MODEL`) was cut by moving that constant into `src/lib/rooms/vlmConfig.ts`.
 - `src/collab/**`, `src/furniture/**`, `src/ui/**`, `src/store/projectPersistence.ts` — no legacy imports found.
+
+## Approved exceptions to rule 2 (`legacy/` is read-only)
+
+Rule 2 in `CLAUDE.md` quarantines `legacy/` as read-only reference material.
+Anything listed here is a change Dan signed off on before it was made, with the
+reason it did not belong under the rule.
+
+- **2026-09-04, `legacy/src/trace2d/` is editable for the UI-sweep work**
+  (branch `fix/ui-sweep`). Approved by Dan before the edits, when the blast
+  radius of the sweep was presented to him.
+
+  The rule was written about the old extraction **pipeline** — the thing that
+  must not be extended, imported from, or have its patterns leak into the new
+  Python `extraction/`. `trace2d/`'s *drawing UI* is a different object that
+  happens to share the directory: `src/app/design/page.tsx:5` statically imports
+  `TracePanel` from it, `legacyExtractionEnabled` defaults **true**, and it is
+  therefore the live, shipping, user-facing Trace tab — the step the entire
+  marketing site is built around. Treating shipping UI as unmaintainable is how
+  a product ends up with one tab that never gets fixed.
+
+  Scoped to presentation only. In scope: the 57 user-facing strings, the 6 emoji
+  (`TracePanel.tsx:77` 🗺; `TraceRail.tsx:108` 🚪🪟, `:440`/`:445` 📏, `:487`
+  🧲), the 16 directional CSS properties that have to become logical for Hebrew,
+  and hover states. Explicitly **not** in scope: the extraction functions the
+  store imports (`buildPlanarGraph`, `extractWalls`, `detectOpenings`,
+  `generateCandidates`, `rasterToCandidates`, `proposeRaster`,
+  `buildOverlayImage`), `importDxf.ts`, `planImport.ts`, `dxf/parseDxf.ts`, or
+  anything in `legacy/scripts/`. No new imports from `legacy/` into `src/`, and
+  none of its patterns move outward.
+
+  One behavioural exception inside this exception:
+  `legacy/src/trace2d/traceToScene.ts:113-128` is **deleted**, not restyled —
+  that block is the automatic room-type classifier, and lines 122-126 overwrote
+  `Room.name` with the guess. Dan's instruction was to cancel auto room-type
+  detection outright: the types were mostly wrong, and because they became the
+  room's persisted *name* there was no way for a user to see or correct the
+  guess. See the wave-1 notes in the plan for the verified blast radius (every
+  remaining `room.semantics` consumer is either guarded or has a geometric
+  fallback).

@@ -8,8 +8,8 @@
 // EDITOR's concern, not this component's: the room has no sync store to read,
 // so it just omits `status`.
 
-import { useState } from "react";
 import { PD, pdGlass } from "./planDock/tokens";
+import { useHover } from "./planDock/useHover";
 
 export function ProjectBar({
   name,
@@ -20,7 +20,9 @@ export function ProjectBar({
   status?: string | null;
   onOpenProjects: () => void;
 }) {
-  const [hover, setHover] = useState(false);
+  // This button's hand-rolled hover was the only one in the product; it is now
+  // the shared `useHover` hook, and every other control follows it.
+  const [hover, hoverBind] = useHover();
   return (
     <div
       style={{
@@ -37,8 +39,7 @@ export function ProjectBar({
     >
       <button
         onClick={onOpenProjects}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
+        {...hoverBind}
         title="Back to your projects"
         style={{
           display: "flex",

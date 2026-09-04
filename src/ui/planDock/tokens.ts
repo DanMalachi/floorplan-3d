@@ -74,25 +74,55 @@ export const pdGlass = (extra?: React.CSSProperties): React.CSSProperties => ({
   ...extra,
 });
 
+// ── Hover ───────────────────────────────────────────────────────────────────
+// Inline style objects cannot express `:hover`, so the three helpers below take
+// the hover flag as a plain argument and the caller holds the state with
+// `useHover()` (./useHover.ts). Every one of them already declared a
+// `transition` before hover existed, so the animation was in place and only
+// the trigger was missing.
+//
+// Each helper changes TWO things together — the surface AND the text — because
+// that is what reads as "the thing under the cursor" rather than as a flicker.
+// `hovered` is deliberately the LAST parameter everywhere so all existing call
+// sites keep compiling untouched.
+
 /** Accent-tintable chip/pill, glass family. */
-export const pdChip = (active = false, extra?: React.CSSProperties): React.CSSProperties => ({
+export const pdChip = (
+  active = false,
+  extra?: React.CSSProperties,
+  hovered = false,
+): React.CSSProperties => ({
   padding: "6px 12px",
   fontSize: 12,
   fontFamily: PD.fontUi,
   fontWeight: active ? 600 : 500,
   borderRadius: PD.radiusS,
   border: "none",
-  background: active ? PD.accentTint : "transparent",
-  color: active ? PD.accentText : PD.textSecondary,
+  // An active chip is already tinted, so hover deepens the tint rather than
+  // replacing it — otherwise hovering the selected chip would look like
+  // deselecting it.
+  background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : "transparent",
+  color: active ? PD.accentText : hovered ? PD.textPrimary : PD.textSecondary,
   cursor: "pointer",
   transition: "background 160ms ease, color 160ms ease",
   userSelect: "none",
   whiteSpace: "nowrap",
+  // NOTE: `extra` is deliberately NOT spread here. It never has been — this
+  // helper has always accepted the argument and dropped it, so all ~26 call
+  // sites that pass one (`pdChipFlex`, padding/fontSize overrides, `flex: 1`)
+  // are rendering without it today. Spreading it now would silently restyle
+  // most of the dock, so that fix is deliberately left as a separate,
+  // reviewable change. The call sites that DO get their overrides today are
+  // the ones that spread manually: `{ ...pdChip(x), … }`.
 });
 
 /** Small square icon button — the tab row / room-switcher / search-toggle
  *  all use this shape now instead of text pills. */
-export const pdIconBtn = (active = false, size = 28): React.CSSProperties => ({
+export const pdIconBtn = (
+  active = false,
+  size = 28,
+  hovered = false,
+): React.CSSProperties => ({
   width: size,
   height: size,
   display: "flex",
@@ -100,12 +130,37 @@ export const pdIconBtn = (active = false, size = 28): React.CSSProperties => ({
   justifyContent: "center",
   borderRadius: PD.radiusS,
   border: "none",
-  background: active ? PD.accentTint : "transparent",
-  color: active ? PD.accentText : PD.textSecondary,
+  background: active ? PD.accentTint : hovered ? PD.surfaceMutedHover : "transparent",
+  color: active ? PD.accentText : hovered ? PD.textPrimary : PD.textSecondary,
   cursor: "pointer",
   transition: "background 140ms ease, color 140ms ease",
   flex: "0 0 auto",
   padding: 0,
+});
+
+/** The bare `<button>` case — mode switcher, Go live, project cards, account
+ *  menu rows, dialog actions. These used neither helper before, which is why
+ *  most of the app's primary navigation had no hover feedback at all.
+ *
+ *  Rest is transparent so it can sit on glass or on a panel unchanged. */
+export const pdGhostBtn = (
+  hovered = false,
+  extra?: React.CSSProperties,
+): React.CSSProperties => ({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "6px 10px",
+  fontFamily: PD.fontUi,
+  fontSize: 12.5,
+  fontWeight: 500,
+  borderRadius: PD.radiusS,
+  border: "none",
+  background: hovered ? PD.surfaceMutedHover : "transparent",
+  color: hovered ? PD.textPrimary : PD.textSecondary,
+  cursor: "pointer",
+  transition: "background 140ms ease, color 140ms ease",
+  ...extra,
 });
 
 export const pdMicroLabel = (color: string = PD.textTertiary): React.CSSProperties => ({

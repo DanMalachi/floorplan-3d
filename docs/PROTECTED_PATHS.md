@@ -37,6 +37,46 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-04, `src/viewport3d/WallMesh.tsx` — the selected-opening badge
+  renders a display name instead of the raw enum** (branch `fix/ui-sweep`).
+  Approved by Dan before the edit.
+
+  `:1015-1016` printed `{opening.type}`, and `dimLabelStyle` sets no
+  `textTransform`, so the badge floating over a selected opening in the 3D view
+  read literally **`door · 0.90 m`** — lowercase, and it said "door" even when
+  the renderer directly above it was drawing a glazed patio slider. That second
+  half is the part that mattered to Dan: `effectiveSlide()` gives any opening at
+  or past `PATIO_MIN_WIDTH` two sliding glazed panels as a *derived* default,
+  nothing is written to the scene to record it, and the badge was the one place
+  the app asserted a contradiction with what was on screen.
+
+  One import and one expression: `openingDisplayName(opening)` from
+  `src/render/doorStyle.ts`, which is unprotected and already the home for
+  `effectiveSlide`/`isGlazedDoor`/`isDoubleDoor` — so the inspector title and
+  this badge cannot drift apart, which is how the raw-enum fallthrough survived
+  in the first place. No other change to the file.
+
+- **2026-09-04, `src/viewport3d/Viewport.tsx` — emoji swapped for the icon set,
+  and its three panel anchors made direction-agnostic** (branch `fix/ui-sweep`,
+  the RTL half lands with the Hebrew work). Approved by Dan before the edits, as
+  part of "remove all emojis from the app" and "I want Hebrew support for the
+  whole site".
+
+  Two unrelated reasons this file could not be skipped. It holds 5 of the app's
+  25 emoji — `WEATHERS[].label` at `:146` bakes 🌧 **into the label string**
+  (`"🌧 Rain"`), `:168` picks `"☀️"`/`"🌙"` by hour, and `:176` prefixes the
+  walkthrough button with 🚶 — so the emoji cannot leave without splitting label
+  from icon, which is a change to this file by construction. And `:170`, `:243`,
+  `:287` pin overlay panels with a physical `left: 14`, which puts them on the
+  wrong edge under `dir="rtl"`.
+
+  Presentation only, and deliberately narrow: label/icon split plus
+  `left` → `insetInlineStart`. No change to the Canvas, the camera, the controls,
+  postprocessing, env wiring, or any prop signature. Note `CameraDoubleClickRig.tsx:45`'s
+  `(e.clientX - rect.left)/rect.width` is **not** in scope and must not be
+  "fixed" — it is NDC conversion for a raycast, not layout, and is already
+  correct in both directions.
+
 - **2026-09-04, `src/viewport3d/FurnitureLayer.tsx` — `normalize()` clones with
   `SkeletonUtils.clone` instead of `Object3D.clone(true)`.** Approved by Dan
   before the edit. Fixes the "phantom oven" in the marketing hero.
