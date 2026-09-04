@@ -1,7 +1,7 @@
 # Hebrew / RTL — handoff
 
 **Branch:** `feat/hebrew`, two commits in: `533fd89` (the scaffold) and
-`cb83106` (Step 1 — locale routing, links, sitemap/robots, hreflang).
+`485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang).
 **Not pushed.** `main` is at `142d8d3` (the UI sweep, already live on done.design).
 
 Read this file, then `docs/HEBREW-HANDOFF.md`'s sibling section in
