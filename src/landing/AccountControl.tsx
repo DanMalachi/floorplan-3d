@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty } from "@/brand/tokens";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 import { MENU_ITEM_CLASS, OUTLINE_BTN_CLASS, TEXT_BTN_CLASS } from "./hoverCss";

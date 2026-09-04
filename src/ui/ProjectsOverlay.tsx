@@ -15,6 +15,8 @@ import {
 import { ensureDownloaded } from "@/store/syncEngine";
 import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
+import { useLocale } from "next-intl";
+import { localePath } from "@/i18n/navigation";
 import { PD, pdGhostBtn, pdHoverTransition, pdMicroLabel } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
@@ -178,7 +180,8 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {/* See BackToSite at the bottom of this file for why this is a plain
-              <a> and why it is hidden while landingEnabled is off. */}
+              <a>, why it prefixes its own locale, and why it is hidden while
+              landingEnabled is off. */}
           {landingEnabled ? (
             <BackToSite />
           ) : (
@@ -532,17 +535,22 @@ function RenameButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
  *  (src/store/projectPersistence.ts:40/:387), so the last edits would never
  *  reach IndexedDB. That is also why the Next rule below is disabled for this
  *  one line — leaving the editor is exactly the case where a full document load
- *  is the point, not an oversight.
+ *  is the point, not an oversight. Being outside next/link is also why the
+ *  locale has to be added by hand here; see `localePath` in src/i18n/navigation.ts.
  *
  *  Rendered only while `landingEnabled` is on: with the flag off, "/" just
- *  redirects straight back to /design (src/app/(marketing)/layout.tsx:32) and a
- *  link here would only bounce. */
+ *  redirects straight back to /design (src/app/[locale]/(marketing)/layout.tsx)
+ *  and a link here would only bounce. */
 function BackToSite() {
   const [hov, bind] = useHover();
+  // The href still has to carry the locale even though the navigation is a full
+  // document load — `useLocale()` rather than reading `<html lang>`, so the
+  // attribute is identical on the server and after hydration.
+  const locale = useLocale();
   return (
     // eslint-disable-next-line @next/next/no-html-link-for-pages
     <a
-      href="/"
+      href={localePath(locale, "/")}
       aria-label="done. home"
       {...bind}
       style={{ display: "flex", flexDirection: "column", gap: 2, textDecoration: "none" }}

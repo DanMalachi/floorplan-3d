@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 import { landingEnabled } from "@/lib/featureFlags";
+import { routing } from "@/i18n/routing";
+import { localePath } from "@/i18n/navigation";
 
 // What crawlers may index.
 //
@@ -21,13 +23,31 @@ import { landingEnabled } from "@/lib/featureFlags";
 // advertising a redirect as a destination is how a site teaches a crawler to
 // distrust its own sitemap.
 export default function robots(): MetadataRoute.Robots {
+  const paths: `/${string}`[] = landingEnabled
+    ? ["/", "/design", "/about", "/faq", "/pricing", "/legal"]
+    : ["/", "/design", "/legal"];
+
+  // Every rule is stated once per locale. `as-needed` means the English paths
+  // above ARE the unprefixed URLs, so they already cover English; Hebrew lives
+  // under a prefix these rules would otherwise say nothing about — and the
+  // disallow list matters more than the allow list there. `/he/v/` and
+  // `/he/calibration` are the same internals as their English twins and must
+  // be blocked in both, or the entire denylist is one prefix away from being
+  // bypassed.
+  const forEachLocale = (p: `/${string}`) => routing.locales.map((l) => localePath(l, p));
+
   return {
     rules: {
       userAgent: "*",
-      allow: landingEnabled
-        ? ["/", "/design", "/about", "/faq", "/pricing", "/legal"]
-        : ["/", "/design", "/legal"],
-      disallow: ["/v/", "/api/", "/auth/", "/calibration"],
+      allow: paths.flatMap(forEachLocale),
+      disallow: [
+        // These two live under `[locale]`, so they have a Hebrew twin to block.
+        ...(["/v/", "/calibration"] as `/${string}`[]).flatMap(forEachLocale),
+        // These stayed at the app root and are excluded from the locale
+        // middleware's matcher entirely — there is no /he/api to disallow.
+        "/api/",
+        "/auth/",
+      ],
     },
     sitemap: `${siteUrl()}/sitemap.xml`,
   };

@@ -27,6 +27,7 @@ import {
   scheduleProjectMirror,
   registerSharedProject,
 } from "@/store/projectPersistence";
+import { hardNavHref } from "@/i18n/navigation";
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
 import { PD, pdChip, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
@@ -552,7 +553,7 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
     } catch {
       /* ignore */
     }
-    window.location.href = "/design?home=1";
+    window.location.href = hardNavHref("/design?home=1");
   };
 
   const updateMyPresence = useUpdateMyPresence();

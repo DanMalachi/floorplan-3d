@@ -5,6 +5,7 @@ import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
+import { Link } from "@/i18n/navigation";
 
 // -----------------------------------------------------------------------------
 // The account control, top-right next to the theme toggle.
@@ -238,9 +239,9 @@ function MenuRow({
     transition: "background 140ms ease, color 140ms ease",
   };
   return href ? (
-    <a href={href} onClick={onSelect} {...hoverBind} style={style}>
+    <Link href={href} onClick={onSelect} {...hoverBind} style={style}>
       {children}
-    </a>
+    </Link>
   ) : (
     <button onClick={onSelect} {...hoverBind} style={style}>
       {children}

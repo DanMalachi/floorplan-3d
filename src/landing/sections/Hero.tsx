@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";

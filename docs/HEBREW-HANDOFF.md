@@ -1,6 +1,7 @@
 # Hebrew / RTL — handoff
 
-**Branch:** `feat/hebrew`, one commit in: `533fd89` — the scaffold.
+**Branch:** `feat/hebrew`, two commits in: `533fd89` (the scaffold) and
+`cb83106` (Step 1 — locale routing, links, sitemap/robots, hreflang).
 **Not pushed.** `main` is at `142d8d3` (the UI sweep, already live on done.design).
 
 Read this file, then `docs/HEBREW-HANDOFF.md`'s sibling section in
@@ -34,9 +35,12 @@ work incremental instead of one unreviewable diff.
   `localeDetection: false`, plus `dirOf(locale)`.
 - `src/i18n/request.ts` — per-request message loading with a **deep** merge of
   English underneath Hebrew.
-- `middleware.ts` — new file; there was no middleware before, so nothing
+- ~~`middleware.ts` — new file; there was no middleware before, so nothing
   competes with it (Supabase auth runs through `@supabase/ssr` in server
-  components and route handlers).
+  components and route handlers).~~ **Wrong on both counts — corrected in
+  Step 1 below.** There WAS already a middleware: `src/proxy.ts` (Next 16
+  renamed the convention), refreshing the Supabase session on every request.
+  Next allows exactly one, so the two now compose inside `src/proxy.ts`.
 - `next.config.ts` — `withNextIntl` applied **inside** `withSentryConfig`.
 - Every user-facing route moved under `src/app/[locale]/`. `api/`, `auth/`,
   `robots.ts`, `sitemap.ts`, `globals.css` stayed at the root.
@@ -46,9 +50,17 @@ work incremental instead of one unreviewable diff.
   stacks in `src/brand/tokens.ts` and `src/ui/planDock/tokens.ts`.
 - `messages/en.json` + `messages/he.json` — only `meta` and `locale` so far.
 
-**Verified working:** `/` `lang="en" dir="ltr"` · `/he` `lang="he" dir="rtl"` ·
+~~**Verified working:** `/` `lang="en" dir="ltr"` · `/he` `lang="he" dir="rtl"` ·
 `/design` `/he/design` `/faq` `/he/faq` all 200 · production build passes with
-both locales prerendered · Hebrew `<title>` renders.
+both locales prerendered · Hebrew `<title>` renders.~~
+
+**That verification did not hold**, and the way it failed is worth knowing:
+against a production build (`npm run build && npm start`) every *unprefixed*
+English route returned 404 — `/design` and `/faq` included — while their `/he/`
+twins returned 200. The build itself passes and still lists those routes as
+prerendered, so nothing short of serving them shows it. Fixed in Step 1; the
+curl loop that catches it is at the bottom of `src/i18n/README-static.md`. **Do
+not sign off an i18n change on `npm run build` alone.**
 
 ### Three things in the scaffold worth understanding before you change them
 
@@ -69,20 +81,70 @@ both locales prerendered · Hebrew `<title>` renders.
 
 ## Next up, in order
 
-### Step 1 — two known breaks from the route move (do these first)
+### Step 1 — the route move's breaks — **DONE**
 
-- **`src/app/[locale]/(marketing)/layout.tsx:33`** — `redirect("/design")`
-  behind the `landingEnabled` flag. This now **strips the locale**: a visitor
-  on `/he` with the flag off lands on English `/design`. Use next-intl's
-  navigation `redirect` (from a `createNavigation(routing)` helper) so it keeps
-  the prefix.
-- **`src/app/sitemap.ts` and `robots.ts`** — still emit English-only URLs. They
-  need `/he` entries and per-locale `alternates`. The `hreflang` map in
-  `[locale]/layout.tsx` is already correct; the sitemap has to agree with it.
+Three, not two: the audit turned up a third that made the other two moot.
 
-Also audit every internal `<Link href>` / `router.push` / `redirect` in the app
-for the same locale-stripping bug. next-intl's `createNavigation` wrappers are
-the fix; a bare `next/link` loses the prefix.
+**The one that was not on the list: locale routing never ran at all.**
+`middleware.ts` sat at the repo root, but this project keeps `app` under
+`src/`, and Next 16 renamed the convention to `proxy`. So the file was ignored
+twice over — no warning at build or start — and with nothing to rewrite the
+unprefixed English URLs, **every English route 404'd in a production build**
+while every `/he/…` route returned 200. (`npm run build` passes cleanly; the
+routes still show as prerendered. Only serving them shows it.) Two further
+faults were hiding underneath: its matcher wrote "has a dot" as `"\."` inside a
+plain string, which JavaScript collapses to `"."` — turning the clause into
+"any path at all" and excluding every route — and it did not exempt
+`/auth/callback`, so the Google OAuth return would have been rewritten to
+`/en/auth/callback` and 404'd the moment the file did start working.
+
+The scaffold's claim that "there was no middleware before" was the root of it.
+`src/proxy.ts` has been the middleware since the Google sign-in work; it
+refreshes the Supabase session on every request. Next runs exactly one, so the
+two now compose there, Supabase first — its `setAll` writes refreshed tokens
+into `request.cookies`, and next-intl copies `request.headers` onto the
+forwarded request, so this request's render sees the new token rather than the
+expired one. Read the header comment in `src/proxy.ts` before changing either
+half.
+
+**The locale-stripping redirect.** `(marketing)/layout.tsx` and
+`legal/page.tsx` now use next-intl's `redirect`, which takes the target locale
+explicitly so it cannot silently drop the prefix. Verified: `/he/legal` → 
+`/he/legal/privacy`, `/legal` → `/legal/privacy`.
+
+**`sitemap.ts` and `robots.ts`** emit both locales, each entry naming the other.
+
+**The hreflang map was NOT already correct.** It lived in `[locale]/layout.tsx`,
+and layout metadata is inherited by every route below it — so `/about` told
+crawlers its Hebrew twin was the Hebrew *home page*. Google drops a pairing
+that does not point back, so one map there breaks the whole set rather than one
+route. Each page now declares its own via `alternatesFor()` in
+`src/i18n/alternates.ts`, which the sitemap reads too, so the two cannot drift.
+`/design` got a `layout.tsx` purely to carry its map (its page is `"use client"`
+and cannot export metadata).
+
+**The link audit.** Every internal `<Link>` and `redirect` moved to
+`src/i18n/navigation.ts`. Three navigations must NOT be client-side and keep a
+plain `<a>` / `window.location`, prefixing by hand with `localePath` /
+`hardNavHref`: `ProjectsOverlay`'s "back to site" (a full document load is what
+flushes the debounced autosave — see its comment), and the two live-room
+handoffs in `src/collab/`. There is no `useRouter` anywhere in the app.
+
+**One rule this uncovered, written up in `src/i18n/README-static.md`:** every
+server layout and page under `[locale]` must call `setRequestLocale`. Skipping
+it makes next-intl read the locale from a request header, which throws
+"changed from static to dynamic at runtime" and **500s** — but only on the
+unprefixed English routes, and only when served, never at build. Read that file
+before adding a route.
+
+**Verified**, production build, both locales: `/` `/about` `/faq` `/design`
+`/account` `/calibration` `/legal/privacy` `/legal/terms` all 200; `/legal`
+307s to privacy within its locale; `/v/<id>?g=…` still resolves unprefixed;
+`/en/*` 307s to the unprefixed canonical, so there is no duplicate URL; every
+internal href on `/he` carries the prefix and every one on `/` is unchanged;
+`lang`/`dir` correct; hreflang per page correct. `typecheck` clean, `build`
+clean, `lint` unchanged from `main` (the one known `TraceOverlay.tsx:224`
+error).
 
 ### Step 2 — the locale switcher
 

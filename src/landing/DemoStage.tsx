@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Viewport } from "@/viewport3d/Viewport";
 import { useSceneStore, type StoreState } from "@/store/useSceneStore";
 import { frameColorPatch } from "@/render/frameFinish";

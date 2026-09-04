@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty, microLabel } from "@/brand/tokens";
 import { WordmarkLockup } from "@/brand/Wordmark";
 import { APP_HREF, footerLegal, navItems } from "./nav";

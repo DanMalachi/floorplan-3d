@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { alternatesFor } from "@/i18n/alternates";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty, ctaPrimary, microLabel } from "@/brand/tokens";
 import { APP_HREF } from "@/landing/nav";
 import { CTA_CLASS, CTA_GHOST_CLASS } from "@/landing/hoverCss";
@@ -8,13 +11,22 @@ export const metadata: Metadata = {
   title: "About — done.",
   description:
     "Why done. asks you to draw your real floorplan instead of skipping it, and what that buys you.",
+  alternates: alternatesFor("/about"),
 };
 
 // Long-form page. Copy lives inline rather than in src/landing/content.ts
 // because content.ts is the homepage's string table — one narrative page
 // reading top to bottom is easier to edit as prose than as an array.
 
-export default function AboutPage() {
+export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
+  // Every layout and page under [locale] pins the request locale. Without it,
+  // next-intl falls back to reading the locale out of a request HEADER, and a
+  // page that Next prerendered as static then throws "changed from static to
+  // dynamic at runtime" the first time it is served — which took out every
+  // unprefixed English route while only the Hebrew ones kept working, because
+  // those carry the locale in the URL. See src/i18n/README-static.md.
+  setRequestLocale((await params).locale as Locale);
+
   return (
     <article
       style={{

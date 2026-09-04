@@ -6,6 +6,7 @@ import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
 import { CloseIcon } from "@/ui/planDock/icons";
 import { useSceneStore } from "@/store/useSceneStore";
+import { Link } from "@/i18n/navigation";
 
 // -----------------------------------------------------------------------------
 // Cookie / tracking notice.
@@ -95,9 +96,9 @@ export function ConsentNotice() {
       <div style={{ flex: 1 }}>
         This app only sets strictly-necessary cookies, to keep you signed in
         — no analytics or ad tracking.{" "}
-        <a href="/legal/privacy" style={{ color: PD.accentText }}>
+        <Link href="/legal/privacy" style={{ color: PD.accentText }}>
           Privacy Policy
-        </a>
+        </Link>
         .
       </div>
       <DismissButton onClick={dismiss} />

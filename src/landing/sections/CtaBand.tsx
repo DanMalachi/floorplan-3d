@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { APP_HREF } from "../nav";
 import { CTA_CLASS, CTA_GHOST_CLASS } from "../hoverCss";

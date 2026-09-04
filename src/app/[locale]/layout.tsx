@@ -81,16 +81,11 @@ export async function generateMetadata({
     metadataBase: new URL(siteUrl),
     title: t("title"),
     description: t("description"),
-    // Tells search engines these are the same page in two languages rather
-    // than duplicate content, and which to serve to whom. `as-needed` means
-    // English carries no prefix, so its alternate is the bare path.
-    alternates: {
-      languages: {
-        en: "/",
-        he: "/he",
-        "x-default": "/",
-      },
-    },
+    // No `alternates` here on purpose. hreflang says "where is THIS page in the
+    // other language", and metadata declared in a layout is inherited by every
+    // route under it — so one map here would tell crawlers the Hebrew twin of
+    // /about is the Hebrew HOME page. Each page declares its own instead; see
+    // `alternatesFor` in src/i18n/alternates.ts.
   };
 }
 
