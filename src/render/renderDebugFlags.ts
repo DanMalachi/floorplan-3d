@@ -109,13 +109,15 @@ export function parseDprParam(search: string | null | undefined): number | null 
   return Math.min(Math.max(n, DPR[0]), DPR[1]);
 }
 
-/** Non-reactive read, matching `aoDebugMode` above. Null during SSR, and null in
- *  production — the gate lives HERE and not in `parseDprParam`, which stays a
- *  pure function of its argument so `renderDebugFlags.test.ts` keeps testing the
- *  parse rather than the environment it happens to run in. */
+/** Non-reactive read, matching `aoDebugMode` above. Null during SSR.
+ *
+ *  NOT behind `devToolsEnabled`, unlike `?ao=` above (2026-09-04, Dan's ruling):
+ *  `?dpr=` is half of the production measuring kit with `?perf=1`, and the
+ *  question it settles — what the M2 costs at each DPR — can only be asked of
+ *  the real deployment. `?ao=` is gated because it is an A/B for judging a
+ *  render change, which is a dev-machine job. */
 export function dprOverride(): number | null {
   if (typeof window === "undefined") return null;
-  if (!devToolsEnabled) return null;
   return parseDprParam(window.location.search);
 }
 

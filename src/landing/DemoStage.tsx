@@ -15,7 +15,7 @@ import {
   subscribeOrbitPlaying,
 } from "@/viewport3d/autoOrbitPlayback";
 import { B, microLabel, ctaPrimary } from "@/brand/tokens";
-import { demoScene, heroDressedScene, HERO_FLOOR, HERO_FRAME } from "./demoScene";
+import { heroDressedScene, HERO_FLOOR, HERO_FRAME, HERO_MAIN_ROOM_ID } from "./demoScene";
 import { TraceOverlay, PLAN_TEXT_CSS } from "./TraceOverlay";
 import type { HeroStage } from "./heroSequence";
 import { APP_HREF } from "./nav";
@@ -89,12 +89,15 @@ const DAY = 13;
 
 /** The ceiling fixtures' colour temperature, in Kelvin.
  *
- *  `seedRoomFixtures` generates fixtures at `GENERATED_FIXTURE_COLOR_K` (4000K,
- *  neutral white) and `FIXTURE_LUX_MAX`, so "White" is the room as the app
- *  itself would light it and "Warm" is the same room at a domestic 2400K. At
- *  20,000 lux the difference is unmissable, which is the whole point: every
- *  control on this page has to visibly do something. */
-const WHITE_K = 4000;
+ *  "Warm" is a domestic 2400K. At 20,000 lux the difference from White is
+ *  unmissable, which is the whole point: every control on this page has to
+ *  visibly do something.
+ *
+ *  WHITE_K must stay equal to `demoScene`'s `HERO_LIGHT_K` — the hero ships its
+ *  fixtures at that temperature, and the row decides which button is lit by
+ *  reading the scene. A mismatch shows White as active and then changes the
+ *  lighting when you press it. */
+const WHITE_K = 4400;
 const WARM_K = 2400;
 
 /** Three floors from the real registry (data/materials-floors.manifest.json),
@@ -106,18 +109,18 @@ const WARM_K = 2400;
  *  the renderer loads the material from — so the chip is a picture of the thing
  *  it applies, and cannot drift from it the way a hand-picked hex would. */
 const FLOORS = [
+  { id: "wood-chevron", label: "Chevron" },
   { id: "wood-oak-natural", label: "Oak" },
   { id: "concrete-light", label: "Concrete" },
-  { id: "stone-terrazzo", label: "Terrazzo" },
 ] as const;
 
 /** Window frame colours. These are the three a real buyer actually chooses
  *  between, and they carry their own swatch — a named colour with no chip is a
  *  guess until you click it. */
 const FRAMES = [
-  { hex: "#EDEDEA", label: "White" },
-  { hex: "#8B8E92", label: "Grey" },
   { hex: "#1C1D1F", label: "Black" },
+  { hex: "#8B8E92", label: "Grey" },
+  { hex: "#EDEDEA", label: "White" },
 ] as const;
 
 // Tied to the hero scene rather than re-stated, so the control panel opening
@@ -150,23 +153,6 @@ const IconSeeThrough = () => (
   <svg {...ICON}>
     <path {...STROKE} d="M1.3 8S3.7 3.6 8 3.6 14.7 8 14.7 8 12.3 12.4 8 12.4 1.3 8 1.3 8z" />
     <circle {...STROKE} cx="8" cy="8" r="2.1" />
-  </svg>
-);
-
-const IconCeilingOn = () => (
-  <svg {...ICON}>
-    <path {...STROKE} d="M2 3h12" />
-    <path {...STROKE} d="M8 5.4v1.8M5.2 6.1l1 1.4M10.8 6.1l-1 1.4" />
-    <circle {...STROKE} cx="8" cy="10.8" r="2.2" />
-  </svg>
-);
-
-const IconCeilingOff = () => (
-  <svg {...ICON}>
-    <path {...STROKE} d="M2 3h12" />
-    <path {...STROKE} d="M4.3 13.1 11.7 5.7" />
-    <path {...STROKE} d="M9.9 8.4a2.2 2.2 0 0 1-2.9 2.9" />
-    <path {...STROKE} d="M6.6 6.9a2.2 2.2 0 0 1 2.9.6" />
   </svg>
 );
 
@@ -328,8 +314,6 @@ const OPTION_MIN_PX = 104;
  * stack on a marketing page.
  */
 function DemoControls({ dimmed }: { dimmed: boolean }) {
-  const showCeilings = useSceneStore((s) => s.showCeilings);
-  const setShowCeilings = useSceneStore((s) => s.setShowCeilings);
   const wallMode = useSceneStore((s) => s.wallMode);
   const setWallMode = useSceneStore((s) => s.setWallMode);
   const fixtures = useSceneStore((s) => s.scene.fixtures);
@@ -337,32 +321,25 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
   const openings = useSceneStore((s) => s.scene.openings);
 
   const warm = (fixtures?.[0]?.colorK ?? WHITE_K) <= 3200;
-  const floor = rooms?.[0]?.floor ?? DEFAULT_FLOOR;
+  // The MAIN room's floor, by id: the bathroom's black gloss is part of the
+  // design and this row does not own it, so reading `rooms[0]` would report a
+  // floor the row cannot actually set.
+  const floor = rooms?.find((r) => r.id === HERO_MAIN_ROOM_ID)?.floor ?? DEFAULT_FLOOR;
   const frame = openings?.find((o) => o.frameColor)?.frameColor ?? DEFAULT_FRAME;
 
-  // The ceiling only renders in Full wall-mode — `FloorMesh.tsx:343` gates it
-  // as `!show || wallMode !== "full"`, so Cutaway can always see in. Reading
-  // the SAME condition here is what stops the Ceiling row from lighting "On"
-  // over a room with no ceiling in it, which is what made the control look
-  // broken. The two rows are coerced into agreement below, but the display
-  // still has to tell the truth about what is actually on screen.
-  const ceilingOn = showCeilings && wallMode === "full";
-
-  /** Ceiling on implies solid walls, because there is no such thing as a
-   *  visible ceiling without them. Rather than disable the row or show a
-   *  tooltip explaining a coupling nobody asked about, the control just brings
-   *  the walls with it — every button stays live and does the obvious thing. */
-  const setCeiling = (on: boolean) => {
-    setShowCeilings(on);
-    if (on) setWallMode("full");
-  };
-
-  /** The same agreement from the other side: asking to see through the walls
-   *  while a ceiling is on would otherwise leave `showCeilings` true and
-   *  silently re-roof the room the moment Solid came back. */
+  /** There is no Ceiling row any more (Dan's call, 2026-09-04): the hero opens
+   *  see-through and stays roofless, so the control had one useful state. That
+   *  also retires the coupling it needed — the ceiling only renders in `full`
+   *  (`FloorMesh.tsx:343` gates it as `!show || wallMode !== "full"`), so the
+   *  two rows used to coerce each other to keep both looking honest.
+   *
+   *  `showCeilings` is still forced false on every wall change rather than left
+   *  alone: the store is SHARED with the editor, so a visitor who has been in
+   *  `/design` can arrive here with it already true, and pressing Solid would
+   *  then roof a room with no control left to open it again. */
   const setWalls = (mode: "full" | "cutaway") => {
     setWallMode(mode);
-    if (mode === "cutaway") setShowCeilings(false);
+    useSceneStore.getState().setShowCeilings(false);
   };
 
   /** Retint every ceiling fixture. */
@@ -373,12 +350,17 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
     });
   };
 
-  /** Re-floor every room. The demo has one, but writing it as a map keeps this
-   *  correct if the scene ever grows a second. */
+  /** Re-floor the MAIN room only. The bathroom's black gloss is a design
+   *  decision that ships with the scene, not one of the three the visitor is
+   *  being offered — re-flooring every room would quietly take it away the
+   *  first time anyone tried Concrete, with no way back short of a reload. */
   const setFloor = (id: string) => {
     const s = useSceneStore.getState();
     useSceneStore.setState({
-      scene: { ...s.scene, rooms: s.scene.rooms.map((r) => ({ ...r, floor: id })) },
+      scene: {
+        ...s.scene,
+        rooms: s.scene.rooms.map((r) => (r.id === HERO_MAIN_ROOM_ID ? { ...r, floor: id } : r)),
+      },
     });
   };
 
@@ -407,16 +389,6 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
           icon={<IconSeeThrough />}
           active={wallMode === "cutaway"}
           onClick={() => setWalls("cutaway")}
-        />
-      </ControlRow>
-
-      <ControlRow label="Ceiling">
-        <ControlButton label="On" icon={<IconCeilingOn />} active={ceilingOn} onClick={() => setCeiling(true)} />
-        <ControlButton
-          label="Off"
-          icon={<IconCeilingOff />}
-          active={!ceilingOn}
-          onClick={() => setCeiling(false)}
         />
       </ControlRow>
 
@@ -535,7 +507,7 @@ function seedDemoScene(flat: boolean): SeededSlice {
   useSceneStore.setState({
     scene: flat ? buildFrame(dressed, 0) : dressed,
     appMode: "view",
-    wallMode: "full",
+    wallMode: "cutaway",
     showCeilings: false,
     timeOfDay: DAY,
     envPreset: "none",

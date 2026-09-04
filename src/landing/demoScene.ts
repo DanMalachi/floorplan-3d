@@ -1,6 +1,6 @@
 import type { Scene } from "@/schema/scene";
 import { sanitizeSpec } from "@/parametric";
-import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
+import { FIXTURE_LUX_MAX } from "@/render/lightPresets";
 import { frameColorPatch } from "@/render/frameFinish";
 import { HERO_NODES, HERO_ROOMS, heroOpenings, heroWalls } from "./heroPlan";
 
@@ -120,25 +120,101 @@ export const demoScene: Scene = {
   ],
 };
 
-/** The floor and window-frame the hero opens with. Exported so the editor's
+/** The two rooms, by id rather than by index — the Floor control writes to the
+ *  main room ALONE, and an index would silently start painting the bathroom the
+ *  first time `HERO_ROOMS` is reordered. */
+export const HERO_MAIN_ROOM_ID = "r0";
+export const HERO_BATH_ROOM_ID = "r1";
+
+/** The floors and window-frame the hero opens with. Exported so the editor's
  *  `?hero=1` route dresses the scene identically — a furnishing session has to
  *  see the same room the visitor does, or the furniture is chosen against the
- *  wrong floor. DemoStage's FLOORS[0]/FRAMES[0] must stay these two values. */
-export const HERO_FLOOR = "wood-oak-natural";
-export const HERO_FRAME = "#EDEDEA";
+ *  wrong floor. DemoStage's FLOORS[0]/FRAMES[0] must stay `HERO_FLOOR` and
+ *  `HERO_FRAME`. */
+export const HERO_FLOOR = "wood-chevron";
+/** The bathroom is NOT the Floor row's business — it is a design choice, and
+ *  the row rewrites only the main room so a visitor trying Concrete cannot take
+ *  the black gloss with it. */
+export const HERO_BATH_FLOOR = "tile-black-gloss";
+export const HERO_FRAME = "#1C1D1F";
 
 /**
- * The hero scene as it is actually shown: ceiling fixtures seeded, floor and
- * frame colour applied.
+ * Wall paint, per FACE.
+ *
+ * A wall has two long faces and the schema names them by geometry, not by room:
+ * "a" is the wall-local +Z face, "b" the -Z face. The wall group is rotated by
+ * `-atan2(uy, ux)` about Y and plan (x, y) maps to world (x, ·, y), so face "a"
+ * lands on the plan-space LEFT normal of a→b — `(-uy, ux)`. Derived rather than
+ * eyeballed, then checked by probing 0.25 m off each face's midpoint against
+ * the room loops:
+ *
+ *     w0  n0->n1   A=Studio    B=outside      w7  n3->n9   A=Bathroom  B=outside
+ *     w1  n1->n2   A=Studio    B=outside      w8  n9->n8   A=Bathroom  B=outside
+ *     w2  n2->n3   A=Studio    B=outside      w9  n8->n7   A=Bathroom  B=outside
+ *     w3a n3->n7   A=Studio    B=Bathroom     w3b n7->n0   A=Studio    B=outside
+ *
+ * So the bathroom's four faces are w7/w8/w9 face A plus w3a face **B** — the
+ * shared wall is the one that breaks the pattern, and painting its A face would
+ * put the bathroom colour on the studio side of it.
+ *
+ * The accent wall is the one you face walking in: the front door D1 sits on w0
+ * (the bottom wall) at offset 4.5, so entering looks up +y at w2, and w2's
+ * studio side is face A.
+ */
+const BATH_PAINT = "#b3c6b7"; // Tambour 0891P "SERENE OASIS /T" — soft sage
+const ACCENT_PAINT = "#9d4a43"; // Tambour 0175A "Just Terracotta"
+
+const WALL_PAINT: Record<string, { a?: string; b?: string }> = {
+  w7: { a: BATH_PAINT },
+  w8: { a: BATH_PAINT },
+  w9: { a: BATH_PAINT },
+  w3a: { b: BATH_PAINT },
+  w2: { a: ACCENT_PAINT },
+};
+
+/**
+ * The hero's ceiling lights, placed rather than seeded.
+ *
+ * `seedRoomFixtures` drops one fixture at each room's pole of inaccessibility,
+ * which is a sound default and the wrong answer here: the studio's pole is the
+ * middle of the floor, where nothing is. Naming them explicitly also makes this
+ * a no-op — `seedRoomFixtures` only acts when `fixtures` is `undefined`, so
+ * defining the array is what turns the seeding off.
+ *
+ * 4400 K on all three, matching `DemoStage`'s WHITE_K, so the Lighting row opens
+ * with "White" genuinely lit rather than merely looking that way.
+ */
+const HERO_LIGHT_K = 4400;
+
+const HERO_FIXTURES: NonNullable<Scene["fixtures"]> = [
+  // Over the kitchen run, not over the middle of the room.
+  { id: "fx0", assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x: -1.2, y: -1.4 }, targetLux: FIXTURE_LUX_MAX, colorK: HERO_LIGHT_K },
+  // Over the coffee table (f25, at 2.1, 0.9) — a pendant reads as a choice
+  // someone made, which a second flush disc would not.
+  { id: "fx1", assetId: "fx:pendant", rotation: 0, mount: { kind: "ceiling", x: 2.1, y: 0.9 }, targetLux: FIXTURE_LUX_MAX, colorK: HERO_LIGHT_K },
+  // The bathroom keeps its own, near the pole it would have been seeded at.
+  { id: "fx2", assetId: "fx:flushDisc", rotation: 0, mount: { kind: "ceiling", x: -3, y: 1.6 }, targetLux: FIXTURE_LUX_MAX, colorK: HERO_LIGHT_K },
+];
+
+/**
+ * The hero scene as it is actually shown: lights placed, floors laid, walls
+ * painted, frame colour applied.
  *
  * One function, two callers — the hero itself and the editor's furnishing
  * route. Dressing it in each place separately is how the thing Dan furnishes
  * stops being the thing the hero renders.
  */
 export function heroDressedScene(): Scene {
-  const seeded = seedRoomFixtures(demoScene);
+  const painted = demoScene.walls.map((w) => {
+    const p = WALL_PAINT[w.id];
+    return p ? { ...w, ...(p.a ? { paintA: p.a } : {}), ...(p.b ? { paintB: p.b } : {}) } : w;
+  });
+  const rooms = demoScene.rooms.map((r) => ({
+    ...r,
+    floor: r.id === HERO_BATH_ROOM_ID ? HERO_BATH_FLOOR : HERO_FLOOR,
+  }));
   return frameColorPatch(
-    { ...seeded, rooms: seeded.rooms.map((r) => ({ ...r, floor: HERO_FLOOR })) },
+    { ...demoScene, walls: painted, rooms, fixtures: HERO_FIXTURES },
     HERO_FRAME,
   );
 }

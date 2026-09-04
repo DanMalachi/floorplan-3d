@@ -344,8 +344,56 @@ Dan's call, not a landing-page change. Candidate fixes, cheapest first:
 3. Render `ConsentNotice` from the editor's layout and the marketing layout
    separately, so each imports only what it needs.
 
+## The hero's dressing, and what owns which part of it (2026-09-04)
+
+The room is furnished from `/design?hero=1` — 30 pieces, dumped by that route's
+"Copy furniture →" button and pasted into `src/landing/demoScene.ts`. Re-furnish
+THERE; do not nudge coordinates by hand. That session saves nothing, so paste
+the array somewhere before copying anything else (this has been lost once).
+
+The copy button serialises `scene.furniture` and NOTHING ELSE, which is the
+trap: floors, wall paint, window frames and lighting do not come back with it.
+Those live in `demoScene.ts` as explicit exports and have to be set by hand:
+
+| What | Where | Value |
+|---|---|---|
+| Main floor | `HERO_FLOOR` | `wood-chevron` |
+| Bathroom floor | `HERO_BATH_FLOOR` | `tile-black-gloss` |
+| Window frames | `HERO_FRAME` | `#1C1D1F` (black) |
+| Bathroom walls | `WALL_PAINT` | Tambour 0891P `#b3c6b7` |
+| Accent wall | `WALL_PAINT` | Tambour 0175A `#9d4a43` |
+| Lights | `HERO_FIXTURES` | flush disc over the kitchen, pendant over the coffee table, 4400 K |
+
+Two couplings that will bite silently if broken:
+
+- **`DemoStage`'s `FLOORS[0]`/`FRAMES[0]` must equal `HERO_FLOOR`/`HERO_FRAME`,
+  and `WHITE_K` must equal `HERO_LIGHT_K`.** Each row decides which button is
+  lit by reading the scene, so a mismatch opens with a row that is either all
+  dark or lit on an option that then changes something when pressed.
+- **The Floor row writes to the MAIN room only** (`HERO_MAIN_ROOM_ID`). The
+  bathroom's black gloss is part of the design, not one of the three choices on
+  offer; re-flooring every room would take it away the first time a visitor
+  tried Concrete, with no way back short of a reload.
+
+Wall paint is stored per FACE, and the faces are named by geometry rather than
+by room: "a" is the wall-local +Z face, which works out to the plan-space LEFT
+normal of a→b. For this plan that makes the bathroom `w7/w8/w9` face **A** plus
+`w3a` face **B** — the shared wall is the one that breaks the pattern. The
+derivation and the probe that checked it are written out above `WALL_PAINT`.
+
+There is no Ceiling control any more: the hero opens see-through and stays
+roofless, so the row had one useful state. That also retires the coupling where
+Ceiling and Walls had to coerce each other (the ceiling only renders in `full`).
+
 ## Not done
 
+- **The render contract's failure mode.** When the contract legitimately fires
+  it takes the whole viewer down into a stale canvas, because the throw is
+  inside `useFrame`. Throwing during render instead would make a real violation
+  loud rather than mysterious. Flagged, not done — the dev-throw/prod-log split
+  is deliberate, so this is a change to how it throws, not whether.
+- **The patio window is 2.55 m** and the storage cabinet was moved to clear it.
+  Widening it further means moving furniture again.
 - **Pricing.** `/pricing` and `/legal/refunds` are built and working on the
   unmerged `feat/pricing-ui` branch. The menu item and the footer link are
   already written and gate themselves on that branch's own

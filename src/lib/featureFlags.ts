@@ -58,8 +58,16 @@ export const landingEnabled =
   process.env.NEXT_PUBLIC_LANDING_ENABLED === "true";
 
 /**
- * The developer query-parameter hatches, as ONE switch: `?hero=1`, `?gt=`,
- * `?perf=1` (with `?loop=` and `?furnish=`), `?ao=` and `?dpr=`.
+ * The developer query-parameter hatches, as one switch: `?hero=1`, `?gt=` and
+ * `?ao=`.
+ *
+ * NOT `?perf=1` (with `?loop=`/`?furnish=`) and NOT `?dpr=`. Those two were
+ * built to measure the LIVE deployment — the HUD's own doc says the numbers get
+ * read on someone else's MacBook against done.design, and that is how the M2
+ * figures in docs/PERFORMANCE.md were taken. Gating them behind an env var and
+ * a redeploy would leave the project with no instrument for the machine it most
+ * needs to measure. Dan's ruling, 2026-09-04. They read nothing and write
+ * nothing; the exposure is a HUD a stranger would have to know to summon.
  *
  * Each was written for a different job and each was reachable on done.design,
  * because none of them ever had an environment check — they are gated on the
@@ -81,14 +89,7 @@ export const landingEnabled =
  * deployments. Both halves fold to constants at build time, so in production
  * the parameter reads are dead code rather than a runtime branch.
  *
- * THE COST, stated plainly because it is a real one: `?perf=1` and `?dpr=` were
- * designed for production measurement — the HUD's own doc says the numbers get
- * read "on someone else's MacBook against the live done.design deployment", and
- * that is how the M2 readings behind docs/PERFORMANCE.md were taken. Measuring
- * production now needs `NEXT_PUBLIC_DEV_TOOLS_ENABLED=true` set in Vercel and a
- * redeploy, then unset afterwards. If that friction turns out to cost more than
- * the exposure it removes, split `?perf=1`/`?dpr=` back out — they are the two
- * that read nothing and write nothing.
+ * `NEXT_PUBLIC_DEV_TOOLS_ENABLED=true` re-opens them where that is wanted.
  */
 export const devToolsEnabled =
   process.env.NODE_ENV !== "production" ||

@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { devToolsEnabled } from "@/lib/featureFlags";
 
 /**
  * The `?perf=1` gate for the Phase 0 HUD (`docs/PERFORMANCE.md` §3, Phase 0).
@@ -10,15 +9,16 @@ import { devToolsEnabled } from "@/lib/featureFlags";
  * setting, deliberately: Phase 0 exists to measure the app, and a measuring
  * apparatus that can be left switched on becomes part of what later phases
  * measure. A query parameter also survives being pasted into a message, which
- * is the actual workflow here.
+ * is the actual workflow here — the numbers are being read on someone else's
+ * MacBook against the live `done.design` deployment, not on a dev machine.
  *
- * SINCE 2026-09-04 it is ALSO gated on `devToolsEnabled`, so it does nothing on
- * done.design. That is a deliberate trade and it costs something real: this HUD
- * was written to be read on someone else's MacBook against the live deployment,
- * and the M2 numbers behind docs/PERFORMANCE.md were taken exactly that way. To
- * do that again, set `NEXT_PUBLIC_DEV_TOOLS_ENABLED=true` in Vercel, redeploy,
- * measure, then unset it. See `devToolsEnabled` for why the gate is one switch
- * across every hatch rather than one per parameter.
+ * DELIBERATELY NOT behind `devToolsEnabled` (2026-09-04, Dan's ruling), unlike
+ * `?hero=1`/`?gt=`/`?ao=`. Measuring the live site IS the workflow this exists
+ * for — the M2 numbers in docs/PERFORMANCE.md were taken that way — and a HUD
+ * that needs an env var and a redeploy before it will report is not an
+ * instrument. It reads nothing and writes nothing, so the exposure is a HUD a
+ * stranger would have to know the parameter to summon. `?dpr=` stays open for
+ * the same reason.
  */
 export const PERF_PARAM = "perf";
 
@@ -45,14 +45,12 @@ export const PERF_LOOP_PARAM = "loop";
  */
 export function perfEnabled(): boolean {
   if (typeof window === "undefined") return false;
-  if (!devToolsEnabled) return false;
   return new URLSearchParams(window.location.search).get(PERF_PARAM) === "1";
 }
 
 /** `?loop=always`, and only meaningful alongside `?perf=1`. */
 export function perfLoopAlways(): boolean {
   if (typeof window === "undefined") return false;
-  if (!devToolsEnabled) return false;
   return new URLSearchParams(window.location.search).get(PERF_LOOP_PARAM) === "always";
 }
 
