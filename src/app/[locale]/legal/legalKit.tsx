@@ -60,7 +60,7 @@ export const legalP: React.CSSProperties = {
 
 export const legalUl: React.CSSProperties = {
   margin: "0 0 14px",
-  paddingLeft: 20,
+  paddingInlineStart: 20,
   display: "flex",
   flexDirection: "column",
   gap: 8,

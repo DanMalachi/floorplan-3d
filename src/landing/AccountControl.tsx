@@ -119,7 +119,10 @@ export function AccountControl() {
           style={{
             position: "absolute",
             top: "calc(100% + 8px)",
-            right: 0,
+            // Trailing edge, not the physical right: on /he this control sits at
+            // the left of the header, and a right-anchored menu would open off
+            // the side of the page.
+            insetInlineEnd: 0,
             minWidth: 210,
             background: B.raised,
             border: `1px solid ${B.hairline}`,
@@ -156,7 +159,7 @@ export function AccountControl() {
               void signOut();
             }}
             className={MENU_ITEM_CLASS}
-            style={{ ...itemStyle, width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer" }}
+            style={{ ...itemStyle, width: "100%", textAlign: "start", background: "transparent", border: "none", cursor: "pointer" }}
           >
             {t("signOut")}
           </button>

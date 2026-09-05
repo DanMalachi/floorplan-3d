@@ -956,7 +956,7 @@ export default function TraceCanvas() {
           style={{
             position: "absolute",
             top: 8,
-            right: 8,
+            insetInlineEnd: 8,
             display: "flex",
             flexDirection: "column",
             gap: 4,

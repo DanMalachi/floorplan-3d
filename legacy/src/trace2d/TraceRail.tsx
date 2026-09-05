@@ -82,7 +82,7 @@ const tGhostBtn = (hovered: boolean, extra?: React.CSSProperties): React.CSSProp
   pdGhostBtn(hovered, extra);
 
 const railBtn = (active = false, extra?: React.CSSProperties): React.CSSProperties =>
-  chip(active, { width: "100%", textAlign: "left", padding: "7px 11px", ...extra });
+  chip(active, { width: "100%", textAlign: "start", padding: "7px 11px", ...extra });
 
 /** Shared shape for the "Draw by hand" tool strip — five equal chips, each an
  *  icon plus a word. Tighter than the default chip on purpose: the rail has
@@ -225,7 +225,7 @@ function TextAction({
         ...hintText,
         ...tGhostBtn(hov, {
           justifyContent: "flex-start",
-          textAlign: "left",
+          textAlign: "start",
           padding: "2px 4px",
           margin: "0 -4px",
           fontSize: 11.5,
@@ -480,7 +480,7 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
             : "transparent",
         cursor: step.locked ? "default" : "pointer",
         opacity: step.locked ? 0.38 : 1,
-        textAlign: "left",
+        textAlign: "start",
         fontFamily: PD.fontUi,
         transition: `background ${PD.dur} ${PD.ease}`,
       }}
@@ -964,7 +964,7 @@ export function TraceRail() {
     <div
       style={{
         position: "absolute",
-        left: 14,
+        insetInlineStart: 14,
         top: 64,
         bottom: 14,
         width: 264,

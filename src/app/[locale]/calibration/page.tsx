@@ -471,7 +471,7 @@ export default function CalibrationPage() {
       </Canvas>
 
       {ui && (
-        <div style={{ position: "absolute", bottom: 14, left: 14, display: "grid", gap: 8, background: "rgba(12,12,16,0.9)", padding: 12, borderRadius: 10, fontSize: 11, width: 330 }}>
+        <div style={{ position: "absolute", bottom: 14, insetInlineStart: 14, display: "grid", gap: 8, background: "rgba(12,12,16,0.9)", padding: 12, borderRadius: 10, fontSize: 11, width: 330 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {(["exposure", "roof", "interior", "riser", "reference"] as const).map((m) => (
               <button key={m} onClick={() => setMode(m)} style={{ ...btn(mode === m), flex: 1 }}>{m}</button>

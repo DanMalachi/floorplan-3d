@@ -242,7 +242,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                     // glyph, not the `▱` character it replaces.
                     <PlanMapIcon size={30} strokeWidth={1.35} style={{ color: PD.textTertiary }} />
                   )}
-                  <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
+                  <div style={{ position: "absolute", top: 8, insetInlineStart: 8, display: "flex", gap: 6 }}>
                     {isCurrent && (
                       <span
                         style={{
@@ -478,7 +478,7 @@ function ProjectCard({
 function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   const [hov, bind] = useHover();
   return (
-    <div style={{ position: "absolute", top: 8, right: 8 }}>
+    <div style={{ position: "absolute", top: 8, insetInlineEnd: 8 }}>
       <Tooltip label="Delete plan" placement="bottom">
         <button
           onClick={onClick}

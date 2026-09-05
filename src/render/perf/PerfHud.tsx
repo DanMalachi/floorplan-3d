@@ -29,7 +29,7 @@ const FRAME_BUDGET_MS = 16.7;
 
 const panelStyle: CSSProperties = {
   position: "fixed",
-  right: 12,
+  insetInlineEnd: 12,
   bottom: 12,
   zIndex: 9999,
   pointerEvents: "none",
@@ -112,7 +112,7 @@ function ResourceRow({ label, value, delta }: { label: string; value: number; de
       <span style={labelStyle}>{label}</span>
       <span>
         <span>{compact(value)}</span>
-        <span style={{ color: delta > 0 ? WARN : DIM, marginLeft: 6 }}>
+        <span style={{ color: delta > 0 ? WARN : DIM, marginInlineStart: 6 }}>
           {delta === 0 ? "flat" : signed(delta)}
         </span>
       </span>

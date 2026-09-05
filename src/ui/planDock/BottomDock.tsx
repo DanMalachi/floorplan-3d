@@ -394,7 +394,7 @@ function NavigatorPanel({
   const RoomBigIcon = ROOM_ICON[room];
   const Scene = ROOM_SCENE_COMPONENT[room];
   return (
-    <div style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
+    <div style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
       <div style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => (
           <NavRoomButton
@@ -844,7 +844,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               {c}
             </DockChip>
           ))}
-          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
+          <span style={{ ...pdMicroLabel(), marginInlineStart: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start" }}>
@@ -888,8 +888,8 @@ export function BottomDock() {
       <div
         style={{
           position: "absolute",
-          left: 240,
-          right: 16,
+          insetInlineStart: 240,
+          insetInlineEnd: 16,
           bottom: 16,
           height: dockHeight,
           display: "flex",
@@ -918,14 +918,14 @@ export function BottomDock() {
             </DockIconBtn>
           </Tooltip>
           {brush && (
-            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               {brush.kind === "frame"
                 ? "Window frames — pick a colour · Esc to stop"
                 : `${brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop`}
             </span>
           )}
           {!brush && replaceTarget && (
-            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               Replacing — pick a new item
             </span>
           )}

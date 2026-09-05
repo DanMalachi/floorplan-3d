@@ -124,7 +124,7 @@ function GoLiveButton() {
     </button>
   );
   return (
-    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 30 }}>
+    <div style={{ position: "absolute", top: 14, insetInlineEnd: 14, zIndex: 30 }}>
       <Tooltip
         label={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
         placement="bottom"
@@ -172,7 +172,7 @@ function HeroFurnishBar() {
         // readable — it is the only thing telling you the session is unsaved.
         position: "absolute",
         top: 112,
-        left: 14,
+        insetInlineStart: 14,
         zIndex: 40,
         display: "flex",
         alignItems: "center",
@@ -410,7 +410,10 @@ export default function Home() {
         style={{
           position: "absolute",
           top: 14,
-          right: showTrace ? 14 : 132,
+          // The 132 dodges the Go live button, which is pinned to the same
+        // trailing edge and mirrors with it — so the gap holds in both
+        // directions and the NUMBER does not need a second value for Hebrew.
+        insetInlineEnd: showTrace ? 14 : 132,
           zIndex: 30,
           display: "flex",
           alignItems: "center",

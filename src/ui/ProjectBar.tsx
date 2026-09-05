@@ -30,7 +30,7 @@ export function ProjectBar({
       style={{
         position: "absolute",
         top: 14,
-        left: 14,
+        insetInlineStart: 14,
         zIndex: 30,
         display: "flex",
         alignItems: "center",
@@ -69,7 +69,7 @@ export function ProjectBar({
         </button>
       </Tooltip>
       {status && (
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingRight: 10, fontFamily: PD.fontUi }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingInlineEnd: 10, fontFamily: PD.fontUi }}>
           {/* A status light, so it is a drawn circle rather than the `●`
               character it replaces — a text bullet reflows with the font. */}
           <span

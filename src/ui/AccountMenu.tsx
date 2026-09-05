@@ -103,7 +103,12 @@ export function AccountMenu() {
             style={{
               position: "absolute",
               top: SIZE + 14,
-              right: 0,
+              // Anchored to the button's TRAILING edge, so it opens back across
+              // the screen rather than off it. Physical `right: 0` was correct
+              // only while the button sat at the right of an LTR window; in
+              // Hebrew the whole cluster is on the left and a right-anchored
+              // panel would hang past the viewport edge.
+              insetInlineEnd: 0,
               maxWidth: 300,
               padding: "8px 11px",
               fontSize: 11.5,
@@ -162,7 +167,7 @@ export function AccountMenu() {
           style={{
             position: "absolute",
             top: SIZE + 14,
-            right: 0,
+            insetInlineEnd: 0, // trailing edge — see the note on the error panel above
             minWidth: 208,
             padding: 6,
             zIndex: 40,
@@ -225,7 +230,7 @@ function MenuRow({
   const style: React.CSSProperties = {
     display: "block",
     width: href ? undefined : "100%",
-    textAlign: "left",
+    textAlign: "start",
     padding: "8px 10px",
     marginBottom: 4,
     fontSize: 12.5,

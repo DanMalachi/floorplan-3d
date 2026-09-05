@@ -23,20 +23,34 @@ import { Link } from "@/i18n/navigation";
 // So this is a short one-button notice, not a consent-management platform:
 // no accept/reject choice to model, because there's no tracking to opt into.
 //
-// Placement: this app's chrome rings the whole viewport (top row is always
-// full — ProjectBar/ModeSwitcher/AccountMenu in src/app/page.tsx; the right
-// edge fills with an inspector panel whenever something's selected —
-// src/ui/planDock/inspector/panelKit.tsx `right:14, top:64`). The one
-// dependable gap is bottom-left, EXCEPT in Decorate mode, where BottomDock
-// owns the full bottom edge including that corner (src/viewport3d/
-// Viewport.tsx: `appMode === "furnish" && <BottomDock />`; src/ui/planDock/
-// BottomDock.tsx left panel is `left:16, bottom:16, width:208, height:224`).
-// So: hide in "furnish" mode, otherwise sit at bottom-left above the small
-// pointer-events:none StatusOverlay pill that already lives at `left:14,
-// bottom:14` (Viewport.tsx). This was picked by reading every `position:
-// absolute` overlay in Viewport.tsx / page.tsx / BottomDock.tsx, not by
-// looking at the running app — give it a visual pass and nudge the `left`/
-// `bottom` values below if it ever overlaps something.
+// Placement: this app's chrome rings the whole viewport (the top row is always
+// full — ProjectBar/ModeSwitcher/AccountMenu in src/app/[locale]/design/page.tsx;
+// the TRAILING edge fills with an inspector panel whenever something is
+// selected — src/ui/planDock/inspector/panelKit.tsx `insetInlineEnd:14,
+// top:64`). The one dependable gap is the bottom LEADING corner, EXCEPT in
+// Decorate mode, where BottomDock owns the whole bottom edge including that
+// corner (src/viewport3d/Viewport.tsx: `appMode === "furnish" && <BottomDock />`;
+// BottomDock's own panel is `insetInlineStart:16, bottom:16, width:208,
+// height:224`). So: hide in "furnish" mode, otherwise sit at the bottom leading
+// corner. This was picked by reading every `position: absolute` overlay in
+// Viewport.tsx / design/page.tsx / BottomDock.tsx, not by looking at the running
+// app — give it a visual pass and nudge the values below if it ever overlaps
+// something.
+//
+// ── Why the analysis above survived RTL (Step 4) ────────────────────────────
+// Every panel named in it is pinned by a LOGICAL property, this notice
+// included, so they all cross to the other side of the window together and
+// their relationships hold unchanged. That is the whole reason the mirror was
+// done as inset-inline rather than by adding a locale conditional: a
+// conditional would have needed this paragraph re-derived for Hebrew.
+//
+// ONE relationship did not survive, and it is not this notice's fault. The
+// `StatusOverlay` pill this used to sit above lives inside the PROTECTED
+// Viewport.tsx at a physical `left:14, bottom:14`, so in Hebrew it stays on the
+// left while this moves to the right. They no longer stack — they simply
+// separate, which is harmless. See the Step 4 section of
+// docs/HEBREW-HANDOFF.md for the three protected overlays that could not be
+// mirrored and the decision still open on them.
 // -----------------------------------------------------------------------------
 
 const STORAGE_KEY = "fp3d:legalNotice:v1";
@@ -80,7 +94,7 @@ export function ConsentNotice() {
     <div
       style={{
         position: "fixed",
-        left: 14,
+        insetInlineStart: 14,
         bottom: 60,
         zIndex: 35,
         maxWidth: 300,

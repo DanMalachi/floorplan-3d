@@ -36,7 +36,7 @@ type TipPlacement = "top" | "bottom";
  *  renders inside one of these. */
 export const pdInspectorPanel: React.CSSProperties = {
   position: "absolute",
-  right: 14,
+  insetInlineEnd: 14,
   top: 64,
   padding: "12px 14px",
   fontSize: 12.5,
@@ -151,7 +151,7 @@ export function PdNumField({
             fontFamily: PD.fontMono,
             fontSize: 11.5,
             opacity: disabled ? 0.4 : 1,
-            textAlign: "right",
+            textAlign: "end",
           }}
         />
         <span style={{ color: PD.textTertiary, fontSize: 11 }}>{unit}</span>
