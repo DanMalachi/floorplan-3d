@@ -2,8 +2,9 @@
 
 **Branch:** `feat/hebrew`, four commits in: `533fd89` (the scaffold),
 `485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang),
-`dd03c04` (Step 2 — the locale switcher) and `3903114` (Step 3 — the landing
-page in Hebrew).
+`dd03c04` (Step 2 — the locale switcher), `3903114` (Step 3 — the landing page
+in Hebrew), `56c19ed` (the small-screen notice) and `b92c6cf` (Step 4 tiers 1
+and 2 — the editor mirrored), plus doc commits.
 **Not pushed.** `main` is at `142d8d3` (the UI sweep, already live on done.design).
 
 Read this file, then `docs/HEBREW-HANDOFF.md`'s sibling section in
@@ -20,12 +21,21 @@ untracked paths are the three that are untracked on purpose: `docs/NAMING.md`,
 `docs/NAMING-BRIEF.md`, `public/furniture/blenderkit/opt-ktx2/`. Never
 `git add -A` here.
 
-**Steps 1, 2 and 3 are done and verified. Step 3 is the checkpoint — the
-landing page is fully Hebrew and the editor is still English and still
-working.** Steps 4 and 5 are untouched.
+**Steps 1, 2 and 3 are done. Step 3 was the checkpoint and Dan has accepted it
+(see below). Step 4's tiers 1 and 2 are done and measured; Step 5 is
+untouched.**
 
-**Next task: Step 4, mirroring the editor's layout** (~96 directional
-properties, sorted into three tiers below; three of them must NOT be flipped).
+**START HERE NEXT SESSION: Step 4 is blocked on ONE decision from Dan, and it
+is written up under "THE BLOCKER" in the Step 4 section below.** Four pieces of
+editor chrome live inside protected `src/viewport3d/` files and could not be
+mirrored, which leaves the Hebrew editor's wall-mode row on the wrong side and —
+this part is arithmetic, not observation — puts the inspector panel on exactly
+the same coordinates whenever something is selected. Read that section, put the
+three options to Dan, and recommend option 1 (a logged protected-file exception
+for four property renames). **Do not edit a protected file before he says so.**
+
+If Dan picks an option, Step 4 finishes in well under an hour; then Step 5 is
+the last and largest piece (~700–850 keys).
 
 **Two things waiting on Dan. Two more are now CLOSED — do not re-raise them:**
 
@@ -348,65 +358,92 @@ them: `Wordmark.tsx` is DONE (it was listed under Tier 3 as needing the isolate
 — it has it), and the `done.` period problem is closed everywhere except any
 copy that has not been translated yet.
 
-### Step 4 — editor RTL (~96 directional properties)
+### Step 4 — editor RTL — **TIERS 1 AND 2 DONE, BLOCKED ON ONE DECISION**
 
-Sort every one into a tier before touching it.
+Commit `b92c6cf`. Physical properties are logical properties now:
+`left`/`right` → `insetInlineStart`/`insetInlineEnd`, the margin and padding
+pairs likewise, `textAlign: "left"|"right"` → `"start"|"end"`. React passes
+unknown camelCase style keys straight through, so no shim was needed.
 
-**Tier 1 — mechanical.** `left`→`insetInlineStart`, `right`→`insetInlineEnd`,
-`marginLeft`→`marginInlineStart`, `paddingLeft`→`paddingInlineStart` (+ the
-`right`/`End` mirrors), `textAlign: "left"|"right"`→`"start"|"end"`. React
-passes unknown camelCase style keys straight through, so no shim is needed.
-Covers most of it, including `inspector/panelKit.tsx`'s `right: 14` (the anchor
-for **all nine** inspector sections) and `BottomDock`'s three
-`marginLeft: "auto"` right-push spacers.
+**The real count was ~45 sites, not ~96.** The larger figure counted the whole
+repo, including tests, the `parametric/` spatial geometry and the marketing
+site. Both tiers are finished across 17 files.
 
-**Tier 2 — needs design, not a codemod.**
-- `src/ui/consent/ConsentNotice.tsx` — its header comment documents a
-  **hand-tuned** non-collision map against `panelKit`'s `right:14/top:64` and
-  `BottomDock`'s `left:16/bottom:16`. Mirroring invalidates that whole
-  analysis; the notice lands where the navigator now is. Re-derive it.
-- `src/app/[locale]/design/page.tsx` — the conditional `right: showTrace ? 14 : 132`.
-  The property swap is mechanical, but the trace panel it dodges flips too, so
-  the *number* needs re-checking.
-- `src/ui/AccountMenu.tsx` — dropdown pinned `right: 0` must flip to stay on
-  screen.
-- `src/collab/CollabRoom.tsx` — avatar stack `marginLeft: -6`; the negative
-  overlap is what makes the pile read in one direction.
+**Measured**, 1440×900, Build mode, `/design` vs `/he/design`: 8 absolutely
+positioned chrome boxes, **7 mirror to within 4px, and ZERO new overlaps** (4
+overlaps pre-exist in English and are unchanged). The script is ~90 lines and
+worth rebuilding rather than reinventing — it pairs boxes across the two locales
+by DOM path, asserts `he.x === W - (en.x + en.w)`, and then diffs the set of
+overlapping pairs between locales. **That second check is the one that matters:**
+half-mirroring is this job's failure mode, and an element still pinned physically
+does not look wrong on its own — it looks wrong by landing under a neighbour.
 
-**Tier 3 — must NOT be touched.**
-- `src/viewport3d/CameraDoubleClickRig.tsx:45` — `(e.clientX - rect.left)/rect.width`
-  is **NDC maths for a raycast**, not layout. Correct in both directions.
-  "Fixing" it breaks click-to-focus.
-- The seven `translateX(-50%)` centrings — direction-agnostic.
-- `src/landing/TraceOverlay.tsx` — **a mirrored floorplan is a different
-  floorplan.** The drawing stays LTR in its own `HERO_BOUNDS` projection; only
-  its `<text>` labels take Hebrew.
-- **`src/brand/Wordmark.tsx`** — it renders `done` plus a copper square offset
-  by `marginLeft: "0.055em"`. Inside an RTL paragraph, bidi will move that
-  square to the wrong side of the word. Wrap the mark in
-  `direction: "ltr"; unicodeBidi: "isolate"` and **leave the physical
-  `marginLeft` alone** — it positions a glyph inside a Latin lockup, not a page.
+#### THE BLOCKER — read this before doing anything else
 
-  **CONFIRMED ON SCREEN 2026-09-04, and the scope is wider than this entry
-  said.** The square does land on the wrong side — but so does the period of
-  every *textual* `done.` in the copy, because the same bidi rule applies to
-  any Latin run with trailing punctuation inside an RTL line. At `/he` today
-  the CTA reads `.Open done`, the ghost button `.see how it's done`, the
-  footnote `.No account needed to start`.
+**Four pieces of editor chrome live inside PROTECTED files** and could not be
+mirrored. CLAUDE.md rule 1 says stop and ask Dan, so that is what this is.
 
-  Sort those into two piles before fixing anything, because only one is a bug:
+| file | element | pinned at |
+|---|---|---|
+| `src/viewport3d/Viewport.tsx:217` | the **Scene panel** (walkthrough, time of day, weather) | `left:14, top:112` |
+| `src/viewport3d/Viewport.tsx:321` | **WallModeToggle** (Full/Cutaway/Top + Ceilings) | `left:14, top:64` |
+| `src/viewport3d/Viewport.tsx:367` | **StatusOverlay** (selection + undo pill) | `left:14, bottom:14` |
+| `src/viewport3d/walkthrough/WalkthroughMode.tsx:748` | the **FOV slider** | `right:14, top:64` |
 
-  - **Ordinary prose** (`.you can buy, a walkthrough that's yours`) is bidi
-    working CORRECTLY on English text that happens to sit in an RTL container.
-    It resolves itself the moment that copy becomes Hebrew in Step 3. Do not
-    "fix" it — you would be fighting the algorithm on text that is about to
-    stop existing.
-  - **`done.` itself stays broken forever**, because Dan's decision is that the
-    wordmark stays Latin. So it needs the isolation treatment **everywhere it
-    appears in running text** — CTA labels, slogans, `content.ts` strings — not
-    only in `Wordmark.tsx`. Cheapest shape is probably a tiny `<Brand />` that
-    wraps the isolation, used wherever the copy says the name, so Step 3's
-    translated strings interpolate it instead of spelling `done.` inline.
+`WallModeToggle` is the one box the gate catches: on `/he/design` it stays at
+x=14 where the mirror expects x=1178. Screenshot it and you can see it sitting
+on the left under a top bar that has moved to the left with it.
+
+**One consequence is certain rather than observed, and it is the reason this
+needs deciding rather than deferring.** The inspector is `insetInlineEnd: 14,
+top: 64` (`panelKit.tsx`), which in Hebrew resolves to physical `left:14,
+top:64` — *identical* coordinates to `WallModeToggle`. So the moment anything is
+selected in the Hebrew editor those two draw on top of each other. The gate did
+not catch it only because nothing was selected in that run; it is arithmetic,
+not a guess. **Reproduce it before designing a fix:** select a wall on
+`/he/design` and look at the top-left.
+
+Three ways forward, for Dan to pick:
+
+1. **Approve a protected-file exception** for the four sites above — four
+   property renames, no logic touched. There is precedent: the "Approved
+   exceptions" section of `docs/PROTECTED_PATHS.md` already lists a 2026-09-04
+   `WalkthroughMode.tsx` change signed off before it was made. This is the
+   cheapest correct answer, and the argument for it is that these four are UI
+   chrome that happens to live in the viewer's file, not viewer code — the
+   protection exists for "the working 3D viewer/renderer", which none of them is.
+2. **Move them out** into `src/ui/planDock/` as new files and render them from
+   `design/page.tsx`. Sanctioned by rule 1 (new files, no edits to protected
+   ones) but a much larger diff, and it changes what mounts where in a file the
+   walkthrough also uses.
+3. **Leave them physical** and accept that the Hebrew editor has its wall-mode
+   row, scene panel and status pill on the wrong side, with the inspector
+   overlapping the first of them. Cheapest, and visibly wrong.
+
+**Recommendation: option 1.** It is four renames, it is reversible, and it is
+the only one of the three that leaves the Hebrew editor correct without
+restructuring code the 3D layer depends on.
+
+#### Also worth knowing
+
+- **A pre-existing overlap is now easier to see.** In Build mode the consent
+  notice overlaps the Plan Dock navigator, in BOTH locales — the gate confirms
+  it is one of the four that pre-exist in English. It is not a Step 4
+  regression, but it is more obvious in the Hebrew screenshot, so do not file
+  it as one. Fixing it is its own small job.
+- Tier 3 was left alone exactly as specified: the seven `left: "50%"` centrings,
+  every `textAlign: "center"`, `isoArt.tsx`'s `right` (a field name on a box
+  face, not CSS), `parametric/`'s spatial left/right, and the deliberate
+  `direction: ltr` isolates in `Brand.tsx` / `Wordmark.tsx`.
+- The editor's mobile collision is no longer a Step 4 concern: `SmallScreenNotice`
+  (commit `56c19ed`) covers anything under 700px on its short side, so Step 4
+  only has to be right from tablet up.
+- `ConsentNotice`'s hand-tuned non-collision map **survived the mirror
+  unchanged**, because every panel it names is pinned logically too and they all
+  cross together. Its comment is rewritten in leading/trailing terms; that is
+  the payoff for doing this with logical properties instead of a locale
+  conditional.
+
 
 ### Step 5 — editor strings (~700–850 keys)
 
