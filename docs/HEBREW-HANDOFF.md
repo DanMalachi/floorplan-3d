@@ -27,31 +27,39 @@ working.** Steps 4 and 5 are untouched.
 **Next task: Step 4, mirroring the editor's layout** (~96 directional
 properties, sorted into three tiers below; three of them must NOT be flipped).
 
-**Four things waiting on Dan, none blocking Step 4:**
+**Two things waiting on Dan. Two more are now CLOSED — do not re-raise them:**
 
-1. **Does the Hebrew landing page read right to a Hebrew reader?** This is the
-   checkpoint question, and it is now a question about WORDS, not layout — the
-   page is fully translated. Layout correctness is verified mechanically (no
-   overflow at 1280 or 390 in either direction, no untranslated English, the
-   wordmark's square measured on the correct side, English unchanged). What is
-   open is judgment: does the voice survive, does the eye land in the right
-   place, is the register right. Two specific calls are argued in
-   `src/landing/content.he.tsx`'s header and want a second opinion — the ghost
-   CTA's pun does not cross into Hebrew and was translated to its function, and
-   "a rehearsal of yours" became the dress-rehearsal idiom.
-2. **Whether to push `feat/hebrew` for a Vercel preview URL.** Offered, not
-   answered. A branch push is a preview deploy, not production — only a `main`
-   push deploys production — but it is still a push to the remote, so ask
-   before doing it. Dan works from his phone and is not on the PC's Wi-Fi, so a
-   preview is the only way he can actually tap through the site; screenshots
-   are the fallback (drive Playwright locally against `npm start`).
+- ~~Does the Hebrew landing page read right?~~ **Answered 2026-09-05.** Dan read
+  it: the translation is correct, and he is "not sure everything is how I would
+  want it to sound" — accepted anyway, explicitly on the grounds that the
+  foundations are strong and the wording is changeable later. So the checkpoint
+  is PASSED with a standing note: the Hebrew VOICE is provisional and expected
+  to be revised. It is cheap to revise — see below — and revising it does not
+  touch Steps 4 or 5.
+- ~~Push `feat/hebrew` for a Vercel preview?~~ **Declined 2026-09-05**, for now.
+  Do not offer it again unprompted.
 
-3. **Should a Hebrew choice be remembered across visits?** Today it is not, and
+**Re-voicing the Hebrew is a one-file edit, and that is by design.** All of it
+lives in `src/landing/content.he.tsx` (plus `(marketing)/about/content.he.tsx`
+for the About prose) as plain prose in a typed object. Change a sentence and you
+are done: no key to migrate, no English file to keep in step, and
+`satisfies LandingContent` catches anything dropped. The header of each file
+records the register and the three judgement calls behind the current wording,
+so whoever revises it is arguing with a stated position rather than guessing at
+one. **A native Hebrew marketing read before launch is still worth having** —
+the copy is faithful and idiomatic, but "faithful" and "the voice Dan wants" are
+different bars and only he can close the second.
+
+1. **Should a Hebrew choice be remembered across visits?** Today it is not, and
    that is a consequence of `localeDetection: false`, not an oversight — see
    Step 2 below. The locale lives in the URL, so it survives every click inside
    a session and does not survive typing `done.design` fresh next week. Making
    it sticky means deciding what a returning Hebrew reader gets when a friend
    sends them an English link. Not a default to drift into; Dan's call.
+
+2. **The editor at 390px is badly overlapped in BOTH locales** — a pre-existing
+   mobile-layout problem, not RTL, and not part of this work. Worth a decision
+   about whether it is in scope before Step 4 makes it look like a new bug.
 
 **Do not re-litigate:** the middleware/proxy question is settled — see Step 1
 below. `npm run build` alone does NOT verify i18n routing; read
