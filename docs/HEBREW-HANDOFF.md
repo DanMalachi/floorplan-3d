@@ -1,8 +1,9 @@
 # Hebrew / RTL — handoff
 
-**Branch:** `feat/hebrew`, three commits in: `533fd89` (the scaffold),
-`485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang) and
-`dd03c04` (Step 2 — the locale switcher).
+**Branch:** `feat/hebrew`, four commits in: `533fd89` (the scaffold),
+`485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang),
+`dd03c04` (Step 2 — the locale switcher) and `3903114` (Step 3 — the landing
+page in Hebrew).
 **Not pushed.** `main` is at `142d8d3` (the UI sweep, already live on done.design).
 
 Read this file, then `docs/HEBREW-HANDOFF.md`'s sibling section in
@@ -19,22 +20,25 @@ untracked paths are the three that are untracked on purpose: `docs/NAMING.md`,
 `docs/NAMING-BRIEF.md`, `public/furniture/blenderkit/opt-ktx2/`. Never
 `git add -A` here.
 
-**Steps 1 and 2 are done and verified.** Steps 3–5 are untouched. Nothing is
-translated yet — both locales still render English copy; `/he` differs by
-`dir="rtl"`, the Hebrew `<title>` on the routes that inherit it, and now a
-language switch in the header.
+**Steps 1, 2 and 3 are done and verified. Step 3 is the checkpoint — the
+landing page is fully Hebrew and the editor is still English and still
+working.** Steps 4 and 5 are untouched.
 
-**Next task: Step 3, translating the landing page — the checkpoint Dan asked to
-see.**
+**Next task: Step 4, mirroring the editor's layout** (~96 directional
+properties, sorted into three tiers below; three of them must NOT be flipped).
 
-**Three things waiting on Dan, none blocking Step 3:**
+**Four things waiting on Dan, none blocking Step 4:**
 
-1. **Does the mirrored landing page read right to a Hebrew reader?** He has
-   phone screenshots of `/he` and `/` at 390px from 2026-09-04. Layout
-   correctness is already verified mechanically (no overflow either direction,
-   header mirrors, English byte-identical); what is open is product judgment —
-   section order, where the eye lands, whether the hero still works with the
-   CTA stack on that side.
+1. **Does the Hebrew landing page read right to a Hebrew reader?** This is the
+   checkpoint question, and it is now a question about WORDS, not layout — the
+   page is fully translated. Layout correctness is verified mechanically (no
+   overflow at 1280 or 390 in either direction, no untranslated English, the
+   wordmark's square measured on the correct side, English unchanged). What is
+   open is judgment: does the voice survive, does the eye land in the right
+   place, is the register right. Two specific calls are argued in
+   `src/landing/content.he.tsx`'s header and want a second opinion — the ghost
+   CTA's pun does not cross into Hebrew and was translated to its function, and
+   "a rehearsal of yours" became the dress-rehearsal idiom.
 2. **Whether to push `feat/hebrew` for a Vercel preview URL.** Offered, not
    answered. A branch push is a preview deploy, not production — only a `main`
    push deploys production — but it is still a push to the remote, so ask
@@ -256,29 +260,85 @@ overflow. `typecheck` clean; `build` clean, all routes still prerendered; `lint`
 unchanged from `main` (50 problems, the one known `TraceOverlay.tsx:224` error),
 with zero findings in any new file.
 
-### Step 3 — translate the landing page (**this is the checkpoint Dan asked for**)
+### Step 3 — translate the landing page — **DONE** (the checkpoint)
 
-`src/landing/content.ts` (226 lines) is already the single home for marketing
-copy — `SLOGANS`×8, `HERO`×6, `HOW_IT_WORKS`, `DIFFERENT`, `FAQ_INTRO`,
-`FAQ`×10, `CTA_BAND`, plus `src/landing/nav.ts` (3 nav + 3 footer labels). That
-is ~62 strings and it is the whole job for this step. Then the five sections
-(`Hero`, `HowItWorks`, `Different`, `Faq`, `CtaBand`), `about/page.tsx` and
-`faq/page.tsx`.
+`/he` is fully Hebrew: homepage, About, FAQ, the hero demo's own chrome, the
+account control and the cookie notice. English is unchanged. The editor is still
+English and still works, which was the other half of the bar.
 
-**Don't forget the page titles.** Each marketing page carries its own static
-English `title` in `export const metadata`, which overrides the translated
-`meta.title` from `[locale]/layout.tsx`. So `/he` currently serves an ENGLISH
-`<title>` while `/he/design` (which inherits) serves the Hebrew one. Confirmed
-2026-09-04. Those static objects have to become `generateMetadata` reading
-`getTranslations` — keeping `alternates: alternatesFor(...)`, which is already
-correct and must not be dropped in the rewrite.
+**The architecture, and why it is not what this file originally assumed.** The
+plan said ~62 strings into the catalogue. That was right about the count and
+wrong about the container. Voice-bearing copy now lives in TYPED PER-LOCALE
+MODULES — `src/landing/content.{en,he}.tsx` behind `content.ts`, and the same
+shape beside `/about` — and only chrome labels go in `messages/*.json`. The
+argument is written out in `content.ts`'s header; the short version:
 
-**Do the `done.` isolation as part of this step**, not Step 4 — see the
-Wordmark entry below. Step 3 is when this copy gets rewritten, so it is the
-cheap moment to route every textual `done.` through one isolated component.
+1. **The structure is part of the translation.** A slogan is set AROUND the
+   wordmark, and which half a line uses is a Hebrew word-order decision, not a
+   constant to fill in. Two of the eight moved slot.
+2. **The rationale has to live beside the copy.** These strings carry a
+   banned-word list, an honesty rule about what the app does NOT do, and a
+   per-answer citation of the code that makes each FAQ answer true. JSON holds
+   no comments, so a key table would have stranded all of it — the same reason
+   this file already gives for keeping the legal pages out of the catalogue.
+3. **Completeness comes free.** Both modules satisfy `LandingContent`, so a
+   missing Hebrew string is a COMPILE ERROR. That is strictly stronger than the
+   pseudo-locale sweep planned for Step 5, and it costs nothing.
 
-**Stop here and show Dan.** The bar: landing fully Hebrew and correctly laid
-out, editor still English and still working.
+**The line to hold, so this does not become two answers to one question: voice
+copy in the modules, chrome labels in the catalogue.**
+
+**The real string count was 124, not 62.** The estimate was exact for the
+homepage table and never covered About's prose, the hero demo's ~24 controls, or
+the ~20 chrome strings in the header, account menu and cookie notice — all of
+which a Hebrew visitor sees on the landing page. Budget accordingly for Step 5.
+
+**`<Brand />` shipped** (`src/brand/Brand.tsx`) — the mark, wrapped in
+`direction: ltr; unicode-bidi: isolate`. Every occurrence of the name in running
+text goes through it, in BOTH locales: writing `"done."` as a literal in
+`content.he.tsx` renders `.done` on the page.
+
+**The Wordmark was flipping too, and worse than predicted.** Its period is an
+ELEMENT, not a character, so no text-based check could see it — the hero
+rendered a big `.done` on `/he`. `Wordmark` and `WordmarkLockup` now both carry
+the isolate. The square's physical `marginLeft` is deliberately NOT flipped: it
+positions a glyph inside a lockup that is now guaranteed LTR, so an
+inline-start value would be wrong there precisely where it is right elsewhere.
+
+**`fontMono` now ends in Rubik**, and `[locale]/layout.tsx`'s claim that it
+needed no Hebrew companion ("every mono use is numeric") is retracted in place.
+The plan drawing's room labels are Hebrew words in a mono label beside mono
+digits; with no fallback the browser substituted a different face per OS. There
+is no Hebrew monospace loaded, so a proportional fallback is the honest floor.
+
+**Two regressions caught and undone while passing through:** `Footer` had been
+flipped to a client component to reach `useTranslations` (it ships the whole
+footer for strings that never change — it is a server component again, on
+`getTranslations`), and `Faq`/`Different` were keyed on their own copy, which
+changes with the language; both now carry stable `id`s.
+
+**Page titles are `generateMetadata`** on all three marketing pages, so `/he`
+stops serving English ones. `alternatesFor()` is kept on every one.
+
+**Verified** against a production build, both locales, at 1280 and 390: a DOM
+sweep of `/he`, `/he/about` and `/he/faq` with every `<details>` forced open
+finds ZERO untranslated English once the deliberate Latin is excluded (the mark,
+PDF/DXF/DWG/JPG/PNG/CAD, Google, the switcher's own "English", m², ©); `lang`/
+`dir` correct; no horizontal overflow at either width; the copper square measured
+to the RIGHT of the letters in all three wordmarks on the page; English still
+LTR and unchanged. `typecheck` clean, `build` clean with every marketing route
+still `●` prerendered, `lint` at the same 50 problems / 1 error as `main`.
+
+**The sweep has one blind spot, worth knowing before trusting it in Step 5:** it
+only sees what is IN THE DOM. The hero demo's controls mount only once the
+sequence has built a room, so its ~24 labels were never in the sweep's sample —
+they were translated from a static audit, not caught by the gate. A pseudo-locale
+would find them; the sweep will not.
+
+**Two things about Step 4 that this step already settled**, so do not re-derive
+them: `Wordmark.tsx` is DONE (it was listed under Tier 3 as needing the isolate
+— it has it), and the `done.` period problem is closed everywhere except any
+copy that has not been translated yet.
 
 ### Step 4 — editor RTL (~96 directional properties)
 
