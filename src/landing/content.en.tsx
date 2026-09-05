@@ -193,7 +193,7 @@ export const EN: LandingContent = {
       // and live collaboration rooms.
       id: "canIShare",
       q: "Can I share what I've made?",
-      a: "Yes — a share link gives someone a view of your room, or lets them design alongside you in real time, whichever you choose. You decide who can only look and who can edit.",
+      a: "Yes — a share link gives someone a view of your project, or lets them design alongside you in real time, whichever you choose. You decide who can only look and who can edit.",
     },
     {
       // Source: src/viewport3d/camera/inputVocabulary.ts (real one-finger

@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
+import { B } from "@/brand/tokens";
 import { useHover } from "./planDock/useHover";
 import { hardNavHref } from "@/i18n/navigation";
 import { Brand } from "@/brand/Brand";
@@ -174,7 +175,7 @@ export function SmallScreenNotice() {
       </p>
 
       <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: PD.textTertiary, maxWidth: 380 }}>
-        {t("sharedRoomsFine")}
+        {t("sharedProjectsFine")}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginTop: 6 }}>
@@ -252,7 +253,13 @@ function PhoneToLaptop() {
       <path d="M8.5 34.5h5" stroke={PD.textTertiary} strokeWidth="1.4" strokeLinecap="round" />
       <path
         d="M31 23h16m0 0-4.5-4.5M47 23l-4.5 4.5"
-        stroke={PD.accent}
+        // The site's copper, not the editor's blue. `src/brand/tokens.ts` reserves
+        // copper for the wordmark's period and CTA fills and says "not icons" —
+        // Dan's call to spend it here (2026-09-05), on the one arrow that carries
+        // the whole message. It resolves through `var(--br-accent, #DF7940)`, and
+        // the fallback IS the copper, so it works in the editor where the brand
+        // stylesheet is never mounted.
+        stroke={B.accent}
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"

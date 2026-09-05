@@ -79,7 +79,7 @@
   "smallScreen": {
     "title": "The editor wants a bigger screen.",
     "body": "Drawing walls to scale needs more room than a phone gives, so the mobile editor is still being built. Open <brand></brand> on a laptop or tablet and everything here works today.",
-    "sharedRoomsFine": "A room someone has shared with you still opens fine on this phone — it's the drawing that needs the space.",
+    "sharedProjectsFine": "A project someone has shared with you still opens fine on this phone — it's the drawing that needs the space.",
     "continueAnyway": "Continue anyway",
     "backToSite": "Back to the site"
   }
