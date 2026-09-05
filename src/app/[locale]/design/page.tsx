@@ -18,6 +18,7 @@ import { Tooltip } from "@/ui/planDock/Tooltip";
 import { LiveIcon } from "@/ui/planDock/icons";
 import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
 import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
+import { SmallScreenNotice } from "@/ui/SmallScreenNotice";
 import { ProjectBar } from "@/ui/ProjectBar";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
@@ -397,6 +398,11 @@ export default function Home() {
       }}
     >
       <PdThemeStyle />
+      {/* Mounted here and NOWHERE else, because this covers the EDITOR. A
+          shared room (/v/[id]) is a different route and stays open on a phone,
+          which is exactly what the FAQ promises about walking through a
+          finished room. */}
+      <SmallScreenNotice />
       <CloudSync />
       <ModeSwitcher />
       <EditorProjectBar onOpenProjects={() => setProjectsOpen(true)} />
