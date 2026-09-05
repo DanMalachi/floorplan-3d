@@ -17,6 +17,7 @@ import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
 import { LiveIcon } from "@/ui/planDock/icons";
 import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
+import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 import { ProjectBar } from "@/ui/ProjectBar";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
@@ -411,6 +412,7 @@ export default function Home() {
         }}
       >
         <AccountMenu />
+        <LocaleSwitch />
         <ThemeToggle />
       </div>
       {!showTrace && <GoLiveButton />}

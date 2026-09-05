@@ -26,6 +26,22 @@ export const defaultLocale = "en" satisfies Locale;
  *  the string — the next RTL locale should not have to hunt down comparisons. */
 export const dirOf = (locale: string): "rtl" | "ltr" => (locale === "he" ? "rtl" : "ltr");
 
+/**
+ * What each language calls ITSELF — the endonym.
+ *
+ * This lives here rather than in `messages/*.json` because it is a property of
+ * the locale, not a translation of anything: "עברית" is the right label in the
+ * English build too. Putting it in the catalogue invites the one mistake a
+ * language switcher must not make — a translator localising it, so the Hebrew
+ * build offers "אנגלית" to a reader who by definition cannot read that word.
+ * Endonyms are how someone finds their own language in a list they cannot
+ * otherwise read.
+ */
+export const localeName: Record<Locale, string> = {
+  en: "English",
+  he: "עברית",
+};
+
 export const routing = defineRouting({
   locales,
   defaultLocale,
@@ -36,4 +52,21 @@ export const routing = defineRouting({
   // tell you were moved. The switcher is explicit and its choice persists;
   // that is the behaviour people can reason about.
   localeDetection: false,
+  // No NEXT_LOCALE cookie either, and this follows from the line above rather
+  // than being a second opinion. next-intl writes that cookie whenever a
+  // `<Link>` crosses locales, but `resolveLocale` only ever READS it when
+  // `localeDetection` is on — so with detection off it is a cookie nothing can
+  // consult. It would also make a liar of the privacy policy, which says in as
+  // many words that the only cookies set are Supabase's strictly-necessary
+  // session ones (src/app/[locale]/legal/privacy/page.tsx, "Cookies & local
+  // storage"). A cookie that does nothing is not worth amending a legal page for.
+  //
+  // The consequence, stated plainly so nobody has to discover it: the locale
+  // choice lives in the URL and nowhere else. It survives every internal
+  // navigation — that is what src/i18n/navigation.ts is for — and it does not
+  // survive someone typing `done.design` fresh a week later; they get English.
+  // Making Hebrew sticky means deciding what happens to a shared English link
+  // opened by someone who once chose Hebrew, which is a product call, not a
+  // default to drift into.
+  localeCookie: false,
 });

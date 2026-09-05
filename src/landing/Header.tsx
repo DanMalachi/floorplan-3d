@@ -6,6 +6,7 @@ import { B, type as ty, ctaPrimary } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
 import { APP_HREF, navItems } from "./nav";
 import { AccountControl } from "./AccountControl";
+import { LocaleSwitch } from "./LocaleSwitch";
 import { CTA_CLASS, MENU_ITEM_CLASS, NAV_LINK_CLASS, OUTLINE_BTN_CLASS } from "./hoverCss";
 
 // -----------------------------------------------------------------------------
@@ -99,6 +100,7 @@ export function Header() {
 
         {!narrow && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 10 }}>
+            <LocaleSwitch />
             <AccountControl />
             <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary({ padding: "10px 18px", fontSize: 14 })}>
               Open done.
@@ -144,6 +146,9 @@ export function Header() {
               {i.label}
             </Link>
           ))}
+          {/* Last row rather than first: language is a utility, and the sheet's
+              own order should still read About → FAQ → the thing you came for. */}
+          <LocaleSwitch variant="sheet" onNavigate={() => setOpen(false)} />
           <Link
             href={APP_HREF}
             onClick={() => setOpen(false)}

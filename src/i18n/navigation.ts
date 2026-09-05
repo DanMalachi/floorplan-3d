@@ -14,9 +14,40 @@
 // href. Genuinely external links stay on a plain `<a>`.
 
 import { createNavigation } from "next-intl/navigation";
-import { routing } from "./routing";
+import { routing, type Locale } from "./routing";
 
 export const { Link, redirect, usePathname, useRouter, getPathname } = createNavigation(routing);
+
+/**
+ * The href for "the page you are reading now, but in `locale`" — the one link
+ * in the app that deliberately leaves the current locale.
+ *
+ * ── Why not `<Link href={pathname} locale={target}>` ────────────────────────
+ * That is the shape next-intl's own docs give a switcher, and it is wrong for
+ * this app. Setting `locale` on a `Link` also sets next-intl's `forcePrefix`,
+ * so switching to English emits `/en/faq` instead of `/faq`. That URL is not
+ * broken — `src/proxy.ts` 307s it to the canonical one — but it puts a link to
+ * a redirect in the header of every page, which is the exact near-miss
+ * `localePath` below refuses to make for the sitemap, and it costs a round trip
+ * on every switch into English. next-intl forces the prefix so its middleware
+ * can see the target locale and write the cookie; with `localeDetection` and
+ * `localeCookie` both off (see routing.ts) there is no cookie to write and
+ * `/faq` already means English unambiguously.
+ *
+ * `getPathname` WITHOUT `forcePrefix` applies the ordinary "as-needed" rule
+ * instead: `/faq` for English, `/he/faq` for Hebrew.
+ *
+ * Pass the query string along in `pathWithQuery` — this app keeps real state
+ * there (`?g=` share grants, `?perf=1`/`?dpr=1`, `?home=1`). Unlike
+ * `localePath`, this handles a query on the site ROOT correctly: `/?perf=1`
+ * becomes `/he?perf=1`, not the `/he/?perf=1` that 308s.
+ *
+ * The href it returns already names its locale, so render it with a PLAIN
+ * `next/link` — the locale-aware `Link` above would prefix it a second time.
+ */
+export function switchLocaleHref(locale: Locale, pathWithQuery: string): string {
+  return getPathname({ locale, href: pathWithQuery });
+}
 
 /**
  * Prefix a path by hand, for the handful of navigations that must NOT be

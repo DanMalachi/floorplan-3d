@@ -1,7 +1,8 @@
 # Hebrew / RTL — handoff
 
-**Branch:** `feat/hebrew`, two commits in: `533fd89` (the scaffold) and
-`485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang).
+**Branch:** `feat/hebrew`, three commits in: `533fd89` (the scaffold),
+`485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang) and
+Step 2 (the locale switcher).
 **Not pushed.** `main` is at `142d8d3` (the UI sweep, already live on done.design).
 
 Read this file, then `docs/HEBREW-HANDOFF.md`'s sibling section in
@@ -11,21 +12,22 @@ one is the argument.
 
 ---
 
-## Start here (session of 2026-09-04 → next)
+## Start here (session of 2026-09-05 → next)
 
 **Working tree is clean, everything is committed, nothing is pushed.** The only
 untracked paths are the three that are untracked on purpose: `docs/NAMING.md`,
 `docs/NAMING-BRIEF.md`, `public/furniture/blenderkit/opt-ktx2/`. Never
 `git add -A` here.
 
-**Step 1 is done and verified** (locale routing, internal links, sitemap/robots,
-per-page hreflang). Steps 2–5 are untouched. Nothing is translated yet — both
-locales still render English copy; `/he` differs only by `dir="rtl"`.
+**Steps 1 and 2 are done and verified.** Steps 3–5 are untouched. Nothing is
+translated yet — both locales still render English copy; `/he` differs by
+`dir="rtl"`, the Hebrew `<title>` on the routes that inherit it, and now a
+language switch in the header.
 
-**Next task: Step 2, the locale switcher.** Then Step 3, which is the checkpoint
-Dan asked to see.
+**Next task: Step 3, translating the landing page — the checkpoint Dan asked to
+see.**
 
-**Two things waiting on Dan, neither blocking Step 2:**
+**Three things waiting on Dan, none blocking Step 3:**
 
 1. **Does the mirrored landing page read right to a Hebrew reader?** He has
    phone screenshots of `/he` and `/` at 390px from 2026-09-04. Layout
@@ -39,6 +41,13 @@ Dan asked to see.
    before doing it. Dan works from his phone and is not on the PC's Wi-Fi, so a
    preview is the only way he can actually tap through the site; screenshots
    are the fallback (drive Playwright locally against `npm start`).
+
+3. **Should a Hebrew choice be remembered across visits?** Today it is not, and
+   that is a consequence of `localeDetection: false`, not an oversight — see
+   Step 2 below. The locale lives in the URL, so it survives every click inside
+   a session and does not survive typing `done.design` fresh next week. Making
+   it sticky means deciding what a returning Hebrew reader gets when a friend
+   sends them an English link. Not a default to drift into; Dan's call.
 
 **Do not re-litigate:** the middleware/proxy question is settled — see Step 1
 below. `npm run build` alone does NOT verify i18n routing; read
@@ -181,12 +190,71 @@ internal href on `/he` carries the prefix and every one on `/` is unchanged;
 clean, `lint` unchanged from `main` (the one known `TraceOverlay.tsx:224`
 error).
 
-### Step 2 — the locale switcher
+### Step 2 — the locale switcher — **DONE**
 
-None exists yet. Copy the shape of `src/ui/planDock/theme.tsx` — it is the
-working precedent for a persisted user preference applied to
-`document.documentElement`. Strings are already in the catalogue under
-`locale.*`. It needs to appear on both the marketing header and in the editor.
+One hook and two skins, the same split `AccountControl` / `AccountMenu` already
+makes: `src/i18n/useLocaleSwitch.ts` does the href arithmetic,
+`src/landing/LocaleSwitch.tsx` wears the brand tokens (desktop header beside
+Sign in, and a row in the narrow-screen sheet) and
+`src/ui/planDock/LocaleSwitch.tsx` wears the glass ones (editor top bar, between
+`AccountMenu` and `ThemeToggle`).
+
+It reads **"עברית" / "English"** — the endonym, always in the language it leads
+to. `localeName` lives in `routing.ts`, not in the catalogue, precisely so a
+translator cannot localise it: the Hebrew build offering "אנגלית" would be
+addressing a reader who by definition cannot read that word.
+
+Four things here are not obvious, and three of them are traps:
+
+1. **`<Link href={pathname} locale={target}>` is next-intl's documented switcher
+   shape and it is WRONG here.** Setting `locale` also sets `forcePrefix`, so
+   English comes out as `/en/faq`, not `/faq`. It works — `src/proxy.ts` 307s it
+   to the canonical URL — but it puts a link to a redirect in the header of
+   every page, which is the same near-miss `localePath` refuses to make for the
+   sitemap. `switchLocaleHref` in `src/i18n/navigation.ts` calls `getPathname`
+   *without* `forcePrefix` instead, and the result is rendered with a **plain
+   `next/link`** — the locale-aware `Link` would prefix an already-prefixed
+   href a second time. Those two files are the only plain-`next/link` call sites
+   in the app and both say why.
+2. **The query string has to be carried by hand**, because `usePathname()` is
+   path-only and this app keeps real state in the query (`?g=` share grants,
+   `?perf=1` / `?dpr=1`, `?home=1`). `useSearchParams()` is the obvious hook and
+   the wrong one: reading it from a component on a statically-prerendered page
+   opts that page out of static rendering, and this sits in the site header. So
+   it reads `location.search` through `useSyncExternalStore`, exactly as
+   `usePerfEnabled` does and for the reasons written up there. Verified: the
+   build still lists every marketing route as `●` prerendered.
+3. **`localeCookie: false` is now set in `routing.ts`.** next-intl writes a
+   `NEXT_LOCALE` cookie whenever a Link crosses locales, but `resolveLocale`
+   only reads it when `localeDetection` is on — so with detection off it was a
+   cookie nothing could consult, and the privacy policy says in as many words
+   that the only cookies set are Supabase's. Not worth amending a legal page for
+   a no-op. The consequence is item 3 in "waiting on Dan" above.
+4. **`prefetch={false}` on both.** The header is on screen for every visitor of
+   every page; the default would quietly pull the other locale's copy of the
+   site for a control most people click once or never.
+
+Also fixed in passing, in the same bar: `ThemeToggle`'s tooltip was
+`placement="top"` at `top: 14` inside an `overflow: hidden` `<main>`, so it was
+drawn off the edge of the window rather than shown. Both controls now use
+`bottom`.
+
+**Not in scope, on purpose:** `/legal/*`, `/account` and `/calibration` render
+no header at all, so they have no switcher. They are reached from pages that do,
+and the locale rides along.
+
+**Verified** against a production build, in a real browser (Playwright, ~25
+assertions): the switcher's href on `/` `/about` `/faq` `/design` and each `/he`
+twin resolves to the canonical URL in the other locale with **no `/en/…` hop**;
+`?dpr=1`, `?perf=1` and a two-param query survive the switch in both directions;
+a real click lands on `/he/faq` with `lang`/`dir` correct and no horizontal
+overflow, and clicking back returns to `/faq`; the label renders as "עברית" with
+Rubik actually loaded on an English page; in the editor the control is the
+topmost element at its own centre (nothing overlaps it); at 390px it is absent
+from the collapsed bar and present as a row in the open sheet, both locales, no
+overflow. `typecheck` clean; `build` clean, all routes still prerendered; `lint`
+unchanged from `main` (50 problems, the one known `TraceOverlay.tsx:224` error),
+with zero findings in any new file.
 
 ### Step 3 — translate the landing page (**this is the checkpoint Dan asked for**)
 
@@ -324,8 +392,11 @@ visually and would not have come out of curl:
   Shoot the English twin before filing any editor layout bug, or you will
   attribute a mobile problem to the translation.
 
-The script lived in the scratchpad and was deleted; it is ~30 lines. Note it
-has to run from *inside* the repo to resolve `playwright` from `node_modules`.
+The script lived in the scratchpad and was deleted; it is ~30 lines. Step 2's
+larger one (~130 lines, the assertion list quoted above) went the same way. Both
+resolve `playwright` by absolute path into this repo's `node_modules`, which is
+what lets them live in the scratchpad rather than in the tree — a relative
+`require("playwright")` only works from *inside* the repo.
 
 - **Pseudo-locale.** Add a dev-only `en-XA` that brackets every string and pads
   it ~40%. It exposes unextracted strings and truncation instantly and is far

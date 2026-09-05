@@ -4,9 +4,7 @@
     "description": "Trace the floorplan you already have into a 3D model of your home, then furnish it, paint it, and walk through it in your browser."
   },
   "locale": {
-    "switchTo": "עברית",
     "label": "Language",
-    "en": "English",
-    "he": "עברית"
+    "switchTo": "Switch to {language}"
   }
 }
