@@ -7,7 +7,8 @@ import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
 import { APP_HREF } from "../nav";
 import { CTA_CLASS } from "../hoverCss";
-import { HERO, SLOGANS } from "../content";
+import { useLocale, useTranslations } from "next-intl";
+import { landingContent } from "../content";
 import {
   advanceHeroStage,
   getHeroStage,
@@ -58,12 +59,15 @@ const TRACE_BTN_CSS = `
 .${TRACE_BTN_CLASS}:focus-visible { outline: 2px solid ${B.accent}; outline-offset: 3px; }
 `;
 
-/** What a screen reader is told as the sequence moves. */
-const STAGE_ANNOUNCEMENT: Record<string, string> = {
-  idle: "",
-  tracing: "Drawing the floorplan: walls, then windows and doors.",
-  building: "Generating the three-dimensional model.",
-  done: "The room is built. Open done. to draw your own.",
+/** What a screen reader is told as the sequence moves. Catalogue strings rather
+ *  than content-module ones: an aria-live announcement is chrome, and it is the
+ *  one place the product's name needs no bidi isolate — it is spoken, never
+ *  laid out. `idle` is deliberately absent and resolves to the empty string, so
+ *  the live region says nothing before the sequence starts. */
+const ANNOUNCEMENT_KEY: Record<string, string> = {
+  tracing: "announceTracing",
+  building: "announceBuilding",
+  done: "announceDone",
 };
 
 /** Signals that this button PLAYS something rather than navigating. */
@@ -90,7 +94,7 @@ function IconSkip() {
  *
  * A fixed `done.` wordmark with a rotating slogan underneath it — together
  * they read as one sentence ("done. before you start.", "done. with a sofa
- * that fits.", ...; the full set is content.ts's SLOGANS) — a subhead that
+ * that fits.", ...; the full set is content.ts's slogans) — a subhead that
  * states the actual mechanic in plain terms, and the two calls to action.
  *
  * `demo` is the 3D room. It is owned and rendered by another component; this
@@ -103,6 +107,13 @@ function IconSkip() {
  * cycle so a mid-session preference change is honoured within one dwell.
  */
 export function Hero({ demo }: { demo?: React.ReactNode }) {
+  // `useLocale()` rather than a prop, unlike the server sections on this page:
+  // this component is already inside `NextIntlClientProvider`, where the locale
+  // is context and not a request read, and the hero is reached from two places
+  // (the homepage and the `?hero=` furnishing harness) that would otherwise both
+  // have to remember to thread it.
+  const { slogans, hero, openApp } = landingContent(useLocale());
+  const tHero = useTranslations("hero");
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const reducedRef = useRef(false);
@@ -114,10 +125,10 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
   const stage = useSyncExternalStore(subscribeHeroStage, getHeroStage, getHeroStageServer);
   const running = stage === "tracing" || stage === "building";
   const label = running
-    ? HERO.ctaGhostLabelRunning
+    ? hero.ctaGhostLabelRunning
     : stage === "done"
-      ? HERO.ctaGhostLabelDone
-      : HERO.ctaGhostLabel;
+      ? hero.ctaGhostLabelDone
+      : hero.ctaGhostLabel;
 
   // A client-side navigation back to the homepage must not inherit a finished
   // sequence — the hero would open on a built room with no story behind it.
@@ -145,7 +156,7 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
         setVisible(false); // start the fade-out; the line swaps once it's invisible
         fadeTimer = setTimeout(() => {
           if (cancelled) return;
-          setIndex((i) => (i + 1) % SLOGANS.length);
+          setIndex((i) => (i + 1) % slogans.length);
           setVisible(true);
           schedule();
         }, FADE_MS);
@@ -159,7 +170,11 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
       clearTimeout(fadeTimer);
       mq.removeEventListener("change", onChange);
     };
-  }, []);
+    // `slogans.length` is a real dependency now that the set comes from the
+    // locale rather than from a module constant. It cannot change without the
+    // locale changing, and that is a route change which remounts this anyway —
+    // so listing it costs nothing and keeps the rule honest.
+  }, [slogans.length]);
 
   return (
     <section
@@ -186,7 +201,7 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
             opacity: visible ? 1 : 0,
           }}
         >
-          {SLOGANS[index].lead}
+          {slogans[index].lead}
         </span>
         <Wordmark tone="brand" style={{ fontSize: ty.hero }} />
         <span
@@ -197,7 +212,7 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
             opacity: visible ? 1 : 0,
           }}
         >
-          {SLOGANS[index].tail}
+          {slogans[index].tail}
         </span>
       </h1>
 
@@ -211,13 +226,13 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
           color: B.ink2,
         }}
       >
-        {HERO.subhead}
+        {hero.subhead}
       </p>
 
       <style dangerouslySetInnerHTML={{ __html: TRACE_BTN_CSS }} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", alignItems: "center" }}>
         <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary({ padding: "15px 26px", fontSize: 16.5 })}>
-          {HERO.ctaPrimaryLabel}
+          {openApp}
         </Link>
         {/* Not a link. It plays the hero's own animation in place — see
             ../heroSequence.ts for why the two ends talk through a module
@@ -256,10 +271,10 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
           whiteSpace: "nowrap",
         }}
       >
-        {STAGE_ANNOUNCEMENT[stage]}
+        {ANNOUNCEMENT_KEY[stage] ? tHero(ANNOUNCEMENT_KEY[stage]) : ""}
       </div>
 
-      <div style={{ fontFamily: B.fontUi, fontSize: ty.small, color: B.ink4 }}>{HERO.note}</div>
+      <div style={{ fontFamily: B.fontUi, fontSize: ty.small, color: B.ink4 }}>{hero.note}</div>
 
       {/* Deliberately unframed. A border, a radius and a shadow would present
           the room as an application docked inside the page — the exact "small

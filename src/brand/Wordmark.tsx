@@ -66,6 +66,23 @@ export function Wordmark({
       style={{
         display: "inline-flex",
         alignItems: "baseline",
+        // The mark is a Latin lockup and lays itself out left to right in EVERY
+        // locale. Without this, an RTL page reverses the two inline children
+        // below and the copper square lands to the LEFT of the letters — the
+        // wordmark rendered `.done` on /he before this line existed.
+        //
+        // `isolate` as well as `direction`, because the two do different jobs:
+        // `direction` fixes the order INSIDE the mark, and the isolate stops the
+        // surrounding sentence from reordering the mark as a whole against the
+        // punctuation next to it. `<Brand />` (src/brand/Brand.tsx) applies the
+        // same pair to the mark's textual form for the same reason.
+        //
+        // The square's own `marginLeft` stays PHYSICAL and is not flipped: it
+        // positions a glyph inside this Latin lockup, which is now guaranteed to
+        // be laid out left to right, so an inline-start value would be wrong
+        // here exactly where it is right everywhere else.
+        direction: "ltr",
+        unicodeBidi: "isolate",
         fontFamily: B.fontDisplay,
         fontWeight: 800,
         fontSize: size,
@@ -144,7 +161,19 @@ export function WordmarkLockup({
   style?: React.CSSProperties;
 }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "baseline", gap: "0.5em", ...style }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "baseline",
+        gap: "0.5em",
+        // Same reason as `Wordmark` above, one level out: this pairs the mark
+        // with the domain, and on an RTL page the two would otherwise swap so
+        // the address read before the name it belongs to.
+        direction: "ltr",
+        unicodeBidi: "isolate",
+        ...style,
+      }}
+    >
       <Wordmark size={size} />
       <span
         style={{

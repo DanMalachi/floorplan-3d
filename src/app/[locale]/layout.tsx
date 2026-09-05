@@ -44,9 +44,12 @@ const ibmPlexMono = IBM_Plex_Mono({
 // per-CHARACTER: Latin renders in Manrope, Hebrew finds no Manrope glyph and
 // lands on Rubik. One stack, both scripts, no conditional anywhere.
 //
-// `fontMono` deliberately gets no Hebrew companion: every mono use in this app
-// is numeric (dimensions, coordinates, micro-labels) and Hebrew uses Latin
-// digits.
+// `fontMono` was given no Hebrew companion at first, on the grounds that every
+// mono use in this app is numeric (dimensions, coordinates, micro-labels) and
+// Hebrew uses Latin digits. Step 3 disproved that: the hero's plan drawing puts
+// Hebrew ROOM NAMES in a mono label, right beside the dimension figures. Rubik
+// is now appended there too — see the note on `fontMono` in src/brand/tokens.ts
+// for why a proportional fallback is the right answer rather than a wrong one.
 const rubik = Rubik({
   subsets: ["hebrew", "latin"],
   variable: "--font-rubik",

@@ -6,6 +6,7 @@ import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
 import { CloseIcon } from "@/ui/planDock/icons";
 import { useSceneStore } from "@/store/useSceneStore";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 // -----------------------------------------------------------------------------
@@ -41,6 +42,7 @@ import { Link } from "@/i18n/navigation";
 const STORAGE_KEY = "fp3d:legalNotice:v1";
 
 export function ConsentNotice() {
+  const t = useTranslations("consent");
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(true); // hidden until we know the real state
   const appMode = useSceneStore((s) => s.appMode);
@@ -93,22 +95,27 @@ export function ConsentNotice() {
         ...pdGlass({ borderRadius: PD.radiusM }),
       }}
     >
+      {/* The privacy link comes through as a rich-text tag rather than as a
+          sentence split around it: Hebrew does not put the link in the same
+          place English does, and a hard-coded "…tracking. <Link/>." forces the
+          English order onto every language. */}
       <div style={{ flex: 1 }}>
-        This app only sets strictly-necessary cookies, to keep you signed in
-        — no analytics or ad tracking.{" "}
-        <Link href="/legal/privacy" style={{ color: PD.accentText }}>
-          Privacy Policy
-        </Link>
-        .
+        {t.rich("body", {
+          link: (chunks) => (
+            <Link href="/legal/privacy" style={{ color: PD.accentText }}>
+              {chunks}
+            </Link>
+          ),
+        })}
       </div>
-      <DismissButton onClick={dismiss} />
+      <DismissButton onClick={dismiss} label={t("dismiss")} />
     </div>
   );
 }
 
 /** Dismiss. Its own component so it can hold a hover flag — this is a 20px
  *  target and needed one more than most. */
-function DismissButton({ onClick }: { onClick: () => void }) {
+function DismissButton({ onClick, label }: { onClick: () => void; label: string }) {
   const [hovered, hoverBind] = useHover();
   return (
     // The notice sits at the bottom-left, so the default `top` placement has
@@ -117,7 +124,7 @@ function DismissButton({ onClick }: { onClick: () => void }) {
     <Tooltip label="Dismiss">
       <button
         onClick={onClick}
-        aria-label="Dismiss cookie notice"
+        aria-label={label}
         {...hoverBind}
         style={{
           flex: "0 0 auto",

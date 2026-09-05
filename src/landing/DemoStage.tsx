@@ -20,7 +20,8 @@ import { TraceOverlay, PLAN_TEXT_CSS } from "./TraceOverlay";
 import type { HeroStage } from "./heroSequence";
 import { APP_HREF } from "./nav";
 import { CTA_CLASS } from "./hoverCss";
-import { HERO } from "./content";
+import { useLocale, useTranslations } from "next-intl";
+import { landingContent } from "./content";
 
 // -----------------------------------------------------------------------------
 // Everything heavy about the hero demo, isolated behind one dynamic import.
@@ -109,19 +110,22 @@ const WARM_K = 2400;
  *  Each carries its OWN texture as the swatch, served from the same directory
  *  the renderer loads the material from — so the chip is a picture of the thing
  *  it applies, and cannot drift from it the way a hand-picked hex would. */
+// `labelKey` names a "demo" message key rather than spelling the label in
+// English here — this array sits at module scope so it cannot call
+// `useTranslations` itself; the row that renders it looks the string up.
 const FLOORS = [
-  { id: "wood-chevron", label: "Chevron" },
-  { id: "wood-oak-natural", label: "Oak" },
-  { id: "concrete-light", label: "Concrete" },
+  { id: "wood-chevron", labelKey: "floorChevron" },
+  { id: "wood-oak-natural", labelKey: "floorOak" },
+  { id: "concrete-light", labelKey: "floorConcrete" },
 ] as const;
 
 /** Window frame colours. These are the three a real buyer actually chooses
  *  between, and they carry their own swatch — a named colour with no chip is a
  *  guess until you click it. */
 const FRAMES = [
-  { hex: "#1C1D1F", label: "Black" },
-  { hex: "#8B8E92", label: "Grey" },
-  { hex: "#EDEDEA", label: "White" },
+  { hex: "#1C1D1F", labelKey: "frameBlack" },
+  { hex: "#8B8E92", labelKey: "frameGrey" },
+  { hex: "#EDEDEA", labelKey: "frameWhite" },
 ] as const;
 
 // Tied to the hero scene rather than re-stated, so the control panel opening
@@ -317,6 +321,7 @@ const OPTION_MIN_PX = 104;
  * stack on a marketing page.
  */
 function DemoControls({ dimmed }: { dimmed: boolean }) {
+  const t = useTranslations("demo");
   const wallMode = useSceneStore((s) => s.wallMode);
   const setWallMode = useSceneStore((s) => s.setWallMode);
   const fixtures = useSceneStore((s) => s.scene.fixtures);
@@ -380,36 +385,36 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
        late would grow the row and shove the page down at the exact moment the
        visitor is watching the reveal. */
     <div className={`${PANEL_CLASS}${dimmed ? " is-dimmed" : ""}`} inert={dimmed || undefined}>
-      <ControlRow label="Walls">
+      <ControlRow label={t("rowWalls")}>
         <ControlButton
-          label="Solid"
+          label={t("wallsSolid")}
           icon={<IconSolid />}
           active={wallMode === "full"}
           onClick={() => setWalls("full")}
         />
         <ControlButton
-          label="See through"
+          label={t("wallsSeeThrough")}
           icon={<IconSeeThrough />}
           active={wallMode === "cutaway"}
           onClick={() => setWalls("cutaway")}
         />
       </ControlRow>
 
-      <ControlRow label="Lighting">
+      <ControlRow label={t("rowLighting")}>
         <ControlButton
-          label="White"
+          label={t("lightWhite")}
           icon={<IconWhiteLight />}
           active={!warm}
           onClick={() => setLightK(WHITE_K)}
         />
-        <ControlButton label="Warm" icon={<IconWarmLight />} active={warm} onClick={() => setLightK(WARM_K)} />
+        <ControlButton label={t("lightWarm")} icon={<IconWarmLight />} active={warm} onClick={() => setLightK(WARM_K)} />
       </ControlRow>
 
-      <ControlRow label="Floor">
+      <ControlRow label={t("rowFloor")}>
         {FLOORS.map((f) => (
           <ControlButton
             key={f.id}
-            label={f.label}
+            label={t(f.labelKey)}
             swatch={{ image: `/materials/floors/${f.id}/thumb.webp` }}
             active={floor === f.id}
             onClick={() => setFloor(f.id)}
@@ -417,11 +422,11 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
         ))}
       </ControlRow>
 
-      <ControlRow label="Windows">
+      <ControlRow label={t("rowWindows")}>
         {FRAMES.map((f) => (
           <ControlButton
             key={f.hex}
-            label={f.label}
+            label={t(f.labelKey)}
             swatch={{ color: f.hex }}
             active={frame.toLowerCase() === f.hex.toLowerCase()}
             onClick={() => setFrame(f.hex)}
@@ -441,6 +446,7 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
  * affordance nobody can see is the same as one that isn't there.
  */
 function DemoToolbar() {
+  const t = useTranslations("demo");
   const playing = useSyncExternalStore(subscribeOrbitPlaying, getOrbitPlaying, getOrbitPlayingServer);
   return (
     <div className={TOOLBAR_CLASS}>
@@ -455,11 +461,11 @@ function DemoToolbar() {
         }}
       >
         <IconDrag />
-        Drag to orbit
+        {t("dragToOrbit")}
       </span>
       <button
         onClick={() => setOrbitPlaying(!playing)}
-        aria-label={playing ? "Pause the orbit" : "Resume the orbit"}
+        aria-label={playing ? t("pauseOrbit") : t("resumeOrbit")}
         className={BTN_CLASS}
         style={{
           display: "flex",
@@ -651,6 +657,9 @@ export default function DemoStage({
   // A remount is a new component instance, so this runs again then; there is no
   // separate cleanup or re-seed path to keep in sync. Nothing is restored on
   // unmount, since the marketing page never shares a session with the editor.
+  const locale = useLocale();
+  const t = useTranslations("demo");
+
   const priorSlice = useState(() => seedDemoScene(!reduced))[0];
 
   // PUT THE STORE BACK. This file writes the hero's apartment into the SAME
@@ -759,7 +768,7 @@ export default function DemoStage({
           <i style={{ background: "#FEBC2E" }} />
           <i style={{ background: "#28C840" }} />
         </span>
-        <span className={TITLE_CLASS}>Studio apartment</span>
+        <span className={TITLE_CLASS}>{t("windowTitle")}</span>
       </div>
       <div className={BODY_CLASS}>
         <div className={STAGE_CLASS}>
@@ -787,7 +796,7 @@ export default function DemoStage({
         {built && <DemoToolbar />}
         {built && (
           <Link href={APP_HREF} className={`${REVEAL_CLASS} ${CTA_CLASS}`} style={ctaPrimary()}>
-            {HERO.revealCta}
+            {landingContent(locale).openApp}
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { B } from "@/brand/tokens";
 import {
   HERO_BOUNDS,
@@ -206,6 +207,7 @@ export interface TraceOverlayProps {
 }
 
 export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayProps) {
+  const t = useTranslations("demo");
   const planRef = useRef<SVGSVGElement>(null);
   const hudRef = useRef<SVGSVGElement>(null);
   const traceRefs = useRef<(SVGLineElement | null)[]>([]);
@@ -408,11 +410,11 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
         })}
 
         <g className={PLAN_TEXT_CLASS}>
-          <RoomLabel x={480} y={250} name="STUDIO" area="30.0 m²" />
+          <RoomLabel x={480} y={250} name={t("roomStudio")} area="30.0 m²" />
           {/* Low and left of the bathroom's centre: the door is hung mid-way up
               the shared wall, and its swing arc sweeps straight through where a
               centred label would sit. */}
-          <RoomLabel x={72} y={132} name="BATH" area="3.2 m²" />
+          <RoomLabel x={72} y={132} name={t("roomBath")} area="3.2 m²" />
 
           {/* Chained across the top, overall along the bottom, one run down
               each side — the way a plan of this size is actually dimensioned. */}
@@ -423,7 +425,7 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
           <DimV y1={0} y2={180} x={-52} from={0} cm={180} />
 
           <text x={955} y={600} textAnchor="end" fontSize={16} fill={INK.label} letterSpacing="1.6">
-            DIMENSIONS IN CM · 1:50
+            {t("scaleNote")}
           </text>
         </g>
 
@@ -464,7 +466,7 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
             stroke={B.ink3} strokeWidth={2} strokeLinecap="round" fill="none" />
           <text ref={btnTextRef} x={14} y={1} fontFamily={B.fontUi} fontSize={17} fontWeight={600}
             fill={B.ink} textAnchor="middle" dominantBaseline="middle">
-            Generate model
+            {t("generateModel")}
           </text>
           <rect ref={rippleRef} x={-BTN.w / 2} y={-BTN.h / 2} width={BTN.w} height={BTN.h} rx={6}
             fill="none" stroke={B.accent} strokeWidth={2} opacity={0} />

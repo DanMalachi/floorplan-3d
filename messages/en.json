@@ -1,10 +1,79 @@
 {
   "meta": {
     "title": "done. — model our home",
-    "description": "Trace the floorplan you already have into a 3D model of your home, then furnish it, paint it, and walk through it in your browser."
+    "description": "Trace the floorplan you already have into a 3D model of your home, then furnish it, paint it, and walk through it in your browser.",
+    "home": {
+      "title": "done. — design the room you actually have",
+      "description": "Bring the floorplan you already have, draw your walls over it to scale, and walk the result. A sofa that fits, paint you can buy, a room that's actually yours."
+    },
+    "about": {
+      "title": "About — done.",
+      "description": "Why done. asks you to draw your real floorplan instead of skipping it, and what that buys you."
+    },
+    "faq": {
+      "title": "Questions — done.",
+      "description": "What you need to start, what happens to your data, and what done. does and does not do yet."
+    }
   },
   "locale": {
     "label": "Language",
     "switchTo": "Switch to {language}"
+  },
+  "nav": {
+    "about": "About",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "refunds": "Refunds",
+    "home": "done. home",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "footer": {
+    "product": "Product",
+    "legal": "Legal",
+    "yourData": "Your data"
+  },
+  "hero": {
+    "announceTracing": "Drawing the floorplan: walls, then windows and doors.",
+    "announceBuilding": "Generating the three-dimensional model.",
+    "announceDone": "The room is built. Open done. to draw your own."
+  },
+  "demo": {
+    "windowTitle": "Studio apartment",
+    "floorChevron": "Chevron",
+    "floorOak": "Oak",
+    "floorConcrete": "Concrete",
+    "frameBlack": "Black",
+    "frameGrey": "Grey",
+    "frameWhite": "White",
+    "rowWalls": "Walls",
+    "wallsSolid": "Solid",
+    "wallsSeeThrough": "See through",
+    "rowLighting": "Lighting",
+    "lightWhite": "White",
+    "lightWarm": "Warm",
+    "rowFloor": "Floor",
+    "rowWindows": "Windows",
+    "dragToOrbit": "Drag to orbit",
+    "pauseOrbit": "Pause the orbit",
+    "resumeOrbit": "Resume the orbit",
+    "loadingPlan": "Loading the plan",
+    "roomStudio": "STUDIO",
+    "roomBath": "BATH",
+    "scaleNote": "DIMENSIONS IN CM · 1:50",
+    "generateModel": "Generate model"
+  },
+  "account": {
+    "signIn": "Sign in",
+    "opening": "Opening…",
+    "account": "Account",
+    "yourData": "Your data",
+    "signOut": "Sign out"
+  },
+  "consent": {
+    "body": "This app only sets strictly-necessary cookies, to keep you signed in — no analytics or ad tracking. <link>Privacy Policy</link>.",
+    "dismiss": "Dismiss cookie notice"
   }
 }

@@ -80,7 +80,7 @@ export default async function MarketingLayout({
       <style dangerouslySetInnerHTML={{ __html: LANDING_HOVER_CSS }} />
       <Header />
       <main>{children}</main>
-      <Footer />
+      <Footer locale={locale} />
     </div>
   );
 }

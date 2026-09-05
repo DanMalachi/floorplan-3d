@@ -1,19 +1,32 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { alternatesFor } from "@/i18n/alternates";
 import { Link } from "@/i18n/navigation";
 import { B, type as ty, ctaPrimary, microLabel } from "@/brand/tokens";
 import { Faq } from "@/landing/sections/Faq";
+import { landingContent } from "@/landing/content";
 import { APP_HREF } from "@/landing/nav";
 import { CTA_CLASS, CTA_GHOST_CLASS } from "@/landing/hoverCss";
 
-export const metadata: Metadata = {
-  title: "Questions — done.",
-  description:
-    "What you need to start, what happens to your data, and what done. does and does not do yet.",
-  alternates: alternatesFor("/faq"),
-};
+// A static `metadata` export here would win over the translated `meta.title`
+// from `[locale]/layout.tsx`, so `/he/faq` would still serve the English
+// title — see src/i18n/README-static.md's sibling note in
+// docs/HEBREW-HANDOFF.md (Step 3). `alternatesFor` still has to be threaded
+// through by hand: it is per-page, not something `generateMetadata` inherits.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return {
+    title: t("faq.title"),
+    description: t("faq.description"),
+    alternates: alternatesFor("/faq"),
+  };
+}
 
 // The homepage renders a short set (<Faq limit={...} />); this page renders all
 // of them, from the same table in src/landing/content.ts, so the two can never
@@ -26,7 +39,10 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
   // dynamic at runtime" the first time it is served — which took out every
   // unprefixed English route while only the Hebrew ones kept working, because
   // those carry the locale in the URL. See src/i18n/README-static.md.
-  setRequestLocale((await params).locale as Locale);
+  const { locale } = await params;
+  setRequestLocale(locale as Locale);
+
+  const { faqPage, openApp } = landingContent(locale);
 
   return (
     <div
@@ -36,7 +52,7 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
         padding: `clamp(56px, 9vw, 104px) ${B.gutter}px clamp(72px, 10vw, 120px)`,
       }}
     >
-      <div style={microLabel()}>Questions</div>
+      <div style={microLabel()}>{faqPage.eyebrow}</div>
       <h1
         style={{
           fontSize: ty.h1,
@@ -47,14 +63,14 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
           color: B.ink,
         }}
       >
-        Everything worth asking first.
+        {faqPage.title}
       </h1>
 
-      <Faq />
+      <Faq locale={locale} />
 
       <div style={{ marginTop: 48, display: "flex", gap: 12, flexWrap: "wrap" }}>
         <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary()}>
-          Open done.
+          {openApp}
         </Link>
         <Link
           href="/about"
@@ -64,7 +80,7 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
             border: `1px solid ${B.hairline2}`,
           }}
         >
-          What done. is
+          {faqPage.aboutLink}
         </Link>
       </div>
     </div>

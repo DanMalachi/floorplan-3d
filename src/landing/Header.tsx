@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { B, type as ty, ctaPrimary } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
+import { landingContent } from "./content";
 import { APP_HREF, navItems } from "./nav";
 import { AccountControl } from "./AccountControl";
 import { LocaleSwitch } from "./LocaleSwitch";
@@ -46,6 +48,8 @@ export function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const tNav = useTranslations("nav");
+  const { openApp } = landingContent(useLocale());
   const items = navItems();
 
   return (
@@ -70,7 +74,7 @@ export function Header() {
           gap: 16,
         }}
       >
-        <Link href="/" style={{ textDecoration: "none", lineHeight: 0 }} aria-label="done. home">
+        <Link href="/" style={{ textDecoration: "none", lineHeight: 0 }} aria-label={tNav("home")}>
           <Wordmark size={25} />
         </Link>
 
@@ -92,7 +96,7 @@ export function Header() {
                   transition: `color ${B.dur} ${B.ease}`,
                 }}
               >
-                {i.label}
+                {tNav(i.labelKey)}
               </Link>
             ))}
           </nav>
@@ -103,7 +107,7 @@ export function Header() {
             <LocaleSwitch />
             <AccountControl />
             <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary({ padding: "10px 18px", fontSize: 14 })}>
-              Open done.
+              {openApp}
             </Link>
           </div>
         )}
@@ -111,7 +115,12 @@ export function Header() {
         {narrow && (
           <>
             <AccountControl />
-            <MenuButton open={open} onClick={() => setOpen((o) => !o)} />
+            <MenuButton
+              open={open}
+              onClick={() => setOpen((o) => !o)}
+              openLabel={tNav("openMenu")}
+              closeLabel={tNav("closeMenu")}
+            />
           </>
         )}
       </div>
@@ -143,7 +152,7 @@ export function Header() {
                 borderBottom: `1px solid ${B.hairline}`,
               }}
             >
-              {i.label}
+              {tNav(i.labelKey)}
             </Link>
           ))}
           {/* Last row rather than first: language is a utility, and the sheet's
@@ -155,7 +164,7 @@ export function Header() {
             className={CTA_CLASS}
             style={ctaPrimary({ marginTop: 18, justifyContent: "center" })}
           >
-            Open done.
+            {openApp}
           </Link>
         </div>
       )}
@@ -166,7 +175,17 @@ export function Header() {
 /** The three-bar button. Morphs to an X when open — the bars are the same
  *  three elements moved, so the transition reads as one object changing state
  *  rather than two icons swapping. */
-function MenuButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+function MenuButton({
+  open,
+  onClick,
+  openLabel,
+  closeLabel,
+}: {
+  open: boolean;
+  onClick: () => void;
+  openLabel: string;
+  closeLabel: string;
+}) {
   const bar: React.CSSProperties = {
     display: "block",
     width: 18,
@@ -178,7 +197,7 @@ function MenuButton({ open, onClick }: { open: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      aria-label={open ? "Close menu" : "Open menu"}
+      aria-label={open ? closeLabel : openLabel}
       aria-expanded={open}
       aria-controls="site-menu"
       className={OUTLINE_BTN_CLASS}

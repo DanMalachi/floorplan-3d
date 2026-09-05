@@ -2,7 +2,7 @@
 // desktop bar and the mobile sheet follow.
 
 export type NavItem = {
-  label: string;
+  labelKey: string;
   href: string;
   /** External or app links get no active-state treatment. */
   external?: boolean;
@@ -28,9 +28,9 @@ export type NavItem = {
 const pricingLive = process.env.NEXT_PUBLIC_PRICING_UI_ENABLED === "true";
 
 export const NAV: NavItem[] = [
-  { label: "About", href: "/about" },
-  { label: "Pricing", href: "/pricing", enabled: pricingLive },
-  { label: "FAQ", href: "/faq" },
+  { labelKey: "about", href: "/about" },
+  { labelKey: "pricing", href: "/pricing", enabled: pricingLive },
+  { labelKey: "faq", href: "/faq" },
 ];
 
 export const navItems = (): NavItem[] => NAV.filter((i) => i.enabled !== false);
@@ -52,9 +52,9 @@ export const navItems = (): NavItem[] => NAV.filter((i) => i.enabled !== false);
 export const APP_HREF = "/design?home=1";
 
 export const FOOTER_LEGAL: NavItem[] = [
-  { label: "Privacy", href: "/legal/privacy" },
-  { label: "Terms", href: "/legal/terms" },
-  { label: "Refunds", href: "/legal/refunds", enabled: pricingLive },
+  { labelKey: "privacy", href: "/legal/privacy" },
+  { labelKey: "terms", href: "/legal/terms" },
+  { labelKey: "refunds", href: "/legal/refunds", enabled: pricingLive },
 ];
 
 export const footerLegal = (): NavItem[] => FOOTER_LEGAL.filter((i) => i.enabled !== false);

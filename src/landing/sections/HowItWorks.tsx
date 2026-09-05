@@ -1,5 +1,5 @@
 import { B, type as ty, section, microLabel, card } from "@/brand/tokens";
-import { HOW_IT_WORKS } from "../content";
+import { landingContent } from "../content";
 
 /**
  * Three numbered steps. `id="how"` is the anchor the hero's ghost CTA points
@@ -10,10 +10,11 @@ import { HOW_IT_WORKS } from "../content";
  * wordmark's period and CTA fills), and a third accent object anywhere on
  * the page is the thing that rule explicitly warns against.
  */
-export function HowItWorks() {
+export function HowItWorks({ locale }: { locale: string }) {
+  const { howItWorks } = landingContent(locale);
   return (
     <section id="how" style={section()}>
-      <div style={microLabel()}>{HOW_IT_WORKS.eyebrow}</div>
+      <div style={microLabel()}>{howItWorks.eyebrow}</div>
       <h2
         style={{
           margin: "10px 0 40px",
@@ -25,7 +26,7 @@ export function HowItWorks() {
           color: B.ink,
         }}
       >
-        {HOW_IT_WORKS.title}
+        {howItWorks.title}
       </h2>
 
       <div
@@ -35,7 +36,7 @@ export function HowItWorks() {
           gap: 24,
         }}
       >
-        {HOW_IT_WORKS.steps.map((s) => (
+        {howItWorks.steps.map((s) => (
           <div key={s.n} style={card()}>
             <div style={microLabel({ marginBottom: 16 })}>{s.n}</div>
             <h3
