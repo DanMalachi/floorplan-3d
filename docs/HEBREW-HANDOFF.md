@@ -2,7 +2,7 @@
 
 **Branch:** `feat/hebrew`, three commits in: `533fd89` (the scaffold),
 `485d34e` (Step 1 — locale routing, links, sitemap/robots, hreflang) and
-Step 2 (the locale switcher).
+`dd03c04` (Step 2 — the locale switcher).
 **Not pushed.** `main` is at `142d8d3` (the UI sweep, already live on done.design).
 
 Read this file, then `docs/HEBREW-HANDOFF.md`'s sibling section in
