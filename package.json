@@ -68,7 +68,7 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "@vercel/blob": "^2.6.1",
-    "konva": "^10.3.0",
+    "konva": "^10.3.3",
     "next": "16.2.9",
     "next-intl": "^4.14.2",
     "pdfjs-dist": "^6.1.200",
