@@ -4,6 +4,7 @@
 // MiniInspector fixture block: name, rotation, and the lux/color-temperature
 // sliders, unchanged in behavior.
 
+import { useTranslations } from "next-intl";
 import type { FixtureItem } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { FIXTURE_CATALOG_BY_ID } from "@/fixtures/catalog";
@@ -12,7 +13,20 @@ import { PD } from "../tokens";
 import { pdInspectorPanel, PdHelpText, PdRangeRow } from "./panelKit";
 
 export function FixtureSection({ item }: { item: FixtureItem }) {
+  const t = useTranslations("editor.inspector.fixture");
+  // RESOLVED: the catalogue now carries `nameKey` beside `name`, the same split
+  // `FurnitureAsset` uses, so the three generic fixture names translate here.
+  // `name` stays as the fallback and is what the Build-mode fixture picker in
+  // `src/viewport3d/FixtureCatalog.tsx` still renders — that file lives in the
+  // protected tree, so it is a separate ask.
+  //
+  // (Original note, kept for the reasoning: it came from
+  // src/fixtures/catalog.ts's plain `name: string` field (no `nameKey`,
+  // unlike the furniture spec pattern) — that file was outside the worker's
+  // assigned files, so the fixture catalog's 3 generic names ("Flush ceiling
+  // light" etc.) were left as English pending a leader-owned follow-up.)
   const spec = FIXTURE_CATALOG_BY_ID.get(item.assetId);
+  const specName = spec ? t(`names.${spec.nameKey}`) : item.assetId;
   const deg = Math.round(((item.rotation * 180) / Math.PI) % 360);
   const lux = item.targetLux ?? DEFAULT_FIXTURE_LUX;
   const colorK = item.colorK ?? DEFAULT_FIXTURE_COLOR_K;
@@ -27,10 +41,10 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
 
   return (
     <div style={pdInspectorPanel}>
-      <div style={{ fontWeight: 600, fontSize: 13 }}>{spec?.name ?? item.assetId}</div>
+      <div style={{ fontWeight: 600, fontSize: 13 }}>{specName}</div>
       <div style={{ fontSize: 11.5, color: PD.textSecondary }}>{deg}°</div>
       <PdRangeRow
-        label="Strength"
+        label={t("strength")}
         min={FIXTURE_LUX_MIN}
         max={FIXTURE_LUX_MAX}
         step={200}
@@ -39,7 +53,7 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
         format={(v) => `${v} lx`}
       />
       <PdRangeRow
-        label="Color"
+        label={t("color")}
         min={2000}
         max={6500}
         step={100}
@@ -47,7 +61,7 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
         onChange={(v) => patch("Fixture color", { colorK: v })}
         format={(v) => `${v}K`}
       />
-      <PdHelpText>drag to move · R rotates · Delete removes</PdHelpText>
+      <PdHelpText>{t("help")}</PdHelpText>
     </div>
   );
 }

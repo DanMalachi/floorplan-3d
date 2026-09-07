@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useSceneStore } from "@/store/useSceneStore";
+import { resolveImportMsg, useSceneStore } from "@/store/useSceneStore";
 import { PD, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { PlanMapIcon } from "@/ui/planDock/icons";
@@ -30,10 +30,15 @@ const TraceCanvas = dynamic(() => import("./TraceCanvas"), {
 /** Empty state: the plan starts with a drop, not a toolbar. */
 function DropZone() {
   const t = useTranslations("editor.trace");
+  const tImport = useTranslations("editor.import");
   const importBusy = useSceneStore((s) => s.importBusy);
   const importMsg = useSceneStore((s) => s.importMsg);
+  const importMsgKey = useSceneStore((s) => s.importMsgKey);
   const importStatus = useSceneStore((s) => s.importStatus);
   const importPlanFile = useSceneStore((s) => s.importPlanFile);
+  // `importMsgKey` (a literal authored in the store) and `importMsg` (plain
+  // pipeline prose) are mutually exclusive — see useSceneStore's doc comment.
+  const importText = importMsgKey ? resolveImportMsg(tImport, importMsgKey) : importMsg;
   const [over, setOver] = useState(false);
   const [hov, hoverBind] = useHover();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -101,8 +106,8 @@ function DropZone() {
         <span style={{ fontSize: 12, color: PD.textSecondary }}>
           {t("dropZone.subtitle")}
         </span>
-        {importMsg && importStatus !== "ok" && (
-          <span style={{ fontSize: 12, color: PD.warnText, maxWidth: 360 }}>{importMsg}</span>
+        {importText && importStatus !== "ok" && (
+          <span style={{ fontSize: 12, color: PD.warnText, maxWidth: 360 }}>{importText}</span>
         )}
       </button>
     </div>

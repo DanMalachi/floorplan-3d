@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useSceneStore } from "@/store/useSceneStore";
+import { resolveImportMsg, useSceneStore } from "@/store/useSceneStore";
 import type { SegmentKind } from "./types";
 import { analyzeLoops } from "../lib/loops";
 import type React from "react";
@@ -528,6 +528,7 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
 
 export function TraceRail() {
   const t = useTranslations("editor.trace");
+  const tImport = useTranslations("editor.import");
   const image = useSceneStore((s) => s.image);
   const imageOpacity = useSceneStore((s) => s.imageOpacity);
   const setImageOpacity = useSceneStore((s) => s.setImageOpacity);
@@ -536,8 +537,12 @@ export function TraceRail() {
   const setShowImport = useSceneStore((s) => s.setShowImport);
   const importBusy = useSceneStore((s) => s.importBusy);
   const importMsg = useSceneStore((s) => s.importMsg);
+  const importMsgKey = useSceneStore((s) => s.importMsgKey);
   const importStatus = useSceneStore((s) => s.importStatus);
   const importPlanFile = useSceneStore((s) => s.importPlanFile);
+  // `importMsgKey` (a literal authored in the store) and `importMsg` (plain
+  // pipeline prose) are mutually exclusive — see useSceneStore's doc comment.
+  const importText = importMsgKey ? resolveImportMsg(tImport, importMsgKey) : importMsg;
   const sourcePdfName = useSceneStore((s) => s.sourcePdfName);
 
   const metersPerPixel = useSceneStore((s) => s.metersPerPixel);
@@ -713,10 +718,10 @@ export function TraceRail() {
               {importBusy ? t("dropZone.importing") : image ? t("plan.replace") : t("plan.import")}
             </PrimaryButton>
             <div style={hintText}>{t("plan.hint")}</div>
-            {importMsg && (
+            {importText && (
               <div style={statusText(importStatus === "ok")}>
                 <StatusIcon ok={importStatus === "ok"} />
-                <span>{importMsg}</span>
+                <span>{importText}</span>
               </div>
             )}
             {image && (

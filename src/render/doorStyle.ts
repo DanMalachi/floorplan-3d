@@ -129,6 +129,25 @@ export function openingDisplayName(o: Opening): string {
   return "Door";
 }
 
+/**
+ * The same answer as `openingDisplayName`, as a message key.
+ *
+ * A sibling rather than a replacement, and a thin one on purpose: this module
+ * is imported by the renderer, which has no `useTranslations` and no business
+ * gaining one. The derivation stays here — stated once, beside the patio rule
+ * it depends on — and only the WORDS move to the render site.
+ *
+ * Keys resolve under `editor.opening.displayName`. Kept in lockstep with the
+ * function above by sharing its branch order; if you add a case, add it twice.
+ */
+export function openingDisplayNameKey(o: Opening): string {
+  if (o.type === "window") return "window";
+  if (o.type === "passage") return "passage";
+  if (isDoubleDoor(o)) return "doubleDoor";
+  if (isGlazedDoor(o)) return "patioDoor";
+  return "door";
+}
+
 /** How many leaves/panels an opening divides into (1 = a single leaf). */
 export function leafCount(o: Opening): number {
   const slide = effectiveSlide(o);

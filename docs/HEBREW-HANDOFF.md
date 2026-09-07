@@ -14,11 +14,41 @@ one is the argument.
 
 ---
 
-## Start here (session of 2026-09-06 → next)
+## Start here (session of 2026-09-07 → next)
+
+**STEP 5 IS DONE. The editor has no English surface left.** 576 `editor.*` keys,
+en/he key sets identical, `tsc` clean, all eight `test:*` suites pass, and a
+MISSING_MESSAGE sweep of both locales reports zero. 2026-09-06's work was
+committed as `65dc193`; the inspector landed on top of it.
+
+**The next thing is not translation.** What remains on this branch is Dan's two
+open decisions (below), a native Hebrew read of the marketing voice, and the
+merge/deploy question. Do not go looking for strings.
+
+### Read this before trusting any "already done" claim in this file
+
+**Two files were recorded here as "done as collateral" and were not.**
+`ParametricSection.tsx` and `FurnitureSection.tsx` both called
+`useTranslations` — which is what made them look finished to a grep and to an
+inventory pass — while still rendering `"Width"`, `"Height"`, `"Depth"`,
+`"Height off floor"`, `"Replace"`, `"Duplicate"`, `"Delete"` and three help
+sentences as literals. Presence of the hook is not evidence of completion.
+
+**And the sweep that missed it reported zero.** A MISSING_MESSAGE sweep only
+sees keys that fail to resolve; an untranslated LITERAL resolves to itself and
+is invisible to it. The sweep that found these drives `sel3d` through the
+dev-only `window.useSceneStore` handle for each pick kind, then asserts on the
+rendered inspector text — Latin words that are not units, file formats or
+keycaps are the leftovers. **Assert on what is on screen, not on what failed to
+resolve.** (`Inspector.tsx` returns null without a selection, which is why a
+mode-only sweep can never see this panel at all.)
+
+### Old start-here, kept for the record
 
 **Working tree is DIRTY: ~30 modified files, nothing committed, nothing pushed.**
 That is the whole of 2026-09-06's work — Step 4's finish plus most of Step 5.
-Commit it before doing anything else.
+Commit it before doing anything else. **(Done 2026-09-07 as `65dc193`,
+79 files.)**
 
 **Four untracked paths, and they are NOT all the same kind.** Three are
 untracked ON PURPOSE and must stay that way: `docs/NAMING.md`,
@@ -506,9 +536,48 @@ restructuring code the 3D layer depends on.
   conditional.
 
 
-### Step 5 — editor strings — **SUBSTANTIALLY DONE 2026-09-06; the inspector is what is left**
+### Step 5 — editor strings — **DONE 2026-09-07**
 
-The ~700–850 estimate was high: the real editor surface is **478 keys**. Two
+The inspector closed it: `editor.opening` (58), `editor.inspector.{wall,room,
+fixture,panel}` (27), `editor.import` (3), plus 10 repair keys on
+`editor.parametric`. **576 `editor.*` keys, en/he identical.** Three parallel
+workers on disjoint file sets, each writing its own fragment, leader-merged —
+the convention below, used as written.
+
+Four things the leader had to repair afterwards, all of them the predicted
+worker-boundary kind:
+
+- **`src/fixtures/catalog.ts` had no `nameKey`.** Its three names are generic
+  descriptions ("Flush ceiling light"), so they translate — the `FurnitureAsset`
+  split applies. Added `nameKey` BESIDE `name` rather than swapping, because
+  `src/viewport3d/FixtureCatalog.tsx` still renders `name` and lives in the
+  protected tree. **Open: the Build-mode fixture picker is therefore still
+  English.** Not on the PROTECTED_PATHS list by name, but inside `viewport3d/` —
+  ask before editing.
+- **`openingDisplayName` returns English words** from `src/render/doorStyle.ts`,
+  which the renderer imports and which must not gain `useTranslations`. Added a
+  thin `openingDisplayNameKey` sibling; the derivation stays put, only the words
+  moved. Add a case to one, add it to the other.
+- `ParametricSection.tsx` / `FurnitureSection.tsx` — see the warning at the top
+  of this file.
+- `importMsg`'s render sites turned out to live in `legacy/src/trace2d/`
+  (`TraceRail.tsx`, `TracePanel.tsx`), not under `src/`.
+
+**Still English on purpose:** `commitScene` history labels (dead text —
+decision 4); keycap names inside translated sentences (`R`, `Delete` — the
+keyboard does not translate); file-format and unit identifiers (PNG, DXF, m,
+cm, px, lx, K); IKEA product and colour names; the raw JS error text inside
+`editor.import.failed`.
+
+**Still English, and a decision rather than a rule:** the import pipeline's own
+prose — `rasterQualityMsg()` in `planImport.ts` and `importDxf()`'s summary —
+reaches the user through `importMsg` but is formatted upstream. Translating it
+means those functions returning a key + params instead of a string. Also
+`useSceneStore.ts:871`'s "DWG needs a local converter" throw, which reaches the
+user only through the generic `catch`.
+
+The ~700–850 estimate was high: the editor surface was **478 keys** before the
+inspector, 576 after. Two
 independent inventory passes landed at ~492 and ~600; the gap was long-form
 prose that this doc's own guidance had already carved out to per-locale route
 content.

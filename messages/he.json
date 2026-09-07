@@ -946,6 +946,131 @@
             "label": "מגירות"
           }
         }
+      },
+      "width": "רוחב",
+      "height": "גובה",
+      "depth": "עומק",
+      "replace": "החלפה",
+      "duplicate": "שכפול",
+      "delete": "מחיקה",
+      "helpMoveRotate": "גררו כדי להזיז · R מסובב · Delete מוחק",
+      "helpRunOnWalls": "גררו כדי להזיז לאורך הקירות · גררו את החצים בקצה לשינוי הגודל · Delete מוחק",
+      "helpAlongCounter": "גררו כדי להחליק לאורך המשטח · Delete מוחק",
+      "heightOffFloor": "גובה מהרצפה"
+    },
+    "import": {
+      "tooSmall": "התמונה קטנה מדי ({width}×{height}px) — תוכניות צריכות ≥{min}px בצד הארוך.",
+      "unsupported": "קובץ לא נתמך — השתמשו בתמונה (PNG/JPG/WebP), ב-PDF או בקובץ CAD (DXF/DWG).",
+      "failed": "הייבוא נכשל: {message}"
+    },
+    "inspector": {
+      "wall": {
+        "kindWall": "קיר",
+        "kindRail": "מעקה",
+        "kindPortal": "גבול פתוח",
+        "chipOpen": "פתוח",
+        "tipWall": "קיר מלא מהרצפה עד התקרה.",
+        "tipRail": "מחסום נמוך ושקוף — מעקה מרפסת או גג.",
+        "tipPortal": "בלי שום מחסום — החדר עדיין נסגר, אבל שום דבר לא נבנה. מתאים למרחב שפשוט עובר למרחב הבא.",
+        "portalHelp": "שום דבר לא נבנה כאן — החדרים משני הצדדים נשארים נפרדים אך זורמים זה אל זה.",
+        "height": "גובה",
+        "thickness": "עובי",
+        "facesLabel": "צדדים",
+        "faceLabel": "צד {letter}",
+        "faceTip": "{face} — לחצו כדי לחמש מחדש את הצבע הזה",
+        "paintAllOne": "צביעת כל הקירות",
+        "paintAllFromFace": "כל הקירות מ{face}",
+        "facePaintArmed": "{face} דרוך — לחצו על פני קיר כדי לצבוע",
+        "paintedHex": "{count, plural, one {קיר אחד נצבע בגוון {color}} other {# קירות נצבעו בגוון {color}}}",
+        "paintedPlaster": "{count, plural, one {קיר אחד חזר לטיח} other {# קירות חזרו לטיח}}",
+        "paintHelp": "צביעה ב<b>עיצוב</b>: בחרו צבע, לחצו על צדדים."
+      },
+      "room": {
+        "ceilingHeight": "גובה תקרה",
+        "floorHelp": "שינוי הרצפה ב<b>עיצוב</b>: בחרו חומר, לחצו על הרצפה."
+      },
+      "fixture": {
+        "strength": "עוצמה",
+        "color": "גוון",
+        "help": "גררו כדי להזיז · R מסובב · Delete מוחק",
+        "names": {
+          "flushDisc": "מנורת תקרה צמודה",
+          "pendant": "מנורה תלויה",
+          "sconce": "מנורת קיר"
+        }
+      },
+      "panel": {}
+    },
+    "opening": {
+      "types": {
+        "door": "דלת / פטיו",
+        "passage": "מעבר",
+        "passageTip": "משאיר את הפתח, מסיר את הדלת — מעבר פתוח בקיר",
+        "window": "חלון"
+      },
+      "slidePresets": {
+        "patio": "פטיו",
+        "patioTip": "שתי יריעות זכוכית שנעות זו לצד זו — דלת הפטיו",
+        "closet": "ארון",
+        "closetTip": "יריעות אטומות שנעות זו לצד זו — דלתות הזזה לארון",
+        "barn": "בארן",
+        "barnTip": "יריעה אחת שנעה על פני הקיר"
+      },
+      "doorMaterials": {
+        "painted-white": "לבן",
+        "painted-charcoal": "פחם",
+        "oak": "אלון",
+        "walnut": "אגוז"
+      },
+      "frameMaterials": {
+        "matte": "מט",
+        "matteTip": "ציפוי אבקה — מרקם עדין, כמעט ללא השתקפות. חל על כל חלון ודלת פטיו.",
+        "glossy": "מבריק",
+        "glossyTip": "אלומיניום אנודי מלוטש — השתקפויות חדות. חל על כל חלון ודלת פטיו."
+      },
+      "framePaint": {
+        "natural": "טבעי — הצבע של הגימור עצמו",
+        "tip": "בחרו צבע בפלטת העיצוב — הוא יחול על כל חלון ודלת פטיו",
+        "picking": "בוחרים…",
+        "paint": "צביעה"
+      },
+      "material": "חומר",
+      "howItOpens": "אופן הפתיחה",
+      "swing": "פתיחה",
+      "swingTip": "כנף אחת על ציר",
+      "double": "כפולה",
+      "doubleTip": "זוג כנפיים הנפגשות באמצע — דלתות צרפתיות",
+      "hingeStart": "ציר בהתחלה",
+      "hingeEnd": "ציר בסוף",
+      "open": "פתיחה",
+      "panels": "יריעות",
+      "slidesStart": "מחליקה להתחלה",
+      "slidesEnd": "מחליקה לסוף",
+      "slideSideTip": "לאיזה צד המשקוף היריעות נערמות",
+      "panelWidths": "רוחב היריעות",
+      "leafWidths": "רוחב הכנפיים",
+      "panelLabel": "יריעה {n}",
+      "leafLabel": "כנף {n}",
+      "evenThemUp": "איזון אחיד",
+      "cased": "ממוסגר",
+      "bare": "חשוף",
+      "casedTip": "מלבן ומשקוף עליון — פתח גמור וממוסגר",
+      "bareTip": "גילוף טיח חשוף",
+      "width": "רוחב",
+      "height": "גובה",
+      "sill": "אדן",
+      "frameFinishHeading": "גימור מסגרת · כל הבית",
+      "frameColourHeading": "צבע מסגרת · כל הבית",
+      "glazingBars": "צלבי חלון",
+      "columns": "עמודות",
+      "rows": "שורות",
+      "help": "גררו כדי להזיז לאורך הקיר · Delete ממלא את הקיר בחזרה",
+      "displayName": {
+        "window": "חלון",
+        "passage": "מעבר",
+        "doubleDoor": "דלת כפולה",
+        "patioDoor": "דלת פטיו",
+        "door": "דלת"
       }
     }
   }

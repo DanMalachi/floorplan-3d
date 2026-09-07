@@ -6,6 +6,7 @@
 // so touching up or extending a paint job doesn't require reopening the
 // Paint tab and hunting for the exact shade again.
 
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Wall } from "@/schema/scene";
 import { WALL_HEIGHT, DEFAULT_THICKNESS } from "@/schema/constants";
@@ -23,9 +24,12 @@ import {
   PdActionRow,
 } from "./panelKit";
 
-const KIND_LABEL = { wall: "Wall", rail: "Rail", portal: "Open boundary" } as const;
+// `labelKey`, not English text — module scope cannot call `useTranslations()`.
+// Same convention as DOCK_TABS/ROOM_SCENES (BottomDock.tsx).
+const KIND_LABEL_KEY = { wall: "kindWall", rail: "kindRail", portal: "kindPortal" } as const;
 
 export function WallSection({ wall }: { wall: Wall }) {
+  const t = useTranslations("editor.inspector.wall");
   const scene = useSceneStore((s) => s.scene);
   const a = scene.nodes.find((n) => n.id === wall.a);
   const b = scene.nodes.find((n) => n.id === wall.b);
@@ -45,7 +49,9 @@ export function WallSection({ wall }: { wall: Wall }) {
   const setKind = (next: "wall" | "rail" | "portal") => {
     if (next === kind) return;
     const s = useSceneStore.getState();
-    s.commitScene(`Make ${KIND_LABEL[next].toLowerCase()}`, {
+    // History label only — Viewport.tsx never renders it (see
+    // useSceneStore's commitScene call sites), so it stays untranslated.
+    s.commitScene(`Set kind: ${next}`, {
       ...s.scene,
       walls: s.scene.walls.map((w) => (w.id === wall.id ? { ...w, kind: next } : w)),
       openings: next === "wall" ? s.scene.openings : s.scene.openings.filter((o) => o.wallId !== wall.id),
@@ -55,11 +61,11 @@ export function WallSection({ wall }: { wall: Wall }) {
   // Re-arm the paint brush with a face's CURRENT color (undefined -> plaster)
   // so extending an existing paint job to another wall doesn't need the Paint
   // tab reopened and the shade rediscovered.
-  const armPaint = (hex: string | undefined, label: string) => {
+  const armPaint = (hex: string | undefined, faceLabel: string) => {
     const s = useSceneStore.getState();
     s.setAppMode("furnish");
     s.setBrush({ kind: "paint", hex: hex ?? null });
-    pdToast(`${label} armed — click a wall face to paint`);
+    pdToast(t("facePaintArmed", { face: faceLabel }));
   };
 
   // Roll one colour over the whole plan in a single commit (one undo step), so
@@ -78,24 +84,28 @@ export function WallSection({ wall }: { wall: Wall }) {
         (w.kind ?? "wall") === "wall" ? { ...w, paintA: hex, paintB: hex } : w,
       ),
     });
-    pdToast(`${targets.length} wall${targets.length === 1 ? "" : "s"} painted ${hex ?? "back to plaster"}`);
+    pdToast(
+      hex
+        ? t("paintedHex", { count: targets.length, color: hex })
+        : t("paintedPlaster", { count: targets.length }),
+    );
   };
   // One button when both faces already agree; otherwise one per face, since
   // there is no way to guess which of the two the "all" is meant to spread.
   const allButtons =
     wall.paintA === wall.paintB
-      ? [{ hex: wall.paintA, label: "Paint every wall" }]
+      ? [{ hex: wall.paintA, label: t("paintAllOne") }]
       : [
           // Worded rather than arrowed: "← A" put a directional glyph inside a
           // user-facing label, which reads as decoration and would have to
           // mirror under RTL in wave 2.
-          { hex: wall.paintA, label: "All walls from A" },
-          { hex: wall.paintB, label: "All walls from B" },
+          { hex: wall.paintA, label: t("paintAllFromFace", { face: t("faceLabel", { letter: "A" }) }) },
+          { hex: wall.paintB, label: t("paintAllFromFace", { face: t("faceLabel", { letter: "B" }) }) },
         ];
 
   return (
     <div style={pdInspectorPanel}>
-      <PdSectionTitle label={KIND_LABEL[kind]} meta={`${len.toFixed(2)} m`} />
+      <PdSectionTitle label={t(KIND_LABEL_KEY[kind])} meta={`${len.toFixed(2)} m`} />
       <div style={{ display: "flex", gap: 4 }}>
         {(["wall", "rail", "portal"] as const).map((k) => (
           <PdChip
@@ -105,29 +115,29 @@ export function WallSection({ wall }: { wall: Wall }) {
             onClick={() => setKind(k)}
             tip={
               k === "portal"
-                ? "No barrier at all — the room still closes, nothing gets built. For a space that simply gives onto the next."
+                ? t("tipPortal")
                 : k === "rail"
-                  ? "Low, see-through barrier — balcony or terrace railing."
-                  : "Full-height solid wall."
+                  ? t("tipRail")
+                  : t("tipWall")
             }
           >
-            {k === "portal" ? "⇿ Open" : k === "rail" ? "▭ Rail" : "▉ Wall"}
+            {k === "portal" ? `⇿ ${t("chipOpen")}` : k === "rail" ? `▭ ${t(KIND_LABEL_KEY.rail)}` : `▉ ${t(KIND_LABEL_KEY.wall)}`}
           </PdChip>
         ))}
       </div>
       {isPortal ? (
-        <PdHelpText>Nothing is built here — the rooms on each side stay separate but flow together.</PdHelpText>
+        <PdHelpText>{t("portalHelp")}</PdHelpText>
       ) : (
         <>
           <PdNumField
-            label="Height"
+            label={t("height")}
             value={wall.height ?? WALL_HEIGHT}
             onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
             displayScale={100}
             unit="cm"
           />
           <PdNumField
-            label="Thickness"
+            label={t("thickness")}
             value={wall.thickness ?? DEFAULT_THICKNESS}
             onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
             displayScale={100}
@@ -136,9 +146,17 @@ export function WallSection({ wall }: { wall: Wall }) {
           {kind === "wall" && (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ color: PD.textSecondary, fontSize: 11.5 }}>Faces</span>
-                <PdSwatch hex={wall.paintA ?? null} tip="Face A — click to re-arm this colour" onClick={() => armPaint(wall.paintA, "Face A")} />
-                <PdSwatch hex={wall.paintB ?? null} tip="Face B — click to re-arm this colour" onClick={() => armPaint(wall.paintB, "Face B")} />
+                <span style={{ color: PD.textSecondary, fontSize: 11.5 }}>{t("facesLabel")}</span>
+                <PdSwatch
+                  hex={wall.paintA ?? null}
+                  tip={t("faceTip", { face: t("faceLabel", { letter: "A" }) })}
+                  onClick={() => armPaint(wall.paintA, t("faceLabel", { letter: "A" }))}
+                />
+                <PdSwatch
+                  hex={wall.paintB ?? null}
+                  tip={t("faceTip", { face: t("faceLabel", { letter: "B" }) })}
+                  onClick={() => armPaint(wall.paintB, t("faceLabel", { letter: "B" }))}
+                />
               </div>
               <PdActionRow>
                 {allButtons.map((b) => (
@@ -146,7 +164,9 @@ export function WallSection({ wall }: { wall: Wall }) {
                 ))}
               </PdActionRow>
               <PdHelpText>
-                Paint in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Decorate</b>: pick a colour, click faces.
+                {t.rich("paintHelp", {
+                  b: (chunks) => <b style={{ color: PD.textSecondary, fontWeight: 600 }}>{chunks}</b>,
+                })}
               </PdHelpText>
             </>
           )}

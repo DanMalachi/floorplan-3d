@@ -88,12 +88,15 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
       <VariantSwatchRow item={item} />
 
       <PdActionRow>
-        <PdActionButton label="Replace" onClick={onReplace} />
-        <PdActionButton label="Duplicate" onClick={onDuplicate} />
-        <PdActionButton label="Delete" tone="danger" onClick={onDelete} />
+        <PdActionButton label={tp("replace")} onClick={onReplace} />
+        <PdActionButton label={tp("duplicate")} onClick={onDuplicate} />
+        <PdActionButton label={tp("delete")} tone="danger" onClick={onDelete} />
       </PdActionRow>
 
-      <PdHelpText>drag to move · R rotates · Delete removes</PdHelpText>
+      {/* Shares `editor.parametric`'s action and help keys rather than owning a
+          second copy: the two panels render the same three buttons and the same
+          sentence, and two catalogue entries for one string is how they drift. */}
+      <PdHelpText>{tp("helpMoveRotate")}</PdHelpText>
     </div>
   );
 }

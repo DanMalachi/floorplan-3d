@@ -946,6 +946,131 @@
             "label": "Drawers"
           }
         }
+      },
+      "width": "Width",
+      "height": "Height",
+      "depth": "Depth",
+      "replace": "Replace",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "helpMoveRotate": "drag to move · R rotates · Delete removes",
+      "helpRunOnWalls": "drag to move along walls · drag end arrows to resize · Delete removes",
+      "helpAlongCounter": "drag to slide along the counter · Delete removes",
+      "heightOffFloor": "Height off floor"
+    },
+    "import": {
+      "tooSmall": "Image too small ({width}×{height}px) — plans need ≥{min}px on the long edge.",
+      "unsupported": "Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG).",
+      "failed": "Import failed: {message}"
+    },
+    "inspector": {
+      "wall": {
+        "kindWall": "Wall",
+        "kindRail": "Rail",
+        "kindPortal": "Open boundary",
+        "chipOpen": "Open",
+        "tipWall": "Full-height solid wall.",
+        "tipRail": "Low, see-through barrier — balcony or terrace railing.",
+        "tipPortal": "No barrier at all — the room still closes, nothing gets built. For a space that simply gives onto the next.",
+        "portalHelp": "Nothing is built here — the rooms on each side stay separate but flow together.",
+        "height": "Height",
+        "thickness": "Thickness",
+        "facesLabel": "Faces",
+        "faceLabel": "Face {letter}",
+        "faceTip": "{face} — click to re-arm this colour",
+        "paintAllOne": "Paint every wall",
+        "paintAllFromFace": "All walls from {face}",
+        "facePaintArmed": "{face} armed — click a wall face to paint",
+        "paintedHex": "{count, plural, one {# wall painted {color}} other {# walls painted {color}}}",
+        "paintedPlaster": "{count, plural, one {# wall painted back to plaster} other {# walls painted back to plaster}}",
+        "paintHelp": "Paint in <b>Decorate</b>: pick a colour, click faces."
+      },
+      "room": {
+        "ceilingHeight": "Ceiling height",
+        "floorHelp": "Change the floor in <b>Decorate</b>: pick a material, click the floor."
+      },
+      "fixture": {
+        "strength": "Strength",
+        "color": "Color",
+        "help": "drag to move · R rotates · Delete removes",
+        "names": {
+          "flushDisc": "Flush ceiling light",
+          "pendant": "Pendant light",
+          "sconce": "Wall light"
+        }
+      },
+      "panel": {}
+    },
+    "opening": {
+      "types": {
+        "door": "Door / Patio",
+        "passage": "Passage",
+        "passageTip": "Keep the opening, lose the door — an open way through a wall",
+        "window": "Window"
+      },
+      "slidePresets": {
+        "patio": "Patio",
+        "patioTip": "Two glazed panels sliding past each other — the balcony door",
+        "closet": "Closet",
+        "closetTip": "Solid panels sliding past each other — wardrobe bypass doors",
+        "barn": "Barn",
+        "barnTip": "One leaf sliding along the face of the wall"
+      },
+      "doorMaterials": {
+        "painted-white": "White",
+        "painted-charcoal": "Charcoal",
+        "oak": "Oak",
+        "walnut": "Walnut"
+      },
+      "frameMaterials": {
+        "matte": "Matte",
+        "matteTip": "Powder-coated — fine grain, almost no reflection. Applies to every window and patio door.",
+        "glossy": "Glossy",
+        "glossyTip": "Polished anodised aluminium — sharp reflections. Applies to every window and patio door."
+      },
+      "framePaint": {
+        "natural": "Natural — the finish's own colour",
+        "tip": "Pick a colour in the Decorate palette — it applies to every window and patio door",
+        "picking": "Picking…",
+        "paint": "Paint"
+      },
+      "material": "Material",
+      "howItOpens": "How it opens",
+      "swing": "Swing",
+      "swingTip": "One hinged leaf",
+      "double": "Double",
+      "doubleTip": "A pair of hinged leaves meeting in the middle — French doors",
+      "hingeStart": "Hinge start",
+      "hingeEnd": "Hinge end",
+      "open": "Open",
+      "panels": "Panels",
+      "slidesStart": "Slides start",
+      "slidesEnd": "Slides end",
+      "slideSideTip": "Which jamb the panels stack at",
+      "panelWidths": "Panel widths",
+      "leafWidths": "Leaf widths",
+      "panelLabel": "Panel {n}",
+      "leafLabel": "Leaf {n}",
+      "evenThemUp": "Even them up",
+      "cased": "Cased",
+      "bare": "Bare",
+      "casedTip": "Jamb and head casing — a finished cased opening",
+      "bareTip": "Bare plaster reveal",
+      "width": "Width",
+      "height": "Height",
+      "sill": "Sill",
+      "frameFinishHeading": "Frame finish · whole house",
+      "frameColourHeading": "Frame colour · whole house",
+      "glazingBars": "Glazing bars",
+      "columns": "Columns",
+      "rows": "Rows",
+      "help": "Drag to slide it along the wall · Delete fills the wall back in.",
+      "displayName": {
+        "window": "Window",
+        "passage": "Passage",
+        "doubleDoor": "Double door",
+        "patioDoor": "Patio door",
+        "door": "Door"
       }
     }
   }

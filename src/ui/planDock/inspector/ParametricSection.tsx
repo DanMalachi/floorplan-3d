@@ -168,14 +168,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       ) : (
         <>
           <PdNumField
-            label="Width"
+            label={t("width")}
             value={spec.dims.w}
             onCommit={(w) => update({ dims: { ...spec.dims, w } })}
             displayScale={100}
             unit="cm"
           />
           <PdNumField
-            label="Height"
+            label={t("height")}
             value={spec.dims.h}
             onCommit={(h) => update({ dims: { ...spec.dims, h } })}
             displayScale={100}
@@ -184,7 +184,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         </>
       )}
       <PdNumField
-        label="Depth"
+        label={t("depth")}
         value={spec.dims.d}
         onCommit={(d) => update({ dims: { ...spec.dims, d } })}
         displayScale={100}
@@ -343,7 +343,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           this field is the only way to change how high it hangs. */}
       {(spec.generator === "kitchenWall" || (g.wallMounted?.(spec) ?? false)) && (
         <PdNumField
-          label="Height off floor"
+          label={t("heightOffFloor")}
           value={item.elevation ?? elevationOf(spec) ?? 1.45}
           onCommit={(m) => {
             // Wall cabinets keep their original worktop-to-ceiling range; other
@@ -367,16 +367,19 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       )}
 
       <PdActionRow>
-        <PdActionButton label="Duplicate" onClick={onDuplicate} />
-        <PdActionButton label="Delete" tone="danger" onClick={onDelete} />
+        <PdActionButton label={t("duplicate")} onClick={onDuplicate} />
+        <PdActionButton label={t("delete")} tone="danger" onClick={onDelete} />
       </PdActionRow>
 
+      {/* The key names inside these sentences (R, Delete) stay Latin in both
+          locales on purpose: they name physical keycaps, which are not
+          translated by the keyboard. Only the prose around them moves. */}
       <PdHelpText>
         {spec.generator === "kitchenBase" || spec.generator === "kitchenWall"
-          ? "drag to move along walls · drag end arrows to resize · Delete removes"
+          ? t("helpRunOnWalls")
           : spec.generator === "sink" || spec.generator === "cooktop"
-            ? "drag to slide along the counter · Delete removes"
-            : "drag to move · R rotates · Delete removes"}
+            ? t("helpAlongCounter")
+            : t("helpMoveRotate")}
       </PdHelpText>
     </div>
   );

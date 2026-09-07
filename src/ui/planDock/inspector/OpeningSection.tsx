@@ -13,6 +13,7 @@
 // already supports should stay orphaned without a control.
 
 import type { ComponentType } from "react";
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { Opening, OpeningType, SlideSpec } from "@/schema/scene";
 import { DEFAULT_WINDOW } from "@/schema/constants";
@@ -22,6 +23,7 @@ import {
   leafCount,
   leafWidths,
   openingDisplayName,
+  openingDisplayNameKey,
   takesWindowFinish,
   withLeafWidth,
 } from "@/render/doorStyle";
@@ -42,25 +44,30 @@ import { pdMicroLabel } from "../tokens";
 
 // The sliding presets, as the product thinks of them. Each is just a point in
 // the one SlideSpec parameterisation — see buildJoinery.
-// `tip`, not `title`: these are hover explanations, and they render through the
-// app's own glass Tooltip now instead of the browser's white `title` window.
-const SLIDE_PRESETS: { key: string; label: string; tip: string; spec: SlideSpec }[] = [
+// `tipKey`, not `title`: these are hover explanations, and they render through
+// the app's own glass Tooltip now instead of the browser's white `title`
+// window.
+//
+// `labelKey`/`tipKey` rather than `label`/`tip` — this table is MODULE SCOPE
+// and cannot call `useTranslations()`. Same shape as `OPENING_TYPES` in
+// BuildToolbar.tsx: a stable id + key, resolved at the render site.
+const SLIDE_PRESETS: { key: string; labelKey: string; tipKey: string; spec: SlideSpec }[] = [
   {
     key: "patio",
-    label: "Patio",
-    tip: "Two glazed panels sliding past each other — the balcony door",
+    labelKey: "slidePresets.patio",
+    tipKey: "slidePresets.patioTip",
     spec: { style: "bypass", panels: 2, glazed: true, open: 0, side: "end" },
   },
   {
     key: "closet",
-    label: "Closet",
-    tip: "Solid panels sliding past each other — wardrobe bypass doors",
+    labelKey: "slidePresets.closet",
+    tipKey: "slidePresets.closetTip",
     spec: { style: "bypass", panels: 2, glazed: false, open: 0, side: "end" },
   },
   {
     key: "barn",
-    label: "Barn",
-    tip: "One leaf sliding along the face of the wall",
+    labelKey: "slidePresets.barn",
+    tipKey: "slidePresets.barnTip",
     spec: { style: "surface", panels: 1, glazed: false, open: 0, side: "end" },
   },
 ];
@@ -78,37 +85,37 @@ const SLIDE_PRESETS: { key: string; label: string; tip: string; spec: SlideSpec 
  *  Two names for one type was a slip, not a distinction. */
 const OPENING_TYPES: {
   type: OpeningType;
-  label: string;
+  labelKey: string;
   Icon: ComponentType<{ size?: number }>;
-  tip?: string;
+  tipKey?: string;
 }[] = [
-  { type: "door", label: "Door / Patio", Icon: DoorIcon },
+  { type: "door", labelKey: "types.door", Icon: DoorIcon },
   {
     type: "passage",
-    label: "Passage",
+    labelKey: "types.passage",
     Icon: PassageIcon,
-    tip: "Keep the opening, lose the door — an open way through a wall",
+    tipKey: "types.passageTip",
   },
-  { type: "window", label: "Window", Icon: WindowIcon },
+  { type: "window", labelKey: "types.window", Icon: WindowIcon },
 ];
 
 const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
   s.style === p.style && s.panels === p.panels && (s.glazed ?? false) === (p.glazed ?? false);
 
-const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; label: string }[] = [
-  { key: "painted-white", label: "White" },
-  { key: "painted-charcoal", label: "Charcoal" },
-  { key: "oak", label: "Oak" },
-  { key: "walnut", label: "Walnut" },
+const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; labelKey: string }[] = [
+  { key: "painted-white", labelKey: "doorMaterials.painted-white" },
+  { key: "painted-charcoal", labelKey: "doorMaterials.painted-charcoal" },
+  { key: "oak", labelKey: "doorMaterials.oak" },
+  { key: "walnut", labelKey: "doorMaterials.walnut" },
 ];
 
 // Two finishes, not three: "Painted" was tinted matte under another name, so
 // it offered a choice that changed nothing (it survives in the schema for
 // saved projects — see `frameFinishOf`). Colour is orthogonal to both and
 // comes from the Decorate palette. Like colour, the finish is whole-house.
-const WINDOW_FRAME_MATERIALS: { key: FrameFinish; label: string; tip: string }[] = [
-  { key: "matte", label: "Matte", tip: "Powder-coated — fine grain, almost no reflection. Applies to every window and patio door." },
-  { key: "glossy", label: "Glossy", tip: "Polished anodised aluminium — sharp reflections. Applies to every window and patio door." },
+const WINDOW_FRAME_MATERIALS: { key: FrameFinish; labelKey: string; tipKey: string }[] = [
+  { key: "matte", labelKey: "frameMaterials.matte", tipKey: "frameMaterials.matteTip" },
+  { key: "glossy", labelKey: "frameMaterials.glossy", tipKey: "frameMaterials.glossyTip" },
 ];
 
 /** The frame's current colour, plus the one button that changes it.
@@ -120,6 +127,7 @@ const WINDOW_FRAME_MATERIALS: { key: FrameFinish; label: string; tip: string }[]
  *  opens that tab, so the same colours that paint walls also paint frames —
  *  and every colour in the catalog is reachable, not the first twenty. */
 function FramePaintRow({ opening }: { opening: Opening }) {
+  const t = useTranslations("editor.opening");
   const armed = useSceneStore((s) => s.brush?.kind === "frame");
   const openPalette = () => {
     const s = useSceneStore.getState();
@@ -132,22 +140,23 @@ function FramePaintRow({ opening }: { opening: Opening }) {
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <PdSwatch
         hex={opening.frameColor ?? null}
-        tip={opening.frameColor ?? "Natural — the finish's own colour"}
+        tip={opening.frameColor ?? t("framePaint.natural")}
         onClick={openPalette}
       />
       <PdChip
         active={armed}
         extra={{ flex: 1, textAlign: "center" }}
         onClick={openPalette}
-        tip="Pick a colour in the Decorate palette — it applies to every window and patio door"
+        tip={t("framePaint.tip")}
       >
-        {armed ? "Picking…" : <PdChipLabel icon={<PaintIcon size={13} />}>Paint</PdChipLabel>}
+        {armed ? t("framePaint.picking") : <PdChipLabel icon={<PaintIcon size={13} />}>{t("framePaint.paint")}</PdChipLabel>}
       </PdChip>
     </div>
   );
 }
 
 export function OpeningSection({ opening }: { opening: Opening }) {
+  const t = useTranslations("editor.opening");
   const patch = (label: string, p: Partial<Opening>) => {
     const s = useSceneStore.getState();
     s.commitScene(label, {
@@ -176,6 +185,10 @@ export function OpeningSection({ opening }: { opening: Opening }) {
     // fields hands it straight back to the width rule, so what you actually
     // get is a patio slider. Lower-cased mid-sentence, matching WallSection's
     // own `Make ${KIND_LABEL[next].toLowerCase()}`.
+    //
+    // These commitScene labels are internal history-stack debug text only —
+    // Viewport.tsx reads scenePast's LENGTH, never its labels — so they stay
+    // plain English rather than going through i18n.
     patch(
       // "Remove door", not "Remove opening": switching to `passage` KEEPS the
       // opening and takes the leaf out of it — which is what the chip's own
@@ -209,20 +222,20 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           two used to disagree, and the fallthrough here printed the raw
           lowercase enum. */}
       <PdSectionTitle
-        label={openingDisplayName(opening)}
+        label={t(`displayName.${openingDisplayNameKey(opening)}`)}
         meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
       />
 
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-        {OPENING_TYPES.map(({ type, label, Icon, tip }) => (
+        {OPENING_TYPES.map(({ type, labelKey, Icon, tipKey }) => (
           <PdChip
             key={type}
             active={opening.type === type}
             extra={pdChipFlex}
             onClick={() => setType(type)}
-            tip={tip}
+            tip={tipKey ? t(tipKey) : undefined}
           >
-            <PdChipLabel icon={<Icon size={13} />}>{label}</PdChipLabel>
+            <PdChipLabel icon={<Icon size={13} />}>{t(labelKey)}</PdChipLabel>
           </PdChip>
         ))}
       </div>
@@ -233,22 +246,22 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               a frame, so it takes the window materials further down instead. */}
           {!glazedDoor && (
             <>
-              <div style={pdMicroLabel()}>Material</div>
+              <div style={pdMicroLabel()}>{t("material")}</div>
               <div style={{ display: "flex", gap: 4 }}>
                 {DOOR_MATERIALS.map((m) => (
                   <PdChip
                     key={m.key}
                     active={(opening.doorMaterial ?? "painted-white") === m.key}
                     extra={pdChipFlex}
-                    onClick={() => patch(`Door material: ${m.label}`, { doorMaterial: m.key })}
+                    onClick={() => patch(`Door material: ${m.key}`, { doorMaterial: m.key })}
                   >
-                    {m.label}
+                    {t(m.labelKey)}
                   </PdChip>
                 ))}
               </div>
             </>
           )}
-          <div style={pdMicroLabel()}>How it opens</div>
+          <div style={pdMicroLabel()}>{t("howItOpens")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {/* Writing swingDeg (not just clearing `slide`) is what makes this
                 an EXPLICIT choice — otherwise a door past PATIO_MIN_WIDTH
@@ -265,9 +278,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                   leafSplit: undefined,
                 })
               }
-              tip="One hinged leaf"
+              tip={t("swingTip")}
             >
-              ↷ Swing
+              ↷ {t("swing")}
             </PdChip>
             <PdChip
               active={double}
@@ -281,9 +294,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                   leafSplit: undefined,
                 })
               }
-              tip="A pair of hinged leaves meeting in the middle — French doors"
+              tip={t("doubleTip")}
             >
-              ⁘ Double
+              ⁘ {t("double")}
             </PdChip>
             {SLIDE_PRESETS.map((p) => (
               <PdChip
@@ -291,7 +304,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 active={!!slide && matchesPreset(slide, p.spec)}
                 extra={pdChipFlex}
                 onClick={() =>
-                  patch(`${p.label} slider`, {
+                  patch(`${p.key} slider`, {
                     slide: { ...p.spec, open: slide?.open ?? 0, side: slide?.side ?? "end" },
                     swingDeg: undefined,
                     hinge: undefined,
@@ -299,9 +312,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                     leafSplit: undefined,
                   })
                 }
-                tip={p.tip}
+                tip={t(p.tipKey)}
               >
-                {p.label}
+                {t(p.labelKey)}
               </PdChip>
             ))}
           </div>
@@ -311,7 +324,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       {isDoor && !slide && (
         <>
           <PdNumField
-            label="Swing"
+            label={t("swing")}
             unit="°"
             value={opening.swingDeg ?? 0}
             onCommit={(v) => patch("Door swing", { swingDeg: Math.min(120, Math.max(0, v)) })}
@@ -322,7 +335,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
             <div style={{ display: "flex", gap: 4 }}>
               {(["start", "end"] as const).map((h) => (
                 <PdChip key={h} active={(opening.hinge ?? "start") === h} extra={pdChipFlex} onClick={() => patch("Door hinge", { hinge: h })}>
-                  Hinge {h}
+                  {h === "start" ? t("hingeStart") : t("hingeEnd")}
                 </PdChip>
               ))}
             </div>
@@ -333,13 +346,13 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       {isDoor && slide && (
         <>
           <PdNumField
-            label="Open"
+            label={t("open")}
             unit="%"
             value={Math.round((slide.open ?? 0) * 100)}
             onCommit={(v) => patch("Slide open", { slide: { ...slide, open: Math.min(1, Math.max(0, v / 100)) } })}
           />
           {slide.style === "bypass" && (
-            <PdStepper label="Panels" value={slide.panels} min={2} max={3} onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })} />
+            <PdStepper label={t("panels")} value={slide.panels} min={2} max={3} onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })} />
           )}
           <div style={{ display: "flex", gap: 4 }}>
             {(["start", "end"] as const).map((sd) => (
@@ -348,9 +361,9 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 active={(slide.side ?? "end") === sd}
                 extra={pdChipFlex}
                 onClick={() => patch("Slide side", { slide: { ...slide, side: sd } })}
-                tip="Which jamb the panels stack at"
+                tip={t("slideSideTip")}
               >
-                Slides {sd}
+                {sd === "start" ? t("slidesStart") : t("slidesEnd")}
               </PdChip>
             ))}
           </div>
@@ -363,11 +376,11 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           with one wide panel and one narrow fixed light. */}
       {isDoor && leaves > 1 && (
         <>
-          <div style={pdMicroLabel()}>{slide ? "Panel widths" : "Leaf widths"}</div>
+          <div style={pdMicroLabel()}>{slide ? t("panelWidths") : t("leafWidths")}</div>
           {widths.map((w, k) => (
             <PdNumField
               key={k}
-              label={`${slide ? "Panel" : "Leaf"} ${k + 1}`}
+              label={slide ? t("panelLabel", { n: k + 1 }) : t("leafLabel", { n: k + 1 })}
               value={w}
               onCommit={(v) => setLeafWidth(k, v)}
               displayScale={100}
@@ -379,7 +392,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               extra={{ alignSelf: "flex-start", padding: "3px 8px", fontSize: 11 }}
               onClick={() => patch("Even leaves", { leafSplit: undefined })}
             >
-              Even them up
+              {t("evenThemUp")}
             </PdChip>
           )}
         </>
@@ -393,24 +406,24 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               active={(opening.lining ?? true) === l}
               extra={pdChipFlex}
               onClick={() => patch("Passage lining", { lining: l })}
-              tip={l ? "Jamb and head casing — a finished cased opening" : "Bare plaster reveal"}
+              tip={l ? t("casedTip") : t("bareTip")}
             >
-              {l ? "Cased" : "Bare"}
+              {l ? t("cased") : t("bare")}
             </PdChip>
           ))}
         </div>
       )}
 
-      <PdNumField label="Width" value={opening.width} onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })} displayScale={100} unit="cm" />
+      <PdNumField label={t("width")} value={opening.width} onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })} displayScale={100} unit="cm" />
       <PdNumField
-        label="Height"
+        label={t("height")}
         value={opening.height}
         onCommit={(v) => patch("Opening height", { height: Math.max(0.4, v) })}
         displayScale={100}
         unit="cm"
       />
       {isWindow && (
-        <PdNumField label="Sill" value={opening.sill} onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })} displayScale={100} unit="cm" />
+        <PdNumField label={t("sill")} value={opening.sill} onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })} displayScale={100} unit="cm" />
       )}
 
       {/* Frame finish — windows AND patio doors. A glazed slider is a window's
@@ -419,7 +432,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           window and patio door at once: one house, one glazing colour. */}
       {(isWindow || glazedDoor) && (
         <>
-          <div style={pdMicroLabel()}>Frame finish · whole house</div>
+          <div style={pdMicroLabel()}>{t("frameFinishHeading")}</div>
           <div style={{ display: "flex", gap: 4 }}>
             {WINDOW_FRAME_MATERIALS.map((m) => (
               <PdChip
@@ -427,34 +440,34 @@ export function OpeningSection({ opening }: { opening: Opening }) {
                 active={frameFinishOf(opening) === m.key}
                 extra={pdChipFlex}
                 onClick={() => useSceneStore.getState().setFrameFinish(m.key)}
-                tip={m.tip}
+                tip={t(m.tipKey)}
               >
-                {m.label}
+                {t(m.labelKey)}
               </PdChip>
             ))}
           </div>
-          <div style={pdMicroLabel()}>Frame colour · whole house</div>
+          <div style={pdMicroLabel()}>{t("frameColourHeading")}</div>
           <FramePaintRow opening={opening} />
         </>
       )}
 
       {isWindow && (
         <>
-          <div style={pdMicroLabel()}>Glazing bars</div>
+          <div style={pdMicroLabel()}>{t("glazingBars")}</div>
           <PdStepper
-            label="Columns"
+            label={t("columns")}
             value={opening.mullions?.cols ?? 2}
             onSet={(n) => patch("Mullion columns", { mullions: { cols: n, rows: opening.mullions?.rows ?? 1 } })}
           />
           <PdStepper
-            label="Rows"
+            label={t("rows")}
             value={opening.mullions?.rows ?? 1}
             onSet={(n) => patch("Mullion rows", { mullions: { cols: opening.mullions?.cols ?? 2, rows: n } })}
           />
         </>
       )}
 
-      <PdHelpText>Drag to slide it along the wall · Delete fills the wall back in.</PdHelpText>
+      <PdHelpText>{t("help")}</PdHelpText>
     </div>
   );
 }
