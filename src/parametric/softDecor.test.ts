@@ -10,6 +10,16 @@
 // the whole rug, which is a doll's-house rug at any size.
 
 import { existsSync, statSync } from "node:fs";
+import EN_MESSAGES from "../../messages/en.json";
+
+/** The English card caption for a piece. Labels are keys now, so a test that
+ *  asserts on the WORDS has to resolve them the way the UI does — against
+ *  `editor.parametric` in the shipped catalogue. */
+const EN_LABEL = (p: { labelKey: string; variantLabelKey?: string }): string => {
+  const at = (k: string): string =>
+    k.split(".").reduce<unknown>((o, seg) => (o as Record<string, unknown>)?.[seg], EN_MESSAGES.editor.parametric) as string;
+  return p.variantLabelKey ? `${at(p.labelKey)} · ${at(p.variantLabelKey)}` : at(p.labelKey);
+};
 import { resolve } from "node:path";
 import * as THREE from "three";
 import { GENERATORS, sanitizeSpec, elevationOf } from "@/parametric";
@@ -304,9 +314,10 @@ console.log("\nthe colour wheel reaches the whole rug");
 
 console.log("\ncards, names and glyphs");
 {
-  const labels = RUGS.map((p) => p.label);
-  check("no card falls back to '<generator> · <variant>'", labels.every((l) => !l.includes("·")), labels.join(", "));
-  check("card names are unique", new Set(labels).size === labels.length);
+  const fellBack = RUGS.filter((p) => p.variantLabelKey);
+  check("no card falls back to '<generator> · <variant>'", fellBack.length === 0, fellBack.map((p) => p.labelKey).join(", "));
+  const keys1 = RUGS.map((p) => p.labelKey);
+  check("card names are unique", new Set(keys1).size === keys1.length);
   for (const p of RUGS) check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey]);
   const glyphs = RUGS.map((p) => GENERATOR_GLYPH[p.glyphKey]);
   check("no two rugs share a glyph", new Set(glyphs).size === glyphs.length);
@@ -504,7 +515,7 @@ console.log("\nTVs are sold in inches, and both dimensions follow the one number
   check("the TV generator sells by screen size", !!size && size.presets.length >= 5);
   for (const p of TVS) {
     // The card says a size; the geometry has to BE that size.
-    const label = Number(/(\d+)"/.exec(p.label)?.[1]);
+    const label = Number(/(\d+)"/.exec(EN_LABEL(p))?.[1]);
     check(`${p.glyphKey} measures the size on its card`, near(size.of(p.spec), label, 0.6), `${size.of(p.spec).toFixed(1)}" vs ${label}"`);
   }
   const spec = sanitizeSpec({ ...GENERATORS.tv.defaultSpec, variant: "wall-55" } as ParametricSpec);
@@ -596,9 +607,10 @@ console.log("\na TV on a stand can stand on the furniture");
 
 console.log("\nTV cards, names, glyphs and dead controls");
 {
-  const labels = TVS.map((p) => p.label);
-  check("no TV card falls back to '<generator> · <variant>'", labels.every((l) => !l.includes("·")), labels.join(", "));
-  check("TV card names are unique", new Set(labels).size === labels.length);
+  const fellBack = TVS.filter((p) => p.variantLabelKey);
+  check("no TV card falls back to '<generator> · <variant>'", fellBack.length === 0, fellBack.map((p) => p.labelKey).join(", "));
+  const tvKeys = TVS.map((p) => p.labelKey);
+  check("TV card names are unique", new Set(tvKeys).size === tvKeys.length);
   for (const p of TVS) check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey]);
   const glyphs = TVS.map((p) => GENERATOR_GLYPH[p.glyphKey]);
   check("no two TVs share a glyph", new Set(glyphs).size === glyphs.length);
@@ -609,7 +621,7 @@ console.log("\nTV cards, names, glyphs and dead controls");
   check("the TV generator offers a canvas-free finish", GENERATORS.tv.finishes.some((f) => CANVAS_FREE.has(f)));
   // Two-state module, labelled — never a 0/1 stepper.
   const screenMod = GENERATORS.tv.modules.find((m) => m.key === "screenOn");
-  check("the screen toggle has real labels", !!screenMod?.toggle?.on && !!screenMod?.toggle?.off, JSON.stringify(screenMod?.toggle));
+  check("the screen toggle has real labels", !!screenMod?.toggle?.onKey && !!screenMod?.toggle?.offKey, JSON.stringify(screenMod?.toggle));
   // The second swatch row paints the STAND, so it must not appear on a card
   // that has no stand — a control that does nothing teaches people the
   // inspector lies.
@@ -813,7 +825,7 @@ for (const p of CLOCKS) {
 console.log("\nwall-art and clock cards, names and glyphs");
 for (const p of [...ART, ...CLOCKS]) {
   check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey]);
-  check(`${p.glyphKey} has a name that stands alone`, !p.label.includes("·"), p.label);
+  check(`${p.glyphKey} has a name that stands alone`, !p.variantLabelKey, p.labelKey);
 }
 {
   const keys = [...ART, ...CLOCKS].map((p) => p.glyphKey);

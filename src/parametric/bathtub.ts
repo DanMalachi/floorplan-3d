@@ -37,18 +37,18 @@ function basinShape(variant: string, w: number, d: number): THREE.Shape {
 
 export const bathtubGenerator: GeneratorDef = {
   id: "bathtub",
-  label: "Bathtub",
+  labelKey: "bathtub.label",
   category: "Bathroom",
   rooms: ["bathroom"],
   wallSnap: true,
   dimLimits: { w: [1.0, 2.0], d: [0.6, 1.1], h: [0.4, 0.7] },
-  modules: [{ key: "tap", label: "Tap", min: 0, max: 1, default: 1, toggle: { on: "With tap", off: "No tap" } }],
+  modules: [{ key: "tap", labelKey: "bathtub.modules.tap.label", min: 0, max: 1, default: 1, toggle: { onKey: "bathtub.modules.tap.toggle.on", offKey: "bathtub.modules.tap.toggle.off" } }],
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["acrylic", "ceramic"],
   variants: [
-    { id: "alcove", label: "Alcove", cardLabel: "Alcove bath" },
-    { id: "freestanding", label: "Freestanding", cardLabel: "Freestanding bath" },
+    { id: "alcove", labelKey: "bathtub.variants.alcove.label", cardLabelKey: "bathtub.variants.alcove.cardLabel" },
+    { id: "freestanding", labelKey: "bathtub.variants.freestanding.label", cardLabelKey: "bathtub.variants.freestanding.cardLabel" },
   ],
   hotspotKeywords: ["bathtub", "tub"],
   defaultSpec: {

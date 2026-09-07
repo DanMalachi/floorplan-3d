@@ -23,14 +23,16 @@ import type { RoomHotspot } from "./KitchenScene";
 // nobody can reach through the picture does not exist, and a rug sharing a
 // button with lamps and plants is a rug nobody finds.
 export const LIVING_HOTSPOTS: RoomHotspot[] = [
-  { id: "sofa", label: "Sofa", keywords: ["sofa", "couch", "lounge chair", "bench"] },
-  { id: "coffeeTable", label: "Coffee table", keywords: ["coffee table", "side table"] },
-  { id: "tv", label: "TV & storage", keywords: ["tv", "television", "cabinet", "bookcase"] },
-  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
-  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
-  { id: "clock", label: "Clock", keywords: ["clock"] },
+  { id: "sofa", labelKey: "living.sofa", keywords: ["sofa", "couch", "lounge chair", "bench"] },
+  { id: "coffeeTable", labelKey: "living.coffeeTable", keywords: ["coffee table", "side table"] },
+  { id: "tv", labelKey: "living.tv", keywords: ["tv", "television", "cabinet", "bookcase"] },
+  { id: "rug", labelKey: "living.rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "decor", labelKey: "living.decor", keywords: ["lamp", "plant"] },
+  { id: "art", labelKey: "living.art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", labelKey: "living.clock", keywords: ["clock"] },
 ];
+
+const lbl = (id: string) => LIVING_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const LIVING_X0 = 10;
 export const LIVING_WIDTH = 190;
@@ -65,12 +67,12 @@ function LivingItems(): RoomItem[] {
   const clockBox = isoBox(178, 92, 18, 18, 2);
 
   return [
-    { id: "sofa", label: "Sofa", keywords: LIVING_HOTSPOTS[0].keywords, box: sofaBox, art: <Sofa x={10} yFront={ITEMS_Y} w={72} depth={20} /> },
-    { id: "rug", label: "Rug", keywords: LIVING_HOTSPOTS[3].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={62} depth={26} /> },
-    { id: "coffeeTable", label: "Coffee table", keywords: LIVING_HOTSPOTS[1].keywords, box: tableBox, art: <TableWithLegs x={90} yFront={ITEMS_Y} w={26} depth={16} topH={3} legH={14} /> },
+    { id: "sofa", labelKey: lbl("sofa"), keywords: LIVING_HOTSPOTS[0].keywords, box: sofaBox, art: <Sofa x={10} yFront={ITEMS_Y} w={72} depth={20} /> },
+    { id: "rug", labelKey: lbl("rug"), keywords: LIVING_HOTSPOTS[3].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={62} depth={26} /> },
+    { id: "coffeeTable", labelKey: lbl("coffeeTable"), keywords: LIVING_HOTSPOTS[1].keywords, box: tableBox, art: <TableWithLegs x={90} yFront={ITEMS_Y} w={26} depth={16} topH={3} legH={14} /> },
     {
       id: "tv",
-      label: "TV & storage",
+      labelKey: lbl("tv"),
       keywords: LIVING_HOTSPOTS[2].keywords,
       box: tvBox,
       art: (
@@ -81,10 +83,10 @@ function LivingItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "decor", label: "Lamp & decor", keywords: LIVING_HOTSPOTS[4].keywords, box: decorBox, art: <Plant x={188} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
+    { id: "decor", labelKey: lbl("decor"), keywords: LIVING_HOTSPOTS[4].keywords, box: decorBox, art: <Plant x={188} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
     {
       id: "art",
-      label: "Wall art",
+      labelKey: lbl("art"),
       keywords: LIVING_HOTSPOTS[5].keywords,
       box: artBox,
       art: (
@@ -95,7 +97,7 @@ function LivingItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "clock", label: "Clock", keywords: LIVING_HOTSPOTS[6].keywords, box: clockBox, art: <WallClockArt cx={187} cy={83} r={9} /> },
+    { id: "clock", labelKey: lbl("clock"), keywords: LIVING_HOTSPOTS[6].keywords, box: clockBox, art: <WallClockArt cx={187} cy={83} r={9} /> },
   ];
 }
 

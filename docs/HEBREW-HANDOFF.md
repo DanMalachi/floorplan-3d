@@ -14,28 +14,74 @@ one is the argument.
 
 ---
 
-## Start here (session of 2026-09-05 → next)
+## Start here (session of 2026-09-06 → next)
 
-**Working tree is clean, everything is committed, nothing is pushed.** The only
-untracked paths are the three that are untracked on purpose: `docs/NAMING.md`,
-`docs/NAMING-BRIEF.md`, `public/furniture/blenderkit/opt-ktx2/`. Never
-`git add -A` here.
+**Working tree is DIRTY: ~30 modified files, nothing committed, nothing pushed.**
+That is the whole of 2026-09-06's work — Step 4's finish plus most of Step 5.
+Commit it before doing anything else.
 
-**Steps 1, 2 and 3 are done. Step 3 was the checkpoint and Dan has accepted it
-(see below). Step 4's tiers 1 and 2 are done and measured; Step 5 is
-untouched.**
+**Four untracked paths, and they are NOT all the same kind.** Three are
+untracked ON PURPOSE and must stay that way: `docs/NAMING.md`,
+`docs/NAMING-BRIEF.md`, `public/furniture/blenderkit/opt-ktx2/`. The fourth,
+`scripts/i18n/`, is new on 2026-09-06 and SHOULD be committed — it holds the
+fragment-merge tool the parallel-worker convention depends on. Never
+`git add -A` here; add that one path explicitly.
 
-**START HERE NEXT SESSION: Step 4 is blocked on ONE decision from Dan, and it
-is written up under "THE BLOCKER" in the Step 4 section below.** Four pieces of
-editor chrome live inside protected `src/viewport3d/` files and could not be
-mirrored, which leaves the Hebrew editor's wall-mode row on the wrong side and —
-this part is arithmetic, not observation — puts the inspector panel on exactly
-the same coordinates whenever something is selected. Read that section, put the
-three options to Dan, and recommend option 1 (a logged protected-file exception
-for four property renames). **Do not edit a protected file before he says so.**
+**Steps 1–4 are DONE. Step 5 is substantially done.** 478 `editor.*` keys,
+en/he key sets identical, and a Playwright sweep of all four editor modes in
+both locales reports **zero `MISSING_MESSAGE`**. typecheck clean, all five
+`test:*` suites pass, lint 49 problems against a 50 baseline with an identical
+warning profile.
 
-If Dan picks an option, Step 4 finishes in well under an hour; then Step 5 is
-the last and largest piece (~700–850 keys).
+**START HERE NEXT SESSION: the INSPECTOR is the only English surface left** —
+`src/ui/planDock/inspector/`, ~127 strings, the panel that appears when you
+select a wall, opening or item. `ParametricSection.tsx` and
+`FurnitureSection.tsx` in that folder are already done as collateral from the
+parametric work, so the real remainder is `OpeningSection.tsx` (the densest
+single file, ~67 strings including six sentence-length `tip:` strings),
+`WallSection.tsx`, `RoomSection.tsx`, `FixtureSection.tsx`, `Inspector.tsx`,
+`panelKit.tsx`. Also still English: `useSceneStore`'s `importMsg` prose.
+
+### The conventions Step 5 established — follow them, do not invent a second one
+
+**Module-scope label tables carry `labelKey`, resolved at the render site.** A
+module cannot call `useTranslations()`. Every such table now keeps its stable
+`id` and swaps the word for a key: `ALL_MODES` (design/page.tsx), `WALL_MODES`
+/ `ENV_PRESETS` / `WEATHERS` (Viewport.tsx), `DOCK_TABS` / `ROOM_SCENES`
+(BottomDock.tsx), `TOOLS` / `OPENING_TYPES` (BuildToolbar.tsx), every
+`*_HOTSPOTS` array, and all 21 parametric generators. The precedent is
+`NavItem.labelKey` from the marketing nav.
+
+**A worker must NEVER edit `messages/*.json`.** Three parallel workers doing
+read-modify-write on one JSON silently drops two of them. Each writes
+`{"en": …, "he": …}` to its own fragment file and the leader DEEP-merges. The
+merge script (which also diffs the en/he key sets and fails loudly on a
+mismatch) is in the repo: `scripts/i18n/merge-fragments.mjs`, which takes the
+fragment directory as its one argument.
+
+**Budget for repair work after every parallel worker.** A worker stops at its
+file boundary by design, so a rename that crosses files lands half-finished: the
+parametric worker renamed `label`→`labelKey` across 21 files and left three
+render sites and twelve test assertions broken for the leader to fix. That is
+still cheaper than the collisions, but it is not free.
+
+**Tests that assert on WORDS have to resolve keys.** The "no card falls back to
+'<generator> · <variant>'" checks became `!p.variantLabelKey` — the fallback is
+a set field now, not a "·" inside a string. `softDecor.test.ts` imports
+`messages/en.json` through an `EN_LABEL` helper for the one check that reads a
+screen size out of the English caption.
+
+**`FurnitureAsset` has `name` AND `nameKey`, and they mean different things.**
+`name` is a real product noun (IKEA's "MALM") that must never be translated;
+`nameKey` is set only for PARAMETRIC items, whose generic description does
+translate. One field meaning both is exactly how a raw key reaches a user's
+screen. Render sites prefer `nameKey`.
+
+**Two protected-file exceptions were granted on 2026-09-06 and are logged in
+`docs/PROTECTED_PATHS.md`** — one for the four logical-property renames, a
+second, separate one for `Viewport.tsx`'s hardcoded TEXT. They were logged
+separately on purpose: adding a `useTranslations` import is not a property
+rename, and an exception is never widened to a change it does not describe.
 
 **Two things waiting on Dan. Two more are now CLOSED — do not re-raise them:**
 
@@ -358,7 +404,7 @@ them: `Wordmark.tsx` is DONE (it was listed under Tier 3 as needing the isolate
 — it has it), and the `done.` period problem is closed everywhere except any
 copy that has not been translated yet.
 
-### Step 4 — editor RTL — **TIERS 1 AND 2 DONE, BLOCKED ON ONE DECISION**
+### Step 4 — editor RTL — **DONE 2026-09-06**
 
 Commit `b92c6cf`. Physical properties are logical properties now:
 `left`/`right` → `insetInlineStart`/`insetInlineEnd`, the margin and padding
@@ -378,7 +424,22 @@ overlapping pairs between locales. **That second check is the one that matters:*
 half-mirroring is this job's failure mode, and an element still pinned physically
 does not look wrong on its own — it looks wrong by landing under a neighbour.
 
-#### THE BLOCKER — read this before doing anything else
+#### THE BLOCKER — **RESOLVED 2026-09-06, kept for the reasoning**
+
+Dan approved option 1. The four sites are now `insetInlineStart`/
+`insetInlineEnd`, logged in `docs/PROTECTED_PATHS.md`. The predicted
+inspector × WallModeToggle collision is verified gone — and verifying it needed
+a real SELECTION, because `Inspector.tsx` returns null without `sel3d`, which
+is precisely why the earlier gate run missed it. Measured 1440×900 with a wall
+selected: 11 pinned boxes per locale, 10 mirror within 4px, overlap sets
+identical (the one that does not mirror is the `2.00 m` dimension label floating
+in world space over the selected wall — scene geometry, which must never
+mirror). Two traps if you re-run that gate: the editor opens in TRACE with an
+empty plan so press `2` for Build first, and do NOT detect a selection by
+matching the text "Wall" — that is also a toolbar button and it false-positives;
+watch the pinned-box count go 8 → 11 instead.
+
+Original write-up follows.
 
 **Four pieces of editor chrome live inside PROTECTED files** and could not be
 mirrored. CLAUDE.md rule 1 says stop and ask Dan, so that is what this is.
@@ -445,7 +506,14 @@ restructuring code the 3D layer depends on.
   conditional.
 
 
-### Step 5 — editor strings (~700–850 keys)
+### Step 5 — editor strings — **SUBSTANTIALLY DONE 2026-09-06; the inspector is what is left**
+
+The ~700–850 estimate was high: the real editor surface is **478 keys**. Two
+independent inventory passes landed at ~492 and ~600; the gap was long-form
+prose that this doc's own guidance had already carved out to per-locale route
+content.
+
+Original write-up follows.
 
 Namespaces mirroring the UI: `nav`, `hero`, `howItWorks`, `different`, `faq`,
 `cta`, `dock`, `inspector`, `toolbar`, `trace`, `account`, `toast`, `undo`.

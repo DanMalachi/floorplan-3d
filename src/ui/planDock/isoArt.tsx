@@ -6,6 +6,7 @@
 // library of recognizable-shape composites (per Dan's review: "only
 // features boxes... make it look like the actual things they represent").
 
+import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import { PD } from "./tokens";
 
@@ -518,7 +519,13 @@ export function unionBox(a: IsoBox, b: IsoBox): IsoBox {
 
 export interface RoomItem {
   id: string;
-  label: string;
+  /** A key under `editor.rooms`, e.g. "bathroom.toilet" — not a word.
+   *  Every scene's item list takes it from that room's `*_HOTSPOTS` entry via
+   *  the file's own `lbl()` helper, the same way `kw()` already supplies
+   *  keywords, so a label exists in ONE place per room. It used to be written
+   *  out twice — once in the hotspot list, once inline here — and the two had
+   *  already drifted (StudyScene: "Chair & sofa" vs "Chair"). */
+  labelKey: string;
   keywords: string[];
   box: IsoBox;
   art: ReactNode;
@@ -531,7 +538,7 @@ export interface RoomItem {
  *  RoomSceneShell's one-backdrop-wall-plus-floor-row shape, but the hit-area
  *  mechanics are identical. */
 export function HitArea({
-  id,
+  labelKey,
   box,
   active,
   hovered,
@@ -539,7 +546,8 @@ export function HitArea({
   onLeave,
   onClick,
 }: {
-  id: string;
+  /** The accessible name. The visible label is drawn by the parent. */
+  labelKey: string;
   box: IsoBox;
   active: boolean;
   hovered: boolean;
@@ -547,10 +555,11 @@ export function HitArea({
   onLeave: () => void;
   onClick: () => void;
 }) {
+  const t = useTranslations("editor.rooms");
   const { x0, y0, x1, y1 } = box.bbox;
   const pad = 2;
   return (
-    <g role="button" aria-label={id} onMouseEnter={onEnter} onMouseLeave={onLeave} onClick={onClick} style={{ cursor: "pointer" }}>
+    <g role="button" aria-label={t(labelKey)} onMouseEnter={onEnter} onMouseLeave={onLeave} onClick={onClick} style={{ cursor: "pointer" }}>
       <rect x={x0 - pad} y={y0 - pad} width={x1 - x0 + pad * 2} height={y1 - y0 + pad * 2} fill="transparent" />
       {(active || hovered) && (
         <rect
@@ -608,15 +617,16 @@ export function RoomSceneShell({
   onHotspotClick: (id: string) => void;
   onFloorClick: () => void;
 }) {
+  const t = useTranslations("editor.rooms");
   const [hovered, setHovered] = useState<string | null>(null);
   const floor = roomFloor(x0, width);
   const hoveredItem = items.find((i) => i.id === hovered);
-  const hoveredLabel = hovered === "floor" ? "Floor — click to pick material" : hoveredItem?.label ?? null;
+  const hoveredLabel = hovered === "floor" ? t("floor") : hoveredItem ? t(hoveredItem.labelKey) : null;
   const hoveredBox = hovered === "floor" ? floor : hoveredItem?.box ?? null;
 
   return (
     <svg viewBox="0 0 220 170" width="100%" height="100%" style={{ display: "block", overflow: "visible" }}>
-      <g role="button" aria-label="floor" onMouseEnter={() => setHovered("floor")} onMouseLeave={() => setHovered((h) => (h === "floor" ? null : h))} onClick={onFloorClick} style={{ cursor: "pointer" }}>
+      <g role="button" aria-label={t("floor")} onMouseEnter={() => setHovered("floor")} onMouseLeave={() => setHovered((h) => (h === "floor" ? null : h))} onClick={onFloorClick} style={{ cursor: "pointer" }}>
         <polygon points={floor.top} fill="oklch(0.3 0.015 90 / 0.5)" stroke={FACE_STROKE} strokeWidth={0.6} />
         {hovered === "floor" && <polygon points={floor.top} fill="none" stroke={PD.accent} strokeWidth={1.5} strokeDasharray="3 3" />}
       </g>
@@ -627,7 +637,7 @@ export function RoomSceneShell({
         <g key={it.id}>
           {it.art}
           <HitArea
-            id={it.id}
+            labelKey={it.labelKey}
             box={it.box}
             active={activeHotspot === it.id}
             hovered={hovered === it.id}

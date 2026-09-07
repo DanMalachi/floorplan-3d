@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useSession, displayName } from "@/lib/auth/useSession";
 import { wipeLocalData } from "@/store/projectPersistence";
@@ -42,6 +43,7 @@ interface StageReport {
 }
 
 export default function AccountPage() {
+  const locale = useLocale();
   const { user, loading, configured, signOut } = useSession();
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [typed, setTyped] = useState("");
@@ -160,7 +162,7 @@ export default function AccountPage() {
               <Label>Account</Label>
               <Row k="Signed in as" v={`${displayName(user)}${user.email ? ` · ${user.email}` : ""}`} />
               <Row k="Sign-in method" v="Google" />
-              {info?.account.created_at && <Row k="Account created" v={new Date(info.account.created_at).toLocaleString()} />}
+              {info?.account.created_at && <Row k="Account created" v={new Date(info.account.created_at).toLocaleString(locale)} />}
             </Card>
 
             <Card>

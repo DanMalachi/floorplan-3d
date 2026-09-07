@@ -57,13 +57,20 @@ function flue(fromY: number, toY: number, z: number, mat: THREE.Material): THREE
 
 export const rangeHoodGenerator: GeneratorDef = {
   id: "rangeHood",
-  label: "Range hood",
+  labelKey: "rangeHood.label",
   category: "Kitchen",
   rooms: ["kitchen"],
   wallSnap: true,
   dimLimits: { w: [0.5, 1.3], d: [0.35, 0.75], h: [0.12, 1.1] },
   modules: [
-    { key: "lights", label: "Lights", min: 0, max: 1, default: 1, toggle: { on: "Lights on", off: "Lights off" } },
+    {
+      key: "lights",
+      labelKey: "rangeHood.modules.lights.label",
+      min: 0,
+      max: 1,
+      default: 1,
+      toggle: { onKey: "rangeHood.modules.lights.toggle.on", offKey: "rangeHood.modules.lights.toggle.off" },
+    },
   ],
   fronts: ["slab"],
   handles: ["none"],
@@ -82,22 +89,22 @@ export const rangeHoodGenerator: GeneratorDef = {
   variants: [
     {
       id: "chimney",
-      label: "Chimney",
-      cardLabel: "Chimney hood",
+      labelKey: "rangeHood.variants.chimney.label",
+      cardLabelKey: "rangeHood.variants.chimney.cardLabel",
       hotspotKeywords: ["hood", "extractor"],
       defaults: { dims: { w: 0.6, d: 0.5, h: 0.72 }, finish: "steel" },
     },
     {
       id: "island",
-      label: "Island",
-      cardLabel: "Island hood",
+      labelKey: "rangeHood.variants.island.label",
+      cardLabelKey: "rangeHood.variants.island.cardLabel",
       hotspotKeywords: ["hood", "extractor", "island"],
       defaults: { dims: { w: 0.9, d: 0.6, h: 0.8 }, finish: "steel" },
     },
     {
       id: "visor",
-      label: "Visor",
-      cardLabel: "Under-cabinet visor hood",
+      labelKey: "rangeHood.variants.visor.label",
+      cardLabelKey: "rangeHood.variants.visor.cardLabel",
       hotspotKeywords: ["hood", "extractor"],
       defaults: { dims: { w: 0.6, d: 0.46, h: 0.16 }, finish: "steel" },
     },

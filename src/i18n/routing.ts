@@ -42,6 +42,22 @@ export const localeName: Record<Locale, string> = {
   he: "עברית",
 };
 
+/**
+ * The same endonym, abbreviated for a control that sits in a bar rather than a
+ * list. Still the endonym and still in its own script — "עב" is what a Hebrew
+ * reader recognises, and abbreviating it to "HE" would reintroduce exactly the
+ * problem `localeName` exists to avoid.
+ *
+ * Display only. Every `aria-label` keeps the FULL name from `localeName`,
+ * because two letters are a glance-target for someone who can see the bar and
+ * a riddle for someone hearing it read out — "Switch to עב" tells a screen
+ * reader user nothing that "Switch to עברית" does not tell them better.
+ */
+export const localeShort: Record<Locale, string> = {
+  en: "EN",
+  he: "עב",
+};
+
 export const routing = defineRouting({
   locales,
   defaultLocale,

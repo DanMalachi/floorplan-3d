@@ -4,16 +4,18 @@ import { isoBox, Extrusion, TableWithLegs, Plant, Rug, FramedArt, WallClockArt, 
 import type { RoomHotspot } from "./KitchenScene";
 
 export const DINING_HOTSPOTS: RoomHotspot[] = [
-  { id: "table", label: "Table", keywords: ["table"] },
-  { id: "chairs", label: "Chairs", keywords: ["chair"] },
-  { id: "bench", label: "Bench", keywords: ["bench"] },
-  { id: "decor", label: "Decor", keywords: ["plant"] },
+  { id: "table", labelKey: "dining.table", keywords: ["table"] },
+  { id: "chairs", labelKey: "dining.chairs", keywords: ["chair"] },
+  { id: "bench", labelKey: "dining.bench", keywords: ["bench"] },
+  { id: "decor", labelKey: "dining.decor", keywords: ["plant"] },
   // Wide roll-out: a rug under the table, same product as Living/Bedroom's —
   // see LivingScene for why it left the decor button.
-  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
-  { id: "clock", label: "Clock", keywords: ["clock"] },
+  { id: "rug", labelKey: "dining.rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "art", labelKey: "dining.art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", labelKey: "dining.clock", keywords: ["clock"] },
 ];
+
+const lbl = (id: string) => DINING_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const DINING_X0 = 12;
 export const DINING_WIDTH = 176;
@@ -43,10 +45,10 @@ function DiningItems(): RoomItem[] {
   const clockBox = isoBox(150, 94, 20, 20, 2);
 
   return [
-    { id: "table", label: "Table", keywords: DINING_HOTSPOTS[0].keywords, box: tableBox, art: <TableWithLegs x={12} yFront={ITEMS_Y} w={52} depth={30} topH={4} legH={16} /> },
+    { id: "table", labelKey: lbl("table"), keywords: DINING_HOTSPOTS[0].keywords, box: tableBox, art: <TableWithLegs x={12} yFront={ITEMS_Y} w={52} depth={30} topH={4} legH={16} /> },
     {
       id: "chairs",
-      label: "Chairs",
+      labelKey: lbl("chairs"),
       keywords: DINING_HOTSPOTS[1].keywords,
       box: chairsBox,
       art: (
@@ -56,11 +58,11 @@ function DiningItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "bench", label: "Bench", keywords: DINING_HOTSPOTS[2].keywords, box: benchBox, art: <Extrusion box={isoBox(114, ITEMS_Y, 40, 12, 16)} /> },
-    { id: "decor", label: "Decor", keywords: DINING_HOTSPOTS[3].keywords, box: decorBox, art: <Plant x={174} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
-    { id: "rug", label: "Rug", keywords: DINING_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
-    { id: "art", label: "Wall art", keywords: DINING_HOTSPOTS[5].keywords, box: artBox, art: <FramedArt x={20} yTop={70} w={40} h={30} scene="landscape" /> },
-    { id: "clock", label: "Clock", keywords: DINING_HOTSPOTS[6].keywords, box: clockBox, art: <WallClockArt cx={160} cy={84} r={10} /> },
+    { id: "bench", labelKey: lbl("bench"), keywords: DINING_HOTSPOTS[2].keywords, box: benchBox, art: <Extrusion box={isoBox(114, ITEMS_Y, 40, 12, 16)} /> },
+    { id: "decor", labelKey: lbl("decor"), keywords: DINING_HOTSPOTS[3].keywords, box: decorBox, art: <Plant x={174} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
+    { id: "rug", labelKey: lbl("rug"), keywords: DINING_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
+    { id: "art", labelKey: lbl("art"), keywords: DINING_HOTSPOTS[5].keywords, box: artBox, art: <FramedArt x={20} yTop={70} w={40} h={30} scene="landscape" /> },
+    { id: "clock", labelKey: lbl("clock"), keywords: DINING_HOTSPOTS[6].keywords, box: clockBox, art: <WallClockArt cx={160} cy={84} r={10} /> },
   ];
 }
 

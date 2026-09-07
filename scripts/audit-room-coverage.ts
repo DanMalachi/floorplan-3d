@@ -64,7 +64,7 @@ for (const room of Object.keys(HOTSPOTS) as RoomType[]) {
     if (hits.length < BAR) below++;
     const kinds = [...new Set(hits.map((x) => x.kind ?? x.name))].slice(0, 6).join(", ");
     const flag = hits.length === 0 ? "EMPTY" : hits.length < BAR ? "THIN " : "ok   ";
-    console.log(`  ${flag} ${h.label.padEnd(20)} ${String(hits.length).padStart(3)}  ${kinds}`);
+    console.log(`  ${flag} ${h.labelKey.padEnd(20)} ${String(hits.length).padStart(3)}  ${kinds}`);
   }
 }
 

@@ -9,16 +9,20 @@ import { isoBox, Extrusion, BasinCutout, KnobRow, FramedArt, DETAIL_LINE, DETAIL
 import type { RoomHotspot } from "./KitchenScene";
 
 export const LAUNDRY_HOTSPOTS: RoomHotspot[] = [
-  { id: "washer", label: "Washing machine", keywords: ["washer", "washing machine"] },
-  { id: "dryer", label: "Dryer", keywords: ["dryer"] },
-  { id: "sink", label: "Laundry sink", keywords: ["sink"] },
-  { id: "rack", label: "Drying rack", keywords: ["rack"] },
-  { id: "iron", label: "Ironing board", keywords: ["ironing"] },
+  { id: "washer", labelKey: "laundry.washer", keywords: ["washer", "washing machine"] },
+  { id: "dryer", labelKey: "laundry.dryer", keywords: ["dryer"] },
+  { id: "sink", labelKey: "laundry.sink", keywords: ["sink"] },
+  { id: "rack", labelKey: "laundry.rack", keywords: ["rack"] },
+  { id: "iron", labelKey: "laundry.iron", keywords: ["ironing"] },
   // The wall over the machines is the only decorated surface a laundry gets.
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "art", labelKey: "laundry.art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
 
 const kw = (id: string) => LAUNDRY_HOTSPOTS.find((h) => h.id === id)!.keywords;
+// Same trick as `kw`, for the label. The item list below used to write the
+// word out a second time, which is how StudyScene ended up with "Chair & sofa"
+// in one place and "Chair" in the other.
+const lbl = (id: string) => LAUNDRY_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const LAUNDRY_X0 = 14;
 export const LAUNDRY_WIDTH = 168;
@@ -88,7 +92,7 @@ function LaundryItems(): RoomItem[] {
   return [
     {
       id: "washer",
-      label: "Washing machine",
+      labelKey: lbl("washer"),
       keywords: kw("washer"),
       box: washer,
       art: (
@@ -100,7 +104,7 @@ function LaundryItems(): RoomItem[] {
     },
     {
       id: "dryer",
-      label: "Dryer",
+      labelKey: lbl("dryer"),
       keywords: kw("dryer"),
       box: dryer,
       art: (
@@ -112,7 +116,7 @@ function LaundryItems(): RoomItem[] {
     },
     {
       id: "sink",
-      label: "Laundry sink",
+      labelKey: lbl("sink"),
       keywords: kw("sink"),
       box: sink,
       art: (
@@ -122,9 +126,9 @@ function LaundryItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "rack", label: "Drying rack", keywords: kw("rack"), box: rackBox, art: <DryingRack x={106} yFront={ITEMS_Y} /> },
-    { id: "iron", label: "Ironing board", keywords: kw("iron"), box: ironBox, art: <IroningBoard x={140} yFront={ITEMS_Y} w={34} /> },
-    { id: "art", label: "Wall art", keywords: kw("art"), box: artBox, art: <FramedArt x={22} yTop={74} w={20} h={22} scene="abstract" /> },
+    { id: "rack", labelKey: lbl("rack"), keywords: kw("rack"), box: rackBox, art: <DryingRack x={106} yFront={ITEMS_Y} /> },
+    { id: "iron", labelKey: lbl("iron"), keywords: kw("iron"), box: ironBox, art: <IroningBoard x={140} yFront={ITEMS_Y} w={34} /> },
+    { id: "art", labelKey: lbl("art"), keywords: kw("art"), box: artBox, art: <FramedArt x={22} yTop={74} w={20} h={22} scene="abstract" /> },
   ];
 }
 

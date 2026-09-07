@@ -4,11 +4,13 @@ import { isoBox, Extrusion, TableWithLegs, DETAIL_LINE, RoomSceneShell, ITEMS_Y,
 import type { RoomHotspot } from "./KitchenScene";
 
 export const OUTDOORS_HOTSPOTS: RoomHotspot[] = [
-  { id: "table", label: "Patio table", keywords: ["table"] },
-  { id: "seating", label: "Chair & bench", keywords: ["chair", "bench"] },
-  { id: "grill", label: "BBQ grill", keywords: ["grill", "bbq"] },
-  { id: "decor", label: "Planter", keywords: ["planter"] },
+  { id: "table", labelKey: "outdoors.table", keywords: ["table"] },
+  { id: "seating", labelKey: "outdoors.seating", keywords: ["chair", "bench"] },
+  { id: "grill", labelKey: "outdoors.grill", keywords: ["grill", "bbq"] },
+  { id: "decor", labelKey: "outdoors.decor", keywords: ["planter"] },
 ];
+
+const lbl = (id: string) => OUTDOORS_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const OUTDOORS_X0 = 12;
 export const OUTDOORS_WIDTH = 190;
@@ -63,10 +65,10 @@ function OutdoorsItems(): RoomItem[] {
   const decorBox = isoBox(162, ITEMS_Y, 24, 20, 14);
 
   return [
-    { id: "table", label: "Patio table", keywords: OUTDOORS_HOTSPOTS[0].keywords, box: tableBox, art: <TableWithLegs x={12} yFront={ITEMS_Y} w={40} depth={26} topH={3} legH={13} /> },
+    { id: "table", labelKey: lbl("table"), keywords: OUTDOORS_HOTSPOTS[0].keywords, box: tableBox, art: <TableWithLegs x={12} yFront={ITEMS_Y} w={40} depth={26} topH={3} legH={13} /> },
     {
       id: "seating",
-      label: "Chair & bench",
+      labelKey: lbl("seating"),
       keywords: OUTDOORS_HOTSPOTS[1].keywords,
       box: seatingBox,
       art: (
@@ -76,8 +78,8 @@ function OutdoorsItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "grill", label: "BBQ grill", keywords: OUTDOORS_HOTSPOTS[2].keywords, box: grillBox, art: <BbqGrill x={128} yFront={ITEMS_Y} w={26} /> },
-    { id: "decor", label: "Planter", keywords: OUTDOORS_HOTSPOTS[3].keywords, box: decorBox, art: <PlanterBox x={162} yFront={ITEMS_Y} w={24} /> },
+    { id: "grill", labelKey: lbl("grill"), keywords: OUTDOORS_HOTSPOTS[2].keywords, box: grillBox, art: <BbqGrill x={128} yFront={ITEMS_Y} w={26} /> },
+    { id: "decor", labelKey: lbl("decor"), keywords: OUTDOORS_HOTSPOTS[3].keywords, box: decorBox, art: <PlanterBox x={162} yFront={ITEMS_Y} w={24} /> },
   ];
 }
 

@@ -11,6 +11,7 @@
 // what it'll do instead of pretending it already does it.
 
 import type { ComponentType } from "react";
+import { useTranslations } from "next-intl";
 import { useSceneStore, type BuildTool } from "@/store/useSceneStore";
 import type { OpeningType } from "@/schema/scene";
 import { PD, pdGlass, pdChip } from "./tokens";
@@ -24,13 +25,18 @@ type Glyph = ComponentType<{ size?: number }>;
 // `Glyph` is a component, not a character. These four were the text glyphs
 // `◇ ▤ ⬓ ↔`, which reflowed between fonts/platforms and never matched the SVG
 // icons beside them in the dock.
-const TOOLS: { id: BuildTool; label: string; Glyph: Glyph; built: boolean }[] = [
-  { id: "select", label: "Select", Glyph: SelectIcon, built: true },
-  { id: "wall", label: "Wall", Glyph: WallToolIcon, built: true },
+//
+// `labelKey` rather than `label` — this table is MODULE SCOPE and cannot call
+// `useTranslations()`. Same shape as `ALL_MODES` (design/page.tsx) and
+// `WALL_MODES` (viewport3d/Viewport.tsx): a stable id + key, resolved at the
+// render site.
+const TOOLS: { id: BuildTool; labelKey: string; Glyph: Glyph; built: boolean }[] = [
+  { id: "select", labelKey: "select", Glyph: SelectIcon, built: true },
+  { id: "wall", labelKey: "wall", Glyph: WallToolIcon, built: true },
   // Stays "Opening" — it is the PARENT tool, whose sub-types are Door /
   // Patio, Window and Passage. Renaming it too would read "Opening › Opening".
-  { id: "opening", label: "Opening", Glyph: OpeningToolIcon, built: true },
-  { id: "measure", label: "Measure", Glyph: MeasureIcon, built: true },
+  { id: "opening", labelKey: "opening", Glyph: OpeningToolIcon, built: true },
+  { id: "measure", labelKey: "measure", Glyph: MeasureIcon, built: true },
 ];
 
 // `id` is the persisted `openingType` / `Opening.type` enum value and must NOT
@@ -38,19 +44,21 @@ const TOOLS: { id: BuildTool; label: string; Glyph: Glyph; built: boolean }[] = 
 // changes: `effectiveSlide()` silently draws any door at or past
 // PATIO_MIN_WIDTH as a glazed patio slider, so the type genuinely is "a door
 // or a patio depending on width".
-const OPENING_TYPES: { id: OpeningType; label: string; Glyph: Glyph }[] = [
-  { id: "door", label: "Door / Patio", Glyph: DoorIcon },
-  { id: "window", label: "Window", Glyph: WindowIcon },
-  { id: "passage", label: "Passage", Glyph: PassageIcon },
+const OPENING_TYPES: { id: OpeningType; labelKey: string; Glyph: Glyph }[] = [
+  { id: "door", labelKey: "door", Glyph: DoorIcon },
+  { id: "window", labelKey: "window", Glyph: WindowIcon },
+  { id: "passage", labelKey: "passage", Glyph: PassageIcon },
 ];
 
 /** One toolbar tool. Own component so `useHover` is per button rather than
  *  one flag re-rendering the whole toolbar. */
 function ToolButton({ tool, active, onPick }: { tool: (typeof TOOLS)[number]; active: boolean; onPick: (t: (typeof TOOLS)[number]) => void }) {
+  const t = useTranslations("editor.chrome");
   const [hovered, hoverBind] = useHover();
   const { Glyph } = tool;
+  const label = t(`buildToolbar.tools.${tool.labelKey}`);
   return (
-    <Tooltip label={tool.built ? tool.label : `${tool.label} — not built yet`}>
+    <Tooltip label={tool.built ? label : t("buildToolbar.notBuiltTooltip", { label })}>
       <button
         {...hoverBind}
         onClick={() => onPick(tool)}
@@ -72,7 +80,7 @@ function ToolButton({ tool, active, onPick }: { tool: (typeof TOOLS)[number]; ac
         }}
       >
         <Glyph size={14} />
-        {tool.label}
+        {label}
       </button>
     </Tooltip>
   );
@@ -80,6 +88,7 @@ function ToolButton({ tool, active, onPick }: { tool: (typeof TOOLS)[number]; ac
 
 /** One opening-type chip (Door / Patio, Window, Passage). */
 function OpeningTypeChip({ type, active, onPick }: { type: (typeof OPENING_TYPES)[number]; active: boolean; onPick: (t: OpeningType) => void }) {
+  const t = useTranslations("editor.chrome");
   const [hovered, hoverBind] = useHover();
   const { Glyph } = type;
   return (
@@ -89,24 +98,25 @@ function OpeningTypeChip({ type, active, onPick }: { type: (typeof OPENING_TYPES
       style={{ ...pdChip(active, undefined, hovered), display: "flex", alignItems: "center", gap: 5 }}
     >
       <Glyph size={14} />
-      {type.label}
+      {t(`buildToolbar.openingTypes.${type.labelKey}`)}
     </button>
   );
 }
 
 export function BuildToolbar() {
+  const t = useTranslations("editor.chrome");
   const buildTool = useSceneStore((s) => s.buildTool);
   const setBuildTool = useSceneStore((s) => s.setBuildTool);
   const openingType = useSceneStore((s) => s.openingType);
   const setOpeningType = useSceneStore((s) => s.setOpeningType);
 
-  const pick = (t: (typeof TOOLS)[number]) => {
-    if (!t.built) {
+  const pick = (tool: (typeof TOOLS)[number]) => {
+    if (!tool.built) {
       setBuildTool("select");
-      pdToast(`${t.label} tool isn't built yet — still using Select`);
+      pdToast(t("buildToolbar.notBuiltToast", { label: t(`buildToolbar.tools.${tool.labelKey}`) }));
       return;
     }
-    setBuildTool(t.id);
+    setBuildTool(tool.id);
   };
 
   return (
@@ -130,12 +140,12 @@ export function BuildToolbar() {
       </div>
       {buildTool === "measure" && (
         <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
-          Click two points — floor, wall, or ceiling · Esc clears
+          {t("buildToolbar.measureHint")}
         </div>
       )}
       {buildTool === "wall" && (
         <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
-          Click to start, click to draw · Esc ends the chain, Esc again to stop
+          {t("buildToolbar.wallHint")}
         </div>
       )}
       {buildTool === "opening" && (

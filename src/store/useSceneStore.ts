@@ -12,7 +12,7 @@ import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometr
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
 import { frameColorPatch, frameMaterialPatch, type FrameFinish } from "@/render/frameFinish";
-import { sanitizeSpec, GENERATORS, elevationOf } from "@/parametric";
+import { sanitizeSpec, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
 import { pdToast } from "@/ui/planDock/toast";
@@ -918,7 +918,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
           },
         ],
       };
-      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, syncKitchenAttachments(withItem));
+      // Not "Place <name>": the generator's display word is a translation key
+      // now (Hebrew i18n step 5), and this history label is never rendered —
+      // Viewport.tsx only reads scenePast's LENGTH, not its labels — so a
+      // generic label costs nothing and keeps this file out of the render-site
+      // rename entirely.
+      commitScene("Place furniture", syncKitchenAttachments(withItem));
       // Stay armed — Sims-style repeat placement; Esc exits.
     },
     placeSurfaceItemFree: (x, y) => {
@@ -929,7 +934,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { placingCounter, scene, commitScene } = get();
       if (!placingCounter) return;
       const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
-      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, {
+      commitScene("Place furniture", {
         ...scene,
         furniture: [
           ...scene.furniture,
@@ -959,7 +964,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
           },
         ],
       };
-      commitScene(`Place ${GENERATORS[placingWall.generator].label.toLowerCase()}`, withItem);
+      // See placeCounterItem's note: this history label is never rendered.
+      commitScene("Place furniture", withItem);
       // Stay armed for repeat placement, same as counter items.
     },
     brush: null,

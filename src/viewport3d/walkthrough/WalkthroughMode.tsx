@@ -745,7 +745,7 @@ export function WalkthroughFovControl({
     <div
       style={{
         position: "absolute",
-        right: 14,
+        insetInlineEnd: 14,
         top: 64,
         display: "flex",
         flexDirection: "column",

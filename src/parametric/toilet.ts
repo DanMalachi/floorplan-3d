@@ -103,19 +103,28 @@ function seatAndLid(rx: number, rz: number, y: number, centerZ: number, open: bo
 
 export const toiletGenerator: GeneratorDef = {
   id: "toilet",
-  label: "Toilet",
+  labelKey: "toilet.label",
   category: "Bathroom",
   rooms: ["bathroom"],
   wallSnap: true,
   dimLimits: { w: [0.3, 0.46], d: [0.5, 0.8], h: [0.38, 1.05] },
-  modules: [{ key: "lidOpen", label: "Lid", min: 0, max: 1, default: 1, toggle: { on: "Lid up", off: "Lid down" } }],
+  modules: [
+    {
+      key: "lidOpen",
+      labelKey: "toilet.modules.lidOpen.label",
+      min: 0,
+      max: 1,
+      default: 1,
+      toggle: { onKey: "toilet.modules.lidOpen.toggle.on", offKey: "toilet.modules.lidOpen.toggle.off" },
+    },
+  ],
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["ceramic"],
   variants: [
-    { id: "close-coupled", label: "Close-coupled", cardLabel: "Close-coupled toilet" },
-    { id: "wall-hung", label: "Wall-hung", cardLabel: "Wall-hung toilet" },
-    { id: "back-to-wall", label: "Back-to-wall", cardLabel: "Back-to-wall toilet" },
+    { id: "close-coupled", labelKey: "toilet.variants.close-coupled.label", cardLabelKey: "toilet.variants.close-coupled.cardLabel" },
+    { id: "wall-hung", labelKey: "toilet.variants.wall-hung.label", cardLabelKey: "toilet.variants.wall-hung.cardLabel" },
+    { id: "back-to-wall", labelKey: "toilet.variants.back-to-wall.label", cardLabelKey: "toilet.variants.back-to-wall.cardLabel" },
   ],
   hotspotKeywords: ["toilet"],
   defaultSpec: {

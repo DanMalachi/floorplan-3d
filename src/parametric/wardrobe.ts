@@ -16,14 +16,14 @@ function handleFor(spec: ParametricSpec): THREE.Object3D | null {
 
 export const wardrobeGenerator: GeneratorDef = {
   id: "wardrobe",
-  label: "Custom wardrobe",
+  labelKey: "wardrobe.label",
   category: "Storage",
   rooms: ["bedroom", "closet", "kids"],
   wallSnap: true,
   dimLimits: { w: [0.5, 4.0], d: [0.35, 0.8], h: [1.2, 2.6] },
   modules: [
-    { key: "doors", label: "Doors", min: 1, max: 8, default: 2 },
-    { key: "drawers", label: "Drawers", min: 0, max: 3, default: 0 },
+    { key: "doors", labelKey: "wardrobe.modules.doors.label", min: 1, max: 8, default: 2 },
+    { key: "drawers", labelKey: "wardrobe.modules.drawers.label", min: 0, max: 3, default: 0 },
   ],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],

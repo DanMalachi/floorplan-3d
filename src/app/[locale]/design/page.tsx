@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { setUntitledLabel } from "@/store/projectPersistence";
 import { Viewport } from "@/viewport3d/Viewport";
 import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
@@ -27,25 +29,26 @@ import { ProjectBar } from "@/ui/ProjectBar";
  *  here (not in the shared ProjectBar) because it reads the editor's own
  *  sync store — the live room has no such store, so it renders no status. */
 function EditorProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
+  const t = useTranslations("editor.chrome");
   const savedAt = useSceneStore((s) => s.projectSavedAt);
   const restored = useSceneStore((s) => s.projectRestored);
   const name = useSceneStore((s) => s.projectName);
   const sync = useSyncStore((s) => s.status);
-  const local = savedAt ? "Saved" : restored ? "Restored" : "Autosaving…";
+  const local = savedAt ? t("projectBar.local.saved") : restored ? t("projectBar.local.restored") : t("projectBar.local.autosaving");
   // Signed out, the local wording is the whole truth. Signed in, what matters is
   // whether the work has left this computer yet.
   const status =
     sync === "off"
       ? local
       : sync === "syncing"
-        ? "Syncing…"
+        ? t("projectBar.sync.syncing")
         : sync === "offline"
-          ? "Saved here · offline"
+          ? t("projectBar.sync.offline")
           : sync === "error"
-            ? "Saved here · can't reach cloud"
+            ? t("projectBar.sync.error")
             : sync === "conflict"
-              ? "Kept both versions"
-              : `${local} · Synced`;
+              ? t("projectBar.sync.conflict")
+              : t("projectBar.synced", { local });
   return <ProjectBar name={name} status={status} onOpenProjects={onOpenProjects} />;
 }
 
@@ -54,6 +57,7 @@ function EditorProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
  *  liveRoomId) that it always reopens into, and edits sync continuously. First
  *  time it seeds the room from this project; afterwards it just rejoins. */
 function GoLiveButton() {
+  const t = useTranslations("editor.chrome");
   const [busy, setBusy] = useState(false);
   const [hovered, hoverBind] = useHover();
   const liveRoomId = useSceneStore((s) => s.liveRoomId);
@@ -83,7 +87,7 @@ function GoLiveButton() {
       setBusy(false);
     }
   };
-  const label = busy ? "Starting…" : liveRoomId ? "Open live" : "Go live";
+  const label = busy ? t("goLive.starting") : liveRoomId ? t("goLive.openLive") : t("goLive.goLive");
   // What "going live" actually does is not obvious from two words, so this one
   // keeps its explanation — through the app's own glass Tooltip. The positioning
   // moves to a wrapper: Tooltip anchors its label to the element it wraps, and
@@ -126,7 +130,7 @@ function GoLiveButton() {
   return (
     <div style={{ position: "absolute", top: 14, insetInlineEnd: 14, zIndex: 30 }}>
       <Tooltip
-        label={liveRoomId ? "Reopen this project's live shared room" : "Turn this into a live, shareable document"}
+        label={liveRoomId ? t("goLive.tooltipReopen") : t("goLive.tooltipStart")}
         placement="bottom"
       >
         {button}
@@ -191,11 +195,18 @@ function HeroFurnishBar() {
   );
 }
 
-const ALL_MODES: { id: AppMode; label: string; key: string }[] = [
-  { id: "trace", label: "Trace", key: "1" },
-  { id: "build", label: "Build", key: "2" },
-  { id: "furnish", label: "Decorate", key: "3" },
-  { id: "view", label: "View", key: "4" },
+// `labelKey` rather than `label`, because this table is MODULE SCOPE and a
+// module cannot call `useTranslations()` — the hook only exists inside a
+// component. The same shape the marketing nav already uses
+// (`NavItem.labelKey` in src/landing/nav.ts): the table carries a stable id and
+// a key, and the render site resolves the key. Every other module-scope label
+// table in the editor follows this, so there is one answer to the question
+// rather than one per file.
+const ALL_MODES: { id: AppMode; labelKey: string; key: string }[] = [
+  { id: "trace", labelKey: "trace", key: "1" },
+  { id: "build", labelKey: "build", key: "2" },
+  { id: "furnish", labelKey: "furnish", key: "3" },
+  { id: "view", labelKey: "view", key: "4" },
 ];
 
 // The Trace mode is the legacy extraction pipeline's UI. Gated so a later
@@ -249,10 +260,11 @@ function ModeButton({
   active,
   onSelect,
 }: {
-  mode: { id: AppMode; label: string; key: string };
+  mode: { id: AppMode; labelKey: string; key: string };
   active: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations("editor.modes");
   const [hovered, hoverBind] = useHover();
   return (
     <button
@@ -260,12 +272,17 @@ function ModeButton({
       {...hoverBind}
       style={pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered)}
     >
-      {mode.label}
+      {t(mode.labelKey)}
     </button>
   );
 }
 
 export default function Home() {
+  // Before anything can create a project. `setUntitledLabel` only writes a
+  // module variable, so doing it in render is safe and — unlike an effect —
+  // happens ahead of the first-run initialisation that creates project #1.
+  const tPlan = useTranslations("editor");
+  setUntitledLabel(tPlan("untitledPlan"));
   const appMode = useSceneStore((s) => s.appMode);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [heroFurnish, setHeroFurnish] = useState(false);

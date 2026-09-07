@@ -11,6 +11,7 @@
 // hotspot always matches what's actually armed — including when the tool
 // was armed from BuildToolbar instead of a hotspot click.
 
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import { pdGlass, PD } from "./tokens";
 import { pdToast } from "./toast";
@@ -27,6 +28,9 @@ function activeHotspotFor(buildTool: string, openingType: string): BuildHotspotI
 }
 
 export function BuildNavigator() {
+  // `onHotspotClick` is a plain handler, not a render path, so it takes `t`
+  // from the component's scope rather than calling the hook itself.
+  const t = useTranslations("editor.navigator");
   const buildTool = useSceneStore((s) => s.buildTool);
   const openingType = useSceneStore((s) => s.openingType);
   const activeHotspot = activeHotspotFor(buildTool, openingType);
@@ -36,39 +40,39 @@ export function BuildNavigator() {
     switch (id) {
       case "walls":
         s.setBuildTool("wall");
-        pdToast("Wall tool armed — click to start, click to draw");
+        pdToast(t("wallArmed"));
         break;
       case "doors":
         s.setBuildTool("opening");
         s.setOpeningType("door");
-        pdToast("Door / patio armed — click a wall to place it");
+        pdToast(t("doorArmed"));
         break;
       case "windows":
         s.setBuildTool("opening");
         s.setOpeningType("window");
-        pdToast("Window armed — click a wall to place it");
+        pdToast(t("windowArmed"));
         break;
       case "measure":
         s.setBuildTool("measure");
-        pdToast("Measure armed — click two points on the floor");
+        pdToast(t("measureArmed"));
         break;
       case "floors":
         s.requestDock("floors");
-        pdToast("Jumped to Decorate · Floors");
+        pdToast(t("jumpedFloors"));
         break;
       case "paint":
         s.requestDock("paint");
-        pdToast("Jumped to Decorate · Paint");
+        pdToast(t("jumpedPaint"));
         break;
       case "stairs":
-        pdToast("No Build-mode stair tool yet — trace stairs in the Trace tab");
+        pdToast(t("noStairTool"));
         break;
     }
   };
 
   return (
     <div style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
-      <div style={{ padding: "10px 12px 2px", fontSize: 11.5, fontWeight: 600, color: PD.textSecondary }}>Build</div>
+      <div style={{ padding: "10px 12px 2px", fontSize: 11.5, fontWeight: 600, color: PD.textSecondary }}>{t("title")}</div>
       <div style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
         <BuildHouseScene activeHotspot={activeHotspot} onHotspotClick={onHotspotClick} />
       </div>

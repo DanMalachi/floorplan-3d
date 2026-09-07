@@ -22,7 +22,11 @@ export function specOf(item: ItemLike): FurnitureAsset | undefined {
     const defaultElevation = elevationOf(item.parametric);
     return {
       assetId: item.assetId,
-      name: g.label,
+      // A generator has no product name, so `name` carries the id as a last
+      // resort and `nameKey` carries the translatable one. Render sites prefer
+      // `nameKey`; see the note on FurnitureAsset.
+      name: g.id,
+      nameKey: g.labelKey,
       category: g.category,
       footprint: { w: item.parametric.dims.w, d: item.parametric.dims.d },
       wallSnap: g.wallSnap,

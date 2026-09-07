@@ -4,19 +4,21 @@ import { isoBox, Extrusion, ShelfLines, Rug, WallTv, FramedArt, WallClockArt, DE
 import type { RoomHotspot } from "./KitchenScene";
 
 export const KIDS_HOTSPOTS: RoomHotspot[] = [
-  { id: "crib", label: "Crib", keywords: ["crib"] },
-  { id: "toys", label: "Toy storage", keywords: ["toy"] },
-  { id: "changing", label: "Changing table", keywords: ["changing"] },
+  { id: "crib", labelKey: "kids.crib", keywords: ["crib"] },
+  { id: "toys", labelKey: "kids.toys", keywords: ["toy"] },
+  { id: "changing", labelKey: "kids.changing", keywords: ["changing"] },
   // The custom wardrobe and sofa generators are both tagged for this room but
   // had no button that could reach them — with hotspots now filtering the
   // custom cards too, that would have made them unreachable here.
-  { id: "storage", label: "Wardrobe & seating", keywords: ["wardrobe", "closet", "sofa", "couch", "armchair"] },
+  { id: "storage", labelKey: "kids.storage", keywords: ["wardrobe", "closet", "sofa", "couch", "armchair"] },
   // Wide roll-out.
-  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
-  { id: "tv", label: "TV", keywords: ["tv", "television"] },
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
-  { id: "clock", label: "Clock", keywords: ["clock"] },
+  { id: "rug", labelKey: "kids.rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "tv", labelKey: "kids.tv", keywords: ["tv", "television"] },
+  { id: "art", labelKey: "kids.art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", labelKey: "kids.clock", keywords: ["clock"] },
 ];
+
+const lbl = (id: string) => KIDS_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const KIDS_X0 = 20;
 export const KIDS_WIDTH = 176;
@@ -58,10 +60,10 @@ function KidsItems(): RoomItem[] {
   const clockBox = isoBox(111, 91, 18, 18, 2);
 
   return [
-    { id: "crib", label: "Crib", keywords: KIDS_HOTSPOTS[0].keywords, box: cribBox, art: <Crib x={20} yFront={ITEMS_Y} w={40} depth={24} /> },
+    { id: "crib", labelKey: lbl("crib"), keywords: KIDS_HOTSPOTS[0].keywords, box: cribBox, art: <Crib x={20} yFront={ITEMS_Y} w={40} depth={24} /> },
     {
       id: "toys",
-      label: "Toy storage",
+      labelKey: lbl("toys"),
       keywords: KIDS_HOTSPOTS[1].keywords,
       box: toyBox,
       art: (
@@ -75,7 +77,7 @@ function KidsItems(): RoomItem[] {
     },
     {
       id: "changing",
-      label: "Changing table",
+      labelKey: lbl("changing"),
       keywords: KIDS_HOTSPOTS[2].keywords,
       box: changingBox,
       art: (
@@ -88,7 +90,7 @@ function KidsItems(): RoomItem[] {
     },
     {
       id: "storage",
-      label: "Wardrobe & seating",
+      labelKey: lbl("storage"),
       keywords: KIDS_HOTSPOTS[3].keywords,
       box: storageBox,
       art: (
@@ -117,11 +119,11 @@ function KidsItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "rug", label: "Rug", keywords: KIDS_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={54} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
-    { id: "tv", label: "TV", keywords: KIDS_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
+    { id: "rug", labelKey: lbl("rug"), keywords: KIDS_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={54} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
+    { id: "tv", labelKey: lbl("tv"), keywords: KIDS_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
     {
       id: "art",
-      label: "Wall art",
+      labelKey: lbl("art"),
       keywords: KIDS_HOTSPOTS[6].keywords,
       box: artBox,
       art: (
@@ -131,7 +133,7 @@ function KidsItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "clock", label: "Clock", keywords: KIDS_HOTSPOTS[7].keywords, box: clockBox, art: <WallClockArt cx={120} cy={82} r={9} /> },
+    { id: "clock", labelKey: lbl("clock"), keywords: KIDS_HOTSPOTS[7].keywords, box: clockBox, art: <WallClockArt cx={120} cy={82} r={9} /> },
   ];
 }
 

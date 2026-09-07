@@ -277,7 +277,7 @@ for (const id of BATH_IDS) {
 // surface it. This is what caught the mirror having no button of its own.
 console.log("\nnavigator — every generator is reachable from a hotspot in each of its rooms");
 {
-  const HOTSPOTS_BY_ROOM: Partial<Record<string, { id: string; label: string; keywords: string[] }[]>> = {
+  const HOTSPOTS_BY_ROOM: Partial<Record<string, { id: string; labelKey: string; keywords: string[] }[]>> = {
     kitchen: KITCHEN_HOTSPOTS,
     bathroom: BATHROOM_HOTSPOTS,
     bedroom: BEDROOM_HOTSPOTS,
@@ -329,9 +329,9 @@ console.log("\nvariants are browsable pieces, each standing on its own");
     check(`${id} offers ${min}+ pieces`, vs.length >= min, `${vs.length}`);
     // A card name has to make sense with nothing else around it: "Doors" does
     // not, "Vanity with doors" does.
-    check(`${id} variants all carry a standalone card name`, vs.every((v) => !!v.cardLabel), vs.map((v) => v.cardLabel ?? `MISSING:${v.id}`).join(", "));
+    check(`${id} variants all carry a standalone card name`, vs.every((v) => !!v.cardLabelKey), vs.map((v) => v.cardLabelKey ?? `MISSING:${v.id}`).join(", "));
     check(`${id} variant ids are unique`, new Set(vs.map((v) => v.id)).size === vs.length);
-    check(`${id} card names are unique`, new Set(vs.map((v) => v.cardLabel)).size === vs.length);
+    check(`${id} card names are unique`, new Set(vs.map((v) => v.cardLabelKey)).size === vs.length);
   }
 
   // Each variant must actually build something different — identical geometry

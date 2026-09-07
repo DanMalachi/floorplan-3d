@@ -20,14 +20,14 @@ const PILLOW_STEP = 0.35; // spacing between successive same-side pillows
 
 export const sofaGenerator: GeneratorDef = {
   id: "sofa",
-  label: "Custom sofa",
+  labelKey: "sofa.label",
   category: "Seating",
   rooms: ["living", "study", "kids"],
   wallSnap: true,
   dimLimits: { w: [0.8, 4.0], d: [0.8, 1.2], h: [0.65, 1.0] },
   modules: [
-    { key: "seats", label: "Seats", min: 1, max: 5, default: 3 },
-    { key: "pillows", label: "Pillows", min: 0, max: 6, default: 2 },
+    { key: "seats", labelKey: "sofa.modules.seats.label", min: 1, max: 5, default: 3 },
+    { key: "pillows", labelKey: "sofa.modules.pillows.label", min: 0, max: 6, default: 2 },
   ],
   // No doors/handles on a sofa — a single-option list hides the picker in the
   // configurator (ParametricSection.tsx renders it only when length > 1).

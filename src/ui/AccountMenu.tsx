@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
@@ -21,6 +22,7 @@ import { Link } from "@/i18n/navigation";
 const SIZE = 30;
 
 export function AccountMenu() {
+  const t = useTranslations("editor.chrome");
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -65,7 +67,7 @@ export function AccountMenu() {
       <div style={{ position: "relative" }}>
         {/* `placement="bottom"`: this control sits in the top-right chrome, so a
             tooltip above it would be clipped off the top of the window. */}
-        <Tooltip label="Sign in so your projects follow you to any computer" placement="bottom">
+        <Tooltip label={t("accountMenu.signInTooltip")} placement="bottom">
           <button
             onClick={() => {
               setAuthError(null);
@@ -94,7 +96,7 @@ export function AccountMenu() {
             }}
           >
             <GoogleMark />
-            {busy ? "Opening…" : "Sign in"}
+            {busy ? t("accountMenu.signInOpening") : t("accountMenu.signIn")}
           </button>
         </Tooltip>
         {authError && (
@@ -120,7 +122,7 @@ export function AccountMenu() {
               zIndex: 40,
             }}
           >
-            Sign-in failed: {authError}
+            {t("accountMenu.signInFailed", { error: authError })}
           </div>
         )}
       </div>
@@ -191,13 +193,13 @@ export function AccountMenu() {
               </div>
             )}
             <div style={{ fontSize: 11, color: PD.textTertiary, fontFamily: PD.fontUi, marginTop: 8 }}>
-              Your plans are saved to this account.
+              {t("accountMenu.savedToAccount")}
             </div>
           </div>
           {/* The data page (export + account deletion). Reachable from here
               because a right-to-erasure control nobody can find is not one. */}
           <MenuRow href="/account" onSelect={() => setOpen(false)}>
-            Your data
+            {t("accountMenu.yourData")}
           </MenuRow>
           <MenuRow
             onSelect={() => {
@@ -205,7 +207,7 @@ export function AccountMenu() {
               void signOut();
             }}
           >
-            Sign out
+            {t("accountMenu.signOut")}
           </MenuRow>
         </div>
       )}

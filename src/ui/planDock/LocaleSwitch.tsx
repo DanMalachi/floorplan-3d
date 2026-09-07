@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 // PLAIN next/link — the href from `useLocaleSwitch` already names its target
 // locale, so the locale-aware Link would prefix it twice. See `switchLocaleHref`.
 import Link from "next/link";
-import { localeName, type Locale } from "@/i18n/routing";
+import { localeName, localeShort, type Locale } from "@/i18n/routing";
 import { useLocaleSwitch } from "@/i18n/useLocaleSwitch";
 import { PD, pdGlass } from "./tokens";
 import { useHover } from "./useHover";
@@ -86,7 +86,7 @@ function LocaleLink({ href, locale, label }: { href: string; locale: Locale; lab
           transition: "color 140ms ease",
         }}
       >
-        {localeName[locale]}
+        {localeShort[locale]}
       </Link>
     </Tooltip>
   );

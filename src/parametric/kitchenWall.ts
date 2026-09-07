@@ -13,7 +13,7 @@ function handleFor(spec: ParametricSpec): THREE.Object3D | null {
 
 export const kitchenWallGenerator: GeneratorDef = {
   id: "kitchenWall",
-  label: "Kitchen wall cabinets",
+  labelKey: "kitchenWall.label",
   category: "Kitchen",
   rooms: ["kitchen"],
   wallSnap: true,

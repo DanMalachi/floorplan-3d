@@ -158,9 +158,10 @@ console.log("\neach product carries its own size — the reason for the split");
 
 console.log("\nnames and glyphs");
 {
-  const labels = SPLIT.map((p) => p.label);
-  check("no card falls back to '<generator> · <variant>'", labels.every((l) => !l.includes("·")), labels.filter((l) => l.includes("·")).join(", "));
-  check("card names are unique", new Set(labels).size === labels.length);
+  const fellBack = SPLIT.filter((p) => p.variantLabelKey);
+  check("no card falls back to '<generator> · <variant>'", fellBack.length === 0, fellBack.map((p) => p.labelKey).join(", "));
+  const keys = SPLIT.map((p) => p.labelKey);
+  check("card names are unique", new Set(keys).size === keys.length);
   for (const p of SPLIT) check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey]);
   const glyphs = SPLIT.map((p) => GENERATOR_GLYPH[p.glyphKey]);
   check("no two of them share a glyph", new Set(glyphs).size === glyphs.length);

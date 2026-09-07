@@ -4,35 +4,39 @@ import { isoBox, Extrusion, Toilet, Bathtub, Bin, TowelRail, BasinCutout, KnobRo
 import type { RoomHotspot } from "./KitchenScene";
 
 export const BATHROOM_HOTSPOTS: RoomHotspot[] = [
-  { id: "toilet", label: "Toilet", keywords: ["toilet"] },
+  { id: "toilet", labelKey: "bathroom.toilet", keywords: ["toilet"] },
   // "shower" also matches the "Shower head" catalog item by substring — no
   // separate hotspot needed for it.
-  { id: "shower", label: "Shower", keywords: ["shower"] },
-  { id: "bathtub", label: "Bathtub", keywords: ["bathtub", "tub"] },
-  { id: "vanity", label: "Sink & vanity", keywords: ["sink", "basin", "vanity"] },
+  { id: "shower", labelKey: "bathroom.shower", keywords: ["shower"] },
+  { id: "bathtub", labelKey: "bathroom.bathtub", keywords: ["bathtub", "tub"] },
+  { id: "vanity", labelKey: "bathroom.vanity", keywords: ["sink", "basin", "vanity"] },
   // Israeli bathrooms routinely hold the laundry pair, and Phase 2 put a
   // tumble dryer in the catalog — a hotspot that only said "washer" left it
   // with no way in.
-  { id: "washer", label: "Washer & dryer", keywords: ["washer", "washing machine", "dryer", "laundry"] },
+  { id: "washer", labelKey: "bathroom.washer", keywords: ["washer", "washing machine", "dryer", "laundry"] },
   // Mirrors were folded into "extras" and so had no button of their own, even
   // though a mirror is one of the things people go looking for first.
-  { id: "mirror", label: "Mirror", keywords: ["mirror"] },
+  { id: "mirror", labelKey: "bathroom.mirror", keywords: ["mirror"] },
   // Towels and the bin used to share one "extras" button, which is the same
   // mistake the generator made — they are different products bought at
   // different times. Split, they also stop competing for one hit box that
   // spanned the wall band down to the floor.
-  { id: "towels", label: "Towels", keywords: ["towel", "hook"] },
-  { id: "bin", label: "Bin", keywords: ["trash", "waste", "recycl"] },
+  { id: "towels", labelKey: "bathroom.towels", keywords: ["towel", "hook"] },
+  { id: "bin", labelKey: "bathroom.bin", keywords: ["trash", "waste", "recycl"] },
   // Wide roll-out: the same rug product as every other room, but a rug in a
   // bathroom is a bathmat, so it gets the name people actually use for it.
-  { id: "rug", label: "Bath mat", keywords: ["rug", "carpet", "mat"] },
+  { id: "rug", labelKey: "bathroom.rug", keywords: ["rug", "carpet", "mat"] },
   // Wall art reaches the bathroom for the same reason it reaches the laundry:
   // one small framed print is what a narrow wall gets, and it is the cheapest
   // thing that stops the room reading as a showroom.
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "art", labelKey: "bathroom.art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
 
 const kw = (id: string) => BATHROOM_HOTSPOTS.find((h) => h.id === id)!.keywords;
+// Same trick as `kw`, for the label. The item list below used to write the
+// word out a second time, which is how StudyScene ended up with "Chair & sofa"
+// in one place and "Chair" in the other.
+const lbl = (id: string) => BATHROOM_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const BATHROOM_X0 = 12;
 export const BATHROOM_WIDTH = 194;
@@ -75,10 +79,10 @@ function BathroomItems(): RoomItem[] {
   const artBox = isoBox(88, 104, 20, 22, 2);
 
   return [
-    { id: "toilet", label: "Toilet", keywords: kw("toilet"), box: toiletBox, art: <Toilet x={14} yFront={ITEMS_Y} w={22} depth={16} /> },
+    { id: "toilet", labelKey: lbl("toilet"), keywords: kw("toilet"), box: toiletBox, art: <Toilet x={14} yFront={ITEMS_Y} w={22} depth={16} /> },
     {
       id: "shower",
-      label: "Shower",
+      labelKey: lbl("shower"),
       keywords: kw("shower"),
       box: shower,
       art: (
@@ -88,10 +92,10 @@ function BathroomItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "bathtub", label: "Bathtub", keywords: kw("bathtub"), box: tub, art: <Bathtub x={80} yFront={ITEMS_Y} w={46} depth={20} /> },
+    { id: "bathtub", labelKey: lbl("bathtub"), keywords: kw("bathtub"), box: tub, art: <Bathtub x={80} yFront={ITEMS_Y} w={46} depth={20} /> },
     {
       id: "vanity",
-      label: "Sink & vanity",
+      labelKey: lbl("vanity"),
       keywords: kw("vanity"),
       box: vanity,
       art: (
@@ -103,7 +107,7 @@ function BathroomItems(): RoomItem[] {
     },
     {
       id: "washer",
-      label: "Washer & dryer",
+      labelKey: lbl("washer"),
       keywords: kw("washer"),
       box: washer,
       art: (
@@ -120,7 +124,7 @@ function BathroomItems(): RoomItem[] {
       // reflection sheen rather than an extruded solid, because a mirror has
       // no depth to speak of — an isometric box would read as a cabinet.
       id: "mirror",
-      label: "Mirror",
+      labelKey: lbl("mirror"),
       keywords: kw("mirror"),
       box: mirror,
       art: (
@@ -160,20 +164,20 @@ function BathroomItems(): RoomItem[] {
     },
     {
       id: "towels",
-      label: "Towels",
+      labelKey: lbl("towels"),
       keywords: kw("towels"),
       box: towels,
       art: <TowelRail x={RAIL_X} y={RAIL_Y} w={RAIL_W} />,
     },
     {
       id: "bin",
-      label: "Bin",
+      labelKey: lbl("bin"),
       keywords: kw("bin"),
       box: binBox,
       art: <Bin x={BIN_X} yFront={ITEMS_Y + 3} w={BIN_W} h={BIN_H} />,
     },
-    { id: "rug", label: "Bath mat", keywords: kw("rug"), box: matBox, art: <Rug x={86} yFront={FLOOR_Y - 6} w={28} depth={14} /> },
-    { id: "art", label: "Wall art", keywords: kw("art"), box: artBox, art: <FramedArt x={88} yTop={82} w={20} h={22} scene="landscape" /> },
+    { id: "rug", labelKey: lbl("rug"), keywords: kw("rug"), box: matBox, art: <Rug x={86} yFront={FLOOR_Y - 6} w={28} depth={14} /> },
+    { id: "art", labelKey: lbl("art"), keywords: kw("art"), box: artBox, art: <FramedArt x={88} yTop={82} w={20} h={22} scene="landscape" /> },
   ];
 }
 

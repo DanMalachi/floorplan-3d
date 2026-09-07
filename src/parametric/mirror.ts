@@ -39,7 +39,7 @@ function mirrorPane(w: number, h: number, round = false): THREE.Mesh {
 
 export const mirrorGenerator: GeneratorDef = {
   id: "mirror",
-  label: "Mirror",
+  labelKey: "mirror.label",
   category: "Bathroom",
   rooms: ["bathroom"],
   wallSnap: true,
@@ -54,10 +54,10 @@ export const mirrorGenerator: GeneratorDef = {
   hotspotKeywords: ["mirror"],
   variantIsProduct: true,
   variants: [
-    { id: "framed", label: "Framed", cardLabel: "Framed mirror", hotspotKeywords: ["mirror"], defaults: { dims: { w: 0.6, d: 0.05, h: 0.8 }, finish: "oak" } },
-    { id: "round", label: "Round", cardLabel: "Round mirror", hotspotKeywords: ["mirror"], defaults: { dims: { w: 0.7, d: 0.05, h: 0.7 }, finish: "steel" } },
-    { id: "frameless", label: "Frameless", cardLabel: "Frameless mirror", hotspotKeywords: ["mirror"], defaults: { dims: { w: 0.9, d: 0.03, h: 0.7 }, finish: "painted" } },
-    { id: "cabinet", label: "Cabinet", cardLabel: "Mirror cabinet", hotspotKeywords: ["mirror", "cabinet"], defaults: { dims: { w: 0.7, d: 0.15, h: 0.65 }, finish: "painted" } },
+    { id: "framed", labelKey: "mirror.variants.framed.label", cardLabelKey: "mirror.variants.framed.cardLabel", hotspotKeywords: ["mirror"], defaults: { dims: { w: 0.6, d: 0.05, h: 0.8 }, finish: "oak" } },
+    { id: "round", labelKey: "mirror.variants.round.label", cardLabelKey: "mirror.variants.round.cardLabel", hotspotKeywords: ["mirror"], defaults: { dims: { w: 0.7, d: 0.05, h: 0.7 }, finish: "steel" } },
+    { id: "frameless", labelKey: "mirror.variants.frameless.label", cardLabelKey: "mirror.variants.frameless.cardLabel", hotspotKeywords: ["mirror"], defaults: { dims: { w: 0.9, d: 0.03, h: 0.7 }, finish: "painted" } },
+    { id: "cabinet", labelKey: "mirror.variants.cabinet.label", cardLabelKey: "mirror.variants.cabinet.cardLabel", hotspotKeywords: ["mirror", "cabinet"], defaults: { dims: { w: 0.7, d: 0.15, h: 0.65 }, finish: "painted" } },
   ],
   defaultSpec: {
     generator: "mirror",

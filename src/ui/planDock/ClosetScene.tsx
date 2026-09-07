@@ -4,9 +4,11 @@ import { isoBox, Extrusion, DoorSeam, ShelfLines, RoomSceneShell, ITEMS_Y, type 
 import type { RoomHotspot } from "./KitchenScene";
 
 export const CLOSET_HOTSPOTS: RoomHotspot[] = [
-  { id: "wardrobe", label: "Wardrobe", keywords: ["wardrobe"] },
-  { id: "shoes", label: "Shoe rack", keywords: ["shoe"] },
+  { id: "wardrobe", labelKey: "closet.wardrobe", keywords: ["wardrobe"] },
+  { id: "shoes", labelKey: "closet.shoes", keywords: ["shoe"] },
 ];
+
+const lbl = (id: string) => CLOSET_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const CLOSET_X0 = 40;
 export const CLOSET_WIDTH = 110;
@@ -18,7 +20,7 @@ function ClosetItems(): RoomItem[] {
   return [
     {
       id: "wardrobe",
-      label: "Wardrobe",
+      labelKey: lbl("wardrobe"),
       keywords: CLOSET_HOTSPOTS[0].keywords,
       box: wardrobe,
       art: (
@@ -30,7 +32,7 @@ function ClosetItems(): RoomItem[] {
     },
     {
       id: "shoes",
-      label: "Shoe rack",
+      labelKey: lbl("shoes"),
       keywords: CLOSET_HOTSPOTS[1].keywords,
       box: shoes,
       art: (

@@ -67,7 +67,7 @@ function bracket(z: number, r = 0.022): THREE.Group {
 
 export const towelRailGenerator: GeneratorDef = {
   id: "towelRail",
-  label: "Towel rail",
+  labelKey: "towelRail.label",
   category: "Bathroom",
   rooms: ["bathroom"],
   wallSnap: true,
@@ -80,10 +80,10 @@ export const towelRailGenerator: GeneratorDef = {
   hotspotKeywords: ["towel"],
   variantIsProduct: true,
   variants: [
-    { id: "rail", label: "Rail", cardLabel: "Towel rail", hotspotKeywords: ["towel"], defaults: { dims: { w: 0.6, d: 0.12, h: 0.28 } } },
-    { id: "ladder", label: "Ladder", cardLabel: "Heated towel ladder", hotspotKeywords: ["towel"], defaults: { dims: { w: 0.5, d: 0.12, h: 1.1 } } },
-    { id: "ring", label: "Ring", cardLabel: "Towel ring", hotspotKeywords: ["towel"], defaults: { dims: { w: 0.18, d: 0.1, h: 0.34 } } },
-    { id: "hooks", label: "Hooks", cardLabel: "Towel hooks", hotspotKeywords: ["towel", "hook"], defaults: { dims: { w: 0.34, d: 0.08, h: 0.4 } } },
+    { id: "rail", labelKey: "towelRail.variants.rail.label", cardLabelKey: "towelRail.variants.rail.cardLabel", hotspotKeywords: ["towel"], defaults: { dims: { w: 0.6, d: 0.12, h: 0.28 } } },
+    { id: "ladder", labelKey: "towelRail.variants.ladder.label", cardLabelKey: "towelRail.variants.ladder.cardLabel", hotspotKeywords: ["towel"], defaults: { dims: { w: 0.5, d: 0.12, h: 1.1 } } },
+    { id: "ring", labelKey: "towelRail.variants.ring.label", cardLabelKey: "towelRail.variants.ring.cardLabel", hotspotKeywords: ["towel"], defaults: { dims: { w: 0.18, d: 0.1, h: 0.34 } } },
+    { id: "hooks", labelKey: "towelRail.variants.hooks.label", cardLabelKey: "towelRail.variants.hooks.cardLabel", hotspotKeywords: ["towel", "hook"], defaults: { dims: { w: 0.34, d: 0.08, h: 0.4 } } },
   ],
   defaultSpec: {
     generator: "towelRail",

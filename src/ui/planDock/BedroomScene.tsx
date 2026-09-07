@@ -6,16 +6,18 @@ import type { RoomHotspot } from "./KitchenScene";
 // See LivingScene: "rug" moved off the decor button onto its own, now that
 // rugs are real products rather than a keyword hoping to match an IKEA item.
 export const BEDROOM_HOTSPOTS: RoomHotspot[] = [
-  { id: "bed", label: "Bed", keywords: ["bed"] },
-  { id: "nightstand", label: "Nightstand", keywords: ["side table", "nightstand"] },
-  { id: "wardrobe", label: "Wardrobe", keywords: ["bookcase", "wardrobe", "closet", "coat rack"] },
-  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
-  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
+  { id: "bed", labelKey: "bedroom.bed", keywords: ["bed"] },
+  { id: "nightstand", labelKey: "bedroom.nightstand", keywords: ["side table", "nightstand"] },
+  { id: "wardrobe", labelKey: "bedroom.wardrobe", keywords: ["bookcase", "wardrobe", "closet", "coat rack"] },
+  { id: "rug", labelKey: "bedroom.rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "decor", labelKey: "bedroom.decor", keywords: ["lamp", "plant"] },
   // Wide roll-out: no media console here (unlike Living), so a plain
   // wall-mounted panel of its own.
-  { id: "tv", label: "TV", keywords: ["tv", "television"] },
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "tv", labelKey: "bedroom.tv", keywords: ["tv", "television"] },
+  { id: "art", labelKey: "bedroom.art", keywords: ["wall art", "artwork", "picture", "poster"] },
 ];
+
+const lbl = (id: string) => BEDROOM_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const BEDROOM_X0 = 12;
 export const BEDROOM_WIDTH = 178;
@@ -54,11 +56,11 @@ function BedroomItems(): RoomItem[] {
   const artBox = isoBox(30, 100, 38, 26, 2);
 
   return [
-    { id: "bed", label: "Bed", keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
-    { id: "rug", label: "Rug", keywords: BEDROOM_HOTSPOTS[3].keywords, box: rugBox, art: <Rug x={48} yFront={FLOOR_Y - 9} w={66} depth={24} /> },
+    { id: "bed", labelKey: lbl("bed"), keywords: BEDROOM_HOTSPOTS[0].keywords, box: bedBox, art: <Bed x={12} yFront={ITEMS_Y} w={74} depth={30} /> },
+    { id: "rug", labelKey: lbl("rug"), keywords: BEDROOM_HOTSPOTS[3].keywords, box: rugBox, art: <Rug x={48} yFront={FLOOR_Y - 9} w={66} depth={24} /> },
     {
       id: "nightstand",
-      label: "Nightstand",
+      labelKey: lbl("nightstand"),
       keywords: BEDROOM_HOTSPOTS[1].keywords,
       box: nightstand,
       art: (
@@ -70,7 +72,7 @@ function BedroomItems(): RoomItem[] {
     },
     {
       id: "wardrobe",
-      label: "Wardrobe",
+      labelKey: lbl("wardrobe"),
       keywords: BEDROOM_HOTSPOTS[2].keywords,
       box: wardrobe,
       art: (
@@ -82,7 +84,7 @@ function BedroomItems(): RoomItem[] {
     },
     {
       id: "decor",
-      label: "Lamp & decor",
+      labelKey: lbl("decor"),
       keywords: BEDROOM_HOTSPOTS[4].keywords,
       box: decorBox,
       art: (
@@ -92,10 +94,10 @@ function BedroomItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "tv", label: "TV", keywords: BEDROOM_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
+    { id: "tv", labelKey: lbl("tv"), keywords: BEDROOM_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
     {
       id: "art",
-      label: "Wall art",
+      labelKey: lbl("art"),
       keywords: BEDROOM_HOTSPOTS[6].keywords,
       box: artBox,
       art: (

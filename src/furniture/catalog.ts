@@ -36,7 +36,15 @@ export type RoomType =
 
 export interface FurnitureAsset {
   assetId: string; // also the glb filename, UNLESS `model` is set (see below)
+  /** A real product name — IKEA's "MALM", BlenderKit's asset title. NEVER
+   *  translated: these are proper nouns. Parametric items have no product name
+   *  and set `nameKey` instead; exactly one of the two is meaningful. */
   name: string;
+  /** Set only by `specOf` for PARAMETRIC items: a key into
+   *  `editor.parametric`, because a generator's name ("Alcove bath") is a
+   *  generic description and does translate. Render sites must prefer this over
+   *  `name` when it is present. */
+  nameKey?: string;
   category: FurnitureCategory;
   /** Plan-space size in meters: w along local X, d along local Z. */
   footprint: { w: number; d: number };

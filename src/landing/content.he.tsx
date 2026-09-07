@@ -47,10 +47,10 @@ import type { LandingContent } from "./content";
 
 export const HE: LandingContent = {
   openApp: (
-    <>
+    <span>
       {"פתחו את "}
       <Brand />
-    </>
+    </span>
   ),
 
   /**
@@ -226,10 +226,10 @@ export const HE: LandingContent = {
     eyebrow: "שאלות",
     title: "כל מה שכדאי לשאול לפני.",
     aboutLink: (
-      <>
+      <span>
         {"מה זה "}
         <Brand />
-      </>
+      </span>
     ),
   },
 

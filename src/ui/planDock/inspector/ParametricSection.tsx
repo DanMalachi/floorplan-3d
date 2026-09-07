@@ -6,6 +6,7 @@
 // updateFurnitureParametric, which re-sanitizes and re-renders the mesh live.
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { FurnitureItem, ParametricSpec } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { GENERATORS, elevationOf } from "@/parametric";
@@ -109,6 +110,8 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
 }
 
 export function ParametricSection({ item }: { item: FurnitureItem }) {
+  const t = useTranslations("editor.parametric");
+  const td = useTranslations("editor.dock");
   // Before the early return: the "Match run below" toggle spreads pdChip by
   // hand (it layers a disabled look on top), so it can't use the shared PdChip
   // wrapper and needs its own hover state — and a hook cannot sit behind a
@@ -136,7 +139,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
 
   return (
     <div style={pdInspectorPanel}>
-      <PdSectionTitle label={g.label} meta="Custom" />
+      <PdSectionTitle label={t(g.labelKey)} meta={td("customBadge")} />
 
       {/* A television is sold by its screen diagonal, and its width and height
           are that one number at 16:9 — so it gets inches and the standard
@@ -206,7 +209,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
                   extra={pdChipFlex}
                   onClick={() => update({ modules: { [m.key]: v } })}
                 >
-                  {v === 1 ? m.toggle!.on : m.toggle!.off}
+                  {v === 1 ? t(m.toggle!.onKey) : t(m.toggle!.offKey)}
                 </PdChip>
               ))}
             </PdChipGroup>
@@ -215,7 +218,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         return (
           <PdStepper
             key={m.key}
-            label={m.label}
+            label={t(m.labelKey)}
             value={value}
             min={m.min}
             max={m.max}
@@ -233,7 +236,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               extra={pdChipFlex}
               onClick={() => update({ variant: v.id })}
             >
-              {v.label}
+              {t(v.labelKey)}
             </PdChip>
           ))}
         </PdChipGroup>

@@ -5,6 +5,7 @@
 // step's controls visible at a time. Replaces the old all-at-once toolbar.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { SegmentKind } from "./types";
 import { analyzeLoops } from "../lib/loops";
@@ -260,15 +261,16 @@ function FinishButton({
   onClick: () => void;
   kind: "walls" | "stair";
 }) {
+  const t = useTranslations("editor.trace");
   const [hov, bind] = useHover();
   const tip =
     kind === "walls"
       ? armed
-        ? "End this run of walls — the next click starts a fresh one (Esc does the same)"
-        : "Ends a run of walls once you've started one"
+        ? t("finish.wallsArmedTip")
+        : t("finish.wallsIdleTip")
       : armed
-        ? "Commit this staircase (Esc does the same)"
-        : "Commits a staircase once you've started one";
+        ? t("finish.stairArmedTip")
+        : t("finish.stairIdleTip");
   return (
     <Tooltip label={tip}>
       <button
@@ -277,7 +279,7 @@ function FinishButton({
         {...bind}
         style={{ ...finishBtn(armed), ...(hov ? { filter: "brightness(1.1)" } : {}) }}
       >
-        {armed && <CheckIcon size={13} />} Finish
+        {armed && <CheckIcon size={13} />} {t("finish.label")}
       </button>
     </Tooltip>
   );
@@ -315,6 +317,7 @@ function Disclosure({ label, children }: { label: string; children: React.ReactN
 
 /** Manual drawing tools shared by the Walls and Openings steps. */
 function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
+  const t = useTranslations("editor.trace");
   const mode = useSceneStore((s) => s.mode);
   const setMode = useSceneStore((s) => s.setMode);
   const ortho = useSceneStore((s) => s.ortho);
@@ -336,8 +339,8 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   // turns any door at or past PATIO_MIN_WIDTH into a glazed patio slider, so
   // this one tool genuinely places either. The stored enum stays `"door"`.
   const openings = {
-    door: { Icon: DoorIcon, label: "Door / Patio" },
-    window: { Icon: WindowIcon, label: "Window" },
+    door: { Icon: DoorIcon, label: t("tools.doorPatio") },
+    window: { Icon: WindowIcon, label: t("tools.window") },
   } as const;
   const pickWall = (kind: SegmentKind) => {
     setMode("wall");
@@ -345,7 +348,7 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={microLabel()}>Draw by hand</div>
+      <div style={microLabel()}>{t("tools.drawByHand")}</div>
       <div style={{ display: "flex", gap: 4 }}>
         {tools.includes("wall") && (
           <>
@@ -354,23 +357,23 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
               extra={toolChip}
               onClick={() => pickWall("wall")}
             >
-              <WallToolIcon size={13} /> Wall
+              <WallToolIcon size={13} /> {t("tools.wall")}
             </Chip>
             <Chip
               active={mode === "wall" && drawKind === "rail"}
               extra={toolChip}
               onClick={() => pickWall("rail")}
-              tip="Balcony/terrace railing — low, see-through barrier that bounds an outdoor space"
+              tip={t("tools.railTip")}
             >
-              <RailIcon size={13} /> Rail
+              <RailIcon size={13} /> {t("tools.rail")}
             </Chip>
             <Chip
               active={mode === "wall" && drawKind === "portal"}
               extra={toolChip}
               onClick={() => pickWall("portal")}
-              tip="Open boundary — closes the room without building anything. Use where a space simply gives onto the next (living room to corridor); no wall, no door needed."
+              tip={t("tools.openTip")}
             >
-              <PassageIcon size={13} /> Open
+              <PassageIcon size={13} /> {t("tools.open")}
             </Chip>
           </>
         )}
@@ -399,25 +402,25 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
               extra={{ flex: 1, textAlign: "center" }}
               onClick={() => setDrawThickness(DEFAULT_THICKNESS)}
             >
-              Interior
+              {t("tools.interior")}
             </Chip>
             <Chip
               active={drawThickness === EXTERIOR_THICKNESS}
               extra={{ flex: 1, textAlign: "center" }}
               onClick={() => setDrawThickness(EXTERIOR_THICKNESS)}
             >
-              Exterior
+              {t("tools.exterior")}
             </Chip>
           </div>
           <NumField
-            label="Height"
+            label={t("tools.height")}
             value={drawHeight}
             onCommit={(v) => setDrawHeight(Math.min(6, Math.max(0.5, v)))}
             displayScale={100}
             unit="cm"
           />
           <NumField
-            label="Thickness"
+            label={t("tools.thickness")}
             value={drawThickness}
             onCommit={(v) => setDrawThickness(Math.min(1, Math.max(0.05, v)))}
             displayScale={100}
@@ -430,19 +433,19 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
           fix — and required now that Finish grows a tick mark when armed. */}
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {tools.includes("wall") && (
-          <Chip active={ortho} extra={rowChip} onClick={() => setOrtho(!ortho)} tip="Constrain walls to 90° (Shift inverts per click)">
+          <Chip active={ortho} extra={rowChip} onClick={() => setOrtho(!ortho)} tip={t("tools.orthoTip")}>
             <OrthoIcon size={13} /> 90°
           </Chip>
         )}
         <Chip extra={rowChip} onClick={undo}>
-          <UndoIcon size={13} /> Undo
+          <UndoIcon size={13} /> {t("tools.undo")}
         </Chip>
         <FinishButton armed={drawingChain} onClick={finishChain} kind="walls" />
         <Chip
           extra={{ ...rowChip, opacity: selectedPointId || selectedOpeningId ? 1 : 0.4 }}
           onClick={deleteSelected}
         >
-          Delete
+          {t("tools.delete")}
         </Chip>
       </div>
     </div>
@@ -524,6 +527,7 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
 }
 
 export function TraceRail() {
+  const t = useTranslations("editor.trace");
   const image = useSceneStore((s) => s.image);
   const imageOpacity = useSceneStore((s) => s.imageOpacity);
   const setImageOpacity = useSceneStore((s) => s.setImageOpacity);
@@ -586,28 +590,28 @@ export function TraceRail() {
 
   const steps: StepDef[] = [
     {
-      n: 1, label: "Plan", done: !!image, locked: false,
-      status: image ? (sourcePdfName ?? "loaded") : "import a floor plan",
+      n: 1, label: t("steps.plan"), done: !!image, locked: false,
+      status: image ? (sourcePdfName ?? t("status.planLoaded")) : t("status.planPending"),
     },
     {
-      n: 2, label: "Scale", done: scaleSet, locked: !image,
-      status: scaleSet ? `1 m ≈ ${(1 / metersPerPixel!).toFixed(0)} px` : "two clicks + a distance",
+      n: 2, label: t("steps.scale"), done: scaleSet, locked: !image,
+      status: scaleSet ? `1 m ≈ ${(1 / metersPerPixel!).toFixed(0)} px` : t("status.scalePending"),
     },
     {
-      n: 3, label: "Walls", done: segments.length > 0, locked: !scaleSet,
-      status: segments.length > 0 ? `${segments.length} traced` : "draw the walls by hand",
+      n: 3, label: t("steps.walls"), done: segments.length > 0, locked: !scaleSet,
+      status: segments.length > 0 ? t("status.wallsTraced", { count: segments.length }) : t("status.wallsPending"),
     },
     {
-      n: 4, label: "Openings", done: openings.length > 0, locked: !scaleSet,
-      status: openings.length > 0 ? `${openings.length} placed` : "doors & windows",
+      n: 4, label: t("steps.openings"), done: openings.length > 0, locked: !scaleSet,
+      status: openings.length > 0 ? t("status.openingsPlaced", { count: openings.length }) : t("status.openingsPending"),
     },
     {
-      n: 5, label: "Stairs", done: stairs.length > 0, locked: !scaleSet,
-      status: stairs.length > 0 ? `${stairs.length} placed` : "optional — steps & levels",
+      n: 5, label: t("steps.stairs"), done: stairs.length > 0, locked: !scaleSet,
+      status: stairs.length > 0 ? t("status.stairsPlaced", { count: stairs.length }) : t("status.stairsPending"),
     },
     {
-      n: 6, label: "Build", done: false, locked: !scaleSet,
-      status: analysis.loops.length > 0 ? `${analysis.loops.length} room${analysis.loops.length > 1 ? "s" : ""} ready` : "close a room loop",
+      n: 6, label: t("steps.build"), done: false, locked: !scaleSet,
+      status: analysis.loops.length > 0 ? t("status.buildReady", { count: analysis.loops.length }) : t("status.buildPending"),
     },
   ];
 
@@ -682,9 +686,9 @@ export function TraceRail() {
     if (r?.straightened) {
       const shift = Math.round(r.maxShift * 100);
       pdToast(
-        `Squared up ${r.straightened} wall${r.straightened === 1 ? "" : "s"}` +
-          (r.diagonals ? `, kept ${r.diagonals} angled` : "") +
-          (shift >= 10 ? ` — moved a corner by ${shift}cm, worth a look` : ""),
+        t("build.squaredToast", { count: r.straightened }) +
+          (r.diagonals ? t("build.squaredKept", { count: r.diagonals }) : "") +
+          (shift >= 10 ? t("build.squaredShift", { cm: shift }) : ""),
       );
     }
   };
@@ -706,9 +710,9 @@ export function TraceRail() {
               }}
             />
             <PrimaryButton enabled={!importBusy} disabled={importBusy} onClick={() => fileRef.current?.click()}>
-              {importBusy ? "Importing…" : image ? "Replace plan…" : "Import plan…"}
+              {importBusy ? t("dropZone.importing") : image ? t("plan.replace") : t("plan.import")}
             </PrimaryButton>
-            <div style={hintText}>Image (PNG/JPG/WebP) or PDF — every PDF imports as a page you trace over. CAD vectors come from DXF/DWG.</div>
+            <div style={hintText}>{t("plan.hint")}</div>
             {importMsg && (
               <div style={statusText(importStatus === "ok")}>
                 <StatusIcon ok={importStatus === "ok"} />
@@ -718,7 +722,7 @@ export function TraceRail() {
             {image && (
               <>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: PD.textSecondary }}>
-                  Plan opacity
+                  {t("plan.opacity")}
                   <input
                     type="range"
                     min={0} max={1} step={0.05}
@@ -734,7 +738,7 @@ export function TraceRail() {
                     extra={{ display: "flex", alignItems: "center", gap: 5 }}
                     onClick={() => setShowImport(!showImport)}
                   >
-                    {showImport && <CheckIcon size={12} />} CAD vector overlay
+                    {showImport && <CheckIcon size={12} />} {t("plan.cadOverlay")}
                   </Chip>
                 )}
               </>
@@ -748,14 +752,14 @@ export function TraceRail() {
               <>
                 <div style={statusText(true)}>
                   <StatusIcon ok />
-                  <span>Scale set — 1 m ≈ {(1 / metersPerPixel!).toFixed(1)} px</span>
+                  <span>{t("scale.setStatus", { px: (1 / metersPerPixel!).toFixed(1) })}</span>
                 </div>
                 <Chip
                   styler={railBtn}
                   extra={{ display: "flex", alignItems: "center", gap: 6 }}
                   onClick={() => setMode("calibrate")}
                 >
-                  <MeasureIcon size={13} /> Redo scale
+                  <MeasureIcon size={13} /> {t("scale.redo")}
                 </Chip>
               </>
             ) : (
@@ -765,18 +769,18 @@ export function TraceRail() {
                     onClick={() => setMode("calibrate")}
                   >
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                      <MeasureIcon size={13} /> Set scale
+                      <MeasureIcon size={13} /> {t("scale.setAction")}
                     </span>
                   </PrimaryButton>
                 )}
                 {mode === "calibrate" && calibrationPts.length < 2 && (
                   <div style={{ ...statusText(false), fontWeight: 600 }}>
-                    Click two points a known distance apart on the plan ({calibrationPts.length}/2)
+                    {t("scale.clickTwoPoints", { n: calibrationPts.length })}
                   </div>
                 )}
                 {mode === "calibrate" && calibrationPts.length >= 2 && (
                   <>
-                    <div style={hintText}>Real distance between the two points:</div>
+                    <div style={hintText}>{t("scale.realDistance")}</div>
                     <div style={{ display: "flex", gap: 5 }}>
                       <input
                         type="number" step="1" min="0" autoFocus
@@ -793,12 +797,12 @@ export function TraceRail() {
                         style={field({ width: 90 })}
                       />
                       <span style={{ color: PD.textTertiary, fontSize: 11.5 }}>cm</span>
-                      <Chip active onClick={applyScale}>Apply</Chip>
-                      <Chip onClick={cancelCalibration}>Cancel</Chip>
+                      <Chip active onClick={applyScale}>{t("scale.apply")}</Chip>
+                      <Chip onClick={cancelCalibration}>{t("scale.cancel")}</Chip>
                     </div>
                   </>
                 )}
-                <div style={hintText}>A doorway is ~90 cm; a dimension line from the plan is even better.</div>
+                <div style={hintText}>{t("scale.hint")}</div>
               </>
             )}
           </>
@@ -807,7 +811,7 @@ export function TraceRail() {
         return (
           <>
             {hasVectors && (
-              <Disclosure label="Advanced (CAD)">
+              <Disclosure label={t("walls.advancedCad")}>
                 <Chip
                   styler={railBtn}
                   active={wallSnap}
@@ -815,19 +819,19 @@ export function TraceRail() {
                   onClick={() => setWallSnap(!wallSnap)}
                 >
                   <MagnetIcon size={13} />
-                  <span>Snap tracing to CAD centerlines</span>
+                  <span>{t("walls.snapCad")}</span>
                 </Chip>
               </Disclosure>
             )}
             <DrawTools tools={["wall"]} />
-            <TextAction onClick={clearTrace}>Clear the whole trace…</TextAction>
+            <TextAction onClick={clearTrace}>{t("walls.clearTrace")}</TextAction>
           </>
         );
       case 4:
         return (
           <>
             <div style={hintText}>
-              Draw doors and windows by hand: pick a tool below, then click two points along a wall.
+              {t("openings.hint")}
             </div>
             <DrawTools tools={["door", "window"]} />
           </>
@@ -836,34 +840,31 @@ export function TraceRail() {
         return (
           <>
             <div style={hintText}>
-              Click the foot of the run, then its head, then either long edge to set
-              the width. Keep clicking to add flights — the flat gap you leave between
-              two of them becomes the landing. Esc finishes the staircase.
+              {t("stairs.hint1")}
             </div>
             <div style={{ display: "flex", gap: 4 }}>
               <Chip active={mode === "stair"} extra={rowChip} onClick={() => setMode("stair")}>
-                <PencilIcon size={13} /> Stair
+                <PencilIcon size={13} /> {t("stairs.stairTool")}
               </Chip>
               <FinishButton armed={stairDrafting} onClick={finishChain} kind="stair" />
               <Chip
                 extra={{ ...rowChip, opacity: selectedStair ? 1 : 0.4 }}
                 onClick={deleteSelected}
               >
-                Delete
+                {t("tools.delete")}
               </Chip>
             </div>
-            <NumField label="Width" value={stairWidth} onCommit={commitStairWidth} displayScale={100} unit="cm" />
-            <NumField label="Rise" value={stairRise} onCommit={commitStairRise} displayScale={100} unit="cm" />
+            <NumField label={t("stairs.width")} value={stairWidth} onCommit={commitStairWidth} displayScale={100} unit="cm" />
+            <NumField label={t("stairs.rise")} value={stairRise} onCommit={commitStairRise} displayScale={100} unit="cm" />
             <div style={hintText}>
-              Rise is the TOTAL climb of the whole staircase — a full storey by default,
-              less for a terrace, a stoop or a split level.
+              {t("stairs.riseHint")}
             </div>
             {stairTarget && (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ flex: 1 }}>
                     <NumField
-                      label="Steps"
+                      label={t("stairs.steps")}
                       value={stairTarget.metrics.steps}
                       unit=""
                       disabled={!selectedStair}
@@ -876,26 +877,25 @@ export function TraceRail() {
                   <Chip
                     active={stairTarget.stair.steps == null}
                     extra={{ opacity: selectedStair ? 1 : 0.4 }}
-                    tip="Derive the step count from the rise again"
+                    tip={t("stairs.autoTip")}
                     onClick={() => selectedStair && updateStair(selectedStair.id, { steps: null })}
                   >
-                    Auto
+                    {t("stairs.auto")}
                   </Chip>
                 </div>
                 <div style={hintText}>
-                  Nudge Steps until the ladder on the canvas lines up with the treads
-                  drawn on the plan — then the model matches the drawing.
+                  {t("stairs.nudgeHint")}
                 </div>
                 <div style={{ fontSize: 12, color: PD.textSecondary, lineHeight: 1.6 }}>
-                  {stairTarget.stair.flights.length} flight
-                  {stairTarget.stair.flights.length === 1 ? "" : "s"} ·{" "}
-                  {stairTarget.metrics.steps} steps · riser{" "}
-                  {Math.round(stairTarget.metrics.riser * 100)} cm · tread{" "}
-                  {Math.round(stairTarget.metrics.going * 100)} cm ·{" "}
-                  {Math.round(
-                    (Math.atan2(stairTarget.metrics.riser, stairTarget.metrics.going) * 180) / Math.PI,
-                  )}
-                  °
+                  {t("stairs.summary", {
+                    flights: stairTarget.stair.flights.length,
+                    steps: stairTarget.metrics.steps,
+                    riser: Math.round(stairTarget.metrics.riser * 100),
+                    tread: Math.round(stairTarget.metrics.going * 100),
+                    angle: Math.round(
+                      (Math.atan2(stairTarget.metrics.riser, stairTarget.metrics.going) * 180) / Math.PI,
+                    ),
+                  })}
                 </div>
                 {/* Advisory only: a plan may legitimately show a stair that
                     fails a rule of thumb, so nothing here blocks Generate. */}
@@ -913,28 +913,26 @@ export function TraceRail() {
         return (
           <>
             <div style={{ fontSize: 12, color: PD.textSecondary, lineHeight: 1.6 }}>
-              {segments.length} wall{segments.length === 1 ? "" : "s"} · {openings.length} opening{openings.length === 1 ? "" : "s"} ·{" "}
+              {t("build.wallsCount", { count: segments.length })} · {t("build.openingsCount", { count: openings.length })} ·{" "}
               <span style={{ color: analysis.loops.length ? PD.ok : PD.warnText }}>
-                {analysis.loops.length} room{analysis.loops.length === 1 ? "" : "s"}
+                {t("build.roomsCount", { count: analysis.loops.length })}
               </span>
-              {analysis.hasOpenChain && <span style={{ color: PD.warnText }}> · open chain</span>}
+              {analysis.hasOpenChain && <span style={{ color: PD.warnText }}> · {t("build.openChain")}</span>}
             </div>
             {!canGenerate && (
-              <div style={hintText}>Close at least one room loop — walls must connect back on themselves to make a floor.</div>
+              <div style={hintText}>{t("build.closeLoopHint")}</div>
             )}
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: PD.textSecondary }}>
               <input type="checkbox" checked={squareUp} onChange={(e) => setSquareUp(e.target.checked)} />
-              Square up near-square walls
+              {t("build.squareUp")}
             </label>
             <div style={hintText}>
-              Straightens walls traced a degree or two out — the ortho lock lets them
-              through whenever you click onto an existing corner or the plan underneath.
-              Genuinely angled walls are left as drawn.
+              {t("build.squareUpHint")}
             </div>
             <PrimaryButton enabled={canGenerate} disabled={!canGenerate} onClick={generate}>
-              Generate 3D model →
+              {t("build.generate")}
             </PrimaryButton>
-            <div style={hintText}>Builds the model and takes you to Build mode. Everything stays editable in 3D.</div>
+            <div style={hintText}>{t("build.generateHint")}</div>
             <TextAction
               extra={{ cursor: segments.length ? "pointer" : "default", opacity: segments.length ? 1 : 0.4 }}
               disabled={!segments.length}
@@ -951,7 +949,7 @@ export function TraceRail() {
                 )
               }
             >
-              <DownloadIcon size={12} /> Export ground truth (eval)
+              <DownloadIcon size={12} /> {t("build.exportGt")}
             </TextAction>
           </>
         );

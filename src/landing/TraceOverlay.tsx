@@ -424,7 +424,30 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
           <DimV y1={0} y2={500} x={838} from={780} cm={500} />
           <DimV y1={0} y2={180} x={-52} from={0} cm={180} />
 
-          <text x={955} y={600} textAnchor="end" fontSize={16} fill={INK.label} letterSpacing="1.6">
+          {/* The only direction-relative anchor in the drawing — every other
+              label here is `textAnchor="middle"`, which is direction-agnostic.
+              `end` is not: it resolves against the element's inline base
+              direction, so under `<html dir="rtl">` it flipped to mean the LEFT
+              end and the caption ran off the right of the viewBox (it starts 5
+              units inside it at x=955) and was clipped by the SVG bounds.
+
+              A plan drawing is a COORDINATE SYSTEM, not a text flow: "the right
+              edge" has to stay the right edge in both locales, so `direction`
+              is pinned ltr here to fix what `end` means. `unicodeBidi:
+              "plaintext"` then takes the RUN's base direction from its own
+              first strong character, so the Hebrew still orders right-to-left
+              inside the label while the label as a whole stays pinned to the
+              same corner. Anchor from the diagram, direction from the words —
+              and no locale conditional either way. */}
+          <text
+            x={955}
+            y={600}
+            textAnchor="end"
+            fontSize={16}
+            fill={INK.label}
+            letterSpacing="1.6"
+            style={{ direction: "ltr", unicodeBidi: "plaintext" }}
+          >
             {t("scaleNote")}
           </text>
         </g>

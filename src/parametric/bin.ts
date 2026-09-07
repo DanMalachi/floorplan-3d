@@ -73,7 +73,7 @@ function pedal(r: number, mat: THREE.Material): THREE.Group {
 
 export const binGenerator: GeneratorDef = {
   id: "bin",
-  label: "Bin",
+  labelKey: "bin.label",
   category: "Storage",
   rooms: ["bathroom", "kitchen"],
   wallSnap: false,
@@ -87,31 +87,31 @@ export const binGenerator: GeneratorDef = {
   variants: [
     {
       id: "pedal",
-      label: "Pedal",
-      cardLabel: "Pedal bin",
+      labelKey: "bin.variants.pedal.label",
+      cardLabelKey: "bin.variants.pedal.cardLabel",
       hotspotKeywords: ["bin", "trash", "waste"],
       defaults: { dims: { w: 0.25, d: 0.25, h: 0.32 }, finish: "steel" },
     },
     {
       id: "kitchen",
-      label: "Kitchen",
-      cardLabel: "Kitchen pedal bin",
+      labelKey: "bin.variants.kitchen.label",
+      cardLabelKey: "bin.variants.kitchen.cardLabel",
       hotspotKeywords: ["bin", "trash", "waste"],
       rooms: ["kitchen"],
       defaults: { dims: { w: 0.35, d: 0.35, h: 0.7 }, finish: "steel" },
     },
     {
       id: "recycling",
-      label: "Recycling",
-      cardLabel: "Recycling twin bin",
+      labelKey: "bin.variants.recycling.label",
+      cardLabelKey: "bin.variants.recycling.cardLabel",
       hotspotKeywords: ["bin", "trash", "recycling", "waste"],
       rooms: ["kitchen"],
       defaults: { dims: { w: 0.6, d: 0.34, h: 0.65 }, finish: "steel" },
     },
     {
       id: "open",
-      label: "Open",
-      cardLabel: "Open waste basket",
+      labelKey: "bin.variants.open.label",
+      cardLabelKey: "bin.variants.open.cardLabel",
       hotspotKeywords: ["bin", "trash", "waste"],
       defaults: { dims: { w: 0.24, d: 0.24, h: 0.28 }, finish: "painted" },
     },

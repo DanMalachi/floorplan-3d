@@ -32,7 +32,7 @@ import { Brand } from "@/brand/Brand";
 import type { LandingContent } from "./content";
 
 export const EN: LandingContent = {
-  openApp: <>Open <Brand /></>,
+  openApp: <span>Open <Brand /></span>,
 
   /**
    * The lines that rotate beside/below the fixed `done.` wordmark in the hero.
@@ -70,7 +70,7 @@ export const EN: LandingContent = {
      * something at every stage of a thirteen-second sequence, so it has three
      * labels rather than going dead once it has been pressed.
      */
-    ctaGhostLabel: <>{"see how it's "}<Brand /></>,
+    ctaGhostLabel: <span>{"see how it's "}<Brand /></span>,
     ctaGhostLabelRunning: "Skip to the room",
     ctaGhostLabelDone: "Watch it again",
   },
@@ -238,7 +238,7 @@ export const EN: LandingContent = {
   faqPage: {
     eyebrow: "Questions",
     title: "Everything worth asking first.",
-    aboutLink: <>What <Brand /> is</>,
+    aboutLink: <span>What <Brand /> is</span>,
   },
 
   /** The closing call to action, on its own band. */

@@ -37,6 +37,90 @@ extraction dependencies.
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-07, `src/viewport3d/Viewport.tsx` — `StatusOverlay`'s `bottom`
+  moves from 14 to 250.** Approved by Dan before the edit. A third, separate
+  ask from the two 2026-09-06 entries below: neither of those covered
+  POSITIONING, and this is not a rename and not a string move — it changes
+  where a box lands.
+
+  Why: the pill renders only in `build` and `furnish`, and those are exactly
+  the two modes where a 208×224 Plan Dock panel is pinned to the same corner
+  (`BuildNavigator.tsx:74` in build, `BottomDock.tsx:403`'s `NavigatorPanel` in
+  furnish, both `insetInlineStart: 16, bottom: 16`). Measured at 1440×900 the
+  overlap was 208×31 — **72% of the pill** — identical in `en` and `he` and in
+  both modes; both boxes are `z-index: auto` under the same stacking parent, so
+  DOM order decided it and the panel painted over the pill. The pill was
+  therefore never fully visible in either mode it exists in. This is one of the
+  four pre-existing English overlaps the Step 4 RTL gate counted, and NOT an
+  RTL regression — Dan reported seeing it in both languages.
+
+  Scope: one number plus its comment. No logic, no imports, no props. The
+  residual case, left deliberately unhandled: `furnish`'s item dock is
+  resizable, and dragging it above ~234px tall reaches the pill's trailing end
+  again — fixing that would couple this file to the dock's height, which is the
+  cross-layer reach this tree is protected from.
+
+- **2026-09-06 (second, separate from the property-rename entry below),
+  `src/viewport3d/Viewport.tsx` — its hardcoded UI TEXT moves into the message
+  catalogue** (branch `feat/hebrew`, Step 5). Approved by Dan before the edit,
+  asked for separately because the earlier exception the same day covered
+  *property renames only* and this one is not that: it adds a
+  `useTranslations` import and changes three module-scope label tables to carry
+  keys instead of words.
+
+  The text: `WALL_MODES` ("Full"/"Cutaway"/"Top"), `ENV_PRESETS`
+  ("Studio"/"Suburb"/"City"), `WEATHERS` ("Clear"/"Cloudy"/"Rain"), the
+  "Scene" panel header, the walkthrough chip's two states, the time-of-day
+  tooltip, the ceilings tip, and StatusOverlay's selection and undo/redo lines.
+  Without it the Hebrew editor would show its view-mode and environment rows in
+  English directly beside translated chrome.
+
+  Each table keeps its `id` untouched and swaps `label` for `labelKey`; the
+  render site resolves the key. That is the convention already used by
+  `NavItem.labelKey` (src/landing/nav.ts) and now by `ALL_MODES`
+  (design/page.tsx), so this file follows the app's existing answer rather than
+  inventing one. Ids are what the store compares on and none of them move.
+
+  Presentation only. Nothing touching the Canvas, camera, controls,
+  postprocessing, env/time-of-day WIRING (only the words naming the presets),
+  raycasting, or any store setter — every `onClick` keeps the exact call it
+  had. The file's own comment above `WEATHERS` already anticipated this: the
+  weather emoji was split out of the label string earlier precisely so "the
+  label stays a word".
+
+- **2026-09-06, `src/viewport3d/Viewport.tsx` and
+  `src/viewport3d/walkthrough/WalkthroughMode.tsx` — four pinned chrome boxes
+  move from physical `left`/`right` to logical `insetInlineStart`/
+  `insetInlineEnd`** (branch `feat/hebrew`, Step 4 of docs/HEBREW-HANDOFF.md).
+  Approved by Dan before the edit.
+
+  | site | element | was |
+  |---|---|---|
+  | `Viewport.tsx:217` | Scene panel | `left: 14, top: 112` |
+  | `Viewport.tsx:321` | WallModeToggle | `left: 14, top: 64` |
+  | `Viewport.tsx:367` | StatusOverlay | `left: 14, bottom: 14` |
+  | `WalkthroughMode.tsx:748` | FOV slider | `right: 14, top: 64` |
+
+  Under `<html dir="rtl">` these four stayed on the physical side they were
+  authored on while everything around them mirrored. The consequence is not
+  cosmetic and is arithmetic rather than observed: the inspector is
+  `insetInlineEnd: 14, top: 64` (`panelKit.tsx`), which in Hebrew resolves to
+  physical `left: 14, top: 64` — the exact coordinates of WallModeToggle. The
+  two draw on top of each other the moment anything is selected in the Hebrew
+  editor. The Step 4 mirror gate missed it only because nothing was selected
+  during that run.
+
+  Four property renames. No logic, no geometry, no imports, no types. Nothing
+  touching the camera, controls, postprocessing, env/time-of-day wiring, or the
+  first-person walkthrough's collision, spawn, doors or config. Every one is UI
+  chrome that happens to live in the viewer's file rather than viewer code —
+  which is the same argument the 2026-09-04 `WalkthroughMode.tsx` entry below
+  makes, and, as that entry says, an exception is never widened to a file it
+  does not name: both files are named here.
+
+  Reversible by inverting the four renames; in English the two spellings
+  compute identically, so the LTR render is unchanged by construction.
+
 - **2026-09-04, `src/viewport3d/walkthrough/WalkthroughMode.tsx` — its five
   `T` token references now read from the Plan Dock set** (branch
   `fix/ui-sweep`). Approved by Dan before the edit, asked for specifically

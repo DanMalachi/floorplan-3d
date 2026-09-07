@@ -258,7 +258,7 @@ function buildLedge(
 
 export const wallArtGenerator: GeneratorDef = {
   id: "wallArt",
-  label: "Wall art",
+  labelKey: "wallArt.label",
   category: "Decor",
   // The wide roll-out list: art belongs on a wall in every room people spend
   // time in, and the hallway-sized rooms (laundry, kitchen) are exactly where
@@ -269,11 +269,11 @@ export const wallArtGenerator: GeneratorDef = {
   modules: [
     {
       key: "mount",
-      label: "Mount",
+      labelKey: "wallArt.modules.mount.label",
       min: 0,
       max: 1,
       default: 1,
-      toggle: { on: "With mount", off: "Print to edge" },
+      toggle: { onKey: "wallArt.modules.mount.toggle.on", offKey: "wallArt.modules.mount.toggle.off" },
       // A gallery wrap has no mount board and no glass to put one behind.
       appliesTo: (spec) => kindOf(spec) !== "canvas",
     },
@@ -303,38 +303,38 @@ export const wallArtGenerator: GeneratorDef = {
   variants: [
     {
       id: "framed-portrait",
-      label: "Portrait",
-      cardLabel: "Framed print, portrait",
+      labelKey: "wallArt.variants.framed-portrait.label",
+      cardLabelKey: "wallArt.variants.framed-portrait.cardLabel",
       defaults: { dims: { w: 0.5, d: 0.045, h: 0.7 }, finish: "art-plum", finish2: "oak" },
     },
     {
       id: "framed-landscape",
-      label: "Landscape",
-      cardLabel: "Framed print, landscape",
+      labelKey: "wallArt.variants.framed-landscape.label",
+      cardLabelKey: "wallArt.variants.framed-landscape.cardLabel",
       defaults: { dims: { w: 0.72, d: 0.045, h: 0.52 }, finish: "art-wave", finish2: "walnut" },
     },
     {
       id: "framed-large",
-      label: "Statement",
-      cardLabel: "Large framed art",
+      labelKey: "wallArt.variants.framed-large.label",
+      cardLabelKey: "wallArt.variants.framed-large.cardLabel",
       defaults: { dims: { w: 1.1, d: 0.055, h: 0.85 }, finish: "art-bedroom", finish2: "painted", color2: "#23252b" },
     },
     {
       id: "canvas",
-      label: "Canvas",
-      cardLabel: "Canvas print",
+      labelKey: "wallArt.variants.canvas.label",
+      cardLabelKey: "wallArt.variants.canvas.cardLabel",
       defaults: { dims: { w: 0.9, d: CANVAS_D, h: 0.6 }, finish: "art-lilies" },
     },
     {
       id: "gallery-3",
-      label: "Gallery set",
-      cardLabel: "Gallery wall, set of 3",
+      labelKey: "wallArt.variants.gallery-3.label",
+      cardLabelKey: "wallArt.variants.gallery-3.cardLabel",
       defaults: { dims: { w: 1.35, d: 0.042, h: 0.78 }, finish: "art-cannons", finish2: "painted", color2: "#23252b" },
     },
     {
       id: "ledge",
-      label: "Ledge",
-      cardLabel: "Picture ledge with frames",
+      labelKey: "wallArt.variants.ledge.label",
+      cardLabelKey: "wallArt.variants.ledge.cardLabel",
       defaults: { dims: { w: 0.9, d: 0.12, h: 0.52 }, finish: "art-mono", finish2: "oak" },
     },
   ],

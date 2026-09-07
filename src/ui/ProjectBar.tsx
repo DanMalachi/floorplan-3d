@@ -8,6 +8,7 @@
 // EDITOR's concern, not this component's: the room has no sync store to read,
 // so it just omits `status`.
 
+import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
@@ -22,6 +23,7 @@ export function ProjectBar({
   status?: string | null;
   onOpenProjects: () => void;
 }) {
+  const t = useTranslations("editor.chrome");
   // This button's hand-rolled hover was the only one in the product; it is now
   // the shared `useHover` hook, and every other control follows it.
   const [hover, hoverBind] = useHover();
@@ -41,7 +43,7 @@ export function ProjectBar({
     >
       {/* `placement="bottom"`: this pill is pinned at top:14, so a tooltip above
           it would be clipped off the top of the window. */}
-      <Tooltip label="Back to your projects" placement="bottom">
+      <Tooltip label={t("projectBar.backTooltip")} placement="bottom">
         <button
           onClick={onOpenProjects}
           {...hoverBind}

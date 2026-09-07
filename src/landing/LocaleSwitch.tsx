@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 // Link from @/i18n/navigation would prefix it a second time. `switchLocaleHref`
 // carries the full argument.
 import Link from "next/link";
-import { localeName } from "@/i18n/routing";
+import { localeName, localeShort } from "@/i18n/routing";
 import { useLocaleSwitch } from "@/i18n/useLocaleSwitch";
 import { B, type as ty } from "@/brand/tokens";
 import { MENU_ITEM_CLASS, TEXT_BTN_CLASS } from "./hoverCss";
@@ -14,12 +14,26 @@ import { MENU_ITEM_CLASS, TEXT_BTN_CLASS } from "./hoverCss";
 // -----------------------------------------------------------------------------
 // The marketing site's language switcher.
 //
-// ── Why it says "עברית" and not "Hebrew" ───────────────────────────────────
+// ── Why a globe and not a flag ─────────────────────────────────────────────
+// A flag is a country, not a language. Hebrew is not only spoken in Israel,
+// English has no single flag to pick, and the moment a flag stands in for a
+// language somebody is being told their language belongs to someone else's
+// state. The globe is the conventional mark for "language" precisely because
+// it is the one symbol in this space that names nobody.
+//
+// (It is also the only form that survives this repo's zero-emoji gate over
+// `src/` as a drawn mark rather than a codepoint.)
+//
+// ── Why it still says "עברית" and not "Hebrew" ─────────────────────────────
 // Every entry is written in the language it leads to, in that language's own
 // script (`localeName` in src/i18n/routing.ts). That is the whole trick of a
 // language switcher: the person who needs it is, by definition, the one who
 // cannot read the page they are looking at. "Hebrew" is a word for people who
 // already read English.
+//
+// The globe carries the CATEGORY ("this control is about language") and the
+// endonym carries the DESTINATION ("…and it leads here"). An icon alone gives
+// you the first and drops the second, which is the half that does the work.
 //
 // ── Why it is a link and not a button ──────────────────────────────────────
 // The locale IS the URL here (`localePrefix: "as-needed"`), so switching
@@ -63,10 +77,46 @@ export function LocaleSwitch({ variant = "bar", onNavigate }: {
           className={variant === "bar" ? TEXT_BTN_CLASS : MENU_ITEM_CLASS}
           style={variant === "bar" ? barStyle : sheetStyle}
         >
-          {localeName[locale]}
+          <GlobeIcon size={variant === "bar" ? 15 : 17} />
+          {localeShort[locale]}
         </Link>
       ))}
     </>
+  );
+}
+
+/**
+ * The globe. Drawn rather than imported: it is nine path commands, and the app
+ * has no icon set to pull from on the marketing side.
+ *
+ * `currentColor` throughout, so it inherits the link's rest and hover colours
+ * from `TEXT_BTN_CLASS`/`MENU_ITEM_CLASS` without either style object having to
+ * know the icon exists. `aria-hidden` because the link already carries a full
+ * `aria-label` — announcing "globe" before it would be noise.
+ *
+ * The meridians are two ellipses rather than a mesh: at 15px anything denser
+ * turns to grey mush, and the equator + one vertical oval is what still reads
+ * as a globe at that size.
+ */
+function GlobeIcon({ size }: { size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.3}
+      aria-hidden="true"
+      // Not `display: block` — this sits inline beside text, and the flex row
+      // on the link handles alignment. `flexShrink` stops a long endonym from
+      // squeezing it out of round in the sheet.
+      style={{ flexShrink: 0 }}
+    >
+      <circle cx="8" cy="8" r="6.35" />
+      <ellipse cx="8" cy="8" rx="2.6" ry="6.35" />
+      <line x1="1.65" y1="8" x2="14.35" y2="8" />
+    </svg>
   );
 }
 
@@ -74,6 +124,9 @@ export function LocaleSwitch({ variant = "bar", onNavigate }: {
  *  They are the same kind of thing (a utility beside the CTA, not a nav
  *  destination) and should not compete with each other for attention. */
 const barStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
   fontFamily: B.fontUi,
   fontSize: ty.small,
   fontWeight: 600,
@@ -84,6 +137,9 @@ const barStyle: React.CSSProperties = {
 
 /** Matches the sheet's nav rows. */
 const sheetStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
   fontFamily: B.fontUi,
   fontSize: 17,
   fontWeight: 600,

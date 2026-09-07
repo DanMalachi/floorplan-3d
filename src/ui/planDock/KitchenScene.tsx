@@ -14,30 +14,34 @@ import { isoBox, Extrusion, DoorSeam, ShelfLines, KnobRow, BurnerRings, BasinCut
 
 export interface RoomHotspot {
   id: string;
-  label: string;
+  labelKey: string;
   keywords: string[];
 }
 
 export const KITCHEN_HOTSPOTS: RoomHotspot[] = [
-  { id: "fridge", label: "Fridge", keywords: ["fridge", "refrigerator"] },
-  { id: "cabinets", label: "Cabinets", keywords: ["cabinet"] },
-  { id: "dishwasher", label: "Dishwasher", keywords: ["dishwasher"] },
-  { id: "sink", label: "Sink", keywords: ["sink"] },
-  { id: "stove", label: "Stove & oven", keywords: ["stove", "oven", "cooktop", "cooker", "range"] },
-  { id: "hood", label: "Range hood", keywords: ["hood", "extractor"] },
-  { id: "counter", label: "Counter & bar", keywords: ["counter", "bar", "stool", "island"] },
-  { id: "microwave", label: "Microwave", keywords: ["microwave"] },
+  { id: "fridge", labelKey: "kitchen.fridge", keywords: ["fridge", "refrigerator"] },
+  { id: "cabinets", labelKey: "kitchen.cabinets", keywords: ["cabinet"] },
+  { id: "dishwasher", labelKey: "kitchen.dishwasher", keywords: ["dishwasher"] },
+  { id: "sink", labelKey: "kitchen.sink", keywords: ["sink"] },
+  { id: "stove", labelKey: "kitchen.stove", keywords: ["stove", "oven", "cooktop", "cooker", "range"] },
+  { id: "hood", labelKey: "kitchen.hood", keywords: ["hood", "extractor"] },
+  { id: "counter", labelKey: "kitchen.counter", keywords: ["counter", "bar", "stool", "island"] },
+  { id: "microwave", labelKey: "kitchen.microwave", keywords: ["microwave"] },
   // "bin" is deliberately NOT a keyword: it is a substring of "cabinet", so it
   // fills the Trash button with kitchen cabinets. The bathroom bin card is
   // reached by "trash", which it also carries.
-  { id: "trash", label: "Trash", keywords: ["trash", "waste", "recycl"] },
+  { id: "trash", labelKey: "kitchen.trash", keywords: ["trash", "waste", "recycl"] },
   // Soft decor reaches the kitchen too: one print over the run, and the clock
   // that every kitchen in the world has above it.
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
-  { id: "clock", label: "Clock", keywords: ["clock"] },
+  { id: "art", labelKey: "kitchen.art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", labelKey: "kitchen.clock", keywords: ["clock"] },
 ];
 
 const kw = (id: string) => KITCHEN_HOTSPOTS.find((h) => h.id === id)!.keywords;
+// Same trick as `kw`, for the label. The item list below used to write the
+// word out a second time, which is how StudyScene ended up with "Chair & sofa"
+// in one place and "Chair" in the other.
+const lbl = (id: string) => KITCHEN_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const KITCHEN_X0 = 12;
 export const KITCHEN_WIDTH = 196;
@@ -139,7 +143,7 @@ function KitchenItems(): RoomItem[] {
   return [
     {
       id: "fridge",
-      label: "Fridge",
+      labelKey: lbl("fridge"),
       keywords: kw("fridge"),
       box: fridge,
       art: (
@@ -151,7 +155,7 @@ function KitchenItems(): RoomItem[] {
     },
     {
       id: "cabinets",
-      label: "Cabinets",
+      labelKey: lbl("cabinets"),
       keywords: kw("cabinets"),
       box: cabinets,
       art: (
@@ -166,7 +170,7 @@ function KitchenItems(): RoomItem[] {
       // Integrated or steel-fronted, a dishwasher reads as a single full-height
       // front with a control line along its top edge and a bar pull.
       id: "dishwasher",
-      label: "Dishwasher",
+      labelKey: lbl("dishwasher"),
       keywords: kw("dishwasher"),
       box: dishwasher,
       art: (
@@ -195,7 +199,7 @@ function KitchenItems(): RoomItem[] {
     },
     {
       id: "sink",
-      label: "Sink",
+      labelKey: lbl("sink"),
       keywords: kw("sink"),
       box: sink,
       art: (
@@ -207,7 +211,7 @@ function KitchenItems(): RoomItem[] {
     },
     {
       id: "stove",
-      label: "Stove & oven",
+      labelKey: lbl("stove"),
       keywords: kw("stove"),
       box: stove,
       art: (
@@ -230,16 +234,16 @@ function KitchenItems(): RoomItem[] {
     },
     {
       id: "hood",
-      label: "Range hood",
+      labelKey: lbl("hood"),
       keywords: kw("hood"),
       box: hood,
       art: <ChimneyHood x={118} yBottom={HOOD_BOTTOM} w={24} depth={8} />,
     },
-    { id: "art", label: "Wall art", keywords: kw("art"), box: artBox, art: <FramedArt x={44} yTop={78} w={22} h={22} scene="abstract" /> },
-    { id: "clock", label: "Clock", keywords: kw("clock"), box: clockBox, art: <WallClockArt cx={80} cy={84} r={10} /> },
+    { id: "art", labelKey: lbl("art"), keywords: kw("art"), box: artBox, art: <FramedArt x={44} yTop={78} w={22} h={22} scene="abstract" /> },
+    { id: "clock", labelKey: lbl("clock"), keywords: kw("clock"), box: clockBox, art: <WallClockArt cx={80} cy={84} r={10} /> },
     {
       id: "counter",
-      label: "Counter & bar",
+      labelKey: lbl("counter"),
       keywords: kw("counter"),
       box: { ...counter, bbox: { x0: counter.bbox.x0, y0: counter.bbox.y0, x1: counter.bbox.x1 + 12, y1: counter.bbox.y1 } },
       art: (
@@ -251,7 +255,7 @@ function KitchenItems(): RoomItem[] {
     },
     {
       id: "microwave",
-      label: "Microwave",
+      labelKey: lbl("microwave"),
       keywords: kw("microwave"),
       box: microwave,
       art: (
@@ -283,7 +287,7 @@ function KitchenItems(): RoomItem[] {
     },
     {
       id: "trash",
-      label: "Trash",
+      labelKey: lbl("trash"),
       keywords: kw("trash"),
       box: trashBin,
       art: <Bin x={BIN_X} yFront={ITEMS_Y + 2} w={BIN_W} h={BIN_H} />,

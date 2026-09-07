@@ -135,7 +135,7 @@ function DismissButton({ onClick, label }: { onClick: () => void; label: string 
     // The notice sits at the bottom-left, so the default `top` placement has
     // room. The button keeps its own `aria-label` ("Dismiss cookie notice",
     // more specific than the tooltip), so `Tooltip` leaves the name alone.
-    <Tooltip label="Dismiss">
+    <Tooltip label={label}>
       <button
         onClick={onClick}
         aria-label={label}

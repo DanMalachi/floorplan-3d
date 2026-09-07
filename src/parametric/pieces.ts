@@ -15,7 +15,16 @@ import { GENERATORS, sanitizeSpec } from "./index";
 export interface CustomPiece {
   generator: GeneratorDef;
   variantId?: string;
-  label: string;
+  /** Resolve with `useTranslations("editor.parametric")` at the render site.
+   *  When `variantLabelKey` is ALSO set, this variant carries no card caption
+   *  of its own and the render site must compose
+   *  `${t(labelKey)} · ${t(variantLabelKey)}` — two resolved translations,
+   *  never a template built over the keys themselves (the keys are not
+   *  words). Every live generator gives every one of its variants an
+   *  explicit `cardLabelKey` except cooktop, so this composition is cooktop's
+   *  three cards today, not a hypothetical. */
+  labelKey: string;
+  variantLabelKey?: string;
   /** Glyph key: "<generatorId>:<variantId>", falling back to the generator id. */
   glyphKey: string;
   keywords: string[];
@@ -36,9 +45,13 @@ export function piecesOf(g: GeneratorDef): CustomPiece[] {
     return [
       {
         generator: g,
-        label: g.label,
+        labelKey: g.labelKey,
         glyphKey: g.id,
-        keywords: g.hotspotKeywords ?? [g.label],
+        // Every live generator sets its own hotspotKeywords explicitly (see
+        // types.ts); `g.id` is a defensive last resort only, not a real
+        // fallback path — unlike the old `g.label`, a translation key is not
+        // searchable English.
+        keywords: g.hotspotKeywords ?? [g.id],
         spec: g.defaultSpec,
         rooms: g.rooms,
       },
@@ -47,9 +60,10 @@ export function piecesOf(g: GeneratorDef): CustomPiece[] {
   return g.variants.map((v) => ({
     generator: g,
     variantId: v.id,
-    label: v.cardLabel ?? `${g.label} · ${v.label}`,
+    labelKey: v.cardLabelKey ?? g.labelKey,
+    variantLabelKey: v.cardLabelKey ? undefined : v.labelKey,
     glyphKey: `${g.id}:${v.id}`,
-    keywords: v.hotspotKeywords ?? g.hotspotKeywords ?? [g.label],
+    keywords: v.hotspotKeywords ?? g.hotspotKeywords ?? [g.id],
     spec: sanitizeSpec({ ...g.defaultSpec, ...v.defaults, variant: v.id } as ParametricSpec),
     rooms: v.rooms ?? g.rooms,
   }));

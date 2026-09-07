@@ -82,5 +82,871 @@
     "sharedProjectsFine": "פרויקט שמישהו שיתף אתכם עדיין נפתח כאן בלי בעיה — זה השרטוט שצריך את המקום.",
     "continueAnyway": "להמשיך בכל זאת",
     "backToSite": "חזרה לאתר"
+  },
+  "editor": {
+    "modes": {
+      "trace": "שרטוט",
+      "build": "בנייה",
+      "furnish": "עיצוב",
+      "view": "תצוגה"
+    },
+    "scene": "סצנה",
+    "walkThrough": "סיור",
+    "exitWalkthrough": "יציאה מהסיור (Esc)",
+    "timeOfDayNoEffect": "לשעת היום אין השפעה בתצורת הסטודיו",
+    "showCeilings": "הצגת תקרות (בתצוגה מלאה בלבד)",
+    "nothingSelected": "לא נבחר דבר",
+    "selectedHint": "{kind} נבחר — גררו כדי להזיז, Delete מוחק, Esc מבטל בחירה",
+    "undoRedo": "⌘Z ביטול ({past}) · ⌘Y ביצוע מחדש ({future})",
+    "wallModes": {
+      "full": "מלא",
+      "cutaway": "חתך",
+      "top": "מלמעלה"
+    },
+    "envPresets": {
+      "none": "סטודיו",
+      "suburb": "פרברים",
+      "city": "עיר"
+    },
+    "weather": {
+      "clear": "בהיר",
+      "cloudy": "מעונן",
+      "rain": "גשם"
+    },
+    "kinds": {
+      "wall": "קיר",
+      "opening": "פתח",
+      "room": "חדר",
+      "furniture": "רהיט",
+      "stair": "מדרגות",
+      "fixture": "אביזר"
+    },
+    "ceiling": "תקרה",
+    "chrome": {
+      "projectBar": {
+        "local": {
+          "saved": "נשמר",
+          "restored": "שוחזר",
+          "autosaving": "שומר אוטומטית…"
+        },
+        "sync": {
+          "syncing": "מסנכרן…",
+          "offline": "נשמר כאן · לא מקוון",
+          "error": "נשמר כאן · אין גישה לענן",
+          "conflict": "נשמרו שתי הגרסאות"
+        },
+        "synced": "{local} · מסונכרן",
+        "backTooltip": "חזרה לפרויקטים שלך"
+      },
+      "goLive": {
+        "starting": "מתחיל…",
+        "openLive": "כניסה לחדר החי",
+        "goLive": "שיתוף חי",
+        "tooltipReopen": "היכנסו מחדש לחדר המשותף החי של הפרויקט",
+        "tooltipStart": "הפכו את הפרויקט למסמך חי שאפשר לשתף"
+      },
+      "buildToolbar": {
+        "tools": {
+          "select": "בחירה",
+          "wall": "קיר",
+          "opening": "פתח",
+          "measure": "מדידה"
+        },
+        "openingTypes": {
+          "door": "דלת / פטיו",
+          "window": "חלון",
+          "passage": "מעבר"
+        },
+        "notBuiltTooltip": "{label} — עדיין לא נבנה",
+        "notBuiltToast": "הכלי {label} עדיין לא נבנה — ממשיכים עם בחירה",
+        "measureHint": "לחצו על שתי נקודות — רצפה, קיר או תקרה · Esc מנקה",
+        "wallHint": "לחצו כדי להתחיל, לחצו כדי לשרטט · Esc מסיים את השרשרת, Esc נוסף עוצר"
+      },
+      "projectsOverlay": {
+        "title": "פרויקטים",
+        "planCount": "{count, plural, one {תוכנית אחת} two {שתי תוכניות} other {# תוכניות}}",
+        "newPlan": "תוכנית חדשה",
+        "openBadge": "פתוח",
+        "cloudOnlyTooltip": "נשמרה בחשבון שלך — לחצו כדי להביא אותה למחשב הזה",
+        "downloadingBadge": "מוריד…",
+        "inCloudBadge": "בענן",
+        "liveTooltip": "מסמך משותף חי — נפתח ישירות לתוך החדר שלו",
+        "liveBadge": "חי",
+        "confirmDelete": "למחוק את “{name}”? לא ניתן לשחזר.",
+        "closeTooltip": "סגירה (Esc)",
+        "closeAriaLabel": "סגירת הפרויקטים",
+        "deleteLabel": "מחיקת תוכנית",
+        "renameTooltip": "שינוי שם",
+        "renameAriaLabel": "שינוי שם לתוכנית",
+        "backToSite": "חזרה לאתר",
+        "homeAriaLabelWord": "בית",
+        "ago": {
+          "justNow": "ממש עכשיו",
+          "minutes": "{n, plural, one {לפני דקה} two {לפני שתי דקות} other {לפני # דקות}}",
+          "hours": "{n, plural, one {לפני שעה} two {לפני שעתיים} other {לפני # שעות}}",
+          "days": "{n, plural, one {לפני יום} two {לפני יומיים} other {לפני # ימים}}"
+        }
+      },
+      "accountMenu": {
+        "signInTooltip": "התחברות כדי שהפרויקטים שלך יעברו איתך לכל מחשב",
+        "signInOpening": "פותח…",
+        "signIn": "התחברות",
+        "signInFailed": "ההתחברות נכשלה: {error}",
+        "savedToAccount": "התוכניות שלך נשמרות לחשבון הזה.",
+        "yourData": "המידע שלך",
+        "signOut": "התנתקות"
+      }
+    },
+    "dock": {
+      "tabs": {
+        "furniture": "ריהוט",
+        "lighting": "תאורה",
+        "paint": "צבע",
+        "floors": "רצפות"
+      },
+      "rooms": {
+        "kitchen": "מטבח",
+        "bathroom": "אמבטיה",
+        "bedroom": "חדר שינה",
+        "living": "סלון",
+        "dining": "פינת אוכל",
+        "study": "חדר עבודה",
+        "laundry": "חדר כביסה",
+        "closet": "ארון",
+        "kids": "חדר ילדים",
+        "garage": "חניה",
+        "outdoors": "חוץ"
+      },
+      "categories": {
+        "Seating": "ישיבה",
+        "Tables": "שולחנות",
+        "Beds": "מיטות",
+        "Storage": "אחסון",
+        "Kitchen": "מטבח",
+        "Bathroom": "אמבטיה",
+        "Decor": "עיצוב"
+      },
+      "allCategories": "הכול",
+      "nothingHere": "עדיין אין כאן דבר.",
+      "search": "חיפוש",
+      "closeSearch": "סגירת החיפוש",
+      "dragToResize": "גררו לשינוי הגובה",
+      "eyedropper": "טפטפת (E)",
+      "eyedropperArmed": "הטפטפת דרוכה (E)",
+      "brushFrame": "מסגרות חלון — בחרו צבע · Esc לעצירה",
+      "brushPaint": "צביעה — לחצו על משטח · Esc לעצירה",
+      "brushFloor": "ריצוף — לחצו על משטח · Esc לעצירה",
+      "sceneNotBuilt": "הסצנה של {room} עדיין לא נבנתה — מוצג כאן כל מה שמתויג לחדר הזה",
+      "customBadge": "מותאם"
+    },
+    "rooms": {
+      "floor": "רצפה — לחצו לבחירת חומר",
+      "bathroom": {
+        "toilet": "אסלה",
+        "shower": "מקלחת",
+        "bathtub": "אמבטיה",
+        "vanity": "כיור",
+        "washer": "מכונת כביסה ומייבש",
+        "mirror": "מראה",
+        "towels": "מגבות",
+        "bin": "פח אשפה",
+        "rug": "שטיח אמבטיה",
+        "art": "תמונת קיר"
+      },
+      "bedroom": {
+        "bed": "מיטה",
+        "nightstand": "שידת לילה",
+        "wardrobe": "ארון בגדים",
+        "rug": "שטיח",
+        "decor": "מנורה ונוי",
+        "tv": "טלוויזיה",
+        "art": "תמונת קיר"
+      },
+      "build": {
+        "walls": "קירות",
+        "doors": "דלתות ומרפסות",
+        "windows": "חלונות",
+        "measure": "מדידה",
+        "floors": "רצפות",
+        "paint": "צבע",
+        "stairs": "מדרגות (סימון בלבד)",
+        "hints": {
+          "walls": "קירות — שרטטו קירות חדשים",
+          "doors": "דלתות ומרפסות — שחררו על קיר",
+          "windows": "חלונות — שחררו על קיר",
+          "stairs": "מדרגות — בשרטוט בלבד, לא במצב בנייה"
+        }
+      },
+      "closet": {
+        "wardrobe": "ארון בגדים",
+        "shoes": "מדף נעליים"
+      },
+      "dining": {
+        "table": "שולחן",
+        "chairs": "כיסאות",
+        "bench": "ספסל",
+        "decor": "קישוט",
+        "rug": "שטיח",
+        "art": "תמונת קיר",
+        "clock": "שעון"
+      },
+      "garage": {
+        "workbench": "שולחן עבודה",
+        "tools": "מתלה כלים",
+        "shelving": "מדפים"
+      },
+      "kids": {
+        "crib": "מיטת תינוק",
+        "toys": "ארגז צעצועים",
+        "changing": "שולחן החתלה",
+        "storage": "ארון וכורסה",
+        "rug": "שטיח",
+        "tv": "טלוויזיה",
+        "art": "תמונת קיר",
+        "clock": "שעון"
+      },
+      "kitchen": {
+        "fridge": "מקרר",
+        "cabinets": "ארונות",
+        "dishwasher": "מדיח",
+        "sink": "כיור",
+        "stove": "כיריים ותנור",
+        "hood": "קולט אדים",
+        "counter": "דלפק ובר",
+        "microwave": "מיקרוגל",
+        "trash": "פח אשפה",
+        "art": "תמונת קיר",
+        "clock": "שעון"
+      },
+      "laundry": {
+        "washer": "מכונת כביסה",
+        "dryer": "מייבש",
+        "sink": "כיור כביסה",
+        "rack": "מתקן ייבוש",
+        "iron": "קרש גיהוץ",
+        "art": "תמונת קיר"
+      },
+      "living": {
+        "sofa": "ספה",
+        "coffeeTable": "שולחן סלוני",
+        "tv": "טלוויזיה ומזנון",
+        "rug": "שטיח",
+        "decor": "מנורה ונוי",
+        "art": "תמונת קיר",
+        "clock": "שעון"
+      },
+      "outdoors": {
+        "table": "שולחן גן",
+        "seating": "כיסא וספסל",
+        "grill": "מנגל",
+        "decor": "עציץ"
+      },
+      "study": {
+        "desk": "שולחן כתיבה",
+        "chair": "כיסא וספה",
+        "bookcase": "כוננית",
+        "decor": "מנורה ונוי",
+        "rug": "שטיח",
+        "tv": "טלוויזיה",
+        "art": "תמונת קיר",
+        "clock": "שעון"
+      }
+    },
+    "trace": {
+      "loadingCanvas": "טוען את משטח השרטוט…",
+      "dropZone": {
+        "title": "גררו לכאן תוכנית קומה",
+        "subtitle": "תמונה, PDF או קובץ CAD (DXF/DWG) — או לחצו לעיון בקבצים",
+        "importing": "מייבא…"
+      },
+      "steps": {
+        "plan": "תוכנית",
+        "scale": "קנה מידה",
+        "walls": "קירות",
+        "openings": "פתחים",
+        "stairs": "מדרגות",
+        "build": "בנייה"
+      },
+      "status": {
+        "planLoaded": "נטען",
+        "planPending": "ייבוא תוכנית קומה",
+        "scalePending": "שתי לחיצות ומרחק",
+        "wallsTraced": "{count, plural, one {קיר אחד תואר} other {# קירות תוארו}}",
+        "wallsPending": "שרטטו את הקירות ביד",
+        "openingsPlaced": "{count, plural, one {פתח אחד הוצב} other {# פתחים הוצבו}}",
+        "openingsPending": "דלתות וחלונות",
+        "stairsPlaced": "{count, plural, one {גרם מדרגות אחד הוצב} other {# גרמי מדרגות הוצבו}}",
+        "stairsPending": "אופציונלי — מדרגות ומפלסים",
+        "buildReady": "{count, plural, one {חדר אחד מוכן} other {# חדרים מוכנים}}",
+        "buildPending": "סגרו מעגל של חדר"
+      },
+      "plan": {
+        "import": "ייבוא תוכנית…",
+        "replace": "החלפת תוכנית…",
+        "hint": "תמונה (PNG/JPG/WebP) או PDF — כל PDF מיובא כעמוד שמשרטטים מעליו. קווים וקטוריים של CAD מגיעים מקובצי DXF/DWG.",
+        "opacity": "שקיפות התוכנית",
+        "cadOverlay": "שכבת-על וקטורית של CAD"
+      },
+      "scale": {
+        "setAction": "קביעת קנה מידה",
+        "setStatus": "קנה המידה נקבע — 1 m ≈ {px} px",
+        "redo": "קביעה מחדש של קנה המידה",
+        "clickTwoPoints": "לחצו על שתי נקודות במרחק ידוע ביניהן על התוכנית ({n}/2)",
+        "realDistance": "המרחק האמיתי בין שתי הנקודות:",
+        "apply": "אישור",
+        "cancel": "ביטול",
+        "hint": "פתח דלת הוא כ-90 cm; קו מידה מהתוכנית עוד יותר טוב."
+      },
+      "walls": {
+        "advancedCad": "מתקדם (CAD)",
+        "snapCad": "הצמדת השרטוט לקווי המרכז של ה-CAD",
+        "clearTrace": "מחיקת כל השרטוט…"
+      },
+      "tools": {
+        "drawByHand": "ציור ביד",
+        "wall": "קיר",
+        "rail": "מעקה",
+        "railTip": "מעקה מרפסת/גג — מחסום נמוך ושקוף שתוחם שטח חיצוני",
+        "open": "פתוח",
+        "openTip": "גבול פתוח — סוגר את החדר בלי לבנות דבר. מתאים למקום שבו מרחב אחד עובר בפשטות למרחב הבא (מסלון למסדרון); בלי קיר ובלי דלת.",
+        "doorPatio": "דלת / דלת פטיו",
+        "window": "חלון",
+        "interior": "פנימי",
+        "exterior": "חיצוני",
+        "height": "גובה",
+        "thickness": "עובי",
+        "orthoTip": "הגבלת הקירות לזוויות של 90° (Shift הופך את ההגדרה בכל לחיצה)",
+        "undo": "ביטול פעולה",
+        "delete": "מחיקה"
+      },
+      "finish": {
+        "label": "סיום",
+        "wallsArmedTip": "סיום רצף הקירות הזה — הלחיצה הבאה תתחיל רצף חדש (Esc עושה את אותו הדבר)",
+        "wallsIdleTip": "מסיים רצף קירות לאחר שהתחלתם אחד",
+        "stairArmedTip": "אישור גרם המדרגות הזה (Esc עושה את אותו הדבר)",
+        "stairIdleTip": "מאשר גרם מדרגות לאחר שהתחלתם אחד"
+      },
+      "openings": {
+        "hint": "שרטטו דלתות וחלונות ביד: בחרו כלי למטה, ואז לחצו על שתי נקודות לאורך קיר."
+      },
+      "stairs": {
+        "hint1": "לחצו על תחתית הגרם, ואז על ראשו, ולאחר מכן על אחת הקצוות הארוכות כדי לקבוע את הרוחב. המשיכו ללחוץ כדי להוסיף גרמים נוספים — הרווח השטוח שתשאירו בין שני גרמים הופך לפודסט. Esc מסיים את גרם המדרגות.",
+        "stairTool": "מדרגות",
+        "width": "רוחב",
+        "rise": "עלייה",
+        "riseHint": "העלייה היא הטיפוס הכולל של כל גרם המדרגות — קומה שלמה כברירת מחדל, פחות מכך עבור מרפסת, מדרגת כניסה או מפלס-ביניים.",
+        "steps": "מדרגות",
+        "auto": "אוטומטי",
+        "autoTip": "חישוב מספר המדרגות מחדש לפי העלייה",
+        "nudgeHint": "כוונו את מספר המדרגות עד שהסולם על המשטח יתיישר עם המדרגות המצוירות בתוכנית — כך שהמודל יתאים לשרטוט.",
+        "summary": "{flights, plural, one {גרם אחד} other {# גרמים}} · {steps} מדרגות · רום {riser} cm · שלוח {tread} cm · {angle}°"
+      },
+      "build": {
+        "wallsCount": "{count, plural, one {קיר אחד} other {# קירות}}",
+        "openingsCount": "{count, plural, one {פתח אחד} other {# פתחים}}",
+        "roomsCount": "{count, plural, one {חדר אחד} other {# חדרים}}",
+        "openChain": "שרשרת פתוחה",
+        "closeLoopHint": "סגרו לפחות מעגל אחד של חדר — הקירות חייבים להתחבר בחזרה לעצמם כדי ליצור רצפה.",
+        "squareUp": "יישור קירות הקרובים ל-90°",
+        "squareUpHint": "מיישר קירות שסוטים מעלה או שתיים — נעילת הזוויות הישרות מאפשרת זאת בכל פעם שלוחצים על פינה קיימת או על התוכנית שמתחת. קירות שבאמת נטויים נשארים כפי שצוירו.",
+        "generate": "יצירת מודל תלת-ממדי →",
+        "generateHint": "בונה את המודל ומעביר אתכם למצב בנייה. הכול נשאר ניתן לעריכה בתלת-ממד.",
+        "exportGt": "ייצוא נתוני ייחוס (להערכה)",
+        "squaredToast": "{count, plural, one {יושר קיר אחד} other {יושרו # קירות}}",
+        "squaredKept": "{count, plural, one {, קיר אחד נשאר באלכסון} other {, # קירות נשארו באלכסון}}",
+        "squaredShift": " — פינה אחת זזה ב-{cm}cm, כדאי לבדוק"
+      },
+      "zoom": {
+        "in": "התקרבות",
+        "out": "התרחקות",
+        "reset": "איפוס תצוגה (התאמה)"
+      }
+    },
+    "navigator": {
+      "title": "בנייה",
+      "wallArmed": "כלי הקירות דרוך — לחצו להתחלה, לחצו לשרטוט",
+      "doorArmed": "דלת / מרפסת דרוכה — לחצו על קיר כדי למקם",
+      "windowArmed": "חלון דרוך — לחצו על קיר כדי למקם",
+      "measureArmed": "המדידה דרוכה — לחצו על שתי נקודות ברצפה",
+      "jumpedFloors": "מעבר לעיצוב · רצפות",
+      "jumpedPaint": "מעבר לעיצוב · צבע",
+      "noStairTool": "עדיין אין כלי מדרגות במצב בנייה — שרטטו מדרגות בלשונית השרטוט"
+    },
+    "untitledPlan": "תוכנית ללא שם",
+    "parametric": {
+      "appliance": {
+        "label": "מכשיר חשמלי",
+        "modules": {
+          "doorOpen": {
+            "label": "דלת",
+            "toggle": {
+              "on": "דלת פתוחה",
+              "off": "דלת סגורה"
+            }
+          },
+          "burners": {
+            "label": "מבערים"
+          }
+        },
+        "variants": {
+          "fridge-2door": {
+            "label": "מקרר",
+            "cardLabel": "מקרר ומקפיא"
+          },
+          "fridge-side-by-side": {
+            "label": "סייד-ביי-סייד",
+            "cardLabel": "מקרר סייד-ביי-סייד"
+          },
+          "fridge-under-counter": {
+            "label": "תחת שיש",
+            "cardLabel": "מקרר תחת שיש"
+          },
+          "oven": {
+            "label": "תנור",
+            "cardLabel": "תנור בילט-אין"
+          },
+          "range-cooker": {
+            "label": "משולב",
+            "cardLabel": "תנור עם כיריים"
+          },
+          "dishwasher-integrated": {
+            "label": "מובנה",
+            "cardLabel": "מדיח כלים מובנה"
+          },
+          "dishwasher-steel": {
+            "label": "חזית נירוסטה",
+            "cardLabel": "מדיח כלים נירוסטה"
+          },
+          "washer": {
+            "label": "מכונת כביסה",
+            "cardLabel": "מכונת כביסה"
+          },
+          "dryer": {
+            "label": "מייבש",
+            "cardLabel": "מייבש כביסה"
+          },
+          "washer-dryer-stack": {
+            "label": "בערימה",
+            "cardLabel": "כביסה ומייבש בערימה"
+          },
+          "microwave": {
+            "label": "מיקרוגל",
+            "cardLabel": "מיקרוגל שולחני"
+          },
+          "microwave-over-range": {
+            "label": "מעל הכיריים",
+            "cardLabel": "מיקרוגל מעל כיריים"
+          }
+        }
+      },
+      "bathAccessory": {
+        "label": "מראה ואביזרים",
+        "variants": {
+          "mirror": {
+            "label": "מראה",
+            "cardLabel": "מראת קיר"
+          },
+          "cabinet": {
+            "label": "ארונית",
+            "cardLabel": "ארונית מראה"
+          },
+          "towel-rail": {
+            "label": "מוט",
+            "cardLabel": "מוט מגבות"
+          },
+          "towel-ladder": {
+            "label": "סולם",
+            "cardLabel": "סולם מגבות מחומם"
+          },
+          "bin": {
+            "label": "פח",
+            "cardLabel": "פח אשפה לאמבטיה"
+          }
+        }
+      },
+      "bathtub": {
+        "label": "אמבטיה",
+        "modules": {
+          "tap": {
+            "label": "ברז",
+            "toggle": {
+              "on": "עם ברז",
+              "off": "ללא ברז"
+            }
+          }
+        },
+        "variants": {
+          "alcove": {
+            "label": "שקועה",
+            "cardLabel": "אמבטיה שקועה"
+          },
+          "freestanding": {
+            "label": "עומדת",
+            "cardLabel": "אמבטיה חופשית"
+          }
+        }
+      },
+      "bin": {
+        "label": "פח אשפה",
+        "variants": {
+          "pedal": {
+            "label": "פדל",
+            "cardLabel": "פח דוושה"
+          },
+          "kitchen": {
+            "label": "מטבח",
+            "cardLabel": "פח דוושה למטבח"
+          },
+          "recycling": {
+            "label": "מיחזור",
+            "cardLabel": "פח מיחזור כפול"
+          },
+          "open": {
+            "label": "פתוח",
+            "cardLabel": "סל אשפה פתוח"
+          }
+        }
+      },
+      "cooktop": {
+        "label": "כיריים",
+        "modules": {
+          "burners": {
+            "label": "מבערים"
+          }
+        },
+        "variants": {
+          "induction": {
+            "label": "אינדוקציה"
+          },
+          "radiant": {
+            "label": "קרמי"
+          },
+          "gas": {
+            "label": "גז"
+          }
+        }
+      },
+      "kitchenBase": {
+        "label": "ארונות תחתונים",
+        "modules": {
+          "drawerUnits": {
+            "label": "יחידות מגירות"
+          }
+        }
+      },
+      "kitchenWall": {
+        "label": "ארונות עליונים"
+      },
+      "kitchenRun": {
+        "label": "מטבח מותאם אישית",
+        "modules": {
+          "drawerUnits": {
+            "label": "יחידות מגירות"
+          },
+          "wallCabinets": {
+            "label": "ארונות עליונים"
+          }
+        }
+      },
+      "mirror": {
+        "label": "מראה",
+        "variants": {
+          "framed": {
+            "label": "עם מסגרת",
+            "cardLabel": "מראה עם מסגרת"
+          },
+          "round": {
+            "label": "עגולה",
+            "cardLabel": "מראה עגולה"
+          },
+          "frameless": {
+            "label": "ללא מסגרת",
+            "cardLabel": "מראה ללא מסגרת"
+          },
+          "cabinet": {
+            "label": "ארונית",
+            "cardLabel": "ארונית מראה"
+          }
+        }
+      },
+      "rangeHood": {
+        "label": "קולט אדים",
+        "modules": {
+          "lights": {
+            "label": "תאורה",
+            "toggle": {
+              "on": "תאורה דולקת",
+              "off": "תאורה כבויה"
+            }
+          }
+        },
+        "variants": {
+          "chimney": {
+            "label": "ארובה",
+            "cardLabel": "קולט אדים ארובה"
+          },
+          "island": {
+            "label": "אי",
+            "cardLabel": "קולט אדים לאי"
+          },
+          "visor": {
+            "label": "מתחת לארון",
+            "cardLabel": "קולט אדים מתחת לארון"
+          }
+        }
+      },
+      "rug": {
+        "label": "שטיח",
+        "variants": {
+          "area": {
+            "label": "שטיח שטח",
+            "cardLabel": "שטיח צמר"
+          },
+          "round": {
+            "label": "עגול",
+            "cardLabel": "שטיח שאגי עגול"
+          },
+          "persian": {
+            "label": "פרסי",
+            "cardLabel": "שטיח פרסי"
+          },
+          "modern": {
+            "label": "מודרני",
+            "cardLabel": "שטיח גיאומטרי מודרני"
+          },
+          "jute": {
+            "label": "יוטה",
+            "cardLabel": "שטיח יוטה קלוע עגול"
+          }
+        }
+      },
+      "shower": {
+        "label": "מקלחת",
+        "modules": {
+          "brassware": {
+            "label": "ברזים",
+            "toggle": {
+              "on": "עם מוט מקלחת",
+              "off": "ראש בלבד"
+            }
+          }
+        },
+        "variants": {
+          "enclosure": {
+            "label": "תא מקלחת",
+            "cardLabel": "תא מקלחת"
+          },
+          "walk-in": {
+            "label": "ווק-אין",
+            "cardLabel": "מקלחת ווק-אין"
+          },
+          "wet-room": {
+            "label": "חדר רטוב",
+            "cardLabel": "מקלחה בחדר רטוב"
+          }
+        }
+      },
+      "sink": {
+        "label": "כיור",
+        "modules": {
+          "bowls": {
+            "label": "אגנים"
+          }
+        }
+      },
+      "sofa": {
+        "label": "ספה מותאמת",
+        "modules": {
+          "seats": {
+            "label": "מושבים"
+          },
+          "pillows": {
+            "label": "כריות"
+          }
+        }
+      },
+      "toilet": {
+        "label": "אסלה",
+        "modules": {
+          "lidOpen": {
+            "label": "מכסה",
+            "toggle": {
+              "on": "מכסה פתוח",
+              "off": "מכסה סגור"
+            }
+          }
+        },
+        "variants": {
+          "close-coupled": {
+            "label": "קלאסית",
+            "cardLabel": "אסלה קלאסית"
+          },
+          "wall-hung": {
+            "label": "תלויה",
+            "cardLabel": "אסלה תלויה"
+          },
+          "back-to-wall": {
+            "label": "צמודת קיר",
+            "cardLabel": "אסלה צמודת קיר"
+          }
+        }
+      },
+      "towelRail": {
+        "label": "מתקן למגבות",
+        "variants": {
+          "rail": {
+            "label": "מוט",
+            "cardLabel": "מוט מגבות"
+          },
+          "ladder": {
+            "label": "סולם",
+            "cardLabel": "סולם מגבות מחומם"
+          },
+          "ring": {
+            "label": "טבעת",
+            "cardLabel": "טבעת למגבת"
+          },
+          "hooks": {
+            "label": "ווים",
+            "cardLabel": "ווים למגבות"
+          }
+        }
+      },
+      "tv": {
+        "label": "טלוויזיה",
+        "modules": {
+          "screenOn": {
+            "label": "מסך",
+            "toggle": {
+              "on": "מסך דלוק",
+              "off": "מסך כבוי"
+            }
+          }
+        },
+        "variants": {
+          "wall-55": {
+            "label": "55\" קיר",
+            "cardLabel": "טלוויזיה תלויה 55 אינץ׳"
+          },
+          "wall-65": {
+            "label": "65\" קיר",
+            "cardLabel": "טלוויזיה תלויה 65 אינץ׳"
+          },
+          "wall-75": {
+            "label": "75\" קיר",
+            "cardLabel": "טלוויזיה תלויה 75 אינץ׳"
+          },
+          "pedestal-55": {
+            "label": "55\" עמוד",
+            "cardLabel": "טלוויזיה על עמוד 55 אינץ׳"
+          },
+          "feet-43": {
+            "label": "43\" רגליים",
+            "cardLabel": "טלוויזיה על רגליים 43 אינץ׳"
+          }
+        }
+      },
+      "vanity": {
+        "label": "כיור וארון אמבטיה",
+        "modules": {
+          "doors": {
+            "label": "דלתות"
+          }
+        },
+        "variants": {
+          "vanity-doors": {
+            "label": "דלתות",
+            "cardLabel": "ארון אמבטיה עם דלתות"
+          },
+          "vanity-drawers": {
+            "label": "מגירות",
+            "cardLabel": "ארון אמבטיה עם מגירות"
+          },
+          "countertop": {
+            "label": "קערה",
+            "cardLabel": "כיור קערה על ארון"
+          },
+          "pedestal": {
+            "label": "עמוד",
+            "cardLabel": "כיור על עמוד"
+          }
+        }
+      },
+      "wallArt": {
+        "label": "אמנות קיר",
+        "modules": {
+          "mount": {
+            "label": "פספרטו",
+            "toggle": {
+              "on": "עם פספרטו",
+              "off": "עד הקצה"
+            }
+          }
+        },
+        "variants": {
+          "framed-portrait": {
+            "label": "לאורך",
+            "cardLabel": "הדפס ממוסגר לאורך"
+          },
+          "framed-landscape": {
+            "label": "לרוחב",
+            "cardLabel": "הדפס ממוסגר לרוחב"
+          },
+          "framed-large": {
+            "label": "מרשים",
+            "cardLabel": "יצירת אמנות ממוסגרת גדולה"
+          },
+          "canvas": {
+            "label": "קנבס",
+            "cardLabel": "הדפס קנבס"
+          },
+          "gallery-3": {
+            "label": "סט גלריה",
+            "cardLabel": "קיר גלריה, סט 3"
+          },
+          "ledge": {
+            "label": "מדף תמונות",
+            "cardLabel": "מדף תמונות עם מסגרות"
+          }
+        }
+      },
+      "wallClock": {
+        "label": "שעון קיר",
+        "modules": {
+          "secondHand": {
+            "label": "מחוג שניות",
+            "toggle": {
+              "on": "עם מחוג שניות",
+              "off": "שעות בלבד"
+            }
+          }
+        },
+        "variants": {
+          "minimal": {
+            "label": "מינימליסטי",
+            "cardLabel": "שעון קיר עגול"
+          },
+          "wood": {
+            "label": "עץ",
+            "cardLabel": "שעון קיר מעץ"
+          },
+          "station": {
+            "label": "תחנת רכבת",
+            "cardLabel": "שעון תחנה, חוגה רומית"
+          }
+        }
+      },
+      "wardrobe": {
+        "label": "ארון בגדים מותאם",
+        "modules": {
+          "doors": {
+            "label": "דלתות"
+          },
+          "drawers": {
+            "label": "מגירות"
+          }
+        }
+      }
+    }
   }
 }

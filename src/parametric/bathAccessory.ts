@@ -40,7 +40,7 @@ function towel(width: number, mat: THREE.Material): THREE.Group {
 
 export const bathAccessoryGenerator: GeneratorDef = {
   id: "bathAccessory",
-  label: "Mirror & accessories",
+  labelKey: "bathAccessory.label",
   category: "Bathroom",
   rooms: [], // retired: renders old saves, never offered again
   wallSnap: true,
@@ -60,11 +60,11 @@ export const bathAccessoryGenerator: GeneratorDef = {
   // product. Hence per-variant hotspot keywords: the Mirror hotspot must not
   // surface the bin.
   variants: [
-    { id: "mirror", label: "Mirror", cardLabel: "Wall mirror", hotspotKeywords: ["mirror"] },
-    { id: "cabinet", label: "Cabinet", cardLabel: "Mirror cabinet", hotspotKeywords: ["mirror", "cabinet"] },
-    { id: "towel-rail", label: "Rail", cardLabel: "Towel rail", hotspotKeywords: ["towel"] },
-    { id: "towel-ladder", label: "Ladder", cardLabel: "Heated towel ladder", hotspotKeywords: ["towel"] },
-    { id: "bin", label: "Bin", cardLabel: "Bathroom bin", hotspotKeywords: ["bin", "trash"] },
+    { id: "mirror", labelKey: "bathAccessory.variants.mirror.label", cardLabelKey: "bathAccessory.variants.mirror.cardLabel", hotspotKeywords: ["mirror"] },
+    { id: "cabinet", labelKey: "bathAccessory.variants.cabinet.label", cardLabelKey: "bathAccessory.variants.cabinet.cardLabel", hotspotKeywords: ["mirror", "cabinet"] },
+    { id: "towel-rail", labelKey: "bathAccessory.variants.towel-rail.label", cardLabelKey: "bathAccessory.variants.towel-rail.cardLabel", hotspotKeywords: ["towel"] },
+    { id: "towel-ladder", labelKey: "bathAccessory.variants.towel-ladder.label", cardLabelKey: "bathAccessory.variants.towel-ladder.cardLabel", hotspotKeywords: ["towel"] },
+    { id: "bin", labelKey: "bathAccessory.variants.bin.label", cardLabelKey: "bathAccessory.variants.bin.cardLabel", hotspotKeywords: ["bin", "trash"] },
   ],
   hotspotKeywords: ["mirror", "towel", "bin", "trash"],
   defaultSpec: {

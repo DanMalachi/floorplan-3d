@@ -64,7 +64,7 @@ function burnerSlots(w: number, d: number, n: number): { x: number; z: number; r
 
 export const cooktopGenerator: GeneratorDef = {
   id: "cooktop",
-  label: "Cooktop",
+  labelKey: "cooktop.label",
   category: "Kitchen",
   rooms: ["kitchen"],
   wallSnap: false,
@@ -74,14 +74,17 @@ export const cooktopGenerator: GeneratorDef = {
     w: Math.max(spec.dims.w - 2 * PLATE_LIP, 0.1),
     d: Math.max(spec.dims.d - 2 * PLATE_LIP, 0.1),
   }),
+  // No cardLabelKey on any of these three: none needed its own standalone
+  // name to read well, so the render site composes "Cooktop · Induction" etc.
+  // from two resolved translations — see pieces.ts's labelKey/variantLabelKey.
   variants: [
-    { id: "induction", label: "Induction" },
-    { id: "radiant", label: "Radiant" },
-    { id: "gas", label: "Gas" },
+    { id: "induction", labelKey: "cooktop.variants.induction.label" },
+    { id: "radiant", labelKey: "cooktop.variants.radiant.label" },
+    { id: "gas", labelKey: "cooktop.variants.gas.label" },
   ],
   defaultElevation: 0.84, // fallback only — attached items derive from their host
   dimLimits: { w: [0.3, 0.9], d: [0.45, 0.55], h: [0.008, 0.008] },
-  modules: [{ key: "burners", label: "Burners", min: 1, max: 5, default: 4 }],
+  modules: [{ key: "burners", labelKey: "cooktop.modules.burners.label", min: 1, max: 5, default: 4 }],
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["glass-black"],

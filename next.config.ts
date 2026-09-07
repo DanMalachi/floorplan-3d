@@ -169,6 +169,16 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Dev-only — `next build` ignores this entirely, so it changes nothing about
+  // production. Next blocks cross-origin requests to its /_next/* DEV resources
+  // by default, which means opening the dev server from a phone on the LAN
+  // serves the SSR'd HTML and then silently fails to hydrate: the editor looks
+  // like it loaded, nothing is interactive, and SmallScreenNotice never appears
+  // because by design it renders only after hydration (its server snapshot is
+  // `false`). The symptom points at the notice; the cause is that no client JS
+  // ran at all. Listing the host you actually browse from is the whole fix.
+  allowedDevOrigins: ["192.168.7.21"],
+
   async headers() {
     return [
       {
