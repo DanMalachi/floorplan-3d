@@ -184,6 +184,8 @@ below. `npm run build` alone does NOT verify i18n routing; read
 | IKEA product names, brand names, item names | **Stay native. Never translated.** |
 | Everything else | Gets translated. |
 | The `done.` wordmark | **Stays Latin** in the Hebrew build. Everything around it translates. |
+| Tambour paint colour names (2026-09-07) | **Stay English. Leave as is.** All 1651 `nameHe` entries in `data/tambour-colors.json` are `""` — the feed carries none (`scripts/README-tambour.md:51`). "Soft Blush" is product data, the same bucket as an IKEA model name. `BottomDock` already prefers `nameHe` by locale, so they light up if that column is ever backfilled; **do not scrape a Hebrew feed and do not put 1651 names in the catalogue.** |
+| The three `buildTools` toasts (2026-09-07) | **Stay English. Leave as is.** `src/viewport3d/buildTools/OpeningTool.tsx:115,119` and `WallTool.tsx:129`. Dan was offered the same protected-file exception that covered the lighting picker and the stair inspector, and declined it for these. They are the known, accepted remainder — **do not file them as a Step 5 bug.** |
 
 ---
 
