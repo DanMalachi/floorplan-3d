@@ -237,7 +237,40 @@
       "brushPaint": "Painting — click a surface · Esc to stop",
       "brushFloor": "Flooring — click a surface · Esc to stop",
       "sceneNotBuilt": "{room} scene not built yet — showing everything tagged for this room",
-      "customBadge": "Custom"
+      "customBadge": "Custom",
+      "paint": {
+        "tipPlaster": "Plaster (default)",
+        "tipNatural": "Natural — the finish's own colour",
+        "loading": "Loading…"
+      },
+      "floors": {
+        "tip": "{name} · {family} · tiles every {cover} m",
+        "family": {
+          "wood": "Wood",
+          "tile": "Tile",
+          "stone": "Stone",
+          "concrete": "Concrete",
+          "carpet": "Carpet"
+        },
+        "names": {
+          "carpet-beige": "Beige loop pile",
+          "carpet-navy": "Navy cut pile",
+          "concrete-grey": "Grey screed",
+          "concrete-light": "Polished concrete",
+          "stone-terrazzo": "Colourful terrazzo",
+          "stone-travertine": "Light travertine",
+          "tile-black-gloss": "Black gloss",
+          "tile-checker-marble": "Marble checkerboard",
+          "tile-hex-white": "White hexagon",
+          "tile-white-large": "White large-format",
+          "wood-basketweave": "Basketweave parquet",
+          "wood-chevron": "Chevron parquet",
+          "wood-walnut-dark": "Dark walnut",
+          "wood-oak-natural": "Natural oak",
+          "wood-plank-pale": "Pale wide plank",
+          "wood-grey-weathered": "Weathered grey"
+        }
+      }
     },
     "rooms": {
       "floor": "Floor — click to pick material",
@@ -844,6 +877,10 @@
             "label": "43\" feet",
             "cardLabel": "TV on feet 43\""
           }
+        },
+        "finishes2Label": "Stand",
+        "sizeInches": {
+          "label": "Screen"
         }
       },
       "vanity": {
@@ -908,7 +945,9 @@
             "label": "Ledge",
             "cardLabel": "Picture ledge with frames"
           }
-        }
+        },
+        "finishesLabel": "Picture",
+        "finishes2Label": "Frame"
       },
       "wallClock": {
         "label": "Wall clock",
@@ -956,7 +995,26 @@
       "helpMoveRotate": "drag to move · R rotates · Delete removes",
       "helpRunOnWalls": "drag to move along walls · drag end arrows to resize · Delete removes",
       "helpAlongCounter": "drag to slide along the counter · Delete removes",
-      "heightOffFloor": "Height off floor"
+      "heightOffFloor": "Height off floor",
+      "front": {
+        "slab": "Slab",
+        "shaker": "Shaker",
+        "farmhouse": "Farmhouse"
+      },
+      "handle": {
+        "bar": "Bar",
+        "knob": "Knob",
+        "none": "None"
+      },
+      "finishes2": {
+        "counter": "Counter",
+        "pillows": "Pillows"
+      },
+      "matchRun": {
+        "label": "Match run below",
+        "on": "On",
+        "off": "Off"
+      }
     },
     "import": {
       "tooSmall": "Image too small ({width}×{height}px) — plans need ≥{min}px on the long edge.",
@@ -1072,6 +1130,52 @@
         "patioDoor": "Patio door",
         "door": "Door"
       }
+    },
+    "lighting": {
+      "filterAll": "All",
+      "filterCeiling": "Ceiling",
+      "filterWall": "Wall",
+      "placeHint": "Click to place · R rotates · Esc done"
+    },
+    "stair": {
+      "title": "Stair",
+      "meta": "{count, plural, one {# flight} other {# flights}} · {run} m",
+      "styleSolidLabel": "Solid",
+      "styleSolidTip": "Closed stringer — a boxed-in flight sitting on the floor, landings built down with it.",
+      "styleOpenLabel": "Open",
+      "styleOpenTip": "Open riser — floating treads on two side stringers. You can see through and under it.",
+      "width": "Width",
+      "rise": "Rise",
+      "steps": "Steps",
+      "auto": "Auto",
+      "autoTip": "Derive the step count from the rise ({rise} m climb ≈ {steps} steps)",
+      "metrics": "riser {riser} cm · tread {tread} cm · {angle}°",
+      "help": "Where it runs is traced — edit the flights in <b>Trace</b>.",
+      "warnings": {
+        "riseZero": "Rise must be greater than zero.",
+        "noFlights": "Stair has no flights.",
+        "flightNoLength": "Flight {n} has no length.",
+        "riserSteep": "Riser {riser} is steep (over 19 cm).",
+        "treadShallow": "Tread {tread} is shallow (under 25 cm).",
+        "ruleOfThumb": "2×riser + tread is {total} — comfortable stairs sit between 60 and 66 cm.",
+        "widthNarrow": "Width {width} is narrow (under 80 cm).",
+        "landingWide": "Landing {n} spans {span} — is that intended?",
+        "headOn": "Flights {a} and {b} meet head-on — leave a gap for the landing."
+      }
+    },
+    "toast": {
+      "sampledFurniture": "Sampled — same item armed, click to place",
+      "sampledFixture": "Sampled — same fixture armed, click to place",
+      "sampledFaceHex": "Sampled Face {side} — paint armed, click a face",
+      "sampledPlaster": "Sampled plaster — paint armed, click a face",
+      "sampledFloor": "Sampled floor — armed, click a room to apply",
+      "pointAtWallToHang": "Point at a wall to hang it",
+      "placeOnCounter": "Place it on a kitchen counter",
+      "pointAtWall": "Point at a wall",
+      "startAgainstWall": "Start against a wall",
+      "removedKitchenRun": "Removed kitchen run",
+      "duplicated": "Duplicated",
+      "pickReplacement": "Pick a replacement in the Furniture tab"
     }
   }
 }

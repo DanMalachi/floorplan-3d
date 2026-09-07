@@ -283,9 +283,9 @@ export const wallArtGenerator: GeneratorDef = {
   // The first swatch row picks the PICTURE. On a framed print that is the
   // choice being made; the moulding is the accessory.
   finishes: ARTWORK_IDS,
-  finishesLabel: "Picture",
+  finishesLabelKey: "wallArt.finishesLabel",
   finishes2: ["oak", "walnut", "painted", "steel"],
-  finishes2Label: "Frame",
+  finishes2LabelKey: "wallArt.finishes2Label",
   // Nothing to paint on a frameless canvas — a control that does nothing
   // teaches people the inspector lies.
   showFinishes2: (spec) => kindOf(spec) !== "canvas",

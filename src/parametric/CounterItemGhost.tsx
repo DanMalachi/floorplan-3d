@@ -20,6 +20,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import { pdToast } from "@/ui/planDock/toast";
 import { attachedPose, counterLiftOf, findAttachHost, findHostRun, isCounterHost, isSurfaceOptional } from "./kitchenAttach";
@@ -44,6 +45,7 @@ function rayToPlan(e: ThreeEvent<PointerEvent | MouseEvent>, offset: { cx: numbe
 }
 
 function WallItemGhost({ offset }: { offset: { cx: number; cz: number } }) {
+  const t = useTranslations("editor.toast");
   const placingWall = useSceneStore((s) => s.placingWall);
   const scene = useSceneStore((s) => s.scene);
   const [pose, setPose] = useState<{ x: number; y: number; rotation: number; elevation: number } | null>(null);
@@ -84,7 +86,7 @@ function WallItemGhost({ offset }: { offset: { cx: number; cz: number } }) {
     e.stopPropagation();
     const p = resolve(e);
     if (!p) {
-      pdToast("Point at a wall to hang it");
+      pdToast(t("pointAtWallToHang"));
       return;
     }
     useSceneStore.getState().placeWallItem(p);
@@ -210,6 +212,7 @@ function HostHeightProbes({ hosting }: { hosting?: boolean }) {
 }
 
 function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
+  const t = useTranslations("editor.toast");
   const placingCounter = useSceneStore((s) => s.placingCounter);
   const scene = useSceneStore((s) => s.scene);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
@@ -262,7 +265,7 @@ function CounterGhost({ offset }: { offset: { cx: number; cz: number } }) {
       // A sink cannot exist off a counter; a TV on a stand is happy on the
       // floor, so the same ghost either refuses or just puts it down.
       if (!freeStanding) {
-        pdToast("Place it on a kitchen counter");
+        pdToast(t("placeOnCounter"));
         return;
       }
       useSceneStore.getState().placeSurfaceItemFree(p.x, p.y);

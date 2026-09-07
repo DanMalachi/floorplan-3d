@@ -38,7 +38,10 @@ export interface GeneratorDef {
    *  the Width/Height fields, and the generator owns the conversion (only it
    *  knows what its bezel, chin and stand add to the picture). */
   sizeInches?: {
-    label: string;
+    /** Key into next-intl's `editor.parametric` namespace — see
+     *  ModuleDef.labelKey for why this travels as a key, not a word.
+     *  "<generatorId>.sizeInches.label" */
+    labelKey: string;
     /** Standard sizes offered as chips, e.g. [43, 50, 55, 65, 75]. */
     presets: number[];
     /** Screen diagonal of a spec, in inches. */
@@ -56,21 +59,26 @@ export interface GeneratorDef {
   showFronts?: (spec: ParametricSpec) => boolean;
   handles: ParametricSpec["handle"][];
   finishes: string[]; // primary finish ids (ordered, first = default)
-  /** Caption over the primary swatch row. Absent = no caption, which is right
-   *  whenever the row obviously means "what is this made of". Wall art needs
-   *  it: its first row picks the PICTURE, and an unlabelled row of paintings
-   *  next to a labelled row of frame tones reads as the same kind of choice
-   *  twice. */
-  finishesLabel?: string;
+  /** Key into next-intl's `editor.parametric` namespace for the caption over
+   *  the primary swatch row — see ModuleDef.labelKey for why this travels as
+   *  a key, not a word ("<generatorId>.finishesLabel"). Absent = no caption,
+   *  which is right whenever the row obviously means "what is this made of".
+   *  Wall art needs it: its first row picks the PICTURE, and an unlabelled
+   *  row of paintings next to a labelled row of frame tones reads as the
+   *  same kind of choice twice. */
+  finishesLabelKey?: string;
   finishes2?: string[]; // secondary finish ids, when applicable
   /** Whether the secondary swatch row means anything for this spec — the same
    *  dead-control rule `showFronts` follows. A TV's second finish paints its
    *  STAND, so the three wall-mounted cards must not offer it. Absent = shown
    *  whenever `finishes2` exists. */
   showFinishes2?: (spec: ParametricSpec) => boolean;
-  /** What the secondary row is called in the inspector ("Counter", "Stand").
-   *  Absent = the inspector's own default for the kitchen/sofa generators. */
-  finishes2Label?: string;
+  /** Key into next-intl's `editor.parametric` namespace for what the
+   *  secondary row is called in the inspector ("Counter", "Stand") — see
+   *  ModuleDef.labelKey for why this travels as a key, not a word
+   *  ("<generatorId>.finishes2Label"). Absent = the inspector's own default
+   *  for the kitchen/sofa generators. */
+  finishes2LabelKey?: string;
   defaultSpec: ParametricSpec;
   /** Meters above floor a fresh placement starts at — wall-mounted items
    *  (kitchen wall cabinets, counter drop-ins). Absent = floor level.

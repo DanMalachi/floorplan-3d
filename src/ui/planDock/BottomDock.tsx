@@ -45,7 +45,7 @@
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
 import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
@@ -62,7 +62,7 @@ import { piecesOf, type CustomPiece } from "@/parametric/pieces";
 import type { ParametricSpec } from "@/schema/scene";
 import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
-import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
+import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
 import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
 import type { FloorStyle } from "@/schema/scene";
 import { PD, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
@@ -674,6 +674,8 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
 }
 
 function PaintTab() {
+  const t = useTranslations("editor.dock");
+  const locale = useLocale();
   const brush = useSceneStore((s) => s.brush);
   // The same palette serves walls and window frames — which one a swatch lands
   // on is the armed brush, not a second copy of the colour list. Frames take
@@ -701,16 +703,21 @@ function PaintTab() {
       <SwatchButton
         onClick={() => pick(null)}
         active={plasterActive}
-        tip={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
+        tip={forFrames ? t("paint.tipNatural") : t("paint.tipPlaster")}
         style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: "#f3ece1", cursor: "pointer" }}
       />
-      {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>Loading…</span>}
+      {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>{t("paint.loading")}</span>}
       {families.flatMap((slug) =>
         (grouped[slug] ?? []).map((c) => {
+          // `nameHe` is currently "" for the whole 1651-shade Tambour feed (no
+          // Hebrew names in the scraped source — see scripts/README-tambour.md)
+          // so this falls back to nameEn until that's backfilled; written to
+          // pick it up for free the day it is.
+          const colorName = locale === "he" && c.nameHe ? c.nameHe : c.nameEn;
           return (
             <SwatchButton
               key={c.code}
-              tip={`${c.code} · ${c.nameEn}`}
+              tip={`${c.code} · ${colorName}`}
               onClick={() => pick(c.hex)}
               active={activeHex === c.hex}
               style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: c.hex, cursor: "pointer" }}
@@ -723,6 +730,7 @@ function PaintTab() {
 }
 
 function FloorsTab() {
+  const t = useTranslations("editor.dock");
   const brush = useSceneStore((s) => s.brush);
   const active = brush?.kind === "floor" ? brush.style : undefined;
   const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
@@ -734,7 +742,11 @@ function FloorsTab() {
             key={m.id}
             onClick={() => pick(m.id)}
             active={active === m.id}
-            tip={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
+            tip={t("floors.tip", {
+              name: t(`floors.names.${m.id}`),
+              family: t(`floors.family.${FAMILY_LABEL_KEY[family]}`),
+              cover: m.coverM,
+            })}
             style={{
               flex: "0 0 auto",
               width: 44,

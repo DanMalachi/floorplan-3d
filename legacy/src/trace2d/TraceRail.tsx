@@ -529,6 +529,10 @@ function StepHeader({ step, active, onOpen }: { step: StepDef; active: boolean; 
 export function TraceRail() {
   const t = useTranslations("editor.trace");
   const tImport = useTranslations("editor.import");
+  // The stair advisories are shared with the 3D stair inspector and keyed
+  // under `editor.stair`, not under this rail's own namespace — one catalogue
+  // entry per sentence, resolved by whichever panel happens to show it.
+  const tStair = useTranslations("editor.stair");
   const image = useSceneStore((s) => s.image);
   const imageOpacity = useSceneStore((s) => s.imageOpacity);
   const setImageOpacity = useSceneStore((s) => s.setImageOpacity);
@@ -907,7 +911,7 @@ export function TraceRail() {
                 {stairTarget.metrics.warnings.map((w, i) => (
                   <div key={i} style={statusText(false)}>
                     <StatusIcon ok={false} />
-                    <span>{w}</span>
+                    <span>{tStair(`warnings.${w.key}`, w.params)}</span>
                   </div>
                 ))}
               </>

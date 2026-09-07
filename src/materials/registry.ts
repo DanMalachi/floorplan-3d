@@ -62,10 +62,13 @@ export function isLegacyStyle(id: string): boolean {
 /** Picker ordering: group by family, then by name within it. */
 export const FAMILY_ORDER: FloorFamily[] = ["wood", "tile", "stone", "concrete", "carpet"];
 
-export const FAMILY_LABEL: Record<FloorFamily, string> = {
-  wood: "Wood",
-  tile: "Tile",
-  stone: "Stone",
-  concrete: "Concrete",
-  carpet: "Carpet",
+// Message-key suffixes under editor.dock.floors.family — module scope can't
+// call useTranslations(), so the render site (BottomDock.tsx's FloorsTab)
+// resolves these. Same convention as DOCK_TABS/ROOM_SCENES's labelKey.
+export const FAMILY_LABEL_KEY: Record<FloorFamily, string> = {
+  wood: "wood",
+  tile: "tile",
+  stone: "stone",
+  concrete: "concrete",
+  carpet: "carpet",
 };

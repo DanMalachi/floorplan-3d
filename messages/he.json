@@ -237,7 +237,40 @@
       "brushPaint": "צביעה — לחצו על משטח · Esc לעצירה",
       "brushFloor": "ריצוף — לחצו על משטח · Esc לעצירה",
       "sceneNotBuilt": "הסצנה של {room} עדיין לא נבנתה — מוצג כאן כל מה שמתויג לחדר הזה",
-      "customBadge": "מותאם"
+      "customBadge": "מותאם",
+      "paint": {
+        "tipPlaster": "טיח (ברירת מחדל)",
+        "tipNatural": "טבעי — הגוון של הגימור עצמו",
+        "loading": "טוען…"
+      },
+      "floors": {
+        "tip": "{name} · {family} · חוזר כל {cover} m",
+        "family": {
+          "wood": "עץ",
+          "tile": "אריחים",
+          "stone": "אבן",
+          "concrete": "בטון",
+          "carpet": "שטיח"
+        },
+        "names": {
+          "carpet-beige": "לולאה בז'",
+          "carpet-navy": "לולאה גזורה כחול נייבי",
+          "concrete-grey": "טיח אפור",
+          "concrete-light": "בטון מלוטש",
+          "stone-terrazzo": "טרצו צבעוני",
+          "stone-travertine": "טרוורטין בהיר",
+          "tile-black-gloss": "שחור מבריק",
+          "tile-checker-marble": "שיש משבצות",
+          "tile-hex-white": "משושה לבן",
+          "tile-white-large": "לבן בפורמט גדול",
+          "wood-basketweave": "פרקט קליעה",
+          "wood-chevron": "פרקט שברון",
+          "wood-walnut-dark": "אגוז כהה",
+          "wood-oak-natural": "אלון טבעי",
+          "wood-plank-pale": "לוחות בהירים רחבים",
+          "wood-grey-weathered": "אפור מיושן"
+        }
+      }
     },
     "rooms": {
       "floor": "רצפה — לחצו לבחירת חומר",
@@ -844,6 +877,10 @@
             "label": "43\" רגליים",
             "cardLabel": "טלוויזיה על רגליים 43 אינץ׳"
           }
+        },
+        "finishes2Label": "מעמד",
+        "sizeInches": {
+          "label": "גודל מסך"
         }
       },
       "vanity": {
@@ -908,7 +945,9 @@
             "label": "מדף תמונות",
             "cardLabel": "מדף תמונות עם מסגרות"
           }
-        }
+        },
+        "finishesLabel": "תמונה",
+        "finishes2Label": "מסגרת"
       },
       "wallClock": {
         "label": "שעון קיר",
@@ -956,7 +995,26 @@
       "helpMoveRotate": "גררו כדי להזיז · R מסובב · Delete מוחק",
       "helpRunOnWalls": "גררו כדי להזיז לאורך הקירות · גררו את החצים בקצה לשינוי הגודל · Delete מוחק",
       "helpAlongCounter": "גררו כדי להחליק לאורך המשטח · Delete מוחק",
-      "heightOffFloor": "גובה מהרצפה"
+      "heightOffFloor": "גובה מהרצפה",
+      "front": {
+        "slab": "חלק",
+        "shaker": "שייקר",
+        "farmhouse": "כפרי"
+      },
+      "handle": {
+        "bar": "מוט",
+        "knob": "כפתור",
+        "none": "ללא"
+      },
+      "finishes2": {
+        "counter": "משטח עבודה",
+        "pillows": "כריות"
+      },
+      "matchRun": {
+        "label": "התאמה לשורה התחתונה",
+        "on": "פעיל",
+        "off": "כבוי"
+      }
     },
     "import": {
       "tooSmall": "התמונה קטנה מדי ({width}×{height}px) — תוכניות צריכות ≥{min}px בצד הארוך.",
@@ -1072,6 +1130,52 @@
         "patioDoor": "דלת פטיו",
         "door": "דלת"
       }
+    },
+    "lighting": {
+      "filterAll": "הכול",
+      "filterCeiling": "תקרה",
+      "filterWall": "קיר",
+      "placeHint": "לחצו כדי למקם · R מסובב · Esc לסיום"
+    },
+    "stair": {
+      "title": "מדרגות",
+      "meta": "{count, plural, one {גרם אחד} other {# גרמים}} · {run} m",
+      "styleSolidLabel": "סגור",
+      "styleSolidTip": "מיתרן סגור — גרם קופסתי שיושב על הרצפה, עם הפודסטים בנויים איתו כלפי מטה.",
+      "styleOpenLabel": "פתוח",
+      "styleOpenTip": "מיתרן פתוח — שלוחים צפים על שני מיתרנים בצדדים, כך שרואים דרכו ומתחתיו.",
+      "width": "רוחב",
+      "rise": "עלייה",
+      "steps": "מדרגות",
+      "auto": "אוטומטי",
+      "autoTip": "חישוב מספר המדרגות לפי העלייה ({rise} m טיפוס ≈ {steps} מדרגות)",
+      "metrics": "רום {riser} cm · שלח {tread} cm · {angle}°",
+      "help": "המסלול נקבע בשרטוט — לעריכת הגרמים עברו ל<b>שרטוט</b>.",
+      "warnings": {
+        "riseZero": "הגובה חייב להיות גדול מאפס.",
+        "noFlights": "למדרגות אין מהלכים.",
+        "flightNoLength": "למהלך {n} אין אורך.",
+        "riserSteep": "רום {riser} תלול (מעל 19 cm).",
+        "treadShallow": "שלח {tread} צר (מתחת ל-25 cm).",
+        "ruleOfThumb": "2×רום + שלח הוא {total} — מדרגות נוחות נמצאות בין 60 ל-66 cm.",
+        "widthNarrow": "רוחב {width} צר (מתחת ל-80 cm).",
+        "landingWide": "פודסט {n} משתרע על {span} — האם זה מכוון?",
+        "headOn": "מהלכים {a} ו-{b} נפגשים חזיתית — השאירו רווח לפודסט."
+      }
+    },
+    "toast": {
+      "sampledFurniture": "נדגם — אותו פריט דרוך, לחצו כדי למקם",
+      "sampledFixture": "נדגם — אותו גוף תאורה דרוך, לחצו כדי למקם",
+      "sampledFaceHex": "נדגם צד {side} — הצבע דרוך, לחצו על פני קיר כדי לצבוע",
+      "sampledPlaster": "נדגם טיח — הצבע דרוך, לחצו על פני קיר כדי לצבוע",
+      "sampledFloor": "נדגמה רצפה — דרוכה, לחצו על חדר כדי להחיל",
+      "pointAtWallToHang": "הצביעו על קיר כדי לתלות אותו",
+      "placeOnCounter": "הניחו אותו על משטח העבודה במטבח",
+      "pointAtWall": "הצביעו על קיר",
+      "startAgainstWall": "התחילו צמוד לקיר",
+      "removedKitchenRun": "שורת המטבח הוסרה",
+      "duplicated": "שוכפל",
+      "pickReplacement": "בחרו תחליף בלשונית הריהוט"
     }
   }
 }

@@ -15,7 +15,7 @@ import { frameColorPatch, frameMaterialPatch, type FrameFinish } from "@/render/
 import { sanitizeSpec, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
-import { pdToast } from "@/ui/planDock/toast";
+import { pdToastKey } from "@/ui/planDock/toast";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -1231,7 +1231,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             (f) => !gone.has(f.id) && !(f.attach && gone.has(f.attach.hostId)),
           ),
         }));
-        if (groupId) pdToast("Removed kitchen run");
+        if (groupId) pdToastKey("removedKitchenRun");
       } else if (sel3d.kind === "wall") {
         commitScene("Delete wall", {
           ...scene,

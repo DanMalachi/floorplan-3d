@@ -254,7 +254,7 @@ export const tvGenerator: GeneratorDef = {
   // The stand, and only the stand: hidden on the wall-mounted cards, where it
   // would be a control that does nothing.
   finishes2: ["steel", "oak", "walnut", "painted"],
-  finishes2Label: "Stand",
+  finishes2LabelKey: "tv.finishes2Label",
   showFinishes2: (spec) => STAND[variantOf(spec)] !== "none",
   wallMounted: (spec) => MOUNT[variantOf(spec)] === "wall",
   // A set on a stand goes where a set on a stand goes: on top of the media
@@ -266,7 +266,7 @@ export const tvGenerator: GeneratorDef = {
   surfaceOptional: true,
   cutoutSize: () => null, // a TV stands ON a surface; it cuts nothing
   sizeInches: {
-    label: "Screen",
+    labelKey: "tv.sizeInches.label",
     presets: [32, 43, 50, 55, 65, 75, 85],
     of: diagonalInches,
     dims: dimsForInches,

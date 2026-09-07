@@ -138,10 +138,31 @@ export interface StairMetrics {
   going: number; // nominal, totalRun / steps
   run: number; // total
   flights: FlightMetrics[];
-  warnings: string[]; // advisory only — nothing blocks on these
+  /** Advisory only — nothing blocks on these.
+   *
+   *  A KEY plus params, not a sentence. This module is pure geometry and has no
+   *  business rendering words: it is read by TWO panels in two locales — the
+   *  stair inspector and `legacy/src/trace2d/TraceRail.tsx` — and a module that
+   *  formats English can only ever serve one of them. Resolve against
+   *  `editor.stair.warnings.*` at the render site, the same split `importMsg`
+   *  uses in the scene store.
+   *
+   *  Both consumers were changed together, deliberately: `TraceRail` rendered
+   *  `<span>{w}</span>`, so leaving it behind would have put `[object Object]`
+   *  on screen rather than failing the build. If you add a third consumer,
+   *  resolve there too. */
+  warnings: StairWarning[];
 }
 
 const cm = (m: number) => `${Math.round(m * 100)} cm`;
+
+/** One advisory, as a key the render site resolves. `params` carries the
+ *  already-formatted measurements — the numbers are geometry, the sentence
+ *  around them is not. */
+export interface StairWarning {
+  key: string;
+  params?: Record<string, string | number>;
+}
 
 export function stairMetrics(s: Stair): StairMetrics {
   const runs = s.flights.map(flightRun);
@@ -170,29 +191,29 @@ export function stairMetrics(s: Stair): StairMetrics {
 
   // Buildability, as a rule of thumb rather than a code check: report, never
   // block. A plan can legitimately show a stair that fails these.
-  const warnings: string[] = [];
-  if (s.rise <= 0) warnings.push("Rise must be greater than zero.");
-  if (s.flights.length === 0) warnings.push("Stair has no flights.");
+  const warnings: StairWarning[] = [];
+  if (s.rise <= 0) warnings.push({ key: "riseZero" });
+  if (s.flights.length === 0) warnings.push({ key: "noFlights" });
   runs.forEach((r, i) => {
-    if (r <= EPS) warnings.push(`Flight ${i + 1} has no length.`);
+    if (r <= EPS) warnings.push({ key: "flightNoLength", params: { n: i + 1 } });
   });
-  if (riser > 0.19) warnings.push(`Riser ${cm(riser)} is steep (over 19 cm).`);
-  if (going > EPS && going < 0.25) warnings.push(`Tread ${cm(going)} is shallow (under 25 cm).`);
+  if (riser > 0.19) warnings.push({ key: "riserSteep", params: { riser: cm(riser) } });
+  if (going > EPS && going < 0.25) warnings.push({ key: "treadShallow", params: { tread: cm(going) } });
   const rule = 2 * riser + going;
   if (going > EPS && (rule < 0.6 || rule > 0.66)) {
-    warnings.push(`2×riser + tread is ${cm(rule)} — comfortable stairs sit between 60 and 66 cm.`);
+    warnings.push({ key: "ruleOfThumb", params: { total: cm(rule) } });
   }
-  if (s.width < 0.8) warnings.push(`Width ${cm(s.width)} is narrow (under 80 cm).`);
+  if (s.width < 0.8) warnings.push({ key: "widthNarrow", params: { width: cm(s.width) } });
   for (let i = 0; i + 1 < s.flights.length; i++) {
     const a = s.flights[i];
     const b = s.flights[i + 1];
     const gap = Math.hypot(b.x0 - a.x1, b.y0 - a.y1);
-    if (gap > 3) warnings.push(`Landing ${i + 1} spans ${cm(gap)} — is that intended?`);
+    if (gap > 3) warnings.push({ key: "landingWide", params: { n: i + 1, span: cm(gap) } });
     // Only reachable when two flights continue on the SAME axis with no gap at
     // all: there is genuinely nothing between them to bridge. A flush TURN is
     // not this case — it builds a proper landing (see interiorLandingPoly).
     if (interiorLandingPoly(a, b, s.width).length < 3) {
-      warnings.push(`Flights ${i + 1} and ${i + 2} meet head-on — leave a gap for the landing.`);
+      warnings.push({ key: "headOn", params: { a: i + 1, b: i + 2 } });
     }
   }
 

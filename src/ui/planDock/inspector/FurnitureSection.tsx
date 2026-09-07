@@ -20,6 +20,7 @@ import { VariantSwatchRow } from "./VariantSwatchRow";
 export function FurnitureSection({ item }: { item: FurnitureItem }) {
   const locale = useLocale();
   const tp = useTranslations("editor.parametric");
+  const tt = useTranslations("editor.toast");
   const spec = specOf(item);
   // `nameKey` for a generator (translatable description), `name` for a real
   // product (a proper noun that must not be translated).
@@ -31,14 +32,14 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
 
   const onDuplicate = () => {
     useSceneStore.getState().duplicateFurniture(item.id);
-    pdToast("Duplicated");
+    pdToast(tt("duplicated"));
   };
   const onReplace = () => {
     const s = useSceneStore.getState();
     const id = item.id;
     s.requestDock("furniture");
     s.setReplaceTarget(id);
-    pdToast("Pick a replacement in the Furniture tab");
+    pdToast(tt("pickReplacement"));
   };
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 

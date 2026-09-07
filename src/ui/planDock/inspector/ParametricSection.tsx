@@ -32,16 +32,19 @@ import {
   PdHelpText,
 } from "./panelKit";
 
-const FRONT_LABEL: Record<ParametricSpec["front"], string> = {
-  slab: "Slab",
-  shaker: "Shaker",
-  farmhouse: "Farmhouse",
+// Module scope cannot call useTranslations() — these carry the stable key,
+// same convention as GeneratorDef.labelKey (types.ts); the render site
+// resolves it through the `t` already in scope there.
+const FRONT_LABEL_KEY: Record<ParametricSpec["front"], string> = {
+  slab: "front.slab",
+  shaker: "front.shaker",
+  farmhouse: "front.farmhouse",
 };
 
-const HANDLE_LABEL: Record<ParametricSpec["handle"], string> = {
-  bar: "Bar",
-  knob: "Knob",
-  none: "None",
+const HANDLE_LABEL_KEY: Record<ParametricSpec["handle"], string> = {
+  bar: "handle.bar",
+  knob: "handle.knob",
+  none: "handle.none",
 };
 
 // Representative swatch colors — a flat UI stand-in for the actual procedural/
@@ -112,6 +115,9 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
 export function ParametricSection({ item }: { item: FurnitureItem }) {
   const t = useTranslations("editor.parametric");
   const td = useTranslations("editor.dock");
+  // Same key its sibling FurnitureSection uses — one catalogue entry for one
+  // string, because the two panels fire the identical toast.
+  const tt = useTranslations("editor.toast");
   // Before the early return: the "Match run below" toggle spreads pdChip by
   // hand (it layers a disabled look on top), so it can't use the shared PdChip
   // wrapper and needs its own hover state — and a hook cannot sit behind a
@@ -133,7 +139,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
 
   const onDuplicate = () => {
     useSceneStore.getState().duplicateFurniture(item.id);
-    pdToast("Duplicated");
+    pdToast(tt("duplicated"));
   };
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 
@@ -147,7 +153,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.sizeInches ? (
         <>
           <PdNumField
-            label={g.sizeInches.label}
+            label={t(g.sizeInches.labelKey)}
             value={g.sizeInches.of(spec)}
             onCommit={(inches) => update({ dims: g.sizeInches!.dims(spec, inches) })}
             unit={'"'}
@@ -246,7 +252,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         <PdChipGroup>
           {g.fronts.map((f) => (
             <PdChip key={f} active={spec.front === f} extra={pdChipFlex} onClick={() => update({ front: f })}>
-              {FRONT_LABEL[f]}
+              {t(FRONT_LABEL_KEY[f])}
             </PdChip>
           ))}
         </PdChipGroup>
@@ -256,13 +262,13 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         <PdChipGroup>
           {g.handles.map((h) => (
             <PdChip key={h} active={spec.handle === h} extra={pdChipFlex} onClick={() => update({ handle: h })}>
-              {HANDLE_LABEL[h]}
+              {t(HANDLE_LABEL_KEY[h])}
             </PdChip>
           ))}
         </PdChipGroup>
       )}
 
-      {g.finishesLabel && <span style={{ fontSize: 10.5, color: PD.textTertiary }}>{g.finishesLabel}</span>}
+      {g.finishesLabelKey && <span style={{ fontSize: 10.5, color: PD.textTertiary }}>{t(g.finishesLabelKey)}</span>}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         {g.finishes.map((f) => {
           // Wall art's finishes ARE pictures: the swatch shows the painting,
@@ -287,7 +293,11 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.finishes2 && (g.showFinishes2?.(spec) ?? true) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontSize: 10.5, color: PD.textTertiary }}>
-            {g.finishes2Label ?? (spec.generator === "kitchenRun" || spec.generator === "kitchenBase" ? "Counter" : "Pillows")}
+            {g.finishes2LabelKey
+              ? t(g.finishes2LabelKey)
+              : spec.generator === "kitchenRun" || spec.generator === "kitchenBase"
+                ? t("finishes2.counter")
+                : t("finishes2.pillows")}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {g.finishes2.map((f) => (
@@ -316,7 +326,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           a disabled one reads as "not right now, here's why". */}
       {isWallRun && (
         <label style={pdInspectorRow}>
-          <span style={{ color: PD.textSecondary }}>Match run below</span>
+          <span style={{ color: PD.textSecondary }}>{t("matchRun.label")}</span>
           <button
             {...linkHoverBind}
             disabled={!isLinked && !linkHost}
@@ -333,7 +343,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               cursor: !isLinked && !linkHost ? "default" : "pointer",
             }}
           >
-            {isLinked ? "On" : "Off"}
+            {isLinked ? t("matchRun.on") : t("matchRun.off")}
           </button>
         </label>
       )}

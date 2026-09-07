@@ -730,7 +730,7 @@ console.log("\nthe pictures are real files, and the registry knows their shape")
   // A painting owns its palette; multiplying the wheel's colour over a scan
   // makes one muddy tone, which is the same rule the patterned rugs follow.
   check("artwork finishes opt out of the colour wheel", ARTWORKS.every((a) => !isColorable(a.id)));
-  check("the artwork row is labelled", GENERATORS.wallArt.finishesLabel === "Picture");
+  check("the artwork row is labelled", GENERATORS.wallArt.finishesLabelKey === "wallArt.finishesLabel");
 }
 
 console.log("\nno painting is ever stretched: the mount takes the mismatch");

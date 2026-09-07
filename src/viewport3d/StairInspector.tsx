@@ -12,6 +12,7 @@
 // look after the rest of the inspector moved to src/ui/planDock/inspector/;
 // same controls, same behavior, just PD-colored via the shared panelKit.
 
+import { useTranslations } from "next-intl";
 import type { Stair } from "@/schema/scene";
 import { DEFAULT_STAIR } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -31,21 +32,23 @@ import {
   stairMetrics,
 } from "@/lib/stairs/stairGeometry";
 
-// `label` is the word alone — the ▉ / ▤ that used to lead each string is now a
-// drawn icon, so the label can be translated and the two chips match the rest
-// of the inspector instead of reflowing with the font.
+// `labelKey`/`tipKey`, not English text — module scope cannot call
+// `useTranslations()`, so the render site resolves them. Same convention as
+// KIND_LABEL_KEY (WallSection.tsx). The ▉ / ▤ that used to lead each string is
+// now a drawn icon, so the label stays a bare word and the two chips match the
+// rest of the inspector instead of reflowing with the font.
 const STYLES = [
   {
     key: "solid" as const,
-    label: "Solid",
+    labelKey: "styleSolidLabel",
     Icon: StairsSolidIcon,
-    tip: "Closed stringer — a boxed-in flight sitting on the floor, landings built down with it.",
+    tipKey: "styleSolidTip",
   },
   {
     key: "open" as const,
-    label: "Open",
+    labelKey: "styleOpenLabel",
     Icon: StairsIcon,
-    tip: "Open riser — floating treads on two side stringers. You can see through and under it.",
+    tipKey: "styleOpenTip",
   },
 ];
 
@@ -85,6 +88,7 @@ function StairChip({
 }
 
 export function StairInspector({ stair }: { stair: Stair }) {
+  const t = useTranslations("editor.stair");
   const m = stairMetrics(stair);
   const style = stair.style ?? "solid";
   const pitchDeg = Math.round((Math.atan2(m.riser, m.going) * 180) / Math.PI);
@@ -114,8 +118,8 @@ export function StairInspector({ stair }: { stair: Stair }) {
   return (
     <div style={pdInspectorPanel}>
       <PdSectionTitle
-        label="Stair"
-        meta={`${stair.flights.length} flight${stair.flights.length === 1 ? "" : "s"} · ${m.run.toFixed(2)} m`}
+        label={t("title")}
+        meta={t("meta", { count: stair.flights.length, run: m.run.toFixed(2) })}
       />
 
       <div style={{ display: "flex", gap: 4 }}>
@@ -124,23 +128,23 @@ export function StairInspector({ stair }: { stair: Stair }) {
             key={s.key}
             active={style === s.key}
             extra={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
-            tip={s.tip}
+            tip={t(s.tipKey)}
             onClick={() => style !== s.key && patch(`Stair: ${s.key}`, { style: s.key })}
           >
-            <s.Icon size={13} /> {s.label}
+            <s.Icon size={13} /> {t(s.labelKey)}
           </StairChip>
         ))}
       </div>
 
       <PdNumField
-        label="Width"
+        label={t("width")}
         value={stair.width}
         onCommit={(v) => patch("Stair width", { width: Math.min(MAX_STAIR_WIDTH, Math.max(MIN_STAIR_WIDTH, v)) })}
         displayScale={100}
         unit="cm"
       />
       <PdNumField
-        label="Rise"
+        label={t("rise")}
         value={stair.rise}
         onCommit={(v) => patch("Stair rise", { rise: Math.min(6, Math.max(0.1, v)) })}
         displayScale={100}
@@ -150,7 +154,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <div style={{ flex: 1 }}>
           <PdNumField
-            label="Steps"
+            label={t("steps")}
             value={m.steps}
             unit=""
             onCommit={(v) => patch("Stair steps", { steps: Math.max(1, Math.round(v)) })}
@@ -158,19 +162,21 @@ export function StairInspector({ stair }: { stair: Stair }) {
         </div>
         <StairChip
           active={stair.steps == null}
-          tip={`Derive the step count from the rise (${DEFAULT_STAIR.rise} m climb ≈ 14 steps)`}
+          tip={t("autoTip", { rise: DEFAULT_STAIR.rise, steps: 14 })}
           onClick={setAutoSteps}
         >
-          Auto
+          {t("auto")}
         </StairChip>
       </div>
 
       <div style={{ fontSize: 11, color: PD.textSecondary, lineHeight: 1.5 }}>
-        riser {Math.round(m.riser * 100)} cm · tread {Math.round(m.going * 100)} cm · {pitchDeg}°
+        {t("metrics", { riser: Math.round(m.riser * 100), tread: Math.round(m.going * 100), angle: pitchDeg })}
       </div>
 
       {/* Advisory only — a plan can legitimately show a stair that fails a rule
-          of thumb, so nothing here blocks or clamps. */}
+          of thumb, so nothing here blocks or clamps. Each warning arrives as a
+          key + params (stairGeometry.ts owns the geometry, not the wording);
+          `TraceRail.tsx` resolves the same array the same way. */}
       {m.warnings.map((w, i) => (
         <div
           key={i}
@@ -186,12 +192,14 @@ export function StairInspector({ stair }: { stair: Stair }) {
           <span style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 1 }}>
             <WarnIcon size={12} />
           </span>
-          <span>{w}</span>
+          <span>{t(`warnings.${w.key}`, w.params)}</span>
         </div>
       ))}
 
       <PdHelpText>
-        Where it runs is traced — edit the flights in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Trace</b>.
+        {t.rich("help", {
+          b: (chunks) => <b style={{ color: PD.textSecondary, fontWeight: 600 }}>{chunks}</b>,
+        })}
       </PdHelpText>
     </div>
   );

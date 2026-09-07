@@ -12,6 +12,23 @@ report for methodology). Nothing here is marked UNCERTAIN — every file's
 imports were traced and confirmed to be 3D-viewer-only with no legacy
 extraction dependencies.
 
+> **THE LIST HAS A DATE, AND THE TREE HAS GROWN PAST IT.** Twenty-plus files
+> have been added under `src/viewport3d/` since 2026-07-19 — `StairInspector`,
+> `StairMesh`, `FixtureCatalog`, `FixtureLayer`, `MeasureTool`, the whole
+> `buildTools/` and `camera/` directories — and **none of them are named below,
+> because they did not exist when the pass ran.** Absence from this list is
+> therefore not evidence that a file is unprotected; it may only mean nobody has
+> looked. Treat anything inside the tree as protected and ASK, exactly as rule 1
+> says, rather than reading the list as exhaustive.
+>
+> This was found on 2026-09-07 the expensive way: the Hebrew job declared the
+> editor fully translated while two panels inside this tree — the lighting
+> picker and the stair inspector — were still entirely English, because the
+> inventory had used this list as its boundary. Dan's call that day was to keep
+> treating the whole tree as protected and to record the gap here rather than
+> silently narrowing the rule. **The list still needs a fresh Explore pass to
+> classify the post-2026-07-19 files properly.**
+
 ## React Three Fiber viewer
 
 - `src/viewport3d/Viewport.tsx` — Canvas root: camera, controls, postprocessing, env/time-of-day wiring.
@@ -36,6 +53,33 @@ extraction dependencies.
 
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
+
+- **2026-09-07 (second), `src/viewport3d/FixtureCatalog.tsx` and
+  `src/viewport3d/StairInspector.tsx` — their hardcoded UI TEXT moves into the
+  message catalogue.** Approved by Dan before the edits. Translation only: a
+  `useTranslations` import, module-scope label tables swapping words for keys,
+  and the render sites resolving them. No logic, no geometry, no imports beyond
+  next-intl.
+
+  **Neither file is named in the list above, and that is the point of the
+  callout at the top of this file.** The list was compiled 2026-07-19;
+  `StairInspector.tsx` landed 2026-07-31 and `FixtureCatalog.tsx` 2026-08-03. So
+  they sat in the protected tree while being absent from the protected list, and
+  the Hebrew inventory — which used the list as its boundary — never saw them.
+  The lighting picker and the stair panel were still fully English after Step 5
+  was declared done. Dan found the lighting one by looking at the running app.
+
+  Dan's decision was deliberately the conservative one: treat the whole tree as
+  protected, grant this exception explicitly, and write the staleness down —
+  rather than concluding "not on the list, therefore fair game", which would
+  have widened rule 1 by interpretation instead of by a decision.
+
+  `FixtureCatalog.tsx` also switches from the catalogue's `name` to its new
+  `nameKey` (`src/fixtures/catalog.ts`); `name` stays as the English fallback.
+  `StairInspector.tsx`'s advisory warnings are built in
+  `src/lib/stairs/stairGeometry.ts`, which is NOT protected and now returns
+  `{ key, params }` for the render site to resolve — a pure geometry module must
+  not render words.
 
 - **2026-09-07, `src/viewport3d/Viewport.tsx` — `StatusOverlay`'s `bottom`
   moves from 14 to 250.** Approved by Dan before the edit. A third, separate
