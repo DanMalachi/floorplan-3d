@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useSession, displayName } from "@/lib/auth/useSession";
 import { wipeLocalData } from "@/store/projectPersistence";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
@@ -42,6 +43,7 @@ interface StageReport {
 }
 
 export default function AccountPage() {
+  const locale = useLocale();
   const { user, loading, configured, signOut } = useSession();
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [typed, setTyped] = useState("");
@@ -160,7 +162,7 @@ export default function AccountPage() {
               <Label>Account</Label>
               <Row k="Signed in as" v={`${displayName(user)}${user.email ? ` · ${user.email}` : ""}`} />
               <Row k="Sign-in method" v="Google" />
-              {info?.account.created_at && <Row k="Account created" v={new Date(info.account.created_at).toLocaleString()} />}
+              {info?.account.created_at && <Row k="Account created" v={new Date(info.account.created_at).toLocaleString(locale)} />}
             </Card>
 
             <Card>
@@ -222,7 +224,7 @@ export default function AccountPage() {
               ) : (
                 <>
                   <Note>This cannot be undone. There is no backup to restore from. It removes:</Note>
-                  <ul style={{ margin: 0, paddingLeft: 18, color: PD.textSecondary, fontSize: 12.5, lineHeight: 1.7 }}>
+                  <ul style={{ margin: 0, paddingInlineStart: 18, color: PD.textSecondary, fontSize: 12.5, lineHeight: 1.7 }}>
                     <li>every plan on your account, and its geometry</li>
                     <li>every plan image and thumbnail you have uploaded</li>
                     <li>
@@ -284,7 +286,7 @@ export default function AccountPage() {
                 >
                   {error}
                   {stages && (
-                    <ul style={{ margin: "6px 0 0", paddingLeft: 16 }}>
+                    <ul style={{ margin: "6px 0 0", paddingInlineStart: 16 }}>
                       {stages.map((s) => (
                         <li key={s.stage} style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
                           <span style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 2 }}>
@@ -330,7 +332,7 @@ const Note = ({ children }: { children: React.ReactNode }) => (
 const Row = ({ k, v }: { k: string; v: string }) => (
   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12.5 }}>
     <span style={{ color: PD.textTertiary }}>{k}</span>
-    <span style={{ color: PD.textPrimary, textAlign: "right" }}>{v}</span>
+    <span style={{ color: PD.textPrimary, textAlign: "end" }}>{v}</span>
   </div>
 );
 

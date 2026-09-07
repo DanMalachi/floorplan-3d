@@ -14,15 +14,29 @@ export type FixtureShape = "flushDisc" | "pendant" | "sconce";
 
 export interface FixtureAsset {
   assetId: string; // "fx:flushDisc", "fx:pendant", "fx:sconce"
+  /** English, and the fallback. Kept so existing consumers keep working
+   *  unchanged — including `src/viewport3d/FixtureCatalog.tsx`, which still
+   *  renders this. */
   name: string;
+  /** The translatable one, under `editor.inspector.fixture.names`. Render sites
+   *  prefer it; `name` is the fallback.
+   *
+   *  These three ARE translatable, unlike an IKEA model name, because they are
+   *  generic descriptions of what the thing is rather than proper nouns — the
+   *  same line `FurnitureAsset` draws between `name` and `nameKey`, and the
+   *  same line Dan's 2026-09-06 decision draws between furniture `kind` values
+   *  (translate) and BlenderKit asset titles (do not). Added rather than
+   *  swapped for exactly the reason that split exists: one field meaning both
+   *  is how a raw key reaches a user's screen. */
+  nameKey: string;
   category: FixtureCategory;
   shape: FixtureShape; // discriminant for the procedural mesh in FixtureLayer.tsx
 }
 
 export const FIXTURE_CATALOG: FixtureAsset[] = [
-  { assetId: "fx:flushDisc", name: "Flush ceiling light", category: "Ceiling", shape: "flushDisc" },
-  { assetId: "fx:pendant", name: "Pendant light", category: "Ceiling", shape: "pendant" },
-  { assetId: "fx:sconce", name: "Wall light", category: "Wall", shape: "sconce" },
+  { assetId: "fx:flushDisc", name: "Flush ceiling light", nameKey: "flushDisc", category: "Ceiling", shape: "flushDisc" },
+  { assetId: "fx:pendant", name: "Pendant light", nameKey: "pendant", category: "Ceiling", shape: "pendant" },
+  { assetId: "fx:sconce", name: "Wall light", nameKey: "sconce", category: "Wall", shape: "sconce" },
 ];
 
 export const FIXTURE_CATALOG_BY_ID: ReadonlyMap<string, FixtureAsset> = new Map(

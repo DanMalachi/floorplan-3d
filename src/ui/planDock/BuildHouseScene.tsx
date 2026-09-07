@@ -15,6 +15,7 @@
 // clicked/hovered.
 
 import { useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   isoBox,
   isoCylinder,
@@ -34,21 +35,33 @@ export type BuildHotspotId = "walls" | "doors" | "windows" | "measure" | "floors
 
 export interface BuildHotspot {
   id: BuildHotspotId;
-  label: string;
+  labelKey: string;
 }
 
 // `id: "doors"` stays — it is a local UI key that BuildNavigator dispatches on
 // and isoArt's HitArea feeds to `aria-label`. Only the visible label changes,
 // because a door at or past PATIO_MIN_WIDTH is drawn as a glazed patio slider.
 export const BUILD_HOTSPOTS: BuildHotspot[] = [
-  { id: "walls", label: "Walls" },
-  { id: "doors", label: "Doors & patios" },
-  { id: "windows", label: "Windows" },
-  { id: "measure", label: "Measure" },
-  { id: "floors", label: "Floors" },
-  { id: "paint", label: "Paint" },
-  { id: "stairs", label: "Stairs (trace only)" },
+  { id: "walls", labelKey: "build.walls" },
+  { id: "doors", labelKey: "build.doors" },
+  { id: "windows", labelKey: "build.windows" },
+  { id: "measure", labelKey: "build.measure" },
+  { id: "floors", labelKey: "build.floors" },
+  { id: "paint", labelKey: "build.paint" },
+  { id: "stairs", labelKey: "build.stairs" },
 ];
+
+// Same trick as the room scenes' `kw()`/`lbl()` pair: the item list below used
+// to write every label out a second time, longer and slightly different from
+// the one above (e.g. "Walls" vs "Walls — draw new walls") — that pair of
+// copies is exactly the drift BathroomScene's rewrite eliminated elsewhere.
+const lbl = (id: string) => BUILD_HOTSPOTS.find((h) => h.id === id)!.labelKey;
+// Four of the seven items deliberately do NOT use `lbl`. In this scene the two
+// surfaces say different things: the CHIP row is the short noun ("Walls"), the
+// hover label on the illustration is the instruction ("Walls — draw new
+// walls"). That is not the duplication `lbl` exists to remove, so those four
+// carry their own `build.hints.*` keys. The other three had nothing extra to
+// say and share the chip's word.
 
 const ITEMS_Y = 118;
 const WALL_H = 58;
@@ -157,7 +170,7 @@ function MeasureArt({ x, yFront }: { x: number; yFront: number }) {
 
 interface HotspotDef {
   id: BuildHotspotId;
-  label: string;
+  labelKey: string;
   box: IsoBox;
   art: ReactNode;
   disabled?: boolean;
@@ -181,16 +194,18 @@ export function BuildHouseScene({
   const measureBox: IsoBox = { ...isoBox(96, FLOOR_Y - 4, 32, 0, 8), bbox: { x0: 92, y0: FLOOR_Y - 12, x1: 138, y1: FLOOR_Y } };
 
   const items: HotspotDef[] = [
-    { id: "walls", label: "Walls — draw new walls", box: wallBox, art: <WallSegment box={wallBox} /> },
-    { id: "doors", label: "Doors & patios — drop on a wall", box: doorBox, art: <DoorSegment box={doorBox} /> },
-    { id: "windows", label: "Windows — drop on a wall", box: windowBox, art: <WindowSegment box={windowBox} /> },
-    { id: "floors", label: "Floor — pick a material", box: floor, art: <></> },
-    { id: "paint", label: "Paint — pick a colour", box: paintBox, art: <PaintRollerArt x={30} yFront={FLOOR_Y - 6} /> },
-    { id: "measure", label: "Measure a span", box: measureBox, art: <MeasureArt x={96} yFront={FLOOR_Y - 4} /> },
-    { id: "stairs", label: "Stairs — traced only, not Build mode", box: stairBox, art: <StairArt x0={178} yFront={FLOOR_Y - 2} />, disabled: true },
+    { id: "walls", labelKey: "build.hints.walls", box: wallBox, art: <WallSegment box={wallBox} /> },
+    { id: "doors", labelKey: "build.hints.doors", box: doorBox, art: <DoorSegment box={doorBox} /> },
+    { id: "windows", labelKey: "build.hints.windows", box: windowBox, art: <WindowSegment box={windowBox} /> },
+    { id: "floors", labelKey: lbl("floors"), box: floor, art: <></> },
+    { id: "paint", labelKey: lbl("paint"), box: paintBox, art: <PaintRollerArt x={30} yFront={FLOOR_Y - 6} /> },
+    { id: "measure", labelKey: lbl("measure"), box: measureBox, art: <MeasureArt x={96} yFront={FLOOR_Y - 4} /> },
+    { id: "stairs", labelKey: "build.hints.stairs", box: stairBox, art: <StairArt x0={178} yFront={FLOOR_Y - 2} />, disabled: true },
   ];
 
+  const t = useTranslations("editor.rooms");
   const hoveredItem = items.find((i) => i.id === hovered);
+  const hoveredLabel = hoveredItem ? t(hoveredItem.labelKey) : null;
 
   return (
     <svg viewBox="0 0 220 170" width="100%" height="100%" style={{ display: "block", overflow: "visible" }}>
@@ -208,7 +223,7 @@ export function BuildHouseScene({
       {items.map((it) => (
         <HitArea
           key={it.id}
-          id={it.id}
+          labelKey={it.labelKey}
           box={it.box}
           active={activeHotspot === it.id}
           hovered={hovered === it.id}
@@ -218,12 +233,12 @@ export function BuildHouseScene({
         />
       ))}
 
-      {hoveredItem && (
+      {hoveredItem && hoveredLabel && (
         <g style={{ pointerEvents: "none" }}>
           <rect
             x={Math.max(2, hoveredItem.box.bbox.x0)}
             y={Math.max(2, hoveredItem.box.bbox.y0 - 16)}
-            width={Math.min(216, hoveredItem.label.length * 4.6 + 10)}
+            width={Math.min(216, hoveredLabel.length * 4.6 + 10)}
             height={13}
             rx={4}
             fill="oklch(0.12 0.01 260 / 0.92)"
@@ -235,7 +250,7 @@ export function BuildHouseScene({
             fontFamily={PD.fontUi}
             fill={PD.textPrimary}
           >
-            {hoveredItem.label}
+            {hoveredLabel}
           </text>
         </g>
       )}

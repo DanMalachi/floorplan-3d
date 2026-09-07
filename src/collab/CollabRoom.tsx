@@ -27,6 +27,7 @@ import {
   scheduleProjectMirror,
   registerSharedProject,
 } from "@/store/projectPersistence";
+import { hardNavHref } from "@/i18n/navigation";
 import { WALL_HEIGHT } from "@/schema/constants";
 import type { Scene } from "@/schema/scene";
 import { PD, pdChip, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
@@ -419,7 +420,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
         </RoomChip>
       </div>
       {open && (
-        <div style={{ position: "absolute", top: 40, right: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
+        <div style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>Share this plan</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
@@ -465,7 +466,7 @@ function RoleRow({
         display: "flex",
         alignItems: "center",
         gap: 6,
-        textAlign: "left",
+        textAlign: "start",
         padding: "7px 10px",
         borderRadius: PD.radiusS,
         cursor: "pointer",
@@ -487,14 +488,14 @@ function RoleRow({
 
 /** One face in the presence stack.
  *
- *  `marginLeft: -6` is what makes the pile overlap, and it has to stay on the
- *  OUTERMOST element: `Tooltip` wraps its child in an `inline-flex` span, so
+ *  `marginInlineStart: -6` is what makes the pile overlap, and it has to stay on
+ *  the OUTERMOST element: `Tooltip` wraps its child in an `inline-flex` span, so
  *  leaving the negative margin on the inner circle would shrink that span to
  *  22px and shift the stack instead of overlapping it. The margin therefore
  *  moves to a wrapper around the tooltip, and the circle keeps its own box. */
 function Avatar({ name, color }: Identity) {
   return (
-    <span style={{ marginLeft: -6, display: "inline-flex", flex: "0 0 auto" }}>
+    <span style={{ marginInlineStart: -6, display: "inline-flex", flex: "0 0 auto" }}>
       <Tooltip label={name} placement="bottom">
         <div style={{ width: 28, height: 28, borderRadius: "50%", background: color, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid oklch(1 0 0 / 0.25)", fontFamily: PD.fontUi }}>
           {initials(name)}
@@ -509,13 +510,13 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   const me = useSelf();
   const count = others.length + (me ? 1 : 0);
   return (
-    <div style={{ position: "absolute", top: 14, right: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: PD.fontUi }}>
+    <div style={{ position: "absolute", top: 14, insetInlineEnd: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: PD.fontUi }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...pdGlass({ borderRadius: 999 }) }}>
         <span style={{ fontSize: 12.5, color: PD.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
           <Pip color={PD.ok} /> {count} here
           {role === "view" && <span style={{ color: PD.textTertiary }}>· view only</span>}
         </span>
-        <div style={{ display: "flex", paddingLeft: 6 }}>
+        <div style={{ display: "flex", paddingInlineStart: 6 }}>
           {me && <Avatar name={me.presence.name} color={me.presence.color} />}
           {others.map(({ connectionId, presence }) => (
             <Avatar key={connectionId} name={presence.name} color={presence.color} />
@@ -552,7 +553,7 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
     } catch {
       /* ignore */
     }
-    window.location.href = "/design?home=1";
+    window.location.href = hardNavHref("/design?home=1");
   };
 
   const updateMyPresence = useUpdateMyPresence();

@@ -17,7 +17,7 @@
 // of the four call sites.
 
 import { useSceneStore } from "@/store/useSceneStore";
-import { pdToast } from "@/ui/planDock/toast";
+import { pdToastKey } from "@/ui/planDock/toast";
 import type { FixtureItem, FloorStyle, FurnitureItem, Wall } from "@/schema/scene";
 
 export function sampleFurniture(item: FurnitureItem): boolean {
@@ -28,7 +28,7 @@ export function sampleFurniture(item: FurnitureItem): boolean {
     sel3d: null,
     eyedropper: false,
   });
-  pdToast("Sampled — same item armed, click to place");
+  pdToastKey("sampledFurniture");
   return true;
 }
 
@@ -40,7 +40,7 @@ export function sampleFixture(item: FixtureItem): boolean {
     sel3d: null,
     eyedropper: false,
   });
-  pdToast("Sampled — same fixture armed, click to place");
+  pdToastKey("sampledFixture");
   return true;
 }
 
@@ -53,7 +53,8 @@ export function sampleWallFace(wall: Wall, side: "a" | "b"): boolean {
     sel3d: null,
     eyedropper: false,
   });
-  pdToast(hex ? `Sampled Face ${side.toUpperCase()} — paint armed, click a face` : "Sampled plaster — paint armed, click a face");
+  if (hex) pdToastKey("sampledFaceHex", { side: side.toUpperCase() });
+  else pdToastKey("sampledPlaster");
   return true;
 }
 
@@ -65,6 +66,6 @@ export function sampleFloor(style: FloorStyle): boolean {
     sel3d: null,
     eyedropper: false,
   });
-  pdToast("Sampled floor — armed, click a room to apply");
+  pdToastKey("sampledFloor");
   return true;
 }

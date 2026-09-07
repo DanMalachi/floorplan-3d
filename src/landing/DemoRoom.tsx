@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { B, microLabel } from "@/brand/tokens";
 import { getHeroStage, getHeroStageServer, setHeroStage, subscribeHeroStage } from "./heroSequence";
 
@@ -53,6 +54,7 @@ function prefersReducedMotion(): boolean {
  *  loading, and permanently on any browser without WebGL. What replaces it is
  *  the plan, not the room — the room is what the plan turns into. */
 function DemoPlaceholder() {
+  const t = useTranslations("demo");
   return (
     <div
       style={{
@@ -66,7 +68,7 @@ function DemoPlaceholder() {
         background: "transparent",
       }}
     >
-      <span style={microLabel({ color: B.ink3 })}>Loading the plan</span>
+      <span style={microLabel({ color: B.ink3 })}>{t("loadingPlan")}</span>
     </div>
   );
 }

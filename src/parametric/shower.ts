@@ -119,19 +119,28 @@ function glassPanel(width: number, height: number): THREE.Group {
 
 export const showerGenerator: GeneratorDef = {
   id: "shower",
-  label: "Shower",
+  labelKey: "shower.label",
   category: "Bathroom",
   rooms: ["bathroom"],
   wallSnap: true,
   dimLimits: { w: [0.7, 1.6], d: [0.7, 1.2], h: [1.8, 2.2] },
-  modules: [{ key: "brassware", label: "Brassware", min: 0, max: 1, default: 1, toggle: { on: "With rail", off: "Head only" } }],
+  modules: [
+    {
+      key: "brassware",
+      labelKey: "shower.modules.brassware.label",
+      min: 0,
+      max: 1,
+      default: 1,
+      toggle: { onKey: "shower.modules.brassware.toggle.on", offKey: "shower.modules.brassware.toggle.off" },
+    },
+  ],
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["acrylic", "ceramic"],
   variants: [
-    { id: "enclosure", label: "Enclosure", cardLabel: "Shower enclosure" },
-    { id: "walk-in", label: "Walk-in", cardLabel: "Walk-in shower" },
-    { id: "wet-room", label: "Wet room", cardLabel: "Wet-room shower" },
+    { id: "enclosure", labelKey: "shower.variants.enclosure.label", cardLabelKey: "shower.variants.enclosure.cardLabel" },
+    { id: "walk-in", labelKey: "shower.variants.walk-in.label", cardLabelKey: "shower.variants.walk-in.cardLabel" },
+    { id: "wet-room", labelKey: "shower.variants.wet-room.label", cardLabelKey: "shower.variants.wet-room.cardLabel" },
   ],
   hotspotKeywords: ["shower"],
   defaultSpec: {

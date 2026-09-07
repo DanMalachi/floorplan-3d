@@ -1,46 +1,107 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
+import { routing } from "@/i18n/routing";
 
 // -----------------------------------------------------------------------------
-// Keeps the Supabase session alive (Next 16's `proxy`, formerly `middleware`).
+// The app's single edge entry point (Next 16's `proxy`, formerly `middleware`).
 //
-// Access tokens are short-lived. Without a refresh on the way through, a user
-// who leaves a tab open comes back signed out — and any server route that reads
-// the session (the Liveblocks authorizer) sees a guest. Calling getUser() here
-// refreshes the token when needed and writes the new cookies onto the response.
+// It does two jobs, and it has to do both HERE because Next runs exactly one
+// such file per app. A second one named `middleware.ts` is not a second hook —
+// Next 16 fails the build if it finds both, and a root-level `middleware.ts`
+// beside `src/` is ignored with no warning at all.
 //
-// This is a no-op when accounts aren't configured, and it never blocks a
-// request: the app is usable signed-out, so there is nothing to guard.
+//   1. Locale routing (next-intl). `localePrefix: "as-needed"` means the
+//      English URLs carry no prefix, so SOMETHING has to rewrite `/about` to
+//      `/en/about` before the router sees it. Without that rewrite `/about` is
+//      read as `[locale] = "about"`, fails `hasLocale`, and 404s — while every
+//      `/he/...` URL keeps working, because those carry their locale in the
+//      path. An entirely 404'ing English site with a healthy Hebrew one is the
+//      signature of this hook not running.
 //
-// Named `proxy` (not `middleware`) — Next 16 renamed the convention, and the old
-// filename now fails to resolve at runtime rather than warning.
+//   2. Supabase session refresh. Access tokens are short-lived. Without a
+//      refresh on the way through, a user who leaves a tab open comes back
+//      signed out — and any server route that reads the session (the Liveblocks
+//      authorizer) sees a guest. `getUser()` refreshes when needed and writes
+//      the new cookies onto the response.
+//
+// ── Order is load-bearing ───────────────────────────────────────────────────
+// Supabase runs FIRST. Its `setAll` writes the refreshed tokens into
+// `request.cookies`, which is backed by the request's `cookie` header — and
+// next-intl builds its rewrite by copying `request.headers` onto the forwarded
+// request. So refreshing first is what lets THIS request's server components
+// see the new token rather than the expired one; the reverse order would hand
+// them the stale cookie and only fix the next navigation.
+//
+// The refreshed cookies are then copied onto whatever response next-intl
+// returns, rather than onto a fresh `NextResponse.next()`. That response is the
+// rewrite (or redirect), so replacing it would throw the locale routing away.
+//
+// Both halves are no-ops when their config is absent: no Supabase env vars
+// means no session work, and an exempt path skips locale routing entirely.
 // -----------------------------------------------------------------------------
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+const intlMiddleware = createIntlMiddleware(routing);
+
+/**
+ * Paths that must reach the router with their URL untouched.
+ *
+ * This is a function rather than more regex in `config.matcher` because the
+ * matcher has to stay broad: the Supabase refresh above wants to run on
+ * `/api/*` too (the Liveblocks authorizer reads the session there), while
+ * locale routing must not touch those routes at all. One matcher, two
+ * audiences — so the narrower rule lives here where it can be read.
+ */
+function skipsLocaleRouting(pathname: string): boolean {
+  return (
+    // Route handlers, and everything else that never moved under `[locale]`.
+    // `/auth/callback` especially: it is the Google OAuth return URL, and
+    // rewriting it to `/en/auth/callback` 404s the whole sign-in round trip.
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/_vercel") ||
+    pathname.startsWith("/monitoring") ||
+    // Anything with an extension: favicon.ico, og images, /furniture/*.glb,
+    // textures, and the generated /robots.txt and /sitemap.xml.
+    pathname.includes(".")
+  );
+}
+
 export default async function proxy(request: NextRequest) {
-  if (!url || !anonKey) return NextResponse.next();
+  const pending: { name: string; value: string; options: Record<string, unknown> }[] = [];
 
-  let response = NextResponse.next({ request });
-
-  const supabase = createServerClient(url, anonKey, {
-    cookies: {
-      getAll: () => request.cookies.getAll(),
-      setAll: (written) => {
-        for (const { name, value } of written) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
-        for (const { name, value, options } of written) response.cookies.set(name, value, options);
+  if (url && anonKey) {
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (written) => {
+          for (const { name, value, options } of written) {
+            // Onto the request, so the forwarded render sees the fresh token…
+            request.cookies.set(name, value);
+            // …and held for the response, so the browser keeps it.
+            pending.push({ name, value, options: options as Record<string, unknown> });
+          }
+        },
       },
-    },
-  });
+    });
 
-  try {
-    await supabase.auth.getUser();
-  } catch {
-    // Offline or Supabase unreachable — serve the page anyway; the browser
-    // client will retry, and a guest session is a valid state.
+    try {
+      await supabase.auth.getUser();
+    } catch {
+      // Offline or Supabase unreachable — serve the page anyway; the browser
+      // client will retry, and a guest session is a valid state.
+    }
   }
+
+  const response = skipsLocaleRouting(request.nextUrl.pathname)
+    ? NextResponse.next({ request })
+    : intlMiddleware(request);
+
+  for (const { name, value, options } of pending) response.cookies.set(name, value, options);
 
   return response;
 }

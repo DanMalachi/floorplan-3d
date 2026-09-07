@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import { FIXTURE_CATALOG, type FixtureAsset, type FixtureCategory } from "@/fixtures/catalog";
 import { PD, pdChip } from "@/ui/planDock/tokens";
@@ -48,6 +49,12 @@ function CategoryChip({
  *  reads as one system with Furniture/Paint/Floors instead of a leftover
  *  pre-overhaul component. */
 function FixtureTile({ asset }: { asset: FixtureAsset }) {
+  // Reads the catalogue's `nameKey`, never its `name`. `name` stays on the
+  // asset as the English fallback for consumers that cannot translate; these
+  // three are generic descriptions ("Pendant light"), not product nouns, which
+  // is the line that decides whether a catalogue string moves.
+  const t = useTranslations("editor");
+  const name = t(`inspector.fixture.names.${asset.nameKey}`);
   const placing = useSceneStore((s) => s.placing);
   const active = placing?.assetId === asset.assetId;
   const [hovered, hoverBind] = useHover();
@@ -101,12 +108,12 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
           maxWidth: "100%",
         }}
       >
-        {asset.name}
+        {name}
       </span>
     </button>
   );
   return (
-    <Tooltip label={asset.name} placement="bottom">
+    <Tooltip label={name} placement="bottom">
       {tile}
     </Tooltip>
   );
@@ -118,6 +125,7 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
  *  fine against the new dark backdrop but didn't match Furniture/Paint/Floors
  *  as one system. */
 export function FixtureCatalog() {
+  const t = useTranslations("editor.lighting");
   const placing = useSceneStore((s) => s.placing);
   const [activeCategory, setActiveCategory] = useState<FixtureCategory | null>(null);
   const items = useMemo(
@@ -128,16 +136,19 @@ export function FixtureCatalog() {
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
         <CategoryChip active={activeCategory === null} onClick={() => setActiveCategory(null)}>
-          All
+          {t("filterAll")}
         </CategoryChip>
+        {/* `c` is the stored FixtureCategory — an identifier that happens to be
+            a word, so it filters on the value and only the LABEL is looked up.
+            Translating the value itself would break every saved scene. */}
         {CATEGORIES.map((c) => (
           <CategoryChip key={c} active={activeCategory === c} onClick={() => setActiveCategory(c)}>
-            {c}
+            {t(`filter${c}`)}
           </CategoryChip>
         ))}
         {placing && (
           <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-            Click to place · R rotates · Esc done
+            {t("placeHint")}
           </span>
         )}
       </div>

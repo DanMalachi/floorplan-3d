@@ -14,6 +14,7 @@ import { PerfRig } from "@/render/perf/PerfRig";
 import { PerfHud } from "@/render/perf/PerfHud";
 import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { RoomLights } from "@/render/RoomLights";
+import { useTranslations } from "next-intl";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
@@ -131,26 +132,31 @@ function DragVizLayer({ cx, cz, span }: { cx: number; cz: number; span: number }
   );
 }
 
-const WALL_MODES: { id: WallViewMode; label: string }[] = [
-  { id: "full", label: "Full" },
-  { id: "cutaway", label: "Cutaway" },
-  { id: "top", label: "Top" },
+// `labelKey` rather than `label`: these are MODULE SCOPE, and a module cannot
+// call `useTranslations()` — the hook only exists inside a component. The id is
+// what the store compares on and does not move; only the word does, out to the
+// catalogue and back at the render site. Same shape as `NavItem.labelKey`
+// (src/landing/nav.ts) and `ALL_MODES` (design/page.tsx).
+const WALL_MODES: { id: WallViewMode; labelKey: string }[] = [
+  { id: "full", labelKey: "full" },
+  { id: "cutaway", labelKey: "cutaway" },
+  { id: "top", labelKey: "top" },
 ];
 
-const ENV_PRESETS: { id: EnvPreset; label: string }[] = [
-  { id: "none", label: "Studio" },
-  { id: "suburb", label: "Suburb" },
-  { id: "city", label: "City" },
+const ENV_PRESETS: { id: EnvPreset; labelKey: string }[] = [
+  { id: "none", labelKey: "none" },
+  { id: "suburb", labelKey: "suburb" },
+  { id: "city", labelKey: "city" },
 ];
 
 // `label` is the word and nothing else. The weather emoji used to be baked into
 // the label string itself (`"<rain emoji> Rain"`), which made the label
 // untranslatable and un-restylable at once — the icon is a separate field now,
 // so the render site draws it and the label stays a word.
-const WEATHERS: { id: Weather; label: string; Icon: (p: { size?: number }) => React.ReactElement }[] = [
-  { id: "clear", label: "Clear", Icon: SunIcon },
-  { id: "cloudy", label: "Cloudy", Icon: CloudIcon },
-  { id: "rain", label: "Rain", Icon: RainIcon },
+const WEATHERS: { id: Weather; labelKey: string; Icon: (p: { size?: number }) => React.ReactElement }[] = [
+  { id: "clear", labelKey: "clear", Icon: SunIcon },
+  { id: "cloudy", labelKey: "cloudy", Icon: CloudIcon },
+  { id: "rain", labelKey: "rain", Icon: RainIcon },
 ];
 
 /** A chip button in Viewport's own panels, with hover. `useHover` is a hook, so
@@ -204,6 +210,7 @@ function fmtHour(t: number): string {
 
 /** Scene panel (View mode): environment preset + a fun time-of-day slider. */
 function ScenePanel() {
+  const t = useTranslations("editor");
   const preset = useSceneStore((s) => s.envPreset);
   const setEnvPreset = useSceneStore((s) => s.setEnvPreset);
   const time = useSceneStore((s) => s.timeOfDay);
@@ -214,8 +221,8 @@ function ScenePanel() {
   const setWalkthroughActive = useSceneStore((s) => s.setWalkthroughActive);
   const DayNightIcon = time >= 6 && time < 19 ? SunIcon : MoonIcon;
   return (
-    <div style={{ position: "absolute", left: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...pdGlass() }}>
-      <div style={{ fontWeight: 600, fontSize: 13 }}>Scene</div>
+    <div style={{ position: "absolute", insetInlineStart: 14, top: 112, width: 216, display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", ...pdGlass() }}>
+      <div style={{ fontWeight: 600, fontSize: 13 }}>{t("scene")}</div>
       <PanelChip
         active={walkthroughActive}
         onClick={() => setWalkthroughActive(!walkthroughActive)}
@@ -231,10 +238,10 @@ function ScenePanel() {
         }}
       >
         {walkthroughActive ? (
-          "Exit walkthrough (Esc)"
+          t("exitWalkthrough")
         ) : (
           <>
-            <WalkIcon size={14} /> Walk through
+            <WalkIcon size={14} /> {t("walkThrough")}
           </>
         )}
       </PanelChip>
@@ -250,7 +257,7 @@ function ScenePanel() {
             // why Dan read this panel as belonging to a different app.
             extra={{ flex: 1, fontSize: 11.5, borderRadius: 999 }}
           >
-            {p.label}
+            {t(`envPresets.${p.labelKey}`)}
           </PanelChip>
         ))}
       </div>
@@ -260,7 +267,7 @@ function ScenePanel() {
             flex item that is meant to stretch — and the icon is where the eye
             goes when the slider looks disabled anyway. */}
         {preset === "none" ? (
-          <Tooltip label="Time of day has no effect in the Studio preset">
+          <Tooltip label={t("timeOfDayNoEffect")}>
             <span style={{ lineHeight: 0, color: PD.textSecondary }}>
               <DayNightIcon size={16} />
             </span>
@@ -299,7 +306,7 @@ function ScenePanel() {
                 padding: "5px 6px",
               }}
             >
-              <w.Icon size={12} /> {w.label}
+              <w.Icon size={12} /> {t(`weather.${w.labelKey}`)}
             </PanelChip>
           ))}
         </div>
@@ -310,6 +317,7 @@ function ScenePanel() {
 
 /** Sims wall-view control: Full / Cutaway / Top, plus a Ceilings toggle. */
 function WallModeToggle() {
+  const t = useTranslations("editor");
   const wallMode = useSceneStore((s) => s.wallMode);
   const setWallMode = useSceneStore((s) => s.setWallMode);
   const showCeilings = useSceneStore((s) => s.showCeilings);
@@ -318,7 +326,7 @@ function WallModeToggle() {
     <div
       style={{
         position: "absolute",
-        left: 14,
+        insetInlineStart: 14,
         top: 64,
         display: "flex",
         gap: 3,
@@ -333,13 +341,13 @@ function WallModeToggle() {
           extra={{ borderRadius: 999, border: "none", fontSize: 11.5 }}
           onClick={() => setWallMode(m.id)}
         >
-          {m.label}
+          {t(`wallModes.${m.labelKey}`)}
         </PanelChip>
       ))}
       <span style={{ width: 1, alignSelf: "stretch", margin: "3px 2px", background: PD.hairline }} />
       <PanelChip
         active={showCeilings}
-        tip="Show ceilings (Full view only)"
+        tip={t("showCeilings")}
         extra={{
           borderRadius: 999,
           border: "none",
@@ -348,7 +356,7 @@ function WallModeToggle() {
         }}
         onClick={() => setShowCeilings(!showCeilings)}
       >
-        Ceiling
+        {t("ceiling")}
       </PanelChip>
     </div>
   );
@@ -356,6 +364,7 @@ function WallModeToggle() {
 
 /** Selection + undo status pill. */
 function StatusOverlay() {
+  const t = useTranslations("editor");
   const sel3d = useSceneStore((s) => s.sel3d);
   const past = useSceneStore((s) => s.scenePast.length);
   const future = useSceneStore((s) => s.sceneFuture.length);
@@ -364,8 +373,24 @@ function StatusOverlay() {
     <div
       style={{
         position: "absolute",
-        left: 14,
-        bottom: 14,
+        insetInlineStart: 14,
+        // Above the Plan Dock's corner panel, not under it. This pill renders
+        // ONLY in build and furnish (see the call site) — and those are exactly
+        // the two modes where a 208x224 panel is pinned to this same corner:
+        // BuildNavigator.tsx:74 in build, BottomDock.tsx:403's NavigatorPanel in
+        // furnish, both at `insetInlineStart: 16, bottom: 16`. At the old
+        // `bottom: 14` the overlap measured 208x31 — 72% of the pill — in both
+        // locales and both modes, and since both boxes are `z-index: auto` with
+        // the same stacking parent, DOM order decided it and the panel won. So
+        // the pill was never once fully visible in either mode it exists in.
+        //
+        // 16 + 224 + 10 clearance. The one case this does not cover: in furnish
+        // the item dock beside the navigator is resizable, and the pill is
+        // ~272px wide against a 226px leading column, so dragging that dock
+        // above ~234px tall reaches the pill's trailing end again. Left as is
+        // rather than coupling this file to the dock's height — that is exactly
+        // the cross-layer reach this tree is protected from.
+        bottom: 250,
         padding: "7px 12px",
         fontSize: 12,
         pointerEvents: "none",
@@ -376,13 +401,13 @@ function StatusOverlay() {
     >
       {sel3d ? (
         <span style={{ color: PD.accent }}>
-          {sel3d.kind} selected — drag to move, Delete removes, Esc deselects
+          {t("selectedHint", { kind: t(`kinds.${sel3d.kind}`) })}
         </span>
       ) : (
-        <span style={{ color: PD.textSecondary }}>nothing selected</span>
+        <span style={{ color: PD.textSecondary }}>{t("nothingSelected")}</span>
       )}
       <span style={{ color: PD.textTertiary }}>
-        ⌘Z undo ({past}) · ⌘Y redo ({future})
+        {t("undoRedo", { past, future })}
       </span>
     </div>
   );

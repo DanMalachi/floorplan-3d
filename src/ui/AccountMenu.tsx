@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
+import { Link } from "@/i18n/navigation";
 
 // -----------------------------------------------------------------------------
 // The account control, top-right next to the theme toggle.
@@ -20,6 +22,7 @@ import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 const SIZE = 30;
 
 export function AccountMenu() {
+  const t = useTranslations("editor.chrome");
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -64,7 +67,7 @@ export function AccountMenu() {
       <div style={{ position: "relative" }}>
         {/* `placement="bottom"`: this control sits in the top-right chrome, so a
             tooltip above it would be clipped off the top of the window. */}
-        <Tooltip label="Sign in so your projects follow you to any computer" placement="bottom">
+        <Tooltip label={t("accountMenu.signInTooltip")} placement="bottom">
           <button
             onClick={() => {
               setAuthError(null);
@@ -93,7 +96,7 @@ export function AccountMenu() {
             }}
           >
             <GoogleMark />
-            {busy ? "Opening…" : "Sign in"}
+            {busy ? t("accountMenu.signInOpening") : t("accountMenu.signIn")}
           </button>
         </Tooltip>
         {authError && (
@@ -102,7 +105,12 @@ export function AccountMenu() {
             style={{
               position: "absolute",
               top: SIZE + 14,
-              right: 0,
+              // Anchored to the button's TRAILING edge, so it opens back across
+              // the screen rather than off it. Physical `right: 0` was correct
+              // only while the button sat at the right of an LTR window; in
+              // Hebrew the whole cluster is on the left and a right-anchored
+              // panel would hang past the viewport edge.
+              insetInlineEnd: 0,
               maxWidth: 300,
               padding: "8px 11px",
               fontSize: 11.5,
@@ -114,7 +122,7 @@ export function AccountMenu() {
               zIndex: 40,
             }}
           >
-            Sign-in failed: {authError}
+            {t("accountMenu.signInFailed", { error: authError })}
           </div>
         )}
       </div>
@@ -161,7 +169,7 @@ export function AccountMenu() {
           style={{
             position: "absolute",
             top: SIZE + 14,
-            right: 0,
+            insetInlineEnd: 0, // trailing edge — see the note on the error panel above
             minWidth: 208,
             padding: 6,
             zIndex: 40,
@@ -185,13 +193,13 @@ export function AccountMenu() {
               </div>
             )}
             <div style={{ fontSize: 11, color: PD.textTertiary, fontFamily: PD.fontUi, marginTop: 8 }}>
-              Your plans are saved to this account.
+              {t("accountMenu.savedToAccount")}
             </div>
           </div>
           {/* The data page (export + account deletion). Reachable from here
               because a right-to-erasure control nobody can find is not one. */}
           <MenuRow href="/account" onSelect={() => setOpen(false)}>
-            Your data
+            {t("accountMenu.yourData")}
           </MenuRow>
           <MenuRow
             onSelect={() => {
@@ -199,7 +207,7 @@ export function AccountMenu() {
               void signOut();
             }}
           >
-            Sign out
+            {t("accountMenu.signOut")}
           </MenuRow>
         </div>
       )}
@@ -224,7 +232,7 @@ function MenuRow({
   const style: React.CSSProperties = {
     display: "block",
     width: href ? undefined : "100%",
-    textAlign: "left",
+    textAlign: "start",
     padding: "8px 10px",
     marginBottom: 4,
     fontSize: 12.5,
@@ -238,9 +246,9 @@ function MenuRow({
     transition: "background 140ms ease, color 140ms ease",
   };
   return href ? (
-    <a href={href} onClick={onSelect} {...hoverBind} style={style}>
+    <Link href={href} onClick={onSelect} {...hoverBind} style={style}>
       {children}
-    </a>
+    </Link>
   ) : (
     <button onClick={onSelect} {...hoverBind} style={style}>
       {children}

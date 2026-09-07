@@ -52,7 +52,7 @@ function basin(w: number, d: number, depth: number, mat: THREE.Material): THREE.
 
 export const sinkGenerator: GeneratorDef = {
   id: "sink",
-  label: "Sink",
+  labelKey: "sink.label",
   category: "Kitchen",
   rooms: ["kitchen"],
   wallSnap: false,
@@ -65,7 +65,7 @@ export const sinkGenerator: GeneratorDef = {
   }),
   defaultElevation: 0.84, // fallback only — attached items derive from their host
   dimLimits: { w: [0.45, 1.2], d: [0.44, 0.52], h: [0.02, 0.02] },
-  modules: [{ key: "bowls", label: "Bowls", min: 1, max: 2, default: 1 }],
+  modules: [{ key: "bowls", labelKey: "sink.modules.bowls.label", min: 1, max: 2, default: 1 }],
   fronts: ["slab"],
   handles: ["none"],
   finishes: ["steel"],

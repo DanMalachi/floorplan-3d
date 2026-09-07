@@ -8,10 +8,12 @@ import type { RoomHotspot } from "./KitchenScene";
 // bar STOOL in the catalog and showed them as tool racks. IKEA also spells
 // the item type "work bench", not "workbench".
 export const GARAGE_HOTSPOTS: RoomHotspot[] = [
-  { id: "workbench", label: "Workbench", keywords: ["workbench", "work bench"] },
-  { id: "tools", label: "Tool rack", keywords: ["tool rack", "tool cabinet", "tool chest", "pegboard"] },
-  { id: "shelving", label: "Shelving", keywords: ["shelving", "shelf", "rack with hooks", "metal rack"] },
+  { id: "workbench", labelKey: "garage.workbench", keywords: ["workbench", "work bench"] },
+  { id: "tools", labelKey: "garage.tools", keywords: ["tool rack", "tool cabinet", "tool chest", "pegboard"] },
+  { id: "shelving", labelKey: "garage.shelving", keywords: ["shelving", "shelf", "rack with hooks", "metal rack"] },
 ];
+
+const lbl = (id: string) => GARAGE_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const GARAGE_X0 = 20;
 export const GARAGE_WIDTH = 170;
@@ -36,11 +38,11 @@ function GarageItems(): RoomItem[] {
   const shelfBox = isoBox(120, ITEMS_Y, 34, 48, 16);
 
   return [
-    { id: "workbench", label: "Workbench", keywords: GARAGE_HOTSPOTS[0].keywords, box: benchBox, art: <TableWithLegs x={20} yFront={ITEMS_Y} w={44} depth={22} topH={3} legH={16} /> },
-    { id: "tools", label: "Tool rack", keywords: GARAGE_HOTSPOTS[1].keywords, box: toolBox, art: <ToolRack x={78} yFront={ITEMS_Y} w={32} /> },
+    { id: "workbench", labelKey: lbl("workbench"), keywords: GARAGE_HOTSPOTS[0].keywords, box: benchBox, art: <TableWithLegs x={20} yFront={ITEMS_Y} w={44} depth={22} topH={3} legH={16} /> },
+    { id: "tools", labelKey: lbl("tools"), keywords: GARAGE_HOTSPOTS[1].keywords, box: toolBox, art: <ToolRack x={78} yFront={ITEMS_Y} w={32} /> },
     {
       id: "shelving",
-      label: "Shelving",
+      labelKey: lbl("shelving"),
       keywords: GARAGE_HOTSPOTS[2].keywords,
       box: shelfBox,
       art: (

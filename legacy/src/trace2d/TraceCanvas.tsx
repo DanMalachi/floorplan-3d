@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import type Konva from "konva";
-import { Circle, Group, Image as KImage, Layer, Line, Shape, Stage, Text } from "react-konva";
+import { Circle, Group, Image as KImage, Layer, Line, Shape, Stage } from "react-konva";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { ImportSegment, TraceStair } from "./types";
 import type { Stair } from "@/schema/scene";
@@ -241,6 +242,7 @@ type Target =
   | { kind: "free"; point: { x: number; y: number }; snapped?: boolean };
 
 export default function TraceCanvas() {
+  const t = useTranslations("editor.trace");
   const { ref, size } = useContainerSize();
   const groupRef = useRef<Konva.Group>(null);
   const shiftRef = useRef(false);
@@ -655,16 +657,6 @@ export default function TraceCanvas() {
               />
             )}
 
-            {!image && (
-              <Text
-                x={20 - offsetX}
-                y={20 - offsetY}
-                text="Upload a floor plan to trace over (or just start clicking to place wall points)."
-                fontSize={16}
-                fill="#888"
-              />
-            )}
-
             {/* Imported CAD (DXF/DWG) overlay: every parsed segment, by stroke color */}
             {showImport && importedSegments.length > 0 && (
               <Shape
@@ -956,19 +948,19 @@ export default function TraceCanvas() {
           style={{
             position: "absolute",
             top: 8,
-            right: 8,
+            insetInlineEnd: 8,
             display: "flex",
             flexDirection: "column",
             gap: 4,
           }}
         >
-          <ZoomButton tip="Zoom in" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.2)}>
+          <ZoomButton tip={t("zoom.in")} onClick={() => zoomAt(size.w / 2, size.h / 2, 1.2)}>
             <PlusIcon size={15} />
           </ZoomButton>
-          <ZoomButton tip="Zoom out" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.2)}>
+          <ZoomButton tip={t("zoom.out")} onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.2)}>
             <MinusIcon size={15} />
           </ZoomButton>
-          <ZoomButton tip="Reset view (fit)" onClick={() => setView(null)}>
+          <ZoomButton tip={t("zoom.reset")} onClick={() => setView(null)}>
             <FitIcon size={15} />
           </ZoomButton>
         </div>

@@ -16,6 +16,7 @@
 // gone or has its own fallback, and the room you are pointing at is already
 // identified by being highlighted in the viewport.
 
+import { useTranslations } from "next-intl";
 import type { Room } from "@/schema/scene";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -25,6 +26,7 @@ import { PD } from "../tokens";
 import { pdInspectorPanel, PdSectionTitle, PdHelpText, PdNumField } from "./panelKit";
 
 export function RoomSection({ room }: { room: Room }) {
+  const t = useTranslations("editor.inspector.room");
   const scene = useSceneStore((s) => s.scene);
   const nodes = nodeMap(scene.nodes);
   const area = roomArea(room.loop, nodes);
@@ -46,14 +48,16 @@ export function RoomSection({ room }: { room: Room }) {
     <div style={pdInspectorPanel}>
       <PdSectionTitle label={`${w.toFixed(2)} × ${h.toFixed(2)} m`} meta={`${area.toFixed(1)} m²`} />
       <PdNumField
-        label="Ceiling height"
+        label={t("ceilingHeight")}
         value={room.ceilingHeight ?? derivedCeilingHeight}
         onCommit={(v) => setCeilingHeight(Math.min(6, Math.max(2, v)))}
         displayScale={100}
         unit="cm"
       />
       <PdHelpText>
-        Change the floor in <b style={{ color: PD.textSecondary, fontWeight: 600 }}>Decorate</b>: pick a material, click the floor.
+        {t.rich("floorHelp", {
+          b: (chunks) => <b style={{ color: PD.textSecondary, fontWeight: 600 }}>{chunks}</b>,
+        })}
       </PdHelpText>
     </div>
   );

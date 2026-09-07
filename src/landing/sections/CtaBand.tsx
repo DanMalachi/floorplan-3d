@@ -1,15 +1,16 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty, section, ctaPrimary, ctaGhost } from "@/brand/tokens";
 import { APP_HREF } from "../nav";
 import { CTA_CLASS, CTA_GHOST_CLASS } from "../hoverCss";
-import { CTA_BAND } from "../content";
+import { landingContent } from "../content";
 
 /**
  * The closing call to action, on its own band — background one step up from
  * the page ground (`B.canvas`, same convention `section()` is named for) so
  * it reads as a stop rather than another paragraph.
  */
-export function CtaBand() {
+export function CtaBand({ locale }: { locale: string }) {
+  const { ctaBand, openApp } = landingContent(locale);
   return (
     <section style={{ background: B.canvas, borderTop: `1px solid ${B.hairline}` }}>
       <div
@@ -33,7 +34,7 @@ export function CtaBand() {
             color: B.ink,
           }}
         >
-          {CTA_BAND.title}
+          {ctaBand.title}
         </h2>
         <p
           style={{
@@ -45,14 +46,14 @@ export function CtaBand() {
             color: B.ink2,
           }}
         >
-          {CTA_BAND.subhead}
+          {ctaBand.subhead}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", marginTop: 8 }}>
           <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary()}>
-            {CTA_BAND.ctaPrimaryLabel}
+            {openApp}
           </Link>
           <Link href="/faq" className={CTA_GHOST_CLASS} style={ctaGhost()}>
-            {CTA_BAND.ctaGhostLabel}
+            {ctaBand.ctaGhostLabel}
           </Link>
         </div>
       </div>

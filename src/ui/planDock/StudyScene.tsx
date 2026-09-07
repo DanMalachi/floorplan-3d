@@ -4,19 +4,21 @@ import { isoBox, Extrusion, TableWithLegs, ShelfLines, Plant, Rug, WallTv, ArtLe
 import type { RoomHotspot } from "./KitchenScene";
 
 export const STUDY_HOTSPOTS: RoomHotspot[] = [
-  { id: "desk", label: "Desk", keywords: ["desk"] },
+  { id: "desk", labelKey: "study.desk", keywords: ["desk"] },
   // "sofa"/"couch" included so the custom sofa generator, which is tagged for
   // the study, is reachable from a button — a study armchair or two-seater is
   // the same choice a user is making here.
-  { id: "chair", label: "Chair & sofa", keywords: ["chair", "sofa", "couch"] },
-  { id: "bookcase", label: "Bookcase", keywords: ["bookcase"] },
-  { id: "decor", label: "Lamp & decor", keywords: ["lamp", "plant"] },
+  { id: "chair", labelKey: "study.chair", keywords: ["chair", "sofa", "couch"] },
+  { id: "bookcase", labelKey: "study.bookcase", keywords: ["bookcase"] },
+  { id: "decor", labelKey: "study.decor", keywords: ["lamp", "plant"] },
   // Wide roll-out.
-  { id: "rug", label: "Rug", keywords: ["rug", "carpet", "mat"] },
-  { id: "tv", label: "TV", keywords: ["tv", "television"] },
-  { id: "art", label: "Wall art", keywords: ["wall art", "artwork", "picture", "poster"] },
-  { id: "clock", label: "Clock", keywords: ["clock"] },
+  { id: "rug", labelKey: "study.rug", keywords: ["rug", "carpet", "mat"] },
+  { id: "tv", labelKey: "study.tv", keywords: ["tv", "television"] },
+  { id: "art", labelKey: "study.art", keywords: ["wall art", "artwork", "picture", "poster"] },
+  { id: "clock", labelKey: "study.clock", keywords: ["clock"] },
 ];
+
+const lbl = (id: string) => STUDY_HOTSPOTS.find((h) => h.id === id)!.labelKey;
 
 export const STUDY_X0 = 14;
 export const STUDY_WIDTH = 170;
@@ -62,11 +64,11 @@ function StudyItems(): RoomItem[] {
   const clockBox = isoBox(128, 86, 18, 18, 2);
 
   return [
-    { id: "desk", label: "Desk", keywords: STUDY_HOTSPOTS[0].keywords, box: deskBox, art: <DeskWithMonitor x={14} yFront={ITEMS_Y} w={46} depth={24} /> },
-    { id: "chair", label: "Chair", keywords: STUDY_HOTSPOTS[1].keywords, box: chairBox, art: <StudyChair x={66} yFront={ITEMS_Y} /> },
+    { id: "desk", labelKey: lbl("desk"), keywords: STUDY_HOTSPOTS[0].keywords, box: deskBox, art: <DeskWithMonitor x={14} yFront={ITEMS_Y} w={46} depth={24} /> },
+    { id: "chair", labelKey: lbl("chair"), keywords: STUDY_HOTSPOTS[1].keywords, box: chairBox, art: <StudyChair x={66} yFront={ITEMS_Y} /> },
     {
       id: "bookcase",
-      label: "Bookcase",
+      labelKey: lbl("bookcase"),
       keywords: STUDY_HOTSPOTS[2].keywords,
       box: bookcaseBox,
       art: (
@@ -76,11 +78,11 @@ function StudyItems(): RoomItem[] {
         </>
       ),
     },
-    { id: "decor", label: "Lamp & decor", keywords: STUDY_HOTSPOTS[3].keywords, box: decorBox, art: <Plant x={138} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
-    { id: "rug", label: "Rug", keywords: STUDY_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
-    { id: "tv", label: "TV", keywords: STUDY_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
-    { id: "art", label: "Wall art", keywords: STUDY_HOTSPOTS[6].keywords, box: artBox, art: <ArtLedge x={18} yTop={72} w={40} h={26} /> },
-    { id: "clock", label: "Clock", keywords: STUDY_HOTSPOTS[7].keywords, box: clockBox, art: <WallClockArt cx={137} cy={77} r={9} /> },
+    { id: "decor", labelKey: lbl("decor"), keywords: STUDY_HOTSPOTS[3].keywords, box: decorBox, art: <Plant x={138} yFront={ITEMS_Y + 6} r={5} potH={7} canopyR={8} /> },
+    { id: "rug", labelKey: lbl("rug"), keywords: STUDY_HOTSPOTS[4].keywords, box: rugBox, art: <Rug x={52} yFront={FLOOR_Y - 10} w={64} depth={26} /> },
+    { id: "tv", labelKey: lbl("tv"), keywords: STUDY_HOTSPOTS[5].keywords, box: wallTvBox, art: <WallTv box={wallTvBox} /> },
+    { id: "art", labelKey: lbl("art"), keywords: STUDY_HOTSPOTS[6].keywords, box: artBox, art: <ArtLedge x={18} yTop={72} w={40} h={26} /> },
+    { id: "clock", labelKey: lbl("clock"), keywords: STUDY_HOTSPOTS[7].keywords, box: clockBox, art: <WallClockArt cx={137} cy={77} r={9} /> },
   ];
 }
 

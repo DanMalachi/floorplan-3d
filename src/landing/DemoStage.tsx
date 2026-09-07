@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Viewport } from "@/viewport3d/Viewport";
 import { useSceneStore, type StoreState } from "@/store/useSceneStore";
 import { frameColorPatch } from "@/render/frameFinish";
@@ -20,7 +20,8 @@ import { TraceOverlay, PLAN_TEXT_CSS } from "./TraceOverlay";
 import type { HeroStage } from "./heroSequence";
 import { APP_HREF } from "./nav";
 import { CTA_CLASS } from "./hoverCss";
-import { HERO } from "./content";
+import { useLocale, useTranslations } from "next-intl";
+import { landingContent } from "./content";
 
 // -----------------------------------------------------------------------------
 // Everything heavy about the hero demo, isolated behind one dynamic import.
@@ -109,19 +110,22 @@ const WARM_K = 2400;
  *  Each carries its OWN texture as the swatch, served from the same directory
  *  the renderer loads the material from — so the chip is a picture of the thing
  *  it applies, and cannot drift from it the way a hand-picked hex would. */
+// `labelKey` names a "demo" message key rather than spelling the label in
+// English here — this array sits at module scope so it cannot call
+// `useTranslations` itself; the row that renders it looks the string up.
 const FLOORS = [
-  { id: "wood-chevron", label: "Chevron" },
-  { id: "wood-oak-natural", label: "Oak" },
-  { id: "concrete-light", label: "Concrete" },
+  { id: "wood-chevron", labelKey: "floorChevron" },
+  { id: "wood-oak-natural", labelKey: "floorOak" },
+  { id: "concrete-light", labelKey: "floorConcrete" },
 ] as const;
 
 /** Window frame colours. These are the three a real buyer actually chooses
  *  between, and they carry their own swatch — a named colour with no chip is a
  *  guess until you click it. */
 const FRAMES = [
-  { hex: "#1C1D1F", label: "Black" },
-  { hex: "#8B8E92", label: "Grey" },
-  { hex: "#EDEDEA", label: "White" },
+  { hex: "#1C1D1F", labelKey: "frameBlack" },
+  { hex: "#8B8E92", labelKey: "frameGrey" },
+  { hex: "#EDEDEA", labelKey: "frameWhite" },
 ] as const;
 
 // Tied to the hero scene rather than re-stated, so the control panel opening
@@ -291,6 +295,7 @@ function ControlRow({ label, children }: { label: string; children: ReactNode })
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <span style={microLabel()}>{label}</span>
       <div
+        className={ROW_CLASS}
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(auto-fit, minmax(${OPTION_MIN_PX}px, 1fr))`,
@@ -317,6 +322,7 @@ const OPTION_MIN_PX = 104;
  * stack on a marketing page.
  */
 function DemoControls({ dimmed }: { dimmed: boolean }) {
+  const t = useTranslations("demo");
   const wallMode = useSceneStore((s) => s.wallMode);
   const setWallMode = useSceneStore((s) => s.setWallMode);
   const fixtures = useSceneStore((s) => s.scene.fixtures);
@@ -380,36 +386,36 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
        late would grow the row and shove the page down at the exact moment the
        visitor is watching the reveal. */
     <div className={`${PANEL_CLASS}${dimmed ? " is-dimmed" : ""}`} inert={dimmed || undefined}>
-      <ControlRow label="Walls">
+      <ControlRow label={t("rowWalls")}>
         <ControlButton
-          label="Solid"
+          label={t("wallsSolid")}
           icon={<IconSolid />}
           active={wallMode === "full"}
           onClick={() => setWalls("full")}
         />
         <ControlButton
-          label="See through"
+          label={t("wallsSeeThrough")}
           icon={<IconSeeThrough />}
           active={wallMode === "cutaway"}
           onClick={() => setWalls("cutaway")}
         />
       </ControlRow>
 
-      <ControlRow label="Lighting">
+      <ControlRow label={t("rowLighting")}>
         <ControlButton
-          label="White"
+          label={t("lightWhite")}
           icon={<IconWhiteLight />}
           active={!warm}
           onClick={() => setLightK(WHITE_K)}
         />
-        <ControlButton label="Warm" icon={<IconWarmLight />} active={warm} onClick={() => setLightK(WARM_K)} />
+        <ControlButton label={t("lightWarm")} icon={<IconWarmLight />} active={warm} onClick={() => setLightK(WARM_K)} />
       </ControlRow>
 
-      <ControlRow label="Floor">
+      <ControlRow label={t("rowFloor")}>
         {FLOORS.map((f) => (
           <ControlButton
             key={f.id}
-            label={f.label}
+            label={t(f.labelKey)}
             swatch={{ image: `/materials/floors/${f.id}/thumb.webp` }}
             active={floor === f.id}
             onClick={() => setFloor(f.id)}
@@ -417,11 +423,11 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
         ))}
       </ControlRow>
 
-      <ControlRow label="Windows">
+      <ControlRow label={t("rowWindows")}>
         {FRAMES.map((f) => (
           <ControlButton
             key={f.hex}
-            label={f.label}
+            label={t(f.labelKey)}
             swatch={{ color: f.hex }}
             active={frame.toLowerCase() === f.hex.toLowerCase()}
             onClick={() => setFrame(f.hex)}
@@ -439,12 +445,21 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
  * The hint is not decoration. Drag is the ONLY camera gesture left — the wheel
  * and every touch gesture are deliberately dead (AutoOrbitRig.tsx) — and an
  * affordance nobody can see is the same as one that isn't there.
+ *
+ * The same sentence is why the hint carries a class and is dropped on touch
+ * (STAGE_CSS). `controls.touches.one/two/three` are all `ACTION.NONE`, so on a
+ * phone "Drag to orbit" instructs the visitor to do the one thing that has been
+ * deliberately disabled — and it was doing it in the largest object on a canvas
+ * that had no room to spare. The pause control stays: the orbit still runs
+ * there, so stopping it is still a thing you can want.
  */
 function DemoToolbar() {
+  const t = useTranslations("demo");
   const playing = useSyncExternalStore(subscribeOrbitPlaying, getOrbitPlaying, getOrbitPlayingServer);
   return (
     <div className={TOOLBAR_CLASS}>
       <span
+        className={HINT_CLASS}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -455,11 +470,11 @@ function DemoToolbar() {
         }}
       >
         <IconDrag />
-        Drag to orbit
+        {t("dragToOrbit")}
       </span>
       <button
         onClick={() => setOrbitPlaying(!playing)}
-        aria-label={playing ? "Pause the orbit" : "Resume the orbit"}
+        aria-label={playing ? t("pauseOrbit") : t("resumeOrbit")}
         className={BTN_CLASS}
         style={{
           display: "flex",
@@ -651,6 +666,9 @@ export default function DemoStage({
   // A remount is a new component instance, so this runs again then; there is no
   // separate cleanup or re-seed path to keep in sync. Nothing is restored on
   // unmount, since the marketing page never shares a session with the editor.
+  const locale = useLocale();
+  const t = useTranslations("demo");
+
   const priorSlice = useState(() => seedDemoScene(!reduced))[0];
 
   // PUT THE STORE BACK. This file writes the hero's apartment into the SAME
@@ -759,7 +777,7 @@ export default function DemoStage({
           <i style={{ background: "#FEBC2E" }} />
           <i style={{ background: "#28C840" }} />
         </span>
-        <span className={TITLE_CLASS}>Studio apartment</span>
+        <span className={TITLE_CLASS}>{t("windowTitle")}</span>
       </div>
       <div className={BODY_CLASS}>
         <div className={STAGE_CLASS}>
@@ -787,7 +805,7 @@ export default function DemoStage({
         {built && <DemoToolbar />}
         {built && (
           <Link href={APP_HREF} className={`${REVEAL_CLASS} ${CTA_CLASS}`} style={ctaPrimary()}>
-            {HERO.revealCta}
+            {landingContent(locale).openApp}
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
@@ -806,29 +824,33 @@ const TOOLBAR_CLASS = "done-demo-toolbar";
 const BTN_CLASS = "done-demo-btn";
 const CANVAS_FADE_CLASS = "done-demo-canvas-fade";
 const REVEAL_CLASS = "done-demo-reveal";
+const ROW_CLASS = "done-demo-row";
+const HINT_CLASS = "done-demo-hint";
 const WINDOW_CLASS = "done-demo-window";
 const TITLEBAR_CLASS = "done-demo-titlebar";
 const LIGHTS_CLASS = "done-demo-lights";
 const TITLE_CLASS = "done-demo-title";
 const BODY_CLASS = "done-demo-body";
 
-/* ── Why the canvas is MASKED rather than colour-matched ─────────────────────
-   The room has to float on the page with no rectangle around it, and the canvas
-   cannot simply BE the page's colour: `src/render/contract.ts` sets
+/* ── Why the canvas is no longer MASKED ──────────────────────────────────────
+   HISTORICAL, kept because the reasoning is easy to rediscover and re-apply by
+   mistake. The room used to float on the page with no rectangle around it, and
+   the canvas cannot simply BE the page's colour: `src/render/contract.ts` sets
    `alpha: false` on the GL context, and the composer tone-maps the background,
    so what lands on screen is never exactly the hex the source names. Chasing
-   that with a matching page colour is what left a visible box.
+   that with a matching page colour left a visible box, and fading the canvas's
+   own edges to transparent was the only exact answer — there is no colour to
+   match.
 
-   So the canvas's own edges are masked to transparent and the page shows
-   through. That is exact by construction — there is no colour to match — and it
-   survives any change to the tone mapping, the studio background or the brand
-   ground. Two linear gradients composited with `intersect` give a soft-edged
-   rectangle; a browser without `mask-composite` applies the vertical ramp
-   alone, which is no worse than the DOM overlay this replaced.
+   The window frame retired all of that: a crisp rectangle of darker ground is
+   what an application's 3D view looks like, and a canvas whose edges dissolve
+   inside a frame reads as a smudge. Radius plus overflow:hidden replaced it.
 
-   The horizontal inset is smaller than the vertical because the room is framed
-   to fill the column: fading 6% from each side stays clear of the model, while
-   a heavier ramp would start dimming the walls themselves.
+   The mask outlived that decision in the `max-width: 900px` block for two days
+   and was, on a phone, the single most visible defect in the hero — a 22px ramp
+   across the top of a 277px canvas, which reads as the room being cut off
+   rather than as a soft edge. If you find yourself reaching for a mask again,
+   the question to ask first is whether the canvas still has a frame around it.
 
    `touch-action: pan-y` is NOT redundant with the dead touch map. Enabling
    camera-controls writes `touch-action: none` onto the canvas element itself
@@ -988,22 +1010,101 @@ ${PLAN_TEXT_CSS}
 
 /* Stacked, model first. Below this width the panel beside the room would be too
    narrow for a three-option row to hold its labels, and the room too narrow to
-   be legible at all. The side masks go with it: at this size the canvas spans
-   the full viewport, so its side edges are off-screen and fading them would
-   only eat the model. */
+   be legible at all.
+
+   NO canvas mask here any more. One used to survive in this block after the
+   window frame retired it on desktop, and on a phone it was the most visible
+   thing in the hero: it ramped the top and bottom 8% of the canvas to
+   transparent, which on a 277px-tall canvas is a 22px fade across the top edge
+   that reads as the room being cut off. The desktop reasoning applies verbatim
+   at every width — inside a window frame a crisp rectangle of darker ground is
+   what an application's 3D view looks like, and edges that dissolve read as a
+   smudge. The mask's original premise (a full-bleed canvas that had to melt
+   into the page) stopped being true when the window arrived.
+
+   The room is also given back the height the old rule took. The camera fits a
+   SPHERE around the model and the vertical half-angle is what limits the fit at
+   every aspect ratio wider than square (AutoOrbitRig), so the model's size on
+   screen is a fixed fraction of the CANVAS HEIGHT — 42vh was therefore not a
+   smaller frame, it was a smaller room, and that is the whole of why the hero
+   read as tiny on a phone. Changing it here rather than in the rig keeps this a
+   layout fix and leaves the protected viewport tree alone. */
 @media (max-width: 900px) {
   .${STAGE_CLASS} {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto;
     gap: 14px;
   }
-  /* Shorter, because the room now has the full width to be legible in and the
-     panel below it needs to be reachable without a long scroll past the hero. */
-  .${CANVAS_CLASS} { min-height: clamp(260px, 42vh, 400px); }
-  .${STAGE_CLASS} canvas {
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
-  }
+  /* Height is not a taste call here, it is the room's size. The rig fits a
+     sphere against the SMALLER of the two half-angles, so the limiting axis
+     flips at aspect 1: while the canvas is wider than it is tall the room grows
+     with every pixel of height, and once it is taller than it is wide the room
+     is width-bound and any more height is pure letterbox. A tablet canvas is
+     ~693px wide, so it is nowhere near that crossover and every pixel counts —
+     which is exactly what the old 42vh was giving away. The phone block below
+     caps it, because a phone reaches the crossover almost immediately. */
+  .${CANVAS_CLASS} { min-height: clamp(300px, 50vh, 460px); }
   .${PANEL_CLASS} { gap: 14px; }
+}
+
+/* ── Phone ──────────────────────────────────────────────────────────────────
+   The controls are the same five rows, sized for a hand rather than a pointer.
+   On a 393px screen the panel was 450px tall against a 277px room: the thing
+   the hero exists to show was the smaller half of its own window. The floor and
+   frame rows are the reason — at a 104px floor they wrapped 2 + 1 and cost two
+   button lines each. A lower floor lets those two rows sit three-up on one line
+   while walls and lighting, which only have two options, still stretch to fill
+   the width. That plus the shorter buttons is ~165px off the panel, all of it
+   given to the room.
+
+   The !important is because the button's own metrics are inline styles, which
+   no stylesheet can otherwise reach — the same bargain the hover rules make. */
+@media (max-width: 640px) {
+  /* The crossover the block above describes, in numbers: a phone canvas is
+     319px wide at 393 and ~356 at the widest phone, so past ~360 the room has
+     stopped growing and the extra height is letterbox that pushes the controls
+     off the screen. This is the one place where MORE room for the model makes
+     the model no bigger. */
+  .${CANVAS_CLASS} { min-height: clamp(300px, 50vh, 360px); }
+  .${PANEL_CLASS} { gap: 12px; padding: 12px; }
+  .${PANEL_CLASS} .${ROW_CLASS} {
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)) !important;
+  }
+  /* Every number here is sized against ONE label: "Concrete", the longest any
+     three-option row carries. At 3 columns it gets 93px of track, of which the
+     padding, the swatch and its gap take 37 — so the text has 56px and needs
+     53. Measured, not guessed (the run asserts no label truncates); if you
+     change the font, the padding or the swatch, re-measure rather than reason
+     about it, because the margin is 3px. */
+  .${PANEL_CLASS} .${BTN_CLASS} {
+    height: 36px !important;
+    font-size: 12px !important;
+    padding: 0 7px !important;
+    gap: 6px !important;
+  }
+}
+
+/* ── Touch ──────────────────────────────────────────────────────────────────
+   Keyed on the input, not the width, because that is what the rule is actually
+   about: every touch gesture is dead in the rig, so the drag hint is false on
+   any touch device and true on a narrow mouse-driven window. What is left is
+   the pause control alone, which no longer needs the middle of the canvas — it
+   goes to the trailing corner, clear of the centred call to action. */
+@media (hover: none) and (pointer: coarse) {
+  /* !important: the hint's own display is an inline style, which a stylesheet
+     cannot otherwise outrank. Without it this rule matches and does nothing. */
+  .${HINT_CLASS} { display: none !important; }
+  .${TOOLBAR_CLASS} {
+    left: auto;
+    inset-inline-end: clamp(10px, 2vw, 16px);
+    transform: none;
+    padding: 6px;
+    gap: 0;
+  }
+  /* Only once the toolbar is out of the middle. The desktop offset exists to
+     clear a full-width bar directly below it, and dropping the CTA on width
+     alone put the two on top of each other in a narrow MOUSE window, where the
+     bar is still centred and still says what it does. */
+  .${REVEAL_CLASS} { bottom: clamp(12px, 3vw, 18px); }
 }
 `;

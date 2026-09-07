@@ -23,6 +23,7 @@
 import { useEffect, useState } from "react";
 import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
+import { useTranslations } from "next-intl";
 import type { Node, Scene, Wall } from "@/schema/scene";
 import { DEFAULT_THICKNESS, WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -438,6 +439,7 @@ export function commitLegs(raw: Leg[], limits: readonly [number, number]): Leg[]
 }
 
 export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } }) {
+  const t = useTranslations("editor.toast");
   const placingRun = useSceneStore((s) => s.placingRun);
   const [chain, setChain] = useState<ChainSeg[] | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
@@ -533,7 +535,7 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
     e.stopPropagation();
     const { p, height, face } = dragPoint(e);
     if (!p) {
-      if (onTheWall) pdToast("Point at a wall");
+      if (onTheWall) pdToast(t("pointAtWall"));
       return;
     }
     const scene = useSceneStore.getState().scene;
@@ -541,7 +543,7 @@ export function RunDrawGhost({ offset }: { offset: { cx: number; cz: number } })
     if (!chain) {
       const hit = findNearestWall(p.x, p.y, scene, depth, onTheWall ? 0.6 : START_RANGE, face);
       if (!hit) {
-        pdToast(onTheWall ? "Point at a wall" : "Start against a wall");
+        pdToast(onTheWall ? t("pointAtWall") : t("startAgainstWall"));
         return;
       }
       // Same anchor AND same stub the hover preview drew, so the run starts

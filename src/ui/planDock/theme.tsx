@@ -112,7 +112,11 @@ export function ThemeToggle() {
   const isLight = theme === "light";
   const Icon = isLight ? SunIcon : MoonIcon;
   return (
-    <Tooltip label={isLight ? "Switch to dark" : "Switch to light"}>
+    // `bottom` because this button lives at top:14 in an <main> that is
+    // `overflow: hidden` — the default `top` placement drew the label off the
+    // edge of the window, where it was clipped rather than shown. Noticed while
+    // adding the language switch beside it, which needs the same.
+    <Tooltip label={isLight ? "Switch to dark" : "Switch to light"} placement="bottom">
       <button
         {...hoverBind}
         onClick={() => setTheme(isLight ? "dark" : "light")}

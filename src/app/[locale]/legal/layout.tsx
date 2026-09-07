@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
 import { PD } from "@/ui/planDock/tokens";
 import { ChevronLeftIcon } from "@/ui/planDock/icons";
 
@@ -7,7 +9,21 @@ import { ChevronLeftIcon } from "@/ui/planDock/icons";
 // benefit (a fixed-size WebGL canvas). Legal pages are long-form text, so this
 // layout opens its own full-viewport scroll region instead of touching that
 // global rule (which src/viewport3d/Viewport.tsx and friends depend on).
-export default function LegalLayout({ children }: { children: ReactNode }) {
+export default async function LegalLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  // `/legal` is a real path segment, so static generation renders it in its own
+  // scope — the `setRequestLocale` in [locale]/layout.tsx does not reach here
+  // the way it reaches the `(marketing)` route group, which has no segment of
+  // its own. Without this, the locale-aware `Link`s below make every page under
+  // /legal server-rendered on demand instead of prerendered.
+  const { locale } = await params;
+  setRequestLocale(locale as Locale);
+
   return (
     <div
       // Opaque, deliberately: a policy is long-form reading, so this page

@@ -119,7 +119,7 @@ function hand(len: number, width: number, thick: number, mat: THREE.Material): T
 
 export const wallClockGenerator: GeneratorDef = {
   id: "wallClock",
-  label: "Wall clock",
+  labelKey: "wallClock.label",
   category: "Decor",
   rooms: ["kitchen", "living", "dining", "study", "kids"],
   wallSnap: true,
@@ -127,11 +127,11 @@ export const wallClockGenerator: GeneratorDef = {
   modules: [
     {
       key: "secondHand",
-      label: "Second hand",
+      labelKey: "wallClock.modules.secondHand.label",
       min: 0,
       max: 1,
       default: 1,
-      toggle: { on: "Second hand", off: "Hours only" },
+      toggle: { onKey: "wallClock.modules.secondHand.toggle.on", offKey: "wallClock.modules.secondHand.toggle.off" },
     },
   ],
   fronts: ["slab"],
@@ -145,20 +145,20 @@ export const wallClockGenerator: GeneratorDef = {
   variants: [
     {
       id: "minimal",
-      label: "Minimal",
-      cardLabel: "Round wall clock",
+      labelKey: "wallClock.variants.minimal.label",
+      cardLabelKey: "wallClock.variants.minimal.cardLabel",
       defaults: { dims: { w: 0.3, d: 0.05, h: 0.3 }, finish: "painted", color: "#23262b" },
     },
     {
       id: "wood",
-      label: "Wood",
-      cardLabel: "Wooden wall clock",
+      labelKey: "wallClock.variants.wood.label",
+      cardLabelKey: "wallClock.variants.wood.cardLabel",
       defaults: { dims: { w: 0.34, d: 0.055, h: 0.34 }, finish: "oak" },
     },
     {
       id: "station",
-      label: "Station",
-      cardLabel: "Station clock, roman dial",
+      labelKey: "wallClock.variants.station.label",
+      cardLabelKey: "wallClock.variants.station.cardLabel",
       defaults: { dims: { w: 0.42, d: 0.062, h: 0.42 }, finish: "painted", color: "#f2efe8" },
     },
   ],

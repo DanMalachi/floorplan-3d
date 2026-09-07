@@ -75,14 +75,14 @@ function counterSlabForPath(
 
 export const kitchenBaseGenerator: GeneratorDef = {
   id: "kitchenBase",
-  label: "Kitchen base run",
+  labelKey: "kitchenBase.label",
   category: "Kitchen",
   rooms: ["kitchen"],
   wallSnap: true,
   // dims.h IS the counter surface height (v1 kitchenRun fixed this at 0.84 —
   // here it's the dimension the user sets); carcass height derives from it.
   dimLimits: { w: [0.6, 6.0], d: [0.55, 0.7], h: [0.75, 0.95] },
-  modules: [{ key: "drawerUnits", label: "Drawer units", min: 0, max: 4, default: 1 }],
+  modules: [{ key: "drawerUnits", labelKey: "kitchenBase.modules.drawerUnits.label", min: 0, max: 4, default: 1 }],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],
   finishes: ["painted", "laminate-matte", "laminate-gloss", "oak", "walnut", "wood-walnut-dark", "wood-plank-pale"],

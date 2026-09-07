@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty } from "@/brand/tokens";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 import { MENU_ITEM_CLASS, OUTLINE_BTN_CLASS, TEXT_BTN_CLASS } from "./hoverCss";
@@ -25,6 +26,7 @@ import { MENU_ITEM_CLASS, OUTLINE_BTN_CLASS, TEXT_BTN_CLASS } from "./hoverCss";
 // -----------------------------------------------------------------------------
 
 export function AccountControl() {
+  const t = useTranslations("account");
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -69,7 +71,7 @@ export function AccountControl() {
           opacity: busy ? 0.6 : 1,
         }}
       >
-        {busy ? "Opening…" : "Sign in"}
+        {busy ? t("opening") : t("signIn")}
       </button>
     );
   }
@@ -81,7 +83,7 @@ export function AccountControl() {
     <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label="Account"
+        aria-label={t("account")}
         aria-expanded={open}
         className={OUTLINE_BTN_CLASS}
         style={{
@@ -117,7 +119,10 @@ export function AccountControl() {
           style={{
             position: "absolute",
             top: "calc(100% + 8px)",
-            right: 0,
+            // Trailing edge, not the physical right: on /he this control sits at
+            // the left of the header, and a right-anchored menu would open off
+            // the side of the page.
+            insetInlineEnd: 0,
             minWidth: 210,
             background: B.raised,
             border: `1px solid ${B.hairline}`,
@@ -146,7 +151,7 @@ export function AccountControl() {
             )}
           </div>
           <Link href="/account" className={MENU_ITEM_CLASS} style={itemStyle} onClick={() => setOpen(false)}>
-            Your data
+            {t("yourData")}
           </Link>
           <button
             onClick={() => {
@@ -154,9 +159,9 @@ export function AccountControl() {
               void signOut();
             }}
             className={MENU_ITEM_CLASS}
-            style={{ ...itemStyle, width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer" }}
+            style={{ ...itemStyle, width: "100%", textAlign: "start", background: "transparent", border: "none", cursor: "pointer" }}
           >
-            Sign out
+            {t("signOut")}
           </button>
         </div>
       )}

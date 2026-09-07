@@ -2,28 +2,43 @@
 
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useSceneStore } from "@/store/useSceneStore";
+import { useTranslations } from "next-intl";
+import { resolveImportMsg, useSceneStore } from "@/store/useSceneStore";
 import { PD, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { PlanMapIcon } from "@/ui/planDock/icons";
 import { TraceRail } from "./TraceRail";
 
+/** `dynamic()`'s `loading` fallback, as its own component: `useTranslations`
+ *  only exists inside a component, and this one renders under the same
+ *  `[locale]` provider tree as everything else here. */
+function LoadingCanvas() {
+  const t = useTranslations("editor.trace");
+  return (
+    <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: PD.textTertiary }}>
+      {t("loadingCanvas")}
+    </div>
+  );
+}
+
 // Konva touches `window`/`canvas`, so the Stage must never render on the server.
 const TraceCanvas = dynamic(() => import("./TraceCanvas"), {
   ssr: false,
-  loading: () => (
-    <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: PD.textTertiary }}>
-      Loading canvas…
-    </div>
-  ),
+  loading: () => <LoadingCanvas />,
 });
 
 /** Empty state: the plan starts with a drop, not a toolbar. */
 function DropZone() {
+  const t = useTranslations("editor.trace");
+  const tImport = useTranslations("editor.import");
   const importBusy = useSceneStore((s) => s.importBusy);
   const importMsg = useSceneStore((s) => s.importMsg);
+  const importMsgKey = useSceneStore((s) => s.importMsgKey);
   const importStatus = useSceneStore((s) => s.importStatus);
   const importPlanFile = useSceneStore((s) => s.importPlanFile);
+  // `importMsgKey` (a literal authored in the store) and `importMsg` (plain
+  // pipeline prose) are mutually exclusive — see useSceneStore's doc comment.
+  const importText = importMsgKey ? resolveImportMsg(tImport, importMsgKey) : importMsg;
   const [over, setOver] = useState(false);
   const [hov, hoverBind] = useHover();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -86,13 +101,13 @@ function DropZone() {
             at ~2.0px, which has presence at this size without going heavy. */}
         <PlanMapIcon size={34} strokeWidth={1.4} style={{ color: hov ? PD.textPrimary : PD.textSecondary }} />
         <span style={{ fontSize: 15, fontWeight: 600, color: PD.textPrimary }}>
-          {importBusy ? "Importing…" : "Drop a floor plan"}
+          {importBusy ? t("dropZone.importing") : t("dropZone.title")}
         </span>
         <span style={{ fontSize: 12, color: PD.textSecondary }}>
-          image, PDF, or CAD (DXF/DWG) — or click to browse
+          {t("dropZone.subtitle")}
         </span>
-        {importMsg && importStatus !== "ok" && (
-          <span style={{ fontSize: 12, color: PD.warnText, maxWidth: 360 }}>{importMsg}</span>
+        {importText && importStatus !== "ok" && (
+          <span style={{ fontSize: 12, color: PD.warnText, maxWidth: 360 }}>{importText}</span>
         )}
       </button>
     </div>

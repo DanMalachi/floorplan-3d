@@ -12,10 +12,10 @@ import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometr
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
 import { frameColorPatch, frameMaterialPatch, type FrameFinish } from "@/render/frameFinish";
-import { sanitizeSpec, GENERATORS, elevationOf } from "@/parametric";
+import { sanitizeSpec, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
-import { pdToast } from "@/ui/planDock/toast";
+import { pdToastKey } from "@/ui/planDock/toast";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -184,14 +184,48 @@ export type Weather = "clear" | "cloudy" | "rain";
  *  from outside it. */
 export type ImportStatus = "ok" | "warn" | "error";
 
+/** Which literal drives a translatable `importMsg` line, plus its
+ *  interpolation params — same reasoning as `ImportStatus`: this module
+ *  cannot call `useTranslations`, so the render site resolves the words with
+ *  `resolveImportMsg`. Covers only the English literals authored directly in
+ *  THIS file (too-small image, unsupported file type, import failure).
+ *  `importMsg` (plain string) still carries prose that arrives pre-rendered
+ *  from the import pipeline itself — see its own doc comment — and is
+ *  deliberately NOT routed through here. */
+export type ImportMsgKey =
+  | { key: "tooSmall"; width: number; height: number; min: number }
+  | { key: "unsupported" }
+  | { key: "failed"; message: string };
+
+/** Resolves an `ImportMsgKey` into words. `t` is whatever
+ *  `useTranslations("editor.import")` returns at the render site — passed in,
+ *  never imported here, so this module still never touches next-intl. */
+export function resolveImportMsg(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  m: ImportMsgKey,
+): string {
+  switch (m.key) {
+    case "tooSmall":
+      return t("tooSmall", { width: m.width, height: m.height, min: m.min });
+    case "unsupported":
+      return t("unsupported");
+    case "failed":
+      return t("failed", { message: m.message });
+  }
+}
+
 /** Adapts an importer's `{ msg, status }` to the two store fields.
  *
  *  The importers used to type a `✓`/`⚠` into the front of the message and the
  *  store stripped it back off with a regex. Both ends are gone: the status is
  *  a field now, so the render site picks the icon (CheckIcon / WarnIcon) and
- *  the message is plain prose — which is also what makes it translatable. */
+ *  the message is plain prose — which is also what makes it translatable
+ *  (pipeline prose aside — see `importMsg`'s doc comment). `importMsgKey` is
+ *  cleared here because this path always produces plain pipeline prose, never
+ *  a translatable code. */
 const asImport = (r: { msg: string; status: "ok" | "warn" }) => ({
   importMsg: r.msg,
+  importMsgKey: null as ImportMsgKey | null,
   importStatus: r.status as ImportStatus,
 });
 
@@ -458,14 +492,24 @@ export interface StoreState {
   /** 1 Plan · 2 Scale · 3 Walls · 4 Openings · 5 Build */
   traceStep: number;
   importBusy: boolean;
-  /** Plain prose. No leading ✓ / ⚠ / ✗ — see `importStatus`. */
+  /** Plain prose. No leading ✓ / ⚠ / ✗ — see `importStatus`. English only:
+   *  this is pipeline output (DXF/DWG summary, raster-quality wording) that
+   *  arrives already rendered, not a literal typed in this module — see
+   *  `importMsgKey` for the ones that are. Mutually exclusive with
+   *  `importMsgKey`; whichever path sets one clears the other. */
   importMsg: string | null;
-  /** How `importMsg` should read: which icon the render site draws, and which
-   *  colour it uses. The glyph used to be typed into the front of the message
-   *  string, which two things made untenable: this module is not React, so it
-   *  cannot pick an icon component, and a message that carries its own glyph
-   *  cannot be handed to a translator. So the STATUS is data and the icon
-   *  belongs to whoever renders it (TraceRail / TracePanel). */
+  /** The translatable counterpart to `importMsg`: set instead of it by the
+   *  literals authored directly in this file (too-small image, unsupported
+   *  file type, import failure). Resolve with `resolveImportMsg` at the
+   *  render site — this module cannot call `useTranslations`. */
+  importMsgKey: ImportMsgKey | null;
+  /** How `importMsg`/`importMsgKey` should read: which icon the render site
+   *  draws, and which colour it uses. The glyph used to be typed into the
+   *  front of the message string, which two things made untenable: this
+   *  module is not React, so it cannot pick an icon component, and a message
+   *  that carries its own glyph cannot be handed to a translator. So the
+   *  STATUS is data and the icon belongs to whoever renders it
+   *  (TraceRail / TracePanel). */
   importStatus: ImportStatus;
   // Project persistence status (autosaved to IndexedDB; see projectPersistence.ts).
   projectRestored: boolean; // this session's state was rehydrated from disk
@@ -754,6 +798,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     traceStep: 1,
     importBusy: false,
     importMsg: null,
+    importMsgKey: null,
     importStatus: "ok",
     projectRestored: false,
     projectSavedAt: null,
@@ -771,6 +816,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       set({
         importBusy: true,
         importMsg: null,
+        importMsgKey: null,
         importStatus: "ok",
         points: [],
         segments: [],
@@ -843,6 +889,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             importedTexts: r.texts,
             showImport: true,
             importMsg: r.summary,
+            importMsgKey: null,
             importStatus: "ok",
           });
           // A DXF with known units gives us real scale for free — no calibration.
@@ -852,7 +899,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
           if (Math.max(img.width, img.height) < MIN_IMAGE_PX) {
             set({
               importBusy: false,
-              importMsg: `Image too small (${img.width}×${img.height}px) — plans need ≥${MIN_IMAGE_PX}px on the long edge.`,
+              importMsg: null,
+              importMsgKey: { key: "tooSmall", width: img.width, height: img.height, min: MIN_IMAGE_PX },
               importStatus: "error",
             });
             return;
@@ -868,7 +916,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
         } else {
           set({
             importBusy: false,
-            importMsg: "Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG).",
+            importMsg: null,
+            importMsgKey: { key: "unsupported" },
             importStatus: "error",
           });
           return;
@@ -877,7 +926,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
         if (get().metersPerPixel == null) get().setMode("calibrate");
         set({ traceStep: 2 });
       } catch (e) {
-        set({ importMsg: "Import failed: " + (e as Error).message, importStatus: "error" });
+        // The caught error can be a raw JS/fetch error OR a literal authored
+        // right above (the DWG-converter-unavailable message) — either way
+        // its `.message` is untranslated prose we don't own, so only the
+        // "Import failed:" frame around it is translatable. See
+        // `resolveImportMsg`'s "failed" case.
+        set({ importMsg: null, importMsgKey: { key: "failed", message: (e as Error).message }, importStatus: "error" });
       } finally {
         set({ importBusy: false });
       }
@@ -918,7 +972,12 @@ export const useSceneStore = create<StoreState>((set, get) => {
           },
         ],
       };
-      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, syncKitchenAttachments(withItem));
+      // Not "Place <name>": the generator's display word is a translation key
+      // now (Hebrew i18n step 5), and this history label is never rendered —
+      // Viewport.tsx only reads scenePast's LENGTH, not its labels — so a
+      // generic label costs nothing and keeps this file out of the render-site
+      // rename entirely.
+      commitScene("Place furniture", syncKitchenAttachments(withItem));
       // Stay armed — Sims-style repeat placement; Esc exits.
     },
     placeSurfaceItemFree: (x, y) => {
@@ -929,7 +988,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const { placingCounter, scene, commitScene } = get();
       if (!placingCounter) return;
       const id = `f${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
-      commitScene(`Place ${GENERATORS[placingCounter.generator].label.toLowerCase()}`, {
+      commitScene("Place furniture", {
         ...scene,
         furniture: [
           ...scene.furniture,
@@ -959,7 +1018,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
           },
         ],
       };
-      commitScene(`Place ${GENERATORS[placingWall.generator].label.toLowerCase()}`, withItem);
+      // See placeCounterItem's note: this history label is never rendered.
+      commitScene("Place furniture", withItem);
       // Stay armed for repeat placement, same as counter items.
     },
     brush: null,
@@ -1171,7 +1231,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
             (f) => !gone.has(f.id) && !(f.attach && gone.has(f.attach.hostId)),
           ),
         }));
-        if (groupId) pdToast("Removed kitchen run");
+        if (groupId) pdToastKey("removedKitchenRun");
       } else if (sel3d.kind === "wall") {
         commitScene("Delete wall", {
           ...scene,

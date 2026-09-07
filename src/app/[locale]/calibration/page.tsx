@@ -471,7 +471,7 @@ export default function CalibrationPage() {
       </Canvas>
 
       {ui && (
-        <div style={{ position: "absolute", bottom: 14, left: 14, display: "grid", gap: 8, background: "rgba(12,12,16,0.9)", padding: 12, borderRadius: 10, fontSize: 11, width: 330 }}>
+        <div style={{ position: "absolute", bottom: 14, insetInlineStart: 14, display: "grid", gap: 8, background: "rgba(12,12,16,0.9)", padding: 12, borderRadius: 10, fontSize: 11, width: 330 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {(["exposure", "roof", "interior", "riser", "reference"] as const).map((m) => (
               <button key={m} onClick={() => setMode(m)} style={{ ...btn(mode === m), flex: 1 }}>{m}</button>
@@ -481,7 +481,7 @@ export default function CalibrationPage() {
           {mode === "exposure" ? (
             <>
               <div style={{ opacity: 0.65 }}>18% grey card, sun only, normal incidence</div>
-              <div>exposure &nbsp;{RENDER_EXPOSURE.toExponential(4)} &nbsp;= PI / {REFERENCE_SUN_LUX.toLocaleString()}</div>
+              <div>exposure &nbsp;{RENDER_EXPOSURE.toExponential(4)} &nbsp;= PI / {REFERENCE_SUN_LUX.toLocaleString("en-US")}</div>
               <div>measured sRGB &nbsp;{centre.join(", ")}</div>
               <div>
                 measured linear&nbsp;
@@ -498,7 +498,7 @@ export default function CalibrationPage() {
           ) : (
             <>
               <div>hour {hour.toFixed(1)} &nbsp; elev {(Math.asin(Math.max(-1, Math.min(1, sun.dir.y))) * (180 / Math.PI)).toFixed(1)}°</div>
-              <div style={{ opacity: 0.7 }}>sun {Math.round(sun.sunLux).toLocaleString()} lx &nbsp; sky {Math.round(sun.skyLux).toLocaleString()} lx</div>
+              <div style={{ opacity: 0.7 }}>sun {Math.round(sun.sunLux).toLocaleString("en-US")} lx &nbsp; sky {Math.round(sun.skyLux).toLocaleString("en-US")} lx</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {SWEEP_HOURS.map((h) => (
                   <button key={h} onClick={() => setHour(h)} style={btn(hour === h)}>{h}</button>

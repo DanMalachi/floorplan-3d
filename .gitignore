@@ -103,3 +103,7 @@ floorplan_for_training/dxf_dwg/
 # per-agent incremental build info (parallel typechecks would race on the
 # single tsconfig.tsbuildinfo; each run gets its own via --tsBuildInfoFile)
 .tsbuildinfo.*
+
+# Scratch: per-worker i18n fragments, merged into messages/*.json by
+# scripts/i18n/merge-fragments.mjs. Never the source of truth.
+.i18n-fragments/

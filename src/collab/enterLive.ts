@@ -3,6 +3,7 @@
 // The room lives on a full-reload route, so we record room ownership (for the
 // room→project mirror) and optionally stash a first-time seed BEFORE navigating.
 
+import { hardNavHref } from "@/i18n/navigation";
 import { mintGrant, lbRoom, type ShareRole } from "./share";
 import { setRoomOwner } from "@/store/projectPersistence";
 import { stashGoLiveSeed, type GoLiveSeed } from "./goLiveHandoff";
@@ -22,5 +23,8 @@ export async function enterLiveRoom(
   const grant = await mintGrant(lbRoom(roomId), role, { create: role === "build" });
   // Seed is consumed only if the room is still empty (first go-live); harmless after.
   if (seed) stashGoLiveSeed(roomId, seed);
-  window.location.href = `/v/${roomId}?g=${grant}`;
+  // Keeps the caller's locale across the reload. The share links already out in
+  // the world are unprefixed and stay valid — this only affects the hand-off a
+  // Hebrew session makes for itself.
+  window.location.href = hardNavHref(`/v/${roomId}?g=${grant}`);
 }

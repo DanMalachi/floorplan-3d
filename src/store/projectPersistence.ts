@@ -69,10 +69,28 @@ function deriveName(state: Partial<ProjectState>): string {
   return nextUntitledName();
 }
 
+/**
+ * The default project NAME, which is persisted data rather than chrome — a
+ * project created in Hebrew keeps its Hebrew name after a switch to English,
+ * exactly like a name the user typed, because that is what it is. (Same
+ * behaviour as "Untitled document" in Google Docs.)
+ *
+ * A module-level setting rather than an argument because projects are created
+ * from three places, only one of which is a React component: the "New plan"
+ * button, first-run initialisation, and the legacy migration. A setter lets the
+ * editor localise all three from one call, and leaves the English default in
+ * place for any path that runs before it — no non-React module has to learn
+ * about locales.
+ */
+let untitledLabel = "Untitled plan";
+export function setUntitledLabel(label: string): void {
+  untitledLabel = label;
+}
+
 function nextUntitledName(): string {
   const used = new Set(manifest.map((m) => m.name));
   for (let n = 1; ; n++) {
-    const name = n === 1 ? "Untitled plan" : `Untitled plan ${n}`;
+    const name = n === 1 ? untitledLabel : `${untitledLabel} ${n}`;
     if (!used.has(name)) return name;
   }
 }
@@ -277,7 +295,7 @@ async function loadIntoStore(id: string): Promise<void> {
       // this field clears it, rather than carrying the previous project's room.
       liveRoomId: doc.state.liveRoomId ?? null,
       currentProjectId: id,
-      projectName: meta?.name ?? "Untitled plan",
+      projectName: meta?.name ?? untitledLabel,
       projectRestored: true,
       projectSavedAt: doc.savedAt,
       frameToken: s.frameToken + 1,
@@ -287,7 +305,7 @@ async function loadIntoStore(id: string): Promise<void> {
     useSceneStore.setState((s) => ({
       ...(defaults as ProjectState),
       currentProjectId: id,
-      projectName: meta?.name ?? "Untitled plan",
+      projectName: meta?.name ?? untitledLabel,
       projectRestored: false,
       projectSavedAt: null,
       frameToken: s.frameToken + 1,

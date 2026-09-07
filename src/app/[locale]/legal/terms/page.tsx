@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { setRequestLocale } from "next-intl/server";
+import { alternatesFor } from "@/i18n/alternates";
+import type { Locale } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 import {
   legalH1,
   legalMeta,
@@ -15,9 +18,19 @@ import {
 export const metadata: Metadata = {
   title: "Terms of Service · done.",
   description: "The terms governing use of Floorplan → 3D.",
+  alternates: alternatesFor("/legal/terms"),
 };
 
-export default function TermsOfServicePage() {
+export default async function TermsOfServicePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // This page links out to the privacy policy with the locale-aware <Link>, and
+  // that reads the request locale. Pinning it here keeps the page prerendered;
+  // without it the route drops to server-rendered-on-demand. The rule is
+  // next-intl's: every layout and page that should stay static declares it.
+  setRequestLocale((await params).locale as Locale);
   return (
     <>
       {/* DRAFT — not legal advice; review by a lawyer before launch */}

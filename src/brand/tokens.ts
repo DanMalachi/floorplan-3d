@@ -44,9 +44,23 @@ export const B = {
   // src/app/layout.tsx (variable mode), so naming them literally here is
   // enough — the @font-face rules are on the page already. Manrope is loaded
   // as a variable font with no weight array, so 800 is available.
-  fontDisplay: `Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
-  fontUi: `Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
-  fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace`,
+  fontDisplay: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  fontUi: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  // Rubik is last, AFTER the monospace generic, and it is there for Hebrew only.
+  //
+  // src/app/[locale]/layout.tsx used to state that this stack needed no Hebrew
+  // companion because "every mono use in this app is numeric". That stopped
+  // being true when the hero's plan drawing took Hebrew room labels: STUDIO and
+  // BATH became סטודיו and אמבטיה in the same `fontMono` label as the dimension
+  // figures beside them, and with no Hebrew face in the list the browser
+  // substituted one of its own — a different face on every OS, sitting next to
+  // digits still rendering in IBM Plex Mono.
+  //
+  // There is no Hebrew monospace in the loaded set, so a proportional fallback
+  // is the honest floor here: it means one deliberate, identical mismatch
+  // everywhere instead of an unpredictable one per machine. Latin and digits are
+  // unaffected — they find IBM Plex Mono first and never reach this entry.
+  fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace, Rubik`,
 
   // ── Grounds ─────────────────────────────────────────────────────────────
   //

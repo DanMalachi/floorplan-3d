@@ -156,6 +156,18 @@ reason it did not belong under the rule.
   anything in `legacy/scripts/`. No new imports from `legacy/` into `src/`, and
   none of its patterns move outward.
 
+  A second deletion, 2026-09-06, on the same footing as the one below:
+  `TraceCanvas.tsx`'s empty-state hint ("Upload a floor plan to trace over (or
+  just start clicking to place wall points).") is **deleted**, not translated —
+  Dan's instruction, on sight. It was a Konva `<Text>` drawn INTO the canvas at
+  a fixed `(20,20)` offset, so it sat underneath the floating project-name pill
+  and rendered as a clipped fragment reading "…e over (or just start clicking to
+  place wall points)." The drop-target card in the middle of the same empty
+  screen already says what to do, in DOM text that reflows. Translating a string
+  nobody could read in the first place would have shipped the bug in two
+  languages. The now-unused `Text` import was dropped with it; no other
+  `<Text>` remains in the file.
+
   One behavioural exception inside this exception:
   `legacy/src/trace2d/traceToScene.ts:113-128` is **deleted**, not restyled —
   that block is the automatic room-type classifier, and lines 122-126 overwrote

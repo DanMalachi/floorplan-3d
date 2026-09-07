@@ -255,9 +255,10 @@ console.log("\neach card places its own size, not one shared default");
 
 console.log("\nevery card has a name that stands on its own, and its own glyph");
 {
-  const labels = PHASE2.map((p) => p.label);
-  check("no card falls back to '<generator> · <variant>'", labels.every((l) => !l.includes("·")), labels.filter((l) => l.includes("·")).join(", "));
-  check("card names are unique", new Set(labels).size === labels.length);
+  const fellBack = PHASE2.filter((p) => p.variantLabelKey);
+  check("no card falls back to '<generator> · <variant>'", fellBack.length === 0, fellBack.map((p) => p.labelKey).join(", "));
+  const keys = PHASE2.map((p) => p.labelKey);
+  check("card names are unique", new Set(keys).size === keys.length);
   for (const p of PHASE2) check(`${p.glyphKey} has a glyph`, !!GENERATOR_GLYPH[p.glyphKey], "renders as an empty tile without one");
   const glyphs = PHASE2.map((p) => GENERATOR_GLYPH[p.glyphKey]);
   check("no two Phase 2 cards share a glyph", new Set(glyphs).size === glyphs.length);

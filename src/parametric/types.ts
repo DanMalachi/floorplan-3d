@@ -4,14 +4,18 @@ import type { FurnitureCategory, RoomType } from "@/furniture/catalog";
 
 export interface ModuleDef {
   key: string; // key into spec.modules
-  label: string; // "Doors", "Drawers", …
+  /** Key into next-intl's `editor.parametric` namespace — module scope
+   *  cannot call `useTranslations()`, so the word travels as a key out to the
+   *  catalogue and back at the render site. Same shape as `WALL_MODES.labelKey`
+   *  (src/viewport3d/Viewport.tsx). */
+  labelKey: string; // "<generatorId>.modules.<key>.label"
   min: number;
   max: number; // hard clamp; generator may clamp further by dims
   default: number;
   /** Two-state module (min 0 / max 1): the inspector renders a labelled pair
    *  of buttons instead of a +/- stepper, because "Lid open: 0" is a number
-   *  standing in for a word. `on` is the label for value 1. */
-  toggle?: { on: string; off: string };
+   *  standing in for a word. `onKey` is the label key for value 1. */
+  toggle?: { onKey: string; offKey: string };
   /** Variants this control means anything for. Absent = all of them. One
    *  generator covering twelve appliances would otherwise offer a fridge a
    *  burner count: the value is harmless (sanitizeSpec still carries it), the
@@ -21,7 +25,9 @@ export interface ModuleDef {
 
 export interface GeneratorDef {
   id: ParametricSpec["generator"];
-  label: string; // "Custom wardrobe"
+  /** Key into next-intl's `editor.parametric` namespace, e.g. "wardrobe.label"
+   *  — see ModuleDef.labelKey for why this travels as a key, not a word. */
+  labelKey: string; // "<generatorId>.label"
   category: FurnitureCategory; // dock category chip
   rooms: RoomType[]; // which room tabs show the Custom card
   wallSnap: boolean;
@@ -32,7 +38,10 @@ export interface GeneratorDef {
    *  the Width/Height fields, and the generator owns the conversion (only it
    *  knows what its bezel, chin and stand add to the picture). */
   sizeInches?: {
-    label: string;
+    /** Key into next-intl's `editor.parametric` namespace — see
+     *  ModuleDef.labelKey for why this travels as a key, not a word.
+     *  "<generatorId>.sizeInches.label" */
+    labelKey: string;
     /** Standard sizes offered as chips, e.g. [43, 50, 55, 65, 75]. */
     presets: number[];
     /** Screen diagonal of a spec, in inches. */
@@ -50,21 +59,26 @@ export interface GeneratorDef {
   showFronts?: (spec: ParametricSpec) => boolean;
   handles: ParametricSpec["handle"][];
   finishes: string[]; // primary finish ids (ordered, first = default)
-  /** Caption over the primary swatch row. Absent = no caption, which is right
-   *  whenever the row obviously means "what is this made of". Wall art needs
-   *  it: its first row picks the PICTURE, and an unlabelled row of paintings
-   *  next to a labelled row of frame tones reads as the same kind of choice
-   *  twice. */
-  finishesLabel?: string;
+  /** Key into next-intl's `editor.parametric` namespace for the caption over
+   *  the primary swatch row — see ModuleDef.labelKey for why this travels as
+   *  a key, not a word ("<generatorId>.finishesLabel"). Absent = no caption,
+   *  which is right whenever the row obviously means "what is this made of".
+   *  Wall art needs it: its first row picks the PICTURE, and an unlabelled
+   *  row of paintings next to a labelled row of frame tones reads as the
+   *  same kind of choice twice. */
+  finishesLabelKey?: string;
   finishes2?: string[]; // secondary finish ids, when applicable
   /** Whether the secondary swatch row means anything for this spec — the same
    *  dead-control rule `showFronts` follows. A TV's second finish paints its
    *  STAND, so the three wall-mounted cards must not offer it. Absent = shown
    *  whenever `finishes2` exists. */
   showFinishes2?: (spec: ParametricSpec) => boolean;
-  /** What the secondary row is called in the inspector ("Counter", "Stand").
-   *  Absent = the inspector's own default for the kitchen/sofa generators. */
-  finishes2Label?: string;
+  /** Key into next-intl's `editor.parametric` namespace for what the
+   *  secondary row is called in the inspector ("Counter", "Stand") — see
+   *  ModuleDef.labelKey for why this travels as a key, not a word
+   *  ("<generatorId>.finishes2Label"). Absent = the inspector's own default
+   *  for the kitchen/sofa generators. */
+  finishes2LabelKey?: string;
   defaultSpec: ParametricSpec;
   /** Meters above floor a fresh placement starts at — wall-mounted items
    *  (kitchen wall cabinets, counter drop-ins). Absent = floor level.
@@ -112,11 +126,13 @@ export interface GeneratorDef {
    *  (front profile, handle, dimensions, finish, colour) stays in the
    *  inspector. First entry is the default.
    *
-   *  `label` is the short inspector chip ("Doors"); `cardLabel` is the name
-   *  that has to stand on its own in the picker ("Vanity with doors") and
-   *  falls back to "<generator> · <label>". `hotspotKeywords` narrows the
-   *  room-scene match to this variant, so the Mirror hotspot surfaces the
-   *  mirror and not the bin that shares its generator.
+   *  `labelKey` is the short inspector chip ("Doors"); `cardLabelKey` is the
+   *  name that has to stand on its own in the picker ("Vanity with doors") and,
+   *  absent, means the render site composes it from two resolved translations
+   *  — `t(labelKey of the generator) + " · " + t(this labelKey)` — never a
+   *  template over the keys themselves (see pieces.ts). `hotspotKeywords`
+   *  narrows the room-scene match to this variant, so the Mirror hotspot
+   *  surfaces the mirror and not the bin that shares its generator.
    *
    *  `defaults` patches the generator's `defaultSpec` for THIS card. Appliances
    *  forced it: one generator covers a 0.6m washing machine and a 0.9m
@@ -126,8 +142,8 @@ export interface GeneratorDef {
    *  bathroom, not to the Kitchen tab its fridge shares a generator with. */
   variants?: {
     id: string;
-    label: string;
-    cardLabel?: string;
+    labelKey: string; // "<generatorId>.variants.<id>.label"
+    cardLabelKey?: string; // "<generatorId>.variants.<id>.cardLabel"
     hotspotKeywords?: string[];
     defaults?: Partial<ParametricSpec>;
     rooms?: RoomType[];
@@ -142,10 +158,11 @@ export interface GeneratorDef {
   variantIsProduct?: boolean;
   /** Words the room-scene hotspots match this generator against, so clicking
    *  "Toilet" in the illustrated room surfaces the toilet generator and not
-   *  every custom card in the room. Defaults to the generator's label, which
-   *  is enough when the label already says what the thing is ("Toilet",
-   *  "Shower") — spell it out when it doesn't ("Mirror & accessories" also
-   *  covers towels and bins). */
+   *  every custom card in the room. Every live generator sets this explicitly
+   *  now (pieces.ts falls back to the generator id only as a defensive last
+   *  resort, since the label is a translation key and not searchable English)
+   *  — spell it out whenever the id alone wouldn't say what the thing is
+   *  ("Mirror & accessories" also covers towels and bins). */
   hotspotKeywords?: string[];
   /** Pure build: spec → group. Origin at floor center (y=0 at floor, x/z centered),
    *  front faces +Z — same convention FurnitureLayer's normalize() produces. */

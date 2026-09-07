@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { alternatesFor } from "@/i18n/alternates";
 import {
   legalH1,
   legalMeta,
@@ -17,9 +20,18 @@ import {
 export const metadata: Metadata = {
   title: "Privacy Policy · done.",
   description: "How Floorplan → 3D collects, stores, and shares data.",
+  alternates: alternatesFor("/legal/privacy"),
 };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage({ params }: { params: Promise<{ locale: string }> }) {
+  // Every layout and page under [locale] pins the request locale. Without it,
+  // next-intl falls back to reading the locale out of a request HEADER, and a
+  // page that Next prerendered as static then throws "changed from static to
+  // dynamic at runtime" the first time it is served — which took out every
+  // unprefixed English route while only the Hebrew ones kept working, because
+  // those carry the locale in the URL. See src/i18n/README-static.md.
+  setRequestLocale((await params).locale as Locale);
+
   return (
     <>
       {/* DRAFT — not legal advice; review by a lawyer before launch */}

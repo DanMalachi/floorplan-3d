@@ -1,5 +1,5 @@
 import { B, type as ty, section, microLabel } from "@/brand/tokens";
-import { DIFFERENT } from "../content";
+import { landingContent } from "../content";
 
 /**
  * The positioning section: why drawing your own walls first — the one
@@ -7,10 +7,11 @@ import { DIFFERENT } from "../content";
  * fits, paint you can buy, a walkthrough that's actually your home) true
  * rather than a guess. Copy lives in content.ts; this file only lays it out.
  */
-export function Different() {
+export function Different({ locale }: { locale: string }) {
+  const { different } = landingContent(locale);
   return (
     <section style={section()}>
-      <div style={microLabel()}>{DIFFERENT.eyebrow}</div>
+      <div style={microLabel()}>{different.eyebrow}</div>
       <h2
         style={{
           margin: "10px 0 16px",
@@ -22,7 +23,7 @@ export function Different() {
           color: B.ink,
         }}
       >
-        {DIFFERENT.title}
+        {different.title}
       </h2>
       <p
         style={{
@@ -34,7 +35,7 @@ export function Different() {
           color: B.ink2,
         }}
       >
-        {DIFFERENT.intro}
+        {different.intro}
       </p>
 
       <div
@@ -44,8 +45,8 @@ export function Different() {
           gap: "32px 28px",
         }}
       >
-        {DIFFERENT.points.map((p) => (
-          <div key={p.title} style={{ borderTop: `1px solid ${B.hairline}`, paddingTop: 18 }}>
+        {different.points.map((p) => (
+          <div key={p.id} style={{ borderTop: `1px solid ${B.hairline}`, paddingTop: 18 }}>
             <h3
               style={{
                 margin: "0 0 8px",

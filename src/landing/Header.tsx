@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty, ctaPrimary } from "@/brand/tokens";
 import { Wordmark } from "@/brand/Wordmark";
+import { landingContent } from "./content";
 import { APP_HREF, navItems } from "./nav";
 import { AccountControl } from "./AccountControl";
-import { CTA_CLASS, MENU_ITEM_CLASS, NAV_LINK_CLASS, OUTLINE_BTN_CLASS } from "./hoverCss";
+import { LocaleSwitch } from "./LocaleSwitch";
+import {
+  CTA_CLASS,
+  MENU_ITEM_CLASS,
+  NARROW_ONLY_CLASS,
+  NAV_BREAK,
+  NAV_LINK_CLASS,
+  OUTLINE_BTN_CLASS,
+  WIDE_ONLY_CLASS,
+} from "./hoverCss";
 
 // -----------------------------------------------------------------------------
 // The marketing header.
@@ -15,28 +26,40 @@ import { CTA_CLASS, MENU_ITEM_CLASS, NAV_LINK_CLASS, OUTLINE_BTN_CLASS } from ".
 // assembled inline in src/app/design/page.tsx out of absolutely-positioned
 // pieces over a full-bleed canvas, which is the right shape for a tool and the
 // wrong shape for a document. This one is a normal sticky bar in normal flow.
+//
+// ── Which bar shows is a MEDIA QUERY, not React state ───────────────────────
+// This used to be `const [narrow, setNarrow] = useState(false)` synced from
+// `matchMedia` in an effect. That cannot run on the server, so the server always
+// rendered the DESKTOP bar and every phone painted it before hydrating: About,
+// FAQ and the locale link in the open, and "Open done." running off the right
+// edge — 420px of content in a 393px window, cropped without a scrollbar by the
+// marketing shell's `overflowX: hidden`. The hamburger arrived only once React
+// hydrated, which on a phone is after the hero's 3D chunk.
+//
+// Both bars are in the HTML now and `WIDE_ONLY_CLASS`/`NARROW_ONLY_CLASS` hide
+// one. Correct in the first paint, correct with JS off, and `display: none`
+// keeps the hidden one out of the accessibility tree so the links are not
+// announced twice. See the note on those classes in hoverCss.ts.
+//
+// `AccountControl` renders ONCE, outside both, because it is the one control
+// that belongs in both bars — two copies would mean two `useSession`
+// subscriptions and two dropdowns behind one visible control.
 // -----------------------------------------------------------------------------
-
-const BREAK = 860; // px — below this the links collapse into the sheet
 
 export function Header() {
   const [open, setOpen] = useState(false);
-  const [narrow, setNarrow] = useState(false);
 
-  // Media queries can't reach inline styles, and this repo styles with inline
-  // objects rather than CSS. One resize listener is the honest cost of that.
+  // The only thing left that needs to know the width, and it decides nothing
+  // about what renders — only that a sheet left open across a resize to desktop
+  // does not stay open behind the bar it belongs to.
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${BREAK}px)`);
-    const sync = () => setNarrow(mq.matches);
-    sync();
+    const mq = window.matchMedia(`(max-width: ${NAV_BREAK}px)`);
+    const sync = () => {
+      if (!mq.matches) setOpen(false);
+    };
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
-
-  // A menu left open across a resize to desktop would strand its overlay.
-  useEffect(() => {
-    if (!narrow) setOpen(false);
-  }, [narrow]);
 
   useEffect(() => {
     if (!open) return;
@@ -45,6 +68,8 @@ export function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const tNav = useTranslations("nav");
+  const { openApp } = landingContent(useLocale());
   const items = navItems();
 
   return (
@@ -69,54 +94,63 @@ export function Header() {
           gap: 16,
         }}
       >
-        <Link href="/" style={{ textDecoration: "none", lineHeight: 0 }} aria-label="done. home">
+        <Link href="/" style={{ textDecoration: "none", lineHeight: 0 }} aria-label={tNav("home")}>
           <Wordmark size={25} />
         </Link>
 
         <div style={{ flex: 1 }} />
 
-        {!narrow && (
-          <nav style={{ display: "flex", alignItems: "center", gap: 26 }}>
-            {items.map((i) => (
-              <Link
-                key={i.href}
-                href={i.href}
-                className={NAV_LINK_CLASS}
-                style={{
-                  fontFamily: B.fontUi,
-                  fontSize: ty.small,
-                  fontWeight: 600,
-                  color: B.ink3,
-                  textDecoration: "none",
-                  transition: `color ${B.dur} ${B.ease}`,
-                }}
-              >
-                {i.label}
-              </Link>
-            ))}
-          </nav>
-        )}
-
-        {!narrow && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 10 }}>
-            <AccountControl />
-            <Link href={APP_HREF} className={CTA_CLASS} style={ctaPrimary({ padding: "10px 18px", fontSize: 14 })}>
-              Open done.
+        <nav className={WIDE_ONLY_CLASS} style={{ display: "flex", alignItems: "center", gap: 26 }}>
+          {items.map((i) => (
+            <Link
+              key={i.href}
+              href={i.href}
+              className={NAV_LINK_CLASS}
+              style={{
+                fontFamily: B.fontUi,
+                fontSize: ty.small,
+                fontWeight: 600,
+                color: B.ink3,
+                textDecoration: "none",
+                transition: `color ${B.dur} ${B.ease}`,
+              }}
+            >
+              {tNav(i.labelKey)}
             </Link>
-          </div>
-        )}
+          ))}
+        </nav>
 
-        {narrow && (
-          <>
-            <AccountControl />
-            <MenuButton open={open} onClick={() => setOpen((o) => !o)} />
-          </>
-        )}
+        {/* One group, so the utilities keep a single rhythm in both bars: wide
+            reads language → account → CTA, narrow drops the two wide-only
+            members and reads account → menu. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginInlineStart: 10 }}>
+          <div className={WIDE_ONLY_CLASS} style={{ display: "flex", alignItems: "center" }}>
+            <LocaleSwitch />
+          </div>
+
+          <AccountControl />
+
+          <Link
+            href={APP_HREF}
+            className={`${CTA_CLASS} ${WIDE_ONLY_CLASS}`}
+            style={ctaPrimary({ padding: "10px 18px", fontSize: 14 })}
+          >
+            {openApp}
+          </Link>
+
+          <MenuButton
+            open={open}
+            onClick={() => setOpen((o) => !o)}
+            openLabel={tNav("openMenu")}
+            closeLabel={tNav("closeMenu")}
+          />
+        </div>
       </div>
 
-      {narrow && open && (
+      {open && (
         <div
           id="site-menu"
+          className={NARROW_ONLY_CLASS}
           style={{
             borderTop: `1px solid ${B.hairline}`,
             background: B.ground,
@@ -141,16 +175,19 @@ export function Header() {
                 borderBottom: `1px solid ${B.hairline}`,
               }}
             >
-              {i.label}
+              {tNav(i.labelKey)}
             </Link>
           ))}
+          {/* Last row rather than first: language is a utility, and the sheet's
+              own order should still read About → FAQ → the thing you came for. */}
+          <LocaleSwitch variant="sheet" onNavigate={() => setOpen(false)} />
           <Link
             href={APP_HREF}
             onClick={() => setOpen(false)}
             className={CTA_CLASS}
             style={ctaPrimary({ marginTop: 18, justifyContent: "center" })}
           >
-            Open done.
+            {openApp}
           </Link>
         </div>
       )}
@@ -161,7 +198,17 @@ export function Header() {
 /** The three-bar button. Morphs to an X when open — the bars are the same
  *  three elements moved, so the transition reads as one object changing state
  *  rather than two icons swapping. */
-function MenuButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+function MenuButton({
+  open,
+  onClick,
+  openLabel,
+  closeLabel,
+}: {
+  open: boolean;
+  onClick: () => void;
+  openLabel: string;
+  closeLabel: string;
+}) {
   const bar: React.CSSProperties = {
     display: "block",
     width: 18,
@@ -173,10 +220,10 @@ function MenuButton({ open, onClick }: { open: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      aria-label={open ? "Close menu" : "Open menu"}
+      aria-label={open ? closeLabel : openLabel}
       aria-expanded={open}
       aria-controls="site-menu"
-      className={OUTLINE_BTN_CLASS}
+      className={`${OUTLINE_BTN_CLASS} ${NARROW_ONLY_CLASS}`}
       style={{
         width: 40,
         height: 40,

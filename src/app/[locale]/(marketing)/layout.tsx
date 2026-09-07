@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
 import { B, BRAND_THEME_CSS } from "@/brand/tokens";
 import { LANDING_HOVER_CSS } from "@/landing/hoverCss";
 import { Header } from "@/landing/Header";
@@ -29,8 +31,27 @@ import { landingEnabled } from "@/lib/featureFlags";
  * a page that isn't there yet — and the site ROOT has to resolve to something
  * regardless, so a single uniform rule beats two.
  */
-export default function MarketingLayout({ children }: { children: ReactNode }) {
-  if (!landingEnabled) redirect("/design");
+export default async function MarketingLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  // Every layout and page under [locale] pins the request locale. Without it,
+  // next-intl falls back to reading the locale out of a request HEADER, and a
+  // page Next prerendered as static then throws "changed from static to dynamic
+  // at runtime" the first time it is served — which takes out every unprefixed
+  // English route while the Hebrew ones keep working, because those carry the
+  // locale in the URL. See src/i18n/README-static.md.
+  const { locale } = await params;
+  setRequestLocale(locale as Locale);
+
+  // next-intl's `redirect` takes the target locale explicitly rather than
+  // inferring it, so this destination cannot silently drop the prefix the way
+  // the bare `next/navigation` one did: a visitor on `/he` with the flag off
+  // has to land on `/he/design`, not in the English editor.
+  if (!landingEnabled) redirect({ href: "/design", locale: locale as Locale });
 
   return (
     <div
@@ -59,7 +80,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <style dangerouslySetInnerHTML={{ __html: LANDING_HOVER_CSS }} />
       <Header />
       <main>{children}</main>
-      <Footer />
+      <Footer locale={locale} />
     </div>
   );
 }

@@ -15,6 +15,8 @@ import {
 import { ensureDownloaded } from "@/store/syncEngine";
 import { requestViewportThumb } from "@/render/viewportThumb";
 import { enterLiveRoom } from "@/collab/enterLive";
+import { useLocale, useTranslations } from "next-intl";
+import { localePath } from "@/i18n/navigation";
 import { PD, pdGhostBtn, pdHoverTransition, pdMicroLabel } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
@@ -54,16 +56,21 @@ function Pip({ size = 7, color = "currentColor" }: { size?: number; color?: stri
   );
 }
 
-function ago(ts: number): string {
+// `t` is passed in rather than read via a hook — this is a module-scope
+// function and `useTranslations()` only works inside a component. The caller
+// (ProjectsOverlay) already holds a `t` from `useTranslations("editor.chrome")`.
+function ago(ts: number, locale: string, t: ReturnType<typeof useTranslations>): string {
   const s = (Date.now() - ts) / 1000;
-  if (s < 45) return "just now";
+  if (s < 45) return t("projectsOverlay.ago.justNow");
   const m = s / 60;
-  if (m < 60) return `${Math.floor(m)}m ago`;
+  if (m < 60) return t("projectsOverlay.ago.minutes", { n: Math.floor(m) });
   const h = m / 60;
-  if (h < 24) return `${Math.floor(h)}h ago`;
+  if (h < 24) return t("projectsOverlay.ago.hours", { n: Math.floor(h) });
   const d = h / 24;
-  if (d < 7) return `${Math.floor(d)}d ago`;
-  return new Date(ts).toLocaleDateString();
+  if (d < 7) return t("projectsOverlay.ago.days", { n: Math.floor(d) });
+  // Explicit locale: the no-argument form reads the MACHINE's locale, so an
+  // English UI on a Hebrew computer already prints Hebrew dates today.
+  return new Date(ts).toLocaleDateString(locale);
 }
 
 /**
@@ -73,6 +80,8 @@ function ago(ts: number): string {
  * last visited.
  */
 export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("editor.chrome");
+  const locale = useLocale();
   const [items, setItems] = useState<ProjectMeta[]>([]);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -138,7 +147,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
     onClose();
   }
   async function handleDelete(m: ProjectMeta) {
-    if (!window.confirm(`Delete “${m.name}”? This can't be undone.`)) return;
+    if (!window.confirm(t("projectsOverlay.confirmDelete", { name: m.name }))) return;
     await deleteProject(m.id);
     refresh();
   }
@@ -178,16 +187,17 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {/* See BackToSite at the bottom of this file for why this is a plain
-              <a> and why it is hidden while landingEnabled is off. */}
+              <a>, why it prefixes its own locale, and why it is hidden while
+              landingEnabled is off. */}
           {landingEnabled ? (
             <BackToSite />
           ) : (
             <Wordmark size={20} style={{ color: PD.textPrimary }} />
           )}
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <span style={{ fontSize: 19, fontWeight: 600, color: PD.textPrimary }}>Projects</span>
+            <span style={{ fontSize: 19, fontWeight: 600, color: PD.textPrimary }}>{t("projectsOverlay.title")}</span>
             <span style={{ fontSize: 13, color: PD.textTertiary }}>
-              {items.length} {items.length === 1 ? "plan" : "plans"}
+              {t("projectsOverlay.planCount", { count: items.length })}
             </span>
           </div>
         </div>
@@ -239,7 +249,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                     // glyph, not the `▱` character it replaces.
                     <PlanMapIcon size={30} strokeWidth={1.35} style={{ color: PD.textTertiary }} />
                   )}
-                  <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
+                  <div style={{ position: "absolute", top: 8, insetInlineStart: 8, display: "flex", gap: 6 }}>
                     {isCurrent && (
                       <span
                         style={{
@@ -252,7 +262,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                           letterSpacing: 0.4,
                         }}
                       >
-                        OPEN
+                        {t("projectsOverlay.openBadge")}
                       </span>
                     )}
                     {m.cloudOnly && (
@@ -260,7 +270,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       // card, inside the gallery's own scroll container, so a
                       // tooltip above them is clipped on the first row.
                       <Tooltip
-                        label="Saved to your account — click to bring it onto this computer"
+                        label={t("projectsOverlay.cloudOnlyTooltip")}
                         placement="bottom"
                       >
                         <span
@@ -274,12 +284,12 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                             letterSpacing: 0.4,
                           }}
                         >
-                          {busyId === m.id ? "DOWNLOADING…" : "IN CLOUD"}
+                          {busyId === m.id ? t("projectsOverlay.downloadingBadge") : t("projectsOverlay.inCloudBadge")}
                         </span>
                       </Tooltip>
                     )}
                     {m.liveRoomId && (
-                      <Tooltip label="Live shared document — opens into its room" placement="bottom">
+                      <Tooltip label={t("projectsOverlay.liveTooltip")} placement="bottom">
                         <span
                           style={{
                             padding: "3px 8px",
@@ -294,7 +304,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                             gap: 4,
                           }}
                         >
-                          <Pip color="#fff" size={6} /> LIVE
+                          <Pip color="#fff" size={6} /> {t("projectsOverlay.liveBadge")}
                         </span>
                       </Tooltip>
                     )}
@@ -355,7 +365,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       />
                     </div>
                   )}
-                  <span style={pdMicroLabel(PD.textTertiary)}>{ago(m.updatedAt)}</span>
+                  <span style={pdMicroLabel(PD.textTertiary)}>{ago(m.updatedAt, locale, t)}</span>
                 </div>
               </ProjectCard>
             );
@@ -375,12 +385,13 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
 /** Close (Esc). `placement="bottom"` — it lives in the sheet's top bar, where a
  *  tooltip above it would sit off the top of the window. */
 function CloseButton({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("editor.chrome");
   const [hov, bind] = useHover();
   return (
-    <Tooltip label="Close (Esc)" placement="bottom">
+    <Tooltip label={t("projectsOverlay.closeTooltip")} placement="bottom">
       <button
         onClick={onClose}
-        aria-label="Close projects"
+        aria-label={t("projectsOverlay.closeAriaLabel")}
         {...bind}
         style={{
           border: `1px solid ${hov ? PD.surfaceMutedHover : PD.hairline}`,
@@ -405,6 +416,7 @@ function CloseButton({ onClose }: { onClose: () => void }) {
 /** The dashed "New plan" tile. It already declared a border-color/color
  *  transition and had nothing to trigger it. */
 function NewPlanTile({ onClick }: { onClick: () => void }) {
+  const t = useTranslations("editor.chrome");
   const [hov, bind] = useHover();
   return (
     <button
@@ -427,7 +439,7 @@ function NewPlanTile({ onClick }: { onClick: () => void }) {
       }}
     >
       <PlusIcon size={28} strokeWidth={1.4} />
-      <span style={{ fontSize: 13 }}>New plan</span>
+      <span style={{ fontSize: 13 }}>{t("projectsOverlay.newPlan")}</span>
     </button>
   );
 }
@@ -473,13 +485,15 @@ function ProjectCard({
  *  renders a `position: relative` span around its child, so leaving `top/right`
  *  on the button would anchor it to that span instead of to the thumbnail. */
 function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  const t = useTranslations("editor.chrome");
   const [hov, bind] = useHover();
+  const label = t("projectsOverlay.deleteLabel");
   return (
-    <div style={{ position: "absolute", top: 8, right: 8 }}>
-      <Tooltip label="Delete plan" placement="bottom">
+    <div style={{ position: "absolute", top: 8, insetInlineEnd: 8 }}>
+      <Tooltip label={label} placement="bottom">
         <button
           onClick={onClick}
-          aria-label="Delete plan"
+          aria-label={label}
           {...bind}
           style={{
             width: 24,
@@ -505,12 +519,13 @@ function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
 
 /** Rename, beside the plan's name. */
 function RenameButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  const t = useTranslations("editor.chrome");
   const [hov, bind] = useHover();
   return (
-    <Tooltip label="Rename">
+    <Tooltip label={t("projectsOverlay.renameTooltip")}>
       <button
         onClick={onClick}
-        aria-label="Rename plan"
+        aria-label={t("projectsOverlay.renameAriaLabel")}
         {...bind}
         style={pdGhostBtn(hov, {
           justifyContent: "center",
@@ -532,18 +547,27 @@ function RenameButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
  *  (src/store/projectPersistence.ts:40/:387), so the last edits would never
  *  reach IndexedDB. That is also why the Next rule below is disabled for this
  *  one line — leaving the editor is exactly the case where a full document load
- *  is the point, not an oversight.
+ *  is the point, not an oversight. Being outside next/link is also why the
+ *  locale has to be added by hand here; see `localePath` in src/i18n/navigation.ts.
  *
  *  Rendered only while `landingEnabled` is on: with the flag off, "/" just
- *  redirects straight back to /design (src/app/(marketing)/layout.tsx:32) and a
- *  link here would only bounce. */
+ *  redirects straight back to /design (src/app/[locale]/(marketing)/layout.tsx)
+ *  and a link here would only bounce. */
 function BackToSite() {
+  const t = useTranslations("editor.chrome");
   const [hov, bind] = useHover();
+  // The href still has to carry the locale even though the navigation is a full
+  // document load — `useLocale()` rather than reading `<html lang>`, so the
+  // attribute is identical on the server and after hydration.
+  const locale = useLocale();
   return (
     // eslint-disable-next-line @next/next/no-html-link-for-pages
     <a
-      href="/"
-      aria-label="done. home"
+      href={localePath(locale, "/")}
+      // aria-label is a plain string attribute — it can't carry the <Wordmark>
+      // JSX, so the "done." half stays a literal (the wordmark is always Latin)
+      // and only the trailing word is translated.
+      aria-label={`done. ${t("projectsOverlay.homeAriaLabelWord")}`}
       {...bind}
       style={{ display: "flex", flexDirection: "column", gap: 2, textDecoration: "none" }}
     >
@@ -558,7 +582,7 @@ function BackToSite() {
           transition: pdHoverTransition(hov),
         }}
       >
-        back to site
+        {t("projectsOverlay.backToSite")}
       </span>
     </a>
   );

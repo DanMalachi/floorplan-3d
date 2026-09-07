@@ -227,7 +227,7 @@ const cardDims = (variant: string, inches: number) =>
 
 export const tvGenerator: GeneratorDef = {
   id: "tv",
-  label: "TV",
+  labelKey: "tv.label",
   category: "Decor",
   // Wide roll-out: bedroom / study / kids each got their own TV button and
   // wall-band art (LivingScene's console pairing stays living-only — those
@@ -238,12 +238,12 @@ export const tvGenerator: GeneratorDef = {
   modules: [
     {
       key: "screenOn",
-      label: "Screen",
+      labelKey: "tv.modules.screenOn.label",
       min: 0,
       max: 1,
       default: 1,
       // Two states get named buttons, never a 0/1 stepper.
-      toggle: { on: "Screen on", off: "Screen off" },
+      toggle: { onKey: "tv.modules.screenOn.toggle.on", offKey: "tv.modules.screenOn.toggle.off" },
     },
   ],
   fronts: ["slab"],
@@ -254,7 +254,7 @@ export const tvGenerator: GeneratorDef = {
   // The stand, and only the stand: hidden on the wall-mounted cards, where it
   // would be a control that does nothing.
   finishes2: ["steel", "oak", "walnut", "painted"],
-  finishes2Label: "Stand",
+  finishes2LabelKey: "tv.finishes2Label",
   showFinishes2: (spec) => STAND[variantOf(spec)] !== "none",
   wallMounted: (spec) => MOUNT[variantOf(spec)] === "wall",
   // A set on a stand goes where a set on a stand goes: on top of the media
@@ -266,7 +266,7 @@ export const tvGenerator: GeneratorDef = {
   surfaceOptional: true,
   cutoutSize: () => null, // a TV stands ON a surface; it cuts nothing
   sizeInches: {
-    label: "Screen",
+    labelKey: "tv.sizeInches.label",
     presets: [32, 43, 50, 55, 65, 75, 85],
     of: diagonalInches,
     dims: dimsForInches,
@@ -278,36 +278,36 @@ export const tvGenerator: GeneratorDef = {
   variants: [
     {
       id: "wall-55",
-      label: "55\" wall",
-      cardLabel: "Wall-mounted TV 55\"",
+      labelKey: "tv.variants.wall-55.label",
+      cardLabelKey: "tv.variants.wall-55.cardLabel",
       hotspotKeywords: ["tv", "television"],
       defaults: { dims: cardDims("wall-55", 55), finish: "glass-black" },
     },
     {
       id: "wall-65",
-      label: "65\" wall",
-      cardLabel: "Wall-mounted TV 65\"",
+      labelKey: "tv.variants.wall-65.label",
+      cardLabelKey: "tv.variants.wall-65.cardLabel",
       hotspotKeywords: ["tv", "television"],
       defaults: { dims: cardDims("wall-65", 65), finish: "glass-black" },
     },
     {
       id: "wall-75",
-      label: "75\" wall",
-      cardLabel: "Wall-mounted TV 75\"",
+      labelKey: "tv.variants.wall-75.label",
+      cardLabelKey: "tv.variants.wall-75.cardLabel",
       hotspotKeywords: ["tv", "television"],
       defaults: { dims: cardDims("wall-75", 75), finish: "glass-black" },
     },
     {
       id: "pedestal-55",
-      label: "55\" pedestal",
-      cardLabel: "TV on pedestal 55\"",
+      labelKey: "tv.variants.pedestal-55.label",
+      cardLabelKey: "tv.variants.pedestal-55.cardLabel",
       hotspotKeywords: ["tv", "television"],
       defaults: { dims: cardDims("pedestal-55", 55), finish: "glass-black", finish2: "steel" },
     },
     {
       id: "feet-43",
-      label: "43\" feet",
-      cardLabel: "TV on feet 43\"",
+      labelKey: "tv.variants.feet-43.label",
+      cardLabelKey: "tv.variants.feet-43.cardLabel",
       hotspotKeywords: ["tv", "television"],
       defaults: { dims: cardDims("feet-43", 43), finish: "steel", finish2: "steel" },
     },

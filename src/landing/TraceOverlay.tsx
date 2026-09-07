@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { B } from "@/brand/tokens";
 import {
   HERO_BOUNDS,
@@ -206,6 +207,7 @@ export interface TraceOverlayProps {
 }
 
 export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayProps) {
+  const t = useTranslations("demo");
   const planRef = useRef<SVGSVGElement>(null);
   const hudRef = useRef<SVGSVGElement>(null);
   const traceRefs = useRef<(SVGLineElement | null)[]>([]);
@@ -408,11 +410,11 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
         })}
 
         <g className={PLAN_TEXT_CLASS}>
-          <RoomLabel x={480} y={250} name="STUDIO" area="30.0 m²" />
+          <RoomLabel x={480} y={250} name={t("roomStudio")} area="30.0 m²" />
           {/* Low and left of the bathroom's centre: the door is hung mid-way up
               the shared wall, and its swing arc sweeps straight through where a
               centred label would sit. */}
-          <RoomLabel x={72} y={132} name="BATH" area="3.2 m²" />
+          <RoomLabel x={72} y={132} name={t("roomBath")} area="3.2 m²" />
 
           {/* Chained across the top, overall along the bottom, one run down
               each side — the way a plan of this size is actually dimensioned. */}
@@ -422,8 +424,31 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
           <DimV y1={0} y2={500} x={838} from={780} cm={500} />
           <DimV y1={0} y2={180} x={-52} from={0} cm={180} />
 
-          <text x={955} y={600} textAnchor="end" fontSize={16} fill={INK.label} letterSpacing="1.6">
-            DIMENSIONS IN CM · 1:50
+          {/* The only direction-relative anchor in the drawing — every other
+              label here is `textAnchor="middle"`, which is direction-agnostic.
+              `end` is not: it resolves against the element's inline base
+              direction, so under `<html dir="rtl">` it flipped to mean the LEFT
+              end and the caption ran off the right of the viewBox (it starts 5
+              units inside it at x=955) and was clipped by the SVG bounds.
+
+              A plan drawing is a COORDINATE SYSTEM, not a text flow: "the right
+              edge" has to stay the right edge in both locales, so `direction`
+              is pinned ltr here to fix what `end` means. `unicodeBidi:
+              "plaintext"` then takes the RUN's base direction from its own
+              first strong character, so the Hebrew still orders right-to-left
+              inside the label while the label as a whole stays pinned to the
+              same corner. Anchor from the diagram, direction from the words —
+              and no locale conditional either way. */}
+          <text
+            x={955}
+            y={600}
+            textAnchor="end"
+            fontSize={16}
+            fill={INK.label}
+            letterSpacing="1.6"
+            style={{ direction: "ltr", unicodeBidi: "plaintext" }}
+          >
+            {t("scaleNote")}
           </text>
         </g>
 
@@ -464,7 +489,7 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
             stroke={B.ink3} strokeWidth={2} strokeLinecap="round" fill="none" />
           <text ref={btnTextRef} x={14} y={1} fontFamily={B.fontUi} fontSize={17} fontWeight={600}
             fill={B.ink} textAnchor="middle" dominantBaseline="middle">
-            Generate model
+            {t("generateModel")}
           </text>
           <rect ref={rippleRef} x={-BTN.w / 2} y={-BTN.h / 2} width={BTN.w} height={BTN.h} rx={6}
             fill="none" stroke={B.accent} strokeWidth={2} opacity={0} />

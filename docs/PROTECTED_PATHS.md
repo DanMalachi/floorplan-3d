@@ -12,6 +12,23 @@ report for methodology). Nothing here is marked UNCERTAIN — every file's
 imports were traced and confirmed to be 3D-viewer-only with no legacy
 extraction dependencies.
 
+> **THE LIST HAS A DATE, AND THE TREE HAS GROWN PAST IT.** Twenty-plus files
+> have been added under `src/viewport3d/` since 2026-07-19 — `StairInspector`,
+> `StairMesh`, `FixtureCatalog`, `FixtureLayer`, `MeasureTool`, the whole
+> `buildTools/` and `camera/` directories — and **none of them are named below,
+> because they did not exist when the pass ran.** Absence from this list is
+> therefore not evidence that a file is unprotected; it may only mean nobody has
+> looked. Treat anything inside the tree as protected and ASK, exactly as rule 1
+> says, rather than reading the list as exhaustive.
+>
+> This was found on 2026-09-07 the expensive way: the Hebrew job declared the
+> editor fully translated while two panels inside this tree — the lighting
+> picker and the stair inspector — were still entirely English, because the
+> inventory had used this list as its boundary. Dan's call that day was to keep
+> treating the whole tree as protected and to record the gap here rather than
+> silently narrowing the rule. **The list still needs a fresh Explore pass to
+> classify the post-2026-07-19 files properly.**
+
 ## React Three Fiber viewer
 
 - `src/viewport3d/Viewport.tsx` — Canvas root: camera, controls, postprocessing, env/time-of-day wiring.
@@ -36,6 +53,117 @@ extraction dependencies.
 
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
+
+- **2026-09-07 (second), `src/viewport3d/FixtureCatalog.tsx` and
+  `src/viewport3d/StairInspector.tsx` — their hardcoded UI TEXT moves into the
+  message catalogue.** Approved by Dan before the edits. Translation only: a
+  `useTranslations` import, module-scope label tables swapping words for keys,
+  and the render sites resolving them. No logic, no geometry, no imports beyond
+  next-intl.
+
+  **Neither file is named in the list above, and that is the point of the
+  callout at the top of this file.** The list was compiled 2026-07-19;
+  `StairInspector.tsx` landed 2026-07-31 and `FixtureCatalog.tsx` 2026-08-03. So
+  they sat in the protected tree while being absent from the protected list, and
+  the Hebrew inventory — which used the list as its boundary — never saw them.
+  The lighting picker and the stair panel were still fully English after Step 5
+  was declared done. Dan found the lighting one by looking at the running app.
+
+  Dan's decision was deliberately the conservative one: treat the whole tree as
+  protected, grant this exception explicitly, and write the staleness down —
+  rather than concluding "not on the list, therefore fair game", which would
+  have widened rule 1 by interpretation instead of by a decision.
+
+  `FixtureCatalog.tsx` also switches from the catalogue's `name` to its new
+  `nameKey` (`src/fixtures/catalog.ts`); `name` stays as the English fallback.
+  `StairInspector.tsx`'s advisory warnings are built in
+  `src/lib/stairs/stairGeometry.ts`, which is NOT protected and now returns
+  `{ key, params }` for the render site to resolve — a pure geometry module must
+  not render words.
+
+- **2026-09-07, `src/viewport3d/Viewport.tsx` — `StatusOverlay`'s `bottom`
+  moves from 14 to 250.** Approved by Dan before the edit. A third, separate
+  ask from the two 2026-09-06 entries below: neither of those covered
+  POSITIONING, and this is not a rename and not a string move — it changes
+  where a box lands.
+
+  Why: the pill renders only in `build` and `furnish`, and those are exactly
+  the two modes where a 208×224 Plan Dock panel is pinned to the same corner
+  (`BuildNavigator.tsx:74` in build, `BottomDock.tsx:403`'s `NavigatorPanel` in
+  furnish, both `insetInlineStart: 16, bottom: 16`). Measured at 1440×900 the
+  overlap was 208×31 — **72% of the pill** — identical in `en` and `he` and in
+  both modes; both boxes are `z-index: auto` under the same stacking parent, so
+  DOM order decided it and the panel painted over the pill. The pill was
+  therefore never fully visible in either mode it exists in. This is one of the
+  four pre-existing English overlaps the Step 4 RTL gate counted, and NOT an
+  RTL regression — Dan reported seeing it in both languages.
+
+  Scope: one number plus its comment. No logic, no imports, no props. The
+  residual case, left deliberately unhandled: `furnish`'s item dock is
+  resizable, and dragging it above ~234px tall reaches the pill's trailing end
+  again — fixing that would couple this file to the dock's height, which is the
+  cross-layer reach this tree is protected from.
+
+- **2026-09-06 (second, separate from the property-rename entry below),
+  `src/viewport3d/Viewport.tsx` — its hardcoded UI TEXT moves into the message
+  catalogue** (branch `feat/hebrew`, Step 5). Approved by Dan before the edit,
+  asked for separately because the earlier exception the same day covered
+  *property renames only* and this one is not that: it adds a
+  `useTranslations` import and changes three module-scope label tables to carry
+  keys instead of words.
+
+  The text: `WALL_MODES` ("Full"/"Cutaway"/"Top"), `ENV_PRESETS`
+  ("Studio"/"Suburb"/"City"), `WEATHERS` ("Clear"/"Cloudy"/"Rain"), the
+  "Scene" panel header, the walkthrough chip's two states, the time-of-day
+  tooltip, the ceilings tip, and StatusOverlay's selection and undo/redo lines.
+  Without it the Hebrew editor would show its view-mode and environment rows in
+  English directly beside translated chrome.
+
+  Each table keeps its `id` untouched and swaps `label` for `labelKey`; the
+  render site resolves the key. That is the convention already used by
+  `NavItem.labelKey` (src/landing/nav.ts) and now by `ALL_MODES`
+  (design/page.tsx), so this file follows the app's existing answer rather than
+  inventing one. Ids are what the store compares on and none of them move.
+
+  Presentation only. Nothing touching the Canvas, camera, controls,
+  postprocessing, env/time-of-day WIRING (only the words naming the presets),
+  raycasting, or any store setter — every `onClick` keeps the exact call it
+  had. The file's own comment above `WEATHERS` already anticipated this: the
+  weather emoji was split out of the label string earlier precisely so "the
+  label stays a word".
+
+- **2026-09-06, `src/viewport3d/Viewport.tsx` and
+  `src/viewport3d/walkthrough/WalkthroughMode.tsx` — four pinned chrome boxes
+  move from physical `left`/`right` to logical `insetInlineStart`/
+  `insetInlineEnd`** (branch `feat/hebrew`, Step 4 of docs/HEBREW-HANDOFF.md).
+  Approved by Dan before the edit.
+
+  | site | element | was |
+  |---|---|---|
+  | `Viewport.tsx:217` | Scene panel | `left: 14, top: 112` |
+  | `Viewport.tsx:321` | WallModeToggle | `left: 14, top: 64` |
+  | `Viewport.tsx:367` | StatusOverlay | `left: 14, bottom: 14` |
+  | `WalkthroughMode.tsx:748` | FOV slider | `right: 14, top: 64` |
+
+  Under `<html dir="rtl">` these four stayed on the physical side they were
+  authored on while everything around them mirrored. The consequence is not
+  cosmetic and is arithmetic rather than observed: the inspector is
+  `insetInlineEnd: 14, top: 64` (`panelKit.tsx`), which in Hebrew resolves to
+  physical `left: 14, top: 64` — the exact coordinates of WallModeToggle. The
+  two draw on top of each other the moment anything is selected in the Hebrew
+  editor. The Step 4 mirror gate missed it only because nothing was selected
+  during that run.
+
+  Four property renames. No logic, no geometry, no imports, no types. Nothing
+  touching the camera, controls, postprocessing, env/time-of-day wiring, or the
+  first-person walkthrough's collision, spawn, doors or config. Every one is UI
+  chrome that happens to live in the viewer's file rather than viewer code —
+  which is the same argument the 2026-09-04 `WalkthroughMode.tsx` entry below
+  makes, and, as that entry says, an exception is never widened to a file it
+  does not name: both files are named here.
+
+  Reversible by inverting the four renames; in English the two spellings
+  compute identically, so the LTR render is unchanged by construction.
 
 - **2026-09-04, `src/viewport3d/walkthrough/WalkthroughMode.tsx` — its five
   `T` token references now read from the Plan Dock set** (branch

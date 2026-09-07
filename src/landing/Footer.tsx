@@ -1,6 +1,8 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { B, type as ty, microLabel } from "@/brand/tokens";
 import { WordmarkLockup } from "@/brand/Wordmark";
+import { landingContent } from "./content";
 import { APP_HREF, footerLegal, navItems } from "./nav";
 import { NAV_LINK_CLASS } from "./hoverCss";
 
@@ -10,7 +12,16 @@ import { NAV_LINK_CLASS } from "./hoverCss";
  * links, policies, an address bar. The mark keeps the period; the plumbing
  * keeps the domain.
  */
-export function Footer() {
+// A SERVER component, deliberately. It briefly became a client one to reach
+// `useTranslations`, which ships the whole footer — markup, styles and all — to
+// the browser for strings that never change after render. `getTranslations` is
+// the server half of the same API and needs no boundary; the marketing layout
+// above has already pinned the request locale, so this stays statically
+// rendered (see src/i18n/README-static.md).
+export async function Footer({ locale }: { locale: string }) {
+  const t = await getTranslations("nav");
+  const tFooter = await getTranslations("footer");
+  const { footer, openApp } = landingContent(locale);
   return (
     <footer style={{ borderTop: `1px solid ${B.hairline}`, background: B.ground }}>
       <div
@@ -36,27 +47,26 @@ export function Footer() {
               maxWidth: 300,
             }}
           >
-            Draw the home you actually have, furnish it from a real catalogue,
-            and walk it before you spend anything.
+            {footer.tagline}
           </p>
         </div>
 
-        <FooterCol heading="Product">
-          <FooterLink href={APP_HREF}>Open done.</FooterLink>
+        <FooterCol heading={tFooter("product")}>
+          <FooterLink href={APP_HREF}>{openApp}</FooterLink>
           {navItems().map((i) => (
             <FooterLink key={i.href} href={i.href}>
-              {i.label}
+              {t(i.labelKey)}
             </FooterLink>
           ))}
         </FooterCol>
 
-        <FooterCol heading="Legal">
+        <FooterCol heading={tFooter("legal")}>
           {footerLegal().map((i) => (
             <FooterLink key={i.href} href={i.href}>
-              {i.label}
+              {t(i.labelKey)}
             </FooterLink>
           ))}
-          <FooterLink href="/account">Your data</FooterLink>
+          <FooterLink href="/account">{tFooter("yourData")}</FooterLink>
         </FooterCol>
       </div>
 

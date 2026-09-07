@@ -21,14 +21,14 @@ function handleFor(spec: ParametricSpec): THREE.Object3D | null {
 // so no UI path can place a new one.
 export const kitchenRunGenerator: GeneratorDef = {
   id: "kitchenRun",
-  label: "Custom kitchen run",
+  labelKey: "kitchenRun.label",
   category: "Kitchen",
   rooms: [],
   wallSnap: true,
   dimLimits: { w: [0.6, 6.0], d: [0.55, 0.7], h: [1.4, 2.6] },
   modules: [
-    { key: "drawerUnits", label: "Drawer units", min: 0, max: 4, default: 1 },
-    { key: "wallCabinets", label: "Wall cabinets", min: 0, max: 6, default: 2 },
+    { key: "drawerUnits", labelKey: "kitchenRun.modules.drawerUnits.label", min: 0, max: 4, default: 1 },
+    { key: "wallCabinets", labelKey: "kitchenRun.modules.wallCabinets.label", min: 0, max: 6, default: 2 },
   ],
   fronts: ["slab", "shaker", "farmhouse"],
   handles: ["bar", "knob", "none"],

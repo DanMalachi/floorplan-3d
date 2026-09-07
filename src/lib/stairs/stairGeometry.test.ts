@@ -57,7 +57,7 @@ const stair = (p: Partial<Stair> & Pick<Stair, "flights">): Stair => ({
 {
   const m = stairMetrics(stair({ flights: [{ x0: 0, y0: 0, x1: 1.5, y1: 0 }] }));
   ok(
-    m.warnings.some((w) => w.includes("shallow")),
+    m.warnings.some((w) => w.key === "treadShallow"),
     `cramped run warns on tread depth (got ${JSON.stringify(m.warnings)})`,
   );
 }
@@ -67,14 +67,14 @@ const stair = (p: Partial<Stair> & Pick<Stair, "flights">): Stair => ({
   const m = stairMetrics(stair({ flights: [{ x0: 0, y0: 0, x1: 4, y1: 0 }], steps: 10 }));
   ok(m.steps === 10, `explicit steps wins (got ${m.steps})`);
   ok(near(m.riser, 0.24), "riser follows the override");
-  ok(m.warnings.some((w) => w.includes("steep")), "and the steep riser is reported");
+  ok(m.warnings.some((w) => w.key === "riserSteep"), "and the steep riser is reported");
 }
 
 // 4. Degenerate run: warns, stays finite.
 {
   const s = stair({ flights: [{ x0: 2, y0: 2, x1: 2, y1: 2 }] });
   const m = stairMetrics(s);
-  ok(m.warnings.some((w) => w.includes("no length")), "zero-length flight warns");
+  ok(m.warnings.some((w) => w.key === "flightNoLength"), "zero-length flight warns");
   ok(Number.isFinite(m.riser) && Number.isFinite(m.going), "no NaN in the metrics");
   ok(stairLandings(s).every((l) => l.poly.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))),
     "no NaN in the landing hulls");
@@ -161,7 +161,7 @@ for (const [name, s] of Object.entries(shapes)) {
     `flush U landing spans both flights (got ${area(ls[0]?.poly ?? []).toFixed(2)} m²)`,
   );
   ok(contains(ls[0]?.poly ?? [], 3.2, 0.5), "and covers the crossover past both flight ends");
-  ok(!m.warnings.some((w) => w.includes("head-on")), "no head-on warning for a flush turn");
+  ok(!m.warnings.some((w) => w.key === "headOn"), "no head-on warning for a flush turn");
 }
 
 // 6b. Two collinear flights meeting head-on genuinely have nothing to bridge.
@@ -173,7 +173,7 @@ for (const [name, s] of Object.entries(shapes)) {
     ],
   });
   const m = stairMetrics(s);
-  ok(m.warnings.some((w) => w.includes("head-on")), "flush straight continuation warns instead");
+  ok(m.warnings.some((w) => w.key === "headOn"), "flush straight continuation warns instead");
   ok(stairLandings(s).length === 1, "and emits only the top stub, not a zero-area quad");
 }
 

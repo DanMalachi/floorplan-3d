@@ -274,7 +274,7 @@ function ModelRow({
         alignItems: "center",
         justifyContent: "space-between",
         gap: 12,
-        textAlign: "left",
+        textAlign: "start",
         padding: "8px 12px",
         borderRadius: PD.radiusS,
         border: `1px solid ${active ? PD.accent : hov ? PD.surfaceMutedHover : PD.hairline}`,

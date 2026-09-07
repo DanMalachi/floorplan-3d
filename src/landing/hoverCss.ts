@@ -29,6 +29,36 @@ export const MENU_ITEM_CLASS = "done-menu-item";
 /** A quiet text-only button (header "Sign in"). */
 export const TEXT_BTN_CLASS = "done-text-btn";
 
+/**
+ * The header breakpoint, and the two classes that act on it.
+ *
+ * These are CSS rather than the `useState` + `matchMedia` pair Header.tsx used
+ * to hold, because that pair cannot run on the server. `narrow` started
+ * `false`, so the SERVER rendered the desktop bar and every phone painted it:
+ * About, FAQ and the locale link sitting in the open, and the CTA running off
+ * the right edge — header content measured 420px in a 393px window, silently
+ * cropped by the shell's `overflowX: hidden`. The hamburger only appeared once
+ * React hydrated, which on a phone is *after* the hero's 3D chunk, long enough
+ * to be the whole first impression.
+ *
+ * A media query has no such gap: the right bar is in the first paint, with
+ * JavaScript off entirely. Both trees ship in the HTML and one is display:none,
+ * which also keeps it out of the accessibility tree — so there are no duplicate
+ * nav links for a screen reader.
+ *
+ * `!important` is load-bearing: this site styles with inline objects, and an
+ * inline `display` would otherwise beat a class. An important declaration in a
+ * stylesheet wins over a non-important inline one. Hiding by `display: none`
+ * rather than setting a display VALUE means each element keeps whatever
+ * `display` its own inline style asks for when it is shown (the nav is flex,
+ * the menu button inline-flex, the sheet a flex column).
+ */
+export const NAV_BREAK = 860;
+/** Shown only from the breakpoint up. */
+export const WIDE_ONLY_CLASS = "done-wide-only";
+/** Shown only below the breakpoint. */
+export const NARROW_ONLY_CLASS = "done-narrow-only";
+
 export const LANDING_HOVER_CSS = `
 .${CTA_CLASS} { transition: filter ${B.dur} ${B.ease}, transform ${B.dur} ${B.ease}; }
 .${CTA_CLASS}:hover { filter: brightness(1.08); transform: translateY(-1px); }
@@ -54,6 +84,13 @@ export const LANDING_HOVER_CSS = `
 .${TEXT_BTN_CLASS} { transition: color ${B.dur} ${B.ease}; }
 .${TEXT_BTN_CLASS}:hover { color: ${B.ink}; }
 .${TEXT_BTN_CLASS}:focus-visible { outline: 2px solid ${B.accent}; outline-offset: 3px; border-radius: 4px; }
+
+@media (max-width: ${NAV_BREAK}px) {
+  .${WIDE_ONLY_CLASS} { display: none !important; }
+}
+@media (min-width: ${NAV_BREAK + 1}px) {
+  .${NARROW_ONLY_CLASS} { display: none !important; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .${CTA_CLASS}:hover { transform: none; }

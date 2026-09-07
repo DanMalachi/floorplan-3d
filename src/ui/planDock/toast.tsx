@@ -9,35 +9,51 @@
 // or persistence.
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./tokens";
 
-type Listener = (msg: string) => void;
+/** A toast is either words already resolved by its (React) caller, or a
+ *  translation key for a caller that has no `t` of its own — see `pdToastKey`. */
+type ToastEntry = { text: string } | { key: string; params?: Record<string, string | number> };
+type Listener = (entry: ToastEntry) => void;
 const listeners = new Set<Listener>();
 
 const DURATION_MS = 2200;
 
 /** Fire a transient PD-styled toast from anywhere: build tools, the eyedropper,
  *  the house-cutaway navigator, BuildToolbar. No-op if no <PdToastHost/> is
- *  mounted (there is exactly one, in Viewport). */
+ *  mounted (there is exactly one, in Viewport). `msg` is already-translated
+ *  words — the caller resolved them with its own `useTranslations`. */
 export function pdToast(msg: string) {
-  for (const l of listeners) l(msg);
+  for (const l of listeners) l({ text: msg });
+}
+
+/** Same as `pdToast`, for callers that CANNOT call `useTranslations` because
+ *  they aren't React components (the store, the eyedropper module) — same
+ *  reasoning as useSceneStore's `ImportMsgKey`/`resolveImportMsg`: the caller
+ *  names a key instead of words, and whatever has `t` (here, `PdToastHost`
+ *  itself, which is already a component) turns it into words at render time.
+ *  `key` is relative to the `editor.toast` namespace. */
+export function pdToastKey(key: string, params?: Record<string, string | number>) {
+  for (const l of listeners) l({ key, params });
 }
 
 /** Bottom-center glass pill, above the dock. Mount once near the Canvas root. */
 export function PdToastHost() {
+  const t = useTranslations("editor.toast");
   const [entry, setEntry] = useState<{ msg: string; key: number } | null>(null);
 
   useEffect(() => {
     let n = 0;
-    const onMsg: Listener = (msg) => {
+    const onMsg: Listener = (e) => {
       n += 1;
-      setEntry({ msg, key: n });
+      setEntry({ msg: "text" in e ? e.text : t(e.key, e.params), key: n });
     };
     listeners.add(onMsg);
     return () => {
       listeners.delete(onMsg);
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!entry) return;

@@ -75,20 +75,20 @@ function vesselBowl(rx: number, rz: number, mat: THREE.Material): THREE.Group {
 
 export const vanityGenerator: GeneratorDef = {
   id: "vanity",
-  label: "Basin & vanity",
+  labelKey: "vanity.label",
   category: "Bathroom",
   rooms: ["bathroom"],
   wallSnap: true,
   dimLimits: { w: [0.4, 1.6], d: [0.35, 0.6], h: [0.75, 0.95] },
-  modules: [{ key: "doors", label: "Doors", min: 1, max: 4, default: 2 }],
+  modules: [{ key: "doors", labelKey: "vanity.modules.doors.label", min: 1, max: 4, default: 2 }],
   fronts: ["slab", "shaker"],
   handles: ["bar", "knob", "none"],
   finishes: ["painted", "oak", "walnut", "laminate-matte", "ceramic"],
   variants: [
-    { id: "vanity-doors", label: "Doors", cardLabel: "Vanity with doors" },
-    { id: "vanity-drawers", label: "Drawers", cardLabel: "Vanity with drawers" },
-    { id: "countertop", label: "Vessel", cardLabel: "Vessel basin unit" },
-    { id: "pedestal", label: "Pedestal", cardLabel: "Pedestal basin" },
+    { id: "vanity-doors", labelKey: "vanity.variants.vanity-doors.label", cardLabelKey: "vanity.variants.vanity-doors.cardLabel" },
+    { id: "vanity-drawers", labelKey: "vanity.variants.vanity-drawers.label", cardLabelKey: "vanity.variants.vanity-drawers.cardLabel" },
+    { id: "countertop", labelKey: "vanity.variants.countertop.label", cardLabelKey: "vanity.variants.countertop.cardLabel" },
+    { id: "pedestal", labelKey: "vanity.variants.pedestal.label", cardLabelKey: "vanity.variants.pedestal.cardLabel" },
   ],
   hotspotKeywords: ["sink", "basin", "vanity"],
   defaultSpec: {

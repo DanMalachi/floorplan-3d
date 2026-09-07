@@ -7,6 +7,7 @@
 // (VariantSwatchRow renders nothing until furniture/variants.ts exists) so
 // this file's layout doesn't change shape between phases.
 
+import { useLocale, useTranslations } from "next-intl";
 import type { FurnitureItem } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { specOf } from "@/furniture/spec";
@@ -17,22 +18,28 @@ import { pdInspectorPanel, PdHelpText, PdActionRow, PdActionButton } from "./pan
 import { VariantSwatchRow } from "./VariantSwatchRow";
 
 export function FurnitureSection({ item }: { item: FurnitureItem }) {
+  const locale = useLocale();
+  const tp = useTranslations("editor.parametric");
+  const tt = useTranslations("editor.toast");
   const spec = specOf(item);
+  // `nameKey` for a generator (translatable description), `name` for a real
+  // product (a proper noun that must not be translated).
+  const specName = spec?.nameKey ? tp(spec.nameKey) : spec?.name;
   const rendered = useThumbnail(spec?.thumbnail ? "" : spec?.model ?? item.assetId);
   const thumb = spec?.thumbnail ?? rendered;
   const deg = Math.round(((item.rotation * 180) / Math.PI) % 360);
-  const priceStr = spec?.price?.value != null ? `${spec.price.currency ?? "₪"}${spec.price.value.toLocaleString()}` : null;
+  const priceStr = spec?.price?.value != null ? `${spec.price.currency ?? "₪"}${spec.price.value.toLocaleString(locale)}` : null;
 
   const onDuplicate = () => {
     useSceneStore.getState().duplicateFurniture(item.id);
-    pdToast("Duplicated");
+    pdToast(tt("duplicated"));
   };
   const onReplace = () => {
     const s = useSceneStore.getState();
     const id = item.id;
     s.requestDock("furniture");
     s.setReplaceTarget(id);
-    pdToast("Pick a replacement in the Furniture tab");
+    pdToast(tt("pickReplacement"));
   };
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 
@@ -54,14 +61,14 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
         >
           {thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumb} alt={spec?.name ?? item.assetId} width={44} height={44} style={{ objectFit: "contain" }} draggable={false} />
+            <img src={thumb} alt={specName ?? item.assetId} width={44} height={44} style={{ objectFit: "contain" }} draggable={false} />
           ) : (
             <span style={{ color: PD.textTertiary, fontSize: 10 }}>…</span>
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {spec?.name ?? item.assetId}
+            {specName ?? item.assetId}
           </div>
           {spec?.kind && <div style={{ fontSize: 10.5, color: PD.textTertiary }}>{spec.kind}</div>}
           {(spec?.brand || priceStr) && (
@@ -82,12 +89,15 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
       <VariantSwatchRow item={item} />
 
       <PdActionRow>
-        <PdActionButton label="Replace" onClick={onReplace} />
-        <PdActionButton label="Duplicate" onClick={onDuplicate} />
-        <PdActionButton label="Delete" tone="danger" onClick={onDelete} />
+        <PdActionButton label={tp("replace")} onClick={onReplace} />
+        <PdActionButton label={tp("duplicate")} onClick={onDuplicate} />
+        <PdActionButton label={tp("delete")} tone="danger" onClick={onDelete} />
       </PdActionRow>
 
-      <PdHelpText>drag to move · R rotates · Delete removes</PdHelpText>
+      {/* Shares `editor.parametric`'s action and help keys rather than owning a
+          second copy: the two panels render the same three buttons and the same
+          sentence, and two catalogue entries for one string is how they drift. */}
+      <PdHelpText>{tp("helpMoveRotate")}</PdHelpText>
     </div>
   );
 }

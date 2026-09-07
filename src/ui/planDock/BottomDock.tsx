@@ -45,6 +45,7 @@
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
 import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
@@ -61,7 +62,7 @@ import { piecesOf, type CustomPiece } from "@/parametric/pieces";
 import type { ParametricSpec } from "@/schema/scene";
 import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
-import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL } from "@/materials/registry";
+import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
 import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
 import type { FloorStyle } from "@/schema/scene";
 import { PD, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
@@ -256,6 +257,7 @@ function SwatchButton({
  *  pointermove/pointerup listeners, not R3F — this is regular HTML, no
  *  Three.js raycasting involved. */
 function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; setDockHeight: (h: number) => void }) {
+  const t = useTranslations("editor.dock");
   const [hovered, hoverBind] = useHover();
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -302,34 +304,36 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
   // Below, not above: this strip is the topmost thing inside a panel with
   // `overflow: hidden`, so a tooltip over it would be clipped away entirely.
   return (
-    <Tooltip label="Drag to resize" placement="bottom">
+    <Tooltip label={t("dragToResize")} placement="bottom">
       {strip}
     </Tooltip>
   );
 }
 
-const DOCK_TABS: { id: DockTab; label: string }[] = [
-  { id: "furniture", label: "Furniture" },
-  { id: "lighting", label: "Lighting" },
-  { id: "paint", label: "Paint" },
-  { id: "floors", label: "Floors" },
+// `labelKey`, not `label` — module scope cannot call `useTranslations()`.
+// Same convention as ALL_MODES / WALL_MODES / the room scenes.
+const DOCK_TABS: { id: DockTab; labelKey: string }[] = [
+  { id: "furniture", labelKey: "furniture" },
+  { id: "lighting", labelKey: "lighting" },
+  { id: "paint", labelKey: "paint" },
+  { id: "floors", labelKey: "floors" },
 ];
 
 // Every browsable room tab, all 11 with illustrated hotspot art in
 // ROOM_SCENE_COMPONENT. NavigatorPanel's "scene not built yet" fallback stays
 // in place for any future RoomType added without a Scene yet.
-const ROOM_SCENES: { id: RoomType; label: string }[] = [
-  { id: "kitchen", label: "Kitchen" },
-  { id: "bathroom", label: "Bathroom" },
-  { id: "bedroom", label: "Bedroom" },
-  { id: "living", label: "Living" },
-  { id: "dining", label: "Dining" },
-  { id: "study", label: "Study" },
-  { id: "laundry", label: "Laundry" },
-  { id: "closet", label: "Closet" },
-  { id: "kids", label: "Kids" },
-  { id: "garage", label: "Garage" },
-  { id: "outdoors", label: "Outdoors" },
+const ROOM_SCENES: { id: RoomType; labelKey: string }[] = [
+  { id: "kitchen", labelKey: "kitchen" },
+  { id: "bathroom", labelKey: "bathroom" },
+  { id: "bedroom", labelKey: "bedroom" },
+  { id: "living", labelKey: "living" },
+  { id: "dining", labelKey: "dining" },
+  { id: "study", labelKey: "study" },
+  { id: "laundry", labelKey: "laundry" },
+  { id: "closet", labelKey: "closet" },
+  { id: "kids", labelKey: "kids" },
+  { id: "garage", labelKey: "garage" },
+  { id: "outdoors", labelKey: "outdoors" },
 ];
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
@@ -363,11 +367,12 @@ const isHebrew = (s: string) => /[֐-׿]/.test(s);
 /** One room tab. Its own component so `useHover` lives per BUTTON — 11
  *  buttons sharing one hover flag in NavigatorPanel would re-render the whole
  *  row (and the illustrated scene under it) on every cursor move. */
-function NavRoomButton({ id, label, active, onPick }: { id: RoomType; label: string; active: boolean; onPick: (r: RoomType) => void }) {
+function NavRoomButton({ id, labelKey, active, onPick }: { id: RoomType; labelKey: string; active: boolean; onPick: (r: RoomType) => void }) {
+  const t = useTranslations("editor.dock.rooms");
   const Icon = ROOM_ICON[id];
   const [hovered, hoverBind] = useHover();
   return (
-    <Tooltip label={label}>
+    <Tooltip label={t(labelKey)}>
       <button {...hoverBind} onClick={() => onPick(id)} style={pdIconBtn(active, 28, hovered)}>
         <Icon size={15} />
       </button>
@@ -391,16 +396,17 @@ function NavigatorPanel({
   setActiveHotspot: (h: string | null) => void;
   onFloorClick: () => void;
 }) {
+  const t = useTranslations("editor.dock");
   const RoomBigIcon = ROOM_ICON[room];
   const Scene = ROOM_SCENE_COMPONENT[room];
   return (
-    <div style={{ position: "absolute", left: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
+    <div style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}>
       <div style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => (
           <NavRoomButton
             key={r.id}
             id={r.id}
-            label={r.label}
+            labelKey={r.labelKey}
             active={room === r.id}
             onPick={(id) => {
               setRoom(id);
@@ -416,7 +422,7 @@ function NavigatorPanel({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 8, color: PD.textTertiary }}>
             <RoomBigIcon size={40} />
             <span style={{ fontSize: 10, textAlign: "center", padding: "0 10px" }}>
-              {ROOM_SCENES.find((r) => r.id === room)?.label} scene not built yet — showing everything tagged for this room
+              {t("sceneNotBuilt", { room: t(`rooms.${ROOM_SCENES.find((r) => r.id === room)?.labelKey}`) })}
             </span>
           </div>
         )}
@@ -554,7 +560,20 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
  *  placement of the generator's default spec, same ghost/click-to-place flow
  *  as a catalog item. */
+/** Resolves a piece's caption. Most variants carry an explicit
+ *  `cardLabelKey`; cooktop is the one generator that does not, so its caption
+ *  is composed from two resolved translations rather than a template over
+ *  keys — the separator sits between two finished words in either script. */
+function usePieceLabel() {
+  const tp = useTranslations("editor.parametric");
+  return (piece: CustomPiece) =>
+    piece.variantLabelKey ? `${tp(piece.labelKey)} · ${tp(piece.variantLabelKey)}` : tp(piece.labelKey);
+}
+
 function CustomCard({ piece }: { piece: CustomPiece }) {
+  const t = useTranslations("editor.dock");
+  const pieceLabel = usePieceLabel();
+  const label = pieceLabel(piece);
   const generator = piece.generator;
   const placing = useSceneStore((s) => s.placing);
   const placingRun = useSceneStore((s) => s.placingRun);
@@ -638,23 +657,25 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
           letterSpacing: 0.2,
         }}
       >
-        Custom
+        {t("customBadge")}
       </span>
       <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-        {piece.label}
+        {label}
       </span>
     </button>
   );
   // Same reasoning as ItemCard: the caption below is ellipsized at 68px, so the
   // full name is worth a hover label, drawn below because the grid scrolls.
   return (
-    <Tooltip label={piece.label} placement="bottom">
+    <Tooltip label={label} placement="bottom">
       {card}
     </Tooltip>
   );
 }
 
 function PaintTab() {
+  const t = useTranslations("editor.dock");
+  const locale = useLocale();
   const brush = useSceneStore((s) => s.brush);
   // The same palette serves walls and window frames — which one a swatch lands
   // on is the armed brush, not a second copy of the colour list. Frames take
@@ -682,16 +703,21 @@ function PaintTab() {
       <SwatchButton
         onClick={() => pick(null)}
         active={plasterActive}
-        tip={forFrames ? "Natural — the finish's own colour" : "Plaster (default)"}
+        tip={forFrames ? t("paint.tipNatural") : t("paint.tipPlaster")}
         style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: "#f3ece1", cursor: "pointer" }}
       />
-      {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>Loading…</span>}
+      {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>{t("paint.loading")}</span>}
       {families.flatMap((slug) =>
         (grouped[slug] ?? []).map((c) => {
+          // `nameHe` is currently "" for the whole 1651-shade Tambour feed (no
+          // Hebrew names in the scraped source — see scripts/README-tambour.md)
+          // so this falls back to nameEn until that's backfilled; written to
+          // pick it up for free the day it is.
+          const colorName = locale === "he" && c.nameHe ? c.nameHe : c.nameEn;
           return (
             <SwatchButton
               key={c.code}
-              tip={`${c.code} · ${c.nameEn}`}
+              tip={`${c.code} · ${colorName}`}
               onClick={() => pick(c.hex)}
               active={activeHex === c.hex}
               style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: c.hex, cursor: "pointer" }}
@@ -704,6 +730,7 @@ function PaintTab() {
 }
 
 function FloorsTab() {
+  const t = useTranslations("editor.dock");
   const brush = useSceneStore((s) => s.brush);
   const active = brush?.kind === "floor" ? brush.style : undefined;
   const pick = (style: FloorStyle) => useSceneStore.getState().setBrush({ kind: "floor", style });
@@ -715,7 +742,11 @@ function FloorsTab() {
             key={m.id}
             onClick={() => pick(m.id)}
             active={active === m.id}
-            tip={`${m.name} · ${FAMILY_LABEL[family]} · tiles every ${m.coverM} m`}
+            tip={t("floors.tip", {
+              name: t(`floors.names.${m.id}`),
+              family: t(`floors.family.${FAMILY_LABEL_KEY[family]}`),
+              cover: m.coverM,
+            })}
             style={{
               flex: "0 0 auto",
               width: 44,
@@ -734,6 +765,8 @@ function FloorsTab() {
 }
 
 function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; activeHotspot: string | null }) {
+  const t = useTranslations("editor.dock");
+  const pieceLabel = usePieceLabel();
   const [activeCategory, setActiveCategory] = useState<FurnitureCategory | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -773,8 +806,10 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
     let out = customGenerators;
     if (hotspot) out = out.filter((p) => pieceMatchesHotspot(p, hotspot));
     const q = query.trim().toLowerCase();
-    return q ? out.filter((p) => p.label.toLowerCase().includes(q)) : out;
-  }, [customGenerators, hotspot, query]);
+    // Search the RESOLVED label, not the key — otherwise typing "ספה" in the
+    // Hebrew UI matches nothing.
+    return q ? out.filter((p) => pieceLabel(p).toLowerCase().includes(q)) : out;
+  }, [customGenerators, hotspot, query, pieceLabel]);
 
   const items = useMemo(() => {
     let out = roomItems;
@@ -823,7 +858,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               outline: "none",
             }}
           />
-          <Tooltip label="Close search">
+          <Tooltip label={t("closeSearch")}>
             <DockIconBtn onClick={closeSearch} size={22}>
               <CloseIcon size={12} />
             </DockIconBtn>
@@ -831,25 +866,25 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 3, overflowX: "auto" }}>
-          <Tooltip label="Search">
+          <Tooltip label={t("search")}>
             <DockIconBtn onClick={() => setSearchOpen(true)} size={22}>
               <SearchIcon size={13} />
             </DockIconBtn>
           </Tooltip>
           <DockChip onClick={() => setActiveCategory(null)} active={activeCategory === null} extra={{ padding: "3px 8px", fontSize: 10.5 }}>
-            All
+            {t("allCategories")}
           </DockChip>
           {roomCategories.map((c) => (
             <DockChip key={c} onClick={() => setActiveCategory(c)} active={activeCategory === c} extra={{ padding: "3px 8px", fontSize: 10.5 }}>
-              {c}
+              {t(`categories.${c}`)}
             </DockChip>
           ))}
-          <span style={{ ...pdMicroLabel(), marginLeft: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
+          <span style={{ ...pdMicroLabel(), marginInlineStart: "auto", flex: "0 0 auto" }}>{visibleCustom.length + items.length}</span>
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 6, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start" }}>
         {visibleCustom.length === 0 && items.length === 0 ? (
-          <div style={{ padding: "8px 4px", fontSize: 11, color: PD.textTertiary }}>Nothing here yet.</div>
+          <div style={{ padding: "8px 4px", fontSize: 11, color: PD.textTertiary }}>{t("nothingHere")}</div>
         ) : (
           <>
             {visibleCustom.map((p) => <CustomCard key={p.glyphKey} piece={p} />)}
@@ -862,6 +897,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
 }
 
 export function BottomDock() {
+  const t = useTranslations("editor.dock");
   const [tab, setTab] = useState<DockTab>("furniture");
   const [room, setRoom] = useState<RoomType>("kitchen");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
@@ -888,8 +924,8 @@ export function BottomDock() {
       <div
         style={{
           position: "absolute",
-          left: 240,
-          right: 16,
+          insetInlineStart: 240,
+          insetInlineEnd: 16,
           bottom: 16,
           height: dockHeight,
           display: "flex",
@@ -902,30 +938,33 @@ export function BottomDock() {
       >
         <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
         <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          {DOCK_TABS.map((t) => {
-            const Icon = SECTION_ICON[t.id];
+          {/* `tab_`, not `t` — `t` is the translator in this scope now. */}
+          {DOCK_TABS.map((tab_) => {
+            const Icon = SECTION_ICON[tab_.id];
             return (
-              <Tooltip key={t.id} label={t.label}>
-                <DockIconBtn onClick={() => setTab(t.id)} active={tab === t.id}>
+              <Tooltip key={tab_.id} label={t(`tabs.${tab_.labelKey}`)}>
+                <DockIconBtn onClick={() => setTab(tab_.id)} active={tab === tab_.id}>
                   <Icon size={15} />
                 </DockIconBtn>
               </Tooltip>
             );
           })}
-          <Tooltip label={eyedropper ? "Eyedropper armed (E)" : "Eyedropper (E)"}>
+          <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
             <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
               <EyedropperIcon size={14} />
             </DockIconBtn>
           </Tooltip>
           {brush && (
-            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               {brush.kind === "frame"
-                ? "Window frames — pick a colour · Esc to stop"
-                : `${brush.kind === "paint" ? "Painting" : "Flooring"} — click a surface · Esc to stop`}
+                ? t("brushFrame")
+                : brush.kind === "paint"
+                  ? t("brushPaint")
+                  : t("brushFloor")}
             </span>
           )}
           {!brush && replaceTarget && (
-            <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
               Replacing — pick a new item
             </span>
           )}
