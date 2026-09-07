@@ -16,9 +16,11 @@ one is the argument.
 
 ## Start here (session of 2026-09-07 → next)
 
-**STEP 5 IS DONE. The editor has no English surface left.** 576 `editor.*` keys,
-en/he key sets identical, `tsc` clean, all eight `test:*` suites pass, and a
-MISSING_MESSAGE sweep of both locales reports zero. 2026-09-06's work was
+**STEP 5 IS DONE. The editor has no English surface left.** 654 `editor.*` keys,
+en/he key sets identical, `tsc` clean, all nine `test:*` suites pass, and a
+MISSING_MESSAGE sweep of both locales reports zero. It closed in TWO passes —
+the inspector (`370af3e`), then the surfaces no screenshot can see (`cf24c33`),
+which is what the three blind spots below are about. 2026-09-06's work was
 committed as `65dc193`; the inspector landed on top of it.
 
 **The next thing is not translation.** What remains on this branch is Dan's two
@@ -34,9 +36,29 @@ inventory pass — while still rendering `"Width"`, `"Height"`, `"Depth"`,
 `"Height off floor"`, `"Replace"`, `"Duplicate"`, `"Delete"` and three help
 sentences as literals. Presence of the hook is not evidence of completion.
 
-**And the sweep that missed it reported zero.** A MISSING_MESSAGE sweep only
-sees keys that fail to resolve; an untranslated LITERAL resolves to itself and
-is invisible to it. The sweep that found these drives `sel3d` through the
+**THREE BLIND SPOTS closed on 2026-09-07, after Dan found four more English
+surfaces by looking at the running app. Every one of them had already been
+"verified clean".**
+
+1. **Tooltips.** The floor and paint swatches carry NO visible text — hovering
+   is the only way to read them. A rendered-text snapshot of the floors tab
+   returns **zero characters**, which looks identical to "clean" and actually
+   means "not looked at". Its tooltip was fully English. **An empty capture is
+   never a pass; assert that the surface mounted before you believe its
+   emptiness.**
+2. **Toasts.** Thirteen `pdToast()` calls across eight files, each on screen for
+   ~2 seconds after a user action. Invisible to a JSX grep and to any snapshot.
+   `pdToastKey` now exists for the call sites that cannot hold a hook.
+3. **The protected-tree boundary was the inventory's boundary.**
+   `docs/PROTECTED_PATHS.md` was compiled 2026-07-19 and 20+ files have landed
+   under `src/viewport3d/` since, so absence from that list means "nobody
+   looked", not "not protected". The lighting picker and the ENTIRE stair
+   inspector sat behind it. That file now carries the warning at the top, and
+   the list still needs a fresh Explore pass.
+
+**And the sweep that missed the two files below reported zero.** A
+MISSING_MESSAGE sweep only sees keys that fail to resolve; an untranslated
+LITERAL resolves to itself and is invisible to it. The sweep that found these drives `sel3d` through the
 dev-only `window.useSceneStore` handle for each pick kind, then asserts on the
 rendered inspector text — Latin words that are not units, file formats or
 keycaps are the leftovers. **Assert on what is on screen, not on what failed to
