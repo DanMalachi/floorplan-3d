@@ -60,7 +60,10 @@ export default async function PrivacyPolicyPage({ params }: { params: Promise<{ 
         <Placeholder>legal entity name</Placeholder>,{" "}
         <Placeholder>registered address</Placeholder>. If you have questions
         about this policy or your data, contact{" "}
-        <Placeholder>privacy contact email</Placeholder>.
+        <a href="mailto:done.design.app@gmail.com" style={{ color: "inherit" }}>
+          done.design.app@gmail.com
+        </a>
+        .
       </p>
 
       <h2 style={legalH2}>The short version</h2>
@@ -248,11 +251,24 @@ export default async function PrivacyPolicyPage({ params }: { params: Promise<{ 
         that ships.
       </p>
 
+      {/* 16, not the US federal COPPA floor of 13: it clears COPPA (avoiding
+          the verifiable-parental-consent regime entirely), and it's the
+          highest age any single GDPR member state sets for its own digital-
+          consent threshold (Germany/Ireland/Netherlands and others; the
+          regulation lets member states pick 13-16), so one number holds
+          everywhere in the EU without per-country branching. Below Israel's
+          age of majority (18), but this Service doesn't collect the
+          "sensitive" data category that draft Israeli rules gate at under-18
+          — only account/plan data. Once real in-app purchases exist, that
+          FLOW should independently confirm legal capacity to contract (18,
+          or guardian involvement) — a marketplace convention (cf. most
+          consumer platforms gating "buy" separately from "browse/account"),
+          not something this number alone should carry. Verify with counsel;
+          not a substitute for legal advice. */}
       <h2 style={legalH2}>Children&rsquo;s privacy</h2>
       <p style={legalP}>
         The Service is not directed at children, and we do not knowingly
-        collect personal information from children under{" "}
-        <Placeholder>minimum age, per applicable law</Placeholder>.
+        collect personal information from children under 16.
       </p>
 
       <h2 style={legalH2}>International data transfers</h2>
@@ -283,7 +299,11 @@ export default async function PrivacyPolicyPage({ params }: { params: Promise<{ 
 
       <h2 style={legalH2}>Contact</h2>
       <p style={legalP}>
-        Questions about this policy: <Placeholder>privacy contact email</Placeholder>.
+        Questions about this policy:{" "}
+        <a href="mailto:done.design.app@gmail.com" style={{ color: "inherit" }}>
+          done.design.app@gmail.com
+        </a>
+        .
       </p>
     </>
   );

@@ -67,9 +67,12 @@ export default async function TermsOfServicePage({
         handled entirely through Google OAuth via Supabase — the Service
         never asks for or stores a password. You are responsible for
         maintaining the security of the Google account you sign in with. You
-        must be at least{" "}
-        <Placeholder>minimum age, per applicable law</Placeholder> years old
-        to create an account.
+        must be at least 16 years old to create an account. See the{" "}
+        <Link href="/legal/privacy" style={{ color: "inherit" }}>
+          Privacy Policy
+        </Link>
+        &rsquo;s Children&rsquo;s privacy section for how that number was
+        chosen.
       </p>
 
       <h2 style={legalH2}>3. Your content</h2>
@@ -178,7 +181,11 @@ export default async function TermsOfServicePage({
 
       <h2 style={legalH2}>12. Contact</h2>
       <p style={legalP}>
-        Questions about these Terms: <Placeholder>support contact email</Placeholder>.
+        Questions about these Terms:{" "}
+        <a href="mailto:done.design.app@gmail.com" style={{ color: "inherit" }}>
+          done.design.app@gmail.com
+        </a>
+        .
       </p>
     </>
   );
