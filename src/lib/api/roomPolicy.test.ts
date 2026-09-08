@@ -5,7 +5,13 @@
 // loudly if anyone ever "simplifies" the share route back to what it was.
 
 import assert from "node:assert/strict";
-import { canAttenuateTo, isUnguessableRoom, isValidRoom, ROLE_RANK } from "./roomPolicy";
+import {
+  canAttenuateTo,
+  claimOutcome,
+  isUnguessableRoom,
+  isValidRoom,
+  ROLE_RANK,
+} from "./roomPolicy";
 import { signGrant, verifyGrant, signBlob, verifyBlob } from "@/collab/grant.server";
 
 let failures = 0;
@@ -58,6 +64,26 @@ check("THE ESCALATION: a role may never mint above itself", () => {
 });
 check("build is the top rank", () => {
   assert.equal(Math.max(...Object.values(ROLE_RANK)), ROLE_RANK.build);
+});
+
+console.log("claim outcome");
+check("the database's yes is the only thing that creates ownership", () => {
+  assert.equal(claimOutcome("owner"), "claimed");
+});
+check("someone else's room stays theirs", () => {
+  assert.equal(claimOutcome("other"), "taken");
+});
+check("THE FAIL-OPEN: no answer must never become a claim", () => {
+  // null is unreachable Supabase / unapplied migration / failed RPC — never "free".
+  // This used to fall through and mint an owner cookie, which ownsRoom then trusted
+  // precisely because the database was still too unwell to contradict it.
+  assert.equal(claimOutcome(null), "unavailable");
+  assert.notEqual(claimOutcome(null), "claimed");
+});
+check("'free' is not a claim either — only the claim RPC's 'owner' is", () => {
+  // live_room_owner_state can say 'free'; claim_live_room never does. If one ever
+  // reaches here it means nobody has claimed yet, NOT that we have claimed it.
+  assert.equal(claimOutcome("free"), "unavailable");
 });
 
 console.log("grant signing");

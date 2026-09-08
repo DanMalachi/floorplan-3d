@@ -21,9 +21,12 @@
 //      other owner is, which RLS alone cannot do (an RLS select can't distinguish
 //      "owned by someone else" from "not claimed").
 //   2. A signed, HttpOnly owner cookie — the fallback for a deployment with no
-//      Supabase at all, and the bridge for the window before the migration is
-//      applied. It is deliberately NOT accepted when the database says the room
-//      belongs to someone else.
+//      Supabase at all, and the record of a claim the database already confirmed.
+//      It is deliberately NOT accepted when the database says the room belongs to
+//      someone else, and — the other half of the same rule — it is never ISSUED to
+//      paper over a database that failed to answer. A cookie minted on an outage
+//      would be believed by every later request that also cannot reach the
+//      database, which is exactly when it is least deserved. See claimRoom.
 //
 // Claiming is first-come-wins (trust on first use), the same shape the old
 // browser-local `setRoomOwner` had — except now the server records it, so a second
@@ -34,12 +37,19 @@ import { signBlob, verifyBlob } from "@/collab/grant.server";
 import type { ShareRole } from "@/collab/share";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { accountsConfigured } from "./auth";
-import { forbidden, unauthorized, isProduction } from "./http";
-import { canAttenuateTo, isUnguessableRoom } from "./roomPolicy";
+import { forbidden, unauthorized, unavailable, isProduction } from "./http";
+import { canAttenuateTo, claimOutcome, isUnguessableRoom, type OwnerState } from "./roomPolicy";
 
 // The pure predicates live in ./roomPolicy so they can be unit-tested without a
 // Next request context; re-exported here so callers have one import.
-export { isValidRoom, isUnguessableRoom, ROLE_RANK, canAttenuateTo } from "./roomPolicy";
+export {
+  isValidRoom,
+  isUnguessableRoom,
+  ROLE_RANK,
+  canAttenuateTo,
+  claimOutcome,
+} from "./roomPolicy";
+export type { OwnerState, ClaimOutcome } from "./roomPolicy";
 
 // ---------------------------------------------------------------------------
 // Owner cookie
@@ -78,8 +88,6 @@ async function rememberOwned(room: string): Promise<void> {
 // Database ownership (migration 0002_live_rooms.sql)
 // ---------------------------------------------------------------------------
 
-export type OwnerState = "owner" | "other" | "free";
-
 /** Unreachable database / unapplied migration / signed-out caller all return null. */
 async function dbOwnerState(room: string, userId: string | null): Promise<OwnerState | null> {
   if (!userId) return null;
@@ -90,7 +98,14 @@ async function dbOwnerState(room: string, userId: string | null): Promise<OwnerS
   return data === "owner" || data === "other" || data === "free" ? data : null;
 }
 
-/** First-come-wins insert. Returns who owns it afterwards, or null if unavailable. */
+/**
+ * First-come-wins insert. Returns who owns it afterwards, or null if unavailable.
+ *
+ * null is ALWAYS "no answer", never "the room is free": claim_live_room returns
+ * 'owner' or 'other' and nothing else, so every null here is a client that could
+ * not be built, an RPC that errored, or a migration that is not applied. Callers
+ * must not read it as permission — see claimOutcome in ./roomPolicy.
+ */
 async function dbClaim(room: string, userId: string | null): Promise<OwnerState | null> {
   if (!userId) return null;
   const supabase = await getServerSupabase().catch(() => null);
@@ -113,30 +128,46 @@ export async function ownsRoom(room: string, userId: string | null): Promise<boo
   return (await readOwnedCookie()).includes(room);
 }
 
-export type ClaimResult = "claimed" | "already-yours" | "taken" | "not-allowed";
+export type ClaimResult = "claimed" | "already-yours" | "taken" | "not-allowed" | "unavailable";
 
 /**
  * Claim `room` for the caller. Called only when a room is first created (Go live).
  *
- * The rule that keeps this from being the hole all over again: when accounts are
- * configured, claiming REQUIRES sign-in. Otherwise a link recipient could claim
- * the room they were merely invited to and mint themselves a build grant.
+ * Two rules keep this from being the hole all over again.
+ *
+ * FIRST: when accounts are configured, claiming REQUIRES sign-in. Otherwise a link
+ * recipient could claim the room they were merely invited to and mint themselves a
+ * build grant.
+ *
+ * SECOND: creating ownership requires the database to SAY SO. This used to fall
+ * through to the cookie whenever dbClaim returned null — but null is "the database
+ * did not answer", never "the room is free", so that treated an outage as consent.
+ * A signed-in caller retrying "Go live" against a flaky Supabase could walk away
+ * holding an owner cookie for a room someone else legitimately owns, and ownsRoom
+ * believes that cookie in exactly the conditions that produced it (the database is
+ * unreachable, so nothing can contradict it). An unconfirmed claim now mints
+ * nothing and returns "unavailable" — a retryable "ask me again", not a denial.
+ *
+ * The cost is bounded and deliberate: an owner who has claimed before is already
+ * past this, answered "already-yours" by ownsRoom's cookie fallback above. Only a
+ * genuine FIRST claim has to wait for the database to come back, and a caller who
+ * merely wants back INTO the room is not blocked at all — authorizeMint takes an
+ * unconfirmed claim as a non-answer and falls through to the grant they hold.
+ * Better an occasional "try again" than one wrong ownership grant.
  */
 export async function claimRoom(room: string, userId: string | null): Promise<ClaimResult> {
   if (await ownsRoom(room, userId)) return "already-yours";
 
   if (accountsConfigured()) {
     if (!userId) return "not-allowed"; // guests may join rooms, not own them
-    const claimed = await dbClaim(room, userId);
-    if (claimed === "owner") {
-      await rememberOwned(room);
-      return "claimed";
-    }
-    if (claimed === "other") return "taken";
-    // Database unreachable or migration not yet applied: fall through to the
-    // cookie, which still requires a signed-in caller here.
-    await rememberOwned(room);
-    return "claimed";
+    // "claimed" only on a definite 'owner'; "taken" on 'other'; "unavailable" on
+    // the null that means unreachable database or unapplied migration. Those last
+    // two are not worth telling apart: an unapplied migration is a deployment that
+    // has no authoritative record to claim in yet, and inventing ownership on
+    // either one is the same mistake.
+    const outcome = claimOutcome(await dbClaim(room, userId));
+    if (outcome === "claimed") await rememberOwned(room);
+    return outcome;
   }
 
   // No Supabase at all — a guest-only deployment. The cookie is the only record,
@@ -181,7 +212,10 @@ export async function authorizeMint(opts: {
   // A claim attempt is an OPPORTUNITY, never a gate. `create` is set on every
   // "Go live", including by a collaborator re-entering a room someone else owns —
   // so a failed claim must fall through to the grant they legitimately hold
-  // rather than turning "you don't own this" into "you can't come in".
+  // rather than turning "you don't own this" into "you can't come in". That
+  // applies to "unavailable" (the database did not answer) exactly as it does to
+  // "taken": the held grant below is verified by signature alone and needs no
+  // database, so an outage never shuts a collaborator out of a live room.
   let claim: ClaimResult | null = null;
   if (create) {
     claim = await claimRoom(room, userId);
@@ -209,6 +243,21 @@ export async function authorizeMint(opts: {
   }
 
   // Nothing authorized this caller. Say which of the two doors was the near miss.
+  //
+  // "unavailable" is a THIRD answer and must not be spelled as either of them: the
+  // caller is signed in (claimRoom only reaches it with a user), so "sign in" would
+  // be a lie that bounces them to the sign-in page, and 403 would tell them they
+  // are barred from a room that may well be theirs to claim once Supabase answers.
+  // 503 is the honest one — nothing is wrong with the caller, only with us.
+  if (claim === "unavailable") {
+    return {
+      ok: false,
+      response: unavailable(
+        "could not verify who owns this room",
+        "the ownership record is temporarily unreachable, so a new room cannot be claimed right now — try again in a moment",
+      ),
+    };
+  }
   if (claim === "not-allowed") {
     return {
       ok: false,

@@ -20,6 +20,25 @@ export const isValidRoom = (room: string) => ROOM_RE.test(room);
 export const isUnguessableRoom = (room: string) =>
   /^floorplan-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(room);
 
+/** The caller's relationship to a room, as the database reports it. */
+export type OwnerState = "owner" | "other" | "free";
+
+/** What a claim attempt resolved to. "unavailable" means the database never answered. */
+export type ClaimOutcome = "claimed" | "taken" | "unavailable";
+
+/**
+ * Turn the database's answer to a claim into a decision.
+ *
+ * The load-bearing case is `null`. The claim RPC itself only ever returns 'owner'
+ * or 'other' (migration 0002), so null never means "the room is free" — it means
+ * the question did not get through: unreachable Supabase, an unapplied migration,
+ * a failed RPC. Ownership may only be CREATED on a definite 'owner', because the
+ * owner cookie a claim mints is trusted by ownsRoom precisely when the database is
+ * too unwell to contradict it. Silence is not consent.
+ */
+export const claimOutcome = (answer: OwnerState | null): ClaimOutcome =>
+  answer === "owner" ? "claimed" : answer === "other" ? "taken" : "unavailable";
+
 export const ROLE_RANK: Record<ShareRole, number> = { view: 1, decorate: 2, build: 3 };
 
 /**
