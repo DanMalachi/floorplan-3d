@@ -1,6 +1,8 @@
 # Extraction Rebuild — Phase Execution Plan
 
-Source of truth for building the new floorplan→JSON pipeline. Derived from `docs/paper.md` §6.7; this file is the operational version. One phase = one branch = one Claude Code session (or session series). Exit bars marked (†) are provisional until Phase 0 ratifies them against the real corpus.
+> **PARKED 2026-09-08 (Dan's call).** The product is 100% manual tracing; auto-extraction is not on the roadmap until further notice. Everything below is frozen research history — read it for context only, don't resume or plan around it without Dan explicitly reopening it.
+
+Source of truth for building the new floorplan→JSON pipeline (when this was active). Derived from `docs/paper.md` §6.7; this file is the operational version. One phase = one branch = one Claude Code session (or session series). Exit bars marked (†) are provisional until Phase 0 ratifies them against the real corpus.
 
 ## Quick reference for Dan — model, effort, terminals
 

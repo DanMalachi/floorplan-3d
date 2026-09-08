@@ -1,6 +1,8 @@
-# CLAUDE.md — Floorplan Extraction Rebuild
+# CLAUDE.md — done. (floorplan-3d)
 
-This repo contains (1) a working Next.js floorplan-to-3D app and (2) a ground-up rebuild of its extraction pipeline, executed phase by phase per `docs/extraction-plan.md`. Read that file's section for the CURRENT PHASE at the start of every session. Deep technical rationale lives in `docs/paper.md` — read only the sections the plan points you to.
+**Extraction rebuild is PARKED as of 2026-09-08 — Dan's call.** The product is 100% manual tracing. `extraction/`, `eval/`, and `docs/extraction-plan.md` are frozen research, not active work. Do not resume, extend, or plan around them unless Dan explicitly says so. Skip the rest of this paragraph and the phase-plan ritual below until then.
+
+This repo contains (1) a working Next.js floorplan-to-3D app (the live product) and (2) a parked, ground-up rebuild of its extraction pipeline, previously executed phase by phase per `docs/extraction-plan.md`. Deep technical rationale lives in `docs/paper.md`.
 
 ## Hard rules (never violate)
 
