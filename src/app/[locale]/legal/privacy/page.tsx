@@ -15,7 +15,6 @@ import {
   DraftBanner,
   Placeholder,
   Verify,
-  Pending,
 } from "../legalKit";
 
 export const metadata: Metadata = {
@@ -244,11 +243,12 @@ export default async function PrivacyPolicyPage({ params }: { params: Promise<{ 
       <p style={legalP}>
         Deleting a project removes it from your local browser storage and
         marks it deleted in the cloud (if signed in), so it disappears from
-        your other devices too. The precise end-to-end account- and
-        data-deletion mechanism (including how to request deletion of your
-        account and all associated cloud data) is{" "}
-        <Pending>delete flow</Pending> — this section will be filled in once
-        that ships.
+        your other devices too; the underlying files and database row are
+        purged within 30 days. You can also delete your account outright from
+        account settings: this erases every project you own, their stored
+        images and thumbnails, and any live shared room built from them —
+        removing your access to the Service and all associated cloud data in
+        one step.
       </p>
 
       {/* 16, not the US federal COPPA floor of 13: it clears COPPA (avoiding
