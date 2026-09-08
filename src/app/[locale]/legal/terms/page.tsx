@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { alternatesFor } from "@/i18n/alternates";
 import type { Locale } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
+import { Brand } from "@/brand/Brand";
 import {
   legalH1,
   legalMeta,
@@ -17,7 +18,7 @@ import {
 
 export const metadata: Metadata = {
   title: "Terms of Service · done.",
-  description: "The terms governing use of Floorplan → 3D.",
+  description: "The terms governing use of done.",
   alternates: alternatesFor("/legal/terms"),
 };
 
@@ -41,7 +42,7 @@ export default async function TermsOfServicePage({
       <DraftBanner />
 
       <p style={legalIntro}>
-        These Terms govern your use of Floorplan → 3D (the
+        These Terms govern your use of <Brand /> (the
         &ldquo;Service&rdquo;), operated by{" "}
         <Placeholder>legal entity name</Placeholder>. By using the Service you
         agree to these Terms. This is a draft prepared alongside the
@@ -54,7 +55,7 @@ export default async function TermsOfServicePage({
 
       <h2 style={legalH2}>1. The Service</h2>
       <p style={legalP}>
-        Floorplan → 3D lets you trace, build, and edit a 3D model of a home,
+        <Brand /> lets you trace, build, and edit a 3D model of a home,
         furnish it, and optionally collaborate on it live with others. The
         Service is under active development; features may change, and some
         are explicitly labeled as beta or experimental.

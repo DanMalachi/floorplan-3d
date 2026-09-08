@@ -66,6 +66,14 @@ function skipsLocaleRouting(pathname: string): boolean {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/_vercel") ||
     pathname.startsWith("/monitoring") ||
+    // `src/app/icon.tsx` and `apple-icon.tsx` are root-level metadata routes
+    // (outside `[locale]`), and — unlike favicon.ico — Next serves them at an
+    // EXTENSION-LESS URL (`/icon?<hash>`, `/apple-icon?<hash>`), so the dot
+    // check below doesn't catch them. Without this, next-intl rewrites
+    // `/icon` to `/en/icon`, which doesn't exist, and every tab/home-screen
+    // icon silently 404s.
+    pathname === "/icon" ||
+    pathname === "/apple-icon" ||
     // Anything with an extension: favicon.ico, og images, /furniture/*.glb,
     // textures, and the generated /robots.txt and /sitemap.xml.
     pathname.includes(".")

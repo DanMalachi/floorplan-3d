@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { alternatesFor } from "@/i18n/alternates";
+import { Brand } from "@/brand/Brand";
 import {
   legalH1,
   legalMeta,
@@ -19,7 +20,7 @@ import {
 
 export const metadata: Metadata = {
   title: "Privacy Policy · done.",
-  description: "How Floorplan → 3D collects, stores, and shares data.",
+  description: "How done. collects, stores, and shares data.",
   alternates: alternatesFor("/legal/privacy"),
 };
 
@@ -42,7 +43,7 @@ export default async function PrivacyPolicyPage({ params }: { params: Promise<{ 
       <DraftBanner />
 
       <p style={legalIntro}>
-        This policy explains what Floorplan → 3D (the &ldquo;Service&rdquo;)
+        This policy explains what <Brand /> (the &ldquo;Service&rdquo;)
         collects, why, and who it is shared with. It was written by reading
         the Service&rsquo;s own source code, not by copying a template — every
         third party named below is one this codebase actually calls. Where a
@@ -55,7 +56,7 @@ export default async function PrivacyPolicyPage({ params }: { params: Promise<{ 
 
       <h2 style={legalH2}>Who we are</h2>
       <p style={legalP}>
-        Floorplan → 3D is operated by{" "}
+        <Brand /> is operated by{" "}
         <Placeholder>legal entity name</Placeholder>,{" "}
         <Placeholder>registered address</Placeholder>. If you have questions
         about this policy or your data, contact{" "}

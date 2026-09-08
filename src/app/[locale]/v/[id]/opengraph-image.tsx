@@ -3,6 +3,12 @@ import { ImageResponse } from "next/og";
 // Link-preview card for a shared plan (unfurls in chat/email). Branded, no model
 // render needed — the funnel win is any rich card vs a bare URL. (A future step
 // can draw the actual plan by reading the room's Yjs doc server-side.)
+//
+// The two `#DF7940` fills below used to be `#0a84ff`, the pre-naming blue
+// accent — the one src/brand/tokens.ts's own header comment calls out as
+// still needing this exact swap ("Both still carry the pre-naming blue
+// accent... which the brand book replaces with copper"). Now COPPER, matching
+// the shipped identity; nothing else in the card changed.
 export const runtime = "nodejs";
 export const alt = "A live shared home design — done.";
 export const size = { width: 1200, height: 630 };
@@ -25,7 +31,7 @@ export default function Image() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: "#0a84ff" }} />
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: "#DF7940" }} />
           <div style={{ fontSize: 30, color: "#9a9aa3", letterSpacing: 1 }}>done.</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -33,7 +39,7 @@ export default function Image() {
           <div style={{ fontSize: 30, color: "#9a9aa3" }}>Open the link to explore it in 3D — and design your own.</div>
         </div>
         <div style={{ display: "flex" }}>
-          <div style={{ background: "#0a84ff", color: "#fff", fontSize: 26, fontWeight: 600, padding: "12px 24px", borderRadius: 999 }}>
+          <div style={{ background: "#DF7940", color: "#fff", fontSize: 26, fontWeight: 600, padding: "12px 24px", borderRadius: 999 }}>
             ● Live · collaborative
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { PD } from "@/ui/planDock/tokens";
 import { ChevronLeftIcon } from "@/ui/planDock/icons";
+import { Brand } from "@/brand/Brand";
 
 // globals.css pins `body { overflow: hidden; height: 100% }` for the 3D app's
 // benefit (a fixed-size WebGL canvas). Legal pages are long-form text, so this
@@ -66,15 +67,11 @@ export default async function LegalLayout({
             color: PD.textSecondary,
           }}
         >
-          {/* The "Floorplan → 3D" wording is the OLD product name; the app is
-              "done." now. Left alone deliberately: the in-app branding sweep is
-              one job (never piecemeal), and this is a wording change, not the
-              icon change being made here. */}
           <Link
             href="/"
             style={{ display: "inline-flex", alignItems: "center", gap: 5, color: PD.textSecondary, textDecoration: "none" }}
           >
-            <ChevronLeftIcon size={13} /> Floorplan → 3D
+            <ChevronLeftIcon size={13} /> <Brand />
           </Link>
           <span style={{ color: PD.textTertiary }}>·</span>
           <Link href="/legal/privacy" style={{ color: PD.textPrimary, textDecoration: "none" }}>
