@@ -809,41 +809,110 @@ export const useSceneStore = create<StoreState>((set, get) => {
     importPlanFile: async (file) => {
       const { isPdfFile, isImageFile, isDxfFile, isDwgFile, loadImageFile, rasterQualityMsg, MIN_IMAGE_PX } =
         await import("@legacy/trace2d/planImport");
-      // A new plan is a CLEAN SLATE. Clear any prior plan's trace, built scene,
-      // scale, suggestions, selections and undo history — otherwise they linger
-      // on top of the new plan (especially now that projects are restored from
-      // disk on load, so "prior plan" can be from a previous session).
-      set({
-        importBusy: true,
-        importMsg: null,
-        importMsgKey: null,
-        importStatus: "ok",
-        points: [],
-        segments: [],
-        openings: [],
-        scene: { schemaVersion: 2, units: "meters", nodes: [], walls: [], openings: [], rooms: [], furniture: [] },
-        history: [],
-        calibrationPts: [],
-        metersPerPixel: null,
-        sel3d: null,
-        placing: null,
-        placingRun: null,
-      });
-      get().setSourcePdfName(file.name);
+
+      // PARSE FIRST, THEN CLEAR. This function used to wipe the current plan in
+      // its very first `set()` — before the file had been read, let alone
+      // parsed — so dropping a corrupt PDF, an undersized image, a .dxf that
+      // fails to parse or a .dwg the server can't convert destroyed the user's
+      // in-progress trace and left nothing to go back to. Every branch below now
+      // does its loading against the UNTOUCHED store, and the clean slate lands
+      // in the same `set()` that commits the new plan.
+      //
+      // `prior` is every field this action can overwrite, captured before any of
+      // it moves: the clean-slate fields, the ones each format branch writes on
+      // success (image/opacity/name/CAD overlay), `traceStep`, and the two
+      // `setMode("calibrate")` touches at the end. Restoring it is belt and
+      // braces — with the reordering below a failure normally writes nothing —
+      // but it also makes a throw from AFTER the commit all-or-nothing instead
+      // of leaving half a plan behind. The import status fields are deliberately
+      // NOT in here: a failure must report the failure, not the previous
+      // import's message.
+      //
+      // It must stay field-for-field in step with the clean slate in the commit
+      // `set()` below: anything the commit resets has to be captured here, or a
+      // throw after the commit restores a plan with that field still wiped.
+      // Persistent user PREFERENCES (`wallSnap`, `ortho`, `drawKind`,
+      // `drawThickness`/`drawHeight`, the stair defaults, `appMode`,
+      // `wallMode`, env/time/weather) are in neither list on purpose: they
+      // belong to the user, not to the plan, and importing a file is not a
+      // reason to reset them.
+      const s0 = get();
+      const prior = {
+        points: s0.points,
+        segments: s0.segments,
+        openings: s0.openings,
+        // Trace-time stairs are their OWN array (scene.stairs is the derived 3D
+        // version and rides along inside `scene`), so they need their own entry
+        // here or a flight traced on the old plan survives into the new one.
+        stairs: s0.stairs,
+        stairDraft: s0.stairDraft,
+        // Trace selection / chain-drawing state: ids into points/segments/
+        // openings/stairs, all of which the commit replaces.
+        activeLastPointId: s0.activeLastPointId,
+        selectedPointId: s0.selectedPointId,
+        selectedOpeningId: s0.selectedOpeningId,
+        selectedStairId: s0.selectedStairId,
+        scene: s0.scene,
+        history: s0.history,
+        // The 3D/Build-mode undo stack, which is SEPARATE from `history` (that
+        // one is the 2D trace gesture stack). Every entry holds a whole prior
+        // `scene`, so leaving them behind lets one Ctrl+Z in Build mode restore
+        // the PREVIOUS project on top of the freshly imported one.
+        scenePast: s0.scenePast,
+        sceneFuture: s0.sceneFuture,
+        calibrationPts: s0.calibrationPts,
+        metersPerPixel: s0.metersPerPixel,
+        // Armed tool / selection state — the same bundle `setAppMode` drops
+        // when you leave a mode, for the same reason: it points at (or is
+        // about to write into) the plan that is being replaced.
+        sel3d: s0.sel3d,
+        hover3d: s0.hover3d,
+        placing: s0.placing,
+        placingRun: s0.placingRun,
+        placingCounter: s0.placingCounter,
+        placingWall: s0.placingWall,
+        brush: s0.brush,
+        eyedropper: s0.eyedropper,
+        buildTool: s0.buildTool,
+        openingType: s0.openingType,
+        replaceTarget: s0.replaceTarget,
+        image: s0.image,
+        imageOpacity: s0.imageOpacity,
+        sourcePdfName: s0.sourcePdfName,
+        importedSegments: s0.importedSegments,
+        importedArcs: s0.importedArcs,
+        importedTexts: s0.importedTexts,
+        showImport: s0.showImport,
+        traceStep: s0.traceStep,
+        mode: s0.mode,
+      };
+      /** Report an import failure and leave the existing plan exactly as it was. */
+      const fail = (importMsgKey: ImportMsgKey) =>
+        set({ ...prior, importBusy: false, importMsg: null, importMsgKey, importStatus: "error" });
+
+      // Non-destructive: only the spinner and the previous run's status line.
+      set({ importBusy: true, importMsg: null, importMsgKey: null, importStatus: "ok" });
+
       try {
+        // What a branch produces once the file has actually parsed: the page to
+        // trace over, plus the store fields that belong to the NEW plan. Nothing
+        // is written until both exist.
+        let image: TraceImage;
+        let patch: Partial<StoreState>;
+
         if (isPdfFile(file)) {
           // Runs entirely in the browser (pdf.js). The old server route spawned
           // Python, which has no interpreter on Vercel — see importPdfClient.ts.
           const { importPdf } = await import("@/lib/import/importPdfClient");
           const r = await importPdf(file);
-          get().setImage(r.image);
+          image = r.image;
           // ONE path for every PDF, CAD-drawn or scanned: a rendered page you
           // trace over. A CAD PDF used to also lay its drawing segments over the
           // page as a "vector overlay" + snap magnet; on real AutoCAD exports
           // those land offset from the render, so they fought the pen instead of
           // guiding it — see importPdfClient.ts. Texts are kept: they name rooms
           // at Generate and never draw on the canvas.
-          set({
+          patch = {
             importedSegments: [],
             importedArcs: [],
             importedTexts: r.texts,
@@ -854,7 +923,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
                 r.image.height,
                 `Plan loaded${r.pageCount > 1 ? ` (page 1 of ${r.pageCount})` : ""}`,
               )),
-          });
+          };
         } else if (isDxfFile(file) || isDwgFile(file)) {
           const { importDxf, dxfTextToResult } = await import("@legacy/trace2d/importDxf");
           let r;
@@ -881,8 +950,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
           } else {
             r = await importDxf(file);
           }
-          get().setImage(r.image);
-          set({
+          image = r.image;
+          patch = {
             imageOpacity: 0.45,
             importedSegments: r.segments,
             importedArcs: r.arcs,
@@ -891,47 +960,95 @@ export const useSceneStore = create<StoreState>((set, get) => {
             importMsg: r.summary,
             importMsgKey: null,
             importStatus: "ok",
-          });
-          // A DXF with known units gives us real scale for free — no calibration.
-          if (r.metersPerPixel != null) set({ metersPerPixel: r.metersPerPixel });
+            // A DXF with known units gives us real scale for free — no
+            // calibration. Overrides the clean slate's `metersPerPixel: null`
+            // when present, which is why it rides in the patch.
+            ...(r.metersPerPixel != null ? { metersPerPixel: r.metersPerPixel } : {}),
+          };
         } else if (isImageFile(file)) {
           const img = await loadImageFile(file);
           if (Math.max(img.width, img.height) < MIN_IMAGE_PX) {
-            set({
-              importBusy: false,
-              importMsg: null,
-              importMsgKey: { key: "tooSmall", width: img.width, height: img.height, min: MIN_IMAGE_PX },
-              importStatus: "error",
-            });
+            fail({ key: "tooSmall", width: img.width, height: img.height, min: MIN_IMAGE_PX });
             return;
           }
-          get().setImage(img);
-          set({
+          image = img;
+          patch = {
             importedSegments: [],
             importedArcs: [],
             importedTexts: [],
             imageOpacity: 0.8,
             ...asImport(rasterQualityMsg(img.width, img.height, "Image loaded")),
-          });
+          };
         } else {
-          set({
-            importBusy: false,
-            importMsg: null,
-            importMsgKey: { key: "unsupported" },
-            importStatus: "error",
-          });
+          fail({ key: "unsupported" });
           return;
         }
+
+        // COMMIT — one atomic `set()`, so the store never holds a half-import.
+        // A new plan is a CLEAN SLATE: any prior plan's trace, built scene,
+        // scale, suggestions, selections and undo history go here, because they
+        // would otherwise linger on top of the new plan (especially now that
+        // projects are restored from disk on load, so "prior plan" can be from a
+        // previous session). `image` and `sourcePdfName` are written directly
+        // rather than through setImage/setSourcePdfName — same fields, but part
+        // of the one commit instead of two extra store writes before it.
+        set({
+          points: [],
+          segments: [],
+          openings: [],
+          // Traced stair flights live outside `segments` (analyzeLoops would
+          // read one as a room boundary), so clearing the trace has to name
+          // them explicitly — and `stairDraft` with them, so a half-drawn
+          // staircase isn't left armed over a plan it was never drawn on.
+          stairs: [],
+          stairDraft: null,
+          // Dangling trace ids: every one of these names a point/opening/stair
+          // that no longer exists now the arrays above are empty.
+          activeLastPointId: null,
+          selectedPointId: null,
+          selectedOpeningId: null,
+          selectedStairId: null,
+          scene: { schemaVersion: 2, units: "meters", nodes: [], walls: [], openings: [], rooms: [], furniture: [] },
+          history: [],
+          // The Build-mode (3D) undo stack. `history` above is the 2D trace
+          // stack and is NOT the same thing — each entry here carries a whole
+          // previous `scene`, so an uncleared stack means the first Ctrl+Z
+          // after an import silently resurrects the old project's walls,
+          // rooms and furniture over the new plan.
+          scenePast: [],
+          sceneFuture: [],
+          calibrationPts: [],
+          metersPerPixel: null,
+          // Armed tool / selection state, mirroring what `setAppMode` drops on
+          // a mode change: picks reference ids in the scene being thrown away,
+          // and an armed brush/placement/eyedropper is a gesture aimed at the
+          // OLD plan. User preferences (wallSnap, ortho, draw defaults) are
+          // deliberately left alone — those are settings, not plan state.
+          sel3d: null,
+          hover3d: null,
+          placing: null,
+          placingRun: null,
+          placingCounter: null,
+          placingWall: null,
+          brush: null,
+          eyedropper: false,
+          buildTool: "select",
+          openingType: "door",
+          replaceTarget: null,
+          image,
+          sourcePdfName: file.name,
+          traceStep: 2,
+          ...patch,
+        });
         // A fresh plan needs a scale before anything else can happen.
         if (get().metersPerPixel == null) get().setMode("calibrate");
-        set({ traceStep: 2 });
       } catch (e) {
         // The caught error can be a raw JS/fetch error OR a literal authored
         // right above (the DWG-converter-unavailable message) — either way
         // its `.message` is untranslated prose we don't own, so only the
         // "Import failed:" frame around it is translatable. See
         // `resolveImportMsg`'s "failed" case.
-        set({ importMsg: null, importMsgKey: { key: "failed", message: (e as Error).message }, importStatus: "error" });
+        fail({ key: "failed", message: (e as Error).message });
       } finally {
         set({ importBusy: false });
       }

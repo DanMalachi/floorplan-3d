@@ -36,6 +36,7 @@
     "test:decor": "tsx src/parametric/softDecor.test.ts",
     "test:kitchen": "tsx src/parametric/kitchen.test.ts && tsx src/parametric/kitchenDrag.test.ts && tsx src/parametric/wallCabinetGhost.test.ts && tsx src/parametric/kitchenLink.test.ts",
     "test:persist": "tsx src/store/projectDoc.test.ts",
+    "test:import": "tsx src/store/importPlanFile.test.ts",
     "test:apisec": "tsx src/lib/api/roomPolicy.test.ts",
     "test:rooms": "tsx src/collab/share.test.ts",
     "test:dragplane": "tsx src/viewport3d/dragPlane.test.ts",
