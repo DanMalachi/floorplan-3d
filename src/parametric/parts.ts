@@ -223,6 +223,7 @@ export function countertopWithCutouts(
 const UNIT_W = 0.6; // nominal cabinet width a row divides into
 const MIN_UNIT = 0.15; // narrower than this is a filler, not a cabinet
 const CUT_CLEAR = 0.02; // panel-to-cutout clearance inside a sink/hob unit
+const DOUBLE_DOOR_W = 0.9; // wider than this, a single slab reads as one blank panel
 
 /**
  * How a row of length `len` divides into carcasses. Each countertop cutout
@@ -252,13 +253,18 @@ function layoutUnits(
   }
 
   const units: { x0: number; x1: number; open: boolean }[] = [];
+  // Fixed UNIT_W modules from `a`; only the LAST one absorbs whatever's left
+  // over. A resize then only touches the module at this segment's edge
+  // instead of reflowing every door's width, and crossing a threshold adds a
+  // new module rather than shrinking the ones already there.
   const fill = (a: number, b: number) => {
     const gap = b - a;
     if (gap <= 0) return;
     const n = Math.max(1, Math.round(gap / UNIT_W));
-    for (let i = 0; i < n; i++) {
-      units.push({ x0: a + (gap * i) / n, x1: a + (gap * (i + 1)) / n, open: false });
+    for (let i = 0; i < n - 1; i++) {
+      units.push({ x0: a + i * UNIT_W, x1: a + (i + 1) * UNIT_W, open: false });
     }
+    units.push({ x0: a + (n - 1) * UNIT_W, x1: b, open: false });
   };
   let cursor = 0;
   for (const c of merged) {
@@ -331,16 +337,36 @@ export function cabinetRow(o: {
       }
     } else {
       const y = frontBandBottom + frontBandH / 2;
-      const front = frontOf(o.front, frontBandW, frontBandH, o.mat);
-      front.position.set(x, y, frontZ);
-      g.add(front);
-      const h = o.handle?.();
-      if (h) {
-        const hingeLeft = i % 2 === 0; // alternate, so pairs of doors meet
-        const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
-        const hy = o.handleAt === "top" ? frontBandBottom + frontBandH - 0.06 : frontBandBottom + 0.06;
-        h.position.set(hx, hy, frontZ);
-        g.add(h);
+      const hy = o.handleAt === "top" ? frontBandBottom + frontBandH - 0.06 : frontBandBottom + 0.06;
+      if (frontBandW > DOUBLE_DOOR_W) {
+        // A single slab this wide reads as one blank panel (a sink's widened
+        // unit is the usual case) — real cabinetry splits it into a facing
+        // double-door pair instead.
+        const halfW = (frontBandW - GAP) / 2;
+        const centers = [x - frontBandW / 2 + halfW / 2, x + frontBandW / 2 - halfW / 2];
+        for (const doorX of centers) {
+          const front = frontOf(o.front, halfW, frontBandH, o.mat);
+          front.position.set(doorX, y, frontZ);
+          g.add(front);
+          const h = o.handle?.();
+          if (h) {
+            // Handle on the inner edge (toward the gap), hinge implied outer.
+            const hx = doorX < x ? doorX + halfW / 2 - HANDLE_INSET : doorX - halfW / 2 + HANDLE_INSET;
+            h.position.set(hx, hy, frontZ);
+            g.add(h);
+          }
+        }
+      } else {
+        const front = frontOf(o.front, frontBandW, frontBandH, o.mat);
+        front.position.set(x, y, frontZ);
+        g.add(front);
+        const h = o.handle?.();
+        if (h) {
+          const hingeLeft = i % 2 === 0; // alternate, so pairs of doors meet
+          const hx = hingeLeft ? x + frontBandW / 2 - HANDLE_INSET : x - frontBandW / 2 + HANDLE_INSET;
+          h.position.set(hx, hy, frontZ);
+          g.add(h);
+        }
       }
     }
   }

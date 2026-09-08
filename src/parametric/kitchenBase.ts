@@ -108,13 +108,23 @@ export const kitchenBaseGenerator: GeneratorDef = {
 
     // Where each cutout falls in its leg's row-local x, so the units under a
     // sink/hob lose their top panel and the basin hangs INTO the cabinet.
+    // Must mirror the SAME `forward` check rowPlacement uses: a leg drawn
+    // backward along its wall (legDir: -1) has its row-local +x running
+    // OPPOSITE to leg-local `u`, and this cutout math has to walk it from
+    // the same end the row itself was built from, or the "open" unit lands
+    // on a mirrored, unrelated part of the row while the countertop's real
+    // hole (computed independently, correctly, below) stays put — the sink
+    // then hangs over a solid cabinet top instead of the open one.
     const openTop: { x0: number; x1: number }[][] = legs.map(() => []);
     for (const c of spec.cutouts ?? []) {
       const { leg, u } = legAtAlong(legs, c.along);
       const i = legs.indexOf(leg);
       if (i < 0) continue;
       const lead = i > 0 ? d : 0;
-      openTop[i].push({ x0: u - lead - c.w / 2, x1: u - lead + c.w / 2 });
+      const trail = i < legs.length - 1 ? d : 0;
+      const forward = leg.fz * leg.dx - leg.fx * leg.dz >= 0;
+      const rowX = forward ? u - lead : leg.len - trail - u;
+      openTop[i].push({ x0: rowX - c.w / 2, x1: rowX + c.w / 2 });
     }
 
     // Cabinet rows per leg (corner squares excluded), corner blanks between.
