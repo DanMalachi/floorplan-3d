@@ -8,35 +8,45 @@ through a new adapter module (new files) behind a feature flag. If a task
 appears to require editing anything below, stop and ask Dan.
 
 Compiled from a full-repo Explore pass on 2026-07-19 (see the Phase 0 gate
-report for methodology). Nothing here is marked UNCERTAIN — every file's
-imports were traced and confirmed to be 3D-viewer-only with no legacy
-extraction dependencies.
+report for methodology), **refreshed by a second full pass on 2026-09-08**
+covering every file added under `src/viewport3d/` since. Nothing here is
+marked UNCERTAIN — every file's imports were traced and confirmed to be
+3D-viewer-only with no legacy extraction dependencies (`grep -rn "from
+['"].*legacy" src/viewport3d/` returns nothing).
 
-> **THE LIST HAS A DATE, AND THE TREE HAS GROWN PAST IT.** Twenty-plus files
-> have been added under `src/viewport3d/` since 2026-07-19 — `StairInspector`,
-> `StairMesh`, `FixtureCatalog`, `FixtureLayer`, `MeasureTool`, the whole
-> `buildTools/` and `camera/` directories — and **none of them are named below,
-> because they did not exist when the pass ran.** Absence from this list is
-> therefore not evidence that a file is unprotected; it may only mean nobody has
-> looked. Treat anything inside the tree as protected and ASK, exactly as rule 1
-> says, rather than reading the list as exhaustive.
+> **RESOLVED 2026-09-08.** The gap flagged below (open since 2026-09-07) is
+> closed: all 27 files that had landed under `src/viewport3d/` since the
+> 2026-07-19 pass — `StairMesh.tsx`, `FixtureLayer.tsx`, `MeasureTool.tsx`,
+> `SnapGridViz.tsx`, `autoOrbitPlayback.ts`, `fixtureTexture.ts`,
+> `frameTarget.ts`, `pickObject3D.ts`, `dragPlane.ts` (+ its test), the six
+> camera rigs, the whole `buildTools/` and `camera/` directories, and four more
+> `walkthrough/` files — are now named below. `FixtureCatalog.tsx` and
+> `StairInspector.tsx` were already covered by name in the Approved Exceptions
+> section (added 2026-09-07); they're now also in the main list for
+> completeness. None import from `legacy/` or anything Python-side; all are
+> additive R3F viewer/tool code in the same shape as the files already listed.
+> **This list is current as of `8af476f` (2026-09-08) — the next Explore pass
+> is only needed after the next batch of new files, not on a schedule.**
 >
-> This was found on 2026-09-07 the expensive way: the Hebrew job declared the
-> editor fully translated while two panels inside this tree — the lighting
-> picker and the stair inspector — were still entirely English, because the
-> inventory had used this list as its boundary. Dan's call that day was to keep
-> treating the whole tree as protected and to record the gap here rather than
-> silently narrowing the rule. **The list still needs a fresh Explore pass to
-> classify the post-2026-07-19 files properly.**
+> History, kept for context: this was found on 2026-09-07 the expensive way —
+> the Hebrew job declared the editor fully translated while two panels inside
+> this tree — the lighting picker and the stair inspector — were still
+> entirely English, because the inventory had used this list as its boundary.
+> Dan's call that day was to keep treating the whole tree as protected and to
+> record the gap here rather than silently narrowing the rule.
 
 ## React Three Fiber viewer
 
 - `src/viewport3d/Viewport.tsx` — Canvas root: camera, controls, postprocessing, env/time-of-day wiring.
-- `src/viewport3d/WallMesh.tsx`, `FloorMesh.tsx`, `FurnitureLayer.tsx` — mesh builders consuming `Scene`.
-- `src/viewport3d/collision.ts`, `snap.ts`, `textures.ts`, `viewportCapture.ts` — 3D-editing support (collision, plan-space snapping, procedural textures, screenshot capture).
+- `src/viewport3d/WallMesh.tsx`, `FloorMesh.tsx`, `FurnitureLayer.tsx`, `StairMesh.tsx`, `FixtureLayer.tsx` — mesh builders consuming `Scene`.
+- `src/viewport3d/FixtureCatalog.tsx`, `StairInspector.tsx` — inspector panels for fixtures and stairs (landed 2026-08-03/07-31; see the 2026-09-07 Approved Exceptions entry for the one change made to each since).
+- `src/viewport3d/collision.ts`, `snap.ts`, `textures.ts`, `viewportCapture.ts`, `fixtureTexture.ts`, `dragPlane.ts` (+ `dragPlane.test.ts`), `pickObject3D.ts`, `frameTarget.ts` — 3D-editing support (collision, plan-space snapping, procedural textures, screenshot capture, the pointer→plan-point and pick→Object3D helpers shared by tools and camera rigs, camera framing).
 - `src/viewport3d/geometry/` — `buildJoinery.ts`, `buildWallSegments.ts`, `triangulateFloor.ts`, `wallGeometry.ts`, `wallJunctions.ts` + their `.test.ts` files. Pure geometry turning `Wall`/`Opening`/`Node` into THREE-consumable segments/junctions/joinery.
 - `src/viewport3d/environment/` — `City.tsx`, `Environment3d.tsx`, `Rain.tsx`, `Suburb.tsx`. Presentation environment around the model.
-- `src/viewport3d/walkthrough/` — `WalkthroughMode.tsx`, `collision.ts`, `config.ts`, `doors.ts`, `furnitureCollision.ts`, `spawn.ts`. First-person camera mode.
+- `src/viewport3d/walkthrough/` — `WalkthroughMode.tsx`, `collision.ts`, `config.ts`, `doors.ts`, `furnitureCollision.ts`, `spawn.ts`, `stairGround.ts`. First-person camera mode. Plus `derivedPatioDoor.test.ts`, `doorSig.test.ts`, `stairGround.test.ts`.
+- `src/viewport3d/AutoOrbitRig.tsx`, `CameraRig.tsx`, `CameraKeyboardRig.tsx`, `CameraDoubleClickRig.tsx`, `CameraFocusRig.tsx`, `CameraOfferRig.tsx`, `autoOrbitPlayback.ts` — camera behaviour: orbit/pan/dolly, WASD/keyboard channel, double-click-to-frame, room-click focus, the "offer, never seize" camera-suggestion chip, and the presentation auto-orbit toggle.
+- `src/viewport3d/camera/` — `armedTarget.ts`, `inputVocabulary.ts`, `offerPolicy.ts`, `targetPlane.ts` + their `.test.ts` files. Pure rules behind the camera rigs above: which surface a tool is aiming at, whether the camera can see it, and the mouse/trackpad input map.
+- `src/viewport3d/buildTools/` — `WallTool.tsx`, `OpeningTool.tsx`, `MeasureTool.tsx`, `SnapGridViz.tsx`, `gate.ts`, `planMath.ts`. New, additive Canvas children for the Plan Dock build tools (wall drawing, opening placement, measuring, snap-grid visualization) and their shared pointer-gating/plan-space math — deliberately new files rather than edits to the protected files they mirror (see `planMath.ts`'s own header comment).
 
 ## Scene schema (consumed directly by the viewer)
 
