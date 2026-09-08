@@ -20,8 +20,27 @@ export const ROLE_LABEL: Record<ShareRole, string> = {
   build: "Can edit everything",
 };
 
+const ROOM_PREFIX = "floorplan-";
+
 /** Liveblocks room id for a share id. */
-export const lbRoom = (id: string) => `floorplan-${id}`;
+export const lbRoom = (id: string) => `${ROOM_PREFIX}${id}`;
+
+/**
+ * The canonical Liveblocks room id, whichever of the two shapes you were handed.
+ *
+ * The same logical room is spelled two ways in the database: `projects.live_room_id`
+ * holds the RAW share id ("Go live" writes `crypto.randomUUID()` verbatim), while
+ * `live_rooms.room_id` — and Liveblocks itself — hold the `floorplan-` prefixed
+ * form. Client code never notices, because it always reads the raw id and passes it
+ * through `lbRoom` on the way out. Server-side deletion does notice: it reads from
+ * BOTH tables, and a raw id handed to `deleteRoom` (or matched against
+ * `live_rooms.room_id`) hits nothing and reports no error — the scene survives a
+ * deletion the user was told had happened.
+ *
+ * Idempotent by design: the delete route unions both sources into one list, so this
+ * must leave an already-prefixed id untouched rather than prefix it twice.
+ */
+export const canonicalRoom = (id: string) => (id.startsWith(ROOM_PREFIX) ? id : lbRoom(id));
 
 /** Decode a grant's payload without verifying it. UI-only — never a security check. */
 function payloadOf(grant: string): { room?: string; role?: string } | null {

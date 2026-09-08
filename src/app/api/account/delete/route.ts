@@ -3,6 +3,7 @@ import { getServerUser } from "@/lib/supabase/server";
 import { getAdminSupabase, serviceRoleConfigured } from "@/lib/supabase/admin";
 import { logRequest } from "@/lib/api/log";
 import { BUCKETS, listUserObjects, removeObjects, type Bucket } from "@/lib/supabase/accountData";
+import { canonicalRoom } from "@/collab/share";
 
 // -----------------------------------------------------------------------------
 // POST /api/account/delete — erasure (GDPR Art. 17 / CCPA "delete my data").
@@ -148,12 +149,21 @@ export async function POST(request: Request) {
     const claimed = await admin.from("live_rooms").select("room_id").eq("owner", uid);
     if (claimed.error) throw new Error(claimed.error.message);
 
+    // The two sources spell the same room differently: `projects.live_room_id`
+    // holds the RAW share id, `live_rooms.room_id` the `floorplan-` prefixed one
+    // Liveblocks actually uses. Unioning them unnormalised meant every room known
+    // only through `projects` was deleted by a name Liveblocks has never heard of
+    // — a 404 the loop below reads as "already gone". canonicalRoom is idempotent,
+    // so the already-prefixed half passes through untouched and the de-dupe now
+    // collapses the two spellings of one room into a single id.
     roomIds = [
       ...new Set(
         [
           ...(rows ?? []).map((r) => r.live_room_id),
           ...(claimed.data ?? []).map((r) => r.room_id as string),
-        ].filter((r): r is string => Boolean(r)),
+        ]
+          .filter((r): r is string => Boolean(r))
+          .map(canonicalRoom),
       ),
     ];
     objects = (await listUserObjects(admin, uid)).map((o) => ({ bucket: o.bucket, path: o.path }));

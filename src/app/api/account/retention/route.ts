@@ -9,6 +9,7 @@ import {
   type Bucket,
   type StoredObject,
 } from "@/lib/supabase/accountData";
+import { canonicalRoom } from "@/collab/share";
 
 // -----------------------------------------------------------------------------
 // GET /api/account/retention — the scheduled retention sweep.
@@ -132,7 +133,11 @@ export async function GET(request: Request) {
 
       if (dryRun) {
         wouldDelete.push(
-          `purge project ${id} (+${mine.length} file(s)${row.live_room_id ? `, live room ${row.live_room_id}` : ""})`,
+          // The room is reported in the same canonical form the real run deletes,
+          // so the dry run's list is the truth rather than the stored spelling.
+          `purge project ${id} (+${mine.length} file(s)${
+            row.live_room_id ? `, live room ${canonicalRoom(row.live_room_id as string)}` : ""
+          })`,
         );
         summary.purged.projects++;
         summary.purged.files += mine.length;
@@ -162,7 +167,14 @@ export async function GET(request: Request) {
       // the row without deleting the room would leave a full copy of the plan
       // live on a third party for ever, still reachable by any share link that
       // has not yet expired — the deletion the user asked for, not honoured.
-      const room = row.live_room_id as string | null;
+      //
+      // `projects.live_room_id` stores the RAW share id, while Liveblocks and
+      // `live_rooms.room_id` both use the `floorplan-` prefixed form. Deleting by
+      // the raw id deletes nothing AND reports success (deleteLiveRoom counts a 404
+      // as "already gone"), and the claim row match finds no rows and errors on
+      // none — so the failure was completely silent. Normalise once, use the same
+      // value for both.
+      const room = row.live_room_id ? canonicalRoom(row.live_room_id as string) : null;
       if (room) {
         const deleted = await deleteLiveRoom(room);
         if (!deleted) {
