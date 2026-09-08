@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
+import { PSEUDO_LOCALE_COOKIE } from "@/i18n/pseudoLocaleCookie";
 
 // -----------------------------------------------------------------------------
 // The app's single edge entry point (Next 16's `proxy`, formerly `middleware`).
@@ -73,6 +74,20 @@ function skipsLocaleRouting(pathname: string): boolean {
 
 export default async function proxy(request: NextRequest) {
   const pending: { name: string; value: string; options: Record<string, unknown> }[] = [];
+
+  // Dev-only pseudo-locale toggle — `?pseudo=1` / `?pseudo=0` on any URL sets
+  // (or clears) a cookie that `src/i18n/request.ts` reads to decide whether
+  // to run messages through `pseudoLocale.ts`. `NODE_ENV` check here means the
+  // query param is inert in a production deploy — it never even sets the
+  // cookie, on top of `request.ts`'s own independent check before reading it.
+  if (process.env.NODE_ENV !== "production") {
+    const toggle = request.nextUrl.searchParams.get("pseudo");
+    if (toggle === "1" || toggle === "0") {
+      const value = toggle === "1" ? "1" : "0";
+      request.cookies.set(PSEUDO_LOCALE_COOKIE, value);
+      pending.push({ name: PSEUDO_LOCALE_COOKIE, value, options: { path: "/" } });
+    }
+  }
 
   if (url && anonKey) {
     const supabase = createServerClient(url, anonKey, {

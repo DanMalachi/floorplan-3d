@@ -40,6 +40,7 @@
     "test:dragplane": "tsx src/viewport3d/dragPlane.test.ts",
     "test:squareup": "tsx src/lib/scene/squareUp.test.ts",
     "test:camera": "tsx src/viewport3d/camera/targetPlane.test.ts && tsx src/viewport3d/camera/inputVocabulary.test.ts && tsx src/viewport3d/camera/offerPolicy.test.ts",
+    "test:pseudo": "tsx src/i18n/pseudoLocale.test.ts",
     "furniture:test-retag": "tsx src/furniture/roomRetag.test.ts",
     "mat:index": "tsx scripts/materials/fetch-index.ts",
     "mat:fetch": "tsx scripts/materials/fetch-materials.ts",

@@ -6,7 +6,10 @@
 
 import { getRequestConfig } from "next-intl/server";
 import { hasLocale } from "next-intl";
+import { cookies } from "next/headers";
 import { routing } from "./routing";
+import { pseudoizeMessages } from "./pseudoLocale";
+import { PSEUDO_LOCALE_COOKIE } from "./pseudoLocaleCookie";
 
 type Messages = { [k: string]: string | Messages };
 
@@ -42,8 +45,26 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
 
   const en = (await import("../../messages/en.json")).default as Messages;
-  if (locale === routing.defaultLocale) return { locale, messages: en };
+  const messages =
+    locale === routing.defaultLocale
+      ? en
+      : mergeDeep(en, (await import(`../../messages/${locale}.json`)).default as Messages);
 
-  const translated = (await import(`../../messages/${locale}.json`)).default as Messages;
-  return { locale, messages: mergeDeep(en, translated) };
+  return { locale, messages: await maybePseudoize(messages) };
 });
+
+/**
+ * Dev-only `en-XA`-style pseudo-localization — see `pseudoLocale.ts` for what
+ * it does and why it is a message transform rather than a routed locale.
+ *
+ * Double-gated on purpose: `src/proxy.ts` only ever sets the cookie outside
+ * production, and this checks `NODE_ENV` again independently, so a cookie
+ * that somehow survives into a production request (a stale one from a
+ * preview deploy, say) still can't turn a real visitor's page into pseudo-
+ * loc noise.
+ */
+async function maybePseudoize(messages: Messages): Promise<Messages> {
+  if (process.env.NODE_ENV === "production") return messages;
+  const jar = await cookies();
+  return jar.get(PSEUDO_LOCALE_COOKIE)?.value === "1" ? pseudoizeMessages(messages) : messages;
+}
