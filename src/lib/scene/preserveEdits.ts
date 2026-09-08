@@ -54,8 +54,13 @@ export function preserveSceneEdits(prev: Scene | null | undefined, next: Scene):
       ...(before.swingDeg !== undefined ? { swingDeg: before.swingDeg } : {}),
       ...(before.hinge !== undefined ? { hinge: before.hinge } : {}),
       ...(before.slide !== undefined ? { slide: before.slide } : {}),
+      ...(before.double !== undefined ? { double: before.double } : {}),
+      ...(before.leafSplit !== undefined ? { leafSplit: before.leafSplit } : {}),
       ...(before.mullions !== undefined ? { mullions: before.mullions } : {}),
       ...(before.lining !== undefined ? { lining: before.lining } : {}),
+      ...(before.doorMaterial !== undefined ? { doorMaterial: before.doorMaterial } : {}),
+      ...(before.frameMaterial !== undefined ? { frameMaterial: before.frameMaterial } : {}),
+      ...(before.frameColor !== undefined ? { frameColor: before.frameColor } : {}),
     };
   });
 
@@ -68,13 +73,35 @@ export function preserveSceneEdits(prev: Scene | null | undefined, next: Scene):
     return before?.style ? { ...s, style: before.style } : s;
   });
 
-  // Rooms: the floor material is picked in Decorate, per room.
+  // Rooms: the floor material, ceiling height/openness and a custom name are
+  // all picked in Decorate, per room — none has a trace equivalent. (`ceiling`
+  // and `name` have no authoring UI yet, so this is currently a no-op for both,
+  // but preserving them costs nothing and means the day either ships, edits
+  // survive a retrace for free instead of silently vanishing again.)
   const prevFloors = new Map(
     prev.rooms.filter((r) => r.floor != null).map((r) => [loopKey(r), r.floor]),
   );
+  const prevCeilingHeights = new Map(
+    prev.rooms.filter((r) => r.ceilingHeight != null).map((r) => [loopKey(r), r.ceilingHeight]),
+  );
+  const prevCeilings = new Map(
+    prev.rooms.filter((r) => r.ceiling != null).map((r) => [loopKey(r), r.ceiling]),
+  );
+  const prevNames = new Map(
+    prev.rooms.filter((r) => r.name != null).map((r) => [loopKey(r), r.name]),
+  );
   const rooms: Room[] = next.rooms.map((r) => {
     const floor = prevFloors.get(loopKey(r));
-    return floor != null ? { ...r, floor } : r;
+    const ceilingHeight = prevCeilingHeights.get(loopKey(r));
+    const ceiling = prevCeilings.get(loopKey(r));
+    const name = prevNames.get(loopKey(r));
+    return {
+      ...r,
+      ...(floor != null ? { floor } : {}),
+      ...(ceilingHeight != null ? { ceilingHeight } : {}),
+      ...(ceiling != null ? { ceiling } : {}),
+      ...(name != null ? { name } : {}),
+    };
   });
 
   return {
