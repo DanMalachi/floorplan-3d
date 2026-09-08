@@ -11,7 +11,7 @@ import {
   syncKitchenAttachments,
   applyKitchenGesture,
 } from "./kitchenAttach";
-import { pathLegs, pathLength, clampAlongToPath, legsToSpec, runLocalToWorld } from "./runPath";
+import { pathLegs, pathLength, clampAlongToPath, legsToSpec, runLocalToWorld, legAtAlong } from "./runPath";
 import { sanitizeSpec, GENERATORS } from "@/parametric";
 import { countertopWithCutouts, COUNTER_T } from "./parts";
 
@@ -389,6 +389,51 @@ console.log("\nsink drops THROUGH the counter into an open cabinet");
     if (m.isMesh) mats.add(m.material as THREE.Material);
   });
   check("bowl, rim and tap share one material", mats.size === 2, `${mats.size} materials`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nsink cutout survives a leg drawn BACKWARDS (legDir: -1)");
+{
+  // An L/U leg's row-local x can run opposite to its own leg-local `u`
+  // (rowPlacement's `forward` flag) — kitchenBase's openTop math has to walk
+  // the same direction the row itself was built from, or the "open" (no-top)
+  // unit lands on a mirrored, unrelated part of the row while the real
+  // counter hole (computed independently, correctly) stays where it belongs.
+  // That desync reads as the sink hanging over a SOLID cabinet top instead
+  // of an open one — a direct collision, not a cosmetic offset.
+  const d = 0.6;
+  for (const legDir of [1, -1] as const) {
+    const spec = sanitizeSpec({
+      ...baseRun().parametric!,
+      finish: "laminate-matte", // headless: no canvas-textured finishes
+      finish2: "counter-white",
+      dims: { w: 1.8, d, h: 0.84 },
+      legDir,
+      extraLegs: [{ turn: 1 as const, w: 1.2 }],
+    });
+    const legs = pathLegs(spec);
+    const leg1 = legs[1];
+    const along = leg1.off + 1.0; // well clear of the corner block on either mapping
+    const { leg, u } = legAtAlong(legs, along);
+    // The TRUE item-local point the sink hangs at — the same formula
+    // counterSlabForPath uses for the real hole, independent of any
+    // row-local mirroring bug, so this is a fixed target regardless of legDir.
+    const cx = leg.sx + leg.dx * u + leg.fx * (d / 2);
+    const cz = leg.sz + leg.dz * u + leg.fz * (d / 2);
+    const probe = new THREE.Box3(
+      new THREE.Vector3(cx - 0.15, 0.6, cz - 0.15),
+      new THREE.Vector3(cx + 0.15, 0.79, cz + 0.15),
+    );
+    const built = sanitizeSpec({ ...spec, cutouts: [{ along, w: 0.53, d: 0.45 }] });
+    const g = GENERATORS.kitchenBase.build(built);
+    g.updateMatrixWorld(true);
+    let n = 0;
+    g.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh && new THREE.Box3().setFromObject(o).intersectsBox(probe)) n++;
+    });
+    check(`legDir=${legDir}: the cabinet is open under the sink's REAL position`, n === 0,
+      `${n} meshes collide at the sink's actual spot`);
+  }
 }
 
 // ---------------------------------------------------------------------------
