@@ -10,7 +10,7 @@
 // pipelines) is later work, once there's more than one shape to choose from.
 
 export type FixtureCategory = "Ceiling" | "Wall";
-export type FixtureShape = "flushDisc" | "pendant" | "sconce";
+export type FixtureShape = "flushDisc" | "pendant" | "sconce" | "linear" | "globePendant" | "drumPendant" | "globeSconce" | "boxSconce" | "flushSquare";
 
 export interface FixtureAsset {
   assetId: string; // "fx:flushDisc", "fx:pendant", "fx:sconce"
@@ -31,12 +31,20 @@ export interface FixtureAsset {
   nameKey: string;
   category: FixtureCategory;
   shape: FixtureShape; // discriminant for the procedural mesh in FixtureLayer.tsx
+  /** Source height below the slab; omitted preserves the original fixtures. */
+  sourceDropM?: number;
 }
 
 export const FIXTURE_CATALOG: FixtureAsset[] = [
   { assetId: "fx:flushDisc", name: "Flush ceiling light", nameKey: "flushDisc", category: "Ceiling", shape: "flushDisc" },
   { assetId: "fx:pendant", name: "Pendant light", nameKey: "pendant", category: "Ceiling", shape: "pendant" },
   { assetId: "fx:sconce", name: "Wall light", nameKey: "sconce", category: "Wall", shape: "sconce" },
+  { assetId: "fx:linear", name: "Draw ceiling strip", nameKey: "linear", category: "Ceiling", shape: "linear" },
+  { assetId: "fx:globePendant", name: "Globe pendant", nameKey: "globePendant", category: "Ceiling", shape: "globePendant", sourceDropM: 0.6 },
+  { assetId: "fx:drumPendant", name: "Drum pendant", nameKey: "drumPendant", category: "Ceiling", shape: "drumPendant", sourceDropM: 0.6 },
+  { assetId: "fx:globeSconce", name: "Globe wall light", nameKey: "globeSconce", category: "Wall", shape: "globeSconce" },
+  { assetId: "fx:boxSconce", name: "Rectangular wall light", nameKey: "boxSconce", category: "Wall", shape: "boxSconce" },
+  { assetId: "fx:flushSquare", name: "Square ceiling light", nameKey: "flushSquare", category: "Ceiling", shape: "flushSquare" },
 ];
 
 export const FIXTURE_CATALOG_BY_ID: ReadonlyMap<string, FixtureAsset> = new Map(
