@@ -40,12 +40,22 @@ const COPPER = "#DF7940";
 
 export const B = {
   // ── Type ────────────────────────────────────────────────────────────────
-  // Manrope and IBM Plex Mono are already self-hosted by next/font in
-  // src/app/layout.tsx (variable mode), so naming them literally here is
-  // enough — the @font-face rules are on the page already. Manrope is loaded
-  // as a variable font with no weight array, so 800 is available.
-  fontDisplay: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
-  fontUi: `Manrope, Rubik, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  // next/font gives each face an internal generated family name. The variables
+  // placed on <html> in src/app/[locale]/layout.tsx are the public handles for
+  // those names; using the literal Google-family names here silently falls
+  // through to whatever Windows has installed (David for Hebrew on some
+  // machines). Keep every brand surface, including the wordmark, on the loaded
+  // self-hosted faces by consuming the variables directly.
+  // `--br-font-ui` is switched by document language in BRAND_THEME_CSS. This
+  // matters because next/font's Manrope variable includes its own Arial
+  // fallback; a mixed Manrope → Rubik list lets that fallback claim Hebrew
+  // before Rubik is reached.
+  fontDisplay: `var(--br-font-ui, var(--font-manrope)), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  fontUi: `var(--br-font-ui, var(--font-manrope)), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  /** The logo is a Latin lockup in every locale, so it always stays Manrope. */
+  fontWordmark: `var(--font-manrope), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  /** Latin technical lockups such as the `done.design` footer label. */
+  fontMonoLatin: `var(--font-ibm-plex-mono), ui-monospace, "SF Mono", "Cascadia Code", monospace`,
   // Rubik is last, AFTER the monospace generic, and it is there for Hebrew only.
   //
   // src/app/[locale]/layout.tsx used to state that this stack needed no Hebrew
@@ -60,7 +70,7 @@ export const B = {
   // is the honest floor here: it means one deliberate, identical mismatch
   // everywhere instead of an unpredictable one per machine. Latin and digits are
   // unaffected — they find IBM Plex Mono first and never reach this entry.
-  fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace, Rubik`,
+  fontMono: `var(--br-font-mono, var(--font-ibm-plex-mono)), ui-monospace, "SF Mono", "Cascadia Code", monospace`,
 
   // ── Grounds ─────────────────────────────────────────────────────────────
   //
@@ -147,6 +157,8 @@ export const B = {
  */
 export const BRAND_THEME_CSS = `
 :root {
+  --br-font-ui: var(--font-manrope);
+  --br-font-mono: var(--font-ibm-plex-mono);
   --br-ground: #101014;
   --br-canvas: #18191D;
   --br-raised: #1E2025;
@@ -163,6 +175,10 @@ export const BRAND_THEME_CSS = `
   --br-warn: #ECD065;
   --br-err: #ED537C;
   --br-shadow: 0 18px 40px -22px rgba(0,0,0,0.8);
+}
+html[lang="he"] {
+  --br-font-ui: var(--font-rubik);
+  --br-font-mono: var(--font-rubik);
 }
 [data-br-theme="light"] {
   --br-ground: #F8F7F4;

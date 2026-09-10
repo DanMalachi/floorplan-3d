@@ -14,22 +14,9 @@ export type NavItem = {
   enabled?: boolean;
 };
 
-/**
- * `/pricing` and `/legal/refunds` are built and working, but they live on the
- * unmerged `feat/pricing-ui` branch and are gated there by
- * NEXT_PUBLIC_PRICING_UI_ENABLED, because Dan has not settled tiers or prices
- * (see docs/PRICING.md on that branch).
- *
- * Reading that SAME env var here rather than inventing a second flag means the
- * menu item switches itself on the moment the two branches meet and the flag is
- * set — no follow-up edit to remember, and no window where the menu links to a
- * page that returns 404.
- */
-const pricingLive = process.env.NEXT_PUBLIC_PRICING_UI_ENABLED === "true";
-
 export const NAV: NavItem[] = [
   { labelKey: "about", href: "/about" },
-  { labelKey: "pricing", href: "/pricing", enabled: pricingLive },
+  { labelKey: "pricing", href: "/pricing" },
   { labelKey: "faq", href: "/faq" },
 ];
 
@@ -54,7 +41,6 @@ export const APP_HREF = "/design?home=1";
 export const FOOTER_LEGAL: NavItem[] = [
   { labelKey: "privacy", href: "/legal/privacy" },
   { labelKey: "terms", href: "/legal/terms" },
-  { labelKey: "refunds", href: "/legal/refunds", enabled: pricingLive },
 ];
 
 export const footerLegal = (): NavItem[] => FOOTER_LEGAL.filter((i) => i.enabled !== false);
