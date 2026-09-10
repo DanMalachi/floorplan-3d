@@ -47,7 +47,7 @@ const EN: PricingContent = {
     {
       id: "free",
       eyebrow: "One project · full experience",
-      name: "Free",
+      name: "Personal",
       tagline: "See your home before you commit: test the layout, choose what fits, and walk through every decision.",
       price: "Free",
       priceNote: "No card required",
@@ -67,8 +67,8 @@ const EN: PricingContent = {
       eyebrow: "For ongoing client work",
       name: "Unlimited",
       tagline: "Move from concept to client-ready experience, across every project, without starting over or working alone.",
-      price: "To be announced",
-      priceNote: "Pricing will be shared later",
+      price: "Soon",
+      priceNote: "Full pricing shared before launch",
       features: [
         { label: "Unlimited interactive client projects", included: true },
         { label: "Accurate plan → furnish → walkthrough", included: true },
@@ -98,7 +98,7 @@ const HE: PricingContent = {
     {
       id: "free",
       eyebrow: "פרויקט אחד · החוויה המלאה",
-      name: "חינם",
+      name: "אישית",
       tagline: "ראו את הבית לפני שמתחייבים: בדקו את החלוקה, בחרו מה באמת נכנס וטיילו בכל החלטה.",
       price: "חינם",
       priceNote: "בלי כרטיס אשראי",
@@ -118,8 +118,8 @@ const HE: PricingContent = {
       eyebrow: "לעבודה שוטפת עם לקוחות",
       name: "ללא הגבלה",
       tagline: "עברו מרעיון לחוויה שמוכנה להצגה ללקוח — בכל פרויקט, בלי להתחיל מחדש ובלי לעבוד לבד.",
-      price: "יפורסם בהמשך",
-      priceNote: "המחיר יפורסם בהמשך",
+      price: "בקרוב",
+      priceNote: "המחיר המלא יפורסם לפני ההשקה",
       features: [
         { label: "פרויקטים אינטראקטיביים ללקוחות ללא הגבלה", included: true },
         { label: "תוכנית מדויקת ← ריהוט ← סיור", included: true },
