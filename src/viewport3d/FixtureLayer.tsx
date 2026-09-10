@@ -7,16 +7,18 @@ import type { FixtureItem, FixtureMount, Scene } from "@/schema/scene";
 import { isSolidWall } from "@/schema/scene";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { useSceneStore } from "@/store/useSceneStore";
-import { shadowProps } from "@/render/materialClass";
-import { ROOM_LIGHT } from "@/render/contract";
 import { DEFAULT_FIXTURE_COLOR_K, kelvinToColor } from "@/render/lightPresets";
-import { eligibleLitRooms, resolveFixtureWorldXY, WALL_FIXTURE_GAP_M, type EligibleRoom } from "@/render/roomLighting";
+import { eligibleLitRooms, resolveFixtureWorldXY, type EligibleRoom } from "@/render/roomLighting";
 import { pointInPolygon } from "@/lib/rooms/roomArea";
-import { FIXTURE_CATALOG_BY_ID, WALL_FIXTURE_SILL_M, type FixtureShape } from "@/fixtures/catalog";
+import { FIXTURE_CATALOG_BY_ID, WALL_FIXTURE_SILL_M } from "@/fixtures/catalog";
 import { GRID } from "./snap";
 import { ACCENT } from "./WallMesh";
 import { sampleFixture } from "@/decorate/eyedropper";
-import { fixtureTexture } from "./fixtureTexture";
+import { FixtureBody } from "./FixtureBody";
+import { LinearLightGhost } from "./LinearLightGhost";
+import { CeilingFixtureGhost } from "./CeilingFixtureGhost";
+import { StripSelection } from "./StripSelection";
+import { fixtureDropM, lightPath } from "@/fixtures/linear";
 import { WallSurfaceGrid } from "./SnapGridViz";
 import { rayToWall } from "@/parametric/wallRay";
 import { grabHeight, rayToPlanAt } from "./dragPlane";
@@ -78,10 +80,10 @@ const yawOf = (rotation: number) => -rotation;
 /** Which eligible room's ceiling a plan point sits under, for display height
  *  only — never stored. Falls back to the default wall height when the point
  *  isn't inside any room (e.g. a fixture dragged into a wall's thickness). */
-function ceilingYAt(x: number, y: number, rooms: EligibleRoom[]): number {
+function ceilingYAt(x: number, y: number, rooms: EligibleRoom[], assetId: string): number {
   const hit = rooms.find((er) => pointInPolygon(x, y, er.loop));
   const height = hit?.ceilingHeight ?? WALL_HEIGHT;
-  return height - ROOM_LIGHT.dropBelowCeilingM;
+  return height - fixtureDropM(assetId);
 }
 
 /**
@@ -168,113 +170,6 @@ function SelectionRing({ radius, dim }: { radius: number; dim?: boolean }) {
       <ringGeometry args={[radius * 0.9, radius, 40]} />
       <meshBasicMaterial color={ACCENT} transparent opacity={dim ? 0.35 : 0.85} side={THREE.DoubleSide} />
     </mesh>
-  );
-}
-
-/** A shape's procedural body, local origin at the light source (matches
- *  `RoomLight.position`). MVP visuals: plain primitives, not GLBs — "basic
- *  lights that can later be changed." `colorHex` mirrors the fixture's own
- *  authored color temperature, so the glow you place is the color you get. */
-function FixtureBody({ shape, colorHex, tint, opacity }: {
-  shape: FixtureShape;
-  colorHex: string;
-  tint?: "red" | null;
-  opacity?: number;
-}) {
-  // castShadow deliberately forced off: a fixture's own point light sits at
-  // its local origin (RoomLight.position), so if the housing casts a shadow
-  // it occludes its own cube map and the room it's meant to light goes dark
-  // (Sprint 3b). A 6-20cm housing's shadow is imperceptible either way.
-  const shadow = { ...shadowProps(opacity !== undefined ? "transient" : "opaqueArchitecture"), castShadow: false };
-  const bodyColor = tint === "red" ? "#ff3b30" : "#e8e2d5";
-  const emissive = tint === "red" ? "#000000" : colorHex;
-  const emissiveIntensity = tint === "red" ? 0 : 0.6;
-  // Sprint 9: a brushed-metal micro-roughness/normal pair — previously flat-
-  // shaded plastic-looking primitives. Cylinder/cone/box geometries already
-  // carry default UVs (no wallGeometry.ts-style geometry change needed).
-  const { normalMap, roughnessMap } = fixtureTexture();
-  const matProps = {
-    color: bodyColor,
-    emissive,
-    emissiveIntensity,
-    roughness: 0.6,
-    normalMap,
-    roughnessMap,
-    transparent: opacity !== undefined,
-    opacity: opacity ?? 1,
-    depthWrite: opacity === undefined,
-  };
-
-  // Dark hardware (stem/plate/arm) shared by every shape — never emissive.
-  const hardware = { color: "#3a3a3a", roughness: 0.5, normalMap, roughnessMap };
-
-  // The local origin of every shape is the LIGHT SOURCE (RoomLight.position):
-  // ROOM_LIGHT.dropBelowCeilingM below the ceiling for ceiling mounts,
-  // WALL_FIXTURE_GAP_M off the wall face for wall mounts. Bodies must span
-  // from the origin back to that surface, or the fixture visibly floats.
-
-  if (shape === "pendant") {
-    // Ceiling rose on the slab, cord down to a cone shade with a bulb in it.
-    return (
-      <group>
-        <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM - 0.011, 0]} {...shadow}>
-          <cylinderGeometry args={[0.045, 0.045, 0.022, 16]} />
-          <meshStandardMaterial {...hardware} />
-        </mesh>
-        <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM / 2, 0]} {...shadow}>
-          <cylinderGeometry args={[0.008, 0.008, ROOM_LIGHT.dropBelowCeilingM, 8]} />
-          <meshStandardMaterial {...hardware} />
-        </mesh>
-        <mesh position={[0, -0.06, 0]} {...shadow}>
-          <coneGeometry args={[0.14, 0.16, 16, 1, true]} />
-          <meshStandardMaterial {...matProps} side={THREE.DoubleSide} />
-        </mesh>
-        <mesh position={[0, -0.1, 0]} {...shadow}>
-          <sphereGeometry args={[0.032, 16, 12]} />
-          <meshStandardMaterial {...matProps} emissiveIntensity={emissiveIntensity * 1.6} />
-        </mesh>
-      </group>
-    );
-  }
-
-  if (shape === "sconce") {
-    // Anchored to the wall FACE at local z = -WALL_FIXTURE_GAP_M (the resolved
-    // origin is pushed that far into the room for the lighting math — Sprint
-    // 3c): backplate on the wall, arm out to a glowing open-cylinder shade
-    // around the light source. Front is +Z toward the room, per
-    // FurnitureItem's own "front faces local +Z" convention.
-    return (
-      <group>
-        <mesh position={[0, 0, -WALL_FIXTURE_GAP_M + 0.011]} {...shadow}>
-          <boxGeometry args={[0.09, 0.18, 0.022]} />
-          <meshStandardMaterial {...hardware} />
-        </mesh>
-        <mesh position={[0, 0, -WALL_FIXTURE_GAP_M / 2]} rotation={[Math.PI / 2, 0, 0]} {...shadow}>
-          <cylinderGeometry args={[0.012, 0.012, WALL_FIXTURE_GAP_M, 8]} />
-          <meshStandardMaterial {...hardware} />
-        </mesh>
-        <mesh {...shadow}>
-          <cylinderGeometry args={[0.05, 0.062, 0.16, 16, 1, true]} />
-          <meshStandardMaterial {...matProps} side={THREE.DoubleSide} />
-        </mesh>
-      </group>
-    );
-  }
-
-  // flushDisc — trim plate tight against the ceiling, shallow diffuser dome
-  // below it. The origin (light source) hangs under the housing; the housing
-  // itself reaches up to the slab.
-  return (
-    <group>
-      <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM - 0.011, 0]} {...shadow}>
-        <cylinderGeometry args={[0.15, 0.15, 0.022, 24]} />
-        <meshStandardMaterial {...hardware} />
-      </mesh>
-      <mesh position={[0, ROOM_LIGHT.dropBelowCeilingM - 0.022, 0]} scale={[1, 0.42, 1]} {...shadow}>
-        <sphereGeometry args={[0.135, 24, 16]} />
-        <meshStandardMaterial {...matProps} />
-      </mesh>
-    </group>
   );
 }
 
@@ -373,7 +268,7 @@ function FixtureItemView({ item, offset, rooms }: {
   const world = resolveFixtureWorldXY(item, scene);
   if (!world) return null; // wall mount pointing at a wall that no longer exists
 
-  const y = item.mount.kind === "ceiling" ? ceilingYAt(item.mount.x, item.mount.y, rooms) : item.mount.sill;
+  const y = item.mount.kind === "ceiling" ? ceilingYAt(item.mount.x, item.mount.y, rooms, item.assetId) : item.mount.sill;
   const baseRotation =
     item.mount.kind === "wall" ? wallFacingRotation(item.mount.wallId, item.mount.side, scene) : 0;
 
@@ -397,85 +292,43 @@ function FixtureItemView({ item, offset, rooms }: {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <FixtureBody shape={shape} colorHex={colorHex} />
-      {(selected || hovered) && <SelectionRing radius={0.24} dim={!selected} />}
+      <FixtureBody shape={shape} colorHex={colorHex} path={shape === "linear" ? lightPath(item) : undefined} />
+      {(selected || hovered) && (shape === "linear"
+        ? <StripSelection path={lightPath(item)} dim={!selected} />
+        : <SelectionRing radius={0.24} dim={!selected} />)}
     </group>
   );
 }
 
-/** Ghost + click-to-place. Rendered only while a fixture catalog item is
- *  active (guarded against FurnitureLayer's own ghost by the shared `placing`
- *  field's catalog-membership check there). Ceiling assets follow the cursor
- *  freely over the floor plane; wall assets (`category: "Wall"`) snap to the
- *  nearest solid wall, mirroring furniture's own magnetic `wallSnap` feel. */
+/** Catalog ghosts share fixture bodies; each mount uses its own ray plane. */
 function PlacementGhost({ offset, rooms }: { offset: { cx: number; cz: number }; rooms: EligibleRoom[] }) {
   const placing = useSceneStore((s) => s.placing);
   const scene = useSceneStore((s) => s.scene);
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [wallMount, setWallMount] = useState<FixtureMount | null>(null);
-  if (!placing || !FIXTURE_CATALOG_BY_ID.has(placing.assetId)) return null;
-  const spec = FIXTURE_CATALOG_BY_ID.get(placing.assetId)!;
-  const onWall = spec.category === "Wall";
-
-  const onMove = (e: ThreeEvent<PointerEvent>) => {
-    const p = rayToPlan(e, offset);
-    if (!p) return;
-    if (onWall) {
-      setWallMount(wallMountFromRay(e, scene, offset, WALL_FIXTURE_SILL_M));
-    } else {
-      setPos(e.shiftKey ? p : { x: snap(p.x), y: snap(p.y) });
-    }
-  };
-
+  if (!placing) return null;
+  const spec = FIXTURE_CATALOG_BY_ID.get(placing.assetId);
+  if (!spec || spec.shape === "linear") return null;
+  if (spec.category === "Ceiling") return <CeilingFixtureGhost key={placing.assetId} assetId={placing.assetId} offset={offset} rooms={rooms} />;
+  const onMove = (e: ThreeEvent<PointerEvent>) => setWallMount(wallMountFromRay(e, scene, offset, WALL_FIXTURE_SILL_M));
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    const rotation = useSceneStore.getState().placing?.rotation ?? 0;
-    if (onWall) {
-      if (!wallMount) return;
-      useSceneStore.getState().placeFixture(wallMount, rotation);
-    } else {
-      if (!pos) return;
-      useSceneStore.getState().placeFixture({ kind: "ceiling", x: pos.x, y: pos.y }, rotation);
-    }
+    const mount = wallMountFromRay(e, scene, offset, WALL_FIXTURE_SILL_M);
+    if (mount) useSceneStore.getState().placeFixture(mount, useSceneStore.getState().placing?.rotation ?? 0);
   };
-
-  const previewItem: FixtureItem | null = onWall
-    ? wallMount && { id: "__ghost__", assetId: placing.assetId, rotation: placing.rotation, mount: wallMount }
-    : pos && { id: "__ghost__", assetId: placing.assetId, rotation: placing.rotation, mount: { kind: "ceiling", x: pos.x, y: pos.y } };
-  const world = previewItem && resolveFixtureWorldXY(previewItem, scene);
-  const previewY = previewItem
-    ? previewItem.mount.kind === "ceiling"
-      ? ceilingYAt(previewItem.mount.x, previewItem.mount.y, rooms)
-      : previewItem.mount.sill
-    : 0;
-  const previewRotation =
-    previewItem?.mount.kind === "wall"
-      ? wallFacingRotation(previewItem.mount.wallId, previewItem.mount.side, scene) + previewItem.rotation
-      : (previewItem?.rotation ?? 0);
-
-  return (
-    <>
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[offset.cx, 0.001, offset.cz]}
-        onPointerMove={onMove}
-        onClick={onClick}
-      >
-        <planeGeometry args={[600, 600]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
-      {world && (
-        <group position={[world.x, previewY, world.y]} rotation={[0, yawOf(previewRotation), 0]}>
-          <FixtureBody shape={spec.shape} colorHex={kelvinToColor(DEFAULT_FIXTURE_COLOR_K)} opacity={0.55} />
-        </group>
-      )}
-      {/* The wall grid the ghost is snapping to — same cell rhythm as the
-          floor/ceiling overlays (SnapGridViz). */}
-      {wallMount?.kind === "wall" && (
-        <WallSurfaceGrid scene={scene} wallId={wallMount.wallId} side={wallMount.side} />
-      )}
-    </>
-  );
+  const preview: FixtureItem | null = wallMount && { id: "__ghost__", assetId: placing.assetId, rotation: placing.rotation, mount: wallMount };
+  const world = preview && resolveFixtureWorldXY(preview, scene);
+  return <>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[offset.cx, 0.001, offset.cz]} onPointerMove={onMove} onClick={onClick}>
+      <planeGeometry args={[600, 600]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+    {world && wallMount?.kind === "wall" && <>
+      <group position={[world.x, wallMount.sill, world.y]} rotation={[0, yawOf(wallFacingRotation(wallMount.wallId, wallMount.side, scene) + placing.rotation), 0]}>
+        <FixtureBody shape={spec.shape} colorHex={kelvinToColor(DEFAULT_FIXTURE_COLOR_K)} opacity={0.55} />
+      </group>
+      <WallSurfaceGrid scene={scene} wallId={wallMount.wallId} side={wallMount.side} />
+    </>}
+  </>;
 }
 
 /** Wall grid while DRAGGING an existing wall fixture (the placement ghost
@@ -503,7 +356,13 @@ export function FixtureLayer({ scene, offset }: {
         <FixtureItemView key={item.id} item={item} offset={offset} rooms={rooms} />
       ))}
       <PlacementGhost offset={offset} rooms={rooms} />
+      <LinearPlacement offset={offset} rooms={rooms} />
       <DraggedWallFixtureGrid scene={scene} />
     </group>
   );
+}
+
+function LinearPlacement({ offset, rooms }: { offset: { cx: number; cz: number }; rooms: EligibleRoom[] }) {
+  const placing = useSceneStore((s) => s.placing);
+  return placing?.assetId === "fx:linear" ? <LinearLightGhost offset={offset} rooms={rooms} /> : null;
 }

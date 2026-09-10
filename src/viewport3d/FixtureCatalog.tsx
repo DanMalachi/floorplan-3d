@@ -8,6 +8,7 @@ import { PD, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
 import { DiscLightIcon, PendantIcon, SconceIcon } from "@/ui/planDock/icons";
+import { LinearLightIcon, GlobePendantIcon, DrumPendantIcon, GlobeSconceIcon, BoxSconceIcon, SquareLightIcon } from "@/fixtures/icons";
 
 /** A drawn icon per shape — no GLB thumbnail machinery here (that's furniture-
  *  specific, coupled to CATALOG_BY_ID/spec.model): these are procedural
@@ -21,6 +22,12 @@ const SHAPE_ICON: Record<FixtureAsset["shape"], (p: { size?: number }) => React.
   flushDisc: DiscLightIcon,
   pendant: PendantIcon,
   sconce: SconceIcon,
+  linear: LinearLightIcon,
+  globePendant: GlobePendantIcon,
+  drumPendant: DrumPendantIcon,
+  globeSconce: GlobeSconceIcon,
+  boxSconce: BoxSconceIcon,
+  flushSquare: SquareLightIcon,
 };
 
 const CATEGORIES: FixtureCategory[] = ["Ceiling", "Wall"];
@@ -134,7 +141,7 @@ export function FixtureCatalog() {
   );
   return (
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
         <CategoryChip active={activeCategory === null} onClick={() => setActiveCategory(null)}>
           {t("filterAll")}
         </CategoryChip>
@@ -148,7 +155,7 @@ export function FixtureCatalog() {
         ))}
         {placing && (
           <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-            {t("placeHint")}
+            {t(placing.assetId === "fx:linear" ? "drawHint" : "placeHint")}
           </span>
         )}
       </div>

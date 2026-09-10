@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Scene, FloorStyle, FixtureMount, OpeningType, ParametricSpec } from "@/schema/scene";
+import type { Scene, FloorStyle, FixtureItem, FixtureMount, OpeningType, ParametricSpec } from "@/schema/scene";
 import { sampleScene } from "@/schema/sampleScene";
 import {
   DEFAULT_DOOR,
@@ -422,7 +422,7 @@ export interface StoreState {
   // --- fixtures (lighting) --- placing state is SHARED with furniture above
   // (assetId is enough to tell the catalogs apart) — only the commit/rotate
   // actions are fixture-specific.
-  placeFixture: (mount: FixtureMount, rotation: number) => void;
+  placeFixture: (mount: FixtureMount, rotation: number, path?: FixtureItem["path"]) => void;
   rotateSelectedFixture: (deltaRad: number) => void;
 
   // --- materials brush (Decorate mode) ---
@@ -1308,13 +1308,13 @@ export const useSceneStore = create<StoreState>((set, get) => {
     replaceTarget: null,
     setReplaceTarget: (replaceTarget) => set({ replaceTarget }),
 
-    placeFixture: (mount, rotation) => {
+    placeFixture: (mount, rotation, path) => {
       const { placing, scene, commitScene } = get();
       if (!placing) return;
       const id = `fx${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
       commitScene("Place fixture", {
         ...scene,
-        fixtures: [...(scene.fixtures ?? []), { id, assetId: placing.assetId, rotation, mount }],
+        fixtures: [...(scene.fixtures ?? []), { id, assetId: placing.assetId, rotation, mount, ...(path ? { path } : {}) }],
       });
       // Stay in placing mode - Sims-style repeat placement; Esc exits.
     },
