@@ -83,7 +83,7 @@ export function Wordmark({
         // here exactly where it is right everywhere else.
         direction: "ltr",
         unicodeBidi: "isolate",
-        fontFamily: B.fontDisplay,
+        fontFamily: B.fontWordmark,
         fontWeight: 800,
         fontSize: size,
         lineHeight: 1,
@@ -177,7 +177,7 @@ export function WordmarkLockup({
       <Wordmark size={size} />
       <span
         style={{
-          fontFamily: B.fontMono,
+          fontFamily: B.fontMonoLatin,
           fontSize: size * 0.42,
           letterSpacing: "0.06em",
           color: B.ink4,

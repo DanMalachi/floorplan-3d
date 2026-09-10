@@ -87,6 +87,8 @@ export const LANDING_HOVER_CSS = `
 
 @media (max-width: ${NAV_BREAK}px) {
   .${WIDE_ONLY_CLASS} { display: none !important; }
+  .done-pricing-grid { grid-template-columns: 1fr !important; }
+  .done-pricing-header { grid-template-columns: 1fr !important; }
 }
 @media (min-width: ${NAV_BREAK + 1}px) {
   .${NARROW_ONLY_CLASS} { display: none !important; }

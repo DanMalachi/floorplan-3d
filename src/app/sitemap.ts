@@ -24,6 +24,7 @@ import { INDEXABLE_ALWAYS, INDEXABLE_MARKETING } from "@/i18n/alternates";
 const CHANGE: Record<string, { freq: MetadataRoute.Sitemap[number]["changeFrequency"]; pri: number }> = {
   "/": { freq: "weekly", pri: 1 },
   "/about": { freq: "monthly", pri: 0.6 },
+  "/pricing": { freq: "monthly", pri: 0.7 },
   "/faq": { freq: "monthly", pri: 0.6 },
   // The editor is an app shell with little for a crawler to read, but it is a
   // real destination people link to and robots.ts already allows it — so it

@@ -37,5 +37,5 @@ export function alternatesFor(path: `/${string}`): Metadata["alternates"] {
  *  Kept here, beside `alternatesFor`, rather than inline in `sitemap.ts`: the
  *  sitemap and the per-page maps are two statements of the same fact, and a
  *  crawler that finds them disagreeing trusts neither. One list, two readers. */
-export const INDEXABLE_MARKETING = ["/about", "/faq"] as const;
+export const INDEXABLE_MARKETING = ["/about", "/pricing", "/faq"] as const;
 export const INDEXABLE_ALWAYS = ["/", "/design", "/legal/privacy", "/legal/terms"] as const;
