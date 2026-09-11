@@ -111,7 +111,9 @@ export function Tooltip({
       {child}
       {show && (
         <span
-          role="tooltip"
+          // The text is already the child's accessible name (above); announcing
+          // it a second time on hover would just duplicate it.
+          aria-hidden
           style={{
             position: "absolute",
             ...(placement === "top"

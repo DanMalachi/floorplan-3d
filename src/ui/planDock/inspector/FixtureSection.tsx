@@ -41,7 +41,7 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
   };
 
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected: ${specName}`} style={pdInspectorPanel}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>{specName}</div>
       <div style={{ fontSize: 11.5, color: PD.textSecondary }}>{deg}°</div>
       {item.assetId === "fx:linear" && <PdHelpText>{t("stripDimensions", { length: pathLength(item.path ?? []).toFixed(2) })}</PdHelpText>}

@@ -44,7 +44,9 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 
   return (
-    <div style={pdInspectorPanel}>
+    // A labelled region, so the panel that appears on selection is findable by
+    // landmark rather than only by tabbing past everything above it.
+    <div role="region" aria-label={`Selected: ${spec?.name ?? item.assetId}`} style={pdInspectorPanel}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <div
           style={{
@@ -60,8 +62,10 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
           }}
         >
           {thumb ? (
+            // Decorative: the item's name is right beside it as real text, so a
+            // matching alt would just say it twice.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumb} alt={specName ?? item.assetId} width={44} height={44} style={{ objectFit: "contain" }} draggable={false} />
+            <img src={thumb} alt="" width={44} height={44} style={{ objectFit: "contain" }} draggable={false} />
           ) : (
             <span style={{ color: PD.textTertiary, fontSize: 10 }}>…</span>
           )}

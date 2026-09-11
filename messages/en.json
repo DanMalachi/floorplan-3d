@@ -123,6 +123,7 @@
     },
     "ceiling": "Ceiling",
     "chrome": {
+      "modeSwitcherLabel": "Editor mode",
       "projectBar": {
         "local": {
           "saved": "Saved",
@@ -136,7 +137,8 @@
           "conflict": "Kept both versions"
         },
         "synced": "{local} · Synced",
-        "backTooltip": "Back to your projects"
+        "backTooltip": "Back to your projects",
+        "backAriaLabel": "Browse projects — currently open: {name}"
       },
       "goLive": {
         "starting": "Starting…",
@@ -160,7 +162,9 @@
         "notBuiltTooltip": "{label} — not built yet",
         "notBuiltToast": "{label} tool isn't built yet — still using Select",
         "measureHint": "Click two points — floor, wall, or ceiling · Esc clears",
-        "wallHint": "Click to start, click to draw · Esc ends the chain, Esc again to stop"
+        "wallHint": "Click to start, click to draw · Esc ends the chain, Esc again to stop",
+        "toolGroupLabel": "Build tool",
+        "openingTypeGroupLabel": "Opening type"
       },
       "projectsOverlay": {
         "title": "Projects",
@@ -173,6 +177,10 @@
         "liveTooltip": "Live shared document — opens into its room",
         "liveBadge": "LIVE",
         "confirmDelete": "Delete “{name}”? This can't be undone.",
+        "openCardAriaLabel": "Open {name}{status}, last edited {when}",
+        "statusCurrent": " (currently open)",
+        "statusCloudOnly": " — in cloud, will download first",
+        "statusLive": " — live shared document",
         "closeTooltip": "Close (Esc)",
         "closeAriaLabel": "Close projects",
         "deleteLabel": "Delete plan",
@@ -230,6 +238,9 @@
       "nothingHere": "Nothing here yet.",
       "search": "Search",
       "closeSearch": "Close search",
+      "filterItemsLabel": "Filter items",
+      "itemsShownLabel": "{count} items shown",
+      "dockSectionLabel": "Dock section",
       "dragToResize": "Drag to resize",
       "eyedropper": "Eyedropper (E)",
       "eyedropperArmed": "Eyedropper armed (E)",
@@ -237,13 +248,18 @@
       "brushPaint": "Painting — click a surface · Esc to stop",
       "brushFloor": "Flooring — click a surface · Esc to stop",
       "sceneNotBuilt": "{room} scene not built yet — showing everything tagged for this room",
+      "roomNavigatorLabel": "Room navigator",
+      "roomGroupLabel": "Room",
       "customBadge": "Custom",
       "paint": {
         "tipPlaster": "Plaster (default)",
         "tipNatural": "Natural — the finish's own colour",
-        "loading": "Loading…"
+        "loading": "Loading…",
+        "frameGroupLabel": "Window frame colour",
+        "wallGroupLabel": "Wall paint colour"
       },
       "floors": {
+        "groupLabel": "Floor material",
         "tip": "{name} · {family} · tiles every {cover} m",
         "family": {
           "wood": "Wood",
@@ -1026,6 +1042,7 @@
         "kindWall": "Wall",
         "kindRail": "Rail",
         "kindPortal": "Open boundary",
+        "boundaryKindLabel": "Boundary kind",
         "chipOpen": "Open",
         "tipWall": "Full-height solid wall.",
         "tipRail": "Low, see-through barrier — balcony or terrace railing.",
@@ -1067,6 +1084,7 @@
       "panel": {}
     },
     "opening": {
+      "openingTypeGroup": "Opening type",
       "types": {
         "door": "Door / Patio",
         "passage": "Passage",

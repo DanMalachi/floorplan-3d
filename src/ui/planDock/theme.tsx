@@ -136,7 +136,7 @@ export function ThemeToggle() {
           transition: "color 140ms ease",
         }}
       >
-        <Icon size={15} />
+        <Icon size={15} aria-hidden />
       </button>
     </Tooltip>
   );

@@ -88,6 +88,7 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <input
         type="color"
+        aria-label="Custom colour"
         value={pending ?? value}
         onChange={(e) => setPending(e.target.value)}
         onBlur={() => {
@@ -144,7 +145,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected: ${t(g.labelKey)}`} style={pdInspectorPanel}>
       <PdSectionTitle label={t(g.labelKey)} meta={td("customBadge")} />
 
       {/* A television is sold by its screen diagonal, and its width and height
@@ -165,6 +166,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
                 active={Math.abs(g.sizeInches!.of(spec) - p) < 0.6}
                 extra={pdChipFlex}
                 onClick={() => update({ dims: g.sizeInches!.dims(spec, p) })}
+                aria-pressed={Math.abs(g.sizeInches!.of(spec) - p) < 0.6}
               >
                 {p}&quot;
               </PdChip>
@@ -214,6 +216,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
                   active={value >= 1 === (v === 1)}
                   extra={pdChipFlex}
                   onClick={() => update({ modules: { [m.key]: v } })}
+                  aria-pressed={value >= 1 === (v === 1)}
                 >
                   {v === 1 ? t(m.toggle!.onKey) : t(m.toggle!.offKey)}
                 </PdChip>
@@ -241,6 +244,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
               active={(spec.variant ?? g.variants![0].id) === v.id}
               extra={pdChipFlex}
               onClick={() => update({ variant: v.id })}
+              aria-pressed={(spec.variant ?? g.variants![0].id) === v.id}
             >
               {t(v.labelKey)}
             </PdChip>
@@ -251,7 +255,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.fronts.length > 1 && (g.showFronts?.(spec) ?? true) && (
         <PdChipGroup>
           {g.fronts.map((f) => (
-            <PdChip key={f} active={spec.front === f} extra={pdChipFlex} onClick={() => update({ front: f })}>
+            <PdChip key={f} active={spec.front === f} extra={pdChipFlex} onClick={() => update({ front: f })} aria-pressed={spec.front === f}>
               {t(FRONT_LABEL_KEY[f])}
             </PdChip>
           ))}
@@ -261,7 +265,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       {g.handles.length > 1 && (
         <PdChipGroup>
           {g.handles.map((h) => (
-            <PdChip key={h} active={spec.handle === h} extra={pdChipFlex} onClick={() => update({ handle: h })}>
+            <PdChip key={h} active={spec.handle === h} extra={pdChipFlex} onClick={() => update({ handle: h })} aria-pressed={spec.handle === h}>
               {t(HANDLE_LABEL_KEY[h])}
             </PdChip>
           ))}
@@ -325,10 +329,15 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           this file follow — an invisible control reads as "not offered",
           a disabled one reads as "not right now, here's why". */}
       {isWallRun && (
-        <label style={pdInspectorRow}>
+        // Not a <label>: this row's control is a toggle button, and a label can
+        // only name a form control. The button names itself instead — otherwise
+        // it is announced as just "On"/"Off" with no idea what of.
+        <div style={pdInspectorRow}>
           <span style={{ color: PD.textSecondary }}>{t("matchRun.label")}</span>
           <button
             {...linkHoverBind}
+            aria-label={t("matchRun.label")}
+            aria-pressed={isLinked}
             disabled={!isLinked && !linkHost}
             onClick={() => {
               const store = useSceneStore.getState();
@@ -345,7 +354,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
           >
             {isLinked ? t("matchRun.on") : t("matchRun.off")}
           </button>
-        </label>
+        </div>
       )}
 
       {/* Anything that hangs needs its height editable, not just wall

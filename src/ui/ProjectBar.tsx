@@ -46,6 +46,7 @@ export function ProjectBar({
       <Tooltip label={t("projectBar.backTooltip")} placement="bottom">
         <button
           onClick={onOpenProjects}
+          aria-label={t("projectBar.backAriaLabel", { name })}
           {...hoverBind}
           style={{
             display: "flex",
@@ -71,7 +72,14 @@ export function ProjectBar({
         </button>
       </Tooltip>
       {status && (
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingInlineEnd: 10, fontFamily: PD.fontUi }}>
+        // Save/sync state is the one thing here that changes on its own, and
+        // it answers "did my work make it out of this browser?" — so it
+        // announces itself politely instead of only being visible.
+        <span
+          role="status"
+          aria-live="polite"
+          style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: PD.textTertiary, paddingInlineEnd: 10, fontFamily: PD.fontUi }}
+        >
           {/* A status light, so it is a drawn circle rather than the `●`
               character it replaces — a text bullet reflows with the font. */}
           <span

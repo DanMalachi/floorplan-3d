@@ -58,6 +58,7 @@ export default async function LegalLayout({
       />
       <div className="fp-legal" style={{ maxWidth: 720, margin: "0 auto", padding: "56px 24px 96px" }}>
         <nav
+          aria-label="Legal"
           style={{
             display: "flex",
             alignItems: "center",
@@ -71,9 +72,9 @@ export default async function LegalLayout({
             href="/"
             style={{ display: "inline-flex", alignItems: "center", gap: 5, color: PD.textSecondary, textDecoration: "none" }}
           >
-            <ChevronLeftIcon size={13} /> <Brand />
+            <ChevronLeftIcon size={13} aria-hidden /> <Brand />
           </Link>
-          <span style={{ color: PD.textTertiary }}>·</span>
+          <span aria-hidden style={{ color: PD.textTertiary }}>·</span>
           <Link href="/legal/privacy" style={{ color: PD.textPrimary, textDecoration: "none" }}>
             Privacy Policy
           </Link>
@@ -81,7 +82,10 @@ export default async function LegalLayout({
             Terms of Service
           </Link>
         </nav>
-        {children}
+        {/* These are long documents whose only landmark was the nav above.
+            <main> gives a screen reader somewhere to jump to; it is
+            display:block, so nothing moves. */}
+        <main>{children}</main>
       </div>
     </div>
   );

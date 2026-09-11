@@ -217,7 +217,11 @@ export function OpeningSection({ opening }: { opening: Opening }) {
     });
 
   return (
-    <div style={pdInspectorPanel}>
+    <div
+      role="region"
+      aria-label={`Selected: ${t(`displayName.${openingDisplayNameKey(opening)}`)}`}
+      style={pdInspectorPanel}
+    >
       {/* One name for this element, shared with the 3D selection badge — the
           two used to disagree, and the fallthrough here printed the raw
           lowercase enum. */}
@@ -226,7 +230,12 @@ export function OpeningSection({ opening }: { opening: Opening }) {
         meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
       />
 
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+      {/* Every chip row in this panel is a single-choice group whose selection
+          is shown by tint alone. `role="group"` gives the row the heading its
+          micro-label already gives it visually; PdChip's own aria-pressed
+          (defaulted from `active`) makes "which one is on" available to
+          anything that is not an eye. */}
+      <div role="group" aria-label={t("openingTypeGroup")} style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {OPENING_TYPES.map(({ type, labelKey, Icon, tipKey }) => (
           <PdChip
             key={type}
@@ -247,7 +256,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {!glazedDoor && (
             <>
               <div style={pdMicroLabel()}>{t("material")}</div>
-              <div style={{ display: "flex", gap: 4 }}>
+              <div role="group" aria-label={t("material")} style={{ display: "flex", gap: 4 }}>
                 {DOOR_MATERIALS.map((m) => (
                   <PdChip
                     key={m.key}
@@ -262,7 +271,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
             </>
           )}
           <div style={pdMicroLabel()}>{t("howItOpens")}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <div role="group" aria-label={t("howItOpens")} style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {/* Writing swingDeg (not just clearing `slide`) is what makes this
                 an EXPLICIT choice — otherwise a door past PATIO_MIN_WIDTH
                 would fall straight back to the derived patio slider and the
@@ -332,7 +341,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {/* A double door has no hinge to choose — each leaf hangs on its own
               jamb, and both swing the same way. */}
           {!double && (
-            <div style={{ display: "flex", gap: 4 }}>
+            <div role="group" aria-label="Hinge side" style={{ display: "flex", gap: 4 }}>
               {(["start", "end"] as const).map((h) => (
                 <PdChip key={h} active={(opening.hinge ?? "start") === h} extra={pdChipFlex} onClick={() => patch("Door hinge", { hinge: h })}>
                   {h === "start" ? t("hingeStart") : t("hingeEnd")}
@@ -354,7 +363,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {slide.style === "bypass" && (
             <PdStepper label={t("panels")} value={slide.panels} min={2} max={3} onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })} />
           )}
-          <div style={{ display: "flex", gap: 4 }}>
+          <div role="group" aria-label="Which jamb the panels stack at" style={{ display: "flex", gap: 4 }}>
             {(["start", "end"] as const).map((sd) => (
               <PdChip
                 key={sd}
@@ -399,7 +408,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       )}
 
       {opening.type === "passage" && (
-        <div style={{ display: "flex", gap: 4 }}>
+        <div role="group" aria-label="Passage lining" style={{ display: "flex", gap: 4 }}>
           {([true, false] as const).map((l) => (
             <PdChip
               key={String(l)}
@@ -433,7 +442,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       {(isWindow || glazedDoor) && (
         <>
           <div style={pdMicroLabel()}>{t("frameFinishHeading")}</div>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div role="group" aria-label={t("frameFinishHeading")} style={{ display: "flex", gap: 4 }}>
             {WINDOW_FRAME_MATERIALS.map((m) => (
               <PdChip
                 key={m.key}

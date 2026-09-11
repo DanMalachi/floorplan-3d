@@ -104,9 +104,9 @@ export function WallSection({ wall }: { wall: Wall }) {
         ];
 
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected: ${t(KIND_LABEL_KEY[kind])}`} style={pdInspectorPanel}>
       <PdSectionTitle label={t(KIND_LABEL_KEY[kind])} meta={`${len.toFixed(2)} m`} />
-      <div style={{ display: "flex", gap: 4 }}>
+      <div role="group" aria-label={t("boundaryKindLabel")} style={{ display: "flex", gap: 4 }}>
         {(["wall", "rail", "portal"] as const).map((k) => (
           <PdChip
             key={k}
@@ -121,7 +121,8 @@ export function WallSection({ wall }: { wall: Wall }) {
                   : t("tipWall")
             }
           >
-            {k === "portal" ? `⇿ ${t("chipOpen")}` : k === "rail" ? `▭ ${t(KIND_LABEL_KEY.rail)}` : `▉ ${t(KIND_LABEL_KEY.wall)}`}
+            <span aria-hidden>{k === "portal" ? "⇿" : k === "rail" ? "▭" : "▉"} </span>
+            {k === "portal" ? t("chipOpen") : k === "rail" ? t(KIND_LABEL_KEY.rail) : t(KIND_LABEL_KEY.wall)}
           </PdChip>
         ))}
       </div>
@@ -145,7 +146,7 @@ export function WallSection({ wall }: { wall: Wall }) {
           />
           {kind === "wall" && (
             <>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div role="group" aria-label={t("facesLabel")} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ color: PD.textSecondary, fontSize: 11.5 }}>{t("facesLabel")}</span>
                 <PdSwatch
                   hex={wall.paintA ?? null}

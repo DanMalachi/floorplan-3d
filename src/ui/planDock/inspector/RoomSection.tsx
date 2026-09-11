@@ -45,7 +45,7 @@ export function RoomSection({ room }: { room: Room }) {
     });
   };
   return (
-    <div style={pdInspectorPanel}>
+    <div role="region" aria-label={`Selected room: ${w.toFixed(2)} × ${h.toFixed(2)} m`} style={pdInspectorPanel}>
       <PdSectionTitle label={`${w.toFixed(2)} × ${h.toFixed(2)} m`} meta={`${area.toFixed(1)} m²`} />
       <PdNumField
         label={t("ceilingHeight")}

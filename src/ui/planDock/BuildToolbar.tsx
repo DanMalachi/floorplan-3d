@@ -62,6 +62,7 @@ function ToolButton({ tool, active, onPick }: { tool: (typeof TOOLS)[number]; ac
       <button
         {...hoverBind}
         onClick={() => onPick(tool)}
+        aria-pressed={active}
         style={{
           display: "flex",
           alignItems: "center",
@@ -79,7 +80,7 @@ function ToolButton({ tool, active, onPick }: { tool: (typeof TOOLS)[number]; ac
           transition: "background 140ms ease, color 140ms ease",
         }}
       >
-        <Glyph size={14} />
+        <Glyph size={14} aria-hidden />
         {label}
       </button>
     </Tooltip>
@@ -95,9 +96,10 @@ function OpeningTypeChip({ type, active, onPick }: { type: (typeof OPENING_TYPES
     <button
       {...hoverBind}
       onClick={() => onPick(type.id)}
+      aria-pressed={active}
       style={{ ...pdChip(active, undefined, hovered), display: "flex", alignItems: "center", gap: 5 }}
     >
-      <Glyph size={14} />
+      <Glyph size={14} aria-hidden />
       {t(`buildToolbar.openingTypes.${type.labelKey}`)}
     </button>
   );
@@ -133,23 +135,26 @@ export function BuildToolbar() {
         gap: 6,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 2, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+      <div role="group" aria-label={t("buildToolbar.toolGroupLabel")} style={{ display: "flex", alignItems: "center", gap: 2, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
         {TOOLS.map((t) => (
           <ToolButton key={t.id} tool={t} active={buildTool === t.id} onPick={pick} />
         ))}
       </div>
+      {/* These pills are the only statement of what the armed tool now expects
+          from you. They appeared silently; role="status" announces them when
+          the tool is armed. */}
       {buildTool === "measure" && (
-        <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
+        <div role="status" style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
           {t("buildToolbar.measureHint")}
         </div>
       )}
       {buildTool === "wall" && (
-        <div style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
+        <div role="status" style={{ padding: "5px 12px", fontSize: 11.5, fontFamily: PD.fontMono, color: PD.accentText, ...pdGlass({ borderRadius: 999 }) }}>
           {t("buildToolbar.wallHint")}
         </div>
       )}
       {buildTool === "opening" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+        <div role="group" aria-label={t("buildToolbar.openingTypeGroupLabel")} style={{ display: "flex", alignItems: "center", gap: 4, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
           {OPENING_TYPES.map((t) => (
             <OpeningTypeChip key={t.id} type={t} active={openingType === t.id} onPick={setOpeningType} />
           ))}

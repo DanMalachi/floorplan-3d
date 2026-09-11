@@ -6,7 +6,7 @@
 // gates the mode tabs to the link's role. A view link is READ-only (Liveblocks
 // rejects writes); Share mints role links; "Save a copy" forks into local projects.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LiveblocksProvider,
   RoomProvider,
@@ -278,7 +278,7 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
 
   if (modes.length <= 1) return null; // view-only: no switcher
   return (
-    <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+    <nav aria-label="Editor mode" style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
       {modes.map((m) => (
         <RoomChip
           key={m.id}
@@ -293,7 +293,7 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
           {m.label}
         </RoomChip>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -307,26 +307,30 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
  *
  *  `tooltip` replaces what was a native `title`. The room chrome is pinned at
  *  top:14, so it opens downward or it is clipped off the top of the window. */
-function RoomChip({
-  active = false,
-  onClick,
-  disabled,
-  tooltip,
-  extra,
-  children,
-}: {
+const RoomChip = forwardRef<HTMLButtonElement, {
   active?: boolean;
   onClick: () => void;
   disabled?: boolean;
   tooltip?: string;
   extra?: React.CSSProperties;
+  /** For a chip that opens its own popover (Share) rather than toggling a
+   *  mode — announces it as a disclosure control, not just a pressed toggle. */
+  "aria-haspopup"?: boolean | "true";
+  "aria-expanded"?: boolean;
   children: React.ReactNode;
-}) {
+}>(function RoomChip(
+  { active = false, onClick, disabled, tooltip, extra, "aria-haspopup": ariaHaspopup, "aria-expanded": ariaExpanded, children },
+  ref,
+) {
   const [hov, bind] = useHover();
   const button = (
     <button
+      ref={ref}
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={ariaHaspopup ? undefined : active}
+      aria-haspopup={ariaHaspopup}
+      aria-expanded={ariaExpanded}
       {...bind}
       style={{ ...pdChip(active, undefined, !disabled && hov), ...extra }}
     >
@@ -340,7 +344,7 @@ function RoomChip({
   ) : (
     button
   );
-}
+});
 
 /** The green presence light. A drawn circle rather than the `●` character it
  *  replaces — a text bullet reflows with the font. */
@@ -361,6 +365,7 @@ const SHARE_ROLES: ShareRole[] = ["view", "decorate", "build"];
  *  403. Offer exactly what `held` can actually hand out. */
 function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   const [open, setOpen] = useState(false);
+  const shareBtnRef = useRef<HTMLButtonElement>(null);
   const [role, setRole] = useState<ShareRole>("view");
   const [link, setLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -389,6 +394,21 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     if (open && !link) void makeLink("view");
   }, [open, link, makeLink]);
 
+  // A11y: the popover had no Escape handler, so once open the only way to
+  // dismiss it was to click the Share button again — reachable by keyboard,
+  // but Escape is what everyone reaches for, and it is what the rest of this
+  // app already does (ProjectsOverlay, AccountMenu, ConsentNotice).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      shareBtnRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const copy = async () => {
     await navigator.clipboard.writeText(link).catch(() => {});
     setCopied(true);
@@ -409,31 +429,31 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
         >
           {saved ? (
             <>
-              Saved <CheckIcon size={12} />
+              Saved <CheckIcon size={12} aria-hidden />
             </>
           ) : (
             "Save a copy"
           )}
         </RoomChip>
-        <RoomChip active onClick={() => setOpen((o) => !o)}>
+        <RoomChip active ref={shareBtnRef} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           Share
         </RoomChip>
       </div>
       {open && (
-        <div style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>Share this plan</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div role="group" aria-labelledby="fp-share-title" style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
+          <div id="fp-share-title" style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>Share this plan</div>
+          <div role="group" aria-label="Link permission" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
               <RoleRow key={r} selected={role === r} label={ROLE_LABEL[r]} onClick={() => makeLink(r)} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input readOnly value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
+            <input readOnly aria-label="Share link" value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
             <RoomChip active onClick={copy} disabled={!link}>
               {copied ? "Copied" : "Copy"}
             </RoomChip>
           </div>
-          {err && <div style={{ fontSize: 11.5, color: PD.warnText }}>{err}</div>}
+          {err && <div role="alert" style={{ fontSize: 11.5, color: PD.warnText }}>{err}</div>}
           {held !== "build" && (
             <div style={{ fontSize: 11, color: PD.textTertiary }}>
               You joined with a {ROLE_LABEL[held].toLowerCase()} link, so you can only
@@ -461,6 +481,7 @@ function RoleRow({
   return (
     <button
       onClick={onClick}
+      aria-pressed={selected}
       {...bind}
       style={{
         display: "flex",
@@ -478,7 +499,7 @@ function RoleRow({
         transition: pdHoverTransition(hov),
       }}
     >
-      {selected && <CheckIcon size={12} />}
+      {selected && <CheckIcon size={12} aria-hidden />}
       <span>
         Anyone with the link — <b>{label}</b>
       </span>
@@ -494,6 +515,8 @@ function RoleRow({
  *  22px and shift the stack instead of overlapping it. The margin therefore
  *  moves to a wrapper around the tooltip, and the circle keeps its own box. */
 function Avatar({ name, color }: Identity) {
+  // Announced as two stray capitals before; role="img" + the full name makes
+  // "who else is in this room" readable rather than decorative initials.
   return (
     <span style={{ marginInlineStart: -6, display: "inline-flex", flex: "0 0 auto" }}>
       <Tooltip label={name} placement="bottom">
@@ -512,11 +535,13 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
   return (
     <div style={{ position: "absolute", top: 14, insetInlineEnd: 14, zIndex: 40, display: "flex", alignItems: "center", gap: 10, fontFamily: PD.fontUi }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px 6px 14px", ...pdGlass({ borderRadius: 999 }) }}>
-        <span style={{ fontSize: 12.5, color: PD.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
+        {/* The head count changes as people join and leave — the one fact in
+            this room that arrives without the user doing anything. */}
+        <span role="status" style={{ fontSize: 12.5, color: PD.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
           <Pip color={PD.ok} /> {count} here
           {role === "view" && <span style={{ color: PD.textTertiary }}>· view only</span>}
         </span>
-        <div style={{ display: "flex", paddingInlineStart: 6 }}>
+        <div role="group" aria-label="People in this room" style={{ display: "flex", paddingInlineStart: 6 }}>
           {me && <Avatar name={me.presence.name} color={me.presence.color} />}
           {others.map(({ connectionId, presence }) => (
             <Avatar key={connectionId} name={presence.name} color={presence.color} />

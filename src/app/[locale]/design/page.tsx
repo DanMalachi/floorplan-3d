@@ -218,10 +218,15 @@ const MODES = legacyExtractionEnabled
 
 /** Top-center segmented mode switcher — the app's primary navigation. */
 function ModeSwitcher() {
+  const t = useTranslations("editor.chrome");
   const appMode = useSceneStore((s) => s.appMode);
   const setAppMode = useSceneStore((s) => s.setAppMode);
   return (
-    <div
+    // The app's primary navigation, so it is a real navigation landmark —
+    // otherwise "which mode am I in" is carried by tint alone, which is
+    // exactly the information a screen-reader user does not get.
+    <nav
+      aria-label={t("modeSwitcherLabel")}
       style={{
         position: "absolute",
         top: 14,
@@ -238,7 +243,7 @@ function ModeSwitcher() {
       {MODES.map((m) => (
         <ModeButton key={m.id} mode={m} active={appMode === m.id} onSelect={() => setAppMode(m.id)} />
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -270,6 +275,8 @@ function ModeButton({
     <button
       onClick={onSelect}
       {...hoverBind}
+      aria-pressed={active}
+      aria-keyshortcuts={mode.key}
       style={pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered)}
     >
       {t(mode.labelKey)}

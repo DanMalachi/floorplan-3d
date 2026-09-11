@@ -123,6 +123,7 @@
     },
     "ceiling": "תקרה",
     "chrome": {
+      "modeSwitcherLabel": "מצב העריכה",
       "projectBar": {
         "local": {
           "saved": "נשמר",
@@ -136,7 +137,8 @@
           "conflict": "נשמרו שתי הגרסאות"
         },
         "synced": "{local} · מסונכרן",
-        "backTooltip": "חזרה לפרויקטים שלך"
+        "backTooltip": "חזרה לפרויקטים שלך",
+        "backAriaLabel": "עיון בפרויקטים — פתוח כרגע: {name}"
       },
       "goLive": {
         "starting": "מתחיל…",
@@ -160,7 +162,9 @@
         "notBuiltTooltip": "{label} — עדיין לא נבנה",
         "notBuiltToast": "הכלי {label} עדיין לא נבנה — ממשיכים עם בחירה",
         "measureHint": "לחצו על שתי נקודות — רצפה, קיר או תקרה · Esc מנקה",
-        "wallHint": "לחצו כדי להתחיל, לחצו כדי לשרטט · Esc מסיים את השרשרת, Esc נוסף עוצר"
+        "wallHint": "לחצו כדי להתחיל, לחצו כדי לשרטט · Esc מסיים את השרשרת, Esc נוסף עוצר",
+        "toolGroupLabel": "כלי בנייה",
+        "openingTypeGroupLabel": "סוג הפתח"
       },
       "projectsOverlay": {
         "title": "פרויקטים",
@@ -173,6 +177,10 @@
         "liveTooltip": "מסמך משותף חי — נפתח ישירות לתוך החדר שלו",
         "liveBadge": "חי",
         "confirmDelete": "למחוק את “{name}”? לא ניתן לשחזר.",
+        "openCardAriaLabel": "פתיחת {name}{status}, נערך לאחרונה {when}",
+        "statusCurrent": " (פתוח כרגע)",
+        "statusCloudOnly": " — בענן, יורד תחילה למחשב",
+        "statusLive": " — מסמך משותף בזמן אמת",
         "closeTooltip": "סגירה (Esc)",
         "closeAriaLabel": "סגירת הפרויקטים",
         "deleteLabel": "מחיקת תוכנית",
@@ -230,6 +238,9 @@
       "nothingHere": "עדיין אין כאן דבר.",
       "search": "חיפוש",
       "closeSearch": "סגירת החיפוש",
+      "filterItemsLabel": "סינון פריטים",
+      "itemsShownLabel": "{count} פריטים מוצגים",
+      "dockSectionLabel": "אזור הסרגל",
       "dragToResize": "גררו לשינוי הגובה",
       "eyedropper": "טפטפת (E)",
       "eyedropperArmed": "הטפטפת דרוכה (E)",
@@ -237,13 +248,18 @@
       "brushPaint": "צביעה — לחצו על משטח · Esc לעצירה",
       "brushFloor": "ריצוף — לחצו על משטח · Esc לעצירה",
       "sceneNotBuilt": "הסצנה של {room} עדיין לא נבנתה — מוצג כאן כל מה שמתויג לחדר הזה",
+      "roomNavigatorLabel": "ניווט חדרים",
+      "roomGroupLabel": "חדר",
       "customBadge": "מותאם",
       "paint": {
         "tipPlaster": "טיח (ברירת מחדל)",
         "tipNatural": "טבעי — הגוון של הגימור עצמו",
-        "loading": "טוען…"
+        "loading": "טוען…",
+        "frameGroupLabel": "צבע מסגרת החלון",
+        "wallGroupLabel": "צבע הקיר"
       },
       "floors": {
+        "groupLabel": "חומר הרצפה",
         "tip": "{name} · {family} · חוזר כל {cover} m",
         "family": {
           "wood": "עץ",
@@ -1026,6 +1042,7 @@
         "kindWall": "קיר",
         "kindRail": "מעקה",
         "kindPortal": "גבול פתוח",
+        "boundaryKindLabel": "סוג הגבול",
         "chipOpen": "פתוח",
         "tipWall": "קיר מלא מהרצפה עד התקרה.",
         "tipRail": "מחסום נמוך ושקוף — מעקה מרפסת או גג.",
@@ -1067,6 +1084,7 @@
       "panel": {}
     },
     "opening": {
+      "openingTypeGroup": "סוג הפתח",
       "types": {
         "door": "דלת / פטיו",
         "passage": "מעבר",

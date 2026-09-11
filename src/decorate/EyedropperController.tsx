@@ -41,6 +41,9 @@ export function EyedropperController() {
 
   return (
     <div
+      // Arming the eyedropper changes what the next click does, and this pill
+      // was the only notice of it. role="status" announces it on arm.
+      role="status"
       style={{
         position: "absolute",
         bottom: 182, // clears BottomDock's 150px card rail + its 16px gap

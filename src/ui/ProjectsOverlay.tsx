@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   listProjects,
   openProject,
@@ -87,6 +87,11 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const currentId = getCurrentProjectId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // What had focus before the gallery covered the editor, so it can be handed
+  // back on close instead of dumping the user at the top of the document.
+  const restoreRef = useRef<HTMLElement | null>(null);
 
   const refresh = () => setItems(listProjects());
 
@@ -121,6 +126,42 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // A11y: this covers the whole editor but was a plain <div> — so it had no
+  // dialog semantics, focus stayed wherever it was in the editor underneath,
+  // and Tab walked straight out of the gallery into chrome the user cannot
+  // see or use. Move focus in on open, keep it inside while open, and give it
+  // back on close. Pointer behaviour is untouched.
+  useEffect(() => {
+    restoreRef.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusable = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !root.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      restoreRef.current?.focus?.();
+    };
+  }, []);
 
   async function handleOpen(id: string) {
     // A card that came from the account but has never been on this computer:
@@ -163,6 +204,10 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fp-projects-title"
       style={{
         position: "fixed",
         inset: 0,
@@ -195,7 +240,12 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
             <Wordmark size={20} style={{ color: PD.textPrimary }} />
           )}
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <span style={{ fontSize: 19, fontWeight: 600, color: PD.textPrimary }}>{t("projectsOverlay.title")}</span>
+            {/* h2 rather than span: it is the dialog's title and now names it.
+                Every default heading margin/size is overridden below, so it
+                renders exactly as the span did. */}
+            <h2 id="fp-projects-title" style={{ fontSize: 19, fontWeight: 600, color: PD.textPrimary, margin: 0 }}>
+              {t("projectsOverlay.title")}
+            </h2>
             <span style={{ fontSize: 13, color: PD.textTertiary }}>
               {t("projectsOverlay.planCount", { count: items.length })}
             </span>
@@ -225,6 +275,12 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                 key={m.id}
                 isCurrent={isCurrent}
                 onClick={() => renaming !== m.id && handleOpen(m.id)}
+                keyboardDisabled={renaming === m.id}
+                ariaLabel={t("projectsOverlay.openCardAriaLabel", {
+                  name: m.name,
+                  status: `${isCurrent ? t("projectsOverlay.statusCurrent") : ""}${m.cloudOnly ? t("projectsOverlay.statusCloudOnly") : ""}${m.liveRoomId ? t("projectsOverlay.statusLive") : ""}`,
+                  when: ago(m.updatedAt, locale, t),
+                })}
               >
                 {/* thumbnail */}
                 <div
@@ -238,10 +294,13 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   }}
                 >
                   {m.thumb ? (
+                    // Decorative: a snapshot of the 3D view. The card's own
+                    // label already names the plan, and describing the picture
+                    // would mean describing the model, which this cannot do.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={m.thumb}
-                      alt={m.name}
+                      alt=""
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
@@ -322,6 +381,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   {renaming === m.id ? (
                     <input
                       autoFocus
+                      aria-label={`Rename ${m.name}`}
                       value={draft}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => setDraft(e.target.value)}
@@ -445,14 +505,25 @@ function NewPlanTile({ onClick }: { onClick: () => void }) {
 }
 
 /** A project card. The whole tile is the click target, so the whole tile is
- *  what has to answer the cursor. */
+ *  what has to answer the cursor — and, since the gallery is the only way to
+ *  reach any saved plan, the keyboard too. It cannot be a `<button>` because
+ *  it contains its own buttons (delete, rename) and a text input, so
+ *  `role="button"` plus a key handler is the correct shape here. */
 function ProjectCard({
   isCurrent,
   onClick,
+  ariaLabel,
+  keyboardDisabled,
   children,
 }: {
   isCurrent: boolean;
   onClick: () => void;
+  /** Names the plan and its state (current/cloud-only/live/last-edited) —
+   *  computed by the caller from data this component doesn't have. */
+  ariaLabel: string;
+  /** True while the card is renaming: Enter there confirms the rename, not
+   *  "open this card", and the rename input already has its own tab stop. */
+  keyboardDisabled?: boolean;
   children: React.ReactNode;
 }) {
   const [hov, bind] = useHover();
@@ -460,6 +531,18 @@ function ProjectCard({
     <div
       onClick={onClick}
       {...bind}
+      role="button"
+      tabIndex={keyboardDisabled ? -1 : 0}
+      aria-label={ariaLabel}
+      onKeyDown={(e) => {
+        if (keyboardDisabled) return;
+        if (e.key !== "Enter" && e.key !== " ") return;
+        // Only the card itself; a key press inside the delete or rename
+        // button belongs to that button.
+        if (e.target !== e.currentTarget) return;
+        e.preventDefault();
+        onClick();
+      }}
       style={{
         cursor: "pointer",
         display: "flex",

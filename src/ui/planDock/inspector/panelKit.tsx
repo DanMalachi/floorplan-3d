@@ -181,6 +181,7 @@ export function PdChip({
   disabled,
   onClick,
   children,
+  "aria-pressed": ariaPressed,
 }: {
   active?: boolean;
   extra?: React.CSSProperties;
@@ -190,6 +191,10 @@ export function PdChip({
   disabled?: boolean;
   onClick: () => void;
   children: ReactNode;
+  /** Explicit toggle state for a call site whose selected look is a colour
+   *  swap the accent alone doesn't announce — e.g. a chip that stays the same
+   *  size/shape either way. Defaults to `active` when omitted. */
+  "aria-pressed"?: boolean;
 }) {
   const [hovered, hoverBind] = useHover();
   const button = (
@@ -197,6 +202,7 @@ export function PdChip({
       {...hoverBind}
       disabled={disabled}
       onClick={onClick}
+      aria-pressed={ariaPressed ?? active}
       style={pdChip(active, extra, hovered && !disabled)}
     >
       {children}
@@ -223,12 +229,14 @@ export function PdChipLabel({ icon, children }: { icon: ReactNode; children: Rea
 }
 
 /** One +/- key of a stepper. Its own component so it can hold hover state. */
-function PdStepBtn({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function PdStepBtn({ onClick, ariaLabel, children }: { onClick: () => void; ariaLabel: string; children: ReactNode }) {
   const [hovered, hoverBind] = useHover();
   return (
     <button
       {...hoverBind}
       onClick={onClick}
+      // The "–"/"+" glyph is not a name a screen reader should read literally.
+      aria-label={ariaLabel}
       style={{
         ...pdChip(false, undefined, hovered),
         padding: "1px 9px",
@@ -236,7 +244,7 @@ function PdStepBtn({ onClick, children }: { onClick: () => void; children: React
         lineHeight: 1.2,
       }}
     >
-      {children}
+      <span aria-hidden>{children}</span>
     </button>
   );
 }
@@ -257,16 +265,22 @@ export function PdStepper({
 }) {
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
   return (
-    <label style={pdInspectorRow}>
+    // Not a <label>: a label may only be associated with ONE form control, and
+    // this row has two buttons and a plain text readout. Wrapping them made the
+    // row's text ambiguous rather than helpful. A named group plus explicitly
+    // named buttons says the same thing correctly — the visual layout is
+    // byte-identical (the <label> carried no styling of its own beyond
+    // pdInspectorRow, which moves across).
+    <div role="group" aria-label={label} style={pdInspectorRow}>
       <span style={{ color: PD.textSecondary }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <PdStepBtn onClick={() => onSet(clamp(value - 1))}>–</PdStepBtn>
-        <span style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: PD.fontMono }}>
+        <PdStepBtn ariaLabel={`Decrease ${label.toLowerCase()}`} onClick={() => onSet(clamp(value - 1))}>–</PdStepBtn>
+        <span aria-live="polite" style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: PD.fontMono }}>
           {value}
         </span>
-        <PdStepBtn onClick={() => onSet(clamp(value + 1))}>+</PdStepBtn>
+        <PdStepBtn ariaLabel={`Increase ${label.toLowerCase()}`} onClick={() => onSet(clamp(value + 1))}>+</PdStepBtn>
       </span>
-    </label>
+    </div>
   );
 }
 
@@ -334,7 +348,9 @@ export function PdSwatch({
   img?: string;
   active?: boolean;
   /** The colour/finish name. A swatch has no text of its own, so this is also
-   *  what the Tooltip clones on as the button's accessible name. */
+   *  the button's accessible name (Tooltip clones it on when there's a tip;
+   *  a swatch with no tip at all still gets a hex/default fallback name below
+   *  — several call sites had neither a tip nor any other name). */
   tip?: string;
   tipPlacement?: TipPlacement;
   onClick: () => void;
@@ -345,6 +361,8 @@ export function PdSwatch({
     <button
       {...hoverBind}
       onClick={onClick}
+      aria-label={tip ?? (hex ? `Colour ${hex}` : "Default finish")}
+      aria-pressed={active ?? undefined}
       style={{
         width: size,
         height: size,

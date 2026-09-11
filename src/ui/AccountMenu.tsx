@@ -33,6 +33,7 @@ export function AccountMenu() {
   const [signInHover, signInHoverBind] = useHover();
   const [triggerHover, triggerHoverBind] = useHover();
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // A failed sign-in comes back as ?authError=… from the callback route. Show it
   // once, then take it out of the URL so a refresh isn't haunted by it.
@@ -51,7 +52,13 @@ export function AccountMenu() {
     const onDown = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    // Escape already closed it; it now also puts focus back on the trigger,
+    // so a keyboard user isn't left focused on a menu that no longer exists.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
     return () => {
@@ -66,7 +73,9 @@ export function AccountMenu() {
     return (
       <div style={{ position: "relative" }}>
         {/* `placement="bottom"`: this control sits in the top-right chrome, so a
-            tooltip above it would be clipped off the top of the window. */}
+            tooltip above it would be clipped off the top of the window. Also
+            gives the button its accessible name (Tooltip clones `label` on as
+            aria-label) — richer than its own visible "Sign in" text alone. */}
         <Tooltip label={t("accountMenu.signInTooltip")} placement="bottom">
           <button
             onClick={() => {
@@ -136,8 +145,16 @@ export function AccountMenu() {
     <div ref={ref} style={{ position: "relative" }}>
       <Tooltip label={name} placement="bottom">
         <button
+          ref={triggerRef}
           onClick={() => setOpen((v) => !v)}
           {...triggerHoverBind}
+          // Deliberately "true" and not "menu": role="menu" would promise
+          // arrow-key navigation and roving tabindex, which this popover does
+          // not implement. It is a small panel of ordinary links and buttons,
+          // and Tab reaches them in DOM order, so it is described as exactly
+          // that rather than as a menu it would then fail to behave like.
+          aria-haspopup="true"
+          aria-expanded={open}
           style={{
             width: SIZE + 6,
             height: SIZE + 6,
@@ -157,7 +174,7 @@ export function AccountMenu() {
             // eslint-disable-next-line @next/next/no-img-element -- a remote avatar of unknown host; next/image would need a domain allowlist per provider
             <img src={avatar} alt="" width={SIZE} height={SIZE} style={{ borderRadius: 999, display: "block" }} />
           ) : (
-            <span style={{ fontSize: 13, fontWeight: 700, fontFamily: PD.fontUi, color: PD.textPrimary }}>
+            <span aria-hidden style={{ fontSize: 13, fontWeight: 700, fontFamily: PD.fontUi, color: PD.textPrimary }}>
               {name.slice(0, 1).toUpperCase()}
             </span>
           )}
@@ -166,6 +183,8 @@ export function AccountMenu() {
 
       {open && (
         <div
+          role="group"
+          aria-label="Account"
           style={{
             position: "absolute",
             top: SIZE + 14,
