@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, events as createPointerEvents, useThree } from "@react-three/fiber";
 import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
@@ -45,9 +45,36 @@ import { AutoOrbitRig } from "./AutoOrbitRig";
 import { CameraKeyboardRig } from "./CameraKeyboardRig";
 import { CameraDoubleClickRig } from "./CameraDoubleClickRig";
 import { CameraOfferRig } from "./CameraOfferRig";
+import { suppressSceneEvent } from "./camera/panModifier";
 import { registerViewportCanvas } from "./viewportCapture";
 import { WalkthroughRig, WalkthroughHint, WalkthroughFovControl } from "./walkthrough/WalkthroughMode";
 import { WALKTHROUGH_CONFIG } from "./walkthrough/config";
+
+/** Keep Space-pan out of R3F edit handlers while leaving the same native
+ *  event available to camera-controls on the canvas. This one boundary guard
+ *  covers current and future scene tools without scattering modifier checks
+ *  through every wall, fixture, furniture and parametric drag handler. */
+function createViewportPointerEvents(store: Parameters<typeof createPointerEvents>[0]) {
+  const manager = createPointerEvents(store);
+  if (!manager.handlers) return manager;
+  const handlers = manager.handlers;
+  const guard = (name: keyof typeof handlers): EventListener => (event) => {
+    if (!suppressSceneEvent(name, event)) handlers[name](event);
+  };
+  const guardedHandlers: typeof handlers = {
+    onClick: guard("onClick"),
+    onContextMenu: guard("onContextMenu"),
+    onDoubleClick: guard("onDoubleClick"),
+    onWheel: guard("onWheel"),
+    onPointerDown: guard("onPointerDown"),
+    onPointerUp: guard("onPointerUp"),
+    onPointerLeave: guard("onPointerLeave"),
+    onPointerMove: guard("onPointerMove"),
+    onPointerCancel: guard("onPointerCancel"),
+    onLostPointerCapture: guard("onLostPointerCapture"),
+  };
+  return { ...manager, handlers: guardedHandlers };
+}
 
 // Model center (plan x,y) and span for framing. Keyed on frameToken — only a
 // whole-scene replace reframes; edits never shift the model under the cursor.
@@ -584,6 +611,7 @@ export function Viewport({
       }}
     >
       <Canvas
+        events={createViewportPointerEvents}
         // Every renderer value below is recorded in src/render/contract.ts and
         // checked at startup by <RenderContractCheck>. Values are passed
         // explicitly even where they match the library default — see

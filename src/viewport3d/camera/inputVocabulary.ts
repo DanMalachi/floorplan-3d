@@ -54,18 +54,13 @@ export const VOCABULARY: Binding[] = [
   { device: "mouse", verb: "zoom", gesture: "wheel" },
 
   // --- trackpad ----------------------------------------------------------
-  // Right-drag is a two-finger click-drag, which every trackpad has.
-  { device: "trackpad", verb: "orbit", gesture: "two-finger click + drag" },
-  // Space-drag is the load-bearing one: it is the Figma/Photoshop convention,
-  // it needs no device detection at all, and it works identically on a mouse.
-  // Guessing "is this a trackpad?" from wheel deltas is a heuristic that
-  // misfires on some mice, and a mouse whose wheel suddenly pans is a worse
-  // bug than the one being fixed.
+  // Browsers expose mouse wheels and trackpad swipes through the same event,
+  // so runtime routing uses the event's tick/granularity characteristics.
+  { device: "trackpad", verb: "orbit", gesture: "two-finger swipe" },
+  { device: "trackpad", verb: "orbit", gesture: "right-drag" },
   { device: "trackpad", verb: "pan", gesture: "space + drag" },
-  { device: "trackpad", verb: "pan", gesture: "two-finger swipe sideways" },
   { device: "trackpad", verb: "pan", gesture: "arrow keys / WASD" },
   { device: "trackpad", verb: "zoom", gesture: "pinch" },
-  { device: "trackpad", verb: "zoom", gesture: "two-finger swipe up/down" },
 
   // --- touch -------------------------------------------------------------
   // One finger acts on the world in edit modes (P0), so orbit has to live on a
@@ -81,33 +76,55 @@ export const VOCABULARY: Binding[] = [
 // Wheel classification
 // ---------------------------------------------------------------------------
 
-export type WheelIntent = "zoom" | "panX";
+export type WheelSource = "mouse" | "trackpad";
+export type WheelIntent = "zoom" | "orbit";
+
+export interface WheelSignal {
+  deltaX: number;
+  deltaY: number;
+  deltaMode: number;
+  ctrlKey: boolean;
+  /** Chromium/WebKit legacy tick signal. A conventional wheel notch is 120;
+   *  precision trackpads produce non-notch values. Firefox instead exposes a
+   *  mouse wheel through line-mode deltas, handled above this signal. */
+  wheelDeltaY?: number;
+  /** WebKit forwards macOS's natural-scroll setting on real wheel events. */
+  webkitDirectionInvertedFromDevice?: boolean;
+}
+
+/** Best available browser-side source classification.
+ *
+ *  There is no standard device-kind field on WheelEvent. The strong signals
+ *  are line/page deltas and 120-unit legacy ticks for a conventional wheel;
+ *  horizontal, fractional and small pixel deltas indicate precision input.
+ *  Smooth-scroll mice remain inherently indistinguishable from trackpads and
+ *  intentionally follow the precision-input behavior. */
+export function classifyWheelSource(e: WheelSignal): WheelSource {
+  if (e.deltaMode !== 0) return "mouse";
+  const legacyTick = Math.abs(e.wheelDeltaY ?? 0);
+  if (e.deltaX === 0 && legacyTick >= 120 && legacyTick % 120 === 0) return "mouse";
+  if (e.deltaX !== 0 || !Number.isInteger(e.deltaY)) return "trackpad";
+  return Math.abs(e.deltaY) < 40 ? "trackpad" : "mouse";
+}
 
 /** What a wheel event means.
  *
- *  Deliberately only two outcomes, and deliberately no device sniffing:
- *
- *  - `ctrlKey` is the browser's own signal for a trackpad pinch (and for
- *    browser zoom, which is why it must be consumed). Unambiguous on every
- *    platform, so pinch maps straight to zoom.
- *  - Horizontal delta means horizontal pan. A conventional mouse wheel cannot
- *    produce `deltaX`, and the tilt wheels that can are asking for exactly
- *    this. So the binding is free: it gives trackpads a pan gesture without
- *    changing what a single mouse does.
- *  - Everything else is vertical, and vertical stays zoom for BOTH devices.
- *    That preserves mouse behaviour exactly, and it matches what a trackpad
- *    user already expects from every map application.
- *
- *  Vertical pan is the one gesture deliberately not claimed here — it is
- *  covered by space-drag and the arrow keys, neither of which can misfire on
- *  somebody else's hardware. */
-export function classifyWheel(e: {
-  deltaX: number;
-  deltaY: number;
-  ctrlKey: boolean;
-}): WheelIntent {
+ *  `ctrlKey` is the browser's cross-platform trackpad-pinch signal, so pinch
+ *  always zooms. Otherwise a conventional wheel zooms and precision
+ *  two-finger movement orbits. Shift deliberately has no special meaning. */
+export function classifyWheel(e: WheelSignal): WheelIntent {
   if (e.ctrlKey) return "zoom";
-  return Math.abs(e.deltaX) > Math.abs(e.deltaY) ? "panX" : "zoom";
+  return classifyWheelSource(e) === "mouse" ? "zoom" : "orbit";
+}
+
+/** Compensate for macOS natural scrolling only on a classified mouse wheel.
+ *  WebKit exposes the real setting. Other Mac browsers fall back to the OS
+ *  default (natural scrolling on); trackpad orbit and pinch never reverse. */
+export function shouldReverseMacMouseZoom(e: WheelSignal, isMac: boolean): boolean {
+  if (!isMac || e.ctrlKey || classifyWheelSource(e) !== "mouse") return false;
+  return typeof e.webkitDirectionInvertedFromDevice === "boolean"
+    ? e.webkitDirectionInvertedFromDevice
+    : true;
 }
 
 /** Held-space turns the left button into pan for as long as it is down. A

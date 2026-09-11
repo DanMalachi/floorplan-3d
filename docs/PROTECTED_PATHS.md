@@ -64,6 +64,25 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-11, automatic editor camera input routing (`Viewport.tsx`,
+  `CameraRig.tsx`, `camera/inputVocabulary.ts` + tests, an additive Space-pan
+  arbitration helper, and a guard in `CameraDoubleClickRig.tsx`'s native
+  dblclick handler).** Approved directly by Dan to add macOS mouse and
+  cross-platform trackpad support, then revised from hands-on MacBook
+  feedback. Scope is input routing only: Mouse preserves right-orbit/
+  middle-pan/wheel-zoom (with automatic macOS natural-scroll compensation);
+  Trackpad uses two-finger movement to orbit, pinch to zoom and Space+drag to
+  pan. No dedicated settings UI, scene geometry, renderer contract, camera
+  envelope, framing, or project persistence behavior changes.
+
+  The same Space-pan guard also covers `LinearLightGhost.tsx` and
+  `CeilingFixtureGhost.tsx`'s native click handlers on the branch this landed
+  on — omitted here because the drawable-fixtures feature those two files
+  belong to (`feat(lighting): add drawable fixtures`) has not shipped to
+  `main` yet. Apply that pair of one-line guards when the lighting feature
+  merges; the fixture ghosts are drag-and-click placers and would otherwise
+  reopen the same "camera gesture also edits the scene" bug this fixes.
+
 - **2026-09-07 (second), `src/viewport3d/FixtureCatalog.tsx` and
   `src/viewport3d/StairInspector.tsx` — their hardcoded UI TEXT moves into the
   message catalogue.** Approved by Dan before the edits. Translation only: a
