@@ -15,7 +15,9 @@
 import {
   VOCABULARY,
   classifyWheel,
+  classifyWheelSource,
   PAN_MODIFIER_CODE,
+  shouldReverseMacMouseZoom,
   type CameraVerb,
   type InputDevice,
 } from "./inputVocabulary";
@@ -80,25 +82,48 @@ for (const b of VOCABULARY.filter((x) => x.suppressible)) {
     (g.includes("left-drag") || g.includes("one-finger")) && g.includes("empty space"));
 }
 
-console.log("\nthe wheel classifier never changes what a plain mouse does");
-check("a mouse wheel tick zooms", classifyWheel({ deltaX: 0, deltaY: -120, ctrlKey: false }) === "zoom");
-check("a mouse wheel tick the other way still zooms",
-  classifyWheel({ deltaX: 0, deltaY: 120, ctrlKey: false }) === "zoom");
-check("a trackpad's small vertical scroll zooms, like every map app",
-  classifyWheel({ deltaX: 0, deltaY: -4.5, ctrlKey: false }) === "zoom");
-check("a pinch zooms — ctrlKey is the browser's own pinch signal",
-  classifyWheel({ deltaX: 0, deltaY: -8, ctrlKey: true }) === "zoom");
-check("a pinch zooms even when the delta is horizontal-ish",
-  classifyWheel({ deltaX: 9, deltaY: -2, ctrlKey: true }) === "zoom");
-check("a sideways two-finger swipe pans",
-  classifyWheel({ deltaX: -22, deltaY: 0, ctrlKey: false }) === "panX");
-check("a diagonal swipe resolves to its dominant axis",
-  classifyWheel({ deltaX: 30, deltaY: 4, ctrlKey: false }) === "panX" &&
-  classifyWheel({ deltaX: 4, deltaY: 30, ctrlKey: false }) === "zoom");
-check("an exactly-diagonal swipe falls to zoom, never flickering between the two",
-  classifyWheel({ deltaX: 10, deltaY: 10, ctrlKey: false }) === "zoom");
-check("an empty wheel event is inert rather than a pan",
-  classifyWheel({ deltaX: 0, deltaY: 0, ctrlKey: false }) === "zoom");
+const signal = (overrides: Partial<Parameters<typeof classifyWheel>[0]> = {}) => ({
+  deltaX: 0,
+  deltaY: 0,
+  deltaMode: 0,
+  ctrlKey: false,
+  ...overrides,
+});
+const wheel = (overrides: Partial<Parameters<typeof classifyWheel>[0]> = {}) => classifyWheel(signal(overrides));
+
+console.log("\nthe wheel classifier separates notched wheels from precision input");
+check("a Chromium/WebKit 120-tick mouse wheel zooms",
+  wheel({ deltaY: 4, wheelDeltaY: -120 }) === "zoom");
+check("a larger conventional wheel event zooms",
+  wheel({ deltaY: 100, wheelDeltaY: -120 }) === "zoom");
+check("a Firefox line-mode wheel zooms",
+  wheel({ deltaY: 3, deltaMode: 1 }) === "zoom");
+check("a fallback large pixel wheel zooms",
+  wheel({ deltaY: 100 }) === "zoom");
+check("a fractional vertical two-finger swipe orbits",
+  wheel({ deltaY: -4.5 }) === "orbit");
+check("a small integer two-finger swipe orbits",
+  wheel({ deltaY: -8 }) === "orbit");
+check("a horizontal two-finger swipe orbits",
+  wheel({ deltaX: -22, deltaY: 3 }) === "orbit");
+check("a browser-signalled pinch always zooms",
+  wheel({ deltaY: -8, ctrlKey: true }) === "zoom");
+check("the vocabulary has no Shift-specific trackpad gesture",
+  !VOCABULARY.some((binding) => binding.device === "trackpad" && /shift/i.test(binding.gesture)));
+
+console.log("\nmacOS natural-scroll compensation is mouse-only");
+const naturalMouse = signal({ deltaY: 4, wheelDeltaY: -120, webkitDirectionInvertedFromDevice: true });
+check("WebKit natural mouse direction reverses", shouldReverseMacMouseZoom(naturalMouse, true));
+check("WebKit non-natural mouse direction stays", !shouldReverseMacMouseZoom({ ...naturalMouse, webkitDirectionInvertedFromDevice: false }, true));
+check("other Mac browsers fall back to the natural-scroll default",
+  shouldReverseMacMouseZoom(signal({ deltaY: 4, wheelDeltaY: -120 }), true));
+check("trackpad orbit never reverses",
+  classifyWheelSource(signal({ deltaY: -4.5 })) === "trackpad" &&
+  !shouldReverseMacMouseZoom(signal({ deltaY: -4.5, webkitDirectionInvertedFromDevice: true }), true));
+check("trackpad pinch never reverses",
+  !shouldReverseMacMouseZoom(signal({ deltaY: -4.5, ctrlKey: true, webkitDirectionInvertedFromDevice: true }), true));
+check("Windows mouse wheels never receive Mac compensation",
+  !shouldReverseMacMouseZoom(naturalMouse, false));
 
 console.log("\nthe pan modifier is a physical key, not a character");
 // Same reason Viewport.tsx matches on e.code: a non-Latin keyboard layout types

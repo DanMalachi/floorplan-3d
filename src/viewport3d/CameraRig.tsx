@@ -36,6 +36,16 @@ import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { CameraControlsImpl } from "@react-three/drei";
 import { useSceneStore } from "@/store/useSceneStore";
+import {
+  classifyWheel,
+  PAN_MODIFIER_CODE,
+  shouldReverseMacMouseZoom,
+} from "./camera/inputVocabulary";
+import {
+  finishPanPointer,
+  resetPanModifier,
+  setPanModifierActive,
+} from "./camera/panModifier";
 
 const ACTION = CameraControlsImpl.ACTION;
 
@@ -104,6 +114,7 @@ export function CameraRig({ span, halfX, halfZ }: {
 }) {
   const controls = useThree((s) => s.controls) as CameraControlsImpl | null;
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+  const canvas = useThree((s) => s.gl.domElement);
 
   /** Touch has no hover to gate on, so one finger is claimed by the whole
    *  editing mode instead: one finger acts, two fingers navigate. Without
@@ -140,6 +151,99 @@ export function CameraRig({ span, halfX, halfZ }: {
     // A real minDistance is the floor for approach; pushing the target on
     // overshoot instead would fight the boundary below.
     controls.infinityDolly = false;
+  }, [controls]);
+
+  // Browser wheel events do not expose a device kind. Classify each gesture
+  // from the available tick/granularity signals immediately before
+  // camera-controls' own listener runs: a conventional wheel zooms, precision
+  // two-finger movement orbits, and the browser-signalled pinch zooms. The
+  // capture listener only selects an action — camera-controls still owns the
+  // actual motion, damping, cursor anchor and boundary enforcement.
+  useEffect(() => {
+    if (!controls) return;
+    const baseDollySpeed = Math.abs(controls.dollySpeed) || 1;
+    const isMac = /^Mac/.test(navigator.platform) || /Macintosh/.test(navigator.userAgent);
+    controls.mouseButtons.wheel = ACTION.DOLLY;
+    controls.dollySpeed = baseDollySpeed;
+
+    const restoreRestingInput = () => {
+      controls.mouseButtons.wheel = ACTION.DOLLY;
+      controls.dollySpeed = baseDollySpeed;
+    };
+    const onWheel = (event: WheelEvent) => {
+      const intent = classifyWheel(event);
+      controls.mouseButtons.wheel = intent === "orbit" ? ACTION.ROTATE : ACTION.DOLLY;
+      // Scope natural-scroll compensation to this classified mouse event. A
+      // global negative speed would also reverse trackpad pinch and touch.
+      controls.dollySpeed = shouldReverseMacMouseZoom(event, isMac)
+        ? -baseDollySpeed
+        : baseDollySpeed;
+      queueMicrotask(restoreRestingInput);
+    };
+
+    canvas.addEventListener("wheel", onWheel, { capture: true, passive: true });
+    return () => {
+      canvas.removeEventListener("wheel", onWheel, { capture: true });
+      restoreRestingInput();
+    };
+  }, [canvas, controls]);
+
+  // Space+left-drag is the universal pan fallback for a one-button trackpad,
+  // Magic Mouse, or ordinary mouse. The viewport's guarded R3F event manager
+  // withholds this same gesture from scene tools, so it cannot move an object
+  // and the camera together.
+  useEffect(() => {
+    if (!controls) return;
+    let held = false;
+    const release = () => {
+      if (!held) return;
+      held = false;
+      setPanModifierActive(false);
+      controls.mouseButtons.left = ACTION.NONE;
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== PAN_MODIFIER_CODE) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+      const scene = useSceneStore.getState();
+      if (scene.gestureBase || scene.walkthroughActive || scene.appMode === "trace") return;
+      held = true;
+      setPanModifierActive(true);
+      controls.mouseButtons.left = ACTION.TRUCK;
+      event.preventDefault();
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== PAN_MODIFIER_CODE) return;
+      if (!held) return;
+      release();
+      event.preventDefault();
+    };
+    // If release happens outside the canvas there will be no canvas click to
+    // consume, so do not let the user's next intentional click pay for it.
+    const onPointerUp = (event: PointerEvent) => finishPanPointer(event.pointerId, false, false);
+    const onPointerCancel = (event: PointerEvent) => finishPanPointer(event.pointerId, true);
+    const onBlur = () => {
+      held = false;
+      controls.mouseButtons.left = ACTION.NONE;
+      resetPanModifier();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    // Bubble phase: when release happens on the canvas, its R3F guard sees the
+    // claimed pointer before this outside-canvas safety net clears it.
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerCancel);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerCancel);
+      controls.mouseButtons.left = ACTION.NONE;
+      resetPanModifier();
+    };
   }, [controls]);
 
   useEffect(() => {

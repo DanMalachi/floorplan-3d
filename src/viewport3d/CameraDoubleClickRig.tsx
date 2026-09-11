@@ -21,6 +21,7 @@ import { useThree } from "@react-three/fiber";
 import type { CameraControls } from "@react-three/drei";
 import { pickOf } from "./pickObject3D";
 import { frameObject } from "./frameTarget";
+import { suppressSceneEvent } from "./camera/panModifier";
 
 export function CameraDoubleClickRig() {
   const controls = useThree((s) => s.controls) as CameraControls | null;
@@ -40,6 +41,7 @@ export function CameraDoubleClickRig() {
     const ndc = ndcRef.current!;
 
     const onDblClick = (e: MouseEvent) => {
+      if (suppressSceneEvent("onDoubleClick", e)) return;
       const rect = gl.domElement.getBoundingClientRect();
       ndc.set(
         ((e.clientX - rect.left) / rect.width) * 2 - 1,

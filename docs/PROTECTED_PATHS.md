@@ -64,6 +64,17 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-11, automatic editor camera input routing (`Viewport.tsx`,
+  `CameraRig.tsx`, `camera/inputVocabulary.ts` + tests, an additive Space-pan
+  arbitration helper, and guards in the three native canvas click handlers).**
+  Approved directly by Dan to add macOS mouse and cross-platform trackpad
+  support, then revised from hands-on MacBook feedback. Scope is input routing
+  only: Mouse preserves right-orbit/middle-pan/wheel-zoom (with automatic
+  macOS natural-scroll compensation); Trackpad uses two-finger movement to
+  orbit, pinch to zoom and Space+drag to pan. No dedicated settings UI, scene
+  geometry, renderer contract, camera envelope, framing, or project
+  persistence behavior changes.
+
 - **2026-09-07 (second), `src/viewport3d/FixtureCatalog.tsx` and
   `src/viewport3d/StairInspector.tsx` — their hardcoded UI TEXT moves into the
   message catalogue.** Approved by Dan before the edits. Translation only: a

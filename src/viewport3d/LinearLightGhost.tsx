@@ -10,6 +10,7 @@ import { DEFAULT_FIXTURE_COLOR_K, kelvinToColor } from "@/render/lightPresets";
 import { extendLightPath, fixtureDropM, toFixtureLocal, toFixtureWorld, pathInsideRoom, stripOutline, STRIP_WIDTH_M, STRIP_HEIGHT_M, type LightPoint } from "@/fixtures/linear";
 import { rayToPlanAt } from "./dragPlane";
 import { FixtureBody } from "./FixtureBody";
+import { suppressSceneEvent } from "./camera/panModifier";
 
 type Draft = { origin: LightPoint; rotation: number; height: number; fixed: LightPoint[]; loop: LightPoint[] };
 type Preview = Draft & { path: LightPoint[]; valid: boolean };
@@ -59,6 +60,7 @@ export function LinearLightGhost({ offset, rooms }: { offset: { cx: number; cz: 
     };
     const onClick = (e: MouseEvent) => {
       if (e.button !== 0) return;
+      if (suppressSceneEvent("onClick", e)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (e.detail > 1) return;
@@ -69,6 +71,7 @@ export function LinearLightGhost({ offset, rooms }: { offset: { cx: number; cz: 
       setPreview(next);
     };
     const onDoubleClick = (e: MouseEvent) => {
+      if (suppressSceneEvent("onDoubleClick", e)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       // Browser dispatches click(1), click(2), dblclick. Re-evaluate against

@@ -10,6 +10,7 @@ import type { EligibleRoom } from "@/render/roomLighting";
 import { DEFAULT_FIXTURE_COLOR_K, kelvinToColor } from "@/render/lightPresets";
 import { GRID } from "./snap";
 import { FixtureBody } from "./FixtureBody";
+import { suppressSceneEvent } from "./camera/panModifier";
 
 export function CeilingFixtureGhost({ offset, rooms, assetId }: {
   offset: { cx: number; cz: number }; rooms: EligibleRoom[]; assetId: string;
@@ -31,6 +32,7 @@ export function CeilingFixtureGhost({ offset, rooms, assetId }: {
     const move = (e: PointerEvent) => { if (!e.buttons) setPos(read(e)); };
     const click = (e: MouseEvent) => {
       if (e.button !== 0) return;
+      if (suppressSceneEvent("onClick", e)) return;
       e.stopImmediatePropagation();
       const hit = read(e); // click and preview use the same current ray
       if (hit) useSceneStore.getState().placeFixture({ kind: "ceiling", x: hit.x, y: hit.y }, useSceneStore.getState().placing?.rotation ?? 0);
