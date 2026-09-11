@@ -1,4 +1,6 @@
 import { getServerSupabase, getServerUser } from "@/lib/supabase/server";
+import { sendEmailAfterResponse } from "@/lib/email";
+import { dataExportNoticeEmail } from "@/lib/email/templates";
 
 // -----------------------------------------------------------------------------
 // GET /api/account/export — access + portability (GDPR Art. 15 / Art. 20).
@@ -52,6 +54,19 @@ export async function GET() {
     .order("created_at", { ascending: true });
   if (error) return new Response(`export failed: ${error.message}`, { status: 500 });
   const rows = (data ?? []) as ProjectRow[];
+
+  // Security/audit notice, not a "your download is ready" link: the export
+  // streams straight back to this same request below, so by the time this
+  // fires the recipient already has (or is already receiving) their data.
+  // Scheduled for after the response via sendEmailAfterResponse(), which never
+  // throws and adds no latency to the export itself — a mail failure here must
+  // not turn a successful export into a failed request.
+  if (user.email) {
+    sendEmailAfterResponse(
+      dataExportNoticeEmail({ to: user.email, generatedAt: new Date(), projectCount: rows.length }),
+      { template: "data-export-notice", userId: user.id },
+    );
+  }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
