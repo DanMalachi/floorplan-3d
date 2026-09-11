@@ -342,6 +342,9 @@ export interface FixtureItem {
   // lux, not an eyeballed 0-1 "strength".
   targetLux?: number;
   colorK?: number; // color temperature, Kelvin
+  /** Ceiling strip centerline, local plan meters relative to mount, before rotation.
+   *  One fixture owns the whole run (selection, moves, undo, strength and color). */
+  path?: { x: number; y: number }[];
 }
 
 /** One straight flight within a staircase. Centerline, plan meters. */

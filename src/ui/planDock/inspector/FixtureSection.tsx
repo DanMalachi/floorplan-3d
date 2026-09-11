@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import type { FixtureItem } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { FIXTURE_CATALOG_BY_ID } from "@/fixtures/catalog";
+import { pathLength } from "@/fixtures/linear";
 import { DEFAULT_FIXTURE_COLOR_K, DEFAULT_FIXTURE_LUX, FIXTURE_LUX_MAX, FIXTURE_LUX_MIN } from "@/render/lightPresets";
 import { PD } from "../tokens";
 import { pdInspectorPanel, PdHelpText, PdRangeRow } from "./panelKit";
@@ -43,6 +44,7 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
     <div style={pdInspectorPanel}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>{specName}</div>
       <div style={{ fontSize: 11.5, color: PD.textSecondary }}>{deg}°</div>
+      {item.assetId === "fx:linear" && <PdHelpText>{t("stripDimensions", { length: pathLength(item.path ?? []).toFixed(2) })}</PdHelpText>}
       <PdRangeRow
         label={t("strength")}
         min={FIXTURE_LUX_MIN}

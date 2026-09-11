@@ -6,6 +6,7 @@ import { useFrame, useStore, useThree } from "@react-three/fiber";
 import type { Scene } from "@/schema/scene";
 import { ROOM_LIGHT, SHADOW } from "./contract";
 import { computeRoomLights } from "./roomLighting";
+import { StripBeam } from "./StripBeam";
 
 /**
  * M2 — one ceiling light per detected room, mounted alongside Floors/Ceilings
@@ -111,7 +112,7 @@ export function RoomLights({ scene }: { scene: Scene }) {
 
   return (
     <group>
-      {lights.map((l, i) => (
+      {lights.map((l, i) => l.beam ? <StripBeam key={l.id} light={l} /> : (
         <pointLight
           key={l.id}
           ref={(el) => { refs.current[i] = el; }}

@@ -1048,11 +1048,18 @@
         "floorHelp": "Change the floor in <b>Decorate</b>: pick a material, click the floor."
       },
       "fixture": {
+        "stripDimensions": "{length} m long · 6 cm wide · 5 cm below ceiling",
         "strength": "Strength",
         "color": "Color",
         "help": "drag to move · R rotates · Delete removes",
         "names": {
           "flushDisc": "Flush ceiling light",
+          "linear": "Draw ceiling strip",
+          "globePendant": "Globe pendant",
+          "drumPendant": "Drum pendant",
+          "globeSconce": "Globe wall light",
+          "boxSconce": "Rectangular wall light",
+          "flushSquare": "Square ceiling light",
           "pendant": "Pendant light",
           "sconce": "Wall light"
         }
@@ -1135,6 +1142,7 @@
       "filterAll": "All",
       "filterCeiling": "Ceiling",
       "filterWall": "Wall",
+      "drawHint": "Click start · Click corner · Double-click finish · Esc cancel",
       "placeHint": "Click to place · R rotates · Esc done"
     },
     "stair": {

@@ -1048,11 +1048,18 @@
         "floorHelp": "שינוי הרצפה ב<b>עיצוב</b>: בחרו חומר, לחצו על הרצפה."
       },
       "fixture": {
+        "stripDimensions": "אורך {length} מ׳ · רוחב 6 ס״מ · 5 ס״מ מתחת לתקרה",
         "strength": "עוצמה",
         "color": "גוון",
         "help": "גררו כדי להזיז · R מסובב · Delete מוחק",
         "names": {
           "flushDisc": "מנורת תקרה צמודה",
+          "linear": "שרטוט פס תאורה",
+          "globePendant": "מנורת תלייה כדורית",
+          "drumPendant": "מנורת תלייה גלילית",
+          "globeSconce": "מנורת קיר כדורית",
+          "boxSconce": "מנורת קיר מלבנית",
+          "flushSquare": "מנורת תקרה מרובעת",
           "pendant": "מנורה תלויה",
           "sconce": "מנורת קיר"
         }
@@ -1135,6 +1142,7 @@
       "filterAll": "הכול",
       "filterCeiling": "תקרה",
       "filterWall": "קיר",
+      "drawHint": "לחיצה להתחלה · לחיצה לפינה · לחיצה כפולה לסיום · Esc לביטול",
       "placeHint": "לחצו כדי למקם · R מסובב · Esc לסיום"
     },
     "stair": {

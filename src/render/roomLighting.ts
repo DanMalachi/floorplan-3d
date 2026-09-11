@@ -5,6 +5,7 @@ import { resolveCeilingState } from "@/lib/rooms/roomCeiling";
 import { poleOfInaccessibility, type Point2 } from "@/lib/rooms/poleOfInaccessibility";
 import { ROOM_LIGHT } from "./contract";
 import { resolveCeilingHeights } from "./ceilingHeight";
+import { fixtureDropM, stripLightSegments } from "@/fixtures/linear";
 import {
   DEFAULT_FIXTURE_COLOR_K,
   DEFAULT_FIXTURE_LUX,
@@ -36,6 +37,8 @@ export const WALL_FIXTURE_REFERENCE_AREA_M2 = 6;
  * room (see `computeRoomLights` below).
  */
 export interface RoomLight {
+  /** Downward rectangular strip beam; other fixtures remain point lights. */
+  beam?: { length: number; rotation: number };
   id: string;
   roomId: string;
   /** Plan-space world position: (x, ceilingHeight - drop, planY). Matches the
@@ -206,36 +209,48 @@ export function computeRoomLights(scene: Scene): RoomLight[] {
   const out: RoomLight[] = [];
 
   for (const item of fixtures) {
-    const world = resolveFixtureWorldXY(item, scene);
-    if (!world) continue;
-    const mount = item.mount;
-    const isWall = mount.kind === "wall";
-    const rooms = isWall ? allRooms : eligible;
-    const er = rooms.find((r) => pointInPolygon(world.x, world.y, r.loop));
-    // A ceiling fixture with no eligible room genuinely lights nothing
-    // (unchanged — that's the M2 always-a-room-first design). A WALL fixture
-    // with no containing room at all isn't a "no light" case though: it's
-    // mounted facing an area with no authored Room polygon whatsoever — a
-    // facade, an entrance, a roof-deck edge — exactly Dan's screenshot (a
-    // sconce that renders but stays visibly dark). It still lights *something*
-    // (its own wall face), so it falls through to a room-less light below
-    // instead of being dropped (Sprint 5).
-    if (!er && !isWall) continue;
+    // A strip remains one authored fixture. Its rectangular sections use
+    // this same room/lux/color resolver and directional shadows in RoomLights.
+    const origin = resolveFixtureWorldXY(item, scene);
+    const strip = item.assetId === "fx:linear";
+    const stripRoom = strip && origin ? eligible.find((r) => pointInPolygon(origin.x, origin.y, r.loop)) : null;
+    const segments = stripLightSegments(item);
+    const samples = strip ? segments : origin ? [origin] : [];
+    for (const [index, world] of samples.entries()) {
+      const mount = item.mount;
+      const isWall = mount.kind === "wall";
+      const rooms = isWall ? allRooms : eligible;
+      const er = rooms.find((r) => pointInPolygon(world.x, world.y, r.loop));
+      // One rigid profile has one ceiling height, resolved at its anchor by
+      // FixtureLayer too. A move across a boundary must not create sources
+      // on another room's ceiling, detached from that profile.
+      if (strip && (!stripRoom || er?.room.id !== stripRoom.room.id)) continue;
+      // A ceiling fixture with no eligible room genuinely lights nothing
+      // (unchanged — that's the M2 always-a-room-first design). A WALL fixture
+      // with no containing room at all isn't a "no light" case though: it's
+      // mounted facing an area with no authored Room polygon whatsoever — a
+      // facade, an entrance, a roof-deck edge — exactly Dan's screenshot (a
+      // sconce that renders but stays visibly dark). It still lights *something*
+      // (its own wall face), so it falls through to a room-less light below
+      // instead of being dropped (Sprint 5).
+      if (!er && !isWall) continue;
 
-    const lux = item.targetLux ?? DEFAULT_FIXTURE_LUX;
-    // Wall fixtures use a fixed reference area, not the room's actual area
-    // (Sprint 3c) — see WALL_FIXTURE_REFERENCE_AREA_M2. A room-less wall
-    // fixture uses the same fixed area; there's no room to scale against.
-    const candela = roomFixtureCandela(isWall ? WALL_FIXTURE_REFERENCE_AREA_M2 : er!.area, lux);
-    const y = mount.kind === "ceiling" ? er!.ceilingHeight - ROOM_LIGHT.dropBelowCeilingM : mount.sill;
+      const lux = item.targetLux ?? DEFAULT_FIXTURE_LUX;
+      // Wall fixtures use a fixed reference area, not the room's actual area
+      // (Sprint 3c) — see WALL_FIXTURE_REFERENCE_AREA_M2. A room-less wall
+      // fixture uses the same fixed area; there's no room to scale against.
+      const candela = roomFixtureCandela(isWall ? WALL_FIXTURE_REFERENCE_AREA_M2 : er!.area, lux);
+      const y = mount.kind === "ceiling" ? er!.ceilingHeight - fixtureDropM(item.assetId) : mount.sill;
 
-    out.push({
-      id: item.id,
-      roomId: er ? er.room.id : `exterior:${item.id}`,
-      position: [world.x, y, world.y],
-      intensity: toRenderIntensity(candela),
-      color: kelvinToColor(item.colorK ?? DEFAULT_FIXTURE_COLOR_K),
-    });
+      out.push({
+        id: strip ? `${item.id}:segment:${index}` : item.id,
+        roomId: er ? er.room.id : `exterior:${item.id}`,
+        position: [world.x, y, world.y],
+        intensity: toRenderIntensity(candela) * (strip ? segments[index].weight : 1),
+        color: kelvinToColor(item.colorK ?? DEFAULT_FIXTURE_COLOR_K),
+        ...(strip ? { beam: { length: segments[index].length, rotation: segments[index].rotation } } : {}),
+      });
+    }
   }
 
   return out;
