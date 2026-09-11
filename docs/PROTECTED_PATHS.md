@@ -83,6 +83,23 @@ not listed here still falls under CLAUDE.md rule 1 — stop and ask.
   merges; the fixture ghosts are drag-and-click placers and would otherwise
   reopen the same "camera gesture also edits the scene" bug this fixes.
 
+- **2026-09-10, `feat(lighting): add drawable fixtures` (`codex/lighting-prod`)
+  — `FixtureLayer.tsx` rewritten, plus new `FixtureBody.tsx`,
+  `CeilingFixtureGhost.tsx`, `LinearLightGhost.tsx`, `StripSelection.tsx`,
+  and additive changes to `FixtureCatalog.tsx`.** Approved by Dan directly
+  with OpenAI Codex (a separate coding tool Dan runs on its own branches
+  alongside Claude Code — see `concurrent-codex-session` context); logged
+  here retroactively on merge since Codex's own commit didn't add this
+  entry. Adds a draw-a-ceiling-strip fixture (`FixtureItem.path`, additive
+  and optional on `scene.ts`) alongside the existing point fixtures:
+  `computeRoomLights()` now samples a strip's centerline into weighted
+  segments and renders each as a `StripBeam` rectangular downlight instead
+  of a single point light, everything else (room resolution, wall-fixture
+  fallback, lux/color pipeline) unchanged. `placeFixture()`'s new `path`
+  parameter is optional or backward compatible with every existing call
+  site. No scope outside fixtures/lighting: no camera, wall, floor,
+  furniture, config, or dependency changes.
+
 - **2026-09-07 (second), `src/viewport3d/FixtureCatalog.tsx` and
   `src/viewport3d/StairInspector.tsx` — their hardcoded UI TEXT moves into the
   message catalogue.** Approved by Dan before the edits. Translation only: a
