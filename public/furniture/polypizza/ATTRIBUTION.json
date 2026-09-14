@@ -1,0 +1,38 @@
+{
+  "note": "Poly Pizza is a mixed-license aggregator: some models here are CC0 (no attribution needed), others are CC Attribution (CC-BY), where attribution IS legally required. Each asset below carries its own `licence` and, for CC-BY items, the exact attribution string Poly Pizza itself provides (author name + model page + licence link) — credit it verbatim wherever these models are shown/credited in-app or in release notes.",
+  "source": "https://poly.pizza/",
+  "assets": [
+    {
+      "id": "7qAyGZnerYt",
+      "file": "table-7qAyGZne.glb",
+      "name": "Table",
+      "licence": "CC-BY 3.0",
+      "attribution": "\"Table\" by Hunter Paramore, https://poly.pizza/m/7qAyGZnerYt. Licence at https://creativecommons.org/licenses/by/3.0",
+      "retrieved": "2026-09-14"
+    },
+    {
+      "id": "hOR7wPaWes",
+      "file": "desk-chair-hOR7wPaW.glb",
+      "name": "Desk Chair",
+      "licence": "CC-BY 3.0",
+      "attribution": "\"Desk Chair\" by Nick Slough, https://poly.pizza/m/hOR7wPaWes. Licence at https://creativecommons.org/licenses/by/3.0",
+      "retrieved": "2026-09-14"
+    },
+    {
+      "id": "zMmKNm8w4a",
+      "file": "chair-zMmKNm8w.glb",
+      "name": "Chair",
+      "licence": "CC0 1.0",
+      "attribution": null,
+      "retrieved": "2026-09-14"
+    },
+    {
+      "id": "DT2A8a9tnO",
+      "file": "chair-DT2A8a9t.glb",
+      "name": "Chair",
+      "licence": "CC0 1.0",
+      "attribution": null,
+      "retrieved": "2026-09-14"
+    }
+  ]
+}

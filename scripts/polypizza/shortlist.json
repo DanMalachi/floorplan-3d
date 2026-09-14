@@ -1,0 +1,8780 @@
+{
+  "beds": [
+    {
+      "id": "4sEZ1gl56mT",
+      "name": "Future Bunks",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2oQgfhLT5xH",
+      "name": "Plan",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4NNkEGLAdOb",
+      "name": "Chilled Cow Apt",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "42oLEk7XFLl",
+      "name": "RainyDay - Blocks",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8_e2sYzz8gg",
+      "name": "Elven Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dcjkb_jTZXF",
+      "name": "Wooden Rack",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "680DWvsvj1C",
+      "name": "broken table simple",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "c2ewablvcA",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "exXhc1QaEVM",
+      "name": "Drawers",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2cUYsKvuN2y",
+      "name": "Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3D3gZ5K90sz",
+      "name": "Table Lamp",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3GUXPdbNt_m",
+      "name": "canopybottom",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "33rYrxjRX5g",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aZyMp9TEk0I",
+      "name": "Standing Lamp",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7pKc9ejEUvn",
+      "name": "Bench",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bvl2wn9JQLb",
+      "name": "Pillow",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1ddKcq69eR4",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2Ipd1K9479q",
+      "name": "Storage Crate",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cZltkfbEKS8",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bw5mWRMaJsR",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8u605udsRt",
+      "name": "Bed Character",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "Wtd7rX7DGl",
+      "name": "Shelf",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3qzceNuu8F2",
+      "name": "ChairC",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "eJtyBTDhl_p",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1-dvgfNWdXu",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8qxEypin78N",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1viA0FomZnb",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "58MwKAW7jAm",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bydgit--BYd",
+      "name": "Sled",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2uQn20MwGpd",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "vXaxy7ortM",
+      "name": "Chest",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0NOoJkllvPB",
+      "name": "mixed rack",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "d9k1tf_HpUV",
+      "name": "Wooden Crate Stool",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bRbRiwVaSUC",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "YyAS0OHd4i",
+      "name": "Wood Chest",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8bjY3kDnACV",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "f_y9TYZuAad",
+      "name": "drawer",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "15B0ihXkg3C",
+      "name": "Bookshelf",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bjJ2S3Lgur_",
+      "name": "Breakfast Cactus",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0lqxIR-BUrn",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "28PGrcM0hcZ",
+      "name": "ChairB",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4qpQYNSWA7I",
+      "name": "Loveseat",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3v07gbyeiSF",
+      "name": "Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2VKFPjBuDR-",
+      "name": "HomeStuff_1",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "as8YooTpfXx",
+      "name": "Sofa",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aaC6HS0cERF",
+      "name": "Cabana and curtains",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0K05lwk9caj",
+      "name": "Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b8uN4cUxVrc",
+      "name": "Bookshelf",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5yZC6q99BI",
+      "name": "Chest Open",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bTE0AQSZss",
+      "name": "Chest",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9St_aHAtPZT",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4pJvwcFDbNc",
+      "name": "Curtains",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b0BOXw7svtJ",
+      "name": "camp bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0cRW-BhHD16",
+      "name": "Gazebo",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aFwNuRNmcO5",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1AZTCrnyejR",
+      "name": "Ottoman",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8ir-Gw1ZObm",
+      "name": "Orange Chaise Lounge Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7DzApo8dST5",
+      "name": "Teal Chaise Lounge Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4iV2yZ0wIf1",
+      "name": "Crib",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "c_GI97Mb6w9",
+      "name": "Cabana",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7b5-kH4G9TL",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "a_t-eF8KpgX",
+      "name": "5",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "OCiSQXTJam",
+      "name": "Loft Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cROzumyvH_4",
+      "name": "Drawers",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9SLXF-5abrQ",
+      "name": "Bunk bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3aAw-c_7gkO",
+      "name": "shelf",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cu6YTWSmJ4p",
+      "name": "Study table by window",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3kczVpdqvGP",
+      "name": "Bed roll",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "CuUYyXA9ki",
+      "name": "Bunk Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bsp0Uzr6cSI",
+      "name": "Hammock",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4BqG9kDkQr4",
+      "name": "End Table",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5SRWWIgWCdu",
+      "name": "Concept Home",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "fTP9woAxhRW",
+      "name": "Cabana and curtains",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "akMzoP0qU7f",
+      "name": "Pergola (wooden shade cover)",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "f6IpG9b27Eo",
+      "name": "Building frame",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9dHdNAcgrLM",
+      "name": "Ottoman",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bbvkcYiPdR8",
+      "name": "Wardrobe",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "CwI028T6A9",
+      "name": "Saw Platform",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dO469Hvi0oY",
+      "name": "Nightstand / Bedside Table",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bag5JGLPUsN",
+      "name": "Four Post Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3um_R3zPdkZ",
+      "name": "Wide Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dCGrZOCk4mY",
+      "name": "Chest with drawers",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bNzHwBCVavl",
+      "name": "Wooden Bench",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bc6txJTwfJj",
+      "name": "Desk lamp",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cR4FE3BpAPJ",
+      "name": "Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bssBNm9rp8Q",
+      "name": "Armchair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7pkUt5H1rw9",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6vGMR1wUzfi",
+      "name": "camp bed blue",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "kicEL65Yxv",
+      "name": "Dog Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cQ0wPsJdliT",
+      "name": "Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1_Sd_OBmf5P",
+      "name": "Sled",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "OtYtk8IbjP",
+      "name": "Lingerie Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5ngh9YauT9G",
+      "name": "Sofa",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "FKPty4JRap",
+      "name": "Barricade",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "vU35uQsXj3",
+      "name": "Wooden Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dBumzYGJzUG",
+      "name": "Desk / Shelves",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "fGlFPYb8CCg",
+      "name": "Cot",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "gL7D4nY12g",
+      "name": "Platform Structure",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7dcTIks23j",
+      "name": "Counter Drawers",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aTU8O8XERgM",
+      "name": "Raised bed, robomower hideaway",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "d1qCwgKV7se",
+      "name": "Modern rug",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "DL3mwGoxVT",
+      "name": "Three Seater Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "c3XvEeP10a-",
+      "name": "Garden Lounger",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "WcrsIHK2A3",
+      "name": "Cage",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cWKeLYaXdef",
+      "name": "Winter Sled",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4uOho8GeU_w",
+      "name": "Open umbrella",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dDw6BXOMJJ8",
+      "name": "Cabana",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aGmZ4jQD2y",
+      "name": "Locker",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "TDgvIuorcX",
+      "name": "Shelf Tall",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "IRLaR71Pyn",
+      "name": "Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "ch-fQ-Ruyog",
+      "name": "Door",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "63U8J3bGSaO",
+      "name": "Barstool",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5_1VV3ExWC9",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "238sWQK7yok",
+      "name": "2",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dyht9OdTsW",
+      "name": "Sleepbed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9IZMNkfBIun",
+      "name": "Shelf",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3p23RpcD--P",
+      "name": "Standing Lamp",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "QpDGgpHcH2",
+      "name": "Landing Pad",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "fCt0206mzB",
+      "name": "Red Wood Wall",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5tEY6_rR2wL",
+      "name": "Cabana",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "Ud8QR8Ku9e",
+      "name": "Dresser",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "CYEBbzLl8J",
+      "name": "Cat Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "12PaVpBY04",
+      "name": "Bedroll",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5v5e10T-2zv",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "YQu7UD8YIS",
+      "name": "Shoji Wall",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cvmkDWTTL8",
+      "name": "Container Shelf",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "lmePppSu8a",
+      "name": "Sofa",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aF8zkL7mfb0",
+      "name": "my bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "ufzwKuyJuD",
+      "name": "Minimalist Modern Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8gJKD8bAxN0",
+      "name": "Couch",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "f4dWkHizhSZ",
+      "name": "Armchair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "NQGVFkRh03",
+      "name": "Bedside Lamp",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7-ZyHe177WV",
+      "name": "Ceiling Light",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7Jl72KgiRl-",
+      "name": "Wood chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "PImRvMqW1O",
+      "name": "Lounge Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "gX7VhrgdIE",
+      "name": "Lounge Sofa Long",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8ZuAjF0awms",
+      "name": "armchair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9ElP4aKTczP",
+      "name": "Door",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "nARUaxtRHA",
+      "name": "Bench",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b_p530Qy_-t",
+      "name": "Gazebo",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1Lisi_4xxFL",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4u1IJfWsGnb",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8mkAgVYGbL4",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "efwd5fjuMU",
+      "name": "Bedroll",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "20JcnkCnbAc",
+      "name": "Toolbox",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aMSuFFdIhKB",
+      "name": "Table with drawers",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "fZAzX3YrGwd",
+      "name": "Bookcase",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "Yc9VzCJnW2",
+      "name": "Sofa",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true
+    }
+  ],
+  "office_chairs": [
+    {
+      "id": "DXhRgoTcP4",
+      "name": "Dentist Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "1PfsqbJazUF",
+      "name": "Pc table",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "8IWp8M_bJW7",
+      "name": "The Stabby Throne",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "eeoGDcg9a-a",
+      "name": "Wheelchair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "emInffdGy1E",
+      "name": "Dentist chair V2",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "uxIo5ge0pw",
+      "name": "Standing Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "a5U8EzKX1ax",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "EtJlOllzbf",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0gb5yuNcwbg",
+      "name": "Wheelchair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "b7PfwOuvF99",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "8e_b2DTysDE",
+      "name": "The Director's Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "78E_8uFV0lq",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7Kt95WBY00t",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "c91f8V0gEtD",
+      "name": "Messy Office",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0TsHLxX6CB",
+      "name": "Village Market",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "dvr1diKrxkz",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "33rYrxjRX5g",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "dDXbl8nWjea",
+      "name": "Wassily Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "YxfMuchpUF",
+      "name": "Office Phone",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7OQeue3MhPI",
+      "name": "chair man is born",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5AOlTIK9NvX",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5dWpau7C3k",
+      "name": "Archery Training Grounds",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5osCtu2pLwv",
+      "name": "That Expensive Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0_FDq_UjWHp",
+      "name": "Desk Lamp",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "cZltkfbEKS8",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bw5mWRMaJsR",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7ev-By_el6f",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "cltBiO5aHop",
+      "name": "Table",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "3qzceNuu8F2",
+      "name": "ChairC",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "FD3GBkVOyX",
+      "name": "Archery Training Grounds",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0ka4uFTdYOr",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bqTogxkwYvK",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "2avtgSBRyF3",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "58zA8yry4qr",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "8bjY3kDnACV",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "4i_KehfD3z1",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "4UYuuqgX-xQ",
+      "name": "Work Cappuccino",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "28PGrcM0hcZ",
+      "name": "ChairB",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0xIH2GVYBR3",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "1FAdZ-Wl0Ay",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aFvAXhR1ZJA",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5KMWfpnjUZp",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "6HQPOMqyQTv",
+      "name": "Bench",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "eNaIViK-eKo",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "1lXSlSX7KrD",
+      "name": "Chris Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "4FiA3FG18yv",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5qgBIa5Nj6J",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5Ma7NTHyV9j",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "1MFMOaz3zqe",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0KXrEsCg4K1",
+      "name": "Wooden Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "91dkDNqT7T8",
+      "name": "Seat",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "3txPAhYeu-x",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "eZGTtPqn_Wd",
+      "name": "Chairlift",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "e4T8cpEvCPh",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aU9plW_rBJI",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aFwNuRNmcO5",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "2YEOoQNtNpL",
+      "name": "Chairlift",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "c406LNgto0n",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "8ir-Gw1ZObm",
+      "name": "Orange Chaise Lounge Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7DzApo8dST5",
+      "name": "Teal Chaise Lounge Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "3llsWFtW7yM",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "83sHAj2QuMA",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "3ZfxLp41eSs",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "cu6YTWSmJ4p",
+      "name": "Study table by window",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "6GJ4rMuBZty",
+      "name": "Chairlift",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "6MoOyPtetL",
+      "name": "Couch Large",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "1kwsjhpY84",
+      "name": "L Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "hOR7wPaWes",
+      "name": "Desk Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "zMmKNm8w4a",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7FhXjLOteC8",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "08-z1qQrjz3",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "cz0MliYTG8O",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "3ST0yaOUNJ",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "6B01_4J2AIg",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7zuvXWL0v7f",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "mWgQ94zhDZ",
+      "name": "Couch Medium",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "eP6XIy9ox83",
+      "name": "school desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "b9OtOtxj8Gk",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "4lNptAwxpV",
+      "name": "Door Round",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "VvWlICcNi8",
+      "name": "Door Straight",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bssBNm9rp8Q",
+      "name": "Armchair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bcKqTXlGgTu",
+      "name": "Bar Table",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7pkUt5H1rw9",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "fFfoi1LNKY",
+      "name": "Couch Medium",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "maMILE0taC",
+      "name": "Executive Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0pA2rtoTOO",
+      "name": "Wooden Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "cQ0wPsJdliT",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7ban171PzCS",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bjHo_aDTOas",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "QAiXMsbWRc",
+      "name": "Plastic Barrier",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aE28ttTQtad",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "dBoWGNFoHa",
+      "name": "Cart",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bNOGKxagmvd",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5vqM-1d9KGI",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aVo4dG09vfD",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "BfrWTbXWBl",
+      "name": "L Shaped Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "6cbYP0xAcMA",
+      "name": "Stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0iZSZezOQxC",
+      "name": "Desk Lamp",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7Q_Ab2HLll1",
+      "name": "Couch | Wide",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "cSUMLFBEzi3",
+      "name": "Stapler",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "0yeRlCCKOXf",
+      "name": "Stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "gL7D4nY12g",
+      "name": "Platform Structure",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "x4ZNakeWGT",
+      "name": "Electric Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "Gnst85J3vK",
+      "name": "Rocking Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "DL3mwGoxVT",
+      "name": "Three Seater Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "MTH8ZwnA27",
+      "name": "Bookcase Open",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "c3XvEeP10a-",
+      "name": "Garden Lounger",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "dptlMEX4tF_",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "VZw6xzQbOb",
+      "name": "Stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "8jd7pa_LdMY",
+      "name": "Umbrella and chairs",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "o7i23ZgseY",
+      "name": "Chair Rounded",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "fgzFG7NBJ5",
+      "name": "Club Arm Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "IRLaR71Pyn",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aM7WNfnmdFo",
+      "name": "Stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "e9FWbvmCO-K",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "aoEzCkLzV9h",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "SIlnlrbQR7",
+      "name": "Grill",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "63U8J3bGSaO",
+      "name": "Barstool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "6U8mjPXCH1-",
+      "name": "Office Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "bpFCWQSs-aT",
+      "name": "Throne",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "x6qMpNlvWI",
+      "name": "Wooden Arm Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "GmBB3T5syc",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "X9msj0gtb5",
+      "name": "Couch Small",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "LCfBX1FVJr",
+      "name": "Desk Corner",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "TvaOenUAni",
+      "name": "Stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5kPLN9W15qj",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "vZSrxtIynl",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "d0CwibBQX6A",
+      "name": "Stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "99QQsFyyMA",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "eGccH9cqom",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "DT2A8a9tnO",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "5v5e10T-2zv",
+      "name": "Couch",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "lmePppSu8a",
+      "name": "Sofa",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "ufzwKuyJuD",
+      "name": "Minimalist Modern Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "c0rDaaEyso",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "tTb1bhw7bT",
+      "name": "Bar stool",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "f4dWkHizhSZ",
+      "name": "Armchair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "UMtt043myZ",
+      "name": "Chair Cushion",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "OhXey2fljr",
+      "name": "Computer Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "BD6H0fZpMN",
+      "name": "Bench Cushion",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "MuBw2WmVTU",
+      "name": "Table",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "a42mSc6w2U",
+      "name": "Lounge Sofa Corner",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "7Jl72KgiRl-",
+      "name": "Wood chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "jLxjFxFRpw",
+      "name": "Bench",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "PImRvMqW1O",
+      "name": "Lounge Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "gX7VhrgdIE",
+      "name": "Lounge Sofa Long",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "8ZuAjF0awms",
+      "name": "armchair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    },
+    {
+      "id": "HkPCEdQ5d5",
+      "name": "Table",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ]
+    }
+  ],
+  "dining_tables": [
+    {
+      "id": "1PfsqbJazUF",
+      "name": "Pc table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "2aKo4Mq-_5P",
+      "name": "Stove",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "uxIo5ge0pw",
+      "name": "Standing Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "o8tTxLfAJZ",
+      "name": "Maker's Desk 📐",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dGIfr24PJEd",
+      "name": "Kitchen",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "EtJlOllzbf",
+      "name": "Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dlVBCMiaGw2",
+      "name": "Diner",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4Xlqz9IfdrV",
+      "name": "Diner",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "680DWvsvj1C",
+      "name": "broken table simple",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5on5mJSu0gT",
+      "name": "Blender",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "78E_8uFV0lq",
+      "name": "Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0TsHLxX6CB",
+      "name": "Village Market",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "e2oBGB9QhrV",
+      "name": "Kitchen Woodstove",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "24I9X8aeWTR",
+      "name": "Workbench",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4sE6lmhGPF",
+      "name": "Port",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "ISpMh81QGq",
+      "name": "Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3D3gZ5K90sz",
+      "name": "Table Lamp",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7Z0bva7ec1s",
+      "name": "Adjustable Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8Z4yYj39NWS",
+      "name": "Drafting Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "HVg79yHQTm",
+      "name": "Wodden Temple",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "33rYrxjRX5g",
+      "name": "Couch",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5qMpo1d61bW",
+      "name": "Big table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4ZAhRv2tLG",
+      "name": "Market Stalls",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "nR264crTSr",
+      "name": "Temple",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bXH5RpSa88Q",
+      "name": "Modern rug",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "38PMRiku8qj",
+      "name": "Kitchen v3",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "YOm8PsISdh",
+      "name": "Table with food",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bwL7Xvmql74",
+      "name": "Fridge and Cooker",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "66i_WBdHAN5",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "2hTEcNZSqX2",
+      "name": "Kitchen Knife",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cZltkfbEKS8",
+      "name": "Couch",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "jSqGy8V0MQ",
+      "name": "Market Stalls",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cltBiO5aHop",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3qzceNuu8F2",
+      "name": "ChairC",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8ifQ8a92xw_",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8qkXF9-Ge7Y",
+      "name": "Lunch Counter",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aukWXD-AwKu",
+      "name": "Tv stand",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "fr49PGsXs0x",
+      "name": "Plates",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7GzmqI1M0fC",
+      "name": "Pool Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4HlUpiwqtvs",
+      "name": "Dishwasher",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "61749QyJUoo",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4i_KehfD3z1",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4UYuuqgX-xQ",
+      "name": "Work Cappuccino",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "sbQBUrzZb6",
+      "name": "Kitchentable Sink La",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "6PQ39I5-lKv",
+      "name": "Diner",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "42OaqleENRS",
+      "name": "Kitchen",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aFvAXhR1ZJA",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bI7aNQEm2Fq",
+      "name": "Wine Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "ekYAOSqE8fI",
+      "name": "Kitchen Cooktop and Counter",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "990Ml-tDxFU",
+      "name": "Wooden plank",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "eNaIViK-eKo",
+      "name": "Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dIdgqrgiC9o",
+      "name": "Cheese grater",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "LE1oxmKx1f",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7-B-Vmz3QtU",
+      "name": "Wooden Picnic table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4gsYOYy3v93",
+      "name": "Mosaic Garden Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "b90F1JhGrA4",
+      "name": "Kitchen",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aU9plW_rBJI",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aFwNuRNmcO5",
+      "name": "Couch",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "kTJU2y4R15",
+      "name": "Kitchen Stove",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aB4-AS93Wd7",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3anBsWPsFbO",
+      "name": "Spoon",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cu6YTWSmJ4p",
+      "name": "Study table by window",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4O2XeSYYnvM",
+      "name": "Table tennis table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4qpvnIQNcl5",
+      "name": "Wood Floor",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5teci4b6krG",
+      "name": "Dining car",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "1kwsjhpY84",
+      "name": "L Couch",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4BqG9kDkQr4",
+      "name": "End Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5SRWWIgWCdu",
+      "name": "Concept Home",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "1IZ8Y6MfHRO",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "asZ_nKHursY",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "zMmKNm8w4a",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "c55xJEOICb4",
+      "name": "Blender",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "VJZZW37Vsk",
+      "name": "Watch Tower",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "obMPe0AheB",
+      "name": "Couch",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "yc791ltBNS",
+      "name": "Kitchen Oven",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cztQY06tVj_",
+      "name": "Kitchen table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8HyHn6oFW1P",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "hts7l0NZxW",
+      "name": "Market Stand",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "9CwQ8V3hdd",
+      "name": "Gallows",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dO469Hvi0oY",
+      "name": "Nightstand / Bedside Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "43TvmN6EHnY",
+      "name": "Writing Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "HuzLJcbUd2",
+      "name": "Shack",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3tB8CXKd_zz",
+      "name": "Wooden Bench",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "sVXy2bK13C",
+      "name": "Wood Base 6",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "jGWhVOrvhh",
+      "name": "Wood Base 5",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "WqrnushqVk",
+      "name": "Wood Base 4",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "XpysaEDXJQ",
+      "name": "Bunk Bed",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bcKqTXlGgTu",
+      "name": "Bar Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "gtnHSsBONa",
+      "name": "Wooden Kitchen Sink",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "fei4I7FfrJ",
+      "name": "Logs",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "fFfoi1LNKY",
+      "name": "Couch Medium",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "KWaAZIDK9F",
+      "name": "Table Big",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "maMILE0taC",
+      "name": "Executive Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0pA2rtoTOO",
+      "name": "Wooden Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "T9KZ2y10bV",
+      "name": "Wood Floor 5",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "c_BDr31X5_-",
+      "name": "Table tennis table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7ban171PzCS",
+      "name": "Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "jRXGo26RJy",
+      "name": "Table with sink",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "GQieALI2C4",
+      "name": "Picnic Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "UTJHANd25O",
+      "name": "Sawmill",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "1EwfmPQ-8ur",
+      "name": "Bowl",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "gjSG8fZtc4",
+      "name": "Wood Floor 1",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "rAEBvfb1FT",
+      "name": "Small Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "e1ssm7Ap0Th",
+      "name": "Tea Kettle",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "Nkl0zZtyVq",
+      "name": "Countertop Straight",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7qAyGZnerYt",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3OK0PHaS9Wi",
+      "name": "Ping pong table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aVo4dG09vfD",
+      "name": "Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3MW5T_EMG64",
+      "name": "Bowl",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "BfrWTbXWBl",
+      "name": "L Shaped Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "eiLKj8dex1",
+      "name": "Table Round A Small",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "oEArSZykyi",
+      "name": "Table Round Small",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "ie7VLNi4Ok",
+      "name": "Kitchentable Sink",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0WwhayzV52T",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7Q_Ab2HLll1",
+      "name": "Couch | Wide",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "LdFYthYpQ9",
+      "name": "Stove",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "SpRHK36gNl",
+      "name": "Wooden Sign",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "9RpiicivMJi",
+      "name": "Plate",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "XV1rkrPaxX",
+      "name": "Stove Single",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "gL7D4nY12g",
+      "name": "Platform Structure",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "CBUx8ZMVAO",
+      "name": "Counter Doors",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "z8Q30rFW6E",
+      "name": "Fridge",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "d1qCwgKV7se",
+      "name": "Modern rug",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "uwfs2Gbd5I",
+      "name": "Counter Straight",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8JI0vnsWXA",
+      "name": "Wood Planks Block",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dptlMEX4tF_",
+      "name": "Desk",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0m3VOUqFmTQ",
+      "name": "Fork",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "lZFtRSTeKR",
+      "name": "Stairs",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "WcrsIHK2A3",
+      "name": "Cage",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "c4V1vLlgpE",
+      "name": "Stove",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4cFp8h-mxTV",
+      "name": "Kitchen Scale",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5JVQaADip1h",
+      "name": "Microwave",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "nNGtcp9qK2",
+      "name": "Kitchen Sink",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "57W671WvS2",
+      "name": "Table Round Small",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "eCnblJPsW8",
+      "name": "Table Round Large",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "McgsrFB5x6",
+      "name": "Kitchen Fridge Large",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "68UQghaUBL",
+      "name": "Stone Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "eTUx0oeN9N",
+      "name": "Chair Modern Frame Cush",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4JpGweI6vVR",
+      "name": "Espresso pot",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "e0i7ezqMMM7",
+      "name": "Spoons",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "o7i23ZgseY",
+      "name": "Chair Rounded",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "ipDw2lbUn2",
+      "name": "Countertop Straight",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "TDgvIuorcX",
+      "name": "Shelf Tall",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4MPLFcKuJde",
+      "name": "Dish",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bHjLIDHkAcF",
+      "name": "Stone Table v1.0 - Life Sized",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "SIlnlrbQR7",
+      "name": "Grill",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "63U8J3bGSaO",
+      "name": "Barstool",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5P2Q_M6Ta4H",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    }
+  ],
+  "sofas": [
+    {
+      "id": "4NNkEGLAdOb",
+      "name": "Chilled Cow Apt",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "a5U8EzKX1ax",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "EtJlOllzbf",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6bOTntCJyyK",
+      "name": "Cozy Kitchen",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7Kt95WBY00t",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "c2ewablvcA",
+      "name": "Bed",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "ISpMh81QGq",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7pKc9ejEUvn",
+      "name": "Bench",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bvl2wn9JQLb",
+      "name": "Pillow",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5c0XBtFI9C2",
+      "name": "Bench",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "oUkHO0kbQt",
+      "name": "Structure",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8eD5zdP2aXg",
+      "name": "Seat",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5osCtu2pLwv",
+      "name": "That Expensive Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "Wtd7rX7DGl",
+      "name": "Shelf",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2xB0KOaqNov",
+      "name": "ソファーカー",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cltBiO5aHop",
+      "name": "Table",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "eJtyBTDhl_p",
+      "name": "Bed",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5r6YpmJ60eo",
+      "name": "Bench",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "58MwKAW7jAm",
+      "name": "Bed",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2uQn20MwGpd",
+      "name": "Bed",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8ifQ8a92xw_",
+      "name": "Table",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "ik7UZdELJE",
+      "name": "Damaged Couch",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aukWXD-AwKu",
+      "name": "Tv stand",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "58zA8yry4qr",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8bjY3kDnACV",
+      "name": "Couch",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4i_KehfD3z1",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "28PGrcM0hcZ",
+      "name": "ChairB",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aFvAXhR1ZJA",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3cn9wV_NW0q",
+      "name": "Cushions",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4qpQYNSWA7I",
+      "name": "Loveseat",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dCEsSsJJ1Md",
+      "name": "Office Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2VKFPjBuDR-",
+      "name": "HomeStuff_1",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6HQPOMqyQTv",
+      "name": "Bench",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "eNaIViK-eKo",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "as8YooTpfXx",
+      "name": "Sofa",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aaC6HS0cERF",
+      "name": "Cabana and curtains",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b0BOXw7svtJ",
+      "name": "camp bed",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aU9plW_rBJI",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "c406LNgto0n",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1AZTCrnyejR",
+      "name": "Ottoman",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8ir-Gw1ZObm",
+      "name": "Orange Chaise Lounge Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7DzApo8dST5",
+      "name": "Teal Chaise Lounge Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "c_GI97Mb6w9",
+      "name": "Cabana",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "a_t-eF8KpgX",
+      "name": "5",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6MoOyPtetL",
+      "name": "Couch Large",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "CuUYyXA9ki",
+      "name": "Bunk Bed",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bsp0Uzr6cSI",
+      "name": "Hammock",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4BqG9kDkQr4",
+      "name": "End Table",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "hOR7wPaWes",
+      "name": "Desk Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "zMmKNm8w4a",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7FhXjLOteC8",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cz0MliYTG8O",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3ST0yaOUNJ",
+      "name": "Chair",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9dHdNAcgrLM",
+      "name": "Ottoman",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dO469Hvi0oY",
+      "name": "Nightstand / Bedside Table",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3um_R3zPdkZ",
+      "name": "Wide Dresser",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7zuvXWL0v7f",
+      "name": "Desk",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bNzHwBCVavl",
+      "name": "Wooden Bench",
+      "bucket": "sofa",
+      "category": "Seating",
+      "subtitle": "sofa",
+      "rooms": [
+        "living"
+      ],
+      "wallSnap": true
+    }
+  ],
+  "armchairs": [
+    {
+      "id": "eeoGDcg9a-a",
+      "name": "Wheelchair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "emInffdGy1E",
+      "name": "Dentist chair V2",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "EtJlOllzbf",
+      "name": "Desk",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "0gb5yuNcwbg",
+      "name": "Wheelchair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8e_b2DTysDE",
+      "name": "The Director's Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "0TsHLxX6CB",
+      "name": "Village Market",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5Z_Ra0GJ-Dq",
+      "name": "Tree Park Bench",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "ISpMh81QGq",
+      "name": "Desk",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "33rYrxjRX5g",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "dDXbl8nWjea",
+      "name": "Wassily Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "7pKc9ejEUvn",
+      "name": "Bench",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5AOlTIK9NvX",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8eD5zdP2aXg",
+      "name": "Seat",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5dWpau7C3k",
+      "name": "Archery Training Grounds",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5osCtu2pLwv",
+      "name": "That Expensive Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "cZltkfbEKS8",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bw5mWRMaJsR",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "7ev-By_el6f",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "cltBiO5aHop",
+      "name": "Table",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3qzceNuu8F2",
+      "name": "ChairC",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "0ka4uFTdYOr",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "d9k1tf_HpUV",
+      "name": "Wooden Crate Stool",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bqTogxkwYvK",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bRbRiwVaSUC",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "2avtgSBRyF3",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8bjY3kDnACV",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4i_KehfD3z1",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4UYuuqgX-xQ",
+      "name": "Work Cappuccino",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "0lqxIR-BUrn",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "28PGrcM0hcZ",
+      "name": "ChairB",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "1FAdZ-Wl0Ay",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "aFvAXhR1ZJA",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5KMWfpnjUZp",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4qpQYNSWA7I",
+      "name": "Loveseat",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "dCEsSsJJ1Md",
+      "name": "Office Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "6HQPOMqyQTv",
+      "name": "Bench",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4FiA3FG18yv",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5qgBIa5Nj6J",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "1MFMOaz3zqe",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5Ma7NTHyV9j",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "0KXrEsCg4K1",
+      "name": "Wooden Office Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "91dkDNqT7T8",
+      "name": "Seat",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "as8YooTpfXx",
+      "name": "Sofa",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3txPAhYeu-x",
+      "name": "Office Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "eZGTtPqn_Wd",
+      "name": "Chairlift",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "e4T8cpEvCPh",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "b0BOXw7svtJ",
+      "name": "camp bed",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "aU9plW_rBJI",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "aFwNuRNmcO5",
+      "name": "Couch",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "2YEOoQNtNpL",
+      "name": "Chairlift",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "7DzApo8dST5",
+      "name": "Teal Chaise Lounge Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8ir-Gw1ZObm",
+      "name": "Orange Chaise Lounge Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "hW11P9DDXa",
+      "name": "Executive Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "c_GI97Mb6w9",
+      "name": "Cabana",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "egIoNswl-1t",
+      "name": "Cabana and curtains",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3llsWFtW7yM",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "83sHAj2QuMA",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3ZfxLp41eSs",
+      "name": "Chair",
+      "bucket": "armchair",
+      "category": "Seating",
+      "subtitle": "armchair",
+      "rooms": [
+        "living"
+      ]
+    }
+  ],
+  "dining_chairs": [
+    {
+      "id": "DXhRgoTcP4",
+      "name": "Dentist Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0gb5yuNcwbg",
+      "name": "Wheelchair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dlVBCMiaGw2",
+      "name": "Diner",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "33rYrxjRX5g",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dDXbl8nWjea",
+      "name": "Wassily Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5AOlTIK9NvX",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cZltkfbEKS8",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bw5mWRMaJsR",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cltBiO5aHop",
+      "name": "Table",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3qzceNuu8F2",
+      "name": "ChairC",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0ka4uFTdYOr",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8ifQ8a92xw_",
+      "name": "Table",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8qkXF9-Ge7Y",
+      "name": "Lunch Counter",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bqTogxkwYvK",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bRbRiwVaSUC",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "2avtgSBRyF3",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4i_KehfD3z1",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4UYuuqgX-xQ",
+      "name": "Work Cappuccino",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "28PGrcM0hcZ",
+      "name": "ChairB",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0xIH2GVYBR3",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "1FAdZ-Wl0Ay",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aFvAXhR1ZJA",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5KMWfpnjUZp",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4qpQYNSWA7I",
+      "name": "Loveseat",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "6HQPOMqyQTv",
+      "name": "Bench",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "4FiA3FG18yv",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5qgBIa5Nj6J",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0KXrEsCg4K1",
+      "name": "Wooden Office Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3txPAhYeu-x",
+      "name": "Office Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "e4T8cpEvCPh",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aU9plW_rBJI",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aFwNuRNmcO5",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "8ir-Gw1ZObm",
+      "name": "Orange Chaise Lounge Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7DzApo8dST5",
+      "name": "Teal Chaise Lounge Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "hW11P9DDXa",
+      "name": "Executive Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3llsWFtW7yM",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5teci4b6krG",
+      "name": "Dining car",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "hOR7wPaWes",
+      "name": "Desk Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7FhXjLOteC8",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "08-z1qQrjz3",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "3ST0yaOUNJ",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cztQY06tVj_",
+      "name": "Kitchen table",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bssBNm9rp8Q",
+      "name": "Armchair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bcKqTXlGgTu",
+      "name": "Bar Table",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "7pkUt5H1rw9",
+      "name": "Couch",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "KWaAZIDK9F",
+      "name": "Table Big",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "cQ0wPsJdliT",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aE28ttTQtad",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "dBoWGNFoHa",
+      "name": "Cart",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "bNOGKxagmvd",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "5vqM-1d9KGI",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "aVo4dG09vfD",
+      "name": "Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "6cbYP0xAcMA",
+      "name": "Stool",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "9RpiicivMJi",
+      "name": "Plate",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "0yeRlCCKOXf",
+      "name": "Stool",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "Gnst85J3vK",
+      "name": "Rocking Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "x4ZNakeWGT",
+      "name": "Electric Chair",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    },
+    {
+      "id": "CBUx8ZMVAO",
+      "name": "Counter Doors",
+      "bucket": "diningChair",
+      "category": "Seating",
+      "subtitle": "dining chair",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ]
+    }
+  ],
+  "coffee_tables": [
+    {
+      "id": "1PfsqbJazUF",
+      "name": "Pc table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "uxIo5ge0pw",
+      "name": "Standing Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "o8tTxLfAJZ",
+      "name": "Maker's Desk 📐",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "EtJlOllzbf",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "b7PfwOuvF99",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "6bOTntCJyyK",
+      "name": "Cozy Kitchen",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "78E_8uFV0lq",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "24I9X8aeWTR",
+      "name": "Workbench",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "ISpMh81QGq",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3D3gZ5K90sz",
+      "name": "Table Lamp",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "7Z0bva7ec1s",
+      "name": "Adjustable Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8Z4yYj39NWS",
+      "name": "Drafting Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "33rYrxjRX5g",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "5qMpo1d61bW",
+      "name": "Big table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "66i_WBdHAN5",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "cZltkfbEKS8",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bw5mWRMaJsR",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "Wtd7rX7DGl",
+      "name": "Shelf",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "jSqGy8V0MQ",
+      "name": "Market Stalls",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "cltBiO5aHop",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8ifQ8a92xw_",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "aQ10z9yZkjG",
+      "name": "Small Artists Stool",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bRbRiwVaSUC",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "aukWXD-AwKu",
+      "name": "Tv stand",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "58zA8yry4qr",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "61749QyJUoo",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4i_KehfD3z1",
+      "name": "Chair",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "15B0ihXkg3C",
+      "name": "Bookshelf",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "sbQBUrzZb6",
+      "name": "Kitchentable Sink La",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4ZM-BjvyRAW",
+      "name": "Chair",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bI7aNQEm2Fq",
+      "name": "Wine Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "74tXfxoDB9b",
+      "name": "Little Bookcase",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3v07gbyeiSF",
+      "name": "Dresser",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4QKlmmd0v2b",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "eNaIViK-eKo",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "LE1oxmKx1f",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "b8uN4cUxVrc",
+      "name": "Bookshelf",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "aFwNuRNmcO5",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "3aAw-c_7gkO",
+      "name": "shelf",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "cu6YTWSmJ4p",
+      "name": "Study table by window",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "4O2XeSYYnvM",
+      "name": "Table tennis table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "6MoOyPtetL",
+      "name": "Couch Large",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "1kwsjhpY84",
+      "name": "L Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "asZ_nKHursY",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "VJZZW37Vsk",
+      "name": "Watch Tower",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "obMPe0AheB",
+      "name": "Couch",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "cztQY06tVj_",
+      "name": "Kitchen table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "8HyHn6oFW1P",
+      "name": "Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "hts7l0NZxW",
+      "name": "Market Stand",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "9CwQ8V3hdd",
+      "name": "Gallows",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "dO469Hvi0oY",
+      "name": "Nightstand / Bedside Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "43TvmN6EHnY",
+      "name": "Writing Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "7zuvXWL0v7f",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "mWgQ94zhDZ",
+      "name": "Couch Medium",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "XpysaEDXJQ",
+      "name": "Bunk Bed",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "bcKqTXlGgTu",
+      "name": "Bar Table",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "fFfoi1LNKY",
+      "name": "Couch Medium",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "KWaAZIDK9F",
+      "name": "Table Big",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "maMILE0taC",
+      "name": "Executive Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    },
+    {
+      "id": "7ban171PzCS",
+      "name": "Desk",
+      "bucket": "coffeeTable",
+      "category": "Tables",
+      "subtitle": "coffee table",
+      "rooms": [
+        "living"
+      ]
+    }
+  ],
+  "storage": [
+    {
+      "id": "1dVmBwKgEa5",
+      "name": "Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "a5U8EzKX1ax",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0PvHZr0lJp_",
+      "name": "Stereo rack main",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b7PfwOuvF99",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dlVBCMiaGw2",
+      "name": "Diner",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "70n22Lhssat",
+      "name": "Woonkamerkast",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "78E_8uFV0lq",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7Kt95WBY00t",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "exXhc1QaEVM",
+      "name": "Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2cUYsKvuN2y",
+      "name": "Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cdne0uL-l_0",
+      "name": "Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "oUkHO0kbQt",
+      "name": "Structure",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "Wtd7rX7DGl",
+      "name": "Shelf",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0Eho5cIeyjL",
+      "name": "Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0NOoJkllvPB",
+      "name": "mixed rack",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bNqhcgTSc_E",
+      "name": "Toolbox",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "f_y9TYZuAad",
+      "name": "drawer",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "15B0ihXkg3C",
+      "name": "Bookshelf",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bjJ2S3Lgur_",
+      "name": "Breakfast Cactus",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3v07gbyeiSF",
+      "name": "Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0llPshLCFpl",
+      "name": "Wine Rack",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0K05lwk9caj",
+      "name": "Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b8uN4cUxVrc",
+      "name": "Bookshelf",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3oeWhexXe8",
+      "name": "Wide Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cROzumyvH_4",
+      "name": "Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3aAw-c_7gkO",
+      "name": "shelf",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "fpJR5V04e0",
+      "name": "Fridge",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1I5WB-lrTk4",
+      "name": "Bureau",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8a1t4C7F5_q",
+      "name": "Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "WFamvYkH6t",
+      "name": "Drawer",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cztQY06tVj_",
+      "name": "Kitchen table",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bbvkcYiPdR8",
+      "name": "Wardrobe",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "BWgx6mJnAF",
+      "name": "Large Wardrobe",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dO469Hvi0oY",
+      "name": "Nightstand / Bedside Table",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3um_R3zPdkZ",
+      "name": "Wide Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "43TvmN6EHnY",
+      "name": "Writing Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dCGrZOCk4mY",
+      "name": "Chest with drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7zuvXWL0v7f",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b9OtOtxj8Gk",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cR4FE3BpAPJ",
+      "name": "Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2Gc9faNtDcC",
+      "name": "Control Panel",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "tSnCg8DhcP",
+      "name": "Small Wardrobe",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7TegTC5DiEH",
+      "name": "Coat rack",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7ban171PzCS",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bjHo_aDTOas",
+      "name": "Desk",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "ZTmoGMbwPo",
+      "name": "Medium Wardrobe",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "OtYtk8IbjP",
+      "name": "Lingerie Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cp6KFmnPnnn",
+      "name": "Display Case",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6ijQclm8jxw",
+      "name": "server rack",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6yo90zr_4Z_",
+      "name": "Chest",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "DO6AMMTYVI",
+      "name": "Bookcase Closed",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "w0ZNDRx97W",
+      "name": "Drawers Double Door Bas",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1b_2yTENhcx",
+      "name": "Drawer handle",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "gZpZXM2NtQ",
+      "name": "Bachelor Dresser",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4ONzmE70Lnx",
+      "name": "Cutting Board",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4_NDsWijgCf",
+      "name": "Stereo furniture",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dBumzYGJzUG",
+      "name": "Desk / Shelves",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "CBUx8ZMVAO",
+      "name": "Counter Doors",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7dcTIks23j",
+      "name": "Counter Drawers",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9oZP4harYcp",
+      "name": "Cubicle",
+      "bucket": "storage",
+      "category": "Storage",
+      "subtitle": "cabinet",
+      "rooms": [
+        "living",
+        "bedroom"
+      ],
+      "wallSnap": true
+    }
+  ],
+  "shelving": [
+    {
+      "id": "bTW-JBBRqvp",
+      "name": "ASW Stereo Rack 1",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "a5U8EzKX1ax",
+      "name": "Desk",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0PvHZr0lJp_",
+      "name": "Stereo rack main",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5COCzyz489J",
+      "name": "Plants - Assorted shelf plants",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b7PfwOuvF99",
+      "name": "Desk",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "70n22Lhssat",
+      "name": "Woonkamerkast",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dcjkb_jTZXF",
+      "name": "Wooden Rack",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5qD-9AvW0eh",
+      "name": "Shop",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "78E_8uFV0lq",
+      "name": "Desk",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "16BGcazhzT2",
+      "name": "Bookshelves combined",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7Kt95WBY00t",
+      "name": "Desk",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "TvXpjtD2nk",
+      "name": "Storage shed",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "exXhc1QaEVM",
+      "name": "Drawers",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3Bq6ZipNeK9",
+      "name": "Book",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "7pKc9ejEUvn",
+      "name": "Bench",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "5c0XBtFI9C2",
+      "name": "Bench",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "oUkHO0kbQt",
+      "name": "Structure",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "JrFL3mLOKg",
+      "name": "Storage Shed",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2Ipd1K9479q",
+      "name": "Storage Crate",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "66i_WBdHAN5",
+      "name": "Table",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0mqjLo6Zuu1",
+      "name": "Jar",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8G2I4M-QVEf",
+      "name": "Books on Bookshelf",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "RfSBvgcZUD",
+      "name": "Chest",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "9iHHeuCN3wT",
+      "name": "Stand",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "vXaxy7ortM",
+      "name": "Chest",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0NOoJkllvPB",
+      "name": "mixed rack",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "d9k1tf_HpUV",
+      "name": "Wooden Crate Stool",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2euDqAnJpQn",
+      "name": "broken bookshelf",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "6QuAe-X7WG1",
+      "name": "Hat Rack",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "YyAS0OHd4i",
+      "name": "Wood Chest",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8kjEXzHC0S",
+      "name": "Chest Open",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aukWXD-AwKu",
+      "name": "Tv stand",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "fr49PGsXs0x",
+      "name": "Plates",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "58zA8yry4qr",
+      "name": "Desk",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "f_y9TYZuAad",
+      "name": "drawer",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "l7bDe7ak6j",
+      "name": "Cart",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "OD78iJOQoN",
+      "name": "Shelves",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "aMjE4LE65Ae",
+      "name": "Barn",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "SfJtdV8GDr",
+      "name": "Crate",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "74tXfxoDB9b",
+      "name": "Little Bookcase",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3v07gbyeiSF",
+      "name": "Dresser",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0llPshLCFpl",
+      "name": "Wine Rack",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0KXrEsCg4K1",
+      "name": "Wooden Office Chair",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "0K05lwk9caj",
+      "name": "Dresser",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "b8uN4cUxVrc",
+      "name": "Bookshelf",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "bTE0AQSZss",
+      "name": "Chest",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "roR5x7nDJB",
+      "name": "Make Up Pallete",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3nle0xL2QDP",
+      "name": "Shop",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "2827m06VfIA",
+      "name": "Floor Monitor",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "O72u4Drp8k",
+      "name": "Chest",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cROzumyvH_4",
+      "name": "Drawers",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "3aAw-c_7gkO",
+      "name": "shelf",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "4BqG9kDkQr4",
+      "name": "End Table",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1dh0EFL5gl",
+      "name": "Pickup Crate",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "ablVQH8EsFX",
+      "name": "Stand",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "VJZZW37Vsk",
+      "name": "Watch Tower",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "1-U0qgqSDp_",
+      "name": "Jar Shelf",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "cztQY06tVj_",
+      "name": "Kitchen table",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "dfbQYPt1EHl",
+      "name": "Rectangular Christmas Gifts",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    },
+    {
+      "id": "8HyHn6oFW1P",
+      "name": "Table",
+      "bucket": "shelving",
+      "category": "Storage",
+      "subtitle": "shelving unit",
+      "rooms": [
+        "living",
+        "study"
+      ],
+      "wallSnap": true
+    }
+  ]
+}

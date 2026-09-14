@@ -1,0 +1,153 @@
+[
+  {
+    "assetId": "polyhaven:sofa_02",
+    "name": "Sofa 02",
+    "category": "Seating",
+    "footprint": {
+      "w": 1.807,
+      "d": 0.818
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/polyhaven/sofa_02.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/sofa_02.png?width=256&height=256&v=5c7e6c29",
+    "brand": "Poly Haven",
+    "subtitle": "sofa",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "polyhaven:modern_arm_chair_01",
+    "name": "Modern Arm Chair 01",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.987,
+      "d": 0.82
+    },
+    "realModel": "/furniture/polyhaven/modern_arm_chair_01.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/modern_arm_chair_01.png?width=256&height=256&v=f0268ac6",
+    "brand": "Poly Haven",
+    "subtitle": "armchair",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "polyhaven:Ottoman_01",
+    "name": "Ottoman 01",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.885,
+      "d": 0.621
+    },
+    "realModel": "/furniture/polyhaven/Ottoman_01.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/Ottoman_01.png?width=256&height=256&v=9aff473b",
+    "brand": "Poly Haven",
+    "subtitle": "ottoman",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "polyhaven:dining_chair_02",
+    "name": "Dining Chair 02",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.576,
+      "d": 0.434
+    },
+    "realModel": "/furniture/polyhaven/dining_chair_02.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/dining_chair_02.png?width=256&height=256&v=efb5662a",
+    "brand": "Poly Haven",
+    "subtitle": "dining chair",
+    "rooms": [
+      "dining",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "polyhaven:modern_coffee_table_01",
+    "name": "Modern Coffee Table 01",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.202,
+      "d": 0.6
+    },
+    "realModel": "/furniture/polyhaven/modern_coffee_table_01.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/modern_coffee_table_01.png?width=256&height=256&v=29e2a5b6",
+    "brand": "Poly Haven",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "polyhaven:modern_coffee_table_02",
+    "name": "Modern Coffee Table 02",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.2,
+      "d": 1.199
+    },
+    "realModel": "/furniture/polyhaven/modern_coffee_table_02.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/modern_coffee_table_02.png?width=256&height=256&v=e3394f72",
+    "brand": "Poly Haven",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "polyhaven:drawer_cabinet",
+    "name": "Drawer Cabinet",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.141,
+      "d": 0.488
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/polyhaven/drawer_cabinet.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/drawer_cabinet.png?width=256&height=256&v=7f8d82f5",
+    "brand": "Poly Haven",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "polyhaven:steel_frame_shelves_02",
+    "name": "Steel Frame Shelves 02",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.593,
+      "d": 0.502
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/polyhaven/steel_frame_shelves_02.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/steel_frame_shelves_02.png?width=256&height=256&v=15edc188",
+    "brand": "Poly Haven",
+    "subtitle": "shelving unit",
+    "rooms": [
+      "living",
+      "office"
+    ]
+  },
+  {
+    "assetId": "polyhaven:wooden_display_shelves_01",
+    "name": "Wooden Display Shelves 01",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.078,
+      "d": 0.372
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/polyhaven/wooden_display_shelves_01.glb",
+    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/wooden_display_shelves_01.png?width=256&height=256&v=9d083d6d",
+    "brand": "Poly Haven",
+    "subtitle": "shelving unit",
+    "rooms": [
+      "living"
+    ]
+  }
+]
