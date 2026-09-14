@@ -1,0 +1,4106 @@
+{
+  "beds": [
+    {
+      "uid": "a2b2645701c94fa49e65661806219c6b",
+      "name": "Messy bed 2.0 (with wall mounted backboard)",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 1436
+    },
+    {
+      "uid": "52da52f882e242aba646980e9757ef9f",
+      "name": "bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 862
+    },
+    {
+      "uid": "b49dc1778b0b430cabdbad327d6e2e0d",
+      "name": "Messy Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 860
+    },
+    {
+      "uid": "679c0f112f894623917b0599e9bb9d17",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 700
+    },
+    {
+      "uid": "b8c16d4b69f64335b46379b119b102b4",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 353
+    },
+    {
+      "uid": "d4f3bf907138447cbdcee83f838228d5",
+      "name": "Bed 01",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 339
+    },
+    {
+      "uid": "0583ee84a1be4e91b69503a6ea50e48b",
+      "name": "Bunk bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 300
+    },
+    {
+      "uid": "21234354d78f4a53a5786e1f5a5e764b",
+      "name": "Bumble Bee Hover Craft",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 270
+    },
+    {
+      "uid": "16070c2e6faa405391ab7ada8bb0aed6",
+      "name": "Poliform_Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 248
+    },
+    {
+      "uid": "6ee7831cc521471384191baea365e211",
+      "name": "King Floor Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 216
+    },
+    {
+      "uid": "b7d8c165ab3746ccaff5425de78fda7d",
+      "name": "Modern Pyramid End Table",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 183
+    },
+    {
+      "uid": "352f853f03194e9dac551e2c8afe7d1a",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 162
+    },
+    {
+      "uid": "94478363372f4ab592b338778b01549d",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 157
+    },
+    {
+      "uid": "8438f2be1e53416d84cc358f15dedff9",
+      "name": "Bed Mattress_20_MB",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 153
+    },
+    {
+      "uid": "dde32841bc68419eb38d78d0ed14cac9",
+      "name": "Minimal Floor Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 135
+    },
+    {
+      "uid": "0b7d468d4f7848faa4ace6b8d058254c",
+      "name": "BED",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 134
+    },
+    {
+      "uid": "aebc9bae5a4d459494d1e5de76658d5a",
+      "name": "Messy Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 134
+    },
+    {
+      "uid": "c505ffffc1524865ba63af837346f1f7",
+      "name": "Double Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 108
+    },
+    {
+      "uid": "77887644a7ad4fd9a13f3b3f6ff21262",
+      "name": "Bed Side Table with lamp",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 98
+    },
+    {
+      "uid": "62b1c8bd97124db78478f37b01d51d45",
+      "name": "Source Engine beds",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 95
+    },
+    {
+      "uid": "39d113d5868d473caf71e928d1d313a6",
+      "name": "Queen-bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 87
+    },
+    {
+      "uid": "97e361e8beda4112ac5b1b5bcd388cdf",
+      "name": "Soho bed - 3D Model",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 77
+    },
+    {
+      "uid": "5610453d90754b6d8ec982bae336f94e",
+      "name": "Modern Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 71
+    },
+    {
+      "uid": "5633ff2f729142bebf6b304118647f6f",
+      "name": "bed.0101",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 61
+    },
+    {
+      "uid": "d3aeb724e09c44af96ef09cd20885220",
+      "name": "Dark Modern Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 56
+    },
+    {
+      "uid": "52151e6a6bbc47889330701253e1f6bb",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 54
+    },
+    {
+      "uid": "44317e3732c0453fa8bd8b814359967c",
+      "name": "Bed frame low poly | blockbench",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 51
+    },
+    {
+      "uid": "bd0af44c63464589b865cbf3efbea5e7",
+      "name": "mattress   the bed sleep",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 51
+    },
+    {
+      "uid": "f557d0eb98ac40a3b7ab95945bc08620",
+      "name": "Reclining Topless Woman on White Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 51
+    },
+    {
+      "uid": "e55d174b2f064deeb05c5da71b850465",
+      "name": "Twin Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 50
+    },
+    {
+      "uid": "481a070609a3479bab40e9e23eb7e2c8",
+      "name": "IKEA Mandal Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 47
+    },
+    {
+      "uid": "5dba679f351f47de9304ad5fdcd46116",
+      "name": "Indian Bed (Charpayi)",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 46
+    },
+    {
+      "uid": "12958ff91fd04741bbfe4c2867605b0b",
+      "name": "Modern Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 42
+    },
+    {
+      "uid": "b547d81073b64d3e97200fd3ae9a74af",
+      "name": "Bed - Sample",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 42
+    },
+    {
+      "uid": "e7cbcb10bd2843cf97786ee8266a3ddc",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 41
+    },
+    {
+      "uid": "c713701eecbd479ea5ae7918de5de2f2",
+      "name": "Modern Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 35
+    },
+    {
+      "uid": "ef79709742ec46858b3337a8e0ca8ad9",
+      "name": "Modern double bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 32
+    },
+    {
+      "uid": "20c5de82a3fc41a1a6e2194277b6736f",
+      "name": "Double Bed -  Modern contemporary",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 32
+    },
+    {
+      "uid": "fb8e1620112746549c878e6b36445446",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 32
+    },
+    {
+      "uid": "cbe6e0dcc10a414a84acc5cc08171b87",
+      "name": "Chelsea bed with storage - 3D Model",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 32
+    },
+    {
+      "uid": "575b97005b8f41e6bbc841a86bd0beee",
+      "name": "Cosy Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 31
+    },
+    {
+      "uid": "1fa7d1844949448b8b8abaf4183126c5",
+      "name": "Dorm Floor Mattress With Sheets [No Texture]",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 31
+    },
+    {
+      "uid": "c7bea79b8c7a4b7c9ec5eadfa2529b9a",
+      "name": "Single wooden bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 31
+    },
+    {
+      "uid": "9e5b678a48054633ab9faa6ae834b3bc",
+      "name": "Stack of Pink Mattresses bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 29
+    },
+    {
+      "uid": "034e868e67a94e11bc031581837d6859",
+      "name": "Single Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 28
+    },
+    {
+      "uid": "df64476b23824a049614adda81d42e67",
+      "name": "BED 30",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 28
+    },
+    {
+      "uid": "748b4dc07e4a4112989e8b6faa2b5ac0",
+      "name": "MERLIN -5' x 9' - Queen bed -920lbs DRY WEIGHT",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 27
+    },
+    {
+      "uid": "8a6e4f02523d41bea9d126085f3eaf92",
+      "name": "Bed Full Size",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 25
+    },
+    {
+      "uid": "53acd9ae99e34bf69aea420121bc5b24",
+      "name": "King size bed 3d model",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 24
+    },
+    {
+      "uid": "ea87e015343148039312352a1361f736",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 23
+    },
+    {
+      "uid": "f92ebb77ec8249f8bb53cb9f256f55cc",
+      "name": "C Arm Neurosurgery Operating Table",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 22
+    },
+    {
+      "uid": "984c54bdfdf640fda57a66860958a687",
+      "name": "Black wooden bed frames",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 22
+    },
+    {
+      "uid": "6ef1dc7194294aeebe03f4bf32326c87",
+      "name": "Indian Queen Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 22
+    },
+    {
+      "uid": "034ec1a3141b4b4286beead7560ef986",
+      "name": "Bed Model 002",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 22
+    },
+    {
+      "uid": "327ac18ced754bada81d83d548b3e8a2",
+      "name": "Twin Over Twin Bunk Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 21
+    },
+    {
+      "uid": "7333ebee2cb5475d8c70c7e830d72db3",
+      "name": "Marine mandala camp site",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 21
+    },
+    {
+      "uid": "322ba3a159a845c7b7642467e23fcc2d",
+      "name": "Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 19
+    },
+    {
+      "uid": "2beac70ed3694254b1b294f088aed5ae",
+      "name": "2014 Chrysler 200S",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 19
+    },
+    {
+      "uid": "39a6bcaf391949f0be4504b0325d0157",
+      "name": "Modern double bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 18
+    },
+    {
+      "uid": "86fc8fa72fe14ece9fca3d4c9c33445f",
+      "name": "Chair",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 18
+    },
+    {
+      "uid": "74a15c93277c4a8485bdd0fa8da8550b",
+      "name": "Workhorse 3D Printer",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 18
+    },
+    {
+      "uid": "6aee6ef4ff0f4e5681f1054a77c702cb",
+      "name": "Master's Bed Black",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 18
+    },
+    {
+      "uid": "629b78957c5f442b875755c5cd3bcf57",
+      "name": "Queen Sized Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 17
+    },
+    {
+      "uid": "4b0e5a3bd07447aaa7e042112defb6dc",
+      "name": "White Bed Frame With Mattress and Bedding",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 16
+    },
+    {
+      "uid": "27425c1e783c4210aec2be5ee61a73ad",
+      "name": "Bed - v1",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 14
+    },
+    {
+      "uid": "ae7be3683b034d75a41589a4a28f6df2",
+      "name": "Platform Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 13
+    },
+    {
+      "uid": "eeafb24592f249f08f9576c2511272d8",
+      "name": "Game Ready - Double Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 13
+    },
+    {
+      "uid": "3688d39bb10842868646a672ef57e261",
+      "name": "Double Bed [Free]",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 13
+    },
+    {
+      "uid": "2e4c65b24e144d89952ec615a79ee5f9",
+      "name": "Candycloud - bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 12
+    },
+    {
+      "uid": "4a799b559aec406eb10ed8fcc913c43a",
+      "name": "king bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 12
+    },
+    {
+      "uid": "8aeacdcd0de84070b2ea64296ddba474",
+      "name": "Bed Sweet",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 11
+    },
+    {
+      "uid": "88be8ad75f274c7b8da4a54fef3aaac9",
+      "name": "Twin Bed 2K",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 11
+    },
+    {
+      "uid": "869b66c8ac594dfebd69d13bc9d48a5b",
+      "name": "Daybed with metal frame",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 11
+    },
+    {
+      "uid": "2e81ad23367f4e2ab555d1f3f5a91d34",
+      "name": "'26 FREEDOM FLIGHT XL - 5ft x7ft",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 11
+    },
+    {
+      "uid": "23eaf07c17f946b788c39f0188b3f4f6",
+      "name": "Basic Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 11
+    },
+    {
+      "uid": "cf63f6cc00d44b7291e8dc868b6137b2",
+      "name": "Modern Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 10
+    },
+    {
+      "uid": "597da749e08a46ccaa2802a8366d76be",
+      "name": "Low poly single bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 10
+    },
+    {
+      "uid": "e4e57f507ac148ddbcf7b1edee42fc25",
+      "name": "Beds - King Size Mattress",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 10
+    },
+    {
+      "uid": "c7e0c3672f314e29ae55f457e300d7cc",
+      "name": "Mattress",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 10
+    },
+    {
+      "uid": "381dab8401274cea9ffda2c8451eae7b",
+      "name": "Inflatable Mattress",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 10
+    },
+    {
+      "uid": "8e40d7ab938f4e9cbf9aec8950951c48",
+      "name": "Coffin Platforms Sculpture",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 9
+    },
+    {
+      "uid": "548a583998d447998c33f20e948516b5",
+      "name": "Gatlin Archaeological Site",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 9
+    },
+    {
+      "uid": "f3794befdba94464878be9d395c7a0ff",
+      "name": "King-size bed- 大床",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 9
+    },
+    {
+      "uid": "730d615e84dd49a5b1b1a4c4e0256542",
+      "name": "Baby bed with mattress guard",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 9
+    },
+    {
+      "uid": "9bcbb93e9818426f8c501a52be1af166",
+      "name": "Iron Bed Royce",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 8
+    },
+    {
+      "uid": "f3b896148c7846298bd921c9efa2d8ce",
+      "name": "Bed (Кровать)",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 8
+    },
+    {
+      "uid": "15e3daf0b0d043f39e2605e344e9ac32",
+      "name": "Minecraft Bee | Bare Bones",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 8
+    },
+    {
+      "uid": "7c56b33a7f304addb1961b1db55329bc",
+      "name": "Modern Bed",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 7
+    },
+    {
+      "uid": "fa22f5c3a45242469796da3842a2a3a3",
+      "name": "Nursery Furniture",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 7
+    },
+    {
+      "uid": "a0525f3667d540b8819c4b3a5d0e09b2",
+      "name": "Diamond Head",
+      "bucket": "bed",
+      "category": "Beds",
+      "subtitle": "bed",
+      "rooms": [
+        "bedroom"
+      ],
+      "wallSnap": true,
+      "likeCount": 7
+    }
+  ],
+  "office_chairs": [
+    {
+      "uid": "675f34f7304e4d92812a41e9750539aa",
+      "name": "Office Chair Modern",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 625
+    },
+    {
+      "uid": "41973aa1808d4a13b84c24497fc77c63",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 484
+    },
+    {
+      "uid": "af2f07d06f6349158c1d24d87f5ceb95",
+      "name": "Office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 460
+    },
+    {
+      "uid": "b228a29fa84544c2be501c295653ffe7",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 436
+    },
+    {
+      "uid": "b7a7bf47bdb241d1ba52acd7ecf2f0e8",
+      "name": "Office Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 409
+    },
+    {
+      "uid": "a7fefb5dde954c84896949246dde5be6",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 403
+    },
+    {
+      "uid": "fa2d5243f916407a93db7efcaae75e0d",
+      "name": "High-Poly PBR Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 380
+    },
+    {
+      "uid": "cd5ef0305d8545dd8cd934ebb99cf7d5",
+      "name": "Ergonomic mesh office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 261
+    },
+    {
+      "uid": "9f95348e7bb74f8abbce55344a5ce70b",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 239
+    },
+    {
+      "uid": "f353bbc60e6747de83fd0c616fd970b3",
+      "name": "Office chair (LOW-POLY)",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 216
+    },
+    {
+      "uid": "db03012c3c484314a480b4137da8eb30",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 189
+    },
+    {
+      "uid": "7fa2d1fd9d6a437aa094fec586943f9e",
+      "name": "Modern Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 187
+    },
+    {
+      "uid": "b416b2fa9f634fe0a881166a72d0f0d2",
+      "name": "Office Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 178
+    },
+    {
+      "uid": "b8d24c146a6844788c0ba6f7b135e99e",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 160
+    },
+    {
+      "uid": "f4c3a936dae745e08405cf2fd820b89c",
+      "name": "office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 158
+    },
+    {
+      "uid": "aee7ef0361b848d6b66bd3588fc2190c",
+      "name": "Leather Office Chair - Low Polygon / Game Ready",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 158
+    },
+    {
+      "uid": "3ab97073cb804c928a53880cd00572a5",
+      "name": "M Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 154
+    },
+    {
+      "uid": "e0b8d8dfcf3c49119da650186df8779b",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 153
+    },
+    {
+      "uid": "69208f9465c346308a2bf423c7e5b8f6",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 142
+    },
+    {
+      "uid": "ff09a4d302de4a2e803eb125a0f91600",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 137
+    },
+    {
+      "uid": "87a8de3461bf44848f3629fa8a8dcd68",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 134
+    },
+    {
+      "uid": "448bfab6a5bb4d94ba439a50ddc89a29",
+      "name": "Low Poly Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 133
+    },
+    {
+      "uid": "335cb5fab0814c968155650ca93f6fc1",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 121
+    },
+    {
+      "uid": "622d4d7e7fcd449a9646626b46127749",
+      "name": "office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 114
+    },
+    {
+      "uid": "792bb7e8e97b4f6abf2fe5c3c6a24b38",
+      "name": "Leather Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 98
+    },
+    {
+      "uid": "6ef28755c9214659b3bbc92efeb3e636",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 96
+    },
+    {
+      "uid": "e9c7174ed9a94c25b007348f8a18a53a",
+      "name": "office counter desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 88
+    },
+    {
+      "uid": "5cd859cd7b9a430db0195af2ba89949b",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 84
+    },
+    {
+      "uid": "99df535ae9b848708f08a88121b9120b",
+      "name": "Student desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 76
+    },
+    {
+      "uid": "f502b34eb6ae497bbcb154fe15657aa8",
+      "name": "SILLA DE ESCRITORIO (desk chair)",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 69
+    },
+    {
+      "uid": "ca32a8d9d85e4a6c9e9b32a89a5c148a",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 68
+    },
+    {
+      "uid": "88e43eb5dc55498dace0bda014603b3d",
+      "name": "Executive Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 68
+    },
+    {
+      "uid": "869f53e777524f1289bfe6eefbc88fad",
+      "name": "Desk chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 64
+    },
+    {
+      "uid": "6c00ba40776b41529d3075f950558822",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 63
+    },
+    {
+      "uid": "e5719afff2464e5e810115532e16cc05",
+      "name": "Lowpoly Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 62
+    },
+    {
+      "uid": "45b8be2a4ee343a2b238e20d64704f4c",
+      "name": "Free Desk or Gamer Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 62
+    },
+    {
+      "uid": "fd1b5e00ede34a0886ead5299f647a0a",
+      "name": "Child's Desk Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 58
+    },
+    {
+      "uid": "b33acf220b7a4ce78f04396c8fddf1f4",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 57
+    },
+    {
+      "uid": "a877bd994ed5472480ec8f04ddd52106",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 56
+    },
+    {
+      "uid": "d6d369b2d38e4275a1b4c3b16bda067b",
+      "name": "MUSKONGE_N24T6N23S2001",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 56
+    },
+    {
+      "uid": "5f8767d751c14b88891f71ec073cb31c",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 54
+    },
+    {
+      "uid": "ea5f1287566f4371aac797351dd84655",
+      "name": "SUONI OFFICE CHAIR",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 52
+    },
+    {
+      "uid": "5dbc37f1b0494a74bcbe00f7a2662783",
+      "name": "Office Chair - Swivel chair - Bar chair - Office",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 51
+    },
+    {
+      "uid": "2206e982ea5f40b5be49390308de2db3",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 51
+    },
+    {
+      "uid": "59c1fd83b17842bbb7000a1267da4f23",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 50
+    },
+    {
+      "uid": "f2e9e49238974442b139262536cd19ff",
+      "name": "MUSKONGE_N24T6N23S3007",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 49
+    },
+    {
+      "uid": "ca9d09ae99ec4b3aaa2e0eb1522982ef",
+      "name": "Black Leather Office Chair Free",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 44
+    },
+    {
+      "uid": "4f6c2ce177ff47168c447756b9ed2e82",
+      "name": "Herman Miller - Eames Aluminum Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 38
+    },
+    {
+      "uid": "07dd49275fc84617b5c6d3bd6a7d30a1",
+      "name": "Desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 35
+    },
+    {
+      "uid": "7afad442bdd04ef0841f0100cd989be2",
+      "name": "Modern Chair 3D Model",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 33
+    },
+    {
+      "uid": "d5c97f124faa4e91acc045db07138f94",
+      "name": "The office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 31
+    },
+    {
+      "uid": "3775963c1d6d4ba1b37956a4fb423add",
+      "name": "Chair Low Poly",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 31
+    },
+    {
+      "uid": "680156e643eb441994fd3ab07840bd4d",
+      "name": "Simple Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 31
+    },
+    {
+      "uid": "f9576f11ef0f42abb5562037eccac15d",
+      "name": "Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 30
+    },
+    {
+      "uid": "2635389a81df496182569c824f9b8d99",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 30
+    },
+    {
+      "uid": "211585f6e1bd43549c3f4bf04d05b362",
+      "name": "MUSKONGE_N24T6N23S3012",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 30
+    },
+    {
+      "uid": "3c68efbf102d498cb60377d4151ddc00",
+      "name": "Office Chair - SCP",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 28
+    },
+    {
+      "uid": "667243d6b7714dd28fea48a07915fdc4",
+      "name": "Dock-01 Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 26
+    },
+    {
+      "uid": "749f7d62d2504912b40377f793ae3dae",
+      "name": "office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 25
+    },
+    {
+      "uid": "b78e87f34bbc45f297175dd66ece69eb",
+      "name": "Ergonomic office chair with armrests",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 24
+    },
+    {
+      "uid": "ba29fbe8596f4b30976e300dd20a37ba",
+      "name": "Chair Office 3",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 24
+    },
+    {
+      "uid": "c8815771bd294073b3fbc60fbc1970c8",
+      "name": "Sophisticated Smooth Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 23
+    },
+    {
+      "uid": "9e359199c1fa46fa8dbf4483eb6f4627",
+      "name": "Building_[Desk Chair]",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 23
+    },
+    {
+      "uid": "3177fdf2630c4922a43fecb876d96e1d",
+      "name": "Lowpoly Desktop Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 23
+    },
+    {
+      "uid": "7c7be6d5b07b4f7c8a779e0eda6dc544",
+      "name": "Executive Office Furniture Manager Set 3D Model",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 23
+    },
+    {
+      "uid": "a9910ef915ac4c6c954681c7d0e422f3",
+      "name": "Verner Panton Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 21
+    },
+    {
+      "uid": "c8bcaf6e923845e8a30f8ac9ceeb5997",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 21
+    },
+    {
+      "uid": "6535211a46334cd081ae236e61d84577",
+      "name": "Office Chair Black&White",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 20
+    },
+    {
+      "uid": "dc50d4b3522145e2afdee504bd332726",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 19
+    },
+    {
+      "uid": "181e274c519f4ca8805127ac547a2b89",
+      "name": "Swivel chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 19
+    },
+    {
+      "uid": "976e7673eff24fb7b8bd41d23145f03d",
+      "name": "MUSKONGE_N24T6N23S1005",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 18
+    },
+    {
+      "uid": "d297d855cd1442609383d1cd6d3e186e",
+      "name": "Victoria Noir, futuristic executive",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 18
+    },
+    {
+      "uid": "fb57ac474adf4960ab61d77560a49202",
+      "name": "Desk ＆ Chair (Low Poly)",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 17
+    },
+    {
+      "uid": "c44146be33d142e9ab1a03f027b67c36",
+      "name": "IKEA Swivel chair, Bomstad black (PBR)",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 17
+    },
+    {
+      "uid": "71b087d285d6464da1c8cf4d56f7db4c",
+      "name": "Modern chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 15
+    },
+    {
+      "uid": "cd0a4338009f406db43c58dc558345b5",
+      "name": "Minimal Desk Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 15
+    },
+    {
+      "uid": "f26e2c34e443444fa4decf2317cfc294",
+      "name": "Swivel chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 15
+    },
+    {
+      "uid": "4384aef2107949569305d68f613a9213",
+      "name": "Season Comfort Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 15
+    },
+    {
+      "uid": "a2e68b08f13f4531a167997d1e698252",
+      "name": "Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 13
+    },
+    {
+      "uid": "2577c08ae84b4f1f8adfb778f4bf59c3",
+      "name": "Chair And Desk BB+",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 13
+    },
+    {
+      "uid": "72aac7ce790d47bd91c7151d8ca3329a",
+      "name": "Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 13
+    },
+    {
+      "uid": "f137cbbefa5e4dba90d1f0bd42e1fdc0",
+      "name": "Modern Office Chair / Game Ready",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 13
+    },
+    {
+      "uid": "53ea3a4fb20b460993c74bf224cdd9a9",
+      "name": "Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 12
+    },
+    {
+      "uid": "1ba519a06b954e2487b6bdd96cd2af38",
+      "name": "Modernist chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 12
+    },
+    {
+      "uid": "5deeac084b77464ba38e54a319a6dcf4",
+      "name": "Desk chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 11
+    },
+    {
+      "uid": "4f0ac4fecf2841648f167bf851b72d2c",
+      "name": "Desk Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 11
+    },
+    {
+      "uid": "6f14afb27f004401ada4bca484744aa2",
+      "name": "Wooden Desk Chair Realistic",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 11
+    },
+    {
+      "uid": "7be81372707041e88b360d79bfaf6167",
+      "name": "Executives Office Chair 3D",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 11
+    },
+    {
+      "uid": "ec58b4e7c08044209c99e811328232c1",
+      "name": "Chair_Ottoman",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "90203454a6684128833c653c9b932cce",
+      "name": "Bus Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "610cf73e0cd44e8e804f32245ac94007",
+      "name": "3D CHAIR",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "d95510892d7044b394ead8565fadadd3",
+      "name": "desk chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "caf54465bcdc40b9bc2d3199542cf11b",
+      "name": "Desk Chair Valve",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "0a5b0738cefd4aa9a1cf47dffcd908f3",
+      "name": "Tone 01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "f31b8738dec94aa780145e0e8e004967",
+      "name": "study desk",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "da58b78f0c474963ad1cc5af17197e5f",
+      "name": "Black desk chair wheel / chair caster",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "3473e6f1f5ba41a388a57686c91236a1",
+      "name": "Alien Isolation - Computer",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "8c9c42ccd4c24f9ca52f5b5f70be2577",
+      "name": "AeroShell Glide Chair B",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "25f467cc3a3b4a64bb39828c602a8db0",
+      "name": "Chair and Table",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "37d3ec53d17a43db84cd786139b35f81",
+      "name": "Round Chair desk chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "895eae4c1e1b44dfb8fcd32b41c76859",
+      "name": "Desk Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "11161117c2c142bd8307d2c3975ee730",
+      "name": "Ergonomic office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "1d0807752fd1473581cbaebfdc4f97b2",
+      "name": "Wheeljack's Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "7074567942134f69a88a5b0814bd5551",
+      "name": "Desk Chair (not textured)",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "2786c391e9a3463f9e1782c7e5b400e9",
+      "name": "Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "5a5e437560f848aabb00b492c85e5e3e",
+      "name": "Swivel Chair 03",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "ba1a8755c8fd494793a02fac9cd05cdc",
+      "name": "Swivel Chair Avantissimo 02",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "2411e7e6476d46359b66f7f5a841d727",
+      "name": "Office Chair PSX",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "4067fd3c44ec474386479569ef7cf923",
+      "name": "Office Chair | Realistic 3D Furniture Model",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "427327f345414925af3eee7d29dfce6d",
+      "name": "M1086-02 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "3043ef1b109a4fb59c0a220920a4f72b",
+      "name": "Mandy D02 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "b5d07cc4c6b841b8b93070c2fbbe5f6f",
+      "name": "M1083-03 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "c5c9e7e6c8f94783b7151f40f47d475f",
+      "name": "Wassily Chair - Marcel Breuer",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "bb0029ada7ea47be92ada7a1671adac5",
+      "name": "Ergonomic Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "456cb0784d34442ba0fbe8e2f7fcbcd4",
+      "name": "AeroShell Glide Chair W",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "6ce1bfb5363b4f41abc3a6e6345cd876",
+      "name": "Luxury High Chair by MODENESE",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "6bbfaa2ad1394b9ba70a3d1ef721614f",
+      "name": "Swivel Chair 01",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "ffbee76b2f8140a59863cd23d1a0c6a1",
+      "name": "Swivel Chair 05",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "ac3a9f5add59408b8ca944a0ccf1c8bd",
+      "name": "Modern Black Leather Swivel Armchair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "6d7419ed0606441cb02f093c30651d9e",
+      "name": "Office chair (SCAN) - Revopoint Range",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "186b190b66004779be0dd9cd56cccaec",
+      "name": "M1085-01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "af87cdf24f294c9fbc301cf51fe4c6f3",
+      "name": "M1080-01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "cfea6481dafd49a1902604eb9ec0d2d3",
+      "name": "Anto 01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "328cd4c222954ba58eb462e6eb4e1b06",
+      "name": "Mandy D01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "08a4e29e7ca14a1cb047f25b85cb69aa",
+      "name": "Executive Chair model",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "e6bb764ce73e4c4baa3d2a29184b367e",
+      "name": "Table and Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "e4da8dea991b430fa9181b546604bea1",
+      "name": "ASTRIDE Ergofit Ergonomic Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "f707dd536d194b80afd3d59fff9ca008",
+      "name": "Ergonomic Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "210728f5b1ee49598fa9b74f73f3eebd",
+      "name": "Ergonomic Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "aa42e67ec7114044a23ddbc78528ac2f",
+      "name": "Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "4258c5aee39545ad819416d3992cdd83",
+      "name": "Swivel Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "5a6ad48d2f594b56a5d3807f5cb9cb48",
+      "name": "Swivel Chair Avantissimo",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "def53d89122e4a04a19a8ce66f0680c7",
+      "name": "Swivel Chair Avantissimo 04",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "fa7659600033460f85def67f35772466",
+      "name": "Modern Swivel Lounge Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "056050134c4e41609b30b2a613617dc7",
+      "name": "Contemporary Swivel Armchair by MODENESE",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "d842d25e788a4656b15c5451291ce5a4",
+      "name": "Active T01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "2d78c86a2f7747b99f2ff31f3dd72abb",
+      "name": "Porty 02 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "ab25a006b30f4a17a7fdb568d1b4f27d",
+      "name": "Active D02 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "572e5f7387974875bee6c8a73b635a94",
+      "name": "M1086-01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "eef4f4f075af44d9b0e018b3ad77673d",
+      "name": "Mandy T01 office chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "2d9b902c3c8a4e31b47554bb5ef5e742",
+      "name": "Luxury Leather Executive Office Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "f13cca6099554a44b5299fe0451ddfae",
+      "name": "Baxter Marilyn",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "41a8872bb943494ca0a71ac603d1b322",
+      "name": "Silla Ejecutiva (Materiales Editables)",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "a2af80929fab403bb91416007023fa70",
+      "name": "Task Chair A",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "3643b2e6e30642ab81bb363fb616b451",
+      "name": "Nowy Styl Xenium Duo Back Task Chair WRCXB472874",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "60aa0729bd034e47802d6e3ec06d9ea1",
+      "name": "Dining Table and Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "337b23f7a3544c05ad6dbe2b133273a8",
+      "name": "Dining Chair",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "b9c7608700c34df78c28ce8281e2c6f6",
+      "name": "DP3 - HW1 (2) - 10 Drafts",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "0577e44972bb4acdb247781cc86056f3",
+      "name": "Ergonomic Office Chair - High-Quality 3D Model",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "75aedfbdd14044069c9a7aba2f1ff67d",
+      "name": "Swivel Chair 04",
+      "bucket": "officeChair",
+      "category": "Seating",
+      "subtitle": "office chair",
+      "rooms": [
+        "study"
+      ],
+      "likeCount": 2
+    }
+  ],
+  "dining_tables": [
+    {
+      "uid": "1132fa2850a24917892733566bd68e74",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 573
+    },
+    {
+      "uid": "c41a27d7a1b24dc484bc603e1bc2d0ef",
+      "name": "Dining Table Glass",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 523
+    },
+    {
+      "uid": "d2b7e1dcfcc94f9bb015d01aad7e6ee8",
+      "name": "Wooden Table/Chair | Low-Poly | Game-ready",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 409
+    },
+    {
+      "uid": "f852064a2ddb40419f7c764b3cfb0d3e",
+      "name": "dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 324
+    },
+    {
+      "uid": "fe0b6d5339964951b7bc6ad402d8190d",
+      "name": "Litewall Counter Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 278
+    },
+    {
+      "uid": "031dba0a7ef44158b7c3a1186438db64",
+      "name": "wooden coffee table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 251
+    },
+    {
+      "uid": "a28843f21d784fe98cc220ef0d1df478",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 222
+    },
+    {
+      "uid": "ed7d3482ccd24712bb11f4aa779c4354",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 111
+    },
+    {
+      "uid": "86f23ac640434aef8795e3509510ea4f",
+      "name": "Long Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 110
+    },
+    {
+      "uid": "e1b3aba3a64b4017a79b7b824dfccce3",
+      "name": "Round Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 109
+    },
+    {
+      "uid": "6b8f77da04c74ddf9e19acd7499a9966",
+      "name": "Round Glass Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 102
+    },
+    {
+      "uid": "b8690e12278b4fc288061e6bcf74c8c7",
+      "name": "STEEL TABLE",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 101
+    },
+    {
+      "uid": "42b5982a009843888841127980231f3e",
+      "name": "Dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 92
+    },
+    {
+      "uid": "132b635ab00748ab905bbc279497d6d9",
+      "name": "table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 75
+    },
+    {
+      "uid": "0e5894806c7d425e800b9da7bac25638",
+      "name": "Dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 68
+    },
+    {
+      "uid": "3817e6b2eaaa49369580394e3d7faae2",
+      "name": "Krusty Krab Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 66
+    },
+    {
+      "uid": "ed94c79ad6b349d99c74f37399d0eda7",
+      "name": "Large Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 65
+    },
+    {
+      "uid": "c0f6e92135be4206a0b5de58c9d5f336",
+      "name": "Wooden Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 56
+    },
+    {
+      "uid": "69dda709070c48e5b6142ecc9c91fd06",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 55
+    },
+    {
+      "uid": "fa86b35b358d40248cae79b5de8d536a",
+      "name": "restaurant table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 54
+    },
+    {
+      "uid": "4b8427fda53145ca873d73d7668838ef",
+      "name": "Support dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 52
+    },
+    {
+      "uid": "e51789f2d79d4fb0897ba39b3d55dba6",
+      "name": "Round Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 49
+    },
+    {
+      "uid": "9c900f21473b4217b0c564fd940edfc9",
+      "name": "Prison table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 47
+    },
+    {
+      "uid": "36d64a7dfbf0436db74110818021479c",
+      "name": "Round Coffee Table With Wooden Top",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 47
+    },
+    {
+      "uid": "edafa17f987a43f5adbff33652fe7a9c",
+      "name": "Modern Ceiling Light Fixture",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 41
+    },
+    {
+      "uid": "0f4fea76452749b0ac0c5206bd346362",
+      "name": "White Solid Wood Console",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 37
+    },
+    {
+      "uid": "f46aef15d75f4ae2886dd688d6c15c68",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 34
+    },
+    {
+      "uid": "4db08c2a400246e9870961c50c22b25e",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 33
+    },
+    {
+      "uid": "5f09a8417c614c818ca8fa4eef6ca96f",
+      "name": "Dinner Table 002",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 33
+    },
+    {
+      "uid": "9fc06f83f2e04b3298bb6c9335d49e45",
+      "name": "Free Modern Stools",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 32
+    },
+    {
+      "uid": "d6e30b5e17d84e65ae90ce564727487e",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 31
+    },
+    {
+      "uid": "24dcef8d06f2456b82b93da1cf241c99",
+      "name": "Modern Coffee Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 31
+    },
+    {
+      "uid": "5e79b6a15b7143fa8dbf3af5df8d1a29",
+      "name": "Pool Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 30
+    },
+    {
+      "uid": "389cc90cfc3c45d5b5597e493f06edc3",
+      "name": "Dining Table Lowpoly",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 30
+    },
+    {
+      "uid": "21e9c031f3e74612891befaad6e228d3",
+      "name": "square dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 28
+    },
+    {
+      "uid": "e0484718ee1c44468daff403edf896ca",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 23
+    },
+    {
+      "uid": "501f0260492347d1b0038a2a02ee947f",
+      "name": "Dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 23
+    },
+    {
+      "uid": "f69be2ddeac645faaf49977ef569a606",
+      "name": "Mid Century Teak Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 22
+    },
+    {
+      "uid": "8daedeb29bb444f8aaf2640131eed0a9",
+      "name": "Free 3D model 004 - Dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 22
+    },
+    {
+      "uid": "a7fabdf4241845e8b07b8019cee731a9",
+      "name": "Eiffel 32\" Round Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 22
+    },
+    {
+      "uid": "e89be18f63644db4829ba1f8e95d9655",
+      "name": "Modern Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 19
+    },
+    {
+      "uid": "8da3ca617f514fe1afb4951738f66caa",
+      "name": "Clipper Dining Table By Poliform",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 19
+    },
+    {
+      "uid": "52da56ea67594114bfd652ac28a517f2",
+      "name": "CHAIRS AND TABLE",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 19
+    },
+    {
+      "uid": "717fa4cbaf8b49a9a3472c7b1a9f5913",
+      "name": "Dining Table 6 Seater with Ugly Table Cloth",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 18
+    },
+    {
+      "uid": "31c5cc998f1043ebb16883cac05c49f3",
+      "name": "Small_Dining_Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 18
+    },
+    {
+      "uid": "72e1d594a07242d3a8fbe7ea57513cd3",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 16
+    },
+    {
+      "uid": "cbba58b63b2c4802ac133900c40d53ee",
+      "name": "Dining Boat",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 16
+    },
+    {
+      "uid": "e197d01cd34a48dfa18e2f30b9dd5ff0",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 16
+    },
+    {
+      "uid": "e31ad1d18a8b4a64b36f489ffb890808",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 15
+    },
+    {
+      "uid": "5b09e402ce8b4fd1a22e2b8672f1b2ff",
+      "name": "Dining table wood with black metal",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 15
+    },
+    {
+      "uid": "4e08fc1fad1b4225aa639de70d71331d",
+      "name": "Japanese dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 12
+    },
+    {
+      "uid": "fb2f8f65156e45fc88d0adffe021f6ab",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "940ce9239b204774bed11ca76e6e6764",
+      "name": "Modern Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "60b3bb77b88c414288a31febb1c82840",
+      "name": "Rattan Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "e6dab666606a481e91c150206915a8a5",
+      "name": "Rounded Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "bb412215048540cf8c8e6151dfab1d54",
+      "name": "Sofa and Dining Table - 沙发与餐桌",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 10
+    },
+    {
+      "uid": "129d5fb5acaa4556a8f4423c0b78c44f",
+      "name": "Dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 9
+    },
+    {
+      "uid": "c3eaf014ca44409f8b790c90dda7b251",
+      "name": "#table  Small elliptical round table - 小椭圆桌",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 9
+    },
+    {
+      "uid": "40d1d0f60c6b4311be73b9448a10cba0",
+      "name": "Modern Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "fc9c76ff0ff94cf89d2367447e614d6c",
+      "name": "Table With Chairs",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "bf9f49f4c5a6457387cf700376163a6e",
+      "name": "Modern hanging lamp",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "f89ed38bc0384737b3d45da4dd827a85",
+      "name": "Round dining table made of solid ash or oak.",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 8
+    },
+    {
+      "uid": "6eab2a2fc38c437f843076d8155a69b3",
+      "name": "dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "7b15d95b14754e48988d0dd66b4162ef",
+      "name": "Good Appetite Pink Modern Round Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "d357e81457f04f2a983112e8efd4a203",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "7eaf57092f1348a3b69e471c9697f12a",
+      "name": "Restaurant Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "1b6a1529f8624bb69cd674e2d56f2eaf",
+      "name": "round dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "dbd9f3ab3b134b8aa8180d33a5c04f7c",
+      "name": "Round white table by MODENESE",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "4959c3e841eb4830aff8c51c818cff05",
+      "name": "Piano rectangular table - Chocolate walnut",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 7
+    },
+    {
+      "uid": "869fa36199a54aa1b5a3d8ea4fb2fa7d",
+      "name": "Modern Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "4a23bf9c5a504c5a8056a1ada02c318b",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "877f83205cb14caf9f6eec7a9d2882e2",
+      "name": "Dinner table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 6
+    },
+    {
+      "uid": "15bc857a360945179f7713882edbc98a",
+      "name": "Breakfast Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "38fae2946e1c4a7f9e56b5ba90101912",
+      "name": "Loft Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "cafba6d3e6264a3bbf7b383f2bf2f20b",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 5
+    },
+    {
+      "uid": "2ead6426d18f4f94ae53bfcb46bbb05b",
+      "name": "Outdoor Chair & Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "816c99db3a9745be8deb0b716be822db",
+      "name": "Dining Table Low Poly",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "e10df4f8936a44c3bd4475511d6ef9d0",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "3da9750f62ae4fee80c5123c54bca018",
+      "name": "Regal round table by MODENESE",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "14a8ab2ba13046929e53d415db63b6f9",
+      "name": "Dining Table Small",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 4
+    },
+    {
+      "uid": "d10644a79eb14b30a3641ff075fe1910",
+      "name": "Dinning Table 01",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "61504ee55d064cd4b522296dcad460de",
+      "name": "dlX - Dining Table (wood)",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "c401fb281cb14a7f8f2288098534039b",
+      "name": "Dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "52d16b8e7307463cb81a2c9034929ea9",
+      "name": "Round Wood Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "8caa3c4cecd24c0a80f467110d7e0dcb",
+      "name": "Industiral Wooden Table with Metal Legs",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 3
+    },
+    {
+      "uid": "cb2e355c72464b5ea1d3b9e9d94b97f3",
+      "name": "Modern Wooden Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "054a1bbcee4d49af897db48fc54168e8",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "4f15cc8b442748b09dbcb5b197571787",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "fd817cc701f44576a433369cca25ca64",
+      "name": "Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "60aa0729bd034e47802d6e3ec06d9ea1",
+      "name": "Dining Table and Chair",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "822225b08b7446e29dd4178841853f74",
+      "name": "Simple Wood Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "be2eadb234c54e42a1996f123a66663f",
+      "name": "Textured Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "77cd2d0a9fe847009e13e1b0d90543c5",
+      "name": "Round Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 2
+    },
+    {
+      "uid": "9e81a4255c0e4cda94ac08514b3a25b9",
+      "name": "Modern Wooden Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "b93d2542aa2843b8967b05ee80883083",
+      "name": "Untextured Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "32d1ad632f024c27ad9b0b64b6739b42",
+      "name": "DINING TABLE",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "6b6f2f38bba7461bb5251674048fb211",
+      "name": "Dining Table Solid Wood with Rounded Table Edge",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "6fc1a81f67064378bdb4d9b984a6d09c",
+      "name": "Marble_ Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "0f80863a2c8747ffa0dc0b071f9a8178",
+      "name": "Minimalist Dining Area Lowpoly",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "28413abf4347462a8c64a18094d0ec38",
+      "name": "Home Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "16d7d872b289401cadbc6d8bc71eff5e",
+      "name": "TON P.O.V. 480 Table – Web-Ready 3D Model",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 1
+    },
+    {
+      "uid": "f370aacae2f0417ab60a202f01201847",
+      "name": "A modern dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "0721963927b642cda7b729bce9453811",
+      "name": "Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "593f4fb5b10c4be68eb684aaa95e6d02",
+      "name": "Simple Wood Dining Table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "af6c0464fdc64e8aa270461ed34490d7",
+      "name": "Round dining table",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "4379ae4f588943fb8e116919d5aff98a",
+      "name": "Round table - Vargov",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "940d501c18df41018b838b824c6d1594",
+      "name": "Round table - Vargov",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "fac1775ab42048eb995bf063e138a17c",
+      "name": "Round table - Vargov #2",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "1a84a383bb804061b753a38fcd708415",
+      "name": "Round table - Vargov #4",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "28b7df6459254714a82cb86ad1aec1dc",
+      "name": "Round table - Vargov #2",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "224c8f316a90475db26c38ca8d7cdbd7",
+      "name": "Round table - Vargov #4",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "17392d3a3e9f4e9faad0d3cb90294daa",
+      "name": "Round table - Vargov #3",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "5a94546123be409a809f0d9a913aa920",
+      "name": "Round table - Vargov #3",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    },
+    {
+      "uid": "ca8f1b10eb2d459d90cfb5428d3f5ef8",
+      "name": "Round Table Elegance",
+      "bucket": "diningTable",
+      "category": "Tables",
+      "subtitle": "dining table",
+      "rooms": [
+        "dining",
+        "kitchen"
+      ],
+      "likeCount": 0
+    }
+  ]
+}

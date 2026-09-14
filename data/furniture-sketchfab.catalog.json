@@ -1,0 +1,262 @@
+[
+  {
+    "assetId": "sketchfab:af2f07d06f6349158c1d24d87f5ceb95",
+    "name": "Office chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.722,
+      "d": 0.678
+    },
+    "realModel": "/furniture/sketchfab/office-chair-af2f07d0.glb",
+    "thumbnail": "https://media.sketchfab.com/models/af2f07d06f6349158c1d24d87f5ceb95/thumbnails/ef5483f63fde4fbf873b177ac986cdff/4279625679b947058d1521d6618e354a.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:b416b2fa9f634fe0a881166a72d0f0d2",
+    "name": "Office Swivel Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.698,
+      "d": 0.664
+    },
+    "realModel": "/furniture/sketchfab/office-swivel-chair-b416b2fa.glb",
+    "thumbnail": "https://media.sketchfab.com/models/b416b2fa9f634fe0a881166a72d0f0d2/thumbnails/89362a1659064358b32a6be617534cfe/68a44b7833e8460a8c9f5d5938ef5d8b.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:b8d24c146a6844788c0ba6f7b135e99e",
+    "name": "Office Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.676,
+      "d": 0.656
+    },
+    "realModel": "/furniture/sketchfab/office-chair-b8d24c14.glb",
+    "thumbnail": "https://media.sketchfab.com/models/b8d24c146a6844788c0ba6f7b135e99e/thumbnails/1ed9c2c3c60d47bdb0aa1103a8fadf65/134606f88f824b9b9c86ccc6ce986ce2.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:87a8de3461bf44848f3629fa8a8dcd68",
+    "name": "Office Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.732,
+      "d": 0.726
+    },
+    "realModel": "/furniture/sketchfab/office-chair-87a8de34.glb",
+    "thumbnail": "https://media.sketchfab.com/models/87a8de3461bf44848f3629fa8a8dcd68/thumbnails/9d7fa828af174547a967bf61bda52fbe/3ed02124312d42abad40bdf282e0d3d6.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:622d4d7e7fcd449a9646626b46127749",
+    "name": "office chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.666,
+      "d": 0.652
+    },
+    "realModel": "/furniture/sketchfab/office-chair-622d4d7e.glb",
+    "thumbnail": "https://media.sketchfab.com/models/622d4d7e7fcd449a9646626b46127749/thumbnails/2f15dc50ce3547af837dbe40c65267f5/56ce0c12f7bb496390add48500be48da.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:6c00ba40776b41529d3075f950558822",
+    "name": "Office Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.741,
+      "d": 0.711
+    },
+    "realModel": "/furniture/sketchfab/office-chair-6c00ba40.glb",
+    "thumbnail": "https://media.sketchfab.com/models/6c00ba40776b41529d3075f950558822/thumbnails/abea109038054fca865fb5079949f937/cb8c36eb48a844f1a1c950b0a16fb35e.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:5f8767d751c14b88891f71ec073cb31c",
+    "name": "Office Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.731,
+      "d": 0.697
+    },
+    "realModel": "/furniture/sketchfab/office-chair-5f8767d7.glb",
+    "thumbnail": "https://media.sketchfab.com/models/5f8767d751c14b88891f71ec073cb31c/thumbnails/ea9ddef18827488fb2984e36dc8eb020/54ca683cfa664881a50c29795983943f.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:ea5f1287566f4371aac797351dd84655",
+    "name": "SUONI OFFICE CHAIR",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.72,
+      "d": 0.705
+    },
+    "realModel": "/furniture/sketchfab/suoni-office-chair-ea5f1287.glb",
+    "thumbnail": "https://media.sketchfab.com/models/ea5f1287566f4371aac797351dd84655/thumbnails/371d6faf42a149db9dbd6c048c4298af/abe04906cc9b4fdfb6d968378dbe2175.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:f2e9e49238974442b139262536cd19ff",
+    "name": "MUSKONGE_N24T6N23S3007",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.642,
+      "d": 0.594
+    },
+    "realModel": "/furniture/sketchfab/muskonge-n24t6n23s3007-f2e9e492.glb",
+    "thumbnail": "https://media.sketchfab.com/models/f2e9e49238974442b139262536cd19ff/thumbnails/b5846bbade2b4d52b36d8e9d2ca80ab3/d938591d43b54845b498c015714fc221.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:3775963c1d6d4ba1b37956a4fb423add",
+    "name": "Chair Low Poly",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.631,
+      "d": 0.584
+    },
+    "realModel": "/furniture/sketchfab/chair-low-poly-3775963c.glb",
+    "thumbnail": "https://media.sketchfab.com/models/3775963c1d6d4ba1b37956a4fb423add/thumbnails/2b636504eef148fc912119ac2f6b23d8/0e0c532f8d7549abafd914d936bbe8a3.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:f9576f11ef0f42abb5562037eccac15d",
+    "name": "Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.713,
+      "d": 0.691
+    },
+    "realModel": "/furniture/sketchfab/chair-f9576f11.glb",
+    "thumbnail": "https://media.sketchfab.com/models/f9576f11ef0f42abb5562037eccac15d/thumbnails/a6ac2e6c12cc4c688d44a80c016c49f0/a623364a6b4b4f418d3392b7bbdc3a29.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:211585f6e1bd43549c3f4bf04d05b362",
+    "name": "MUSKONGE_N24T6N23S3012",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.645,
+      "d": 0.642
+    },
+    "realModel": "/furniture/sketchfab/muskonge-n24t6n23s3012-211585f6.glb",
+    "thumbnail": "https://media.sketchfab.com/models/211585f6e1bd43549c3f4bf04d05b362/thumbnails/497d33bf97f548c6ac88b15b0d506260/462a298df7584aec9437f5d37be7cb3c.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "office chair",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "sketchfab:4b8427fda53145ca873d73d7668838ef",
+    "name": "Support dining table",
+    "category": "Tables",
+    "footprint": {
+      "w": 2.72,
+      "d": 0.6
+    },
+    "realModel": "/furniture/sketchfab/support-dining-table-4b8427fd.glb",
+    "thumbnail": "https://media.sketchfab.com/models/4b8427fda53145ca873d73d7668838ef/thumbnails/442cd176315043b6bf30e24896c8db5a/06fb16fd9a434a3eafa2f9e02e061628.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "sketchfab:f46aef15d75f4ae2886dd688d6c15c68",
+    "name": "Table",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.6,
+      "d": 0.8
+    },
+    "realModel": "/furniture/sketchfab/table-f46aef15.glb",
+    "thumbnail": "https://media.sketchfab.com/models/f46aef15d75f4ae2886dd688d6c15c68/thumbnails/af478fc7fd0a4427a118d4ed9f005b57/23b1126a3153408b8b52c3745a9b382d.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "sketchfab:5f09a8417c614c818ca8fa4eef6ca96f",
+    "name": "Dinner Table 002",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.332,
+      "d": 1.32
+    },
+    "realModel": "/furniture/sketchfab/dinner-table-002-5f09a841.glb",
+    "thumbnail": "https://media.sketchfab.com/models/5f09a8417c614c818ca8fa4eef6ca96f/thumbnails/0af5189fb37242b4b81110d6525246d4/feadcdc71de640dc83c4fbfe92b60fa4.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "sketchfab:24dcef8d06f2456b82b93da1cf241c99",
+    "name": "Modern Coffee Table",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.168,
+      "d": 1.008
+    },
+    "realModel": "/furniture/sketchfab/modern-coffee-table-24dcef8d.glb",
+    "thumbnail": "https://media.sketchfab.com/models/24dcef8d06f2456b82b93da1cf241c99/thumbnails/d415e5c5a2084003be402c3017af0f72/230b33d36d144bc9a709cc468dc6bdba.jpeg",
+    "brand": "Sketchfab",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining",
+      "kitchen"
+    ]
+  }
+]

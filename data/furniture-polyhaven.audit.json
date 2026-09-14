@@ -1,0 +1,356 @@
+[
+  {
+    "slug": "sofa_02",
+    "name": "Sofa 02",
+    "category": "Seating",
+    "bucket": "sofa",
+    "downloadCount": 84494,
+    "reportedTagsExcludeCheck": [
+      "wood",
+      "furniture",
+      "chair",
+      "prop",
+      "couch",
+      "leather",
+      "fabric"
+    ],
+    "glbBytes": 425576,
+    "measured": [
+      1.8071673512458801,
+      0.7094889283180237,
+      0.8177513778209686
+    ],
+    "footprint": {
+      "w": 1.8071673512458801,
+      "d": 0.8177513778209686
+    },
+    "height": 0.7094889283180237,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "modern_arm_chair_01",
+    "name": "Modern Arm Chair 01",
+    "category": "Seating",
+    "bucket": "armchair",
+    "downloadCount": 51651,
+    "reportedTagsExcludeCheck": [
+      "wood",
+      "leather",
+      "fancy",
+      "modern",
+      "chair",
+      "contemporary",
+      "wooden",
+      "lounge"
+    ],
+    "glbBytes": 2696080,
+    "measured": [
+      0.8203444182872772,
+      1.0228520567470696,
+      0.9865616858005524
+    ],
+    "footprint": {
+      "w": 0.9865616858005524,
+      "d": 0.8203444182872772
+    },
+    "height": 1.0228520567470696,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "Ottoman_01",
+    "name": "Ottoman 01",
+    "category": "Seating",
+    "bucket": "armchair",
+    "downloadCount": 34588,
+    "reportedTagsExcludeCheck": [
+      "furniture",
+      "leather",
+      "chair",
+      "fabric",
+      "ottoman",
+      "upholstery",
+      "interior design",
+      "living room",
+      "lounge"
+    ],
+    "glbBytes": 651192,
+    "measured": [
+      0.8845577836036682,
+      0.6243239195573551,
+      0.6211484670639038
+    ],
+    "footprint": {
+      "w": 0.8845577836036682,
+      "d": 0.6211484670639038
+    },
+    "height": 0.6243239195573551,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "dining_chair_02",
+    "name": "Dining Chair 02",
+    "category": "Seating",
+    "bucket": "diningChair",
+    "downloadCount": 16427,
+    "reportedTagsExcludeCheck": [
+      "modern",
+      "chair",
+      "seat",
+      "dining",
+      "fancy",
+      "leather"
+    ],
+    "glbBytes": 920128,
+    "measured": [
+      0.4335707724094391,
+      0.9733776897192001,
+      0.5764201134443283
+    ],
+    "footprint": {
+      "w": 0.5764201134443283,
+      "d": 0.4335707724094391
+    },
+    "height": 0.9733776897192001,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "coffee_table_round_01",
+    "name": "Coffee Table Round 01",
+    "category": "Tables",
+    "bucket": "coffeeTable",
+    "downloadCount": 27549,
+    "reportedTagsExcludeCheck": [
+      "modern",
+      "marble",
+      "tea",
+      "coffee",
+      "metal",
+      "sleek",
+      "contemporary",
+      "cocktail"
+    ],
+    "glbBytes": 1562188,
+    "measured": [
+      1.3013009428977966,
+      0.4910094439983368,
+      1.3013015985488892
+    ],
+    "footprint": {
+      "w": 1.3013015985488892,
+      "d": 1.3013009428977966
+    },
+    "height": 0.4910094439983368,
+    "verdict": "FAIL",
+    "reason": "depth 1.301m outside [0.3, 1.2]"
+  },
+  {
+    "slug": "modern_coffee_table_01",
+    "name": "Modern Coffee Table 01",
+    "category": "Tables",
+    "bucket": "coffeeTable",
+    "downloadCount": 17495,
+    "reportedTagsExcludeCheck": [
+      "table",
+      "contemporary",
+      "modern",
+      "rectangular",
+      "stone",
+      "wood",
+      "deco",
+      "clean"
+    ],
+    "glbBytes": 1330320,
+    "measured": [
+      0.6000000238418579,
+      0.38999998569488525,
+      1.2018300294876099
+    ],
+    "footprint": {
+      "w": 1.2018300294876099,
+      "d": 0.6000000238418579
+    },
+    "height": 0.38999998569488525,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "modern_coffee_table_02",
+    "name": "Modern Coffee Table 02",
+    "category": "Tables",
+    "bucket": "coffeeTable",
+    "downloadCount": 9580,
+    "reportedTagsExcludeCheck": [
+      "contemporary",
+      "modern",
+      "rectangular",
+      "stone",
+      "wood",
+      "deco",
+      "clean"
+    ],
+    "glbBytes": 2953908,
+    "measured": [
+      1.1991113424301147,
+      0.3692496716976166,
+      1.1996567845344543
+    ],
+    "footprint": {
+      "w": 1.1996567845344543,
+      "d": 1.1991113424301147
+    },
+    "height": 0.3692496716976166,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "side_table_01",
+    "name": "Side Table 01",
+    "category": "Tables",
+    "bucket": "coffeeTable",
+    "downloadCount": 21013,
+    "reportedTagsExcludeCheck": [
+      "table",
+      "wood",
+      "minimalist",
+      "modern",
+      "decor",
+      "living room",
+      "bedroom",
+      "shelf",
+      "contemporary",
+      "interior",
+      "home",
+      "wooden"
+    ],
+    "glbBytes": 504336,
+    "measured": [
+      0.5500000715255737,
+      0.5506622816901654,
+      0.45000001788139343
+    ],
+    "footprint": {
+      "w": 0.5500000715255737,
+      "d": 0.45000001788139343
+    },
+    "height": 0.5506622816901654,
+    "verdict": "FAIL",
+    "reason": "height 0.551m outside [0.28, 0.55]"
+  },
+  {
+    "slug": "drawer_cabinet",
+    "name": "Drawer Cabinet",
+    "category": "Storage",
+    "bucket": "storage",
+    "downloadCount": 16379,
+    "reportedTagsExcludeCheck": [
+      "wood",
+      "furniture",
+      "shelf",
+      "drawer",
+      "metal",
+      "modern"
+    ],
+    "glbBytes": 1140032,
+    "measured": [
+      1.1410778760910034,
+      1.881253957748413,
+      0.48808470368385315
+    ],
+    "footprint": {
+      "w": 1.1410778760910034,
+      "d": 0.48808470368385315
+    },
+    "height": 1.881253957748413,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "steel_frame_shelves_01",
+    "name": "Steel Frame Shelves 01",
+    "category": "Storage",
+    "bucket": "shelving",
+    "downloadCount": 32209,
+    "reportedTagsExcludeCheck": [
+      "commercial",
+      "modern",
+      "shelf",
+      "bookshelf",
+      "metal",
+      "wood"
+    ],
+    "glbBytes": 1596392,
+    "measured": [
+      10.974145412445068,
+      21.405006067827344,
+      5.021175384521484
+    ],
+    "footprint": {
+      "w": 10.974145412445068,
+      "d": 5.021175384521484
+    },
+    "height": 21.405006067827344,
+    "verdict": "FAIL",
+    "reason": "height 21.405m outside [0.3, 2.6]; width 10.974m outside [0.2, 2.2]; depth 5.021m outside [0.18, 0.6]"
+  },
+  {
+    "slug": "steel_frame_shelves_02",
+    "name": "Steel Frame Shelves 02",
+    "category": "Storage",
+    "bucket": "shelving",
+    "downloadCount": 17659,
+    "reportedTagsExcludeCheck": [
+      "commercial",
+      "modern",
+      "shelf",
+      "bookshelf",
+      "metal",
+      "wood"
+    ],
+    "glbBytes": 539296,
+    "measured": [
+      0.5933027565479279,
+      2.1416114285821095,
+      0.5023781061172485
+    ],
+    "footprint": {
+      "w": 0.5933027565479279,
+      "d": 0.5023781061172485
+    },
+    "height": 2.1416114285821095,
+    "verdict": "PASS",
+    "reason": "within range"
+  },
+  {
+    "slug": "wooden_display_shelves_01",
+    "name": "Wooden Display Shelves 01",
+    "category": "Storage",
+    "bucket": "shelving",
+    "downloadCount": 22851,
+    "reportedTagsExcludeCheck": [
+      "modern",
+      "wood",
+      "pine",
+      "square",
+      "display",
+      "shelf",
+      "bookshelf"
+    ],
+    "glbBytes": 468324,
+    "measured": [
+      0.3715096414089203,
+      1.5561838150024414,
+      1.077760934829712
+    ],
+    "footprint": {
+      "w": 1.077760934829712,
+      "d": 0.3715096414089203
+    },
+    "height": 1.5561838150024414,
+    "verdict": "PASS",
+    "reason": "within range"
+  }
+]
