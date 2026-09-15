@@ -233,10 +233,10 @@ Constraints it was built under:
   `chrome?: boolean` prop and, on 2026-09-01, `autoOrbit?: boolean`. See the
   "Approved exceptions" section of `docs/PROTECTED_PATHS.md` for what each one
   gates and why. Nothing else protected was touched.
-- **Only BlenderKit assets**, served from `public/furniture/blenderkit/opt/`.
-  No IKEA asset appears: those GLBs live on Vercel Blob, are excluded from the
-  git deploy, and 404'd in production once already (2026-08-31). All 18 asset
-  ids used were verified present in both the catalog and on disk.
+- **Only committed CC0 assets** (BlenderKit `opt/` + Poly Haven), served with
+  the deployment. IKEA was removed from the whole product on 2026-09-15 (legal);
+  the hero's 8 former IKEA pieces were swapped for closest-footprint CC0 models,
+  heights measured from the GLBs.
 - **Furniture swaps are built but NOT rendered.** `demoSwaps.ts` is kept and
   marked dormant: every id in it was verified against the catalog and collision-
   checked at its target's pose, so re-enabling a swap strip is a UI change, not
@@ -403,7 +403,6 @@ Ceiling and Walls had to coerce each other (the ceiling only renders in `full`).
   extension was not connected, so no screenshots were taken. Nobody has looked
   at this page yet.
 - **No catalogue brand is named anywhere public.** The copy says "a real
-  furniture catalogue", never IKEA, and never a paint brand — the brand book
-  flags IKEA licensing as unresolved *and* load-bearing for the "what you
-  choose, you can buy" pillar. Settle that before writing the brand name onto a
-  public page.
+  furniture catalogue", never a furniture or paint brand. IKEA is gone from the
+  product (2026-09-15), so the "what you choose, you can buy" pillar has no
+  retailer behind the furniture right now.
