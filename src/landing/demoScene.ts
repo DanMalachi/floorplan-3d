@@ -110,10 +110,10 @@ export const demoScene: Scene = {
     { id: "f22", assetId: "polyhaven:sofa_02", x: 2.3, y: -0.2, rotation: 0 },
     { id: "f23", assetId: "polyhaven:sofa_02", x: 0.9, y: 1.3, rotation: -Math.PI / 2 },
     { id: "f24", assetId: "param:rug", x: 2.1, y: 1.1, rotation: 0, parametric: spec({ generator: "rug", dims: { w: 2.51, d: 2.5, h: 0.016 }, modules: {}, front: "slab", handle: "none", finish: "rug-modern", variant: "modern" }) },
-    { id: "f25", assetId: "blenderkit:1a2474e6-2fce-480a-be98-0b12c6b696ab", x: 2.1, y: 0.9, rotation: 0 },
+    { id: "f25", assetId: "polyhaven:modern_coffee_table_01", x: 2.1, y: 0.9, rotation: 0 },
     { id: "f26", assetId: "blenderkit:0dd6f649-dbef-4c78-a8ae-574bcc9cad64", x: 1.2, y: 0.2, rotation: 0 },
-    { id: "f27", assetId: "polyhaven:drawer_cabinet", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4 },
-    { id: "f28", assetId: "param:tv", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4, elevation: 0.9024, attach: { hostId: "f27", along: 0.57 }, parametric: spec({ generator: "tv", dims: { w: 1.1249, d: 0.2435, h: 0.7506 }, modules: { screenOn: 1 }, front: "slab", handle: "none", finish: "glass-black", finish2: "steel", variant: "pedestal-55" }) },
+    { id: "f27", assetId: "blenderkit:1057fdd0-a688-4ba1-b624-94f8466ce6c8", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4 },
+    { id: "f28", assetId: "param:tv", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4, elevation: 0.9024, attach: { hostId: "f27", along: 0.415 }, parametric: spec({ generator: "tv", dims: { w: 1.1249, d: 0.2435, h: 0.7506 }, modules: { screenOn: 1 }, front: "slab", handle: "none", finish: "glass-black", finish2: "steel", variant: "pedestal-55" }) },
     { id: "f29", assetId: "param:wallArt", x: 3.79, y: -1.52, rotation: Math.PI / 2, elevation: 1.31, parametric: spec({ generator: "wallArt", dims: { w: 1.5, d: 0.12, h: 0.52 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-mono", finish2: "oak", variant: "ledge" }) },
   ],
 };
