@@ -50,10 +50,9 @@ import { HERO_NODES, HERO_ROOMS, heroOpenings, heroWalls } from "./heroPlan";
 //   `blenderkit:*` / `polyhaven:*` — real CC0 GLBs committed under
 //                public/furniture/, served with the deployment.
 //
-// The dining set, sofas, coffee/side tables and TV cabinet were IKEA models
-// until 2026-09-15 and were swapped for CC0 pieces of closest footprint
-// (IKEA is a legal blocker). They were placed by hand in this file, not via
-// the Copy-furniture button, so re-furnish there if anything looks off.
+// The dining set, sofas, coffee table and TV bench were IKEA models until
+// 2026-09-15 (legal blocker); Dan re-furnished them with CC0 pieces through
+// the Copy-furniture button the same day.
 //
 // Every `parametric` spec below is passed through `sanitizeSpec`, so an invalid
 // finish or variant can never reach the marketing page — verified as a no-op
@@ -102,19 +101,19 @@ export const demoScene: Scene = {
 
     // Dining — table centred on the top wall, a chair to each side.
     { id: "f18", assetId: "blenderkit:4fd0b237-9527-45d5-b82a-4cfec427f673", x: -0.7, y: 2, rotation: 0 },
-    { id: "f19", assetId: "polyhaven:dining_chair_02", x: -0.2, y: 2, rotation: Math.PI / 2 },
-    { id: "f20", assetId: "polyhaven:dining_chair_02", x: -1.1, y: 2, rotation: -Math.PI / 2 },
     { id: "f21", assetId: "param:wallArt", x: -0.6759, y: 2.4225, rotation: Math.PI, elevation: 1.2, parametric: spec({ generator: "wallArt", dims: { w: 1.1, d: 0.055, h: 0.85 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-bedroom", finish2: "painted", color2: "#23252b", variant: "framed-large" }) },
 
     // Living — two sofas around a coffee table, TV on the cabinet.
     { id: "f22", assetId: "polyhaven:sofa_02", x: 2.3, y: -0.2, rotation: 0 },
-    { id: "f23", assetId: "polyhaven:sofa_02", x: 0.9, y: 1.3, rotation: -Math.PI / 2 },
+    { id: "f23", assetId: "polyhaven:sofa_02", x: 1, y: 1.1, rotation: -Math.PI / 2 },
     { id: "f24", assetId: "param:rug", x: 2.1, y: 1.1, rotation: 0, parametric: spec({ generator: "rug", dims: { w: 2.51, d: 2.5, h: 0.016 }, modules: {}, front: "slab", handle: "none", finish: "rug-modern", variant: "modern" }) },
-    { id: "f25", assetId: "polyhaven:modern_coffee_table_01", x: 2.1, y: 0.9, rotation: 0 },
-    { id: "f26", assetId: "blenderkit:0dd6f649-dbef-4c78-a8ae-574bcc9cad64", x: 1.2, y: 0.2, rotation: 0 },
     { id: "f27", assetId: "blenderkit:1057fdd0-a688-4ba1-b624-94f8466ce6c8", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4 },
-    { id: "f28", assetId: "param:tv", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4, elevation: 0.9024, attach: { hostId: "f27", along: 0.415 }, parametric: spec({ generator: "tv", dims: { w: 1.1249, d: 0.2435, h: 0.7506 }, modules: { screenOn: 1 }, front: "slab", handle: "none", finish: "glass-black", finish2: "steel", variant: "pedestal-55" }) },
+    { id: "f28", assetId: "param:tv", x: 3.3, y: 1.9, rotation: (3 * Math.PI) / 4, elevation: 0.4877, attach: { hostId: "f27", along: 0.415 }, parametric: spec({ generator: "tv", dims: { w: 1.1249, d: 0.2435, h: 0.7506 }, modules: { screenOn: 1 }, front: "slab", handle: "none", finish: "glass-black", finish2: "steel", variant: "pedestal-55" }) },
     { id: "f29", assetId: "param:wallArt", x: 3.79, y: -1.52, rotation: Math.PI / 2, elevation: 1.31, parametric: spec({ generator: "wallArt", dims: { w: 1.5, d: 0.12, h: 0.52 }, modules: { mount: 1 }, front: "slab", handle: "none", finish: "art-mono", finish2: "oak", variant: "ledge" }) },
+    { id: "f30", assetId: "blenderkit:4db96473-72ed-4947-80d8-af6dc1c4dee8", x: 2.3, y: 0.9, rotation: Math.PI / 4 },
+    { id: "f31", assetId: "blenderkit:aad78f1d-ca8a-4def-bee7-836207e91484", x: 1.1, y: -0.1, rotation: 0 },
+    { id: "f32", assetId: "blenderkit:a48fb06f-f8d1-4936-82d1-053e6f0c372a", x: -0.2, y: 2, rotation: Math.PI / 2 },
+    { id: "f33", assetId: "blenderkit:a48fb06f-f8d1-4936-82d1-053e6f0c372a", x: -1.2, y: 2, rotation: -Math.PI / 2 },
   ],
 };
 
