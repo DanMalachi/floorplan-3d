@@ -45,7 +45,7 @@
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
 import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
   CATEGORIES,
@@ -63,7 +63,6 @@ import type { ParametricSpec } from "@/schema/scene";
 import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
-import { loadTambourColors, groupByFamily, type TambourColor, type TambourFamily } from "@/lib/tambourColors";
 import type { FloorStyle } from "@/schema/scene";
 import { PD, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
 import { KitchenScene, KITCHEN_HOTSPOTS, type RoomHotspot } from "./KitchenScene";
@@ -81,6 +80,7 @@ import { Tooltip } from "./Tooltip";
 import { useHover } from "./useHover";
 import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "./icons";
 import { EyedropperController } from "@/decorate/EyedropperController";
+import { HomeColourPicker } from "./HomeColourPicker";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
 
@@ -673,62 +673,6 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
   );
 }
 
-function PaintTab() {
-  const t = useTranslations("editor.dock");
-  const locale = useLocale();
-  const brush = useSceneStore((s) => s.brush);
-  // The same palette serves walls and window frames — which one a swatch lands
-  // on is the armed brush, not a second copy of the colour list. Frames take
-  // the colour immediately on pick (there is no surface to click: frame colour
-  // is whole-house), walls arm the brush for the next click.
-  const forFrames = brush?.kind === "frame";
-  const activeHex = brush?.kind === "paint" || brush?.kind === "frame" ? brush.hex : undefined;
-  const [colors, setColors] = useState<TambourColor[] | null>(null);
-  useEffect(() => {
-    let alive = true;
-    loadTambourColors().then((c) => alive && setColors(c));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  const grouped = useMemo(() => groupByFamily(colors ?? []), [colors]);
-  const pick = (hex: string | null) =>
-    forFrames
-      ? useSceneStore.getState().setFrameColor(hex)
-      : useSceneStore.getState().setBrush({ kind: "paint", hex });
-  const plasterActive = activeHex === null && (brush?.kind === "paint" || forFrames);
-  const families: TambourFamily[] = ["white", "neutral", "red", "orange", "yellow", "green", "blue", "purple"];
-  return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto", overflowX: "hidden", alignContent: "flex-start", alignItems: "flex-start", padding: "2px 2px" }}>
-      <SwatchButton
-        onClick={() => pick(null)}
-        active={plasterActive}
-        tip={forFrames ? t("paint.tipNatural") : t("paint.tipPlaster")}
-        style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: "#f3ece1", cursor: "pointer" }}
-      />
-      {!colors && <span style={{ fontSize: 10, color: PD.textTertiary, padding: "6px 0" }}>{t("paint.loading")}</span>}
-      {families.flatMap((slug) =>
-        (grouped[slug] ?? []).map((c) => {
-          // `nameHe` is currently "" for the whole 1651-shade Tambour feed (no
-          // Hebrew names in the scraped source — see scripts/README-tambour.md)
-          // so this falls back to nameEn until that's backfilled; written to
-          // pick it up for free the day it is.
-          const colorName = locale === "he" && c.nameHe ? c.nameHe : c.nameEn;
-          return (
-            <SwatchButton
-              key={c.code}
-              tip={`${c.code} · ${colorName}`}
-              onClick={() => pick(c.hex)}
-              active={activeHex === c.hex}
-              style={{ flex: "0 0 auto", width: 30, height: 30, borderRadius: 7, background: c.hex, cursor: "pointer" }}
-            />
-          );
-        }),
-      )}
-    </div>
-  );
-}
-
 function FloorsTab() {
   const t = useTranslations("editor.dock");
   const brush = useSceneStore((s) => s.brush);
@@ -971,7 +915,7 @@ export function BottomDock() {
         </div>
         {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
         {tab === "lighting" && <FixtureCatalog />}
-        {tab === "paint" && <PaintTab />}
+        {tab === "paint" && <HomeColourPicker />}
         {tab === "floors" && <FloorsTab />}
       </div>
     </>
