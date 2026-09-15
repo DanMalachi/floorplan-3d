@@ -1,0 +1,466 @@
+[
+  {
+    "name": "Scan Wooden Chair 02",
+    "reason": "measured height 0.56 m outside chair band [0.6, 1.45]"
+  },
+  {
+    "name": "Tauari stool",
+    "reason": "brand/named product: \"Jabuticasa\""
+  },
+  {
+    "name": "Bathroom Wall Cabinet",
+    "reason": "measured height 0.18 m outside cabinet band [0.4, 2.4]"
+  },
+  {
+    "name": "Old Hospital Bed",
+    "reason": "content: medical equipment, not home furniture"
+  },
+  {
+    "name": "Stone Bench (Photoscanned)",
+    "reason": "content: photoscan ships with its patch of ground"
+  },
+  {
+    "name": "Coffee Cart 01",
+    "reason": "content: commercial café equipment (brewer, carafes), not home furniture"
+  },
+  {
+    "name": "Industrial Storage Cart",
+    "reason": "content: broken export: single material, baseColor black, texture unbound — renders solid black"
+  },
+  {
+    "name": "Tool Cart",
+    "reason": "content: broken export: single material, baseColor black, texture unbound — renders solid black"
+  },
+  {
+    "name": "Chandelier 02",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Chandelier 03",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Chinese Chandelier",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "SPUTNIK Color Chandelier",
+    "reason": "brand/named product: \"Stilnovo\""
+  },
+  {
+    "name": "Double spot light",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Hanging Ceiling Light",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Modern Ceiling Lamp 01",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Spiral ceiling light (130cmx130cm)",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Ikea modern chair",
+    "reason": "content: IKEA product replica"
+  },
+  {
+    "name": "Chest of drawers",
+    "reason": "content: untextured 50-face box with no drawer detail"
+  },
+  {
+    "name": "Drawer Cabinet",
+    "reason": "measured height 1.88 m outside dresser band [0.6, 1.6]"
+  },
+  {
+    "name": "Elza Curio Cabinet - Light Wood",
+    "reason": "content: proper-noun model name + finish variant, likely a named retail product"
+  },
+  {
+    "name": "Wooden box-Freepoly.org",
+    "reason": "measured plan extent 0.41 m outside dresser band [0.6, 2.2]"
+  },
+  {
+    "name": "Cambridge Desk",
+    "reason": "content: proper-noun model name, likely a named retail product"
+  },
+  {
+    "name": "Privacy Booths",
+    "reason": "measured plan extent 2.99 m outside desk band [0.9, 2.4]"
+  },
+  {
+    "name": "School Desk 01",
+    "reason": "measured plan extent 0.71 m outside desk band [0.9, 2.4]"
+  },
+  {
+    "name": "Wooden technological computer table",
+    "reason": "measured height 1.40 m outside dining-table band [0.65, 1]"
+  },
+  {
+    "name": "Corner Lamp RGB",
+    "reason": "content: transmission-only materials — renders as a near-invisible white stick"
+  },
+  {
+    "name": "Corner Lamp Warm White",
+    "reason": "content: transmission-only materials — renders as a near-invisible white stick"
+  },
+  {
+    "name": "Calin Armchair",
+    "reason": "brand/named product: \"Atelier Voler\""
+  },
+  {
+    "name": "SciFi Armchair",
+    "reason": "content: spaceship seat, not home furniture"
+  },
+  {
+    "name": "Soave armchair",
+    "reason": "brand/named product: \"Fan made\""
+  },
+  {
+    "name": "Soave armchair with arms",
+    "reason": "brand/named product: \"Fan made\""
+  },
+  {
+    "name": "Bedside Table Arrondi",
+    "reason": "content: named product line (\"The Arrondi Bedside Table\", product-sheet copy)"
+  },
+  {
+    "name": "DARREN Bedside table with drawers",
+    "reason": "brand/named product: \"Minotti\""
+  },
+  {
+    "name": "Imperial black coffee table",
+    "reason": "measured plan extent 0.50 m outside coffee-table band [0.6, 1.6]"
+  },
+  {
+    "name": "Lugo Sideboard",
+    "reason": "brand/named product: \"Pollus\""
+  },
+  {
+    "name": "Garden Hose Wall Mounted 01",
+    "reason": "prop (slug handtools)"
+  },
+  {
+    "name": "Garden Sprinkler 01",
+    "reason": "prop (slug handtools)"
+  },
+  {
+    "name": "Plunger",
+    "reason": "content: utility prop, not furniture"
+  },
+  {
+    "name": "Caged Hanging Light",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Hanging Industrial Lamp",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Industrial hanging lamp adjust.. height",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "China Water scoop",
+    "reason": "content: handheld prop"
+  },
+  {
+    "name": "Aluminum teapot",
+    "reason": "measured plan extent 0.37 m outside cabinet band [0.4, 2.6]"
+  },
+  {
+    "name": "Pot",
+    "reason": "measured plan extent 0.18 m outside cabinet band [0.4, 2.6]"
+  },
+  {
+    "name": "Folder HUD Interface",
+    "reason": "content: UI mockup, not a physical object"
+  },
+  {
+    "name": "Waiting room furniture",
+    "reason": "measured plan extent 2.14 m outside chair band [0.35, 0.9]"
+  },
+  {
+    "name": "Winged Office Chair",
+    "reason": "measured plan extent 1.48 m outside chair band [0.35, 0.9]"
+  },
+  {
+    "name": "Yellow Tin Box",
+    "reason": "measured height 0.09 m outside cabinet band [0.4, 2.4]"
+  },
+  {
+    "name": "Blue Striped beach chair",
+    "reason": "content: textures lost in conversion — renders plain white, not the striped fabric"
+  },
+  {
+    "name": "Outdoor Table Chair Set 01",
+    "reason": "measured plan extent 1.83 m outside chair band [0.35, 0.9]"
+  },
+  {
+    "name": "Scan shoe",
+    "reason": "not furniture (unclassifiable → decor/prop)"
+  },
+  {
+    "name": "Vintage Miner's Lantern-Freepoly.org",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Gold elegant lantern in an ancient style",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Portable Searchlight",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Retro wall light-Freepoly.org",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Security Light",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Small Plastic Torch",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Vintage Flashlight",
+    "reason": "content: handheld prop (miscategorised as ceiling-light)"
+  },
+  {
+    "name": "Wall Gas Lamp",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Ottoman 01",
+    "reason": "measured height 0.62 m outside pouf band [0.25, 0.6]"
+  },
+  {
+    "name": "IKEA ONNESTAD Green Armchair",
+    "reason": "brand/named product: \"IKEA\""
+  },
+  {
+    "name": "Ikea Onnestad Red Armchair",
+    "reason": "content: IKEA product replica"
+  },
+  {
+    "name": "Miami chair green",
+    "reason": "brand/named product: \"Fratini\""
+  },
+  {
+    "name": "Rondo type chair",
+    "reason": "brand/named product: \"ant_chair\""
+  },
+  {
+    "name": "Wooden Dining Chair",
+    "reason": "measured plan extent 0.52 m outside dining-table band [0.7, 3.2]"
+  },
+  {
+    "name": "Blackboard",
+    "reason": "not furniture (unclassifiable → decor/prop)"
+  },
+  {
+    "name": "Glass Pot",
+    "reason": "not furniture (unclassifiable → decor/prop)"
+  },
+  {
+    "name": "IKEA bamboo corner shelf",
+    "reason": "brand/named product: \"IKEA\""
+  },
+  {
+    "name": "Wooden shelving unit furniture",
+    "reason": "content: replica of an unnamed real product (\"based on a real-world furniture, with accurate measurements\")"
+  },
+  {
+    "name": "Cash Register 01",
+    "reason": "prop (slug shopping-retail)"
+  },
+  {
+    "name": "Living room - sofa moular - fabric",
+    "reason": "brand/named product: \"Lissoni\""
+  },
+  {
+    "name": "Fitzroy Sofa",
+    "reason": "brand/named product: \"Brabbu\""
+  },
+  {
+    "name": "Luxor Leather Couch",
+    "reason": "content: proper-noun model name, likely a named retail product"
+  },
+  {
+    "name": "Sofa Salvador",
+    "reason": "content: proper-noun model name, likely a named retail product"
+  },
+  {
+    "name": "Sofa Wade",
+    "reason": "brand/named product: \"Fan made\""
+  },
+  {
+    "name": "19th-Century Paper Clutter Waste",
+    "reason": "content: desk clutter prop (57 MB)"
+  },
+  {
+    "name": "Early 1900s Office Mail Opened",
+    "reason": "content: desk clutter prop (62 MB)"
+  },
+  {
+    "name": "Large Stack of Old Office Documents",
+    "reason": "content: desk clutter prop"
+  },
+  {
+    "name": "Office Telegram Clutter",
+    "reason": "content: desk clutter prop"
+  },
+  {
+    "name": "Standing Chalkboard 01",
+    "reason": "prop (slug stationery)"
+  },
+  {
+    "name": "Stationery Supplies",
+    "reason": "prop (slug stationery)"
+  },
+  {
+    "name": "Vintage Stapler",
+    "reason": "prop (slug stationery)"
+  },
+  {
+    "name": "Blue wire coffee table",
+    "reason": "measured height 0.72 m outside coffee-table band [0.25, 0.6]"
+  },
+  {
+    "name": "Brown desk",
+    "reason": "measured plan extent 0.37 m outside desk band [0.9, 2.4]"
+  },
+  {
+    "name": "Chinese Tea Table",
+    "reason": "content: broken export: single material, baseColor black, texture unbound — renders solid black"
+  },
+  {
+    "name": "Cross FIxed Table",
+    "reason": "content: named manufacturer product (description quotes the manufacturer)"
+  },
+  {
+    "name": "FLATIRON TABLE",
+    "reason": "brand/named product: \"FLATIRON\""
+  },
+  {
+    "name": "Jiechen Table",
+    "reason": "content: malformed glTF (null texture sampler) — fails to load in three.js"
+  },
+  {
+    "name": "Modern coffee table",
+    "reason": "content: replica of an unnamed real product (\"based on a real-world furniture, with accurate measurements\")"
+  },
+  {
+    "name": "Noguchi coffee table",
+    "reason": "brand/named product: \"Noguchi\""
+  },
+  {
+    "name": "Procedural Table GN",
+    "reason": "content: shader-node materials do not survive glTF export — renders untextured white"
+  },
+  {
+    "name": "Table",
+    "reason": "measured plan extent 1.70 m outside coffee-table band [0.6, 1.6]"
+  },
+  {
+    "name": "Table And Chair Combination",
+    "reason": "measured plan extent 1.14 m outside chair band [0.35, 0.9]"
+  },
+  {
+    "name": "Tauari table",
+    "reason": "content: designer piece (\"made by Brazilian designer Lucas Neves\")"
+  },
+  {
+    "name": "Toco table collection",
+    "reason": "brand/named product: \"Toco Arquitetura\""
+  },
+  {
+    "name": "White outdoor Standing Table",
+    "reason": "measured height 1.15 m outside dining-table band [0.65, 1]"
+  },
+  {
+    "name": "White outdoor Standing Table with cloth",
+    "reason": "measured height 1.16 m outside dining-table band [0.65, 1]"
+  },
+  {
+    "name": "Wockel table",
+    "reason": "content: proper-noun model name, likely a named product"
+  },
+  {
+    "name": "Wood table-Freepoly.org",
+    "reason": "content: mislabelled — the model is a wheeled trolley, not a table"
+  },
+  {
+    "name": "Wooden Table 01",
+    "reason": "measured plan extent 1.80 m outside coffee-table band [0.6, 1.6]"
+  },
+  {
+    "name": "ÅRSTID Floor lamp",
+    "reason": "content: IKEA product replica"
+  },
+  {
+    "name": "ÅRSTID Table lamp",
+    "reason": "content: IKEA product replica"
+  },
+  {
+    "name": "Desk Lamp",
+    "reason": "measured plan extent 0.38 m outside desk band [0.9, 2.4]"
+  },
+  {
+    "name": "Desk Lamp Arm 01",
+    "reason": "measured plan extent 0.59 m outside desk band [0.9, 2.4]"
+  },
+  {
+    "name": "Giravolta lamp",
+    "reason": "content: named designer lamp (Giravolta)"
+  },
+  {
+    "name": "Bunny Soft Toy",
+    "reason": "prop (slug toy)"
+  },
+  {
+    "name": "Chess Set",
+    "reason": "prop (slug toy)"
+  },
+  {
+    "name": "Rubber Duck Toy",
+    "reason": "prop (slug toy)"
+  },
+  {
+    "name": "Teddy Bear",
+    "reason": "prop (slug toy)"
+  },
+  {
+    "name": "Hair Dryer Salerm 4200",
+    "reason": "content: handheld appliance prop"
+  },
+  {
+    "name": "IKEA ARSTID Wall Lamp",
+    "reason": "brand/named product: \"IKEA\""
+  },
+  {
+    "name": "Industrial Caged Sconce",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Industrial Wall Lamp",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Industrial Wall Sconce",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Light",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  },
+  {
+    "name": "Wall Lamp ,Bronze",
+    "reason": "wall/ceiling-mounted light (picker places on the floor)"
+  }
+]

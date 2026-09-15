@@ -1,5 +1,22 @@
 [
   {
+    "assetId": "blenderkit:dc64e9f5-ba68-4306-8a96-15966ab75567",
+    "name": "Gothic Bed 01",
+    "category": "Beds",
+    "footprint": {
+      "w": 1.494,
+      "d": 2.04
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/dc64e9f5-ba68-4306-8a96-15966ab75567.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/dc64e9f5-ba68-4306-8a96-15966ab75567.png",
+    "brand": "BlenderKit",
+    "subtitle": "bed",
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
     "assetId": "blenderkit:3a845132-df64-4f02-8da6-44229fe774e4",
     "name": "Master bed",
     "category": "Beds",
@@ -9,7 +26,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/3a845132-df64-4f02-8da6-44229fe774e4.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d493c69a5c6440bfa7a6a4e745bfbea8/files/thumbnail_7c3e07c8-9bb5-41f4-9742-f821bc9f1470.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/3a845132-df64-4f02-8da6-44229fe774e4.jpg",
     "brand": "BlenderKit",
     "subtitle": "bed",
     "rooms": [
@@ -17,15 +34,32 @@
     ]
   },
   {
-    "assetId": "blenderkit:4db7593a-c7c0-4517-82e6-6f5be2c865cc",
-    "name": "Floor Lamp",
+    "assetId": "blenderkit:cca30285-0ab7-4588-b7f8-70c7a5752825",
+    "name": "Old Bed Frame",
+    "category": "Beds",
+    "footprint": {
+      "w": 0.905,
+      "d": 2.002
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/cca30285-0ab7-4588-b7f8-70c7a5752825.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/cca30285-0ab7-4588-b7f8-70c7a5752825.png",
+    "brand": "BlenderKit",
+    "subtitle": "bed",
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "blenderkit:268de6fe-b7a4-44b0-82f7-c5545ce610b5",
+    "name": "Cylindrical Table Lamp",
     "category": "Decor",
     "footprint": {
-      "w": 0.608,
-      "d": 1.108
+      "w": 0.401,
+      "d": 0.401
     },
-    "realModel": "/furniture/blenderkit/opt/4db7593a-c7c0-4517-82e6-6f5be2c865cc.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/198304a9e11746f0a4617467d786cad1/files/thumbnail_c4d224cf-b7ea-44f1-aab6-a457431e466f.png.512x512_q85_crop-%2C.jpg",
+    "realModel": "/furniture/blenderkit/opt/268de6fe-b7a4-44b0-82f7-c5545ce610b5.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/268de6fe-b7a4-44b0-82f7-c5545ce610b5.png",
     "brand": "BlenderKit",
     "subtitle": "lamp",
     "rooms": [
@@ -42,7 +76,7 @@
       "d": 0.201
     },
     "realModel": "/furniture/blenderkit/opt/dc252bcb-1465-4c65-a03b-9e564204eae0.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/f9d5458693c945de807df509d33918b1/files/thumbnail_10514bef-0bf6-4c5a-ac76-b99275f6af65.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/dc252bcb-1465-4c65-a03b-9e564204eae0.jpg",
     "brand": "BlenderKit",
     "subtitle": "lamp",
     "rooms": [
@@ -59,11 +93,62 @@
       "d": 0.916
     },
     "realModel": "/furniture/blenderkit/opt/c0997e86-cb55-4607-a4fe-1b855c957ac0.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/5dd9bd64a8c947508fd2bbfca20a2bda/files/thumbnail_04b8e103-d99d-441e-91f6-3b34825006e6.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/c0997e86-cb55-4607-a4fe-1b855c957ac0.png",
     "brand": "BlenderKit",
     "subtitle": "decor",
     "rooms": [
       "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:92c902f7-0398-4116-b7be-f196b87813d1",
+    "name": "Retro table lamp-Freepoly.org",
+    "category": "Decor",
+    "footprint": {
+      "w": 0.251,
+      "d": 0.249
+    },
+    "realModel": "/furniture/blenderkit/opt/92c902f7-0398-4116-b7be-f196b87813d1.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/92c902f7-0398-4116-b7be-f196b87813d1.png",
+    "brand": "BlenderKit",
+    "subtitle": "lamp",
+    "rooms": [
+      "living",
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "blenderkit:a71f876f-09bd-47a0-b557-6037a642ae9c",
+    "name": "Tubular floor lamp",
+    "category": "Decor",
+    "footprint": {
+      "w": 0.35,
+      "d": 0.485
+    },
+    "realModel": "/furniture/blenderkit/opt/a71f876f-09bd-47a0-b557-6037a642ae9c.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/a71f876f-09bd-47a0-b557-6037a642ae9c.png",
+    "brand": "BlenderKit",
+    "subtitle": "lamp",
+    "rooms": [
+      "living",
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "blenderkit:7ea37cdc-801c-4f67-a416-eccded572646",
+    "name": "Vintage Oil Lamp",
+    "category": "Decor",
+    "footprint": {
+      "w": 0.22,
+      "d": 0.22
+    },
+    "realModel": "/furniture/blenderkit/opt/7ea37cdc-801c-4f67-a416-eccded572646.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/7ea37cdc-801c-4f67-a416-eccded572646.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "lamp",
+    "rooms": [
+      "living",
+      "bedroom"
     ]
   },
   {
@@ -75,7 +160,7 @@
       "d": 0.402
     },
     "realModel": "/furniture/blenderkit/opt/f4b1081f-6d3e-4b06-b55e-8fc2f80de17a.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/00a397c1d0154389b4c41ae1987deff2/files/thumbnail_459e7449-fe8b-4f8b-b5ea-e52df360e7b3.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/f4b1081f-6d3e-4b06-b55e-8fc2f80de17a.jpg",
     "brand": "BlenderKit",
     "subtitle": "lamp",
     "rooms": [
@@ -92,7 +177,7 @@
       "d": 0.474
     },
     "realModel": "/furniture/blenderkit/opt/0d8f6d0a-a383-4476-bc1b-a8ae8ff22135.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/a8b9a8597cc74ec78e9998d1b8a26b95/files/thumbnail_a9b93685-e242-46fb-b18e-e72e146daaee.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/0d8f6d0a-a383-4476-bc1b-a8ae8ff22135.jpg",
     "brand": "BlenderKit",
     "subtitle": "lamp",
     "rooms": [
@@ -109,7 +194,7 @@
       "d": 0.322
     },
     "realModel": "/furniture/blenderkit/opt/b8b951c4-1600-40f0-ba23-36ff3f5e86bb.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/fa79a0937d3740fa8863e64226cce61e/files/thumbnail_92414605-e984-4c3e-9689-c38275e71a38.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/b8b951c4-1600-40f0-ba23-36ff3f5e86bb.jpg",
     "brand": "BlenderKit",
     "subtitle": "decor",
     "rooms": [
@@ -126,11 +211,28 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/76e31f48-a0f7-4854-868a-c2f692b68f67.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/c9faee01f7f64128bea8b24aa5cb5a34/files/thumbnail_2e8e732d-ad86-4f55-97d0-dbb46059b7d6.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/76e31f48-a0f7-4854-868a-c2f692b68f67.png",
     "brand": "BlenderKit",
     "subtitle": "appliance",
     "rooms": [
       "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:96fec414-09da-42ab-af08-e71c35ed9936",
+    "name": "Arm Chair 01",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.848,
+      "d": 0.766
+    },
+    "realModel": "/furniture/blenderkit/opt/96fec414-09da-42ab-af08-e71c35ed9936.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/96fec414-09da-42ab-af08-e71c35ed9936.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "armchair",
+    "rooms": [
+      "living",
+      "bedroom"
     ]
   },
   {
@@ -142,7 +244,7 @@
       "d": 0.463
     },
     "realModel": "/furniture/blenderkit/opt/d889e3b1-6e86-48c6-bc5e-c6beeae322fc.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/fa165340720d4f56a6c423c22be0da30/files/thumbnail_350f83e2-06d9-4626-8abd-7cdcb07d5a19.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/d889e3b1-6e86-48c6-bc5e-c6beeae322fc.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
@@ -151,55 +253,41 @@
     ]
   },
   {
-    "assetId": "blenderkit:c07eef6b-349e-487a-8315-c58fe9aa1d44",
-    "name": "Bench Alley Loft Classic",
+    "assetId": "blenderkit:33f2c09b-b254-4ae6-9b89-8fe3c4e96c7f",
+    "name": "Bench",
     "category": "Seating",
     "footprint": {
-      "w": 1.25,
-      "d": 0.455
+      "w": 1.533,
+      "d": 0.439
     },
     "wallSnap": true,
-    "realModel": "/furniture/blenderkit/opt/c07eef6b-349e-487a-8315-c58fe9aa1d44.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/63eac485d27845ffa8f8e9dd254f4f6b/files/thumbnail_436a2421-6cab-4de1-bd89-1c8effd2fa28.png.512x512_q85_crop-%2C.png",
+    "realModel": "/furniture/blenderkit/opt/33f2c09b-b254-4ae6-9b89-8fe3c4e96c7f.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/33f2c09b-b254-4ae6-9b89-8fe3c4e96c7f.jpg",
     "brand": "BlenderKit",
     "subtitle": "bench",
     "rooms": [
       "living",
-      "dining"
+      "dining",
+      "outdoors"
     ]
   },
   {
-    "assetId": "blenderkit:0bfe4a6a-7c4a-49de-9b6b-a4e855dde193",
-    "name": "Carl-hansen-son 501",
+    "assetId": "blenderkit:adf9065a-6914-4044-9f76-c3f54fb94f8a",
+    "name": "Bench_VATRA",
     "category": "Seating",
     "footprint": {
-      "w": 0.621,
-      "d": 0.805
+      "w": 1.728,
+      "d": 0.493
     },
-    "realModel": "/furniture/blenderkit/opt/0bfe4a6a-7c4a-49de-9b6b-a4e855dde193.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/79d7fa663dc44bca904ee1ffabca3867/files/thumbnail_e74b2bfe-5b02-4b29-ac29-2957a4d313bb.jpg.512x512_q85_crop-%2C.jpg",
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/adf9065a-6914-4044-9f76-c3f54fb94f8a.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/adf9065a-6914-4044-9f76-c3f54fb94f8a.jpg",
     "brand": "BlenderKit",
-    "subtitle": "armchair",
+    "subtitle": "bench",
     "rooms": [
       "living",
-      "bedroom"
-    ]
-  },
-  {
-    "assetId": "blenderkit:dfdffe2b-4c26-4c33-9f13-784fe54c5570",
-    "name": "Carl-hansen-son CHAIR 29",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.521,
-      "d": 0.481
-    },
-    "realModel": "/furniture/blenderkit/opt/dfdffe2b-4c26-4c33-9f13-784fe54c5570.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d4302197f2794df882a15849fea19483/files/thumbnail_753602d5-8f6d-4635-86e0-bfbd929acbc8.jpg.512x512_q85_crop-%2C.jpg",
-    "brand": "BlenderKit",
-    "subtitle": "chair",
-    "rooms": [
       "dining",
-      "office"
+      "outdoors"
     ]
   },
   {
@@ -211,7 +299,7 @@
       "d": 0.487
     },
     "realModel": "/furniture/blenderkit/opt/498c5874-53ea-4706-8603-5face9777157.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/94eaeda75ef144a3988e4821002d8650/files/thumbnail_cfe090ab-4f33-4cc4-bdcc-ec8f44d8601e.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/498c5874-53ea-4706-8603-5face9777157.jpg",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -228,7 +316,92 @@
       "d": 0.596
     },
     "realModel": "/furniture/blenderkit/opt/703fe964-84bb-4468-84bd-f6aa3fb337b4.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/e5e6a20b74834d9f8ad37f62755c3385/files/thumbnail_d5ecc2ac-6b4b-4f20-a3f7-2d75107a10d6.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/703fe964-84bb-4468-84bd-f6aa3fb337b4.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:f3195791-6d94-4d71-95f8-ba51a73441ba",
+    "name": "Chair 03",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.512,
+      "d": 0.551
+    },
+    "realModel": "/furniture/blenderkit/opt/f3195791-6d94-4d71-95f8-ba51a73441ba.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/f3195791-6d94-4d71-95f8-ba51a73441ba.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:31c07c0a-3594-41f2-a48a-703ce3f6e4b2",
+    "name": "Chair 4",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.493,
+      "d": 0.519
+    },
+    "realModel": "/furniture/blenderkit/opt/31c07c0a-3594-41f2-a48a-703ce3f6e4b2.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/31c07c0a-3594-41f2-a48a-703ce3f6e4b2.png",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:fd85e5a4-a194-4891-9b1c-fd1ee90b4cd3",
+    "name": "Chair 5",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.491,
+      "d": 0.529
+    },
+    "realModel": "/furniture/blenderkit/opt/fd85e5a4-a194-4891-9b1c-fd1ee90b4cd3.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/fd85e5a4-a194-4891-9b1c-fd1ee90b4cd3.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:beb42069-c65c-431b-b9da-677eb3b714f4",
+    "name": "Chair Vintage-Freepoly.org",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.693,
+      "d": 0.756
+    },
+    "realModel": "/furniture/blenderkit/opt/beb42069-c65c-431b-b9da-677eb3b714f4.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/beb42069-c65c-431b-b9da-677eb3b714f4.png",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:6611536b-4d3e-435d-8542-132c9aaf2fc3",
+    "name": "Chair_VATRA",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.574,
+      "d": 0.574
+    },
+    "realModel": "/furniture/blenderkit/opt/6611536b-4d3e-435d-8542-132c9aaf2fc3.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/6611536b-4d3e-435d-8542-132c9aaf2fc3.jpg",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -246,7 +419,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/1fa0bc00-505a-40cb-bcc4-19f237e041d4.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/06142923e97346a7a29be0571a69ffe5/files/thumbnail_7cca029f-5629-4dfd-8df0-a93a1e5959e8.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/1fa0bc00-505a-40cb-bcc4-19f237e041d4.jpg",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -262,7 +435,7 @@
       "d": 0.667
     },
     "realModel": "/furniture/blenderkit/opt/0716c650-c735-493b-8f3a-3be2edfd3115.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d904af986683422e8492e6691b7410e0/files/thumbnail_fd9d6e95-8d8d-441c-bae6-be5498fdb452.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/0716c650-c735-493b-8f3a-3be2edfd3115.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -279,7 +452,7 @@
       "d": 0.789
     },
     "realModel": "/furniture/blenderkit/opt/e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/69a6be10fa074a2dbb928230a7e4e4b8/files/thumbnail_e02878e5-4661-4cfe-90b7-a20561043db8.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6.png",
     "brand": "BlenderKit",
     "subtitle": "armchair",
     "rooms": [
@@ -297,7 +470,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/d4e83285-807e-4bcf-8d84-3dd83cb44da5.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/297ceec5a46e4f6e93ad14aaefa02299/files/thumbnail_0dc5a338-0e8f-468d-80ef-dfa9a8044d08.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/d4e83285-807e-4bcf-8d84-3dd83cb44da5.png",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -313,7 +486,7 @@
       "d": 0.506
     },
     "realModel": "/furniture/blenderkit/opt/11adaf6f-177b-4301-82a8-8030ea31c421.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/44637757a38c4bc5b1fc6632876a6477/files/thumbnail_0da77d87-ad2c-4406-aa7c-7bfa0576f360.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/11adaf6f-177b-4301-82a8-8030ea31c421.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
@@ -331,7 +504,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/d19dd7b1-6573-41c7-b12c-b3eccdb7047d.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d00925461aa5487caf693dcbadff0d76/files/thumbnail_6234c232-b2cf-4cd8-add7-e61f4ffeac64.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/d19dd7b1-6573-41c7-b12c-b3eccdb7047d.jpg",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -348,7 +521,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/ecba830a-8df6-4375-b59c-a10a18f947f0.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d4eaa6c1866a431ea30c4c582f2070ad/files/thumbnail_a8e319a1-1acb-46f9-849f-b08c4b0a0f5e.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/ecba830a-8df6-4375-b59c-a10a18f947f0.jpg",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -356,20 +529,36 @@
     ]
   },
   {
-    "assetId": "blenderkit:2d312a73-fa7c-4a42-8b97-fb432e9275b6",
-    "name": "Ditre Italia Arlott High Sofa",
+    "assetId": "blenderkit:21ae746b-5ea9-490d-b65a-b8792f10c85c",
+    "name": "Curved lounger with air mattress",
     "category": "Seating",
     "footprint": {
-      "w": 0.686,
-      "d": 1.4
+      "w": 1.021,
+      "d": 2.009
     },
-    "wallSnap": true,
-    "realModel": "/furniture/blenderkit/opt/2d312a73-fa7c-4a42-8b97-fb432e9275b6.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/3ce4e25825c54966920df053cb304d8c/files/thumbnail_57ccdcf1-4947-46cf-9942-fdb4ad510446.jpg.512x512_q85_crop-%2C.jpg",
+    "realModel": "/furniture/blenderkit/opt/21ae746b-5ea9-490d-b65a-b8792f10c85c.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/21ae746b-5ea9-490d-b65a-b8792f10c85c.png",
     "brand": "BlenderKit",
-    "subtitle": "sofa",
+    "subtitle": "lounger",
     "rooms": [
-      "living"
+      "outdoors"
+    ]
+  },
+  {
+    "assetId": "blenderkit:ef199ed1-f0b0-4ee2-b3f6-5373ae4463a9",
+    "name": "Folding Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.491,
+      "d": 0.472
+    },
+    "realModel": "/furniture/blenderkit/opt/ef199ed1-f0b0-4ee2-b3f6-5373ae4463a9.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/ef199ed1-f0b0-4ee2-b3f6-5373ae4463a9.png",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
     ]
   },
   {
@@ -381,7 +570,7 @@
       "d": 0.547
     },
     "realModel": "/furniture/blenderkit/opt/e663848a-ed62-40a2-ae71-a56a34d7d443.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/a9092c5f9fd34aa48017268321153679/files/thumbnail_3e9e2a8a-17cb-4675-8ded-68c34e21ee94.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/e663848a-ed62-40a2-ae71-a56a34d7d443.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
@@ -398,7 +587,7 @@
       "d": 0.604
     },
     "realModel": "/furniture/blenderkit/opt/b32f180a-a041-4b01-bcfb-5ff8e6794699.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/fff9971542f4417c97a10a5b6f0f2f32/files/thumbnail_ca07be45-553a-42b4-a16b-cc500e22822e.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/b32f180a-a041-4b01-bcfb-5ff8e6794699.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -415,7 +604,7 @@
       "d": 0.333
     },
     "realModel": "/furniture/blenderkit/opt/246cc152-48b6-46a9-b4c1-7f7f299d0148.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/05d783c215db4804ac43b3b31e12dd76/files/thumbnail_0681e1ac-a76e-4b8b-8239-a9083e43e4c3.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/246cc152-48b6-46a9-b4c1-7f7f299d0148.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -433,7 +622,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/6c59319d-a7b6-470b-a0f9-981083a415ae.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/800ede902e464ebdb3ae7b6df940e9fc/files/thumbnail_2ae534ef-4d4b-4bb6-8404-1cebe0f8509a.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/6c59319d-a7b6-470b-a0f9-981083a415ae.jpg",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -450,7 +639,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/4faac4b8-cc88-4ff2-b7fd-a7edf46d3518.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/28a241ecfde84d8eb8f9b74a5dc3d446/files/thumbnail_1c634822-7a39-4b8e-944e-a45d5242e559.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/4faac4b8-cc88-4ff2-b7fd-a7edf46d3518.jpg",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -458,39 +647,21 @@
     ]
   },
   {
-    "assetId": "blenderkit:722988c3-67ad-497d-84ea-7b5408b05d38",
-    "name": "Marina Bench without Backrest",
+    "assetId": "blenderkit:ca5c4366-77af-4809-a1c2-d37734bcf2aa",
+    "name": "Medieval knight scissor chair",
     "category": "Seating",
     "footprint": {
-      "w": 0.457,
-      "d": 1.9
+      "w": 0.705,
+      "d": 0.623
     },
-    "wallSnap": true,
-    "realModel": "/furniture/blenderkit/opt/722988c3-67ad-497d-84ea-7b5408b05d38.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/15de79c94bf443c990c1b125ca19b9c8/files/thumbnail_80d6e902-533f-4460-b2a9-8c00afd98d44.jpg.512x512_q85_crop-%2C.jpg",
+    "realModel": "/furniture/blenderkit/opt/ca5c4366-77af-4809-a1c2-d37734bcf2aa.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/ca5c4366-77af-4809-a1c2-d37734bcf2aa.jpg",
     "brand": "BlenderKit",
-    "subtitle": "bench",
+    "subtitle": "chair",
     "rooms": [
-      "living",
-      "dining"
-    ]
-  },
-  {
-    "assetId": "blenderkit:17208e80-4a12-4509-ac48-ed20ea923f87",
-    "name": "Metal Bench",
-    "category": "Seating",
-    "footprint": {
-      "w": 3,
-      "d": 0.671
-    },
-    "wallSnap": true,
-    "realModel": "/furniture/blenderkit/opt/17208e80-4a12-4509-ac48-ed20ea923f87.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/8d47a0811ee2411da3d25cca76e09d72/files/thumbnail_29e5957c-5459-4f3a-9fcc-c670c97f79c7.png.512x512_q85_crop-%2C.png",
-    "brand": "BlenderKit",
-    "subtitle": "bench",
-    "rooms": [
-      "living",
-      "dining"
+      "dining",
+      "office",
+      "outdoors"
     ]
   },
   {
@@ -502,7 +673,7 @@
       "d": 0.355
     },
     "realModel": "/furniture/blenderkit/opt/2e1631c7-96ab-45c0-b822-4b4868b8d83e.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/a3c4cda642c44c75be11f8dc1b4bbaea/files/thumbnail_a6564ae4-ac4a-46d4-8391-505064e79e07.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/2e1631c7-96ab-45c0-b822-4b4868b8d83e.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
@@ -519,7 +690,7 @@
       "d": 0.471
     },
     "realModel": "/furniture/blenderkit/opt/5670b13c-e817-48a8-a78e-4dcfc2e4ec89.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/61b8d38e118c489c909c43cc668dfa55/files/thumbnail_c944b784-e101-42fc-b84a-08c6001300d8.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/5670b13c-e817-48a8-a78e-4dcfc2e4ec89.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
@@ -536,7 +707,7 @@
       "d": 1.19
     },
     "realModel": "/furniture/blenderkit/opt/f5f8aa7e-aa53-4c35-abb2-6c6c81b30604.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/65d6e7e761f64d26b4974258613d0449/files/thumbnail_0c41b8db-c09d-4e55-b4ea-6ef1bf70c928.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/f5f8aa7e-aa53-4c35-abb2-6c6c81b30604.png",
     "brand": "BlenderKit",
     "subtitle": "armchair",
     "rooms": [
@@ -553,7 +724,7 @@
       "d": 0.49
     },
     "realModel": "/furniture/blenderkit/opt/c0afe8be-94f7-4c7d-929c-8d8d0a36d7de.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/b5d91b0e1c5e42a39cef3efaa3c7b8ea/files/thumbnail_c3b4ec0f-1203-408c-8c1c-a995c13adc18.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/c0afe8be-94f7-4c7d-929c-8d8d0a36d7de.jpg",
     "brand": "BlenderKit",
     "subtitle": "pouf",
     "rooms": [
@@ -570,7 +741,7 @@
       "d": 0.9
     },
     "realModel": "/furniture/blenderkit/opt/eaeba31c-8d32-4d47-b3ce-2a494ce2b17f.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d40ce5db6cd94aff8aec472b3ee01ee3/files/thumbnail_956adc06-716b-4ef0-a433-cfd04193b32e.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/eaeba31c-8d32-4d47-b3ce-2a494ce2b17f.jpg",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -588,12 +759,29 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/8e9f05a2-8a6b-4bcf-a10c-3b30756d3892.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/a9e4e369de70459daf5be0967232a23f/files/thumbnail_6957e84a-8867-4568-982f-a574d17183e9.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/8e9f05a2-8a6b-4bcf-a10c-3b30756d3892.png",
     "brand": "BlenderKit",
     "subtitle": "bench",
     "rooms": [
       "living",
       "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:0d4fab43-03d4-4e49-8bdc-71c63e84cabd",
+    "name": "Painted Wooden Chair 01",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.432,
+      "d": 0.54
+    },
+    "realModel": "/furniture/blenderkit/opt/0d4fab43-03d4-4e49-8bdc-71c63e84cabd.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/0d4fab43-03d4-4e49-8bdc-71c63e84cabd.png",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
     ]
   },
   {
@@ -605,7 +793,7 @@
       "d": 0.662
     },
     "realModel": "/furniture/blenderkit/opt/ac92d62f-df99-4af2-89ac-be9549c268a6.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/e4df10d27bc446e0ac85fc15cc7897ad/files/thumbnail_48a00e01-d67b-4701-b215-17b495f6cfb7.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/ac92d62f-df99-4af2-89ac-be9549c268a6.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -623,7 +811,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/331afbd0-0322-423e-8967-d41257b93b62.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/ed9a70ca52eb4b3596a43dac125d668b/files/thumbnail_6d092c3a-d4c8-45c0-8da0-b33d5587c5c5.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/331afbd0-0322-423e-8967-d41257b93b62.png",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
@@ -639,7 +827,7 @@
       "d": 0.406
     },
     "realModel": "/furniture/blenderkit/opt/aad78f1d-ca8a-4def-bee7-836207e91484.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/1ff0e5f0065946118918e8b5ef6eb1b5/files/thumbnail_618b74d7-ba9e-4112-b3a9-707aa840143b.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/aad78f1d-ca8a-4def-bee7-836207e91484.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
@@ -656,7 +844,24 @@
       "d": 0.603
     },
     "realModel": "/furniture/blenderkit/opt/0e9aa213-afd4-4b45-ba88-d3b76bcef9ce.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/4318a4f5a3e242d39661e8c3a8c33ab3/files/thumbnail_d3e2f66e-3add-44d0-8649-bbc145ceebb0.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/0e9aa213-afd4-4b45-ba88-d3b76bcef9ce.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:017968cd-fdac-41ab-ae28-b90cd64e5e41",
+    "name": "Plastic Monobloc Chair 01",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.642,
+      "d": 0.628
+    },
+    "realModel": "/furniture/blenderkit/opt/017968cd-fdac-41ab-ae28-b90cd64e5e41.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/017968cd-fdac-41ab-ae28-b90cd64e5e41.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -673,7 +878,7 @@
       "d": 0.552
     },
     "realModel": "/furniture/blenderkit/opt/a48fb06f-f8d1-4936-82d1-053e6f0c372a.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/8d5775b55ab44beda2fc1385deeffee1/files/thumbnail_7cd44934-00d4-4541-8187-9dfba89cdd8a.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/a48fb06f-f8d1-4936-82d1-053e6f0c372a.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -682,32 +887,15 @@
     ]
   },
   {
-    "assetId": "blenderkit:2762707d-892d-4fd1-8ce6-5460da1f0b5a",
-    "name": "Trecento Sessanta",
+    "assetId": "blenderkit:4a113164-9c43-46de-9e1b-f950259aee73",
+    "name": "School Chair 01",
     "category": "Seating",
     "footprint": {
-      "w": 0.842,
-      "d": 0.724
+      "w": 0.566,
+      "d": 0.675
     },
-    "realModel": "/furniture/blenderkit/opt/2762707d-892d-4fd1-8ce6-5460da1f0b5a.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/912bc081b86747168a184b4e1981f28e/files/thumbnail_c206cbaf-d01d-4491-a943-c5b29f2aea02.jpg.512x512_q85_crop-%2C.jpg",
-    "brand": "BlenderKit",
-    "subtitle": "armchair",
-    "rooms": [
-      "living",
-      "bedroom"
-    ]
-  },
-  {
-    "assetId": "blenderkit:9df5c46e-cadf-4c15-816c-31ef905892ee",
-    "name": "Vincent shepard Teo",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.442,
-      "d": 0.485
-    },
-    "realModel": "/furniture/blenderkit/opt/9df5c46e-cadf-4c15-816c-31ef905892ee.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/3fa73bf5ef314466b63ded0feef7aa3d/files/thumbnail_a4b9f0a2-a809-497e-b52f-53d536cf171a.jpg.512x512_q85_crop-%2C.jpg",
+    "realModel": "/furniture/blenderkit/opt/4a113164-9c43-46de-9e1b-f950259aee73.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/4a113164-9c43-46de-9e1b-f950259aee73.png",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -724,7 +912,7 @@
       "d": 0.871
     },
     "realModel": "/furniture/blenderkit/opt/bf356937-e6e7-4a2e-91c7-c1251d1a406b.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/01ef751c45dd4c499c006bb22993387e/files/thumbnail_4c8824a2-5894-4810-909e-7c7114047fc7.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/bf356937-e6e7-4a2e-91c7-c1251d1a406b.jpg",
     "brand": "BlenderKit",
     "subtitle": "armchair",
     "rooms": [
@@ -742,11 +930,28 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/4d6cca18c0c64712a33268cbe6bd8c77/files/thumbnail_89427e48-8f14-402b-85f3-15af5fdde869.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae.png",
     "brand": "BlenderKit",
     "subtitle": "sofa",
     "rooms": [
       "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:9e80a12e-b38b-4081-b260-d5d2ef0c357b",
+    "name": "Winged Office Chair",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.801,
+      "d": 0.741
+    },
+    "realModel": "/furniture/blenderkit/opt/9e80a12e-b38b-4081-b260-d5d2ef0c357b.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/9e80a12e-b38b-4081-b260-d5d2ef0c357b.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "chair",
+    "rooms": [
+      "dining",
+      "office"
     ]
   },
   {
@@ -758,12 +963,29 @@
       "d": 0.716
     },
     "realModel": "/furniture/blenderkit/opt/a31c827d-81e6-4d1a-ba5a-1a6c5ea5459a.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/05224f0221214618a053d10850dc30ce/files/thumbnail_a5f36608-f0ea-4921-953e-e0a406a503c5.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/a31c827d-81e6-4d1a-ba5a-1a6c5ea5459a.jpg",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
       "dining",
       "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:f28d5f34-fb95-4294-8940-522a1738c35e",
+    "name": "Wooden bar stool",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.676,
+      "d": 0.676
+    },
+    "realModel": "/furniture/blenderkit/opt/f28d5f34-fb95-4294-8940-522a1738c35e.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/f28d5f34-fb95-4294-8940-522a1738c35e.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "stool",
+    "rooms": [
+      "kitchen",
+      "dining"
     ]
   },
   {
@@ -776,7 +998,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/9bff6a18-14e1-4442-aa22-6d7bb686d776.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/28a7ea1a000942129aecddbe407ee102/files/thumbnail_084fc8fa-9105-43fc-8787-7ba402923459.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/9bff6a18-14e1-4442-aa22-6d7bb686d776.jpg",
     "brand": "BlenderKit",
     "subtitle": "bench",
     "rooms": [
@@ -793,7 +1015,7 @@
       "d": 0.519
     },
     "realModel": "/furniture/blenderkit/opt/0d05c301-90b9-469a-8d52-91f9e9010244.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/c7df6b9fdf81478ea986ef15b9884477/files/thumbnail_e306f46f-23b1-414b-8aa2-d38ac8d53cb8.png.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/0d05c301-90b9-469a-8d52-91f9e9010244.jpg",
     "brand": "BlenderKit",
     "subtitle": "chair",
     "rooms": [
@@ -811,11 +1033,28 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/1890dedc-c249-40b7-947a-296ee154df2b.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/32ae5e4fc796476b88ec5a5ddb787b2d/files/thumbnail_7499afe8-9a59-4e64-b80b-9f5ffb4c6d7b.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/1890dedc-c249-40b7-947a-296ee154df2b.png",
     "brand": "BlenderKit",
     "subtitle": "bench",
     "rooms": [
       "living",
+      "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:c27d7253-29d2-40ee-a629-c3bee14cf207",
+    "name": "Wooden Stool 01",
+    "category": "Seating",
+    "footprint": {
+      "w": 0.425,
+      "d": 0.442
+    },
+    "realModel": "/furniture/blenderkit/opt/c27d7253-29d2-40ee-a629-c3bee14cf207.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/c27d7253-29d2-40ee-a629-c3bee14cf207.png",
+    "brand": "BlenderKit",
+    "subtitle": "stool",
+    "rooms": [
+      "kitchen",
       "dining"
     ]
   },
@@ -828,12 +1067,83 @@
       "d": 0.183
     },
     "realModel": "/furniture/blenderkit/opt/eb82ecf0-7240-4e91-a699-ed8f28cae459.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/bc34abadc43c47bca0e4e77be65792f4/files/thumbnail_e61bea99-4e73-4667-ae7a-d7a99be0fa1b.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/eb82ecf0-7240-4e91-a699-ed8f28cae459.png",
     "brand": "BlenderKit",
     "subtitle": "stool",
     "rooms": [
       "kitchen",
       "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:2d9a37b0-b73c-4d24-bf06-138ab9ba56ab",
+    "name": "Aged Sideboard",
+    "category": "Storage",
+    "footprint": {
+      "w": 2.1,
+      "d": 0.533
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/2d9a37b0-b73c-4d24-bf06-138ab9ba56ab.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/2d9a37b0-b73c-4d24-bf06-138ab9ba56ab.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dresser",
+    "rooms": [
+      "bedroom",
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:4ec6bd19-a45e-4c91-b707-4884fe140c4b",
+    "name": "AV Unit 01",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.64,
+      "d": 0.838
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/4ec6bd19-a45e-4c91-b707-4884fe140c4b.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/4ec6bd19-a45e-4c91-b707-4884fe140c4b.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dresser",
+    "rooms": [
+      "bedroom",
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:9c5678e3-ba8f-4ebc-88c1-2f464400abeb",
+    "name": "Bed side table Pinus",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.4,
+      "d": 0.332
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/9c5678e3-ba8f-4ebc-88c1-2f464400abeb.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/9c5678e3-ba8f-4ebc-88c1-2f464400abeb.png",
+    "brand": "BlenderKit",
+    "subtitle": "nightstand",
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "blenderkit:b627c645-cfd6-4b49-b01b-5f55bda25ef6",
+    "name": "Chest Of Drawers",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.902,
+      "d": 0.48
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/b627c645-cfd6-4b49-b01b-5f55bda25ef6.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/b627c645-cfd6-4b49-b01b-5f55bda25ef6.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dresser",
+    "rooms": [
+      "bedroom",
+      "living"
     ]
   },
   {
@@ -846,13 +1156,30 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/2b43761f-123c-4017-b706-ebef91754456.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/e844ee839f3d4af5866115ef2a631eec/files/thumbnail_00e71d94-e09d-41e0-9665-174a9ac0f137.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/2b43761f-123c-4017-b706-ebef91754456.png",
     "brand": "BlenderKit",
     "subtitle": "cabinet",
     "rooms": [
       "living",
       "bedroom",
       "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:50d1f036-e7e6-41b5-9a8f-11ca5d983d0a",
+    "name": "Classic Nightstand 01",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.568,
+      "d": 0.424
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/50d1f036-e7e6-41b5-9a8f-11ca5d983d0a.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/50d1f036-e7e6-41b5-9a8f-11ca5d983d0a.png",
+    "brand": "BlenderKit",
+    "subtitle": "nightstand",
+    "rooms": [
+      "bedroom"
     ]
   },
   {
@@ -865,7 +1192,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/b529df0c-671b-4589-bc1c-367fda168cc4.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/6fa945a19a2544109315a81908e22d89/files/thumbnail_e05ca417-4b88-4314-a4f6-b838d1ea8af9.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/b529df0c-671b-4589-bc1c-367fda168cc4.png",
     "brand": "BlenderKit",
     "subtitle": "shelving",
     "rooms": [
@@ -874,21 +1201,116 @@
     ]
   },
   {
-    "assetId": "blenderkit:d69acfaa-14da-4513-8026-3887bfd3125b",
-    "name": "Miomare bathroom shelf",
+    "assetId": "blenderkit:f73fa182-33af-400a-86ac-ba74cc1929a9",
+    "name": "Cupboard 02-Freepoly.org",
     "category": "Storage",
     "footprint": {
-      "w": 0.543,
-      "d": 0.058
+      "w": 1.266,
+      "d": 0.415
     },
     "wallSnap": true,
-    "realModel": "/furniture/blenderkit/opt/d69acfaa-14da-4513-8026-3887bfd3125b.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/09c1fac9de2f4ea7aaa58820332edbb3/files/thumbnail_392325ab-72bc-473f-b738-5e687d0eb6dc.jpg.512x512_q85_crop-%2C.jpg",
+    "realModel": "/furniture/blenderkit/opt/f73fa182-33af-400a-86ac-ba74cc1929a9.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/f73fa182-33af-400a-86ac-ba74cc1929a9.png",
+    "brand": "BlenderKit",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:be6c358c-2655-495c-9b0d-4d84459a5400",
+    "name": "Dark Narrow Bookshelf",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.482,
+      "d": 0.311
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/be6c358c-2655-495c-9b0d-4d84459a5400.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/be6c358c-2655-495c-9b0d-4d84459a5400.png",
     "brand": "BlenderKit",
     "subtitle": "shelving",
     "rooms": [
       "living",
       "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:b600cbf2-cfb7-4abb-b7f8-86c83cad5ad4",
+    "name": "File cabinets 2",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.577,
+      "d": 0.411
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/b600cbf2-cfb7-4abb-b7f8-86c83cad5ad4.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/b600cbf2-cfb7-4abb-b7f8-86c83cad5ad4.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:ec48ad45-5624-446c-bab7-a6e600176ca5",
+    "name": "File Mobile Wood And Paint Finish",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.47,
+      "d": 0.465
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/ec48ad45-5624-446c-bab7-a6e600176ca5.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/ec48ad45-5624-446c-bab7-a6e600176ca5.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:f89dff31-ae54-4564-ac15-8fe627785567",
+    "name": "File Mobile Wood Finish",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.47,
+      "d": 0.465
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/f89dff31-ae54-4564-ac15-8fe627785567.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/f89dff31-ae54-4564-ac15-8fe627785567.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad",
+    "name": "Gothic Cabinet 01",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.719,
+      "d": 1.129
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad.png",
+    "brand": "BlenderKit",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom",
+      "kitchen"
     ]
   },
   {
@@ -901,7 +1323,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/89df3e31-303c-4401-a54f-ec834e46e180.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/3c4d2bffe12b4d938fc26274da6e3a2c/files/thumbnail_a3fed1f7-8032-4571-bfcf-46c905c542ad.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/89df3e31-303c-4401-a54f-ec834e46e180.png",
     "brand": "BlenderKit",
     "subtitle": "cabinet",
     "rooms": [
@@ -920,7 +1342,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/30a3d1c5-6554-42fd-a8d0-a1efdff162b3.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/eecad3ff51ec42d3b71586ce2ee6895c/files/thumbnail_63ecb8d0-da1f-4fff-b2cd-d2791906986d.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/30a3d1c5-6554-42fd-a8d0-a1efdff162b3.png",
     "brand": "BlenderKit",
     "subtitle": "cabinet",
     "rooms": [
@@ -939,7 +1361,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/9c201695-6847-410f-89df-7cdc0ec14f23.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d998677e0f3d45f18b518a913d425d77/files/thumbnail_baa0313c-87a6-4bc3-a3b3-7e5492784eda.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/9c201695-6847-410f-89df-7cdc0ec14f23.png",
     "brand": "BlenderKit",
     "subtitle": "nightstand",
     "rooms": [
@@ -956,7 +1378,98 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/830e4547-ad81-48cb-b61d-d387d046a449.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/3375717814ff4f76ab589d645f8eead1/files/thumbnail_afd5005d-d2c3-41ff-88f5-7b71ec7a6386.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/830e4547-ad81-48cb-b61d-d387d046a449.png",
+    "brand": "BlenderKit",
+    "subtitle": "shelving",
+    "rooms": [
+      "living",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:308b256a-984b-459e-9fda-fd50208abb17",
+    "name": "Recycled Wood Chest Of Drawers",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.565,
+      "d": 0.481
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/308b256a-984b-459e-9fda-fd50208abb17.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/308b256a-984b-459e-9fda-fd50208abb17.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dresser",
+    "rooms": [
+      "bedroom",
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:0caa07f9-ec69-4561-b1a7-a2b78fc79d2f",
+    "name": "Rust Cabinet-Freepoly.org",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.58,
+      "d": 0.615
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/0caa07f9-ec69-4561-b1a7-a2b78fc79d2f.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/0caa07f9-ec69-4561-b1a7-a2b78fc79d2f.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "cabinet",
+    "rooms": [
+      "living",
+      "bedroom",
+      "kitchen"
+    ]
+  },
+  {
+    "assetId": "blenderkit:b9c69165-338f-4eac-ad76-72a33f8ccbcd",
+    "name": "Shelf 01",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.003,
+      "d": 0.257
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/b9c69165-338f-4eac-ad76-72a33f8ccbcd.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/b9c69165-338f-4eac-ad76-72a33f8ccbcd.png",
+    "brand": "BlenderKit",
+    "subtitle": "shelving",
+    "rooms": [
+      "living",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:9856c0f5-7f9e-4816-ac55-e5bb9a3ab549",
+    "name": "Steel Frame Shelves 01",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.097,
+      "d": 0.502
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/9856c0f5-7f9e-4816-ac55-e5bb9a3ab549.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/9856c0f5-7f9e-4816-ac55-e5bb9a3ab549.png",
+    "brand": "BlenderKit",
+    "subtitle": "shelving",
+    "rooms": [
+      "living",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:9fd5fb9c-2763-4efb-80f1-187635fd03a4",
+    "name": "Steel Frame Shelves 02",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.593,
+      "d": 0.502
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/9fd5fb9c-2763-4efb-80f1-187635fd03a4.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/9fd5fb9c-2763-4efb-80f1-187635fd03a4.png",
     "brand": "BlenderKit",
     "subtitle": "shelving",
     "rooms": [
@@ -974,7 +1487,25 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/2747a371-7a7e-4b76-be24-7660093c0b84.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/72fb1a0debf1427da40d9d52a959a593/files/thumbnail_a6c78d19-c89f-4df8-b648-a4b5c1621c48.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/2747a371-7a7e-4b76-be24-7660093c0b84.png",
+    "brand": "BlenderKit",
+    "subtitle": "shelving",
+    "rooms": [
+      "living",
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:fe2a1dcf-17d2-4718-8829-faad9723d4b3",
+    "name": "Wooden Bookshelf Worn",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.374,
+      "d": 0.581
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/fe2a1dcf-17d2-4718-8829-faad9723d4b3.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/fe2a1dcf-17d2-4718-8829-faad9723d4b3.jpg",
     "brand": "BlenderKit",
     "subtitle": "shelving",
     "rooms": [
@@ -992,12 +1523,28 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/5611bfe09876485297d15a95e7b565a1/files/thumbnail_2bd6b2d7-3c86-4a3b-9220-36af7a757e66.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e.png",
     "brand": "BlenderKit",
     "subtitle": "rack",
     "rooms": [
       "living",
       "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:3ae57e53-6f3f-4b66-bd41-29cc5b0fc5d5",
+    "name": "Acrylic cafee table",
+    "category": "Tables",
+    "footprint": {
+      "w": 1,
+      "d": 0.5
+    },
+    "realModel": "/furniture/blenderkit/opt/3ae57e53-6f3f-4b66-bd41-29cc5b0fc5d5.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/3ae57e53-6f3f-4b66-bd41-29cc5b0fc5d5.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
     ]
   },
   {
@@ -1010,9 +1557,57 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/294c2ee9-a12f-4b8c-a5c5-f7178326cb75.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/c88c76e85e934e788438ba85875daa5b/files/thumbnail_e0dbd8e9-1fec-49d5-ab6a-23143f1aaa86.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/294c2ee9-a12f-4b8c-a5c5-f7178326cb75.png",
     "brand": "BlenderKit",
     "subtitle": "console",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:38a3167b-6584-4e90-b04c-af3cabf27a06",
+    "name": "Circular Wood Coffe Table",
+    "category": "Tables",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "realModel": "/furniture/blenderkit/opt/38a3167b-6584-4e90-b04c-af3cabf27a06.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/38a3167b-6584-4e90-b04c-af3cabf27a06.png",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:784023dd-6758-4b3b-99c8-a96c4c8dfee2",
+    "name": "Coffee Table",
+    "category": "Tables",
+    "footprint": {
+      "w": 0.941,
+      "d": 1.372
+    },
+    "realModel": "/furniture/blenderkit/opt/784023dd-6758-4b3b-99c8-a96c4c8dfee2.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/784023dd-6758-4b3b-99c8-a96c4c8dfee2.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:2fd64c16-5134-411b-92ad-07401c3ca87c",
+    "name": "Coffee Table",
+    "category": "Tables",
+    "footprint": {
+      "w": 1,
+      "d": 0.679
+    },
+    "realModel": "/furniture/blenderkit/opt/2fd64c16-5134-411b-92ad-07401c3ca87c.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/2fd64c16-5134-411b-92ad-07401c3ca87c.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
     "rooms": [
       "living"
     ]
@@ -1026,7 +1621,55 @@
       "d": 1.026
     },
     "realModel": "/furniture/blenderkit/opt/4db96473-72ed-4947-80d8-af6dc1c4dee8.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/3ea7c1836b684befa75bcfe62acb27f0/files/thumbnail_400dcbc3-aa85-43c5-88d2-9b81a9dd1c13.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/4db96473-72ed-4947-80d8-af6dc1c4dee8.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:472ad8a5-e283-40fc-8755-b6f644b74784",
+    "name": "Coffee Table 01",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.54,
+      "d": 0.973
+    },
+    "realModel": "/furniture/blenderkit/opt/472ad8a5-e283-40fc-8755-b6f644b74784.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/472ad8a5-e283-40fc-8755-b6f644b74784.png",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:30b84830-c89f-4d60-8c01-48de0a1e602a",
+    "name": "Coffee Table 02",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.184,
+      "d": 0.551
+    },
+    "realModel": "/furniture/blenderkit/opt/30b84830-c89f-4d60-8c01-48de0a1e602a.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/30b84830-c89f-4d60-8c01-48de0a1e602a.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:a8c88282-ef18-45c2-9b1b-1004fe673dd3",
+    "name": "Coffee Table Round 01",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.301,
+      "d": 1.301
+    },
+    "realModel": "/furniture/blenderkit/opt/a8c88282-ef18-45c2-9b1b-1004fe673dd3.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/a8c88282-ef18-45c2-9b1b-1004fe673dd3.png",
     "brand": "BlenderKit",
     "subtitle": "coffee table",
     "rooms": [
@@ -1042,7 +1685,7 @@
       "d": 1.016
     },
     "realModel": "/furniture/blenderkit/opt/a85d4f2f-b1d6-4a05-8e54-a3ba0b7efe9f.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/929d574b02ed4b48ba5b2ce3214a31d6/files/thumbnail_9a9e71fb-c58a-4f9b-82f3-05fd598f67f2.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/a85d4f2f-b1d6-4a05-8e54-a3ba0b7efe9f.jpg",
     "brand": "BlenderKit",
     "subtitle": "dining table",
     "rooms": [
@@ -1058,7 +1701,39 @@
       "d": 1.39
     },
     "realModel": "/furniture/blenderkit/opt/8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/8aff94998f504e0a90cf2ca4f1267802/files/thumbnail_0019e8bd-9ff3-4159-a649-a219cdafe181.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45.png",
+    "brand": "BlenderKit",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:d90a729f-7e97-41e5-a9c3-650381f3d06a",
+    "name": "Dining Table 01",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.789,
+      "d": 0.974
+    },
+    "realModel": "/furniture/blenderkit/opt/d90a729f-7e97-41e5-a9c3-650381f3d06a.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/d90a729f-7e97-41e5-a9c3-650381f3d06a.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:b7b0eac0-f441-4077-bdcc-5c5f6739a7fe",
+    "name": "Dining Table Medium",
+    "category": "Tables",
+    "footprint": {
+      "w": 0.9,
+      "d": 1.5
+    },
+    "realModel": "/furniture/blenderkit/opt/b7b0eac0-f441-4077-bdcc-5c5f6739a7fe.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/b7b0eac0-f441-4077-bdcc-5c5f6739a7fe.png",
     "brand": "BlenderKit",
     "subtitle": "dining table",
     "rooms": [
@@ -1074,7 +1749,7 @@
       "d": 0.518
     },
     "realModel": "/furniture/blenderkit/opt/1057fdd0-a688-4ba1-b624-94f8466ce6c8.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d706e1d25d564d1e8801d03ef0c08d3d/files/thumbnail_f19b32d3-2132-49b9-958c-1bbd8e73f6b8.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/1057fdd0-a688-4ba1-b624-94f8466ce6c8.png",
     "brand": "BlenderKit",
     "subtitle": "dining table",
     "rooms": [
@@ -1090,7 +1765,7 @@
       "d": 0.758
     },
     "realModel": "/furniture/blenderkit/opt/1a2474e6-2fce-480a-be98-0b12c6b696ab.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/2e691d8a91494de7a841c5b739dc5a4b/files/thumbnail_6112931e-694a-4fca-926b-80a57a8c81c8.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/1a2474e6-2fce-480a-be98-0b12c6b696ab.png",
     "brand": "BlenderKit",
     "subtitle": "coffee table",
     "rooms": [
@@ -1107,7 +1782,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/8a90d1ac-eefb-45ff-b854-e0d66b067d39.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/fb475a2dce1f486fbdd63fe1f5ded85d/files/thumbnail_3923a398-8649-4d60-b8ae-afe1f4fb902c.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/8a90d1ac-eefb-45ff-b854-e0d66b067d39.jpg",
     "brand": "BlenderKit",
     "subtitle": "desk",
     "rooms": [
@@ -1123,7 +1798,7 @@
       "d": 0.6
     },
     "realModel": "/furniture/blenderkit/opt/d4de2ba6-412d-4e23-8cbc-50f5ee7cfa4e.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/332d2f3203964fafa2eeb97e1c170698/files/thumbnail_d80edeec-3e0a-4a72-a76f-3edab1c31ae0.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/d4de2ba6-412d-4e23-8cbc-50f5ee7cfa4e.png",
     "brand": "BlenderKit",
     "subtitle": "coffee table",
     "rooms": [
@@ -1140,7 +1815,7 @@
     },
     "wallSnap": true,
     "realModel": "/furniture/blenderkit/opt/0ab00d3f-db59-42cf-b000-e8a3ce25b12c.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/87cf95e25aaa430c9c3ac699e5974c5d/files/thumbnail_df28b2f8-1edf-4bae-98e9-ec872f78fe53.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/0ab00d3f-db59-42cf-b000-e8a3ce25b12c.png",
     "brand": "BlenderKit",
     "subtitle": "desk",
     "rooms": [
@@ -1156,11 +1831,61 @@
       "d": 0.62
     },
     "realModel": "/furniture/blenderkit/opt/b6bdc26a-36bb-4be3-8f64-312836aae79b.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/d97fa891937647008983016b8a8abc99/files/thumbnail_4bc95fb0-df69-477d-93a8-fb7570df640c.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/b6bdc26a-36bb-4be3-8f64-312836aae79b.jpg",
     "brand": "BlenderKit",
     "subtitle": "coffee table",
     "rooms": [
       "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:900d9b4c-3a52-4cd5-9d16-e639bf90e3ac",
+    "name": "Modern Coffee Table 01",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.202,
+      "d": 0.6
+    },
+    "realModel": "/furniture/blenderkit/opt/900d9b4c-3a52-4cd5-9d16-e639bf90e3ac.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/900d9b4c-3a52-4cd5-9d16-e639bf90e3ac.png",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:4f8723d6-6bc8-45ba-8b57-f125bbc86886",
+    "name": "Modern Desk",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.288,
+      "d": 0.623
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/4f8723d6-6bc8-45ba-8b57-f125bbc86886.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/4f8723d6-6bc8-45ba-8b57-f125bbc86886.png",
+    "brand": "BlenderKit",
+    "subtitle": "desk",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:a3c92bf0-8ff0-484f-9fbc-cce9aff8892e",
+    "name": "Modern Desk",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.2,
+      "d": 0.75
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/a3c92bf0-8ff0-484f-9fbc-cce9aff8892e.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/a3c92bf0-8ff0-484f-9fbc-cce9aff8892e.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "desk",
+    "rooms": [
+      "office"
     ]
   },
   {
@@ -1172,11 +1897,79 @@
       "d": 0.7
     },
     "realModel": "/furniture/blenderkit/opt/c56d5811-f7c7-42a0-b007-11547d50f798.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/26c7a1923a9f4563b06da6b1344fb953/files/thumbnail_c0e88c65-f7e3-453c-8dbf-4b19a31b63b5.jpg.512x512_q85_crop-%2C.jpg",
+    "thumbnail": "/furniture/blenderkit/thumb/c56d5811-f7c7-42a0-b007-11547d50f798.jpg",
     "brand": "BlenderKit",
     "subtitle": "dining table",
     "rooms": [
       "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:047f8f98-e6f8-42d4-a4f1-dd598af9c390",
+    "name": "Office desk industrial design",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.363,
+      "d": 0.608
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/047f8f98-e6f8-42d4-a4f1-dd598af9c390.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/047f8f98-e6f8-42d4-a4f1-dd598af9c390.png",
+    "brand": "BlenderKit",
+    "subtitle": "desk",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:11aee464-c648-4950-84a2-095c0284c6f1",
+    "name": "Old desk 02",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.052,
+      "d": 0.643
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/11aee464-c648-4950-84a2-095c0284c6f1.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/11aee464-c648-4950-84a2-095c0284c6f1.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "desk",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:e7fa563d-d41a-4a27-973b-fd8059a19d3d",
+    "name": "Old Desk 03",
+    "category": "Tables",
+    "footprint": {
+      "w": 0.912,
+      "d": 0.65
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/e7fa563d-d41a-4a27-973b-fd8059a19d3d.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/e7fa563d-d41a-4a27-973b-fd8059a19d3d.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "desk",
+    "rooms": [
+      "office"
+    ]
+  },
+  {
+    "assetId": "blenderkit:4adab919-ed88-4fae-96c7-7a021800b117",
+    "name": "Old Desk 4",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.015,
+      "d": 2.065
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/blenderkit/opt/4adab919-ed88-4fae-96c7-7a021800b117.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/4adab919-ed88-4fae-96c7-7a021800b117.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "desk",
+    "rooms": [
+      "office"
     ]
   },
   {
@@ -1188,7 +1981,7 @@
       "d": 0.796
     },
     "realModel": "/furniture/blenderkit/opt/4fd0b237-9527-45d5-b82a-4cfec427f673.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/0730853c7efa4b9895d2d80c3bd66fe5/files/thumbnail_d751210b-61c0-430c-a827-999502892042.png.512x512_q85_crop-%2C.png",
+    "thumbnail": "/furniture/blenderkit/thumb/4fd0b237-9527-45d5-b82a-4cfec427f673.png",
     "brand": "BlenderKit",
     "subtitle": "dining table",
     "rooms": [
@@ -1196,20 +1989,67 @@
     ]
   },
   {
-    "assetId": "blenderkit:0dd6f649-dbef-4c78-a8ae-574bcc9cad64",
-    "name": "Wooden Corner Table",
+    "assetId": "blenderkit:08dee582-4ac7-47fc-a1e1-192e677da403",
+    "name": "Scandinavian Dining Table",
     "category": "Tables",
     "footprint": {
-      "w": 0.325,
-      "d": 0.467
+      "w": 1.5,
+      "d": 1
     },
-    "realModel": "/furniture/blenderkit/opt/0dd6f649-dbef-4c78-a8ae-574bcc9cad64.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/89e6b543da4b44c5a8a09ef088adddc2/files/thumbnail_1646c245-48c6-4bc7-b146-fd08bd798f69.png.512x512_q85_crop-%2C.png",
+    "realModel": "/furniture/blenderkit/opt/08dee582-4ac7-47fc-a1e1-192e677da403.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/08dee582-4ac7-47fc-a1e1-192e677da403.jpg",
     "brand": "BlenderKit",
-    "subtitle": "side table",
+    "subtitle": "dining table",
     "rooms": [
-      "living",
-      "bedroom"
+      "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:e1901884-2e47-4a82-8a2e-bfd573200c6f",
+    "name": "Small Wooden Table 01",
+    "category": "Tables",
+    "footprint": {
+      "w": 0.916,
+      "d": 0.44
+    },
+    "realModel": "/furniture/blenderkit/opt/e1901884-2e47-4a82-8a2e-bfd573200c6f.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/e1901884-2e47-4a82-8a2e-bfd573200c6f.png",
+    "brand": "BlenderKit",
+    "subtitle": "coffee table",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "blenderkit:c230255a-365e-44a3-8a31-f34dab41f4a6",
+    "name": "Wooden Table 02",
+    "category": "Tables",
+    "footprint": {
+      "w": 1.134,
+      "d": 0.706
+    },
+    "realModel": "/furniture/blenderkit/opt/c230255a-365e-44a3-8a31-f34dab41f4a6.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/c230255a-365e-44a3-8a31-f34dab41f4a6.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining"
+    ]
+  },
+  {
+    "assetId": "blenderkit:bdff957c-a9e9-4827-b6c9-602b264a4fbf",
+    "name": "Wooden table with metallic legs",
+    "category": "Tables",
+    "footprint": {
+      "w": 2,
+      "d": 0.9
+    },
+    "realModel": "/furniture/blenderkit/opt/bdff957c-a9e9-4827-b6c9-602b264a4fbf.glb",
+    "thumbnail": "/furniture/blenderkit/thumb/bdff957c-a9e9-4827-b6c9-602b264a4fbf.jpg",
+    "brand": "BlenderKit",
+    "subtitle": "dining table",
+    "rooms": [
+      "dining"
     ]
   }
 ]

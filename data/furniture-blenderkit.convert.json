@@ -1,0 +1,837 @@
+{
+  "017968cd-fdac-41ab-ae28-b90cd64e5e41": {
+    "name": "Plastic Monobloc Chair 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 42909429,
+    "objects": 2,
+    "glbBytes": 6179388
+  },
+  "02615270-a685-4095-9de0-92f1e6be50f6": {
+    "name": "School Desk 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 15922196,
+    "objects": 2,
+    "glbBytes": 4599468
+  },
+  "03bba041-d8bd-4df9-92d1-01faae8a386f": {
+    "name": "Scan shoe",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 43582550,
+    "objects": 2,
+    "glbBytes": 6437648
+  },
+  "047f8f98-e6f8-42d4-a4f1-dd598af9c390": {
+    "name": "Office desk industrial design",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 111320943,
+    "objects": 5,
+    "glbBytes": 10613916
+  },
+  "08dee582-4ac7-47fc-a1e1-192e677da403": {
+    "name": "Scandinavian Dining Table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 64962563,
+    "objects": 3,
+    "glbBytes": 3813852
+  },
+  "0caa07f9-ec69-4561-b1a7-a2b78fc79d2f": {
+    "name": "Rust Cabinet-Freepoly.org",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 59786951,
+    "objects": 2,
+    "glbBytes": 4693336
+  },
+  "0d4010d7-daef-4b9a-b613-16a17e85b794": {
+    "name": "Wooden Table 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 24597225,
+    "objects": 2,
+    "glbBytes": 5327616
+  },
+  "0d4fab43-03d4-4e49-8bdc-71c63e84cabd": {
+    "name": "Painted Wooden Chair 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 57290345,
+    "objects": 2,
+    "glbBytes": 5446004
+  },
+  "11aee464-c648-4950-84a2-095c0284c6f1": {
+    "name": "Old desk 02",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 91343412,
+    "objects": 2,
+    "glbBytes": 7011112
+  },
+  "199e32bc-122e-4693-82b2-16c0ecfbcac5": {
+    "name": "Wooden Display Shelves 01",
+    "ok": false,
+    "date": "2026-09-15",
+    "blendBytes": 71541908,
+    "objects": 5,
+    "reason": "2 texture(s) not packed in the .blend"
+  },
+  "1b278621-893e-4bee-80de-2325f816e242": {
+    "name": "Coffee Cart 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 36852371,
+    "objects": 4,
+    "glbBytes": 6247992
+  },
+  "1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad": {
+    "name": "Gothic Cabinet 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 15839750,
+    "objects": 6,
+    "glbBytes": 5444148
+  },
+  "1d260270-aa31-4ae4-be8f-e2366a2e5c23": {
+    "name": "Pot",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 28477282,
+    "objects": 2,
+    "glbBytes": 2995684
+  },
+  "21ae746b-5ea9-490d-b65a-b8792f10c85c": {
+    "name": "Curved lounger with air mattress",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 20451621,
+    "objects": 7,
+    "glbBytes": 10898988
+  },
+  "23f53808-39a3-41a5-988d-0e8737532d6e": {
+    "name": "Bathroom Wall Cabinet",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 34535491,
+    "objects": 4,
+    "glbBytes": 6854988
+  },
+  "268de6fe-b7a4-44b0-82f7-c5545ce610b5": {
+    "name": "Cylindrical Table Lamp",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 750236,
+    "objects": 4,
+    "excluded": [
+      "Point_Light (light)"
+    ],
+    "glbBytes": 785328
+  },
+  "2d9a37b0-b73c-4d24-bf06-138ab9ba56ab": {
+    "name": "Aged Sideboard",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 23572353,
+    "objects": 1,
+    "glbBytes": 2890196
+  },
+  "2fd64c16-5134-411b-92ad-07401c3ca87c": {
+    "name": "Coffee Table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 5610306,
+    "objects": 1,
+    "glbBytes": 1379360
+  },
+  "308b256a-984b-459e-9fda-fd50208abb17": {
+    "name": "Recycled Wood Chest Of Drawers",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 40340996,
+    "objects": 1,
+    "glbBytes": 3864092
+  },
+  "30b84830-c89f-4d60-8c01-48de0a1e602a": {
+    "name": "Coffee Table 02",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 30460059,
+    "objects": 1,
+    "glbBytes": 2101312
+  },
+  "31c07c0a-3594-41f2-a48a-703ce3f6e4b2": {
+    "name": "Chair 4",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 5611042,
+    "objects": 8,
+    "glbBytes": 5439300
+  },
+  "370524b8-0cc7-4ead-92fe-253c264cacc1": {
+    "name": "Wooden box-Freepoly.org",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 46449121,
+    "objects": 27,
+    "glbBytes": 3238916
+  },
+  "38a3167b-6584-4e90-b04c-af3cabf27a06": {
+    "name": "Circular Wood Coffe Table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 51721261,
+    "objects": 3,
+    "glbBytes": 2732492
+  },
+  "3ae57e53-6f3f-4b66-bd41-29cc5b0fc5d5": {
+    "name": "Acrylic cafee table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 85439,
+    "objects": 1,
+    "glbBytes": 205676
+  },
+  "415c5213-d9db-4199-8d55-ea890964eb9e": {
+    "name": "Privacy Booths",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 29684306,
+    "objects": 1,
+    "glbBytes": 2352472
+  },
+  "4402bd33-48a7-463b-af6f-25c6ce29d958": {
+    "name": "White outdoor Standing Table with cloth",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 690656,
+    "objects": 9,
+    "glbBytes": 12684568
+  },
+  "472ad8a5-e283-40fc-8755-b6f644b74784": {
+    "name": "Coffee Table 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 18648313,
+    "objects": 2,
+    "glbBytes": 4792248
+  },
+  "4a113164-9c43-46de-9e1b-f950259aee73": {
+    "name": "School Chair 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 29646120,
+    "objects": 2,
+    "glbBytes": 5975672
+  },
+  "4adab919-ed88-4fae-96c7-7a021800b117": {
+    "name": "Old Desk 4",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 11325836,
+    "objects": 2,
+    "glbBytes": 1153620
+  },
+  "4c997036-3876-4ebc-8649-428676ee4577": {
+    "name": "Scan Wooden Chair 02",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 31096038,
+    "objects": 2,
+    "glbBytes": 2064020
+  },
+  "4ec6bd19-a45e-4c91-b707-4884fe140c4b": {
+    "name": "AV Unit 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 24211803,
+    "objects": 1,
+    "glbBytes": 2014284
+  },
+  "4f8723d6-6bc8-45ba-8b57-f125bbc86886": {
+    "name": "Modern Desk",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 161565,
+    "objects": 1,
+    "glbBytes": 142928
+  },
+  "50d1f036-e7e6-41b5-9a8f-11ca5d983d0a": {
+    "name": "Classic Nightstand 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 18116721,
+    "objects": 2,
+    "glbBytes": 4662236
+  },
+  "53195601-f0c2-4c34-871a-34aa32472e7e": {
+    "name": "Wooden Dining Chair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 21289504,
+    "objects": 1,
+    "glbBytes": 1541228
+  },
+  "5c3b02f2-98cd-4b4b-b99f-8d6e48a87357": {
+    "name": "Ottoman 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 35923323,
+    "objects": 2,
+    "glbBytes": 6337000
+  },
+  "625bf042-33d9-4763-852c-39686c0c6c7c": {
+    "name": "SciFi Armchair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 5610724,
+    "objects": 42,
+    "excluded": [
+      "bool.006 (hide_render)",
+      "bool.001 (hide_render)"
+    ],
+    "glbBytes": 6803844
+  },
+  "6611536b-4d3e-435d-8542-132c9aaf2fc3": {
+    "name": "Chair_VATRA",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 993549,
+    "objects": 6,
+    "excluded": [
+      "Cylinder.002 (hide_render)",
+      "Cylinder.001 (hide_render)"
+    ],
+    "glbBytes": 11053332
+  },
+  "66fbe60b-4092-4a64-b00b-1c3694eeeb9f": {
+    "name": "Side Table 01",
+    "ok": false,
+    "date": "2026-09-15",
+    "blendBytes": 43138971,
+    "objects": 2,
+    "reason": "1 texture(s) not packed in the .blend"
+  },
+  "6d8f30d8-08c6-4595-b045-bca1488b00ad": {
+    "name": "Brown desk",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 63947582,
+    "objects": 2,
+    "glbBytes": 5879468
+  },
+  "6f5f2494-6d00-4d87-80a6-6fc1aeaf1389": {
+    "name": "Desk Lamp",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 6849874,
+    "objects": 2,
+    "glbBytes": 1979568
+  },
+  "784023dd-6758-4b3b-99c8-a96c4c8dfee2": {
+    "name": "Coffee Table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 6322046,
+    "objects": 2,
+    "glbBytes": 2234352
+  },
+  "7849e317-a440-40c0-a477-3734e3630f35": {
+    "name": "White outdoor Standing Table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 8896367,
+    "objects": 8,
+    "glbBytes": 7850580
+  },
+  "7a43ff88-d80c-421b-8734-3f8e085863fe": {
+    "name": "Table And Chair Combination",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 15040378,
+    "objects": 2,
+    "glbBytes": 2954884
+  },
+  "7ea37cdc-801c-4f67-a416-eccded572646": {
+    "name": "Vintage Oil Lamp",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 29098501,
+    "objects": 3,
+    "glbBytes": 4578172
+  },
+  "7fd22849-c10a-456d-b1e2-e8ade9b8e969": {
+    "name": "Table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 21485382,
+    "objects": 3,
+    "glbBytes": 9383092
+  },
+  "8394a888-4e5a-4b12-a3ab-f0175aaf7754": {
+    "name": "Procedural Table GN",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 312463,
+    "objects": 1,
+    "glbBytes": 754924
+  },
+  "86c161d8-1655-430c-aab9-a0dbb377c29b": {
+    "name": "Wooden technological computer table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 10844683,
+    "objects": 4,
+    "glbBytes": 4207444
+  },
+  "8748915a-beb5-45fe-a92c-0659478b6690": {
+    "name": "Imperial black coffee table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 85167,
+    "objects": 1,
+    "glbBytes": 250732
+  },
+  "896944a8-802f-4c37-b8c1-ff5deff25289": {
+    "name": "Chest of drawers",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 1064252,
+    "objects": 2,
+    "glbBytes": 247324
+  },
+  "8f696fe1-d286-454b-af19-a7aa75dc5439": {
+    "name": "Side Table Tall 01",
+    "ok": false,
+    "date": "2026-09-15",
+    "blendBytes": 52006034,
+    "objects": 2,
+    "reason": "1 texture(s) not packed in the .blend"
+  },
+  "900d9b4c-3a52-4cd5-9d16-e639bf90e3ac": {
+    "name": "Modern Coffee Table 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 115640977,
+    "objects": 2,
+    "glbBytes": 3746616
+  },
+  "90e661d7-0dd1-4780-8f80-63992a3a7628": {
+    "name": "Modern Coffee Table 02",
+    "ok": false,
+    "date": "2026-09-15",
+    "reason": "asset files 759 MB exceed download cap"
+  },
+  "91bb98da-e315-4f81-b394-ae212bdcb666": {
+    "name": "Waiting room furniture",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 24977152,
+    "objects": 1,
+    "glbBytes": 2693212
+  },
+  "92c902f7-0398-4116-b7be-f196b87813d1": {
+    "name": "Retro table lamp-Freepoly.org",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 32977914,
+    "objects": 2,
+    "glbBytes": 2526316
+  },
+  "96fec414-09da-42ab-af08-e71c35ed9936": {
+    "name": "Arm Chair 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 37723927,
+    "objects": 1,
+    "glbBytes": 6321792
+  },
+  "982da854-503c-424e-99a0-181b1422b17d": {
+    "name": "Glass Pot",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 127921,
+    "objects": 1,
+    "glbBytes": 5708800
+  },
+  "9856c0f5-7f9e-4816-ac55-e5bb9a3ab549": {
+    "name": "Steel Frame Shelves 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 107047910,
+    "objects": 2,
+    "glbBytes": 4959816
+  },
+  "997f3ec7-ea4b-46f9-98d4-2237d29823d8": {
+    "name": "Wood table-Freepoly.org",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 76547642,
+    "objects": 5,
+    "glbBytes": 8154992
+  },
+  "9c5678e3-ba8f-4ebc-88c1-2f464400abeb": {
+    "name": "Bed side table Pinus",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 11002971,
+    "objects": 7,
+    "glbBytes": 2148060
+  },
+  "9e80a12e-b38b-4081-b260-d5d2ef0c357b": {
+    "name": "Winged Office Chair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 39729191,
+    "objects": 1,
+    "glbBytes": 2788680
+  },
+  "9fd5fb9c-2763-4efb-80f1-187635fd03a4": {
+    "name": "Steel Frame Shelves 02",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 67126953,
+    "objects": 2,
+    "glbBytes": 5145380
+  },
+  "a037b3a3-1b11-49d6-80c8-e7a4f6b79405": {
+    "name": "Winged Office Chair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 25674695,
+    "objects": 1,
+    "glbBytes": 2467004
+  },
+  "a3aea1ba-5200-41fe-b303-a51f4d31ca9f": {
+    "name": "Blackboard",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 7758082,
+    "objects": 1,
+    "glbBytes": 649604
+  },
+  "a3c92bf0-8ff0-484f-9fbc-cce9aff8892e": {
+    "name": "Modern Desk",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 19856299,
+    "objects": 3,
+    "glbBytes": 6274404
+  },
+  "a71f876f-09bd-47a0-b557-6037a642ae9c": {
+    "name": "Tubular floor lamp",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 273905,
+    "objects": 3,
+    "excluded": [
+      "Light (light)"
+    ],
+    "glbBytes": 253748
+  },
+  "a72c3522-de00-4f16-b157-859eaa4c6816": {
+    "name": "Drawer Cabinet",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 16251159,
+    "objects": 6,
+    "glbBytes": 5644120
+  },
+  "a8c88282-ef18-45c2-9b1b-1004fe673dd3": {
+    "name": "Coffee Table Round 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 127613956,
+    "objects": 2,
+    "glbBytes": 5284808
+  },
+  "aadc5af6-967d-4631-8e1c-d7da9994122c": {
+    "name": "Yellow Tin Box",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 55453784,
+    "objects": 2,
+    "glbBytes": 4841340
+  },
+  "adf9065a-6914-4044-9f76-c3f54fb94f8a": {
+    "name": "Bench_VATRA",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 1036466,
+    "objects": 3,
+    "glbBytes": 4684668
+  },
+  "b600cbf2-cfb7-4abb-b7f8-86c83cad5ad4": {
+    "name": "File cabinets 2",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 7948326,
+    "objects": 2,
+    "glbBytes": 2247744
+  },
+  "b627c645-cfd6-4b49-b01b-5f55bda25ef6": {
+    "name": "Chest Of Drawers",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 84208380,
+    "objects": 1,
+    "glbBytes": 20242548
+  },
+  "b7b0eac0-f441-4077-bdcc-5c5f6739a7fe": {
+    "name": "Dining Table Medium",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 35458438,
+    "objects": 2,
+    "glbBytes": 8022212
+  },
+  "b9c69165-338f-4eac-ad76-72a33f8ccbcd": {
+    "name": "Shelf 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 34840179,
+    "objects": 2,
+    "glbBytes": 6579076
+  },
+  "bdff957c-a9e9-4827-b6c9-602b264a4fbf": {
+    "name": "Wooden table with metallic legs",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 18735914,
+    "objects": 4,
+    "glbBytes": 5280928
+  },
+  "be6c358c-2655-495c-9b0d-4d84459a5400": {
+    "name": "Dark Narrow Bookshelf",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 257240171,
+    "objects": 50,
+    "glbBytes": 1177964
+  },
+  "beb42069-c65c-431b-b9da-677eb3b714f4": {
+    "name": "Chair Vintage-Freepoly.org",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 39354992,
+    "objects": 2,
+    "glbBytes": 3435776
+  },
+  "c230255a-365e-44a3-8a31-f34dab41f4a6": {
+    "name": "Wooden Table 02",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 23616837,
+    "objects": 1,
+    "glbBytes": 5647700
+  },
+  "c27d7253-29d2-40ee-a629-c3bee14cf207": {
+    "name": "Wooden Stool 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 135392559,
+    "objects": 2,
+    "glbBytes": 6849708
+  },
+  "c35fd7a7-7aa0-4940-94f4-f8eab073981f": {
+    "name": "Outdoor Table Chair Set 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 172701626,
+    "objects": 4,
+    "glbBytes": 17864752
+  },
+  "c56c8e81-e9c8-481b-bb3d-61c783603652": {
+    "name": "Corner Lamp Warm White",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 133886,
+    "objects": 3,
+    "excluded": [
+      "Middle Light.002 (light)",
+      "Middle Light.001 (light)",
+      "Middle Light (light)"
+    ],
+    "glbBytes": 118944
+  },
+  "ca5c4366-77af-4809-a1c2-d37734bcf2aa": {
+    "name": "Medieval knight scissor chair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 89306878,
+    "objects": 2,
+    "glbBytes": 11666772
+  },
+  "cc063c39-00d9-4d56-bdcf-cc8663826ade": {
+    "name": "Stone Bench (Photoscanned)",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 94740076,
+    "objects": 1,
+    "glbBytes": 3850372
+  },
+  "cca64db2-99c5-4012-b406-47194a13dabe": {
+    "name": "Round Wooden Table 01",
+    "ok": false,
+    "date": "2026-09-15",
+    "blendBytes": 45263634,
+    "objects": 3,
+    "reason": "1 texture(s) not packed in the .blend"
+  },
+  "d4b59f6b-6ed2-40d3-9a2c-a85ee439d107": {
+    "name": "Aluminum teapot",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 23507000,
+    "objects": 6,
+    "glbBytes": 9184156
+  },
+  "d90a729f-7e97-41e5-a9c3-650381f3d06a": {
+    "name": "Dining Table 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 45474176,
+    "objects": 1,
+    "glbBytes": 2278864
+  },
+  "d91eed93-39a3-480e-9e87-ac9814583385": {
+    "name": "Old Hospital Bed",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 7737687,
+    "objects": 1,
+    "glbBytes": 3195988
+  },
+  "da413138-ee04-4622-bb84-0fe1a767cd38": {
+    "name": "Scan Wooden Chair",
+    "ok": false,
+    "date": "2026-09-15",
+    "blendBytes": 19927104,
+    "objects": 2,
+    "reason": "RuntimeError: Error: Python: Traceback (most recent call last):\n  File \"C:\\Users\\dandu\\tools\\blender\\blender-4.5.14-windows-x64\\4.5\\scripts\\addons_core\\io_scene_gltf2\\__init__.py\", line 1370, in execu"
+  },
+  "dc64e9f5-ba68-4306-8a96-15966ab75567": {
+    "name": "Gothic Bed 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 17801394,
+    "objects": 3,
+    "excluded": [
+      "01 (camera)",
+      "02 (camera)",
+      "03 (camera)"
+    ],
+    "glbBytes": 6302152
+  },
+  "e1901884-2e47-4a82-8a2e-bfd573200c6f": {
+    "name": "Small Wooden Table 01",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 13921874,
+    "objects": 2,
+    "glbBytes": 4843000
+  },
+  "e59d6ef7-7c07-43d1-b9ea-db61c3f92d1f": {
+    "name": "Corner Lamp RGB",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 133956,
+    "objects": 3,
+    "excluded": [
+      "Middle Light.002 (light)",
+      "Middle Light.001 (light)",
+      "Middle Light (light)"
+    ],
+    "glbBytes": 118936
+  },
+  "e7fa563d-d41a-4a27-973b-fd8059a19d3d": {
+    "name": "Old Desk 03",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 29099247,
+    "objects": 2,
+    "glbBytes": 2463996
+  },
+  "ec48ad45-5624-446c-bab7-a6e600176ca5": {
+    "name": "File Mobile Wood And Paint Finish",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 38915587,
+    "objects": 1,
+    "glbBytes": 4737308
+  },
+  "ef199ed1-f0b0-4ee2-b3f6-5373ae4463a9": {
+    "name": "Folding Chair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 243267,
+    "objects": 5,
+    "glbBytes": 631704
+  },
+  "f28d5f34-fb95-4294-8940-522a1738c35e": {
+    "name": "Wooden bar stool",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 24192873,
+    "objects": 9,
+    "glbBytes": 6870508
+  },
+  "f3195791-6d94-4d71-95f8-ba51a73441ba": {
+    "name": "Chair 03",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 41076815,
+    "objects": 2,
+    "glbBytes": 2729776
+  },
+  "f51fa681-6a66-453a-a887-cb647d4a346e": {
+    "name": "Blue wire coffee table",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 136445630,
+    "objects": 3,
+    "glbBytes": 19240756
+  },
+  "f73fa182-33af-400a-86ac-ba74cc1929a9": {
+    "name": "Cupboard 02-Freepoly.org",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 46966674,
+    "objects": 5,
+    "glbBytes": 6646952
+  },
+  "f89dff31-ae54-4564-ac15-8fe627785567": {
+    "name": "File Mobile Wood Finish",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 39859076,
+    "objects": 1,
+    "glbBytes": 5053432
+  },
+  "fbbc7924-bc22-4cd2-bec4-74335c7def4a": {
+    "name": "Blue Striped beach chair",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 1282323,
+    "objects": 10,
+    "glbBytes": 1432608
+  },
+  "fd85e5a4-a194-4891-9b1c-fd1ee90b4cd3": {
+    "name": "Chair 5",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 6822638,
+    "objects": 2,
+    "glbBytes": 1399824
+  },
+  "fe2a1dcf-17d2-4718-8829-faad9723d4b3": {
+    "name": "Wooden Bookshelf Worn",
+    "ok": true,
+    "date": "2026-09-15",
+    "blendBytes": 59053049,
+    "objects": 1,
+    "glbBytes": 5700052
+  }
+}
