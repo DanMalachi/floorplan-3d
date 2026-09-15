@@ -76,12 +76,13 @@ not listed here still falls under CLAUDE.md rule 1 — stop and ask.
   envelope, framing, or project persistence behavior changes.
 
   The same Space-pan guard also covers `LinearLightGhost.tsx` and
-  `CeilingFixtureGhost.tsx`'s native click handlers on the branch this landed
-  on — omitted here because the drawable-fixtures feature those two files
-  belong to (`feat(lighting): add drawable fixtures`) has not shipped to
-  `main` yet. Apply that pair of one-line guards when the lighting feature
-  merges; the fixture ghosts are drag-and-click placers and would otherwise
-  reopen the same "camera gesture also edits the scene" bug this fixes.
+  `CeilingFixtureGhost.tsx`'s native click handlers. They were held back at
+  first because the drawable-fixtures feature those two files belong to
+  (`feat(lighting): add drawable fixtures`) had not shipped to `main`; it has
+  since merged, and the guards landed on 2026-09-16 under this same approval
+  (Dan: "ship the camera change"). The fixture ghosts are drag-and-click
+  placers and would otherwise reopen the same "camera gesture also edits the
+  scene" bug this fixes.
 
 - **2026-09-10, `feat(lighting): add drawable fixtures` (`codex/lighting-prod`)
   — `FixtureLayer.tsx` rewritten, plus new `FixtureBody.tsx`,
