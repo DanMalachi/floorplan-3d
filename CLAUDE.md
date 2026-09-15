@@ -13,6 +13,7 @@ This repo contains (1) a working Next.js floorplan-to-3D app (the live product) 
 5. **Frozen contracts.** After the Phase 0 gate, `extraction/schema/extraction_v1.schema.json` and the `eval/` public interfaces are frozen. Parallel branches must not modify them. A needed change = write `docs/schema-change-proposal.md` and stop for Dan's approval.
 6. **New pipeline code is Python** (`extraction/`, `eval/`), a standalone service with a JSON contract. The Next.js app consumes its output via the adapter only. Don't mix app code and pipeline code.
 7. **No placeholder metrics.** Never report estimated/assumed numbers in a gate report. If something wasn't measured, say NOT MEASURED.
+8. **Everything shipped must be commercially free to use (from 2026-09-16).** done. is past proof-of-concept and is being built as a paid product. Every asset, dataset, dependency or piece of content that reaches production — or that trains/tunes anything that does — must carry a licence that allows commercial use AND redistribution (serving a file to a browser is redistribution), verified at its source and recorded in `docs/DATA_RIGHTS.md` before it ships. No non-commercial, research-only, "royalty-free but no redistribution", or unverified licences; no scraped brand/supplier data (the IKEA catalogue and the Tambour colour fan were both removed for this); no replicas of branded products or their names/codes. Unsure = don't ship it; ask Dan. Full policy: `docs/DATA_RIGHTS.md` → "Commercial-use policy".
 
 ## Session ritual
 

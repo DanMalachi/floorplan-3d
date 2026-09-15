@@ -4,6 +4,53 @@ _Every plan and dataset we touch, with its rights status and permitted use. This
 governance record that keeps the shipped product legally clean. See
 [perception-data-strategy.md](./perception-data-strategy.md) for the licensing analysis._
 
+## Commercial-use policy (from 2026-09-16)
+
+done. is past proof-of-concept and is being built as a real, paid product. From this
+date **everything that ships must be commercially free to use.** This replaces the
+POC-era habit of trying things first and checking rights later.
+
+**What it covers:** anything served by or bundled into production — 3D models, textures,
+photos and artwork, thumbnails, fonts, icons, colour and material data, sounds, copy,
+npm/Python dependencies, and model weights — and anything used to train or tune something
+that ships.
+
+**Allowed** (licence verified at the original source and recorded in this file first):
+
+- Public domain / CC0.
+- Permissive code and data licences: MIT, Apache 2.0, BSD, ISC.
+- CC BY (attribution) — only with a credit on `/legal/credits` (`src/legal/creditsData.ts`).
+- Our own original work, including the done. Home Colours fan (`data/fan.done.v1.json`).
+- A paid or negotiated licence, held in writing, that explicitly allows redistribution
+  inside a commercial app.
+
+**Not allowed:**
+
+- Non-commercial (CC BY-NC), no-derivatives where we modify the asset, research-only, or
+  unknown/unverified licences.
+- "Royalty-free" terms that forbid redistribution. Serving a file to a browser IS
+  redistribution; that is why BlenderKit's royalty-free models were excluded.
+- Scraped or copied brand/supplier data: product catalogues, paint fans, names, codes, photos.
+  The IKEA furniture catalogue and the Tambour colour fan were both removed on 2026-09-15/16
+  for exactly this reason.
+- Replicas or "inspired by" copies of branded or designer products, even when the mesh itself
+  is CC0. A CC0 mesh licence does not grant rights in someone else's design or trademark.
+- Hotlinking third-party CDNs for shipped media. Host our own copy of anything we are allowed to
+  redistribute.
+
+**Process:** new sources get a row in this ledger (or in their per-source `ATTRIBUTION.json`
+plus the audit in `docs/FURNITURE_LICENSE_AUDIT.md`) *before* merge. Catalog builders must
+also honour Dan's visual-review rejections (`scripts/lib/review-rejections.ts`). Dev- or
+eval-only material (the `dev` corpus, NC datasets) never goes into a shipped bundle or a
+training set. When in doubt, don't ship it; ask Dan.
+
+**Known open items (2026-09-16):**
+
+- Sketchfab picker thumbnails still hotlink `media.sketchfab.com`; they should be copied local.
+- Supplier names in code comments of protected `src/viewport3d/WallMesh.tsx` (comments only,
+  stripped from the bundle; protected file, so it needs Dan's OK to edit).
+- The npm/Python dependency licence set has not been audited against this policy yet.
+
 ## Rules
 
 1. **Two splits, strictly separated.** `benchmark` = held-out, rights-owned, the honest
