@@ -9,7 +9,7 @@
  *     the Sketchfab pass).
  *  2. Downloads the .glb directly (Poly Pizza serves a plain, non-expiring
  *     static URL — no signed-URL dance needed here).
- *  3. Measures the real glb with scripts/ikea/glb-geom.ts's geomSize().
+ *  3. Measures the real glb with scripts/lib/glb-geom.ts's geomSize().
  *  4. Applies the category's real-world size range, auto-reject on fail.
  *
  * Auth: reads process.env.POLYPIZZA_API_KEY (never hardcode the key).
@@ -17,7 +17,7 @@
  */
 import { writeFileSync, mkdirSync, unlinkSync, statSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 
 const KEY = process.env.POLYPIZZA_API_KEY;
 if (!KEY) throw new Error("POLYPIZZA_API_KEY not set");

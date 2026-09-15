@@ -12,11 +12,12 @@
  * excludes in any case. A guard that equated "in the commit" with "in
  * production" would report it as broken and be wrong.
  *
- * The IKEA picker thumbnails USED to be a second such class, ignored by git and
- * shipped by the CLI. That made a `git push origin main` — a Git-integration
- * deploy, which has only the commit — 404 all 280 of them on production, on
- * 2026-08-31. They are committed as of 2026-09-01, so the WARN below should now
- * be silent, and a WARN is a finding rather than expected noise.
+ * A picker thumbnail set USED to be a second such class: committed-looking
+ * assets that were actually ignored by git and shipped only by the CLI. That
+ * made a `git push origin main` — a Git-integration deploy, which has only the
+ * commit — 404 a batch of them on production, on 2026-08-31. Fixed 2026-09-01
+ * by committing them, so the WARN below should now be silent, and a WARN is a
+ * finding rather than expected noise.
  *
  * So there are two findings, and they are NOT the same severity:
  *
@@ -27,9 +28,9 @@
  *          would not have it. No asset class is exempt from this any more:
  *          treat every line as something to commit or to justify.
  *
- * Absolute URLs are skipped. The IKEA models live on Vercel Blob and are not in
- * this repo at all, so neither predicate has anything to say about them; proving
- * those resolve is a live network check, a different job.
+ * Absolute URLs are skipped. Some real-model glbs live on Vercel Blob and are
+ * not in this repo at all, so neither predicate has anything to say about
+ * them; proving those resolve is a live network check, a different job.
  *
  * Run: npx tsx scripts/verify-catalog-deploy.ts   (npm run furniture:verify-deploy)
  */
@@ -94,12 +95,10 @@ function assertMatcherIsHonest(isIgnored: (p: string) => boolean) {
     // KTX2 was held back, and the rule to delete when it ships. If MODEL_BASE
     // is flipped without deleting it, this script fails on all 75.
     ["public/furniture/blenderkit/opt-ktx2/x.glb", true],
-    ["public/furniture/ikea/00069768.glb", true],
-    ["public/furniture/ikea/thumb/00069768.png", false],
     ["docs/PERFORMANCE.md", true],
     ["scripts/verify-catalog-deploy.ts", true],
     ["data/raw/anything.json", true],
-    ["data/furniture-ikea.catalog.json", false],
+    ["data/furniture-blenderkit.catalog.json", false],
     ["src/app/page.tsx", false],
   ];
   const wrong = cases.filter(([p, want]) => isIgnored(p) !== want);
@@ -185,7 +184,7 @@ if (warnings.length) {
   console.log(
     "    A `vercel --prod` from this machine serves these. A clean checkout,\n" +
       "    another machine, CI or a Git-integration deploy would not. Nothing is\n" +
-      "    expected here now that the IKEA thumbnails are committed: add these to\n" +
+      "    expected here now that catalog thumbnails are committed: add these to\n" +
       "    git, or record why they are exempt.",
   );
 }

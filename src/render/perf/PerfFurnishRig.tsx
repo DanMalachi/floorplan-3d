@@ -97,9 +97,9 @@ function normalizeForPerf(
 /** One benchmark item. Suspends until its GLB is loaded and decoded. */
 function FurnishItem({ placement, spec }: { placement: FurnishPlacement; spec: FurnitureAsset }) {
   // Always point at the local Draco decoder, which is the split `FurnitureLayer`
-  // actually makes: `:222` passes `draco: true` for every `realModel`, IKEA or
-  // not. An earlier version of this rig guessed from the asset id — IKEA Draco,
-  // BlenderKit plain — and it was wrong: `scripts/blenderkit/optimize.ts` Draco's
+  // actually makes: `:222` passes `draco: true` for every `realModel`, regardless
+  // of source. An earlier version of this rig guessed from the asset id — and it
+  // was wrong: `scripts/blenderkit/optimize.ts` Draco's
   // its output too, and 65 of the 75 GLBs under `public/furniture/blenderkit/opt`
   // carry `KHR_draco_mesh_compression`. Every one of those threw in the loader,
   // `ItemBoundary` swallowed it, and `--furnish-mix blenderkit` reported numbers

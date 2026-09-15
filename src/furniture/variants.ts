@@ -1,11 +1,12 @@
 // Color/finish variant grouping (Plan Dock P6). Groups CATALOG_BY_ID entries
-// that are the SAME physical item in different colors — verified against the
-// raw IKEA data: variantKey = `${name}|${kind}|${WxDxH}`, so VIKHAMMER white/
-// black (identical dims) collapse into one group while BILLY's 13 different
-// sizes (13 different WxDxH strings) correctly stay 13 separate items rather
-// than being mistaken for "variants" of each other. Only IKEA carries real
-// color data (`colors[]`) — BlenderKit/base-catalog items get a `variantKey`
-// from enrich-catalog.ts too, but with no siblings they never form a group.
+// that are the SAME physical item in different colors: variantKey =
+// `${name}|${kind}|${WxDxH}`, so two colorways of the same physical item
+// (identical dims) collapse into one group while genuine size variants
+// (different WxDxH strings) correctly stay separate items rather than being
+// mistaken for "variants" of each other. No currently-shipped catalog source
+// carries real color data (`colors[]`), so this never forms a group today —
+// items still get a `variantKey` from their source's enrich/normalize step,
+// but with no siblings they never form a group.
 //
 // Deliberately its own module rather than folded into catalog.ts: this is
 // UI-facing derived data (which cards collapse, which dots to draw), not

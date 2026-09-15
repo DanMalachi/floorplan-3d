@@ -108,7 +108,7 @@ import { ALL_EXTENSIONS, KHRTextureBasisu } from "@gltf-transform/extensions";
 import { getTextureChannelMask, getTextureColorSpace, listTextureSlots } from "@gltf-transform/functions";
 import { loadIndex, select } from "./select";
 import { isContentRejected } from "./content-filter";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 
 const OPT_DIR = path.resolve("public/furniture/blenderkit/opt");
 const OUT_DIR = path.resolve("public/furniture/blenderkit/opt-ktx2");

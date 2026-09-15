@@ -19,8 +19,8 @@ justified against it.
 ## What's here
 
 - A **Next.js / React Three Fiber** app: upload or trace a floorplan, edit it in
-  2D, and render/walk it in 3D — walls, openings, furniture (a real IKEA
-  catalog), paint, and floors — with live multi-user co-editing.
+  2D, and render/walk it in 3D — walls, openings, furniture (a real, licensed
+  furniture catalog), paint, and floors — with live multi-user co-editing.
 - A **ground-up rebuild of the floorplan-understanding pipeline** (Python), built
   phase-by-phase against a held-out benchmark rather than tuned per plan. This is
   the active R&D surface of the project.

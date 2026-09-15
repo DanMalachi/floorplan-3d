@@ -52,14 +52,12 @@ export const FURNISH_SEED_PARAM = "furnishSeed";
 /**
  * Which catalog the items are drawn from.
  *
- * The two sources have very different cost profiles and the difference is the
- * whole subject of Phase 3: IKEA models are Draco-compressed geometry carrying
- * UNCAPPED albedo textures (measured up to 3118px, ~39 MB each as RGBA8 with
- * mips), while BlenderKit's are pre-optimised to 1024px WebP. Measuring only
- * one of them answers half the question, so `mix` is the default and the other
- * two exist to attribute a delta to a source.
+ * `blenderkit` isolates BlenderKit's catalog, pre-optimised to 1024px WebP;
+ * `mix` (the default) interleaves it with the other real-model sources
+ * (Poly Haven, Sketchfab, Poly Pizza) so a run measures a realistic blend
+ * rather than one source's cost profile alone.
  */
-export type FurnishMix = "mix" | "ikea" | "blenderkit";
+export type FurnishMix = "mix" | "blenderkit";
 
 export interface FurnishOptions {
   /** How many items to place. 0 = off. */
@@ -80,8 +78,7 @@ export const FURNISH_OFF: FurnishOptions = { count: 0, mix: "mix", seed: 1 };
  */
 export const MAX_FURNISH = 400;
 
-const isMix = (v: string | null): v is FurnishMix =>
-  v === "mix" || v === "ikea" || v === "blenderkit";
+const isMix = (v: string | null): v is FurnishMix => v === "mix" || v === "blenderkit";
 
 /** Cache keyed on the raw query string, so the object identity below is stable
  *  for as long as the URL is — see `useFurnishOptions`. */

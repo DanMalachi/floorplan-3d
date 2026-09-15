@@ -6,7 +6,7 @@
  */
 
 import path from "node:path";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 
 for (const f of process.argv.slice(2)) {
   const s = geomSize(path.resolve(f));

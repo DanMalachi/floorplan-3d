@@ -20,7 +20,7 @@
 
 import { existsSync, statSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 
 const RAW_DIR = path.resolve("public/furniture/blenderkit");
 const dirArg = process.argv.indexOf("--dir");

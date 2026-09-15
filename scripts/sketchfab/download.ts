@@ -9,7 +9,7 @@
  *     /search result's cached license label).
  *  2. GETs /v3/models/{uid}/download for a signed .glb URL (expires ~300s)
  *     and downloads it immediately.
- *  3. Measures the REAL glb with scripts/ikea/glb-geom.ts's geomSize() —
+ *  3. Measures the REAL glb with scripts/lib/glb-geom.ts's geomSize() —
  *     Sketchfab's own "glb" export is already a single self-contained file,
  *     no gltf+bin repacking needed (unlike the Poly Haven pass).
  *  4. Applies the category's real-world size range (auto-reject, no
@@ -20,7 +20,7 @@
  */
 import { writeFileSync, mkdirSync, unlinkSync, statSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 
 const TOKEN = process.env.SKETCHFAB_API_TOKEN;
 if (!TOKEN) throw new Error("SKETCHFAB_API_TOKEN not set");

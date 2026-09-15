@@ -1,4 +1,10 @@
-import { BLENDERKIT_ASSETS, IKEA_ASSETS, type FurnitureAsset } from "@/furniture/catalog";
+import {
+  BLENDERKIT_ASSETS,
+  POLYHAVEN_ASSETS,
+  SKETCHFAB_ASSETS,
+  POLYPIZZA_ASSETS,
+  type FurnitureAsset,
+} from "@/furniture/catalog";
 import type { Node, Room, Scene } from "@/schema/scene";
 import type { FurnishMix, FurnishOptions } from "./furnishParams";
 
@@ -108,25 +114,26 @@ const byAssetId = (a: FurnitureAsset, b: FurnitureAsset): number =>
  * The ordered pool the plan draws from, most-preferred first.
  *
  * Sorted by `assetId` — a stable, content-derived key — rather than left in
- * catalog order, because catalog order is a build artefact of
- * `scripts/ikea/build-catalog.ts` and would silently reshuffle the benchmark
- * scene the next time that script runs.
+ * catalog order, because catalog order is a build artefact of each source's
+ * `build-catalog`/`download` script and would silently reshuffle the benchmark
+ * scene the next time one of those scripts runs.
  *
- * `mix` INTERLEAVES the two sorted lists rather than concatenating them, so a
- * 40-item run gets 20 of each instead of 40 IKEA items and no BlenderKit at
- * all. The two sources are the two halves of the Phase 3 question.
+ * `mix` INTERLEAVES the sorted per-source lists rather than concatenating them,
+ * so an N-item run draws evenly across sources instead of exhausting one before
+ * touching the next.
  */
 export function furnishPool(mix: FurnishMix): FurnitureAsset[] {
-  const ikea = IKEA_ASSETS.filter(usableAsset).sort(byAssetId);
   const bk = BLENDERKIT_ASSETS.filter(usableAsset).sort(byAssetId);
-
-  if (mix === "ikea") return ikea;
   if (mix === "blenderkit") return bk;
 
+  const other = [...POLYHAVEN_ASSETS, ...SKETCHFAB_ASSETS, ...POLYPIZZA_ASSETS]
+    .filter(usableAsset)
+    .sort(byAssetId);
+
   const out: FurnitureAsset[] = [];
-  for (let i = 0; i < Math.max(ikea.length, bk.length); i++) {
+  for (let i = 0; i < Math.max(bk.length, other.length); i++) {
     if (i < bk.length) out.push(bk[i]);
-    if (i < ikea.length) out.push(ikea[i]);
+    if (i < other.length) out.push(other[i]);
   }
   return out;
 }

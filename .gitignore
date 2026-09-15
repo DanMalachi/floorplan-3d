@@ -59,28 +59,14 @@ floorplan_for_training/dxf_dwg/
 /data/baselines_out/
 /reports/phase-1/
 
-# IKEA pipeline raw cache — regenerable intermediate (raw API responses + HTTP
-# cache). Committed static asset: the catalog JSON data/furniture-ikea*.json
-# (incl. the .blob.json URL manifest).
+# Catalog pipeline raw cache — regenerable intermediate (raw API responses +
+# HTTP cache). Committed static asset: the catalog JSON data/furniture-*.json.
 /data/raw/
-
-# Real IKEA .glb models (~400 MB) are hosted on Vercel Blob, not committed — the
-# catalog references them by URL via data/furniture-ikea.blob.json. Regenerate
-# locally with `npm run ikea:models`; upload with `npm run ikea:upload`.
-/public/furniture/ikea/*.glb
-
-# The IKEA picker thumbnails ARE committed (637 files, ~18 MB). They were ignored
-# here until 2026-09-01, which made the two deploy paths disagree: `vercel --prod`
-# uploads them off local disk, a Git-integration deploy could not, and 280 catalog
-# references 404'd on production the first time main was pushed. Regenerable with
-# `npm run ikea:thumbnails`, but regenerable is not the test — a deploy has to be
-# reproducible from a clean checkout, same reasoning as the BlenderKit opt/ set.
 
 # BlenderKit raw downloads (~412 MB of undecimated archviz .glb with 4K textures).
 # Regenerable with `npm run bk:models`. Only the OPTIMIZED copies under opt/ are
 # committed and served — 75 files, ~20 MB after Draco + WebP, small enough that
-# keeping them in git makes a deploy reproducible from a clean checkout, unlike
-# the 400 MB IKEA set which had to go to Blob.
+# keeping them in git makes a deploy reproducible from a clean checkout.
 /public/furniture/blenderkit/*.glb
 
 # .blend and alternate-export downloads that `recover-blend-textures.ts` carves

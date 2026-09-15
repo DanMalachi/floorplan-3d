@@ -50,6 +50,13 @@ export const CONTENT_REJECTS: Record<string, string> = {
   "Early 1900s Office Mail Opened": "desk clutter prop (62 MB)",
   "Large Stack of Old Office Documents": "desk clutter prop",
   "Office Telegram Clutter": "desk clutter prop",
+
+  // Replicas of named IKEA products. CC0 covers the uploader's mesh, not IKEA's
+  // design or trademark, and IKEA content is a launch legal blocker.
+  "ÅRSTID Floor lamp": "IKEA product replica",
+  "ÅRSTID Table lamp": "IKEA product replica",
+  "Ikea modern chair": "IKEA product replica",
+  "Ikea Onnestad Red Armchair": "IKEA product replica",
 };
 
 export function isContentRejected(displayName: string): string | null {

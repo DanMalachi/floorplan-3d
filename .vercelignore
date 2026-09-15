@@ -9,11 +9,6 @@ docs/
 scripts/
 *.tsbuildinfo
 
-# Real IKEA .glb models (~400 MB) are served from Vercel Blob, not bundled — the
-# catalog references them by URL (data/furniture-ikea.blob.json). Keep them out of
-# the deployment upload. Transparent thumbnails under .../thumb/ ARE shipped.
-public/furniture/ikea/*.glb
-
 # BlenderKit RAW downloads (~412 MB). The optimized copies under opt/ and the
 # picker thumbnails under thumb/ ARE shipped — the glob stops at the directory
 # boundary, so only the top-level raw files are excluded here.
@@ -28,5 +23,5 @@ public/furniture/blenderkit/*.glb
 # discovered in production.
 public/furniture/blenderkit/opt-ktx2/
 
-# Regenerable IKEA raw API cache — never needed at build/runtime.
+# Regenerable raw API cache — never needed at build/runtime.
 data/raw/

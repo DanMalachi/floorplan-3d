@@ -40,7 +40,7 @@
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { NodeIO } from "@gltf-transform/core";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 
 const SCRATCH = path.resolve(
   "C:/Users/dandu/AppData/Local/Temp/claude/C--Users-dandu/12e01fd5-7c34-4516-89a9-c5630024de73/scratchpad/furn/polyhaven-src",

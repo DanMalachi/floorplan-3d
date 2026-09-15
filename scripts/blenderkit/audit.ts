@@ -13,7 +13,7 @@
  *     under EITHER mapping, the metadata is lying about that asset and its
  *     footprint can't be trusted — the catalog needs the measured value.
  *
- * Reuses scripts/ikea/glb-geom.ts, which reads POSITION accessor min/max without
+ * Reuses scripts/lib/glb-geom.ts, which reads POSITION accessor min/max without
  * decoding geometry, so this is fast even on 412 MB of models.
  *
  * Run:
@@ -22,7 +22,7 @@
 
 import { existsSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { geomSize } from "../ikea/glb-geom";
+import { geomSize } from "../lib/glb-geom";
 import { loadIndex, select } from "./select";
 
 const MODEL_DIR = path.resolve("public/furniture/blenderkit");

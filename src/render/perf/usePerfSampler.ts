@@ -207,7 +207,7 @@ function textureBytes(texture: THREE.Texture): number {
  * Estimated GPU texture bytes reachable from the scene graph.
  *
  * This is an ESTIMATE and the HUD labels it as one. It is right about the thing
- * §2.5 cares about — a 3118px uncapped IKEA albedo decoding to ~39 MB of RGBA8
+ * §2.5 cares about — a 3118px uncapped albedo decoding to ~39 MB of RGBA8
  * — and it is wrong or blind about several others:
  *
  * - It cannot see render targets. The composer chain's own buffers (the ~624 MB

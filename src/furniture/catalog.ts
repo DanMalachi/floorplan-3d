@@ -6,18 +6,10 @@
 // real-world meters and the single source of truth for collision and wall
 // snapping.
 //
-// IKEA REMOVED FROM THE SHIPPED CATALOG (2026-09-14) — confirmed legal
-// blocker: these are real, unlicensed IKEA product models served from Vercel
-// Blob storage, and shipping them to end users is what this whole
-// replacement effort (Poly Haven/Sketchfab/Poly Pizza below) exists to fix.
-// `IKEA_ASSETS` stays exported below ONLY because src/render/perf/
-// furnishPlan.ts still imports it for its "ikea" perf-benchmark mix — it is
-// deliberately excluded from ROOMS/CATALOG_BY_ID, so no real user can place
-// one. NOTE: the marketing landing-page hero (src/landing/demoScene.ts) has
-// its OWN, separate, hardcoded dependency on 8 real IKEA models via Vercel
-// Blob — completely independent of this file and NOT addressed by this
-// change. That is a live, public (no-login-required) exposure and needs its
-// own decision before it's actually resolved.
+// IKEA was removed entirely (2026-09-15, legal): no IKEA models, data, or
+// replicas ship. Old saved plans holding an "ikea:*" assetId render as a
+// placeholder box, because FurnitureLayer falls back for any id missing from
+// CATALOG_BY_ID.
 
 export type FurnitureCategory =
   | "Seating"
@@ -50,7 +42,7 @@ export type RoomType =
 
 export interface FurnitureAsset {
   assetId: string; // also the glb filename, UNLESS `model` is set (see below)
-  /** A real product name — IKEA's "MALM", BlenderKit's asset title. NEVER
+  /** A real model name — e.g. BlenderKit's asset title. NEVER
    *  translated: these are proper nouns. Parametric items have no product name
    *  and set `nameKey` instead; exactly one of the two is meaningful. */
   name: string;
@@ -68,7 +60,7 @@ export interface FurnitureAsset {
   noCollide?: boolean;
   /** Every room-scene this item is valid in; an item may legitimately appear
    *  in more than one (e.g. a rug tagged living+bedroom) — not a bug to dedupe.
-   *  Derived from `ROOMS`/IKEA+BlenderKit `rooms` at catalog build time. */
+   *  Derived from `ROOMS`/each source's `rooms` at catalog build time. */
   roomTags?: RoomType[];
   /** Reserved for the fire-alarm/smoke-detector/misc-catchall phase (Plan Dock
    *  v2 Phase E, not yet scoped). No UI reads this field this round. */
@@ -80,17 +72,16 @@ export interface FurnitureAsset {
    *  item — there's no separate wall-mount concept in the scene schema. */
   defaultElevation?: number;
 
-  // ── Optional, used by imported brand catalogs (e.g. IKEA) ────────────────
-  /** GLB basename to render, when it differs from `assetId`. Lets a real branded
-   *  item (assetId "ikea:99305691") render via a CC0 proxy model while keeping its
-   *  own real footprint. Falls back to `assetId` when absent. */
+  // ── Optional, used by imported model catalogs ────────────────────────────
+  /** GLB basename to render, when it differs from `assetId`. Falls back to
+   *  `assetId` when absent. */
   model?: string;
-  /** Local path to the REAL branded GLB (e.g. "/furniture/ikea/99305691.glb"),
+  /** Path to the real GLB (e.g. "/furniture/polyhaven/sofa_02.glb"),
    *  preferred over `model` when present. May be Draco-compressed. Rendering falls
    *  back to `model` if it fails to load. */
   realModel?: string;
   /** Corrective [x,y,z] Euler (radians) applied before normalizing, for models
-   *  authored lying down (up-axis on X/Z). Baked by scripts/ikea/build-catalog.ts. */
+   *  authored lying down (up-axis on X/Z). */
   modelRotation?: [number, number, number];
   /** Real product photo for the picker tile, instead of a rendered GLB thumbnail. */
   thumbnail?: string;
@@ -99,27 +90,26 @@ export interface FurnitureAsset {
   subtitle?: string;
   price?: { value: number | null; currency: string };
 
-  // ── Added by scripts/ikea/enrich-catalog.ts (Plan Dock P1) ───────────────
+  // ── Search/variant enrichment (Plan Dock P1) ─────────────────────────────
   /** Normalized English item-type ("3-seat sofa", "bookcase", ...) — what
-   *  `searchText` actually keys on. `name` alone is a brand word (BILLY,
-   *  KIVIK) that says nothing about what the item IS, which is why the
-   *  hotspot/search match used to miss every imported IKEA/BlenderKit item. */
+   *  `searchText` actually keys on, since `name` alone may not say what the
+   *  item IS. */
   kind?: string;
   /** Extra English search terms (raw category + BlenderKit tags) folded
    *  into `searchText`. No UI surfaces this list directly. */
   typeTags?: string[];
-  /** True color/finish variants — IKEA only (BlenderKit's schema carries no
-   *  colour data). Feeds the Phase 6 swatch row. */
+  /** True color/finish variants. No current source carries colour data, so
+   *  the Phase 6 swatch row renders for nothing today. */
   colors?: { name: string; hex: string }[];
   /** Groups literal color/finish variants of the same physical item
    *  (name + kind + exact W×D×H from the raw source) without merging
-   *  genuine size variants (BILLY's 13 sizes each get their own key). */
+   *  genuine size variants. */
   variantKey?: string;
 }
 
 /** Every English word `matchesHotspot`/search can match against — `name` is
- *  a brand word for imported catalogs (BILLY, KIVIK), so it's never enough
- *  on its own. Lowercased; callers do their own substring/keyword check. */
+ *  often a product word that says nothing about the item type, so it's never
+ *  enough on its own. Lowercased; callers do their own substring/keyword check. */
 export const searchText = (a: FurnitureAsset): string =>
   [a.name, a.kind, ...(a.typeTags ?? [])].filter(Boolean).join(" ").toLowerCase();
 
@@ -129,29 +119,22 @@ export const searchText = (a: FurnitureAsset): string =>
  *  no longer in CATALOG_BY_ID, so those items don't crash on load. */
 export const CATALOG: FurnitureAsset[] = [];
 
-// IKEA placement catalog (IL market) — kept ONLY for src/render/perf/
-// furnishPlan.ts's "ikea" benchmark mix; deliberately NOT merged into ROOMS
-// or CATALOG_BY_ID (see the top-of-file note — this is the 2026-09-14 legal
-// removal). Generated by scripts/ikea/build-catalog.ts from data/furniture-ikea.json.
-import ikeaRaw from "../../data/furniture-ikea.catalog.json";
-type IkeaAsset = FurnitureAsset & { rooms: string[] };
-export const IKEA_ASSETS = ikeaRaw as unknown as IkeaAsset[];
+type SourcedAsset = FurnitureAsset & { rooms: string[] };
 
-// BlenderKit placement catalog — 76 archviz-grade CC0 models, the realistic tier
-// between Kenney's low-poly kit and the real IKEA products. Every item is public
+// BlenderKit placement catalog — 71 archviz-grade CC0 models. Every item is public
 // domain (see public/furniture/blenderkit/ATTRIBUTION.json); the Royalty-Free
 // half of BlenderKit's library is deliberately excluded, because serving a .glb
 // to a browser is redistribution and that licence forbids it.
 // Generated by scripts/blenderkit/build-catalog.ts.
 import blenderkitRaw from "../../data/furniture-blenderkit.catalog.json";
-export const BLENDERKIT_ASSETS = blenderkitRaw as unknown as IkeaAsset[];
+export const BLENDERKIT_ASSETS = blenderkitRaw as unknown as SourcedAsset[];
 
 // Poly Haven placement catalog — CC0 (site-wide, https://polyhaven.com/license),
 // no-auth public API. Compensates the 2026-09-14 BlenderKit-58-blend-only gap;
 // see docs/FURNITURE_LICENSE_AUDIT.md (2026-09-14, second pass) for the full
 // sourcing/measurement writeup. Generated by scripts/polyhaven/build-catalog.ts.
 import polyhavenRaw from "../../data/furniture-polyhaven.catalog.json";
-export const POLYHAVEN_ASSETS = polyhavenRaw as unknown as IkeaAsset[];
+export const POLYHAVEN_ASSETS = polyhavenRaw as unknown as SourcedAsset[];
 
 // Sketchfab placement catalog — fills the Beds/Office-chairs/Dining-tables
 // gap Poly Haven's 85-item furniture set couldn't (zero office chairs, zero
@@ -164,7 +147,7 @@ export const POLYHAVEN_ASSETS = polyhavenRaw as unknown as IkeaAsset[];
 // candidate (~292 tried across Sketchfab + Poly Pizza combined) failed
 // measured real-world dimensions. Generated by scripts/sketchfab/download.ts.
 import sketchfabRaw from "../../data/furniture-sketchfab.catalog.json";
-export const SKETCHFAB_ASSETS = sketchfabRaw as unknown as IkeaAsset[];
+export const SKETCHFAB_ASSETS = sketchfabRaw as unknown as SourcedAsset[];
 
 // Poly Pizza placement catalog — second aggregator run alongside Sketchfab
 // in the same third pass, same size-range/measurement method (see
@@ -172,7 +155,7 @@ export const SKETCHFAB_ASSETS = sketchfabRaw as unknown as IkeaAsset[];
 // items carry their attribution string in public/furniture/polypizza/
 // ATTRIBUTION.json. Generated by scripts/polypizza/download.ts.
 import polypizzaRaw from "../../data/furniture-polypizza.catalog.json";
-export const POLYPIZZA_ASSETS = polypizzaRaw as unknown as IkeaAsset[];
+export const POLYPIZZA_ASSETS = polypizzaRaw as unknown as SourcedAsset[];
 
 import { retagRooms } from "./roomRetag";
 
@@ -186,7 +169,7 @@ export const CATEGORIES: FurnitureCategory[] = [
   "Decor",
 ];
 
-/** IKEA-style browsing: rooms, not furniture taxonomies. Items may appear in
+/** Showroom-style browsing: rooms, not furniture taxonomies. Items may appear in
  *  several rooms — people shop by "what goes in the bedroom". */
 export interface RoomSection {
   id: string;
@@ -217,23 +200,17 @@ const BASE_ROOMS: RoomSection[] = [
   { id: "outdoors", label: "Outdoors", assetIds: [] },
 ];
 
-// Final room sections: curated CC0 items first, then the realistic BlenderKit
-// models, then the IKEA items that map to each room (so real IKEA pieces show up
-// in the same picker). BlenderKit sits ahead of IKEA because those models are
-// the better-looking default when someone is just dressing a room; IKEA is what
-// you reach for when you want a specific product.
+// Final room sections: BlenderKit first, then Poly Haven, Sketchfab, Poly Pizza.
 // `retagRooms` widens each item's source `rooms` to the dock's own taxonomy
 // (see roomRetag.ts): the sources only file products under living/bedroom/
 // kitchen/dining/office, so an outdoor lounger arrived tagged "living" and a
 // wardrobe tagged "bedroom" with nothing pointing at Outdoors or Closet.
-const byRoom = (assets: IkeaAsset[]): Record<string, string[]> => {
+const byRoom = (assets: SourcedAsset[]): Record<string, string[]> => {
   const out: Record<string, string[]> = {};
   for (const a of assets) for (const r of retagRooms(a)) (out[r] ??= []).push(a.assetId);
   return out;
 };
 
-// IKEA is deliberately NOT included here — see the top-of-file note. No
-// `ikeaByRoom`, so no IKEA assetId ever reaches a RoomSection or the picker.
 const blenderkitByRoom = byRoom(BLENDERKIT_ASSETS);
 const polyhavenByRoom = byRoom(POLYHAVEN_ASSETS);
 const sketchfabByRoom = byRoom(SKETCHFAB_ASSETS);
@@ -280,10 +257,6 @@ Object.assign(BLENDERKIT_ASSETS, BLENDERKIT_ASSETS.map(withRoomTags));
 Object.assign(POLYHAVEN_ASSETS, POLYHAVEN_ASSETS.map(withRoomTags));
 Object.assign(SKETCHFAB_ASSETS, SKETCHFAB_ASSETS.map(withRoomTags));
 Object.assign(POLYPIZZA_ASSETS, POLYPIZZA_ASSETS.map(withRoomTags));
-// IKEA_ASSETS is deliberately excluded from CATALOG_BY_ID — see the
-// top-of-file note. FurnitureLayer.tsx falls back to a placeholder box for
-// any assetId not found here, so an already-placed "ikea:*" item in an old
-// saved plan degrades gracefully instead of erroring.
 
 export const CATALOG_BY_ID: ReadonlyMap<string, FurnitureAsset> = new Map(
   [...CATALOG, ...BLENDERKIT_ASSETS, ...POLYHAVEN_ASSETS, ...SKETCHFAB_ASSETS, ...POLYPIZZA_ASSETS].map(
@@ -292,7 +265,7 @@ export const CATALOG_BY_ID: ReadonlyMap<string, FurnitureAsset> = new Map(
 );
 
 /** Cross-listing filter: every item tagged for `room`, from every source
- *  catalog (base + IKEA + BlenderKit). An item with multiple roomTags (e.g.
+ *  catalog. An item with multiple roomTags (e.g.
  *  a rug tagged living+bedroom) appears in each room's results — by design. */
 export const getItemsForRoom = (room: RoomType): FurnitureAsset[] =>
   [...CATALOG_BY_ID.values()].filter((a) => a.roomTags?.includes(room));

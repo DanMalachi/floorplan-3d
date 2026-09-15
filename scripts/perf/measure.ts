@@ -47,9 +47,10 @@
  * texture memory — neither of which any existing project can produce, because
  * the only two live rooms hold zero catalog furniture between them.
  *
- * `--furnish N` builds the missing scene: N real catalog items (IKEA's
- * uncapped-texture models, BlenderKit's 1024px WebP ones, or a deterministic
- * interleave of both), placed inside the plan's rooms by
+ * `--furnish N` builds the missing scene: N real catalog items (BlenderKit's
+ * 1024px WebP models, the other real-model sources — Poly Haven, Sketchfab,
+ * Poly Pizza — or a deterministic interleave of both), placed inside the
+ * plan's rooms by
  * `src/render/perf/furnishPlan.ts`. It is perf-gated, it is deterministic, and
  * it CANNOT reach the live Liveblocks room — the furniture is hung on the
  * three.js scene graph and never enters `scene.furniture`, so the collab sink
@@ -66,7 +67,7 @@
  *   npm run perf:measure -- --room de882e79 --only editor:city,editor:studio
  *   npm run perf:measure -- --room de882e79 --vsync        # control run
  *   npm run perf:measure -- --room de882e79 --furnish 40   # furnished scene
- *   npm run perf:measure -- --room de882e79 --furnish 40 --furnish-mix ikea
+ *   npm run perf:measure -- --room de882e79 --furnish 40 --furnish-mix blenderkit
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -153,7 +154,7 @@ interface Options {
   furnishMix: string;
   furnishSeed: number;
   /** How long to wait for every furnished model to load before sampling.
-   *  Generous: the IKEA half of the catalog is fetched from Vercel Blob. */
+   *  Generous: every real-model asset is fetched from Vercel Blob. */
   furnishTimeoutMs: number;
   only: string[] | null;
   out: string | null;
@@ -178,8 +179,8 @@ function parseArgs(argv: string[]): Options {
   const only = get("--only");
 
   const furnishMix = get("--furnish-mix") ?? "mix";
-  if (!["mix", "ikea", "blenderkit"].includes(furnishMix)) {
-    console.error(`error: --furnish-mix must be one of mix, ikea, blenderkit (got "${furnishMix}").`);
+  if (!["mix", "blenderkit"].includes(furnishMix)) {
+    console.error(`error: --furnish-mix must be one of mix, blenderkit (got "${furnishMix}").`);
     process.exit(1);
   }
 
@@ -537,8 +538,8 @@ async function waitForFirstSamples(page: Page, timeoutMs = 60_000): Promise<void
 /**
  * Block until every furnished model has resolved one way or the other.
  *
- * Waiting on a stopwatch instead is failure mode #5 in the README: the IKEA half
- * of the catalog is fetched from Vercel Blob and Draco-decoded, so a fixed
+ * Waiting on a stopwatch instead is failure mode #5 in the README: every real-model
+ * asset is fetched from Vercel Blob and Draco-decoded, so a fixed
  * settle delay measures a half-built scene and files it under a "40 items"
  * label. `settled` means `placed + failed >= planned`, so this returns as soon
  * as the scene is final — including when some models failed, which the caller

@@ -17,40 +17,6 @@
     ]
   },
   {
-    "assetId": "blenderkit:cd259516-4f81-48a5-9097-77789637cbf4",
-    "name": "ÅRSTID Floor lamp",
-    "category": "Decor",
-    "footprint": {
-      "w": 0.35,
-      "d": 0.361
-    },
-    "realModel": "/furniture/blenderkit/opt/cd259516-4f81-48a5-9097-77789637cbf4.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/8450de7cb398490eb1533a456ac2b57c/files/thumbnail_237e7a4b-dfa7-4f83-868c-23916d3a2de2.png.512x512_q85_crop-%2C.png",
-    "brand": "BlenderKit",
-    "subtitle": "lamp",
-    "rooms": [
-      "living",
-      "bedroom"
-    ]
-  },
-  {
-    "assetId": "blenderkit:008228fc-e83c-4b13-8b2d-d27e36be1b3e",
-    "name": "ÅRSTID Table lamp",
-    "category": "Decor",
-    "footprint": {
-      "w": 0.198,
-      "d": 0.249
-    },
-    "realModel": "/furniture/blenderkit/opt/008228fc-e83c-4b13-8b2d-d27e36be1b3e.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/930ab2fd48a64a41b8194d3a492934e1/files/thumbnail_eec8ee2f-07ac-477f-81ea-86567de19ae2.png.512x512_q85_crop-%2C.png",
-    "brand": "BlenderKit",
-    "subtitle": "lamp",
-    "rooms": [
-      "living",
-      "bedroom"
-    ]
-  },
-  {
     "assetId": "blenderkit:4db7593a-c7c0-4517-82e6-6f5be2c865cc",
     "name": "Floor Lamp",
     "category": "Decor",
@@ -455,40 +421,6 @@
     "rooms": [
       "dining",
       "office"
-    ]
-  },
-  {
-    "assetId": "blenderkit:d85ae05e-ac69-425d-8b2a-693851a9ba6d",
-    "name": "Ikea modern chair",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.63,
-      "d": 0.791
-    },
-    "realModel": "/furniture/blenderkit/opt/d85ae05e-ac69-425d-8b2a-693851a9ba6d.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/da326a37d2014e128e327973d06618d1/files/thumbnail_bd967e5a-0f09-440d-b231-73898c701f9d.jpg.512x512_q85_crop-%2C.jpg",
-    "brand": "BlenderKit",
-    "subtitle": "chair",
-    "rooms": [
-      "dining",
-      "office"
-    ]
-  },
-  {
-    "assetId": "blenderkit:6122afb7-3fb5-441e-9fa3-f57de7ebed93",
-    "name": "Ikea Onnestad Red Armchair",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.664,
-      "d": 0.756
-    },
-    "realModel": "/furniture/blenderkit/opt/6122afb7-3fb5-441e-9fa3-f57de7ebed93.glb",
-    "thumbnail": "https://public.blenderkit.com/thumbnails/assets/82597b9f33be414a9d0df58b5fc54e3b/files/thumbnail_40d42260-5636-4e2c-ba22-493168e0868d.jpg.512x512_q85_crop-%2C.jpg",
-    "brand": "BlenderKit",
-    "subtitle": "armchair",
-    "rooms": [
-      "living",
-      "bedroom"
     ]
   },
   {

@@ -106,7 +106,6 @@ function csp(): string {
       supabaseWs, // Supabase Realtime
       `https://api.liveblocks.io`, // confirmed exact host: node_modules/@liveblocks/core's DEFAULT_BASE_URL
       `wss://api.liveblocks.io`, // same host, ws upgrade — Liveblocks doesn't use a separate socket host
-      `https://*.public.blob.vercel-storage.com`, // furniture GLBs (data/furniture-ikea.blob.json); store-id subdomain varies per env, hence wildcard
       `blob:`, // local-file GLTFLoader.load(url) in the calibration rig
       // Sentry's browser SDK POSTs events to <org>.ingest.sentry.io. Without
       // this the CSP would silently block the very reports that tell us the CSP

@@ -12,8 +12,8 @@ import { perfEnabled } from "./usePerfEnabled";
  * Two failure modes would otherwise be invisible, and both produce a confident
  * wrong number rather than an error:
  *
- * 1. **Sampling before the models arrive.** Every IKEA GLB is fetched from
- *    Vercel Blob over the network and Draco-decoded on arrival. A run that
+ * 1. **Sampling before the models arrive.** Every real-model GLB is fetched
+ *    from Vercel Blob over the network and Draco-decoded on arrival. A run that
  *    starts sampling at a fixed settle delay measures a half-loaded scene, and
  *    reports it under a "40 items" label. `settled` is what the harness waits
  *    on instead of a stopwatch.

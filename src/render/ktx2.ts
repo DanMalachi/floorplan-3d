@@ -64,9 +64,9 @@ function getKtx2Loader(gl: THREE.WebGLRenderer): KTX2Loader {
  * `useGLTF`'s 4th argument (`extendLoader`). Registers the shared KTX2Loader
  * on whichever GLTFLoader drei hands back.
  *
- * Safe to wire in unconditionally, for every furniture GLB, IKEA included:
- * a GLB that doesn't declare `KHR_texture_basisu` (every IKEA model today,
- * and any BlenderKit model not yet run through `optimize-ktx2.ts`) never
+ * Safe to wire in unconditionally, for every furniture GLB: a GLB that
+ * doesn't declare `KHR_texture_basisu` (any BlenderKit model not yet run
+ * through `optimize-ktx2.ts`, and every other source's models today) never
  * reaches the code that reads `parser.options.ktx2Loader` at all, so
  * registering it is a harmless no-op for those assets. That's what keeps
  * this hookup a one-call addition in FurnitureLayer.tsx rather than a
@@ -111,9 +111,9 @@ export function useKtx2ExtendLoader(): (loader: GLTFLoader) => void {
  * material alone — `gltf.parser.json` is the only place that distinction
  * still exists once GLTFLoader has finished swallowing the failure.
  *
- * Only runs for GLBs that actually use `KHR_texture_basisu` — every IKEA
- * model, and any BlenderKit model not yet run through `optimize-ktx2.ts`,
- * exits on the first line and costs nothing.
+ * Only runs for GLBs that actually use `KHR_texture_basisu` — any BlenderKit
+ * model not yet run through `optimize-ktx2.ts`, and every other source's
+ * models, exit on the first line and cost nothing.
  *
  * Throws (does not warn) on a genuine loss, so the caller's existing error
  * boundary — `ModelBoundary` in FurnitureLayer.tsx, `ItemBoundary` in
