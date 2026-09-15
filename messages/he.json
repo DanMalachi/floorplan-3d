@@ -260,8 +260,55 @@
         "tipPlaster": "טיח (ברירת מחדל)",
         "tipNatural": "טבעי — הגוון של הגימור עצמו",
         "loading": "טוען…",
-        "frameGroupLabel": "צבע מסגרת החלון",
-        "wallGroupLabel": "צבע הקיר"
+        "preview": "תצוגה מקדימה של הצבע",
+        "allHomeColours": "כל צבעי הבית",
+        "search": "חיפוש צבעים",
+        "clearFilters": "ניקוי מסננים",
+        "noResults": "אין צבעי בית שמתאימים למסננים האלה.",
+        "resultCount": "{count, plural, one {צבע אחד} two {שני צבעים} other {# צבעים}}",
+        "disclaimer": "הצבע הדיגיטלי להמחשה בלבד. יש לאשר כל בחירת צבע סופית באמצעות דוגמה פיזית או מניפת הצבעים הרשמית של הספק.",
+        "families": {
+          "whites": "לבנים ואוף־וויט",
+          "neutrals": "אפורים, גרייז׳ וטאופ",
+          "blacks": "שחורים וכמעט שחורים",
+          "beiges": "בז׳, חול ושמנת",
+          "greens": "ירוקים",
+          "blues": "כחולים",
+          "warm_earth": "חמרים וורודים חמים",
+          "yellows": "צהובים ואוכרה",
+          "reds": "אדומים ובורדו",
+          "purples": "סגולים ושזיף"
+        },
+        "filters": {
+          "warmth": {
+            "label": "גוון",
+            "all": "הכול",
+            "warm": "חם",
+            "neutral": "ניטרלי",
+            "cool": "קר"
+          },
+          "lightness": {
+            "label": "בהירות",
+            "all": "הכול",
+            "light": "בהיר",
+            "mid": "בינוני",
+            "dark": "כהה"
+          },
+          "saturation": {
+            "label": "רוויה",
+            "all": "הכול",
+            "low": "מעושן",
+            "medium": "מאוזן",
+            "high": "עשיר"
+          }
+        },
+        "neighbours": {
+          "lighter": "בהיר יותר",
+          "darker": "כהה יותר",
+          "warmer": "חם יותר",
+          "cooler": "קר יותר",
+          "similar": "דומים"
+        }
       },
       "floors": {
         "groupLabel": "חומר הרצפה",

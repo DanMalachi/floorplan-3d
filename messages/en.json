@@ -260,8 +260,55 @@
         "tipPlaster": "Plaster (default)",
         "tipNatural": "Natural — the finish's own colour",
         "loading": "Loading…",
-        "frameGroupLabel": "Window frame colour",
-        "wallGroupLabel": "Wall paint colour"
+        "preview": "Applied colour preview",
+        "allHomeColours": "All home colours",
+        "search": "Search colours",
+        "clearFilters": "Clear filters",
+        "noResults": "No home colours match these filters.",
+        "resultCount": "{count, plural, one {# colour} other {# colours}}",
+        "disclaimer": "Digital colour is illustrative only. Confirm any final paint choice with a physical sample or the supplier’s official fan.",
+        "families": {
+          "whites": "Whites & off-whites",
+          "neutrals": "Greys, greiges & taupes",
+          "blacks": "Blacks & near-blacks",
+          "beiges": "Beiges, sands & creams",
+          "greens": "Greens",
+          "blues": "Blues",
+          "warm_earth": "Clays & warm pinks",
+          "yellows": "Yellows & ochres",
+          "reds": "Reds & burgundies",
+          "purples": "Purples & plums"
+        },
+        "filters": {
+          "warmth": {
+            "label": "Tone",
+            "all": "Any",
+            "warm": "Warm",
+            "neutral": "Neutral",
+            "cool": "Cool"
+          },
+          "lightness": {
+            "label": "Light",
+            "all": "Any",
+            "light": "Light",
+            "mid": "Mid",
+            "dark": "Dark"
+          },
+          "saturation": {
+            "label": "Colour",
+            "all": "Any",
+            "low": "Muted",
+            "medium": "Balanced",
+            "high": "Rich"
+          }
+        },
+        "neighbours": {
+          "lighter": "Lighter",
+          "darker": "Darker",
+          "warmer": "Warmer",
+          "cooler": "Cooler",
+          "similar": "Similar"
+        }
       },
       "floors": {
         "groupLabel": "Floor material",
