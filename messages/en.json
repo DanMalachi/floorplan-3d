@@ -13,6 +13,10 @@
     "faq": {
       "title": "Questions — done.",
       "description": "What you need to start, what happens to your data, and what done. does and does not do yet."
+    },
+    "credits": {
+      "title": "Credits & Licenses — done.",
+      "description": "Attribution for the third-party 3D models and media done. ships, and the licenses they're released under."
     }
   },
   "locale": {
@@ -26,6 +30,7 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "refunds": "Refunds",
+    "credits": "Credits",
     "home": "done. home",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -1203,5 +1208,20 @@
       "duplicated": "Duplicated",
       "pickReplacement": "Pick a replacement in the Furniture tab"
     }
+  },
+  "legalCredits": {
+    "h1": "Credits & Licenses",
+    "intro": "done. furnishes rooms with 3D models from several outside sources. Some are released under a Creative Commons Attribution license, which requires visible credit to the model's author — that credit is listed below, exactly as each source requires it. Models released under CC0 (public domain) don't legally require attribution; they're listed here anyway, briefly, as a courtesy to the people who made them.",
+    "ccbyHeading": "Attribution required (CC BY)",
+    "sketchfabHeading": "Sketchfab models",
+    "sketchfabIntro": "{count, plural, one {# model} other {# models}} licensed CC Attribution 4.0.",
+    "polypizzaHeading": "Poly Pizza models",
+    "polypizzaIntro": "{count, plural, one {# model} other {# models}} licensed CC Attribution 3.0.",
+    "sourceLabel": "View model",
+    "licenseLabel": "License",
+    "cc0Heading": "CC0 sources (courtesy credit)",
+    "cc0Body": "The rest of the furniture catalog is CC0 — public domain, no attribution required. It's drawn from BlenderKit and Poly Haven, both listed here as a courtesy to their contributors. Floor materials are CC0 too, from ambientCG.",
+    "photoHeading": "Public-domain photography & artwork",
+    "photoBody": "Real photographs and paintings used for screens, prints, and wall art are public domain, courtesy of NASA and the Art Institute of Chicago."
   }
 }

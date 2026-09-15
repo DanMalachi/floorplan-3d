@@ -81,6 +81,9 @@ export default async function LegalLayout({
           <Link href="/legal/terms" style={{ color: PD.textPrimary, textDecoration: "none" }}>
             Terms of Service
           </Link>
+          <Link href="/legal/credits" style={{ color: PD.textPrimary, textDecoration: "none" }}>
+            Credits
+          </Link>
         </nav>
         {/* These are long documents whose only landmark was the nav above.
             <main> gives a screen reader somewhere to jump to; it is

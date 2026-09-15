@@ -32,6 +32,7 @@ const CHANGE: Record<string, { freq: MetadataRoute.Sitemap[number]["changeFreque
   "/design": { freq: "monthly", pri: 0.5 },
   "/legal/privacy": { freq: "yearly", pri: 0.3 },
   "/legal/terms": { freq: "yearly", pri: 0.3 },
+  "/legal/credits": { freq: "yearly", pri: 0.3 },
 };
 
 export default function sitemap(): MetadataRoute.Sitemap {
