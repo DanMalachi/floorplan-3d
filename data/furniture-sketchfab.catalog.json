@@ -112,38 +112,6 @@
     ]
   },
   {
-    "assetId": "sketchfab:ea5f1287566f4371aac797351dd84655",
-    "name": "SUONI OFFICE CHAIR",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.72,
-      "d": 0.705
-    },
-    "realModel": "/furniture/sketchfab/suoni-office-chair-ea5f1287.glb",
-    "thumbnail": "https://media.sketchfab.com/models/ea5f1287566f4371aac797351dd84655/thumbnails/371d6faf42a149db9dbd6c048c4298af/abe04906cc9b4fdfb6d968378dbe2175.jpeg",
-    "brand": "Sketchfab",
-    "subtitle": "office chair",
-    "rooms": [
-      "office"
-    ]
-  },
-  {
-    "assetId": "sketchfab:f2e9e49238974442b139262536cd19ff",
-    "name": "MUSKONGE_N24T6N23S3007",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.642,
-      "d": 0.594
-    },
-    "realModel": "/furniture/sketchfab/muskonge-n24t6n23s3007-f2e9e492.glb",
-    "thumbnail": "https://media.sketchfab.com/models/f2e9e49238974442b139262536cd19ff/thumbnails/b5846bbade2b4d52b36d8e9d2ca80ab3/d938591d43b54845b498c015714fc221.jpeg",
-    "brand": "Sketchfab",
-    "subtitle": "office chair",
-    "rooms": [
-      "office"
-    ]
-  },
-  {
     "assetId": "sketchfab:3775963c1d6d4ba1b37956a4fb423add",
     "name": "Chair Low Poly",
     "category": "Seating",
@@ -169,22 +137,6 @@
     },
     "realModel": "/furniture/sketchfab/chair-f9576f11.glb",
     "thumbnail": "https://media.sketchfab.com/models/f9576f11ef0f42abb5562037eccac15d/thumbnails/a6ac2e6c12cc4c688d44a80c016c49f0/a623364a6b4b4f418d3392b7bbdc3a29.jpeg",
-    "brand": "Sketchfab",
-    "subtitle": "office chair",
-    "rooms": [
-      "office"
-    ]
-  },
-  {
-    "assetId": "sketchfab:211585f6e1bd43549c3f4bf04d05b362",
-    "name": "MUSKONGE_N24T6N23S3012",
-    "category": "Seating",
-    "footprint": {
-      "w": 0.645,
-      "d": 0.642
-    },
-    "realModel": "/furniture/sketchfab/muskonge-n24t6n23s3012-211585f6.glb",
-    "thumbnail": "https://media.sketchfab.com/models/211585f6e1bd43549c3f4bf04d05b362/thumbnails/497d33bf97f548c6ac88b15b0d506260/462a298df7584aec9437f5d37be7cb3c.jpeg",
     "brand": "Sketchfab",
     "subtitle": "office chair",
     "rooms": [

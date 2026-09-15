@@ -1534,17 +1534,6 @@
       "likeCount": 54
     },
     {
-      "uid": "ea5f1287566f4371aac797351dd84655",
-      "name": "SUONI OFFICE CHAIR",
-      "bucket": "officeChair",
-      "category": "Seating",
-      "subtitle": "office chair",
-      "rooms": [
-        "study"
-      ],
-      "likeCount": 52
-    },
-    {
       "uid": "5dbc37f1b0494a74bcbe00f7a2662783",
       "name": "Office Chair - Swivel chair - Bar chair - Office",
       "bucket": "officeChair",
@@ -1576,17 +1565,6 @@
         "study"
       ],
       "likeCount": 50
-    },
-    {
-      "uid": "f2e9e49238974442b139262536cd19ff",
-      "name": "MUSKONGE_N24T6N23S3007",
-      "bucket": "officeChair",
-      "category": "Seating",
-      "subtitle": "office chair",
-      "rooms": [
-        "study"
-      ],
-      "likeCount": 49
     },
     {
       "uid": "ca9d09ae99ec4b3aaa2e0eb1522982ef",
@@ -1679,17 +1657,6 @@
     {
       "uid": "2635389a81df496182569c824f9b8d99",
       "name": "Office Chair",
-      "bucket": "officeChair",
-      "category": "Seating",
-      "subtitle": "office chair",
-      "rooms": [
-        "study"
-      ],
-      "likeCount": 30
-    },
-    {
-      "uid": "211585f6e1bd43549c3f4bf04d05b362",
-      "name": "MUSKONGE_N24T6N23S3012",
       "bucket": "officeChair",
       "category": "Seating",
       "subtitle": "office chair",
