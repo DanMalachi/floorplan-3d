@@ -360,8 +360,8 @@ Those live in `demoScene.ts` as explicit exports and have to be set by hand:
 | Main floor | `HERO_FLOOR` | `wood-chevron` |
 | Bathroom floor | `HERO_BATH_FLOOR` | `tile-black-gloss` |
 | Window frames | `HERO_FRAME` | `#1C1D1F` (black) |
-| Bathroom walls | `WALL_PAINT` | Tambour 0891P `#b3c6b7` |
-| Accent wall | `WALL_PAINT` | Tambour 0175A `#9d4a43` |
+| Bathroom walls | `WALL_PAINT` | soft sage `#b3c6b7` |
+| Accent wall | `WALL_PAINT` | terracotta `#9d4a43` |
 | Lights | `HERO_FIXTURES` | flush disc over the kitchen, pendant over the coffee table, 4400 K |
 
 Two couplings that will bite silently if broken:

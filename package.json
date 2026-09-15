@@ -6,8 +6,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "scrape:tambour": "node scripts/scrape.mjs",
-    "normalize:tambour": "node scripts/normalize.mjs",
     "perf:measure": "tsx scripts/perf/measure.ts",
     "bk:index": "tsx scripts/blenderkit/fetch-index.ts",
     "bk:select": "tsx scripts/blenderkit/select.ts",

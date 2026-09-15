@@ -1,4 +1,4 @@
-export type ColourSource = "done" | "tambour" | "nirlat" | (string & {});
+export type ColourSource = "done" | (string & {});
 export type ColourFamily = "whites" | "neutrals" | "blacks" | "beiges" | "greens" | "blues" | "warm_earth" | "yellows" | "reds" | "purples";
 export type ColourUse = "wall" | "ceiling" | "trim" | "cabinetry" | "door" | "accent";
 export type Warmth = "all" | "warm" | "neutral" | "cool";

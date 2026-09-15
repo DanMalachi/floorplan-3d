@@ -158,8 +158,8 @@ export const HERO_FRAME = "#1C1D1F";
  * (the bottom wall) at offset 4.5, so entering looks up +y at w2, and w2's
  * studio side is face A.
  */
-const BATH_PAINT = "#b3c6b7"; // Tambour 0891P "SERENE OASIS /T" — soft sage
-const ACCENT_PAINT = "#9d4a43"; // Tambour 0175A "Just Terracotta"
+const BATH_PAINT = "#b3c6b7"; // soft sage
+const ACCENT_PAINT = "#9d4a43"; // terracotta
 
 const WALL_PAINT: Record<string, { a?: string; b?: string }> = {
   w7: { a: BATH_PAINT },
