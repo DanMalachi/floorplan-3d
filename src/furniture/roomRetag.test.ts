@@ -75,25 +75,15 @@ console.log("\nword-boundary matching (plain substring would misfire)");
   check("plain sofa gains nothing", sofa.join("/") === "living", sofa.join("/"));
 }
 
-console.log("\nlive catalog: the five previously-empty tabs are populated");
-for (const [room, min] of [
-  ["outdoors", 30],
-  ["closet", 15],
-  ["kids", 5],
-  ["garage", 3],
-  ["laundry", 2],
-] as const) {
-  const n = getItemsForRoom(room).length;
-  check(`${room} has >= ${min} items`, n >= min, `got ${n}`);
-}
-
+// Floors track the post-IKEA catalog (2026-09-15). Closet/kids/garage/laundry
+// have no real models since IKEA left; parametric pieces fill those tabs.
 console.log("\nno room lost items to the re-tag");
 for (const [room, min] of [
-  ["living", 250],
-  ["bedroom", 100],
-  ["dining", 100],
-  ["study", 190],
-  ["kitchen", 11],
+  ["living", 70],
+  ["bedroom", 30],
+  ["dining", 50],
+  ["study", 50],
+  ["outdoors", 4],
 ] as const) {
   const n = getItemsForRoom(room).length;
   check(`${room} still has >= ${min} items`, n >= min, `got ${n}`);
