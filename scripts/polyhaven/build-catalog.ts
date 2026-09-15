@@ -41,6 +41,7 @@ import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { NodeIO } from "@gltf-transform/core";
 import { geomSize } from "../lib/glb-geom";
+import { reviewRejection } from "../lib/review-rejections";
 
 const SCRATCH = path.resolve(
   "C:/Users/dandu/AppData/Local/Temp/claude/C--Users-dandu/12e01fd5-7c34-4516-89a9-c5630024de73/scratchpad/furn/polyhaven-src",
@@ -321,7 +322,7 @@ async function main() {
   }
 
   writeFileSync(REPORT_JSON, JSON.stringify(rows, null, 2));
-  writeFileSync(OUT_JSON, JSON.stringify(catalog, null, 2));
+  writeFileSync(OUT_JSON, JSON.stringify(catalog.filter((c) => !reviewRejection(c.assetId)), null, 2));
 
   console.log(`\n${catalog.length}/${CANDIDATES.length} passed dimension audit.`);
   console.log(`Wrote ${path.relative(process.cwd(), OUT_JSON)}`);

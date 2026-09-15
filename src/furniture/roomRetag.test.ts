@@ -77,13 +77,14 @@ console.log("\nword-boundary matching (plain substring would misfire)");
 
 // Floors track the post-IKEA catalog (2026-09-15). Closet/kids/garage/laundry
 // have no real models since IKEA left; parametric pieces fill those tabs.
+// Lowered again after Dan's visual review removed 40 models (146 -> 106).
 console.log("\nno room lost items to the re-tag");
 for (const [room, min] of [
-  ["living", 70],
-  ["bedroom", 30],
-  ["dining", 50],
-  ["study", 50],
-  ["outdoors", 4],
+  ["living", 50],
+  ["bedroom", 18],
+  ["dining", 36],
+  ["study", 38],
+  ["outdoors", 3],
 ] as const) {
   const n = getItemsForRoom(room).length;
   check(`${room} still has >= ${min} items`, n >= min, `got ${n}`);

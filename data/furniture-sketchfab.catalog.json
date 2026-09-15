@@ -144,23 +144,6 @@
     ]
   },
   {
-    "assetId": "sketchfab:4b8427fda53145ca873d73d7668838ef",
-    "name": "Support dining table",
-    "category": "Tables",
-    "footprint": {
-      "w": 2.72,
-      "d": 0.6
-    },
-    "realModel": "/furniture/sketchfab/support-dining-table-4b8427fd.glb",
-    "thumbnail": "https://media.sketchfab.com/models/4b8427fda53145ca873d73d7668838ef/thumbnails/442cd176315043b6bf30e24896c8db5a/06fb16fd9a434a3eafa2f9e02e061628.jpeg",
-    "brand": "Sketchfab",
-    "subtitle": "dining table",
-    "rooms": [
-      "dining",
-      "kitchen"
-    ]
-  },
-  {
     "assetId": "sketchfab:f46aef15d75f4ae2886dd688d6c15c68",
     "name": "Table",
     "category": "Tables",
@@ -187,23 +170,6 @@
     },
     "realModel": "/furniture/sketchfab/dinner-table-002-5f09a841.glb",
     "thumbnail": "https://media.sketchfab.com/models/5f09a8417c614c818ca8fa4eef6ca96f/thumbnails/0af5189fb37242b4b81110d6525246d4/feadcdc71de640dc83c4fbfe92b60fa4.jpeg",
-    "brand": "Sketchfab",
-    "subtitle": "dining table",
-    "rooms": [
-      "dining",
-      "kitchen"
-    ]
-  },
-  {
-    "assetId": "sketchfab:24dcef8d06f2456b82b93da1cf241c99",
-    "name": "Modern Coffee Table",
-    "category": "Tables",
-    "footprint": {
-      "w": 1.168,
-      "d": 1.008
-    },
-    "realModel": "/furniture/sketchfab/modern-coffee-table-24dcef8d.glb",
-    "thumbnail": "https://media.sketchfab.com/models/24dcef8d06f2456b82b93da1cf241c99/thumbnails/d415e5c5a2084003be402c3017af0f72/230b33d36d144bc9a709cc468dc6bdba.jpeg",
     "brand": "Sketchfab",
     "subtitle": "dining table",
     "rooms": [

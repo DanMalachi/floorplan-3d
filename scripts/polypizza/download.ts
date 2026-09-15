@@ -18,6 +18,7 @@
 import { writeFileSync, mkdirSync, unlinkSync, statSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { geomSize } from "../lib/glb-geom";
+import { reviewRejection } from "../lib/review-rejections";
 
 const KEY = process.env.POLYPIZZA_API_KEY;
 if (!KEY) throw new Error("POLYPIZZA_API_KEY not set");
@@ -339,7 +340,7 @@ async function main() {
   }
 
   const rows = [...rowsById.values()];
-  const catalog = [...catalogByAssetId.values()];
+  const catalog = [...catalogByAssetId.values()].filter((c) => !reviewRejection(c.assetId));
 
   writeFileSync(REPORT_JSON, JSON.stringify(rows, null, 2));
   writeFileSync(OUT_JSON, JSON.stringify(catalog, null, 2));

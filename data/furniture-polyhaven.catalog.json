@@ -66,22 +66,6 @@
     ]
   },
   {
-    "assetId": "polyhaven:modern_coffee_table_01",
-    "name": "Modern Coffee Table 01",
-    "category": "Tables",
-    "footprint": {
-      "w": 1.202,
-      "d": 0.6
-    },
-    "realModel": "/furniture/polyhaven/modern_coffee_table_01.glb",
-    "thumbnail": "https://cdn.polyhaven.com/asset_img/thumbs/modern_coffee_table_01.png?width=256&height=256&v=29e2a5b6",
-    "brand": "Poly Haven",
-    "subtitle": "coffee table",
-    "rooms": [
-      "living"
-    ]
-  },
-  {
     "assetId": "polyhaven:modern_coffee_table_02",
     "name": "Modern Coffee Table 02",
     "category": "Tables",

@@ -52,16 +52,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "9c5678e3-ba8f-4ebc-88c1-2f464400abeb",
-      "file": "9c5678e3-ba8f-4ebc-88c1-2f464400abeb.glb",
-      "name": "Bed side table Pinus",
-      "author": "Rafael Miranda Mota",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/9c5678e3-ba8f-4ebc-88c1-2f464400abeb/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
       "assetBaseId": "33f2c09b-b254-4ae6-9b89-8fe3c4e96c7f",
       "file": "33f2c09b-b254-4ae6-9b89-8fe3c4e96c7f.glb",
       "name": "Bench",
@@ -79,15 +69,6 @@
       "source": "https://www.blenderkit.com/asset-gallery-detail/adf9065a-6914-4044-9f76-c3f54fb94f8a/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "498c5874-53ea-4706-8603-5face9777157",
-      "file": "498c5874-53ea-4706-8603-5face9777157.glb",
-      "name": "Chair",
-      "author": "Free poly",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/498c5874-53ea-4706-8603-5face9777157/",
-      "retrieved": "2026-07-28"
     },
     {
       "assetBaseId": "703fe964-84bb-4468-84bd-f6aa3fb337b4",
@@ -129,16 +110,6 @@
       "retrieved": "2026-09-15"
     },
     {
-      "assetBaseId": "beb42069-c65c-431b-b9da-677eb3b714f4",
-      "file": "beb42069-c65c-431b-b9da-677eb3b714f4.glb",
-      "name": "Chair Vintage-Freepoly.org",
-      "author": "Free poly",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/beb42069-c65c-431b-b9da-677eb3b714f4/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
       "assetBaseId": "6611536b-4d3e-435d-8542-132c9aaf2fc3",
       "file": "6611536b-4d3e-435d-8542-132c9aaf2fc3.glb",
       "name": "Chair_VATRA",
@@ -166,51 +137,6 @@
       "source": "https://www.blenderkit.com/asset-gallery-detail/b627c645-cfd6-4b49-b01b-5f55bda25ef6/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "0716c650-c735-493b-8f3a-3be2edfd3115",
-      "file": "0716c650-c735-493b-8f3a-3be2edfd3115.glb",
-      "name": "China Chair",
-      "author": "PBRPX",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/0716c650-c735-493b-8f3a-3be2edfd3115/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6",
-      "file": "e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6.glb",
-      "name": "Chinese Armchair",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/e8a6bdac-2b8e-424c-ba9c-af3e0584e9a6/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "2b43761f-123c-4017-b706-ebef91754456",
-      "file": "2b43761f-123c-4017-b706-ebef91754456.glb",
-      "name": "Chinese Cabinet",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/2b43761f-123c-4017-b706-ebef91754456/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "294c2ee9-a12f-4b8c-a5c5-f7178326cb75",
-      "file": "294c2ee9-a12f-4b8c-a5c5-f7178326cb75.glb",
-      "name": "Chinese Console Table",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/294c2ee9-a12f-4b8c-a5c5-f7178326cb75/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "d4e83285-807e-4bcf-8d84-3dd83cb44da5",
-      "file": "d4e83285-807e-4bcf-8d84-3dd83cb44da5.glb",
-      "name": "Chinese Sofa",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/d4e83285-807e-4bcf-8d84-3dd83cb44da5/",
-      "retrieved": "2026-07-28"
     },
     {
       "assetBaseId": "11adaf6f-177b-4301-82a8-8030ea31c421",
@@ -248,16 +174,6 @@
       "author": "John Carlo",
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/784023dd-6758-4b3b-99c8-a96c4c8dfee2/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "2fd64c16-5134-411b-92ad-07401c3ca87c",
-      "file": "2fd64c16-5134-411b-92ad-07401c3ca87c.glb",
-      "name": "Coffee Table",
-      "author": "John Carlo",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/2fd64c16-5134-411b-92ad-07401c3ca87c/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
     },
@@ -348,16 +264,6 @@
       "retrieved": "2026-09-15"
     },
     {
-      "assetBaseId": "268de6fe-b7a4-44b0-82f7-c5545ce610b5",
-      "file": "268de6fe-b7a4-44b0-82f7-c5545ce610b5.glb",
-      "name": "Cylindrical Table Lamp",
-      "author": "Shabbir Merchant",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/268de6fe-b7a4-44b0-82f7-c5545ce610b5/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
       "assetBaseId": "be6c358c-2655-495c-9b0d-4d84459a5400",
       "file": "be6c358c-2655-495c-9b0d-4d84459a5400.glb",
       "name": "Dark Narrow Bookshelf",
@@ -374,15 +280,6 @@
       "author": "abd3d",
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/a85d4f2f-b1d6-4a05-8e54-a3ba0b7efe9f/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45",
-      "file": "8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45.glb",
-      "name": "Dining Table",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/8c7111e8-3d2e-4be1-a2d2-b03e9acd9a45/",
       "retrieved": "2026-07-28"
     },
     {
@@ -404,15 +301,6 @@
       "source": "https://www.blenderkit.com/asset-gallery-detail/b7b0eac0-f441-4077-bdcc-5c5f6739a7fe/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "76e31f48-a0f7-4854-868a-c2f692b68f67",
-      "file": "76e31f48-a0f7-4854-868a-c2f692b68f67.glb",
-      "name": "Electric Stove",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/76e31f48-a0f7-4854-868a-c2f692b68f67/",
-      "retrieved": "2026-07-28"
     },
     {
       "assetBaseId": "b600cbf2-cfb7-4abb-b7f8-86c83cad5ad4",
@@ -464,15 +352,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "b32f180a-a041-4b01-bcfb-5ff8e6794699",
-      "file": "b32f180a-a041-4b01-bcfb-5ff8e6794699.glb",
-      "name": "Gallinera Chair",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/b32f180a-a041-4b01-bcfb-5ff8e6794699/",
-      "retrieved": "2026-07-28"
-    },
-    {
       "assetBaseId": "1057fdd0-a688-4ba1-b624-94f8466ce6c8",
       "file": "1057fdd0-a688-4ba1-b624-94f8466ce6c8.glb",
       "name": "Gallinera Table",
@@ -490,34 +369,6 @@
       "source": "https://www.blenderkit.com/asset-gallery-detail/dc64e9f5-ba68-4306-8a96-15966ab75567/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad",
-      "file": "1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad.glb",
-      "name": "Gothic Cabinet 01",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/1c9f5a77-bc5f-40ac-9eb3-9d95f695f5ad/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "246cc152-48b6-46a9-b4c1-7f7f299d0148",
-      "file": "246cc152-48b6-46a9-b4c1-7f7f299d0148.glb",
-      "name": "High Chair for Little Ones",
-      "author": "LifeLike3D",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/246cc152-48b6-46a9-b4c1-7f7f299d0148/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "1a2474e6-2fce-480a-be98-0b12c6b696ab",
-      "file": "1a2474e6-2fce-480a-be98-0b12c6b696ab.glb",
-      "name": "Industrial Coffee Table",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/1a2474e6-2fce-480a-be98-0b12c6b696ab/",
-      "retrieved": "2026-07-28"
     },
     {
       "assetBaseId": "8a90d1ac-eefb-45ff-b854-e0d66b067d39",
@@ -547,15 +398,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "dc252bcb-1465-4c65-a03b-9e564204eae0",
-      "file": "dc252bcb-1465-4c65-a03b-9e564204eae0.glb",
-      "name": "Light Kinkiet",
-      "author": "htosci",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/dc252bcb-1465-4c65-a03b-9e564204eae0/",
-      "retrieved": "2026-07-28"
-    },
-    {
       "assetBaseId": "d4de2ba6-412d-4e23-8cbc-50f5ee7cfa4e",
       "file": "d4de2ba6-412d-4e23-8cbc-50f5ee7cfa4e.glb",
       "name": "Luxury Coffee Table",
@@ -572,16 +414,6 @@
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/3a845132-df64-4f02-8da6-44229fe774e4/",
       "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "ca5c4366-77af-4809-a1c2-d37734bcf2aa",
-      "file": "ca5c4366-77af-4809-a1c2-d37734bcf2aa.glb",
-      "name": "Medieval knight scissor chair",
-      "author": "Joachim Bornemann",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/ca5c4366-77af-4809-a1c2-d37734bcf2aa/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
     },
     {
       "assetBaseId": "0ab00d3f-db59-42cf-b000-e8a3ce25b12c",
@@ -686,15 +518,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "eaeba31c-8d32-4d47-b3ce-2a494ce2b17f",
-      "file": "eaeba31c-8d32-4d47-b3ce-2a494ce2b17f.glb",
-      "name": "Office Chair",
-      "author": "abd3d",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/eaeba31c-8d32-4d47-b3ce-2a494ce2b17f/",
-      "retrieved": "2026-07-28"
-    },
-    {
       "assetBaseId": "047f8f98-e6f8-42d4-a4f1-dd598af9c390",
       "file": "047f8f98-e6f8-42d4-a4f1-dd598af9c390.glb",
       "name": "Office desk industrial design",
@@ -702,15 +525,6 @@
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/047f8f98-e6f8-42d4-a4f1-dd598af9c390/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "cca30285-0ab7-4588-b7f8-70c7a5752825",
-      "file": "cca30285-0ab7-4588-b7f8-70c7a5752825.glb",
-      "name": "Old Bed Frame",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/cca30285-0ab7-4588-b7f8-70c7a5752825/",
       "retrieved": "2026-09-15"
     },
     {
@@ -799,15 +613,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "331afbd0-0322-423e-8967-d41257b93b62",
-      "file": "331afbd0-0322-423e-8967-d41257b93b62.glb",
-      "name": "Painted Wooden Sofa",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/331afbd0-0322-423e-8967-d41257b93b62/",
-      "retrieved": "2026-07-28"
-    },
-    {
       "assetBaseId": "aad78f1d-ca8a-4def-bee7-836207e91484",
       "file": "aad78f1d-ca8a-4def-bee7-836207e91484.glb",
       "name": "Painted Wooden Stool",
@@ -836,31 +641,12 @@
       "retrieved": "2026-09-15"
     },
     {
-      "assetBaseId": "c0997e86-cb55-4607-a4fe-1b855c957ac0",
-      "file": "c0997e86-cb55-4607-a4fe-1b855c957ac0.glb",
-      "name": "Projector Screen",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/c0997e86-cb55-4607-a4fe-1b855c957ac0/",
-      "retrieved": "2026-07-28"
-    },
-    {
       "assetBaseId": "308b256a-984b-459e-9fda-fd50208abb17",
       "file": "308b256a-984b-459e-9fda-fd50208abb17.glb",
       "name": "Recycled Wood Chest Of Drawers",
       "author": "The Doctor By Design",
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/308b256a-984b-459e-9fda-fd50208abb17/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "92c902f7-0398-4116-b7be-f196b87813d1",
-      "file": "92c902f7-0398-4116-b7be-f196b87813d1.glb",
-      "name": "Retro table lamp-Freepoly.org",
-      "author": "Free poly",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/92c902f7-0398-4116-b7be-f196b87813d1/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
     },
@@ -899,16 +685,6 @@
       "author": "Calebe Moreira",
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/08dee582-4ac7-47fc-a1e1-192e677da403/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "4a113164-9c43-46de-9e1b-f950259aee73",
-      "file": "4a113164-9c43-46de-9e1b-f950259aee73.glb",
-      "name": "School Chair 01",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/4a113164-9c43-46de-9e1b-f950259aee73/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
     },
@@ -962,62 +738,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "a71f876f-09bd-47a0-b557-6037a642ae9c",
-      "file": "a71f876f-09bd-47a0-b557-6037a642ae9c.glb",
-      "name": "Tubular floor lamp",
-      "author": "dleon3D León",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/a71f876f-09bd-47a0-b557-6037a642ae9c/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "bf356937-e6e7-4a2e-91c7-c1251d1a406b",
-      "file": "bf356937-e6e7-4a2e-91c7-c1251d1a406b.glb",
-      "name": "Vintage Armchair",
-      "author": "Rohma Ansari",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/bf356937-e6e7-4a2e-91c7-c1251d1a406b/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae",
-      "file": "a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae.glb",
-      "name": "Vintage Day Bed",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/a9acd8c6-7c9f-4d2d-9125-ab73b5dfa4ae/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "7ea37cdc-801c-4f67-a416-eccded572646",
-      "file": "7ea37cdc-801c-4f67-a416-eccded572646.glb",
-      "name": "Vintage Oil Lamp",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/7ea37cdc-801c-4f67-a416-eccded572646/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "f4b1081f-6d3e-4b06-b55e-8fc2f80de17a",
-      "file": "f4b1081f-6d3e-4b06-b55e-8fc2f80de17a.glb",
-      "name": "Wall light",
-      "author": "abd3d",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/f4b1081f-6d3e-4b06-b55e-8fc2f80de17a/",
-      "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "0d8f6d0a-a383-4476-bc1b-a8ae8ff22135",
-      "file": "0d8f6d0a-a383-4476-bc1b-a8ae8ff22135.glb",
-      "name": "Wall Light",
-      "author": "abd3d",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/0d8f6d0a-a383-4476-bc1b-a8ae8ff22135/",
-      "retrieved": "2026-07-28"
-    },
-    {
       "assetBaseId": "b8b951c4-1600-40f0-ba23-36ff3f5e86bb",
       "file": "b8b951c4-1600-40f0-ba23-36ff3f5e86bb.glb",
       "name": "Waste Paper Basket",
@@ -1025,16 +745,6 @@
       "license": "CC0 1.0 Universal (public domain dedication)",
       "source": "https://www.blenderkit.com/asset-gallery-detail/b8b951c4-1600-40f0-ba23-36ff3f5e86bb/",
       "retrieved": "2026-07-28"
-    },
-    {
-      "assetBaseId": "9e80a12e-b38b-4081-b260-d5d2ef0c357b",
-      "file": "9e80a12e-b38b-4081-b260-d5d2ef0c357b.glb",
-      "name": "Winged Office Chair",
-      "author": "The Doctor By Design",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/9e80a12e-b38b-4081-b260-d5d2ef0c357b/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
     },
     {
       "assetBaseId": "a31c827d-81e6-4d1a-ba5a-1a6c5ea5459a",
@@ -1093,16 +803,6 @@
       "retrieved": "2026-07-28"
     },
     {
-      "assetBaseId": "c27d7253-29d2-40ee-a629-c3bee14cf207",
-      "file": "c27d7253-29d2-40ee-a629-c3bee14cf207.glb",
-      "name": "Wooden Stool 01",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/c27d7253-29d2-40ee-a629-c3bee14cf207/",
-      "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
-      "retrieved": "2026-09-15"
-    },
-    {
       "assetBaseId": "eb82ecf0-7240-4e91-a699-ed8f28cae459",
       "file": "eb82ecf0-7240-4e91-a699-ed8f28cae459.glb",
       "name": "Wooden Stool 02",
@@ -1130,15 +830,6 @@
       "source": "https://www.blenderkit.com/asset-gallery-detail/bdff957c-a9e9-4827-b6c9-602b264a4fbf/",
       "converted": "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)",
       "retrieved": "2026-09-15"
-    },
-    {
-      "assetBaseId": "4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e",
-      "file": "4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e.glb",
-      "name": "Worn Metal Rack",
-      "author": "Poly Haven",
-      "license": "CC0 1.0 Universal (public domain dedication)",
-      "source": "https://www.blenderkit.com/asset-gallery-detail/4b94c4f8-45c6-4e66-aaeb-ea2221b5f29e/",
-      "retrieved": "2026-07-28"
     }
   ]
 }

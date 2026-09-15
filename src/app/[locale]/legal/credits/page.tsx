@@ -41,9 +41,15 @@ export default async function CreditsPage({ params }: { params: Promise<{ locale
       <p style={legalP}>{t("sketchfabIntro", { count: sketchfabCredits.length })}</p>
       <CreditList items={sketchfabCredits} sourceLabel={t("sourceLabel")} licenseLabel={t("licenseLabel")} />
 
-      <h3 style={legalH3}>{t("polypizzaHeading")}</h3>
-      <p style={legalP}>{t("polypizzaIntro", { count: polypizzaCredits.length })}</p>
-      <CreditList items={polypizzaCredits} sourceLabel={t("sourceLabel")} licenseLabel={t("licenseLabel")} />
+      {/* Rendered only while a CC-BY Poly Pizza model actually ships — an empty
+          section would credit nothing (none ship after the 2026-09-15 review). */}
+      {polypizzaCredits.length > 0 && (
+        <>
+          <h3 style={legalH3}>{t("polypizzaHeading")}</h3>
+          <p style={legalP}>{t("polypizzaIntro", { count: polypizzaCredits.length })}</p>
+          <CreditList items={polypizzaCredits} sourceLabel={t("sourceLabel")} licenseLabel={t("licenseLabel")} />
+        </>
+      )}
 
       <h2 style={legalH2}>{t("cc0Heading")}</h2>
       <p style={legalP}>{t("cc0Body")}</p>

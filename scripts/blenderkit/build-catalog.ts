@@ -23,6 +23,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { loadIndex, select, sourceFormat } from "./select";
 import { brandHit, isContentRejected } from "./content-filter";
+import { reviewRejection } from "../lib/review-rejections";
 
 /** Content rejects that predate the baseline freeze — none of them ever shipped. */
 const PRE_2026_09_15_REJECTS = new Set([
@@ -136,6 +137,12 @@ function main() {
   for (const e of kept) {
     const display = e.displayName || e.name;
     const baseline = BASELINE_IDS.has(e.assetBaseId);
+
+    const review = reviewRejection(`blenderkit:${e.assetBaseId}`);
+    if (review) {
+      rejected.push({ name: display, reason: review });
+      continue;
+    }
 
     if (baseline) {
       if (isContentRejected(display)) {
