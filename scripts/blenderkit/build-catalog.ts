@@ -19,15 +19,27 @@
  *   npx tsx scripts/blenderkit/build-catalog.ts
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { loadIndex, select } from "./select";
-import { isContentRejected } from "./content-filter";
+import { loadIndex, select, sourceFormat } from "./select";
+import { brandHit, isContentRejected } from "./content-filter";
+
+/** Content rejects that predate the baseline freeze — none of them ever shipped. */
+const PRE_2026_09_15_REJECTS = new Set([
+  "Folder HUD Interface", "Jiechen Table", "Plunger", "Hair Dryer Salerm 4200", "China Water scoop",
+  "Vintage Flashlight", "19th-Century Paper Clutter Waste", "Early 1900s Office Mail Opened",
+  "Large Stack of Old Office Documents", "Office Telegram Clutter", "ÅRSTID Floor lamp",
+  "ÅRSTID Table lamp", "Ikea modern chair", "Ikea Onnestad Red Armchair",
+]);
 import { resolveType, categoryFor, wallSnapFor, roomsFor, PLAUSIBLE_EXTENT, type FurnitureType } from "./classify";
+import { metadataGate, geometryGate } from "./gates";
+import { BASELINE_IDS } from "./baseline";
 import type { AuditRow } from "./audit";
 
 const AUDIT = path.resolve("data/furniture-blenderkit.audit.json");
 const OUT = path.resolve("data/furniture-blenderkit.catalog.json");
+const ATTRIBUTION = path.resolve("public/furniture/blenderkit/ATTRIBUTION.json");
+const REJECTIONS = path.resolve("data/furniture-blenderkit.rejections.json");
 
 /** Public path the app serves the optimized models from.
  *
@@ -109,22 +121,69 @@ function main() {
   const rows: CatalogRow[] = [];
   const rescaled: string[] = [];
   const skipped: string[] = [];
+  const rejected: { name: string; reason: string }[] = [];
+  const baselineFlags: string[] = [];
+  const removedBaseline: string[] = [];
+  const attribution: Record<string, unknown>[] = [];
+  const previousAttribution = new Map<string, { retrieved?: string }>(
+    existsSync(ATTRIBUTION)
+      ? (JSON.parse(readFileSync(ATTRIBUTION, "utf8")).assets as { assetBaseId: string; retrieved?: string }[]).map(
+          (r) => [r.assetBaseId, r],
+        )
+      : [],
+  );
 
   for (const e of kept) {
     const display = e.displayName || e.name;
-    if (isContentRejected(display)) continue;
+    const baseline = BASELINE_IDS.has(e.assetBaseId);
+
+    if (baseline) {
+      if (isContentRejected(display)) {
+        // Baseline items rejected on content since shipping are REMOVED
+        // (Dan, 2026-09-15: brand-named pieces come out of the shipped
+        // catalog too). Pre-existing prop rejects never shipped; only the
+        // newly-removed ones are listed.
+        if (!PRE_2026_09_15_REJECTS.has(display)) removedBaseline.push(`${display} — ${isContentRejected(display)}`);
+        continue;
+      }
+      const brand = brandHit(e);
+      if (brand) {
+        removedBaseline.push(`${display} — brand/named product: "${brand}"`);
+        continue;
+      }
+    } else {
+      const reason = metadataGate(e);
+      if (reason) {
+        rejected.push({ name: display, reason });
+        continue;
+      }
+    }
 
     const a = byId.get(e.assetBaseId);
     if (!a?.glbSize) {
+      // Not downloaded / not converted (or conversion failed) — nothing to ship.
       skipped.push(`${display} — no measured geometry`);
       continue;
     }
 
     // y-up throughout: the measured AABB is [width, height, depth].
     const [w0, h0, d0] = a.glbSize;
-    const type = resolveType(display, e.category, { w: w0, h: h0, d: d0 });
+    let type = resolveType(display, e.category, { w: w0, h: h0, d: d0 });
 
-    const fixed = rescale(w0, d0, type);
+    if (!baseline) {
+      const gate = geometryGate(e, a.glbSize);
+      type = gate.type;
+      const { reason } = gate;
+      if (reason) {
+        rejected.push({ name: display, reason });
+        continue;
+      }
+    } else {
+      const reason = metadataGate(e) ?? geometryGate(e, a.glbSize).reason;
+      if (reason) baselineFlags.push(`${display} — ${reason}`);
+    }
+
+    const fixed = baseline ? rescale(w0, d0, type) : null;
     if (fixed) {
       rescaled.push(
         `${display} (${type}): ${w0.toFixed(2)}x${d0.toFixed(2)} → ${fixed.w.toFixed(2)}x${fixed.d.toFixed(2)}`,
@@ -142,12 +201,41 @@ function main() {
       ...(e.thumbnailUrl ? { thumbnail: e.thumbnailUrl } : {}),
       brand: "BlenderKit",
       subtitle: type.replace(/-/g, " "),
-      rooms: roomsFor(type),
+      // Baseline rows keep the rooms they shipped with; the outdoor slug rule
+      // is for new items (retagRooms in the app already adds Outdoors by name).
+      rooms: baseline ? roomsFor(type) : roomsFor(type, e.category),
+    });
+    attribution.push({
+      assetBaseId: e.assetBaseId,
+      file: `${e.assetBaseId}.glb`,
+      name: display,
+      author: e.author.name || "unknown",
+      license: "CC0 1.0 Universal (public domain dedication)",
+      source: e.webUrl,
+      ...(sourceFormat(e) === "blend" ? { converted: "blend → glb, headless Blender (scripts/blenderkit/convert-blend.ts)" } : {}),
+      retrieved: previousAttribution.get(e.assetBaseId)?.retrieved ?? new Date().toISOString().slice(0, 10),
     });
   }
 
   rows.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
   writeFileSync(OUT, JSON.stringify(rows, null, 2));
+
+  // The manifest is written from the SHIPPED rows, so it can neither miss a
+  // shipped item nor credit a content-rejected one (fetch-models.ts used to
+  // write it from everything downloaded, which listed 10 unshipped props).
+  attribution.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  writeFileSync(
+    ATTRIBUTION,
+    JSON.stringify(
+      {
+        note: "Every model here is CC0 (public domain). Attribution is not required; it is recorded as provenance and as a courtesy to the authors.",
+        source: "https://www.blenderkit.com/",
+        assets: attribution,
+      },
+      null,
+      2,
+    ),
+  );
 
   const byCat = new Map<string, number>();
   for (const r of rows) byCat.set(r.category, (byCat.get(r.category) ?? 0) + 1);
@@ -161,9 +249,22 @@ function main() {
   console.log(`\nRescaled ${rescaled.length} implausibly-sized models:`);
   for (const r of rescaled) console.log(`   • ${r}`);
   if (skipped.length) {
-    console.log(`\nSkipped ${skipped.length}:`);
-    for (const s of skipped) console.log(`   • ${s}`);
+    console.log(`\nSkipped ${skipped.length} (no downloaded/converted glb):`);
+    for (const s of skipped.slice(0, 15)) console.log(`   • ${s}`);
   }
+  const byReason = new Map<string, number>();
+  for (const r of rejected) {
+    const key = r.reason.replace(/"[^"]*"/, '"…"').replace(/[\d.]+ m outside/, "N m outside").replace(/\[.*\]/, "");
+    byReason.set(key, (byReason.get(key) ?? 0) + 1);
+  }
+  console.log(`\nRejected ${rejected.length} new items by gate:`);
+  for (const [k, n] of [...byReason.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(4)}  ${k}`);
+  writeFileSync(REJECTIONS, JSON.stringify(rejected, null, 2));
+  console.log(`  (per-item list → ${path.relative(process.cwd(), REJECTIONS)})`);
+  console.log(`\nBaseline items REMOVED (brand / named product):`);
+  for (const r of removedBaseline) console.log(`   • ${r}`);
+  console.log(`\nBaseline items that would fail the new size/type gates (kept; Dan's decision):`);
+  for (const f of baselineFlags) console.log(`   • ${f}`);
 }
 
 main();

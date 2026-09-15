@@ -12,7 +12,7 @@
  *   npx tsx scripts/blenderkit/fetch-index.ts
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { API, USER_AGENT, ALLOWED_LICENSE, politeDelay, paramsToObject, num } from "./lib";
 import type { BlenderKitIndexEntry } from "./index-schema";
@@ -23,8 +23,16 @@ const PAGE_SIZE = 100;
 /** Interior-relevant subtrees. `interior` is the broad umbrella; the others are
  *  listed explicitly because BlenderKit's tree is inconsistent about whether a
  *  sofa lives under interior/furniture or at the top level. Duplicates are
- *  collapsed by assetBaseId. */
-const SUBTREES = ["interior", "furniture"];
+ *  collapsed by assetBaseId.
+ *
+ *  Checked against the live category tree (/api/v1/categories/) 2026-09-15:
+ *  bed, bedroom, cabinets (bookcase/commode/shelving), lighting (floor-lamp,
+ *  table-lamps), office (desk/office-chair) and outdoor-furniture all sit
+ *  UNDER `interior`, so `category_subtree:interior` already returns them —
+ *  per-subtree queries (bed 5, lighting 72, office 46, outdoor-furniture 11
+ *  CC0) add no ids beyond it. The one furniture-bearing subtree outside
+ *  `interior` is `architecture/exterior/bench` (outdoor benches). */
+const SUBTREES = ["interior", "furniture", "bench"];
 
 interface SearchResponse {
   count: number;
@@ -51,6 +59,7 @@ function toEntry(r: Record<string, unknown>): BlenderKitIndexEntry | null {
   const p = paramsToObject(r.parameters as never);
   const files = (r.files ?? []) as { fileType: string; id: number }[];
   const gltf = files.find((f) => f.fileType === "gltf");
+  const blend = files.find((f) => f.fileType === "blend");
   const author = (r.author ?? {}) as { id?: number; firstName?: string; lastName?: string };
 
   return {
@@ -83,6 +92,7 @@ function toEntry(r: Record<string, unknown>): BlenderKitIndexEntry | null {
     productionLevel: typeof p.productionLevel === "string" ? p.productionLevel : null,
 
     gltfFileId: gltf?.id ?? null,
+    blendFileId: blend?.id ?? null,
     filesSize: num(r.filesSize as never),
 
     thumbnailUrl: (r.thumbnailMiddleUrl as string) ?? null,
@@ -129,6 +139,38 @@ async function fetchSubtree(subtree: string, byId: Map<string, BlenderKitIndexEn
   );
 }
 
+/**
+ * Uploaders re-file assets. On 2026-09-15 two SHIPPED items had left the
+ * `interior` tree ("Projector Screen" → video, "Electric Stove" →
+ * household-appliances) while staying CC0, so a plain re-fetch silently dropped
+ * them from the catalog. Every id the previous index held is therefore
+ * re-looked-up by `asset_base_id` and kept — through the same `toEntry`
+ * licence gate, so an asset that moved to Royalty-Free still falls out.
+ */
+async function retainPrevious(byId: Map<string, BlenderKitIndexEntry>) {
+  if (!existsSync(OUT)) return;
+  const previous = JSON.parse(readFileSync(OUT, "utf8")) as BlenderKitIndexEntry[];
+  const missing = previous.filter((e) => !byId.has(e.assetBaseId));
+  let kept = 0;
+  const dropped: string[] = [];
+  for (const e of missing) {
+    await politeDelay();
+    const url = `${API}/search/?query=asset_type:model+asset_base_id:${e.assetBaseId}`;
+    const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    if (!res.ok) throw new Error(`lookup ${e.assetBaseId}: HTTP ${res.status}`);
+    const data = (await res.json()) as SearchResponse;
+    const entry = data.results.map(toEntry).find((x) => x?.assetBaseId === e.assetBaseId) ?? null;
+    if (entry) {
+      byId.set(entry.assetBaseId, entry);
+      kept++;
+    } else {
+      dropped.push(`${e.name} (no longer CC0 or no longer public)`);
+    }
+  }
+  console.log(`[retain] ${missing.length} previously-indexed ids left the subtrees · kept ${kept}`);
+  for (const d of dropped) console.log(`   • dropped ${d}`);
+}
+
 async function main() {
   const byId = new Map<string, BlenderKitIndexEntry>();
 
@@ -136,6 +178,7 @@ async function main() {
     await fetchSubtree(subtree, byId);
     await politeDelay();
   }
+  await retainPrevious(byId);
 
   const entries = [...byId.values()].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
   mkdirSync(path.dirname(OUT), { recursive: true });

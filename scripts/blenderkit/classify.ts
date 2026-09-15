@@ -18,10 +18,10 @@ import type { FurnitureCategory } from "../../src/furniture/catalog";
 /** Finer-grained type than the app's 7 categories — needed to decide wallSnap
  *  and to sanity-check dimensions, which differ a lot within one category. */
 export type FurnitureType =
-  | "sofa" | "armchair" | "chair" | "stool" | "bench" | "pouf"
+  | "sofa" | "armchair" | "chair" | "stool" | "bench" | "pouf" | "lounger"
   | "dining-table" | "coffee-table" | "side-table" | "desk" | "console"
   | "bed"
-  | "cabinet" | "shelving" | "nightstand" | "rack"
+  | "cabinet" | "shelving" | "nightstand" | "rack" | "dresser"
   | "appliance"
   | "bathroom"
   | "lamp" | "decor";
@@ -37,6 +37,16 @@ const NAME_RULES: [RegExp, FurnitureType][] = [
   [/stool|scoop/i, "stool"],
   [/bench|picnic table/i, "bench"],
   [/pouf|ottoman/i, "pouf"],
+  // Added 2026-09-15 for the gap-category pass. Each precedes the generic word
+  // it contains ("bedside table" before "table"/"bed", "chest of drawers"
+  // before "cabinet"). None of these phrases occurs in a pre-existing name, so
+  // the 71 baseline items classify exactly as before (diffed).
+  [/lounger|sun\s*bed|deck\s*chair/i, "lounger"],
+  [/bed\s*side|night\s*table/i, "nightstand"],
+  [/chest of drawers|dresser|commode|sideboard|drawer cabinet/i, "dresser"],
+  [/book\s*(case|shel)/i, "shelving"],
+  [/wardrobe/i, "cabinet"],
+  [/desks*lamp|tables*lamp|floors*lamp/i, "lamp"],
   [/console/i, "console"],
   [/coffee table/i, "coffee-table"],
   [/dining table|dining/i, "dining-table"],
@@ -66,6 +76,12 @@ const SLUG_RULES: Record<string, FurnitureType> = {
   "office-table": "desk",
   desk: "desk",
   bed: "bed",
+  "kidsfurniture-bed": "bed",
+  commode: "dresser",
+  bookcase: "shelving",
+  "tv-cabinets": "cabinet",
+  wardrobe: "cabinet",
+  bench: "bench",
   cabinets: "cabinet",
   shelving: "shelving",
   "office-storage": "cabinet",
@@ -95,6 +111,7 @@ const TYPE_TO_CATEGORY: Record<FurnitureType, FurnitureCategory> = {
   stool: "Seating",
   bench: "Seating",
   pouf: "Seating",
+  lounger: "Seating",
   "dining-table": "Tables",
   "coffee-table": "Tables",
   "side-table": "Tables",
@@ -105,6 +122,7 @@ const TYPE_TO_CATEGORY: Record<FurnitureType, FurnitureCategory> = {
   shelving: "Storage",
   nightstand: "Storage",
   rack: "Storage",
+  dresser: "Storage",
   appliance: "Kitchen",
   bathroom: "Bathroom",
   lamp: "Decor",
@@ -114,7 +132,7 @@ const TYPE_TO_CATEGORY: Record<FurnitureType, FurnitureCategory> = {
 /** Types that are normally pushed back against a wall. Free-standing seating and
  *  tables are deliberately absent — snapping a dining table to a wall is wrong. */
 const WALL_SNAP_TYPES = new Set<FurnitureType>([
-  "sofa", "bench", "bed", "cabinet", "shelving", "nightstand", "rack",
+  "sofa", "bench", "bed", "cabinet", "shelving", "nightstand", "rack", "dresser",
   "console", "desk", "appliance", "bathroom",
 ]);
 
@@ -166,6 +184,19 @@ export function resolveType(
   return "decor";
 }
 
+/**
+ * New-item refinement of the generic "…table" → dining-table guess, from the
+ * MEASURED height: a 0.4 m "Table" is a coffee table, not an undersized dining
+ * table. Used only for items outside the frozen baseline (build-catalog.ts),
+ * so shipped items keep the type they shipped with.
+ */
+export function refineType(type: FurnitureType, displayName: string, dims: { w: number; h: number; d: number }): FurnitureType {
+  if (type !== "dining-table" || /dining/i.test(displayName)) return type;
+  const extent = Math.max(dims.w, dims.d);
+  if (dims.h < 0.6) return extent < 0.8 ? "side-table" : "coffee-table";
+  return type;
+}
+
 export function categoryFor(type: FurnitureType): FurnitureCategory {
   return TYPE_TO_CATEGORY[type];
 }
@@ -188,6 +219,7 @@ const TYPE_TO_ROOMS: Record<FurnitureType, string[]> = {
   stool: ["kitchen", "dining"],
   bench: ["living", "dining"],
   pouf: ["living", "bedroom"],
+  lounger: ["outdoors"],
   "dining-table": ["dining"],
   "coffee-table": ["living"],
   "side-table": ["living", "bedroom"],
@@ -198,14 +230,21 @@ const TYPE_TO_ROOMS: Record<FurnitureType, string[]> = {
   shelving: ["living", "office"],
   nightstand: ["bedroom"],
   rack: ["living", "office"],
+  dresser: ["bedroom", "living"],
   appliance: ["kitchen"],
   bathroom: ["bathroom"],
   lamp: ["living", "bedroom"],
   decor: ["living"],
 };
 
-export function roomsFor(type: FurnitureType): string[] {
-  return TYPE_TO_ROOMS[type];
+/** BlenderKit slugs that mean "this lives outside". Adds the Outdoors tab on
+ *  top of the type's rooms (a garden bench is still a bench). */
+const OUTDOOR_SLUGS = new Set(["outdoor-furniture", "bench"]);
+
+export function roomsFor(type: FurnitureType, slug?: string): string[] {
+  const rooms = [...TYPE_TO_ROOMS[type]];
+  if (slug && OUTDOOR_SLUGS.has(slug) && !rooms.includes("outdoors")) rooms.push("outdoors");
+  return rooms;
 }
 
 /**
@@ -224,6 +263,7 @@ export const PLAUSIBLE_EXTENT: Record<FurnitureType, [number, number]> = {
   stool: [0.25, 0.7],
   bench: [0.8, 3.2],
   pouf: [0.35, 1.0],
+  lounger: [1.2, 2.3],
   "dining-table": [0.7, 3.2],
   "coffee-table": [0.6, 1.6],
   "side-table": [0.3, 0.8],
@@ -234,8 +274,43 @@ export const PLAUSIBLE_EXTENT: Record<FurnitureType, [number, number]> = {
   shelving: [0.3, 2.6],
   nightstand: [0.3, 0.8],
   rack: [0.4, 2.0],
+  dresser: [0.6, 2.2],
   appliance: [0.4, 1.2],
   bathroom: [0.3, 1.8],
   lamp: [0.08, 1.2],
   decor: [0.05, 1.2],
+};
+
+/**
+ * Plausible real-world HEIGHT per type, metres [min, max]. Added 2026-09-15 as
+ * a hard gate for NEW items (build-catalog.ts): the plan-extent band alone let
+ * a 0.46 m kettle pass as an "appliance". Unlike the extent band, a failure
+ * here is a rejection, never a rescale — a model whose measured proportions do
+ * not look like its type is the wrong model, not a mis-scaled right one.
+ * Upper bounds allow for what really ships on the piece: bed headboards,
+ * office-chair headrests, a desk with a hutch.
+ */
+export const PLAUSIBLE_HEIGHT: Record<FurnitureType, [number, number]> = {
+  sofa: [0.55, 1.3],
+  armchair: [0.6, 1.45],
+  chair: [0.6, 1.45],
+  stool: [0.35, 1.1],
+  bench: [0.35, 1.1],
+  pouf: [0.25, 0.6],
+  lounger: [0.2, 1.1],
+  "dining-table": [0.65, 1.0],
+  "coffee-table": [0.25, 0.6],
+  "side-table": [0.35, 0.8],
+  desk: [0.65, 1.2],
+  console: [0.6, 1.1],
+  bed: [0.3, 1.6],
+  cabinet: [0.4, 2.4],
+  shelving: [0.3, 2.4],
+  nightstand: [0.35, 0.85],
+  rack: [0.4, 2.4],
+  dresser: [0.6, 1.6],
+  appliance: [0.6, 2.2],
+  bathroom: [0.2, 2.2],
+  lamp: [0.25, 2.1],
+  decor: [0.05, 2.0],
 };

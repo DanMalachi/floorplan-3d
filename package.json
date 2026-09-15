@@ -12,6 +12,7 @@
     "bk:index": "tsx scripts/blenderkit/fetch-index.ts",
     "bk:select": "tsx scripts/blenderkit/select.ts",
     "bk:models": "tsx scripts/blenderkit/fetch-models.ts",
+    "bk:convert": "tsx scripts/blenderkit/convert-blend.ts",
     "bk:audit": "tsx scripts/blenderkit/audit.ts",
     "bk:optimize": "tsx scripts/blenderkit/optimize.ts",
     "bk:optimize-ktx2": "tsx scripts/blenderkit/optimize-ktx2.ts",

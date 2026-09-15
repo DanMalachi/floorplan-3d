@@ -62,8 +62,12 @@ export interface BlenderKitIndexEntry {
   productionLevel: string | null;
 
   /** Numeric file id for the glTF variant; feeds /downloads/<id>/. Null when the
-   *  asset has no glTF export (blend-only), which makes it unusable to us. */
+   *  asset has no glTF export (blend-only) — see `blendFileId`. */
   gltfFileId: number | null;
+  /** Numeric file id for the native .blend. For blend-only assets it is the
+   *  input to `convert-blend.ts` (headless Blender -> .glb). Optional because
+   *  indexes cached before 2026-09-15 did not record it. */
+  blendFileId?: number | null;
   /** Byte size of all the asset's files combined — a rough weight signal only. */
   filesSize: number | null;
 

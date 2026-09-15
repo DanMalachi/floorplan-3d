@@ -51,6 +51,19 @@ export interface SelectionResult {
   rejected: { entry: BlenderKitIndexEntry; reason: string }[];
 }
 
+/**
+ * Where an asset's .glb comes from. `gltf` = BlenderKit's own export, fetched
+ * by fetch-models.ts. `blend` = blend-only; convert-blend.ts downloads the
+ * .blend and exports it with headless Blender (added 2026-09-15 — until then
+ * blend-only assets, ~235 of the index, were rejected here outright). Both
+ * land at the same raw path, so every later step treats them identically.
+ */
+export function sourceFormat(e: BlenderKitIndexEntry): "gltf" | "blend" | null {
+  if (e.gltfFileId !== null) return "gltf";
+  if (e.blendFileId != null) return "blend";
+  return null;
+}
+
 /** Largest horizontal extent. BlenderKit reports dimensions in Blender's Z-up
  *  frame, so X and Y are the plan footprint and Z is height. */
 export function planExtent(e: BlenderKitIndexEntry): number {
@@ -66,7 +79,7 @@ export function select(entries: BlenderKitIndexEntry[]): SelectionResult {
     let reason: string | null = null;
 
     if (e.license !== "cc_zero") reason = "license";
-    else if (e.gltfFileId === null) reason = "no glTF export (blend-only)";
+    else if (sourceFormat(e) === null) reason = "no glTF or .blend file";
     else if (g.dimensionX === null || g.dimensionZ === null) reason = "no dimensions";
     else if (e.modelStyle && EXCLUDED_STYLES.has(e.modelStyle)) reason = `style=${e.modelStyle}`;
     else if (planExtent(e) < MIN_PLAN_M) reason = `too small (${planExtent(e).toFixed(2)}m)`;

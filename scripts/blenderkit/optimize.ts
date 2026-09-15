@@ -18,6 +18,10 @@
  *    is always re-runnable from source with different settings.
  *
  * Content-rejected assets (content-filter.ts) are skipped rather than optimized.
+ * Since 2026-09-15 only ids in data/furniture-blenderkit.catalog.json are
+ * optimized, because the ship gates (gates.ts) live in build-catalog.ts and
+ * need only the audit, not the optimized file. Order is therefore
+ * audit → build-catalog → optimize → verify → fetch-thumbnails.
  *
  * Run:
  *   npx tsx scripts/blenderkit/optimize.ts
@@ -25,7 +29,7 @@
  *   npx tsx scripts/blenderkit/verify-optimized.ts
  */
 
-import { mkdirSync, existsSync, statSync, copyFileSync } from "node:fs";
+import { mkdirSync, existsSync, statSync, copyFileSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { loadIndex, select } from "./select";
@@ -58,13 +62,22 @@ const OVERRIDES: Record<string, { noJoin?: boolean; copyRaw?: boolean; why: stri
     noJoin: true,
     why: "Carl-hansen-son 501 — join dropped geometry, height fell 17.7%",
   },
+  "625bf042-33d9-4763-852c-39686c0c6c7c": {
+    noJoin: true,
+    why: "SciFi Armchair (blend conversion) — join grew depth 0.75 m → 0.96 m (27.6%); --join false restores the AABB",
+  },
 };
 
 function main() {
   mkdirSync(OUT_DIR, { recursive: true });
   const { kept } = select(loadIndex());
 
-  const targets = kept.filter((e) => !isContentRejected(e.displayName || e.name));
+  const shipped = new Set(
+    (JSON.parse(readFileSync(path.resolve("data/furniture-blenderkit.catalog.json"), "utf8")) as { assetId: string }[]).map(
+      (r) => r.assetId.replace(/^blenderkit:/, ""),
+    ),
+  );
+  const targets = kept.filter((e) => !isContentRejected(e.displayName || e.name) && shipped.has(e.assetBaseId));
   console.log(`Optimizing ${targets.length} models (${kept.length - targets.length} content-rejected)\n`);
 
   let done = 0;
