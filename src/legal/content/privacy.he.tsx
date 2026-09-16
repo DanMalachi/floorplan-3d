@@ -1,0 +1,285 @@
+import { Brand } from "@/brand/Brand";
+import { Link } from "@/i18n/navigation";
+import {
+  legalH1, legalMeta, legalIntro, legalH2, legalH3, legalP, legalUl, legalLi,
+  DraftBanner, Verify, Fact, Mail,
+} from "@/app/[locale]/legal/legalKit";
+import { LEGAL_FACTS as F } from "../facts";
+
+// מדיניות הפרטיות — הנוסח המחייב.
+//
+// Written against the Privacy Protection Law 5741-1981 as amended by
+// Amendment 13 (in force 14 Aug 2025): the §11 notice duty (purpose, whether
+// providing the data is a legal duty or voluntary, who receives it and why),
+// the §13/§14 access and correction rights, the Data Security Regulations
+// 2017, and the Transfer of Data Abroad Regulations 2001.
+//
+// Every recipient named below was verified in code on origin/main 8772873 and
+// against the production env on 2026-09-16: Supabase, Liveblocks, Vercel,
+// Upstash (set in prod), Google (OAuth + avatar images). Sentry and Resend are
+// wired but DORMANT in production (no DSN / API key) — disclosed as "when
+// enabled" so switching them on is not a silent policy change.
+//
+// The English file (privacy.en.tsx) must say the same thing. Change both.
+
+export function PrivacyHe() {
+  return (
+    <>
+      <h1 style={legalH1}>מדיניות פרטיות</h1>
+      <p style={legalMeta}>
+        עדכון אחרון: <Fact value={F.effectiveDateHe} missing="תאריך תחילה — ייקבע ביום ההשקה" />
+      </p>
+      <DraftBanner lang="he" />
+
+      <p style={legalIntro}>
+        מדיניות זו מסבירה איזה מידע השירות <Brand /> (&quot;השירות&quot;) אוסף,
+        למה, היכן הוא נשמר ולמי הוא מועבר. היא נכתבה מתוך קריאת הקוד של השירות
+        ולא הועתקה מתבנית: כל גורם חיצוני שמוזכר כאן הוא גורם שהשירות באמת
+        פונה אליו. זהו הנוסח המחייב של המדיניות; הנוסח האנגלי הוא תרגום לנוחות
+        בלבד.
+      </p>
+
+      <h2 style={legalH2}>1. מי אנחנו</h2>
+      <p style={legalP}>
+        השירות מופעל על ידי <Fact value={F.operatorNameHe} missing="שם המפעיל" />,{" "}
+        מס׳ מזהה <Fact value={F.operatorIdNumber} missing="ת.ז. / מס׳ עוסק / ח.פ." />,{" "}
+        שכתובתו <Fact value={F.operatorAddressHe} missing="כתובת" /> (&quot;אנחנו&quot;).
+        אנחנו הבעלים של מאגר המידע ואחראים לו. לכל שאלה או בקשה בנוגע למידע
+        שלכם: <Mail address={F.contactEmail} />.
+      </p>
+
+      <h2 style={legalH2}>2. בקצרה</h2>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          אפשר להשתמש בשירות בלי חשבון. במקרה כזה הפרויקט נשמר רק בדפדפן
+          שלכם ולא נשלח אלינו.
+        </li>
+        <li style={legalLi}>
+          ההתחברות נעשית עם חשבון Google בלבד. אנחנו לא רואים ולא שומרים
+          סיסמה.
+        </li>
+        <li style={legalLi}>
+          תוכניות הדירה והתמונות שלכם לא נשלחות לשום שירות בינה מלאכותית.
+        </li>
+        <li style={legalLi}>
+          אין אצלנו אנליטיקה, פרסום, פיקסלים או כלי מעקב מכל סוג. אנחנו לא
+          מוכרים מידע ולא משתמשים בו לדיוור שיווקי.
+        </li>
+        <li style={legalLi}>
+          מי שמקבל מכם קישור שיתוף פעיל יכול לראות (ולפי ההרשאה שבחרתם, גם
+          לערוך) את הפרויקט המשותף.
+        </li>
+        <li style={legalLi}>
+          אתם יכולים להוריד את כל המידע שלכם ולמחוק את החשבון בעצמכם, בכל
+          עת, מעמוד <Link href="/account" style={{ color: "inherit" }}>המידע שלך</Link>.
+        </li>
+      </ul>
+
+      <h2 style={legalH2}>3. איזה מידע נאסף, למה, ולמי הוא מועבר</h2>
+      <p style={legalP}>
+        אין עליכם חובה חוקית למסור לנו מידע כלשהו. מסירת המידע תלויה ברצונכם
+        ובהסכמתכם. אם תבחרו לא להתחבר, תוכלו להשתמש בשירות על המכשיר שלכם,
+        אבל לא יתאפשרו סנכרון בין מכשירים, גיבוי בענן או שיתוף חי שדורש
+        חשבון.
+      </p>
+
+      <h3 style={legalH3}>חשבון ונתוני פרויקטים — Supabase</h3>
+      <p style={legalP}>
+        אם תתחברו, ההזדהות והאחסון בענן מתבצעים אצל Supabase, Inc.:
+      </p>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          <b>התחברות:</b> באמצעות Google. אנחנו מקבלים מ-Google את השם,
+          כתובת הדוא&quot;ל וכתובת תמונת הפרופיל שלכם. <b>המטרה:</b> לזהות
+          אתכם ולשייך אליכם את הפרויקטים שלכם.
+        </li>
+        <li style={legalLi}>
+          <b>פרטי פרויקט:</b> שם הפרויקט, מועדי יצירה ועדכון ומונה גרסאות
+          לסנכרון. <b>המטרה:</b> לשמור את הפרויקטים ולסנכרן אותם בין
+          המכשירים שלכם.
+        </li>
+        <li style={legalLi}>
+          <b>תוכן הפרויקט:</b> מודל התלת-ממד שבניתם (קירות, חדרים, ריהוט
+          וכו׳), תמונת תוכנית שייבאתם ותמונה ממוזערת. הקבצים נשמרים באחסון
+          פרטי, והגישה אליהם מוגבלת כך שרק החשבון שלכם יכול לקרוא אותם או
+          לכתוב אליהם.
+        </li>
+      </ul>
+
+      <h3 style={legalH3}>שיתוף ועבודה משותפת בזמן אמת — Liveblocks</h3>
+      <p style={legalP}>
+        כשאתם הופכים פרויקט ל&quot;חי&quot; או נכנסים דרך קישור שיתוף, העריכה
+        המשותפת עוברת דרך Liveblocks, Inc.:
+      </p>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          <b>נוכחות:</b> שם תצוגה, תמונה או צבע מוצגים לכל מי שנמצא באותו
+          חדר. אם התחברתם, זה השם ותמונת הפרופיל שלכם ב-Google. אם לא,
+          מוקצה לכם שם אקראי (למשל &quot;שועל זריז&quot;).
+        </li>
+        <li style={legalLi}>
+          <b>הסצנה המשותפת</b> מסונכרנת דרך Liveblocks כל עוד החדר קיים.
+        </li>
+        <li style={legalLi}>
+          הגישה לחדר נקבעת לפי קישור חתום שתוקפו {F.shareLinkDays} יום, ולא
+          לפי זהות. כל מי שמחזיק בקישור בתוקף יכול להיכנס, גם בלי חשבון.
+        </li>
+      </ul>
+
+      <h3 style={legalH3}>אחסון השירות, הגנה מפני שימוש לרעה ותמונות פרופיל</h3>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          <b>Vercel, Inc.</b> מאחסנת את האתר ואת ממשקי השרת, ולכן מעבדת
+          נתוני תקשורת רגילים כמו כתובת IP, כפי שעושה כל שרת אינטרנט. היא
+          גם מגישה את ספריית הרהיטים והחומרים. זו ספרייה לקריאה בלבד, ושום
+          דבר שאתם יוצרים לא נשמר בה.{" "}
+          <Verify>משך שמירת יומני הבקשות אצל Vercel</Verify>
+        </li>
+        <li style={legalLi}>
+          <b>Upstash, Inc.</b> משמשת להגבלת קצב בקשות, כדי להגן על השירות
+          מפני שימוש לרעה. לשם כך נעשה שימוש זמני בכתובת ה-IP או במזהה
+          החשבון כמפתח למונה בקשות קצר מועד. המונה לא נשמר במאגר הנתונים
+          שלנו ולא נכתב ליומנים.
+        </li>
+        <li style={legalLi}>
+          <b>Google:</b> תמונת הפרופיל שלכם נטענת ישירות מהשרתים של Google,
+          ולכן הדפדפן פונה ל-Google כשהיא מוצגת.
+        </li>
+      </ul>
+
+      <h3 style={legalH3}>שירותים שמחוברים לקוד אך כבויים כרגע</h3>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          <b>Resend, Inc.</b> לשליחת הודעות דוא&quot;ל תפעוליות בלבד, כמו
+          אישור מחיקת חשבון או הודעה על שינוי במדיניות. בלי דיוור שיווקי.
+        </li>
+        <li style={legalLi}>
+          <b>Functional Software, Inc. (Sentry)</b> לדיווח על תקלות. השירות
+          מוגדר כך שלא ישלח פרטים מזהים באופן יזום, והקלטת מסך כבויה במכוון
+          כדי שהתוכנית שלכם לא תוקלט.
+        </li>
+      </ul>
+      <p style={legalP}>
+        אם נפעיל אחד מהם, נעדכן את המדיניות לפני ההפעלה.
+      </p>
+
+      <h3 style={legalH3}>בינה מלאכותית — אין</h3>
+      <p style={legalP}>
+        השירות לא שולח את התוכניות, התמונות או כל תוכן אחר שלכם לספק בינה
+        מלאכותית. תכונה מוקדמת שעשתה זאת הוסרה ב-23 באוגוסט 2026, יחד עם הקוד
+        ששלח את המידע.
+      </p>
+
+      <h3 style={legalH3}>גופנים</h3>
+      <p style={legalP}>
+        הגופנים (Manrope,&rlm; IBM Plex Mono,&rlm; Rubik) מוגשים מהשרתים שלנו. הדפדפן
+        לא פונה ל-Google כדי לטעון אותם.
+      </p>
+
+      <h2 style={legalH2}>4. מה נשמר ואיפה</h2>
+      <p style={legalP}>
+        <b>בדפדפן שלכם:</b> כל פרויקט נשמר אוטומטית באחסון המקומי של הדפדפן
+        (IndexedDB), גם בלי התחברות. המידע הזה לא יוצא מהמכשיר, אלא אם
+        התחברתם והוא מסונכרן, או שבחרתם לשתף אותו.
+      </p>
+      <p style={legalP}>
+        <b>בענן (רק אם התחברתם):</b> אותו מידע מגובה ב-Supabase כדי שיהיה
+        זמין גם במכשירים אחרים שלכם, ונשאר פרטי לחשבון שלכם.
+      </p>
+      <p style={legalP}>
+        פירוט העוגיות והאחסון המקומי נמצא ב
+        <Link href="/legal/cookies" style={{ color: "inherit" }}>מדיניות העוגיות</Link>.
+      </p>
+
+      <h2 style={legalH2}>5. מה קישור שיתוף חושף</h2>
+      <p style={legalP}>
+        קישור שיתוף נותן גישה לפרויקט המשותף בלבד, לא לחשבון שלכם ולא לשאר
+        הפרויקטים. ההרשאה שבחרתם (צפייה / עיצוב / בנייה) קובעת מה המקבל יכול
+        לעשות. קישור פועל עד שתוקפו פג ({F.shareLinkDays} יום), או עד שהחדר
+        נמחק, למשל כשאתם מוחקים את החשבון. כרגע אין כפתור לביטול קישור
+        בודד לפני שתוקפו פג, ולכן כדאי לשתף קישור כמו כל מסמך שניתן לערוך:
+        רק עם מי שאתם סומכים עליו.
+      </p>
+
+      <h2 style={legalH2}>6. העברת מידע אל מחוץ לישראל</h2>
+      <p style={legalP}>
+        הגורמים שמפורטים למעלה הם חברות זרות, בעיקר מארצות הברית, והמידע
+        עשוי להישמר או להיות מעובד מחוץ לישראל, כולל במדינות שדיני הגנת
+        הפרטיות בהן שונים מהדין הישראלי. אנחנו עובדים רק עם ספקים שמתחייבים
+        בחוזה לשמור על המידע ולהשתמש בו רק כדי לתת לנו שירות. בשימוש בשירות
+        ובהתחברות אתם מסכימים להעברה זו.{" "}
+        <Verify>
+          הבסיס להעברה לפי תקנות הגנת הפרטיות (העברת מידע למאגרי מידע שמחוץ
+          לגבולות המדינה), התשס&quot;א-2001, ומיקום אזור האחסון של Supabase
+        </Verify>
+      </p>
+
+      <h2 style={legalH2}>7. שמירת מידע ומחיקה</h2>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          פרויקט שמחקתם נמחק מהדפדפן ומסומן כמחוק בענן. הקבצים והרשומות
+          עצמם נמחקים לצמיתות תוך {F.purgeDays} יום.
+        </li>
+        <li style={legalLi}>
+          מחיקת חשבון מעמוד <Link href="/account" style={{ color: "inherit" }}>המידע שלך</Link>{" "}
+          מוחקת מיד את כל הפרויקטים, הקבצים, חדרי השיתוף ואת החשבון עצמו.
+          אי אפשר לבטל אותה.
+        </li>
+        <li style={legalLi}>
+          אנחנו לא שומרים מידע אישי מעבר לנדרש לצורך המטרות שמפורטות כאן,
+          אלא אם הדין מחייב זאת.
+        </li>
+      </ul>
+
+      <h2 style={legalH2}>8. אבטחת מידע</h2>
+      <p style={legalP}>
+        התקשורת עם השירות מוצפנת (HTTPS). הגישה למידע בענן מוגבלת ברמת
+        השורה, כך שכל חשבון רואה רק את המידע שלו. קישורי שיתוף חתומים
+        קריפטוגרפית ומוגבלים בזמן. אף מערכת אינה חסינה לחלוטין. אם יתרחש
+        אירוע אבטחה חמור, נפעל כפי שדורשות תקנות הגנת הפרטיות (אבטחת מידע),
+        התשע&quot;ז-2017, כולל דיווח לרשות להגנת הפרטיות ככל שנדרש.
+      </p>
+
+      <h2 style={legalH2}>9. הזכויות שלכם</h2>
+      <ul style={legalUl}>
+        <li style={legalLi}>
+          <b>עיון:</b> לקבל את המידע שנשמר עליכם. אפשר להוריד אותו בעצמכם
+          (&quot;ייצוא&quot; בעמוד המידע שלך) או לבקש אותו בדוא&quot;ל.
+        </li>
+        <li style={legalLi}>
+          <b>תיקון ומחיקה:</b> לבקש לתקן מידע שגוי, לא שלם או לא מעודכן, או
+          למחוק אותו. את רוב הפעולות אפשר לבצע בעצמכם בשירות.
+        </li>
+        <li style={legalLi}>
+          <b>ביטול הסכמה:</b> להפסיק להשתמש בשירות ולמחוק את החשבון בכל עת.
+        </li>
+      </ul>
+      <p style={legalP}>
+        לפניות: <Mail address={F.contactEmail} />. נשיב תוך 30 יום. אם לא
+        תהיו מרוצים מהתשובה, תוכלו לפנות לרשות להגנת הפרטיות במשרד המשפטים
+        או לבית המשפט.
+      </p>
+
+      {/* 16, not 13 or 18: clears US COPPA, matches the highest GDPR member-
+          state consent age, and this Service collects no "sensitive" data.
+          Account creation (16) is deliberately separate from capacity to
+          contract (18) — when paid plans ship, checkout needs its own gate. */}
+      <h2 style={legalH2}>10. קטינים</h2>
+      <p style={legalP}>
+        השירות לא מיועד לילדים. אין לפתוח חשבון מתחת לגיל {F.minimumAge}, ואנחנו
+        לא אוספים ביודעין מידע אישי על מי שצעירים מגיל זה.
+      </p>
+
+      <h2 style={legalH2}>11. שינויים במדיניות</h2>
+      <p style={legalP}>
+        אם נשנה את המדיניות, נעדכן את תאריך &quot;עדכון אחרון&quot; בראש העמוד.
+        על שינוי מהותי נודיע מראש, בשירות או בדוא&quot;ל למשתמשים רשומים.
+      </p>
+
+      <h2 style={legalH2}>12. יצירת קשר</h2>
+      <p style={legalP}>
+        שאלות על המדיניות או על המידע שלכם: <Mail address={F.contactEmail} />.
+      </p>
+    </>
+  );
+}

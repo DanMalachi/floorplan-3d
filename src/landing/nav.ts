@@ -41,6 +41,7 @@ export const APP_HREF = "/design?home=1";
 export const FOOTER_LEGAL: NavItem[] = [
   { labelKey: "privacy", href: "/legal/privacy" },
   { labelKey: "terms", href: "/legal/terms" },
+  { labelKey: "cookies", href: "/legal/cookies" },
   { labelKey: "credits", href: "/legal/credits" },
 ];
 

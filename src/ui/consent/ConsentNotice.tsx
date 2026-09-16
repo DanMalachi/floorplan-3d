@@ -122,7 +122,7 @@ export function ConsentNotice() {
       <div style={{ flex: 1 }}>
         {t.rich("body", {
           link: (chunks) => (
-            <Link href="/legal/privacy" style={{ color: PD.accentText }}>
+            <Link href="/legal/cookies" style={{ color: PD.accentText }}>
               {chunks}
             </Link>
           ),

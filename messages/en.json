@@ -31,6 +31,7 @@
     "terms": "Terms",
     "refunds": "Refunds",
     "credits": "Credits",
+    "cookies": "Cookies",
     "home": "done. home",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -78,7 +79,7 @@
     "signOut": "Sign out"
   },
   "consent": {
-    "body": "This app only sets strictly-necessary cookies, to keep you signed in — no analytics or ad tracking. <link>Privacy Policy</link>.",
+    "body": "This app uses only strictly-necessary cookies and local storage — for sign-in, sharing and saving your work. No analytics or ad tracking. <link>Cookie Policy</link>.",
     "dismiss": "Dismiss cookie notice"
   },
   "smallScreen": {
