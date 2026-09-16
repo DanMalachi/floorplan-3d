@@ -86,6 +86,9 @@ export default async function LegalLayout({
           <Link href="/legal/cookies" style={{ color: PD.textPrimary, textDecoration: "none" }}>
             {t("cookies")}
           </Link>
+          <Link href="/legal/accessibility" style={{ color: PD.textPrimary, textDecoration: "none" }}>
+            {t("accessibility")}
+          </Link>
           <Link href="/legal/credits" style={{ color: PD.textPrimary, textDecoration: "none" }}>
             {t("credits")}
           </Link>

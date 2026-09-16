@@ -7,6 +7,8 @@ import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 import { Link } from "@/i18n/navigation";
+import { SignInConsent } from "@/legal/SignInConsent";
+import { POP_IN_CLASS, PopInStyle } from "./motion/popIn";
 
 // -----------------------------------------------------------------------------
 // The account control, top-right next to the theme toggle.
@@ -23,6 +25,7 @@ const SIZE = 30;
 
 export function AccountMenu() {
   const t = useTranslations("editor.chrome");
+  const tc = useTranslations("signInConsent");
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -34,6 +37,14 @@ export function AccountMenu() {
   const [triggerHover, triggerHoverBind] = useHover();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const continueRef = useRef<HTMLButtonElement>(null);
+  const [continueHover, continueHoverBind] = useHover();
+
+  // The sign-in panel takes focus on open so Enter continues straight away —
+  // the extra step exists to show the agreement line, not to slow anyone down.
+  useEffect(() => {
+    if (open && !user) continueRef.current?.focus();
+  }, [open, user]);
 
   // A failed sign-in comes back as ?authError=… from the callback route. Show it
   // once, then take it out of the URL so a refresh isn't haunted by it.
@@ -71,19 +82,25 @@ export function AccountMenu() {
 
   if (!user) {
     return (
-      <div style={{ position: "relative" }}>
+      <div ref={ref} style={{ position: "relative" }}>
+        <PopInStyle />
         {/* `placement="bottom"`: this control sits in the top-right chrome, so a
             tooltip above it would be clipped off the top of the window. Also
             gives the button its accessible name (Tooltip clones `label` on as
-            aria-label) — richer than its own visible "Sign in" text alone. */}
+            aria-label) — richer than its own visible "Sign in" text alone.
+            The pill no longer signs in directly: it opens a small panel whose
+            button does, so the Terms/Privacy agreement is on screen BEFORE the
+            Google redirect, next to the action, not somewhere nobody looks. */}
         <Tooltip label={t("accountMenu.signInTooltip")} placement="bottom">
           <button
+            ref={triggerRef}
             onClick={() => {
               setAuthError(null);
-              setBusy(true);
-              void signInWithGoogle().catch(() => setBusy(false));
+              setOpen((v) => !v);
             }}
             disabled={busy}
+            aria-haspopup="dialog"
+            aria-expanded={open}
             {...signInHoverBind}
             style={{
               display: "flex",
@@ -99,8 +116,8 @@ export function AccountMenu() {
               opacity: busy ? 0.6 : 1,
               ...pdGlass({ borderRadius: 999 }),
               // The glass recipe owns `background`, so hover lifts it after the
-              // spread rather than through the helper.
-              background: signInHover && !busy ? PD.surfaceMutedHover : PD.glassBg,
+              // spread rather than through the helper. Held lifted while open.
+              background: (signInHover || open) && !busy ? PD.surfaceMutedHover : PD.glassBg,
               transition: "background 140ms ease",
             }}
           >
@@ -108,6 +125,70 @@ export function AccountMenu() {
             {busy ? t("accountMenu.signInOpening") : t("accountMenu.signIn")}
           </button>
         </Tooltip>
+        {open && (
+          <div
+            role="dialog"
+            aria-label={tc("panelLabel")}
+            className={POP_IN_CLASS}
+            style={{
+              position: "absolute",
+              top: SIZE + 14,
+              insetInlineEnd: 0, // trailing edge — see the note on the error panel below
+              width: 264,
+              padding: 8,
+              zIndex: 40,
+              ...pdGlass({ borderRadius: PD.radiusM }),
+            }}
+          >
+            <button
+              ref={continueRef}
+              onClick={() => {
+                setBusy(true);
+                void signInWithGoogle().catch(() => {
+                  setBusy(false);
+                  setOpen(false);
+                });
+              }}
+              disabled={busy}
+              {...continueHoverBind}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                width: "100%",
+                height: 34,
+                fontSize: 12.5,
+                fontWeight: 600,
+                fontFamily: PD.fontUi,
+                color: PD.textPrimary,
+                background: continueHover && !busy ? PD.surfaceMutedHover : PD.surfaceMuted,
+                border: "none",
+                borderRadius: PD.radiusS,
+                cursor: busy ? "default" : "pointer",
+                opacity: busy ? 0.6 : 1,
+                transition: "background 140ms ease",
+              }}
+            >
+              <GoogleMark />
+              {busy ? t("accountMenu.signInOpening") : tc("continue")}
+            </button>
+            <SignInConsent
+              newTab
+              linkColor={PD.textPrimary}
+              style={{
+                padding: "8px 4px 2px",
+                fontSize: 11,
+                lineHeight: 1.5,
+                fontFamily: PD.fontUi,
+                // Secondary, not tertiary: tertiary is under 4.5:1 even on an
+                // opaque ground (docs/ACCESSIBILITY.md P2), and this is a
+                // sentence people are agreeing to.
+                color: PD.textSecondary,
+              }}
+            />
+          </div>
+        )}
         {authError && (
           <div
             role="alert"
@@ -143,6 +224,7 @@ export function AccountMenu() {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
+      <PopInStyle />
       <Tooltip label={name} placement="bottom">
         <button
           ref={triggerRef}
@@ -185,6 +267,7 @@ export function AccountMenu() {
         <div
           role="group"
           aria-label="Account"
+          className={POP_IN_CLASS}
           style={{
             position: "absolute",
             top: SIZE + 14,

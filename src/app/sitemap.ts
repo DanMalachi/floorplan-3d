@@ -33,6 +33,7 @@ const CHANGE: Record<string, { freq: MetadataRoute.Sitemap[number]["changeFreque
   "/legal/privacy": { freq: "yearly", pri: 0.3 },
   "/legal/terms": { freq: "yearly", pri: 0.3 },
   "/legal/cookies": { freq: "yearly", pri: 0.3 },
+  "/legal/accessibility": { freq: "yearly", pri: 0.3 },
   "/legal/credits": { freq: "yearly", pri: 0.3 },
 };
 
