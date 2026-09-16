@@ -72,10 +72,12 @@ export const legalLi: React.CSSProperties = {
   color: PD.textSecondary,
 };
 
+export type LegalLang = "he" | "en";
+
 /** A visible-on-page echo of the source DRAFT comment — belt and suspenders,
  *  since Dan (or anyone previewing the deployed page) may never open the
- *  source file. */
-export function DraftBanner() {
+ *  source file. Remove only once counsel has reviewed the text. */
+export function DraftBanner({ lang }: { lang: LegalLang }) {
   return (
     <div
       style={{
@@ -95,13 +97,32 @@ export function DraftBanner() {
       <span aria-hidden style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 2 }}>
         <WarnIcon size={15} />
       </span>
-      <span>
-        <b>Draft — not legal advice.</b> This page was generated from the
-        codebase to describe real data flows as accurately as possible. It has
-        not been reviewed by a lawyer and must not be treated as a finished
-        policy until it is.
-      </span>
+      {lang === "he" ? (
+        <span>
+          <b>טיוטה — לא ייעוץ משפטי.</b> מסמך זה נכתב על סמך קריאת הקוד של
+          השירות, כדי לתאר את זרימת המידע בפועל. הוא טרם נבדק על ידי עורך דין,
+          ואין להתייחס אליו כמסמך סופי עד שייבדק.
+        </span>
+      ) : (
+        <span>
+          <b>Draft — not legal advice.</b> This page was written from the
+          codebase to describe real data flows as accurately as possible. It has
+          not been reviewed by a lawyer and must not be treated as a finished
+          document until it is.
+        </span>
+      )}
     </div>
+  );
+}
+
+/** Under the title of every English copy: the Hebrew text binds. */
+export function TranslationNotice() {
+  return (
+    <p style={{ ...legalMeta, marginTop: -14 }}>
+      This is an English translation provided for convenience. The Hebrew
+      version is the binding version; if the two differ, the Hebrew version
+      prevails.
+    </p>
   );
 }
 
@@ -115,8 +136,7 @@ export function Placeholder({ children }: { children: ReactNode }) {
   );
 }
 
-/** [[VERIFY: ...]] — a claim that wasn't traceable to code read while
- *  drafting this page; confirm before relying on it. */
+/** [[VERIFY: ...]] — a claim counsel must confirm before relying on it. */
 export function Verify({ children }: { children: ReactNode }) {
   return (
     <span style={{ color: PD.accent, fontWeight: 700 }}>
@@ -125,12 +145,15 @@ export function Verify({ children }: { children: ReactNode }) {
   );
 }
 
-/** [[PENDING: ...]] — functionality another workstream owns and hasn't
- *  shipped yet. */
-export function Pending({ children }: { children: ReactNode }) {
+/** A fact from src/legal/facts.ts, or a visible placeholder while it is null. */
+export function Fact({ value, missing }: { value: string | null; missing: string }) {
+  return value ? <>{value}</> : <Placeholder>{missing}</Placeholder>;
+}
+
+export function Mail({ address }: { address: string }) {
   return (
-    <span style={{ color: PD.ok, fontWeight: 700 }}>
-      [[PENDING: {children}]]
-    </span>
+    <a href={`mailto:${address}`} style={{ color: "inherit" }} dir="ltr">
+      {address}
+    </a>
   );
 }

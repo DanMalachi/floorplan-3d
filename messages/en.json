@@ -31,6 +31,8 @@
     "terms": "Terms",
     "refunds": "Refunds",
     "credits": "Credits",
+    "cookies": "Cookies",
+    "accessibility": "Accessibility",
     "home": "done. home",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -78,7 +80,7 @@
     "signOut": "Sign out"
   },
   "consent": {
-    "body": "This app only sets strictly-necessary cookies, to keep you signed in — no analytics or ad tracking. <link>Privacy Policy</link>.",
+    "body": "This app uses only strictly-necessary cookies and local storage — for sign-in, sharing and saving your work. No analytics or ad tracking. <link>Cookie Policy</link>.",
     "dismiss": "Dismiss cookie notice"
   },
   "smallScreen": {
@@ -1270,5 +1272,10 @@
     "cc0Body": "The rest of the furniture catalog is CC0 — public domain, no attribution required. It's drawn from BlenderKit and Poly Haven, both listed here as a courtesy to their contributors. Floor materials are CC0 too, from ambientCG.",
     "photoHeading": "Public-domain photography & artwork",
     "photoBody": "Real photographs and paintings used for screens, prints, and wall art are public domain, courtesy of NASA and the Art Institute of Chicago."
+  },
+  "signInConsent": {
+    "continue": "Continue with Google",
+    "panelLabel": "Sign in",
+    "note": "By continuing, you agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>, and confirm you are {age} or older."
   }
 }

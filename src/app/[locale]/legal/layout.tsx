@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { PD } from "@/ui/planDock/tokens";
@@ -24,6 +24,7 @@ export default async function LegalLayout({
   // /legal server-rendered on demand instead of prerendered.
   const { locale } = await params;
   setRequestLocale(locale as Locale);
+  const t = await getTranslations("nav");
 
   return (
     <div
@@ -61,6 +62,7 @@ export default async function LegalLayout({
           aria-label="Legal"
           style={{
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
             gap: 16,
             marginBottom: 40,
@@ -76,13 +78,19 @@ export default async function LegalLayout({
           </Link>
           <span aria-hidden style={{ color: PD.textTertiary }}>·</span>
           <Link href="/legal/privacy" style={{ color: PD.textPrimary, textDecoration: "none" }}>
-            Privacy Policy
+            {t("privacy")}
           </Link>
           <Link href="/legal/terms" style={{ color: PD.textPrimary, textDecoration: "none" }}>
-            Terms of Service
+            {t("terms")}
+          </Link>
+          <Link href="/legal/cookies" style={{ color: PD.textPrimary, textDecoration: "none" }}>
+            {t("cookies")}
+          </Link>
+          <Link href="/legal/accessibility" style={{ color: PD.textPrimary, textDecoration: "none" }}>
+            {t("accessibility")}
           </Link>
           <Link href="/legal/credits" style={{ color: PD.textPrimary, textDecoration: "none" }}>
-            Credits
+            {t("credits")}
           </Link>
         </nav>
         {/* These are long documents whose only landmark was the nav above.
