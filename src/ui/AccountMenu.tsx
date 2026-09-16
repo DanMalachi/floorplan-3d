@@ -23,6 +23,21 @@ import { POP_IN_CLASS, PopInStyle } from "./motion/popIn";
 
 const SIZE = 30;
 
+// Pointer + keyboard feedback for the sign-in panel. Hover is React state (as
+// everywhere in the dock), but press and focus-visible are pseudo-classes that
+// inline styles cannot express, so they live here. Links get the same hover
+// language as /legal (accent + underline). No transform under reduced motion.
+const SIGNIN_PANEL_CSS = `
+.fp-signin-go { transition: background 140ms ease, transform 120ms ease, box-shadow 140ms ease; }
+.fp-signin-go:hover:not(:disabled) { box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.14); }
+.fp-signin-go:active:not(:disabled) { transform: scale(0.97); }
+.fp-signin-go:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 2px; }
+.fp-signin-note a { transition: color 140ms ease, text-decoration-color 140ms ease; text-decoration-color: oklch(1 0 0 / 0.35); }
+.fp-signin-note a:hover { color: ${PD.accentText} !important; text-decoration-color: currentColor; }
+.fp-signin-note a:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 2px; border-radius: 3px; }
+@media (prefers-reduced-motion: reduce) { .fp-signin-go:active:not(:disabled) { transform: none; } }
+`;
+
 export function AccountMenu() {
   const t = useTranslations("editor.chrome");
   const tc = useTranslations("signInConsent");
@@ -84,6 +99,7 @@ export function AccountMenu() {
     return (
       <div ref={ref} style={{ position: "relative" }}>
         <PopInStyle />
+        <style dangerouslySetInnerHTML={{ __html: SIGNIN_PANEL_CSS }} />
         {/* `placement="bottom"`: this control sits in the top-right chrome, so a
             tooltip above it would be clipped off the top of the window. Also
             gives the button its accessible name (Tooltip clones `label` on as
@@ -142,6 +158,7 @@ export function AccountMenu() {
           >
             <button
               ref={continueRef}
+              className="fp-signin-go"
               onClick={() => {
                 setBusy(true);
                 void signInWithGoogle().catch(() => {
@@ -174,6 +191,7 @@ export function AccountMenu() {
               {busy ? t("accountMenu.signInOpening") : tc("continue")}
             </button>
             <SignInConsent
+              className="fp-signin-note"
               newTab
               linkColor={PD.textPrimary}
               style={{

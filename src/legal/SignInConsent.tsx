@@ -16,10 +16,12 @@ import { LEGAL_FACTS } from "./facts";
 
 export function SignInConsent({
   style,
+  className,
   linkColor,
   newTab = false,
 }: {
   style?: React.CSSProperties;
+  className?: string;
   linkColor: string;
   newTab?: boolean;
 }) {
@@ -34,7 +36,7 @@ export function SignInConsent({
       );
     };
   return (
-    <p style={{ margin: 0, ...style }}>
+    <p className={className} style={{ margin: 0, ...style }}>
       {t.rich("note", {
         age: LEGAL_FACTS.minimumAge,
         terms: link("/legal/terms"),
