@@ -381,7 +381,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                   {renaming === m.id ? (
                     <input
                       autoFocus
-                      aria-label={`Rename ${m.name}`}
+                      aria-label={t("projectsOverlay.renameInputLabel", { name: m.name })}
                       value={draft}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => setDraft(e.target.value)}
@@ -398,7 +398,6 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         padding: "3px 6px",
                         fontSize: 13,
                         fontFamily: PD.fontUi,
-                        outline: "none",
                         width: "100%",
                         boxSizing: "border-box",
                       }}

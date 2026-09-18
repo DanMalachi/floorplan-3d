@@ -113,10 +113,11 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
 };
 
 // Item dock resize (Plan Dock P9). One ItemCard ≈ 4(pad-top) + 48(thumb) +
-// 3(gap) + ~11.4(name line, 9.5px/1.2) + 3(gap) + ~9.6(kind line, 8px/1.2) +
-// 4(pad-bottom) ≈ 83px; the chrome around the grid (resize handle 12 + gap 6 +
-// tab-icon row 28 + gap 6 + category/search row 22 + inner gap 4 + outer
-// padding 16) ≈ 96px.
+// 3(gap) + ~13.2(name line, 11px/1.2) + 3(gap) + ~12(kind line, 10px/1.2) +
+// 4(pad-bottom) ≈ 87px (a11y type-size pass raised name/kind off the sub-10px
+// floor — see BottomDock's card text); the chrome around the grid (resize
+// handle 12 + gap 6 + tab-icon row 28 + gap 6 + category/search row 22 +
+// inner gap 4 + outer padding 16) ≈ 96px.
 //
 // P9 opened at TWO full rows (268). That reads as a drawer that opened itself:
 // it eats a third of a laptop viewport before you've asked for anything, in
@@ -172,8 +173,12 @@ function DockIconBtn({
   active,
   size = 28,
   children,
+  "aria-label": ariaLabel,
 }: {
   onClick: () => void;
+  /** Usually stamped on by a wrapping `Tooltip`. The button's only content is
+   *  an icon, so if this is not forwarded the control has no name at all. */
+  "aria-label"?: string;
   /** Omit entirely for a one-shot action (search, close) — an explicit
    *  true/false marks a real toggle (tab, eyedropper) as a toggle button;
    *  `aria-pressed={undefined}` (not `false`) is what keeps a plain action
@@ -184,7 +189,7 @@ function DockIconBtn({
 }) {
   const [hovered, hoverBind] = useHover();
   return (
-    <button {...hoverBind} onClick={onClick} aria-pressed={active} style={pdIconBtn(active, size, hovered)}>
+    <button {...hoverBind} onClick={onClick} aria-pressed={active} aria-label={ariaLabel} style={pdIconBtn(active, size, hovered)}>
       {children}
     </button>
   );
@@ -462,6 +467,7 @@ function NavigatorPanel({
 }
 
 function ItemCard({ item }: { item: FurnitureAsset }) {
+  const tu = useTranslations("editor.units");
   const placing = useSceneStore((s) => s.placing);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
   // Per CARD, not per rail: these render in lists of hundreds, so one hover
@@ -503,7 +509,11 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        width: 68,
+        // Widened 68→76 alongside the a11y name-size bump (9.5→11px): the
+        // larger type fits noticeably fewer characters before the ellipsis
+        // kicks in at the old width, so the card grew to keep truncation
+        // roughly where it was, not to make room for anything new.
+        width: 76,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -579,14 +589,14 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
           ))}
         </div>
       )}
-      <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
         {activeSpec.name}
       </span>
       {/* Imported catalogs' `subtitle` is the raw Hebrew product type — not
           useful as a caption for an English-reading picker. `kind` (added by
           enrich-catalog.ts) is the same information, normalized to English. */}
       {activeSpec.kind && (!activeSpec.subtitle || isHebrew(activeSpec.subtitle)) && (
-        <span style={{ fontSize: 8, color: PD.textTertiary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+        <span style={{ fontSize: 10, color: PD.textTertiary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
           {activeSpec.kind}
         </span>
       )}
@@ -598,7 +608,11 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   // container's top edge, which clips anything drawn above it.
   return (
     <Tooltip
-      label={`${activeSpec.name} · ${activeSpec.footprint.w}×${activeSpec.footprint.d} m`}
+      // Tooltip's `label` is a plain string (also cloned onto aria-label), so
+      // the "W×D m" measurement can't be isolated with a `<bdi>` — it gets the
+      // same LRI/PDI (U+2066/U+2069) wrap RoomSection uses for its aria-label,
+      // the plain-string equivalent of `<bdi dir="ltr">`.
+      label={`${activeSpec.name} · ⁦${activeSpec.footprint.w}×${activeSpec.footprint.d} ${tu("m")}⁩`}
       placement="bottom"
     >
       {card}
@@ -680,7 +694,9 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        width: 68,
+        // Same 68→76 widen as ItemCard, same reason: keeps the ellipsis point
+        // roughly where it was now that the name line reads bigger.
+        width: 76,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -699,7 +715,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       </div>
       <span
         style={{
-          fontSize: 7.5,
+          fontSize: 10,
           fontWeight: 700,
           color: PD.accentText,
           background: PD.accentTint,
@@ -710,7 +726,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       >
         {t("customBadge")}
       </span>
-      <span style={{ fontSize: 9.5, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
         {label}
       </span>
     </button>
@@ -846,10 +862,10 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Escape" && closeSearch()}
-            placeholder={`Search ${roomItems.length} models…`}
+            placeholder={t("searchModelsPlaceholder", { count: roomItems.length })}
             // A placeholder is not a label: it disappears the moment anything is
             // typed, and some screen readers never announce it at all.
-            aria-label={`Search ${roomItems.length} models in this room`}
+            aria-label={t("searchModelsLabel", { count: roomItems.length })}
             style={{
               flex: 1,
               padding: "4px 10px",
@@ -859,7 +875,6 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               fontSize: 11.5,
               fontFamily: PD.fontUi,
               color: PD.textPrimary,
-              outline: "none",
             }}
           />
           <Tooltip label={t("closeSearch")}>
@@ -888,7 +903,10 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               screen reader that lands on it says what the number counts. */}
           <span
             aria-label={t("itemsShownLabel", { count: visibleCustom.length + items.length })}
-            style={{ ...pdMicroLabel(), marginInlineStart: "auto", flex: "0 0 auto" }}
+            // Overridden to 11px here rather than raising pdMicroLabel()'s own
+            // 9.5px: that token is shared with OpeningSection/ProjectsOverlay/
+            // GtLab, out of scope for this pass — only this dock's count moves.
+            style={{ ...pdMicroLabel(), fontSize: 11, marginInlineStart: "auto", flex: "0 0 auto" }}
           >
             {visibleCustom.length + items.length}
           </span>

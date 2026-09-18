@@ -30,6 +30,8 @@ const KIND_LABEL_KEY = { wall: "kindWall", rail: "kindRail", portal: "kindPortal
 
 export function WallSection({ wall }: { wall: Wall }) {
   const t = useTranslations("editor.inspector.wall");
+  const te = useTranslations("editor");
+  const tu = useTranslations("editor.units");
   const scene = useSceneStore((s) => s.scene);
   const a = scene.nodes.find((n) => n.id === wall.a);
   const b = scene.nodes.find((n) => n.id === wall.b);
@@ -104,8 +106,8 @@ export function WallSection({ wall }: { wall: Wall }) {
         ];
 
   return (
-    <div role="region" aria-label={`Selected: ${t(KIND_LABEL_KEY[kind])}`} style={pdInspectorPanel}>
-      <PdSectionTitle label={t(KIND_LABEL_KEY[kind])} meta={`${len.toFixed(2)} m`} />
+    <div role="region" aria-label={te("selectedRegionLabel", { name: t(KIND_LABEL_KEY[kind]) })} style={pdInspectorPanel}>
+      <PdSectionTitle label={t(KIND_LABEL_KEY[kind])} meta={<bdi dir="ltr">{`${len.toFixed(2)} ${tu("m")}`}</bdi>} />
       <div role="group" aria-label={t("boundaryKindLabel")} style={{ display: "flex", gap: 4 }}>
         {(["wall", "rail", "portal"] as const).map((k) => (
           <PdChip
@@ -135,14 +137,14 @@ export function WallSection({ wall }: { wall: Wall }) {
             value={wall.height ?? WALL_HEIGHT}
             onCommit={(v) => patch("Wall height", { height: Math.min(6, Math.max(0.5, v)) })}
             displayScale={100}
-            unit="cm"
+            unit={tu("cm")}
           />
           <PdNumField
             label={t("thickness")}
             value={wall.thickness ?? DEFAULT_THICKNESS}
             onCommit={(v) => patch("Wall thickness", { thickness: Math.min(1, Math.max(0.05, v)) })}
             displayScale={100}
-            unit="cm"
+            unit={tu("cm")}
           />
           {kind === "wall" && (
             <>

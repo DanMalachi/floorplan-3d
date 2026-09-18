@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
+import { CloseIcon } from "./planDock/icons";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
 import { Link } from "@/i18n/navigation";
 import { SignInConsent } from "@/legal/SignInConsent";
@@ -23,6 +24,48 @@ import { POP_IN_CLASS, PopInStyle } from "./motion/popIn";
 
 const SIZE = 30;
 
+/**
+ * Below this CSS viewport width, the signed-out pill collapses to just the
+ * Google "G" (aria-label unchanged, tooltip still names it) so it stops
+ * overlapping the mode switcher's "View" tab.
+ *
+ * Derived, not guessed — measured with headless Chromium (`ctx.measureText`,
+ * real Manrope/Rubik webfonts loaded, same weights/sizes the components use)
+ * against the two things that actually collide:
+ *   - the trailing cluster (Sign-in pill + LocaleSwitch + ThemeToggle,
+ *     `gap: 8` between each, `insetInlineEnd: 132` in Build/Decorate/View
+ *     mode — the value that dodges Go Live at `insetInlineEnd: 14`)
+ *   - the centred mode switcher nav (`padding: 4`, `gap: 3`, three
+ *     `pdChip` buttons at their ACTUAL rendered size — `pdChip()` ignores
+ *     its `extra` argument, so despite the call site passing
+ *     `{padding:"6px 18px", fontSize:13}` the real box is `padding:"6px
+ *     12px"`, `fontSize: 12` — worth knowing if this number is ever
+ *     re-derived from the call site's style object instead of the chip's).
+ *
+ * Solving "cluster's leading edge == nav's trailing edge" for the viewport
+ * width gives `W = 264 + 2*clusterWidth + navWidth` (264 = 132 doubled, the
+ * two symmetric halves either side of the centred nav). Worst case is
+ * Hebrew (longer "Sign in"/locale text, even though the EN nav is itself
+ * wider — "Decorate" alone out-measures the whole Hebrew nav):
+ *   EN: cluster ~179px, nav ~196px -> threshold ~817px
+ *   HE: cluster ~192px, nav ~176px -> threshold ~825px
+ * 840 clears both with a margin for cross-browser font-metric slop. Below
+ * it, the collapsed cluster is ~126px, pushing the real threshold down to
+ * ~700-711px — comfortably under the 720px width Dan asked to be checked.
+ */
+const SIGNIN_COLLAPSE_BREAK = 840;
+
+/** The only two things the callback route ever puts in `?authError=`. Anything
+ *  else — a stale link, a crafted param — collapses to "failed" rather than
+ *  being rendered: the raw provider text used to land here verbatim, which let
+ *  a crafted `?authError=` render arbitrary text under our brand. */
+type AuthErrorCode = "cancelled" | "failed";
+function toAuthErrorCode(raw: string | null): AuthErrorCode | null {
+  if (raw === "cancelled" || raw === "failed") return raw;
+  if (raw === null) return null;
+  return "failed";
+}
+
 // Pointer + keyboard feedback for the sign-in panel. Hover is React state (as
 // everywhere in the dock), but press and focus-visible are pseudo-classes that
 // inline styles cannot express, so they live here. Links get the same hover
@@ -32,6 +75,19 @@ const SIGNIN_PANEL_CSS = `
 .fp-signin-go:hover:not(:disabled) { box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.14); }
 .fp-signin-go:active:not(:disabled) { transform: scale(0.97); }
 .fp-signin-go:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 2px; }
+.fp-signin-retry:focus-visible, .fp-signin-dismiss:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 2px; }
+.fp-signin-compact { display: none; }
+.fp-signin-compact:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 2px; }
+/* See SIGNIN_COLLAPSE_BREAK above for how this number was derived. \`!important\`
+   matches the repo's existing WIDE_ONLY_CLASS/NARROW_ONLY_CLASS pattern
+   (src/landing/hoverCss.ts) so it wins over the inline \`display\` each button
+   also carries — pure CSS, so it applies on first paint with no JS/hydration
+   flash, and \`display: none\` removes the hidden trigger from the a11y tree
+   so it is never announced twice. */
+@media (max-width: ${SIGNIN_COLLAPSE_BREAK - 1}px) {
+  .fp-signin-full { display: none !important; }
+  .fp-signin-compact { display: flex !important; }
+}
 .fp-signin-note a { transition: color 140ms ease, text-decoration-color 140ms ease; text-decoration-color: oklch(1 0 0 / 0.35); }
 .fp-signin-note a:hover { color: ${PD.accentText} !important; text-decoration-color: currentColor; }
 .fp-signin-note a:focus-visible { outline: 2px solid ${PD.accent}; outline-offset: 2px; border-radius: 3px; }
@@ -44,7 +100,7 @@ export function AccountMenu() {
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<AuthErrorCode | null>(null);
   // Both hooks are called unconditionally, before the early returns below — one
   // for the signed-out sign-in pill, one for the signed-in avatar trigger. They
   // are separate flags because only ever one of the two is rendered.
@@ -52,8 +108,22 @@ export function AccountMenu() {
   const [triggerHover, triggerHoverBind] = useHover();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  // The signed-out state renders TWO triggers (full pill + collapsed icon),
+  // only one of which is ever visible — CSS picks which, not React — so
+  // Escape's "focus back" below has to check which one is actually on screen.
+  const compactTriggerRef = useRef<HTMLButtonElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
   const [continueHover, continueHoverBind] = useHover();
+  const [retryHover, retryHoverBind] = useHover();
+  const [dismissHover, dismissHoverBind] = useHover();
+
+  // The alert's "Try again" starts the exact same Google redirect the panel's
+  // own button does — it is not a second flow, just a shorter path to it.
+  const retrySignIn = () => {
+    setAuthError(null);
+    setBusy(true);
+    void signInWithGoogle().catch(() => setBusy(false));
+  };
 
   // The sign-in panel takes focus on open so Enter continues straight away —
   // the extra step exists to show the agreement line, not to slow anyone down.
@@ -61,13 +131,14 @@ export function AccountMenu() {
     if (open && !user) continueRef.current?.focus();
   }, [open, user]);
 
-  // A failed sign-in comes back as ?authError=… from the callback route. Show it
-  // once, then take it out of the URL so a refresh isn't haunted by it.
+  // A failed sign-in comes back as ?authError=<code> from the callback route —
+  // always one of the fixed codes above, never provider text. Show it once,
+  // then take it out of the URL so a refresh isn't haunted by it.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const message = params.get("authError");
-    if (!message) return;
-    setAuthError(message);
+    const code = toAuthErrorCode(params.get("authError"));
+    if (!code) return;
+    setAuthError(code);
     params.delete("authError");
     const qs = params.toString();
     window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
@@ -83,7 +154,11 @@ export function AccountMenu() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setOpen(false);
-      triggerRef.current?.focus();
+      // `offsetParent` is null on a `display: none` element (and only that
+      // element, of the two triggers, is ever hidden) — the cheapest way to
+      // ask "which one is actually rendered" without reading matchMedia here.
+      const visible = triggerRef.current?.offsetParent ? triggerRef.current : compactTriggerRef.current;
+      visible?.focus();
     };
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
@@ -110,6 +185,7 @@ export function AccountMenu() {
         <Tooltip label={t("accountMenu.signInTooltip")} placement="bottom">
           <button
             ref={triggerRef}
+            className="fp-signin-full"
             onClick={() => {
               setAuthError(null);
               setOpen((v) => !v);
@@ -139,6 +215,40 @@ export function AccountMenu() {
           >
             <GoogleMark />
             {busy ? t("accountMenu.signInOpening") : t("accountMenu.signIn")}
+          </button>
+        </Tooltip>
+        {/* Collapsed twin: same trigger, same accessible name (Tooltip still
+            clones `label` on as aria-label), just the mark with no text — see
+            SIGNIN_COLLAPSE_BREAK. Below that width the full pill's own text
+            ("Sign in" / "התחברות") is what pushes it into the mode switcher's
+            "View" tab, so the fix is to drop the text, not shrink the pill. */}
+        <Tooltip label={t("accountMenu.signInTooltip")} placement="bottom">
+          <button
+            ref={compactTriggerRef}
+            className="fp-signin-compact"
+            onClick={() => {
+              setAuthError(null);
+              setOpen((v) => !v);
+            }}
+            disabled={busy}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            {...signInHoverBind}
+            style={{
+              display: "none", // default/no-JS state; the media query above is what shows it
+              alignItems: "center",
+              justifyContent: "center",
+              width: SIZE + 6,
+              height: SIZE + 6,
+              padding: 0,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.6 : 1,
+              ...pdGlass({ borderRadius: 999 }),
+              background: (signInHover || open) && !busy ? PD.surfaceMutedHover : PD.glassBg,
+              transition: "background 140ms ease",
+            }}
+          >
+            <GoogleMark />
           </button>
         </Tooltip>
         {open && (
@@ -219,18 +329,83 @@ export function AccountMenu() {
               // Hebrew the whole cluster is on the left and a right-anchored
               // panel would hang past the viewport edge.
               insetInlineEnd: 0,
-              maxWidth: 300,
-              padding: "8px 11px",
-              fontSize: 11.5,
-              lineHeight: 1.45,
-              fontFamily: PD.fontUi,
-              color: PD.warnText,
-              background: PD.warnBg,
-              borderRadius: PD.radiusS,
+              width: 264,
+              padding: "10px 8px",
               zIndex: 40,
+              ...pdGlass({ borderRadius: PD.radiusM }),
             }}
           >
-            {t("accountMenu.signInFailed", { error: authError })}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+              <p
+                style={{
+                  flex: 1,
+                  margin: 0,
+                  fontSize: 11.5,
+                  lineHeight: 1.45,
+                  fontFamily: PD.fontUi,
+                  color: PD.textPrimary,
+                }}
+              >
+                {t(
+                  authError === "cancelled"
+                    ? "accountMenu.signInErrorCancelled"
+                    : "accountMenu.signInErrorFailed",
+                )}
+              </p>
+              {/* Its own `aria-label`, more specific than a shared tooltip string
+                  ("Dismiss sign-in error", not just "Dismiss") — same pattern as
+                  ConsentNotice's DismissButton. */}
+              <button
+                type="button"
+                className="fp-signin-dismiss"
+                onClick={() => setAuthError(null)}
+                aria-label={t("accountMenu.signInErrorDismiss")}
+                {...dismissHoverBind}
+                style={{
+                  flex: "0 0 auto",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  background: dismissHover ? PD.surfaceMutedHover : "transparent",
+                  color: dismissHover ? PD.textPrimary : PD.textTertiary,
+                  cursor: "pointer",
+                  borderRadius: PD.radiusS,
+                  padding: 3,
+                  transition: "background 140ms ease, color 140ms ease",
+                }}
+              >
+                <CloseIcon size={14} />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="fp-signin-retry"
+              onClick={retrySignIn}
+              disabled={busy}
+              {...retryHoverBind}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                width: "100%",
+                height: 30,
+                marginTop: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: PD.fontUi,
+                color: PD.textPrimary,
+                background: retryHover && !busy ? PD.surfaceMutedHover : PD.surfaceMuted,
+                border: "none",
+                borderRadius: PD.radiusS,
+                cursor: busy ? "default" : "pointer",
+                opacity: busy ? 0.6 : 1,
+                transition: "background 140ms ease",
+              }}
+            >
+              {busy ? t("accountMenu.signInOpening") : t("accountMenu.signInRetry")}
+            </button>
           </div>
         )}
       </div>
@@ -284,7 +459,7 @@ export function AccountMenu() {
       {open && (
         <div
           role="group"
-          aria-label="Account"
+          aria-label={t("accountMenu.account")}
           className={POP_IN_CLASS}
           style={{
             position: "absolute",

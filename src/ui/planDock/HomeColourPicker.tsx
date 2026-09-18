@@ -191,7 +191,7 @@ export function HomeColourPicker() {
             onChange={(event) => setFilter("query", event.target.value)}
             placeholder={t("search")}
             aria-label={t("search")}
-            style={{ width: 145, height: 24, boxSizing: "border-box", border: `1px solid ${PD.hairline}`, borderRadius: 7, background: PD.inputBg, color: PD.textPrimary, fontSize: 9.5, paddingInline: 7, outline: "none" }}
+            style={{ width: 145, height: 24, boxSizing: "border-box", border: `1px solid ${PD.hairline}`, borderRadius: 7, background: PD.inputBg, color: PD.textPrimary, fontSize: 9.5, paddingInline: 7 }}
           />
           <FilterMenu label={t("filters.warmth.label")} value={filters.warmth} values={["all", "warm", "neutral", "cool"] as Warmth[]} onChange={(value) => setFilter("warmth", value)} text={(value) => t(`filters.warmth.${value}`)} />
           <FilterMenu label={t("filters.lightness.label")} value={filters.lightness} values={["all", "light", "mid", "dark"] as LightnessBand[]} onChange={(value) => setFilter("lightness", value)} text={(value) => t(`filters.lightness.${value}`)} />

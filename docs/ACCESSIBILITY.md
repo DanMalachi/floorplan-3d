@@ -2,8 +2,9 @@
 
 Status: **first real audit, partially remediated.** Commercial must-have #22.
 
-This is not a conformance claim. Nothing here was tested with a screen reader,
-with a keyboard in a running browser, or with any automated auditor. See
+This is not a conformance claim. Nothing here was tested with a screen reader.
+One automated axe + scripted-keyboard pass ran on 2026-09-18 — see
+[Automated pass](#automated-pass-2026-09-18) for exactly what it covered. See
 [Not verified](#not-verified) — read that section before quoting anything in
 this file.
 
@@ -216,7 +217,20 @@ glass over its backdrop. For reference: WCAG's commonly-cited thresholds are
 4.5:1 for body text, 3:1 for large text (≥18.66px bold or ≥24px) and for
 non-text UI boundaries.
 
-### P1 — The glass panels have no fixed contrast at all (structural)
+### P1 — The glass panels have no fixed contrast at all (structural) — APPLIED 2026-09-18
+
+Applied, differently from the options below. The glass's `backdrop-filter`
+dims what shows through it instead of the glass getting more opaque — dark
+theme `brightness(0.5)` at 32% opacity, light theme `contrast(0.35)
+brightness(1.7)`. `brightness(0.3)` was tried first and Dan rejected it as
+"smokey"; 0.5 keeps the panel tinted by the scene behind it. Text tokens moved
+to near-white (primary 0.985, secondary 0.88, tertiary 0.76 L) at Dan's
+request, and `pdGlass` sets an inherited 2px dark `text-shadow` halo.
+Measured in Chromium, text vs the rendered glass, over a pure-white backdrop
+(worst case): primary 6.2:1, secondary 4.5:1 before the halo. axe CANNOT
+check this — it ignores `backdrop-filter` and reports ~1.9:1 — so glass
+contrast must be re-measured by pixels, not by axe.
+The original analysis follows.
 
 This is the biggest visual finding and it is not a token tweak.
 
@@ -257,7 +271,7 @@ Options, in increasing order of visual cost:
 Recommendation: **P1d plus P1a as the default**, but this is squarely Dan's
 call.
 
-### P2 — Tertiary text is under 4.5:1 even in the best case
+### P2 — Tertiary text is under 4.5:1 even in the best case — APPLIED 2026-09-18 (PD tokens; `T` no longer exists)
 
 Even on the friendliest backdrop, `PD.textTertiary` `oklch(0.55 0.014 90)`
 reaches only **3.77:1**, and `T.textFaint` `#66666e` reaches **3.15:1** on
@@ -275,7 +289,12 @@ These are one-line token changes; every consumer picks them up through the CSS
 variables. They will make the faint text visibly less faint, which is the
 entire point and also the entire objection.
 
-### P3 — White on the accent is 3.65:1
+### P3 — White on the accent is 3.65:1 — APPLIED 2026-09-18
+
+Applied: dark-theme `PD.accent` is now `oklch(0.55 0.15 258)`. `T.accent` no
+longer exists (tokens.ts was deleted in the one-token-set sweep). The one place
+that used `PD.accent` as *text* colour (the legal `[[VERIFY]]` marker) dropped
+to 3.78:1 with the darker value and was moved to `PD.accentText`.
 
 `Go live` is `#fff` on `PD.accent` `oklch(0.62 0.15 258)` → **3.68:1**. The
 Trace/View chip is `#fff` on `T.accent` `#0a84ff` → **3.65:1**. Both are below
@@ -283,7 +302,13 @@ Trace/View chip is `#fff` on `T.accent` `#0a84ff` → **3.65:1**. Both are below
 `oklch(0.55 0.15 258)` / `#0066d6` reaches ≈ 4.6:1 without changing the hue
 family.
 
-### P4 — There is no focus-visible style anywhere
+### P4 — There is no focus-visible style anywhere — APPLIED 2026-09-18
+
+Applied: a zero-specificity `:where(:focus-visible)` rule in `globals.css`
+(2px, accent, 2px offset; copper on marketing pages via `--fp-focus`), and every
+inline `outline: "none"` outside `src/viewport3d/` removed (account deletion,
+live-room field, NumField, dock search, gallery rename, colour-fan hex field).
+The frozen canvas wrapper in `Viewport.tsx` still sets `outline: none`.
 
 The app relies entirely on the browser's default focus ring, and two places
 suppress even that: `field()` in `src/ui/tokens.ts` sets `outline: "none"`, as
@@ -416,6 +441,72 @@ Real, found, not fixed. Roughly in priority order.
 9. **No automated auditing in CI.** See below.
 
 ---
+
+## Automated pass, 2026-09-18
+
+First browser-driven run. axe-core (WCAG 2.0 + 2.1, A + AA) plus a scripted
+Tab walk, headless Chromium 1440×900, `next start` production build, every
+public route in `en` and `he`: `/`, `/about`, `/faq`, `/pricing`, `/legal/*`,
+`/account` (signed out), `/design` (empty, gallery, and Build / Decorate / View
+modes). Also: the landing sign-in panel by keyboard.
+
+Fixed in this pass: P1, P2, P3, P4 (above), white-on-copper CTA (dark halo `text-shadow` in `ctaPrimary`, now passes), and a regression — the four dock section
+tabs and the eyedropper had **no accessible name** again, because
+`DockIconBtn` did not forward the `aria-label` that `Tooltip` stamps on.
+
+Clean: no keyboard trap anywhere; the projects gallery keeps focus inside and
+lists its cards; the sign-in panel is a labelled dialog, takes focus on open,
+sets `aria-expanded`, closes on Escape; `lang`/`dir` correct per locale.
+
+Still failing after the pass (all need a decision, none are code bugs):
+
+| Finding | Where | Ratio | Needs |
+| --- | --- | --- | --- |
+| `B.ink4` `#757168` micro-labels | about/faq/pricing labels, pricing feature list | 3.6–3.9 | lift `ink4` |
+| `.done-demo-title` | landing demo caption | 3.35 | lift its colour |
+| Project card `role=button` contains buttons | gallery | — | Known gap 1 pattern |
+
+Step 3 (approved, see PROTECTED_PATHS.md 2026-09-18): the editor canvas is
+now `role="application"` named "3D view of your home" with a spoken key list,
+and shows the focus ring; the landing hero canvas is `role="img"` and out of
+the Tab order; the time-of-day slider is labelled; `Tooltip` no longer puts
+`aria-label` on bare spans; camera flights (fit, room focus, F / Home framing)
+jump instead of animate under `prefers-reduced-motion`. After this, Build,
+Decorate and View modes have zero axe violations and every Tab stop is named
+and ringed. The reduced-motion camera path was NOT exercised in a browser.
+
+Not covered: a loaded plan (inspector, selection), live rooms, signed-in
+`/account`, light theme, mobile width, any screen reader.
+
+## Interface review and fixes, 2026-09-18 (later)
+
+A second pass that also covered a selected wall (inspector), light theme,
+Hebrew/RTL, widths 320–1280 and 200% zoom. Glass contrast was measured in
+rendered pixels with the text halo KEPT: glyph pixels are found by diffing
+text-on against text-off, and compared with the 3px ring around them. Every
+backdrop was measured three ways: the scene as rendered, the canvas whitened
+(a bright wall filling the view) and the canvas blacked out.
+
+Fixed (all verified in a production build, en + he, both themes):
+
+| Finding | Fix | Measured after |
+| --- | --- | --- |
+| Editor top bar: below ~810px (1440 laptop at 200% zoom) Sign in covered the View tab | Sign-in pill collapses to its G icon below 840px (`AccountMenu.tsx`, derivation in comment) | No overlap 720–1280px, Trace + Build, en + he |
+| Light tertiary text 3.85:1 (P2's arithmetic said 5.6) | `--pd-text-tertiary` 0.50→0.46, `--pd-accent-text` 0.42→0.38 | ≥4.58:1 worst backdrop |
+| Dark theme over a bright wall: tertiary 3.0, secondary 4.0, blue labels 2.96 | Dan's call: glass unchanged; text near-white (secondary 0.93, tertiary 0.90); blue tint deeper and more opaque (0.45 / 0.65) with blue text 0.90. A more opaque tint at the OLD lightness made it worse (2.43:1) | 0 runs under 4.5:1 on any backdrop |
+| Status line used `PD.accent` (a fill) as text, 3.92:1 | `PD.accentText` (`Viewport.tsx`, approved exception) | passes |
+| Sign-in error echoed `?authError=` text (spoofable, English on /he, no recovery) | Fixed codes only; localized message, Try again + dismiss; raw text to the server log | crafted text no longer renders |
+| Pricing "not included" marker was aria-hidden | `fp-sr-only` "Not included:" | read in the accessibility tree |
+| `Tooltip` replaced visible labels ("Go live" was named "Turn this into…") | A tooltip that does not START WITH the visible text becomes `aria-describedby`; Escape dismisses (1.4.13) | 0 label-in-name mismatches |
+| English accessible names on /he (theme toggle, "Selected:", steppers, …) | Moved to messages (en/he parity 825 keys) | 0 English names in a /he walk |
+| "2.00 m" rendered "m 2.00" in RTL | `<bdi dir="ltr">` / isolate in inspector and 3D labels; units localized | — |
+| "1:00 PM" and ⌘Z on /he and Windows | 24-hour on he; Ctrl on non-Mac | — |
+| Dock card text 7.5–9.5px | Names 11, kind 10, badge 10, count 11; cards 68→76px wide | — |
+| Navigator hotspots under 24×24 | Hit pads grown to ≥24px; kitchen art + clock capped at ~21/19px wide to avoid overlapping | — |
+| Cookie notice covered content at 320px | `--consent-h` reserved as bottom padding on marketing + legal | — |
+
+Still open: `ink4` / `.done-demo-title` (decision pending), and none of this
+was checked with a screen reader.
 
 ## How to re-audit
 

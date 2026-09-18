@@ -67,7 +67,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
           gap: 14,
         }}
       >
-        {copy.plans.map((plan) => <PlanCard key={plan.id} plan={plan} />)}
+        {copy.plans.map((plan) => <PlanCard key={plan.id} plan={plan} notIncluded={copy.notIncluded} />)}
       </section>
 
       <p
@@ -87,7 +87,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
   );
 }
 
-function PlanCard({ plan }: { plan: PricingPlan }) {
+function PlanCard({ plan, notIncluded }: { plan: PricingPlan; notIncluded: string }) {
   return (
     <div
       style={{
@@ -167,7 +167,10 @@ function PlanCard({ plan }: { plan: PricingPlan }) {
             >
               {feature.included ? "✓" : "–"}
             </span>
-            <span>{feature.label}</span>
+            <span>
+              {!feature.included && <span className="fp-sr-only">{notIncluded} </span>}
+              {feature.label}
+            </span>
           </li>
         ))}
       </ul>

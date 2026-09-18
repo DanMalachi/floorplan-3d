@@ -29,6 +29,7 @@
 import * as THREE from "three";
 import type { CameraControls } from "@react-three/drei";
 import { CAMERA } from "./CameraRig";
+import { prefersReducedMotion } from "./reducedMotion";
 
 const _sphere = new THREE.Sphere();
 const _box = new THREE.Box3();
@@ -44,7 +45,7 @@ export function frameBox(controls: CameraControls, box: THREE.Box3): void {
   if (box.isEmpty()) return;
   box.getBoundingSphere(_sphere);
   _sphere.radius += CAMERA.framePaddingM;
-  controls.fitToSphere(_sphere, true);
+  controls.fitToSphere(_sphere, !prefersReducedMotion());
 }
 
 /** Frame a rendered object by its real drawn bounds. */

@@ -44,13 +44,30 @@ export const PD = {
   // unaffected — they find IBM Plex Mono first and never reach this entry.
   fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace, Rubik`,
 
-  accent: v("accent", "oklch(0.62 0.15 258)"),
-  accentText: v("accent-text", "oklch(0.78 0.12 258)"),
-  accentTint: v("accent-tint", "oklch(0.62 0.15 258 / 0.22)"),
+  // 0.55 (was 0.62): white label text on the accent fill (Go live, the
+  // gallery badge) reaches ~4.6:1 instead of 3.68:1. docs/ACCESSIBILITY.md P3.
+  accent: v("accent", "oklch(0.55 0.15 258)"),
+  // Blue text and the tint behind it are tuned as a PAIR (Dan, 2026-09-18:
+  // glass stays as it is; make the text near-white and the blue less
+  // transparent). The old tint (0.62 / 0.22) was LIGHTER than the glass over a
+  // bright wall, so the blue labels on it ("Custom", the selected chip) fell to
+  // 2.96:1. A deeper, more opaque tint (0.45 / 0.65) under 0.9 text passes in
+  // rendered pixels over the normal scene, a whitened backdrop and a black
+  // one. 0.9 not 0.88: at 0.88 the blue status line ("wall selected — …"),
+  // which sits on bare glass, measured 4.45:1 over a bright wall. Making the
+  // OLD tint more opaque made things worse (2.43:1).
+  accentText: v("accent-text", "oklch(0.9 0.11 258)"),
+  accentTint: v("accent-tint", "oklch(0.45 0.15 258 / 0.65)"),
 
-  textPrimary: v("text-primary", "oklch(0.95 0.006 90)"),
-  textSecondary: v("text-secondary", "oklch(0.72 0.012 90)"),
-  textTertiary: v("text-tertiary", "oklch(0.55 0.014 90)"),
+  // Near-white on purpose (Dan, 2026-09-18: "more white, it reads greyish",
+  // then again after the a11y review: glass unchanged, text near-white).
+  // The glass is see-through, so the TEXT has to carry the contrast. Worst
+  // case (a bright wall filling the view behind a panel), measured in pixels
+  // with the halo: secondary 4.69:1, tertiary 4.82:1. At the old 0.88 / 0.76
+  // they were 4.0 / 3.0. The hierarchy now rests on size and weight.
+  textPrimary: v("text-primary", "oklch(0.985 0.004 90)"),
+  textSecondary: v("text-secondary", "oklch(0.93 0.008 90)"),
+  textTertiary: v("text-tertiary", "oklch(0.9 0.01 90)"),
 
   warnBg: v("warn-bg", "oklch(0.32 0.05 75 / 0.55)"),
   warnText: v("warn-text", "oklch(0.82 0.13 75)"),
@@ -58,8 +75,18 @@ export const PD = {
 
   // Deliberately low-opacity — "more transparent" per review. The scene
   // behind should read through clearly, not just tint.
-  glassBg: v("glass-bg", "oklch(0.2 0.014 260 / 0.38)"),
-  glassBlur: v("glass-blur", "blur(20px) saturate(1.3)"),
+  glassBg: v("glass-bg", "oklch(0.2 0.014 260 / 0.32)"),
+  // brightness(0.5) is the legibility half of the recipe: it half-dims
+  // whatever shows THROUGH the glass, so a bright sky can no longer wash the
+  // text out (secondary text was 1.1:1 over daylight) while the panel still
+  // takes the colour of the scene behind it. 0.3 was tried first and read as
+  // smoked glass — too opaque. Measured in Chromium, text vs rendered glass,
+  // worst case pure-white backdrop: primary 6.2:1, secondary 4.5:1.
+  // docs/ACCESSIBILITY.md P1.
+  glassBlur: v("glass-blur", "blur(20px) saturate(1.3) brightness(0.5)"),
+  // Inherited by all text on the glass. A 2px dark halo keeps glyph edges
+  // crisp over the brightest backdrops without darkening the panel itself.
+  glassTextShadow: v("glass-text-shadow", "0 0 2px oklch(0 0 0 / 0.55)"),
   glassBorder: v("glass-border", "1px solid oklch(1 0 0 / 0.09)"),
   glassInset: v("glass-inset", "inset 0 1px 0 oklch(1 0 0 / 0.07)"),
   glassShadow: v("glass-shadow", "0 14px 34px -14px oklch(0 0 0 / 0.55)"),
@@ -80,7 +107,7 @@ export const PD = {
   // invent ad-hoc values, which is worse than two token sets.
   //
   // Note what is deliberately NOT unified: the SURFACE recipe. `pdGlass` is
-  // 38% opacity + blur, which is right for a small panel floating over the
+  // 32% opacity + blur, which is right for a small panel floating over the
   // model and wrong for a full-screen project gallery — read through a
   // fullscreen sheet and the 3D scene behind it competes with the text. So
   // `panelBg`/`surfaceSolid` keep `T`'s heavier surfaces available while the
@@ -113,6 +140,7 @@ export const pdGlass = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: PD.glassBg,
   backdropFilter: PD.glassBlur,
   WebkitBackdropFilter: PD.glassBlur,
+  textShadow: PD.glassTextShadow,
   border: PD.glassBorder,
   boxShadow: `${PD.glassInset}, ${PD.glassShadow}`,
   borderRadius: PD.radiusL,

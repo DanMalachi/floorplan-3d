@@ -239,8 +239,16 @@ function KitchenItems(): RoomItem[] {
       box: hood,
       art: <ChimneyHood x={118} yBottom={HOOD_BOTTOM} w={24} depth={8} />,
     },
-    { id: "art", labelKey: lbl("art"), keywords: kw("art"), box: artBox, art: <FramedArt x={44} yTop={78} w={22} h={22} scene="abstract" /> },
-    { id: "clock", labelKey: lbl("clock"), keywords: kw("clock"), box: clockBox, art: <WallClockArt cx={80} cy={84} r={10} /> },
+    // art and clock hang only ~3 viewBox units apart on X (same narrow wall
+    // band above the sink) — closer than the combined pad both would need to
+    // reach the 24px CSS minimum on that axis. `maxPad.x` caps each hit area
+    // at half that gap so they meet edge-to-edge, never overlap; Y is
+    // unconstrained (no other hotspot sits that close vertically) and both
+    // reach the full 24px there. This is the one hotspot pair in the
+    // illustrated navigator that cannot reach 24×24 on both axes without
+    // overlapping — see BottomDock a11y pass notes.
+    { id: "art", labelKey: lbl("art"), keywords: kw("art"), box: artBox, maxPad: { x: 1.514 }, art: <FramedArt x={44} yTop={78} w={22} h={22} scene="abstract" /> },
+    { id: "clock", labelKey: lbl("clock"), keywords: kw("clock"), box: clockBox, maxPad: { x: 1.514 }, art: <WallClockArt cx={80} cy={84} r={10} /> },
     {
       id: "counter",
       labelKey: lbl("counter"),

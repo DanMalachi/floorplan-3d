@@ -80,8 +80,14 @@
     "signOut": "Sign out"
   },
   "consent": {
+    "regionLabel": "Cookie notice",
     "body": "This app uses only strictly-necessary cookies and local storage — for sign-in, sharing and saving your work. No analytics or ad tracking. <link>Cookie Policy</link>.",
     "dismiss": "Dismiss cookie notice"
+  },
+  "collabRoom": {
+    "linkPermissionLabel": "Link permission",
+    "shareLinkLabel": "Share link",
+    "peopleInRoomLabel": "People in this room"
   },
   "smallScreen": {
     "title": "The editor wants a bigger screen.",
@@ -101,10 +107,14 @@
     "walkThrough": "Walk through",
     "exitWalkthrough": "Exit walkthrough (Esc)",
     "timeOfDayNoEffect": "Time of day has no effect in the Studio preset",
+    "timeOfDay": "Time of day",
+    "viewportLabel": "3D view of your home",
+    "viewportPreviewLabel": "3D preview of a furnished room",
+    "viewportKeys": "Arrow keys or W A S D move the camera, comma and period orbit, T toggles top view, F frames the selection, Home frames the whole house. With an item selected: R rotates, Delete removes, Escape deselects. Ctrl+Z undoes, Ctrl+Y redoes.",
     "showCeilings": "Show ceilings (Full view only)",
     "nothingSelected": "nothing selected",
     "selectedHint": "{kind} selected — drag to move, Delete removes, Esc deselects",
-    "undoRedo": "⌘Z undo ({past}) · ⌘Y redo ({future})",
+    "undoRedo": "{mod}Z undo ({past}) · {mod}Y redo ({future})",
     "wallModes": {
       "full": "Full",
       "cutaway": "Cutaway",
@@ -129,8 +139,23 @@
       "fixture": "fixture"
     },
     "ceiling": "Ceiling",
+    "selectedRegionLabel": "Selected: {name}",
+    "decreaseLabel": "Decrease {label}",
+    "increaseLabel": "Increase {label}",
+    "units": {
+      "cm": "cm",
+      "m": "m",
+      "m2": "m²"
+    },
+    "cameraOffer": {
+      "dismiss": "Dismiss"
+    },
     "chrome": {
       "modeSwitcherLabel": "Editor mode",
+      "themeToggle": {
+        "switchToDark": "Switch to dark",
+        "switchToLight": "Switch to light"
+      },
       "projectBar": {
         "local": {
           "saved": "Saved",
@@ -193,6 +218,7 @@
         "deleteLabel": "Delete plan",
         "renameTooltip": "Rename",
         "renameAriaLabel": "Rename plan",
+        "renameInputLabel": "Rename {name}",
         "backToSite": "back to site",
         "homeAriaLabelWord": "home",
         "ago": {
@@ -206,10 +232,14 @@
         "signInTooltip": "Sign in so your projects follow you to any computer",
         "signInOpening": "Opening…",
         "signIn": "Sign in",
-        "signInFailed": "Sign-in failed: {error}",
+        "signInErrorFailed": "Sign-in didn't finish.",
+        "signInErrorCancelled": "Sign-in was cancelled.",
+        "signInRetry": "Try again",
+        "signInErrorDismiss": "Dismiss sign-in error",
         "savedToAccount": "Your plans are saved to this account.",
         "yourData": "Your data",
-        "signOut": "Sign out"
+        "signOut": "Sign out",
+        "account": "Account"
       }
     },
     "dock": {
@@ -245,6 +275,8 @@
       "nothingHere": "Nothing here yet.",
       "search": "Search",
       "closeSearch": "Close search",
+      "searchModelsPlaceholder": "{count, plural, one {Search # model…} other {Search # models…}}",
+      "searchModelsLabel": "{count, plural, one {Search # model in this room} other {Search # models in this room}}",
       "filterItemsLabel": "Filter items",
       "itemsShownLabel": "{count} items shown",
       "dockSectionLabel": "Dock section",
@@ -1059,6 +1091,8 @@
       "width": "Width",
       "height": "Height",
       "depth": "Depth",
+      "customColour": "Custom colour",
+      "colourAndFinish": "Colour and finish",
       "replace": "Replace",
       "duplicate": "Duplicate",
       "delete": "Delete",
@@ -1115,6 +1149,7 @@
         "paintHelp": "Paint in <b>Decorate</b>: pick a colour, click faces."
       },
       "room": {
+        "selectedRegionLabel": "Selected room: {dims}",
         "ceilingHeight": "Ceiling height",
         "floorHelp": "Change the floor in <b>Decorate</b>: pick a material, click the floor."
       },
@@ -1177,6 +1212,7 @@
       "swingTip": "One hinged leaf",
       "double": "Double",
       "doubleTip": "A pair of hinged leaves meeting in the middle — French doors",
+      "hingeSideLabel": "Hinge side",
       "hingeStart": "Hinge start",
       "hingeEnd": "Hinge end",
       "open": "Open",
@@ -1189,6 +1225,7 @@
       "panelLabel": "Panel {n}",
       "leafLabel": "Leaf {n}",
       "evenThemUp": "Even them up",
+      "passageLiningLabel": "Passage lining",
       "cased": "Cased",
       "bare": "Bare",
       "casedTip": "Jamb and head casing — a finished cased opening",

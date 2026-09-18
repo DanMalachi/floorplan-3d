@@ -1121,6 +1121,11 @@ export const dimLabelStyle: React.CSSProperties = {
   fontSize: 12,
   fontVariantNumeric: "tabular-nums",
   whiteSpace: "nowrap",
+  // Isolate from surrounding RTL context (Hebrew locale): these labels are
+  // always "<number> m"-shaped, and without this the bidi algorithm can
+  // reorder the number and unit (renders as "m 2.00" instead of "2.00 m").
+  direction: "ltr",
+  unicodeBidi: "isolate",
 };
 
 // --- Rails ------------------------------------------------------------------

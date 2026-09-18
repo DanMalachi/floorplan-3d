@@ -64,6 +64,55 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-18, a11y review — contrast/RTL/locale/platform text fixes
+  (`Viewport.tsx`, `WallMesh.tsx`, `MeasureTool.tsx`,
+  `buildTools/WallTool.tsx`, `buildTools/OpeningTool.tsx`).** Approved by Dan
+  2026-09-18 in a11y review: exactly four text/colour-only edits, no scene,
+  render, geometry, camera, import, or type changes beyond what each string/
+  colour change strictly needed.
+  - `Viewport.tsx:~433` `StatusOverlay` selected-item hint: `color: PD.accent`
+    → `PD.accentText`. `PD.accent` is a fill token (0.55 L) and measured
+    3.92:1 as text — below the 4.5:1 body-text bar; `accentText` is the
+    token built for text.
+  - `Viewport.tsx` time-of-day readout (`fmtHour`, `ScenePanel`) and its
+    slider `aria-valuetext`: now locale-aware via `useLocale()` +
+    `Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit",
+    hour12: locale !== "he" })` — Hebrew reads 24-hour ("13:30"), English is
+    byte-identical to the old hardcoded "1:30 PM" format.
+  - `Viewport.tsx` `StatusOverlay` undo/redo hint: the modifier key is no
+    longer hardcoded "⌘" in the message catalogue. A new `useModKey()` hook
+    detects `/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)`
+    client-side in an effect (defaults to `"Ctrl+"` on first/server render so
+    there's no hydration mismatch) and is interpolated into the `undoRedo`
+    message (`messages/en.json` + `messages/he.json`, both restructured from
+    a literal `⌘Z .../⌘Y ...` to a `{mod}Z .../{mod}Y ...` placeholder,
+    identically in both locales) — Mac still shows "⌘Z/⌘Y", every other
+    platform now shows "Ctrl+Z/Ctrl+Y" instead of a Mac-only glyph.
+  - `WallMesh.tsx`'s exported `dimLabelStyle` (shared by every `<Html>`
+    dimension-label div in `WallMesh.tsx` and by `Viewport.tsx`'s
+    `DragVizLayer`), plus the equivalent local label styles in
+    `MeasureTool.tsx`, `buildTools/WallTool.tsx` and
+    `buildTools/OpeningTool.tsx`: added `direction: "ltr"` +
+    `unicodeBidi: "isolate"`. In Hebrew (RTL) these "<number> m"/"<number>
+    cm" labels were being bidi-reordered to render as "m 2.00"; the isolate
+    keeps the digit-then-unit order fixed regardless of surrounding
+    direction, with no change to the numbers, units or wording themselves.
+
+- **2026-09-18, accessibility pass (`Viewport.tsx`, `CameraFocusRig.tsx`,
+  `frameTarget.ts`, new `reducedMotion.ts`).** Approved directly by Dan ("yes
+  to the 3D folder, go ahead with step 3"), branch `feat/a11y-launch`. DOM and
+  camera-flight flags only; no scene, mesh, material or renderer change.
+  - `Viewport.tsx` canvas wrapper: in the editor it is `role="application"`
+    with a translated name and an sr-only key list (`aria-describedby`); the
+    chrome-less embed (landing hero) is `role="img"` and no longer a Tab stop.
+    Inline `outline: none` replaced by `outlineOffset: -3`, so the global
+    `:focus-visible` ring shows on keyboard focus only, inside the edge.
+  - `ScenePanel` time-of-day slider: `aria-label` + `aria-valuetext`.
+  - `FitCamera`, `CameraFocusRig`, `frameBox`: the camera-controls
+    `enableTransition` argument is `!prefersReducedMotion()` instead of `true`,
+    so under the OS reduce-motion setting camera moves jump instead of fly.
+    Default behaviour is unchanged.
+
 - **2026-09-11, automatic editor camera input routing (`Viewport.tsx`,
   `CameraRig.tsx`, `camera/inputVocabulary.ts` + tests, an additive Space-pan
   arbitration helper, and a guard in `CameraDoubleClickRig.tsx`'s native

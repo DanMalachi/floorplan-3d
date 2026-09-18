@@ -9,6 +9,7 @@
 // bundled into this toggle.
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./tokens";
 import { useHover } from "./useHover";
 import { SunIcon, MoonIcon } from "./icons";
@@ -24,22 +25,30 @@ const STORAGE_KEY = "planDock:theme";
  *  default — kept alive here as the light variant instead of deleted. */
 const LIGHT_VARS: Record<string, string> = {
   "--pd-accent": "oklch(0.48 0.15 258)",
-  "--pd-accent-text": "oklch(0.42 0.15 258)",
+  // 0.38 (was 0.42): the "Custom" badge and selected chips sit on accent-tint
+  // and measured 4.28:1 in rendered pixels; 0.38 measures 5.0:1.
+  "--pd-accent-text": "oklch(0.38 0.15 258)",
   "--pd-accent-tint": "oklch(0.48 0.15 258 / 0.14)",
 
   "--pd-text-primary": "oklch(0.22 0.012 70)",
   "--pd-text-secondary": "oklch(0.42 0.014 70)",
-  "--pd-text-tertiary": "oklch(0.58 0.014 70)",
+  // 0.46 (was 0.50, before that 0.58 — P2). 0.50 was chosen by arithmetic and
+  // rendered at 3.85:1 on the light glass; 0.46 measures 4.58:1 in pixels,
+  // worst backdrop. Still lighter than secondary (0.42), so the step survives.
+  "--pd-text-tertiary": "oklch(0.46 0.014 70)",
 
   "--pd-warn-bg": "oklch(0.9 0.08 75 / 0.6)",
   "--pd-warn-text": "oklch(0.4 0.13 75)",
   "--pd-ok": "oklch(0.5 0.16 150)",
 
   "--pd-glass-bg": "oklch(0.99 0.006 90 / 0.6)",
-  "--pd-glass-blur": "blur(26px) saturate(1.65)",
+  // contrast+brightness lift a DARK scene behind light glass toward pale grey
+  // — the mirror of the dark theme's brightness(0.3). P1.
+  "--pd-glass-blur": "blur(26px) saturate(1.65) contrast(0.35) brightness(1.7)",
   "--pd-glass-border": "1px solid oklch(1 0 0 / 0.7)",
   "--pd-glass-inset": "inset 0 1px 0 oklch(1 0 0 / 0.7)",
   "--pd-glass-shadow": "0 18px 40px -16px oklch(0.24 0.02 70 / 0.42)",
+  "--pd-glass-text-shadow": "none", // dark text on light glass needs no halo
 
   "--pd-hairline": "oklch(0 0 0 / 0.08)",
   "--pd-surface-muted": "oklch(0 0 0 / 0.045)",
@@ -107,6 +116,7 @@ export function usePdTheme(): [PdTheme, (t: PdTheme) => void] {
  *  these were the text characters `☀` / `☾`, which are now real icons so they
  *  match the rest of the chrome instead of reflowing with the system font. */
 export function ThemeToggle() {
+  const t = useTranslations("editor.chrome.themeToggle");
   const [theme, setTheme] = usePdTheme();
   const [hovered, hoverBind] = useHover();
   const isLight = theme === "light";
@@ -116,7 +126,7 @@ export function ThemeToggle() {
     // `overflow: hidden` — the default `top` placement drew the label off the
     // edge of the window, where it was clipped rather than shown. Noticed while
     // adding the language switch beside it, which needs the same.
-    <Tooltip label={isLight ? "Switch to dark" : "Switch to light"} placement="bottom">
+    <Tooltip label={isLight ? t("switchToDark") : t("switchToLight")} placement="bottom">
       <button
         {...hoverBind}
         onClick={() => setTheme(isLight ? "dark" : "light")}

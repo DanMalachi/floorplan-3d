@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Canvas, events as createPointerEvents, useThree } from "@react-three/fiber";
 import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
+import { prefersReducedMotion } from "./reducedMotion";
 import { CONTEXT, DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
 import { AmbientOcclusion } from "@/render/AmbientOcclusion";
 import { useDprOverride } from "@/render/renderDebugFlags";
@@ -14,7 +15,7 @@ import { PerfRig } from "@/render/perf/PerfRig";
 import { PerfHud } from "@/render/perf/PerfHud";
 import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { RoomLights } from "@/render/RoomLights";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
@@ -113,7 +114,7 @@ function FitCamera({ span }: { span: number }) {
     camera.far = dist * 20;
     camera.updateProjectionMatrix();
     if (controls && "setLookAt" in controls) {
-      controls.setLookAt(dir.x, dir.y, dir.z, 0, 0, 0, true);
+      controls.setLookAt(dir.x, dir.y, dir.z, 0, 0, 0, !prefersReducedMotion());
     } else {
       camera.position.copy(dir);
     }
@@ -226,18 +227,24 @@ function PanelChip({
   );
 }
 
-/** 13.5 → "1:30 PM" for the time slider readout. */
-function fmtHour(t: number): string {
+/** 13.5 → "1:30 PM" (English) or "13:30" (Hebrew, 24-hour) for the time
+ *  slider readout. Hebrew readers expect a 24-hour clock; AM/PM is an
+ *  English-locale convention, not a translation of it. */
+function fmtHour(t: number, locale: string): string {
   const h24 = Math.floor(t) % 24;
   const m = Math.round((t - Math.floor(t)) * 60) % 60;
-  const ampm = h24 < 12 ? "AM" : "PM";
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  const d = new Date(2000, 0, 1, h24, m);
+  return new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: locale !== "he",
+  }).format(d);
 }
 
 /** Scene panel (View mode): environment preset + a fun time-of-day slider. */
 function ScenePanel() {
   const t = useTranslations("editor");
+  const locale = useLocale();
   const preset = useSceneStore((s) => s.envPreset);
   const setEnvPreset = useSceneStore((s) => s.setEnvPreset);
   const time = useSceneStore((s) => s.timeOfDay);
@@ -312,11 +319,13 @@ function ScenePanel() {
           value={time}
           onChange={(e) => setTimeOfDay(Number(e.target.value))}
           disabled={preset === "none"}
+          aria-label={t("timeOfDay")}
+          aria-valuetext={fmtHour(time, locale)}
           style={{ flex: 1, accentColor: PD.accent }}
         />
       </div>
       <div style={{ fontSize: 11, color: PD.textTertiary, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
-        {fmtHour(time)}
+        {fmtHour(time, locale)}
       </div>
       {preset !== "none" && (
         <div style={{ display: "flex", gap: 4 }}>
@@ -389,9 +398,24 @@ function WallModeToggle() {
   );
 }
 
+/** "⌘" on Mac/iPhone/iPad, "Ctrl+" everywhere else, for the undo/redo hint.
+ *  Starts as "Ctrl+" (a guess, not a locale) so server and first client
+ *  render match — no hydration mismatch — then corrects itself in an effect
+ *  once `navigator` is available. */
+function useModKey(): string {
+  const [mod, setMod] = useState("Ctrl+");
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+      setMod("⌘");
+    }
+  }, []);
+  return mod;
+}
+
 /** Selection + undo status pill. */
 function StatusOverlay() {
   const t = useTranslations("editor");
+  const mod = useModKey();
   const sel3d = useSceneStore((s) => s.sel3d);
   const past = useSceneStore((s) => s.scenePast.length);
   const future = useSceneStore((s) => s.sceneFuture.length);
@@ -427,14 +451,14 @@ function StatusOverlay() {
       }}
     >
       {sel3d ? (
-        <span style={{ color: PD.accent }}>
+        <span style={{ color: PD.accentText }}>
           {t("selectedHint", { kind: t(`kinds.${sel3d.kind}`) })}
         </span>
       ) : (
         <span style={{ color: PD.textSecondary }}>{t("nothingSelected")}</span>
       )}
       <span style={{ color: PD.textTertiary }}>
-        {t("undoRedo", { past, future })}
+        {t("undoRedo", { mod, past, future })}
       </span>
     </div>
   );
@@ -490,6 +514,8 @@ export function Viewport({
   const scene = useSceneStore((s) => s.scene);
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const tv = useTranslations("editor");
+  const keysId = useId();
   const hovering = useSceneStore((s) => s.hover3d !== null);
   // A walkthrough door swing folds its per-frame writes into a gesture too
   // (WalkthroughMode.tsx), but it isn't a drag: it shouldn't tear down N8AO
@@ -599,17 +625,36 @@ export function Viewport({
   return (
     <div
       ref={wrapRef}
-      tabIndex={0}
+      // Accessibility (approved 2026-09-18, docs/PROTECTED_PATHS.md): the
+      // editor canvas is a focusable widget that owns its own keys, so it is an
+      // "application" with a name and a spoken key list. The chrome-less embed
+      // (landing hero) has no editing to do from the keyboard: it is an image
+      // and stays out of the Tab order.
+      {...(chrome
+        ? {
+            tabIndex: 0,
+            role: "application",
+            "aria-label": tv("viewportLabel"),
+            "aria-describedby": keysId,
+          }
+        : { role: "img", "aria-label": tv("viewportPreviewLabel") })}
       onKeyDown={onKeyDown}
       onPointerDown={() => wrapRef.current?.focus()}
       style={{
         position: "relative",
         width: "100%",
         height: "100%",
-        outline: "none",
+        // No `outline: none`: the global :focus-visible ring shows on keyboard
+        // focus only, drawn INSIDE the edge because this box fills the screen.
+        outlineOffset: -3,
         cursor: brush ? BRUSH_CURSOR : dragging ? "grabbing" : hovering ? "pointer" : "auto",
       }}
     >
+      {chrome && (
+        <span id={keysId} className="fp-sr-only">
+          {tv("viewportKeys")}
+        </span>
+      )}
       <Canvas
         events={createViewportPointerEvents}
         // Every renderer value below is recorded in src/render/contract.ts and

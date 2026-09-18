@@ -23,6 +23,7 @@ import type { Room, Node, Id } from "@/schema/scene";
 import { nodeMap, pointInPolygon } from "@/lib/rooms/roomArea";
 import { WALL_HEIGHT } from "@/schema/constants";
 import { frameBox } from "./frameTarget";
+import { prefersReducedMotion } from "./reducedMotion";
 
 /** Look-at height for the point-only fallback, meters above the floor —
  *  roughly a seated sightline, so the room reads as a space rather than as a
@@ -95,7 +96,7 @@ export function CameraFocusRig({ offset }: { offset: { cx: number; cz: number } 
     controls.getTarget(curTarget);
     const rig = curPos.clone().sub(curTarget);
     const nextPos = new THREE.Vector3(tx, AIM_Y, tz).add(rig);
-    controls.setLookAt(nextPos.x, nextPos.y, nextPos.z, tx, AIM_Y, tz, true);
+    controls.setLookAt(nextPos.x, nextPos.y, nextPos.z, tx, AIM_Y, tz, !prefersReducedMotion());
   }, [focusTarget, controls, offset]);
 
   return null;

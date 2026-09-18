@@ -80,8 +80,14 @@
     "signOut": "התנתקות"
   },
   "consent": {
+    "regionLabel": "הודעה על עוגיות",
     "body": "האפליקציה משתמשת רק בעוגיות ובאחסון מקומי הכרחיים — להתחברות, לשיתוף ולשמירת העבודה שלכם. בלי אנליטיקה ובלי מעקב פרסומי. <link>מדיניות העוגיות</link>.",
     "dismiss": "סגירת ההודעה על עוגיות"
+  },
+  "collabRoom": {
+    "linkPermissionLabel": "הרשאת הקישור",
+    "shareLinkLabel": "קישור לשיתוף",
+    "peopleInRoomLabel": "אנשים בחדר הזה"
   },
   "smallScreen": {
     "title": "העורך צריך מסך גדול יותר.",
@@ -101,10 +107,14 @@
     "walkThrough": "סיור",
     "exitWalkthrough": "יציאה מהסיור (Esc)",
     "timeOfDayNoEffect": "לשעת היום אין השפעה בתצורת הסטודיו",
+    "timeOfDay": "שעה ביום",
+    "viewportLabel": "תצוגת תלת־ממד של הבית שלך",
+    "viewportPreviewLabel": "תצוגה מקדימה בתלת־ממד של חדר מרוהט",
+    "viewportKeys": "מקשי החיצים או W A S D מזיזים את המצלמה, פסיק ונקודה מסובבים אותה, T עובר למבט מלמעלה, F ממקד על הפריט הנבחר, Home מציג את כל הבית. כשפריט נבחר: R מסובב, Delete מוחק, Escape מבטל את הבחירה. Ctrl+Z מבטל פעולה, Ctrl+Y מחזיר אותה.",
     "showCeilings": "הצגת תקרות (בתצוגה מלאה בלבד)",
     "nothingSelected": "לא נבחר דבר",
     "selectedHint": "{kind} נבחר — גררו כדי להזיז, Delete מוחק, Esc מבטל בחירה",
-    "undoRedo": "⌘Z ביטול ({past}) · ⌘Y ביצוע מחדש ({future})",
+    "undoRedo": "{mod}Z ביטול ({past}) · {mod}Y ביצוע מחדש ({future})",
     "wallModes": {
       "full": "מלא",
       "cutaway": "חתך",
@@ -129,8 +139,23 @@
       "fixture": "אביזר"
     },
     "ceiling": "תקרה",
+    "selectedRegionLabel": "נבחר: {name}",
+    "decreaseLabel": "הפחתת {label}",
+    "increaseLabel": "הגדלת {label}",
+    "units": {
+      "cm": "ס״מ",
+      "m": "מ׳",
+      "m2": "מ״ר"
+    },
+    "cameraOffer": {
+      "dismiss": "סגירה"
+    },
     "chrome": {
       "modeSwitcherLabel": "מצב העריכה",
+      "themeToggle": {
+        "switchToDark": "מעבר לכהה",
+        "switchToLight": "מעבר לבהיר"
+      },
       "projectBar": {
         "local": {
           "saved": "נשמר",
@@ -193,6 +218,7 @@
         "deleteLabel": "מחיקת תוכנית",
         "renameTooltip": "שינוי שם",
         "renameAriaLabel": "שינוי שם לתוכנית",
+        "renameInputLabel": "שינוי שם ל{name}",
         "backToSite": "חזרה לאתר",
         "homeAriaLabelWord": "בית",
         "ago": {
@@ -206,10 +232,14 @@
         "signInTooltip": "התחברות כדי שהפרויקטים שלך יעברו איתך לכל מחשב",
         "signInOpening": "פותח…",
         "signIn": "התחברות",
-        "signInFailed": "ההתחברות נכשלה: {error}",
+        "signInErrorFailed": "ההתחברות לא הושלמה.",
+        "signInErrorCancelled": "ההתחברות בוטלה.",
+        "signInRetry": "נסו שוב",
+        "signInErrorDismiss": "סגירת הודעת השגיאה",
         "savedToAccount": "התוכניות שלך נשמרות לחשבון הזה.",
         "yourData": "המידע שלך",
-        "signOut": "התנתקות"
+        "signOut": "התנתקות",
+        "account": "חשבון"
       }
     },
     "dock": {
@@ -245,6 +275,8 @@
       "nothingHere": "עדיין אין כאן דבר.",
       "search": "חיפוש",
       "closeSearch": "סגירת החיפוש",
+      "searchModelsPlaceholder": "{count, plural, one {חיפוש דגם אחד…} two {חיפוש שני דגמים…} other {חיפוש # דגמים…}}",
+      "searchModelsLabel": "{count, plural, one {חיפוש דגם אחד בחדר הזה} two {חיפוש שני דגמים בחדר הזה} other {חיפוש # דגמים בחדר הזה}}",
       "filterItemsLabel": "סינון פריטים",
       "itemsShownLabel": "{count} פריטים מוצגים",
       "dockSectionLabel": "אזור הסרגל",
@@ -1059,6 +1091,8 @@
       "width": "רוחב",
       "height": "גובה",
       "depth": "עומק",
+      "customColour": "גוון מותאם אישית",
+      "colourAndFinish": "צבע וגימור",
       "replace": "החלפה",
       "duplicate": "שכפול",
       "delete": "מחיקה",
@@ -1115,6 +1149,7 @@
         "paintHelp": "צביעה ב<b>עיצוב</b>: בחרו צבע, לחצו על צדדים."
       },
       "room": {
+        "selectedRegionLabel": "חדר נבחר: {dims}",
         "ceilingHeight": "גובה תקרה",
         "floorHelp": "שינוי הרצפה ב<b>עיצוב</b>: בחרו חומר, לחצו על הרצפה."
       },
@@ -1177,6 +1212,7 @@
       "swingTip": "כנף אחת על ציר",
       "double": "כפולה",
       "doubleTip": "זוג כנפיים הנפגשות באמצע — דלתות צרפתיות",
+      "hingeSideLabel": "צד הציר",
       "hingeStart": "ציר בהתחלה",
       "hingeEnd": "ציר בסוף",
       "open": "פתיחה",
@@ -1189,6 +1225,7 @@
       "panelLabel": "יריעה {n}",
       "leafLabel": "כנף {n}",
       "evenThemUp": "איזון אחיד",
+      "passageLiningLabel": "גימור המעבר",
       "cased": "ממוסגר",
       "bare": "חשוף",
       "casedTip": "מלבן ומשקוף עליון — פתח גמור וממוסגר",

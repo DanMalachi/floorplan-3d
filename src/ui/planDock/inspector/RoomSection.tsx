@@ -27,6 +27,7 @@ import { pdInspectorPanel, PdSectionTitle, PdHelpText, PdNumField } from "./pane
 
 export function RoomSection({ room }: { room: Room }) {
   const t = useTranslations("editor.inspector.room");
+  const tu = useTranslations("editor.units");
   const scene = useSceneStore((s) => s.scene);
   const nodes = nodeMap(scene.nodes);
   const area = roomArea(room.loop, nodes);
@@ -44,15 +45,21 @@ export function RoomSection({ room }: { room: Room }) {
       rooms: s.scene.rooms.map((r) => (r.id === room.id ? { ...r, ceilingHeight: v } : r)),
     });
   };
+  // "2.00 m" is a left-to-right run wherever it renders — as JSX it gets
+  // `<bdi dir="ltr">` (below); the aria-label has no markup to isolate with,
+  // so the same run is wrapped in LRI/PDI (U+2066/U+2069) instead. Both fix
+  // the same bug: in Hebrew this fragment was rendering as "m 2.00 × 2.85".
+  const dims = `${w.toFixed(2)} × ${h.toFixed(2)} ${tu("m")}`;
+  const areaStr = `${area.toFixed(1)} ${tu("m2")}`;
   return (
-    <div role="region" aria-label={`Selected room: ${w.toFixed(2)} × ${h.toFixed(2)} m`} style={pdInspectorPanel}>
-      <PdSectionTitle label={`${w.toFixed(2)} × ${h.toFixed(2)} m`} meta={`${area.toFixed(1)} m²`} />
+    <div role="region" aria-label={t("selectedRegionLabel", { dims: `⁦${dims}⁩` })} style={pdInspectorPanel}>
+      <PdSectionTitle label={<bdi dir="ltr">{dims}</bdi>} meta={<bdi dir="ltr">{areaStr}</bdi>} />
       <PdNumField
         label={t("ceilingHeight")}
         value={room.ceilingHeight ?? derivedCeilingHeight}
         onCommit={(v) => setCeilingHeight(Math.min(6, Math.max(2, v)))}
         displayScale={100}
-        unit="cm"
+        unit={tu("cm")}
       />
       <PdHelpText>
         {t.rich("floorHelp", {

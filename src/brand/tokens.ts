@@ -241,6 +241,10 @@ export const ctaPrimary = (extra?: React.CSSProperties): React.CSSProperties => 
   letterSpacing: "-0.005em",
   lineHeight: 1,
   color: "#FFFFFF",
+  // White on copper alone is 3.02:1. A tight dark-brown halo carries the
+  // glyph edges past 4.5:1 (axe measures against the halo) while the label
+  // still reads as white — Dan's call over dark text or a darker copper.
+  textShadow: "0 1px 2px rgba(40,14,0,.7), 0 0 1px rgba(40,14,0,.6)",
   background: B.accent,
   border: "1px solid transparent",
   borderRadius: B.radiusS,

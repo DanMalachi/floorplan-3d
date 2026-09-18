@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
@@ -55,11 +55,34 @@ import { Link } from "@/i18n/navigation";
 
 const STORAGE_KEY = "fp3d:legalNotice:v1";
 
+// Fixed offset from the viewport's bottom edge (see the `bottom: NOTICE_BOTTOM`
+// below) — pulled out to a constant because the marketing/legal `--consent-h`
+// reservation (below) has to add it back on top of the notice's own measured
+// height, and two literal `60`s drifting apart would silently reopen the
+// overlap this fix exists for.
+const NOTICE_BOTTOM = 60;
+
+// Written to `documentElement` (not a component-local var) because the thing
+// that needs it — the marketing/legal layout's `padding-bottom` — lives
+// outside this component's own subtree entirely (this notice mounts once at
+// the root [locale]/layout.tsx, see the placement note above). A custom
+// property is the only channel that reaches sideways like that without
+// threading the notice's live height through context. "0px" (not "0", not a
+// removed property) is what `var(--consent-h, 0px)`'s own fallback would give
+// on a page that never renders this component at all (e.g. during SSR) — it
+// is also what "hidden"/"dismissed" resets to, so the fallback and the
+// explicit off-state agree.
+function setConsentHeightVar(px: number) {
+  document.documentElement.style.setProperty("--consent-h", `${Math.max(0, px)}px`);
+}
+
 export function ConsentNotice() {
   const t = useTranslations("consent");
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(true); // hidden until we know the real state
   const appMode = useSceneStore((s) => s.appMode);
+  const noticeRef = useRef<HTMLDivElement>(null);
+  const hidden = !mounted || dismissed || appMode === "furnish";
 
   useEffect(() => {
     setMounted(true);
@@ -88,20 +111,44 @@ export function ConsentNotice() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismissed]);
 
-  if (!mounted || dismissed || appMode === "furnish") return null;
+  // Keeps `--consent-h` in sync with the notice's real rendered height (its
+  // text reflows across widths/locales, so this is not a constant) plus its
+  // fixed bottom offset — i.e. exactly how much of the viewport's bottom edge
+  // the notice currently occupies. Zeroed whenever the notice isn't actually
+  // on screen (not yet mounted, dismissed, or `/design`'s furnish mode) so a
+  // marketing/legal page's reserved padding collapses the moment there's
+  // nothing left to clear.
+  useEffect(() => {
+    if (hidden || !noticeRef.current) {
+      setConsentHeightVar(0);
+      return;
+    }
+    const el = noticeRef.current;
+    const update = () => setConsentHeightVar(el.getBoundingClientRect().height + NOTICE_BOTTOM);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      setConsentHeightVar(0);
+    };
+  }, [hidden]);
+
+  if (hidden) return null;
 
   return (
     <div
+      ref={noticeRef}
       // A named region rather than a live region: this is a disclosure that
       // sits there until dismissed, not an event. Naming it makes it findable
       // and skippable instead of being an anonymous block of text pinned over
       // the corner of the editor.
       role="region"
-      aria-label="Cookie notice"
+      aria-label={t("regionLabel")}
       style={{
         position: "fixed",
         insetInlineStart: 14,
-        bottom: 60,
+        bottom: NOTICE_BOTTOM,
         zIndex: 35,
         maxWidth: 300,
         display: "flex",

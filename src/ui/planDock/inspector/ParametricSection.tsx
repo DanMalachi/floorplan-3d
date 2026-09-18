@@ -83,12 +83,13 @@ const COLOR_PRESETS = ["#f4f4f2", "#3a3d40", "#d8d2c4", "#9aa88f", "#5a4a6a", "#
  *  onChange — the browser's picker fires input continuously while dragging
  *  inside it, and onChange would be a store commit (one undo step) per tick. */
 function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: string) => void }) {
+  const t = useTranslations("editor.parametric");
   const [pending, setPending] = useState<string | null>(null);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <input
         type="color"
-        aria-label="Custom colour"
+        aria-label={t("customColour")}
         value={pending ?? value}
         onChange={(e) => setPending(e.target.value)}
         onBlur={() => {
@@ -115,6 +116,8 @@ function ColorControl({ value, onCommit }: { value: string; onCommit: (hex: stri
 
 export function ParametricSection({ item }: { item: FurnitureItem }) {
   const t = useTranslations("editor.parametric");
+  const te = useTranslations("editor");
+  const tu = useTranslations("editor.units");
   const td = useTranslations("editor.dock");
   // Same key its sibling FurnitureSection uses — one catalogue entry for one
   // string, because the two panels fire the identical toast.
@@ -145,7 +148,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
   const onDelete = () => useSceneStore.getState().deleteSelected3d();
 
   return (
-    <div role="region" aria-label={`Selected: ${t(g.labelKey)}`} style={pdInspectorPanel}>
+    <div role="region" aria-label={te("selectedRegionLabel", { name: t(g.labelKey) })} style={pdInspectorPanel}>
       <PdSectionTitle label={t(g.labelKey)} meta={td("customBadge")} />
 
       {/* A television is sold by its screen diagonal, and its width and height
@@ -180,14 +183,14 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             value={spec.dims.w}
             onCommit={(w) => update({ dims: { ...spec.dims, w } })}
             displayScale={100}
-            unit="cm"
+            unit={tu("cm")}
           />
           <PdNumField
             label={t("height")}
             value={spec.dims.h}
             onCommit={(h) => update({ dims: { ...spec.dims, h } })}
             displayScale={100}
-            unit="cm"
+            unit={tu("cm")}
           />
         </>
       )}
@@ -196,7 +199,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
         value={spec.dims.d}
         onCommit={(d) => update({ dims: { ...spec.dims, d } })}
         displayScale={100}
-        unit="cm"
+        unit={tu("cm")}
       />
 
       {g.modules.map((m) => {
@@ -381,7 +384,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             useSceneStore.getState().setFurnitureElevation(item.id, Math.min(hi, Math.max(lo, m)));
           }}
           displayScale={100}
-          unit="cm"
+          unit={tu("cm")}
         />
       )}
 
