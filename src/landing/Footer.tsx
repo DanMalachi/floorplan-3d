@@ -43,7 +43,7 @@ export async function Footer({ locale }: { locale: string }) {
               fontFamily: B.fontUi,
               fontSize: ty.small,
               lineHeight: 1.6,
-              color: B.ink4,
+              color: B.label,
               maxWidth: 300,
             }}
           >
@@ -83,7 +83,7 @@ export async function Footer({ locale }: { locale: string }) {
             paddingTop: 20,
             fontFamily: B.fontUi,
             fontSize: 12.5,
-            color: B.ink4,
+            color: B.label,
           }}
         >
           © {new Date().getFullYear()} done.design

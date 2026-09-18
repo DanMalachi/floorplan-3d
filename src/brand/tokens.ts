@@ -96,7 +96,12 @@ export const B = {
   ink: v("ink", "#F0EEEA"), // headlines, body
   ink2: v("ink-2", "#A7A49C"), // secondary copy
   ink3: v("ink-3", "#8C8980"), // captions, nav rest state
-  ink4: v("ink-4", "#757168"), // micro-labels, footer fine print
+  // Small quiet TEXT: micro-labels, notes, footer fine print, price notes.
+  // Cooler and lighter than the warm ink ramp on purpose (Dan, 2026-09-18):
+  // the old ink4 (#757168) measured 3.35-3.90:1 dark / 3.26-3.50:1 light, and
+  // no fourth warm grey could pass without landing on ink3. This one clears
+  // 4.5:1 on every ground in both themes (dark 7.9-9.3, light 7.4-8.0).
+  label: v("label", "#B3B5BA"),
 
   // ── The one colour ──────────────────────────────────────────────────────
   accent: v("accent", COPPER),
@@ -165,7 +170,7 @@ export const BRAND_THEME_CSS = `
   --br-ink: #F0EEEA;
   --br-ink-2: #A7A49C;
   --br-ink-3: #8C8980;
-  --br-ink-4: #757168;
+  --br-label: #B3B5BA;
   --br-accent: ${COPPER};
   --br-accent-text: #FDA578;
   --br-accent-tint: rgba(223,121,64,0.14);
@@ -187,7 +192,7 @@ html[lang="he"] {
   --br-ink: #26241F;
   --br-ink-2: #535047;
   --br-ink-3: #757168;
-  --br-ink-4: #8C8980;
+  --br-label: #4E5157;
   --br-accent: #A74900;
   --br-accent-text: #913F04;
   --br-accent-tint: rgba(167,73,0,0.10);
@@ -286,7 +291,7 @@ export const microLabel = (extra?: React.CSSProperties): React.CSSProperties => 
   fontWeight: 500,
   letterSpacing: "0.14em",
   textTransform: "uppercase",
-  color: B.ink4,
+  color: B.label,
   ...extra,
 });
 

@@ -894,7 +894,7 @@ ${PLAN_TEXT_CSS}
   font-family: ${B.fontMono};
   font-size: 11.5px;
   letter-spacing: 0.1em;
-  color: ${B.ink4};
+  color: ${B.ink2};
   pointer-events: none;
 }
 .${BODY_CLASS} { padding: clamp(12px, 1.6vw, 20px); }

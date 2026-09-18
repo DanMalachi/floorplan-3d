@@ -274,7 +274,7 @@ export function Hero({ demo }: { demo?: React.ReactNode }) {
         {ANNOUNCEMENT_KEY[stage] ? tHero(ANNOUNCEMENT_KEY[stage]) : ""}
       </div>
 
-      <div style={{ fontFamily: B.fontUi, fontSize: ty.small, color: B.ink4 }}>{hero.note}</div>
+      <div style={{ fontFamily: B.fontUi, fontSize: ty.small, color: B.label }}>{hero.note}</div>
 
       {/* Deliberately unframed. A border, a radius and a shadow would present
           the room as an application docked inside the page — the exact "small

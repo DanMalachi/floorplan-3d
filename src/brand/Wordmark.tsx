@@ -180,7 +180,7 @@ export function WordmarkLockup({
           fontFamily: B.fontMonoLatin,
           fontSize: size * 0.42,
           letterSpacing: "0.06em",
-          color: B.ink4,
+          color: B.label,
         }}
       >
         done.design

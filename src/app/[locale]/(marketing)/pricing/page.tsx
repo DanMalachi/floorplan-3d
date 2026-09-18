@@ -74,7 +74,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
         style={{
           maxWidth: 700,
           margin: "16px auto 0",
-          color: B.ink4,
+          color: B.label,
           fontFamily: B.fontUi,
           fontSize: ty.small,
           lineHeight: 1.55,
@@ -102,7 +102,7 @@ function PlanCard({ plan, notIncluded }: { plan: PricingPlan; notIncluded: strin
         boxShadow: plan.featured ? B.shadow : "none",
       }}
     >
-      <div style={microLabel({ color: plan.featured ? B.accentText : B.ink4 })}>{plan.eyebrow}</div>
+      <div style={microLabel({ color: plan.featured ? B.accentText : B.label })}>{plan.eyebrow}</div>
       <h2
         style={{
           margin: "10px 0 6px",
@@ -122,7 +122,7 @@ function PlanCard({ plan, notIncluded }: { plan: PricingPlan; notIncluded: strin
         <div style={{ color: B.ink, fontFamily: B.fontDisplay, fontSize: "clamp(20px, 2.8vw, 28px)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.035em" }}>
           {plan.price}
         </div>
-        <div style={{ marginTop: 5, color: B.ink4, fontSize: ty.small }}>{plan.priceNote}</div>
+        <div style={{ marginTop: 5, color: B.label, fontSize: ty.small }}>{plan.priceNote}</div>
       </div>
 
       {plan.action.kind === "open-app" ? (
@@ -148,7 +148,7 @@ function PlanCard({ plan, notIncluded }: { plan: PricingPlan; notIncluded: strin
               display: "flex",
               alignItems: "flex-start",
               gap: 10,
-              color: feature.included ? B.ink2 : B.ink4,
+              color: feature.included ? B.ink2 : B.label,
               fontFamily: B.fontUi,
               fontSize: 14.5,
               lineHeight: 1.4,
@@ -159,7 +159,7 @@ function PlanCard({ plan, notIncluded }: { plan: PricingPlan; notIncluded: strin
               style={{
                 flex: "0 0 auto",
                 width: 15,
-                color: feature.included ? B.ink2 : B.ink4,
+                color: feature.included ? B.ink2 : B.label,
                 fontFamily: B.fontUi,
                 fontWeight: 800,
                 textAlign: "center",
