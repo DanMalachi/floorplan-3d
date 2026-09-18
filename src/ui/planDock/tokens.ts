@@ -52,7 +52,7 @@ export const PD = {
 
   textPrimary: v("text-primary", "oklch(0.95 0.006 90)"),
   textSecondary: v("text-secondary", "oklch(0.72 0.012 90)"),
-  textTertiary: v("text-tertiary", "oklch(0.55 0.014 90)"),
+  textTertiary: v("text-tertiary", "oklch(0.63 0.014 90)"), // was 0.55: 3.8:1 at best (P2)
 
   warnBg: v("warn-bg", "oklch(0.32 0.05 75 / 0.55)"),
   warnText: v("warn-text", "oklch(0.82 0.13 75)"),
@@ -61,7 +61,13 @@ export const PD = {
   // Deliberately low-opacity — "more transparent" per review. The scene
   // behind should read through clearly, not just tint.
   glassBg: v("glass-bg", "oklch(0.2 0.014 260 / 0.38)"),
-  glassBlur: v("glass-blur", "blur(20px) saturate(1.3)"),
+  // brightness(0.3) is the legibility half of the recipe: it dims whatever
+  // shows THROUGH the glass, so a bright sky behind a panel can no longer wash
+  // its text out (secondary text was 1.1:1 over daylight). Dark interiors are
+  // already dark and barely change, so the see-through look survives where it
+  // matters. Measured: primary >= 10:1, secondary >= 4.7:1 on any backdrop.
+  // docs/ACCESSIBILITY.md P1.
+  glassBlur: v("glass-blur", "blur(20px) saturate(1.3) brightness(0.3)"),
   glassBorder: v("glass-border", "1px solid oklch(1 0 0 / 0.09)"),
   glassInset: v("glass-inset", "inset 0 1px 0 oklch(1 0 0 / 0.07)"),
   glassShadow: v("glass-shadow", "0 14px 34px -14px oklch(0 0 0 / 0.55)"),

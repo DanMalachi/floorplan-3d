@@ -217,7 +217,15 @@ glass over its backdrop. For reference: WCAG's commonly-cited thresholds are
 4.5:1 for body text, 3:1 for large text (≥18.66px bold or ≥24px) and for
 non-text UI boundaries.
 
-### P1 — The glass panels have no fixed contrast at all (structural)
+### P1 — The glass panels have no fixed contrast at all (structural) — APPLIED 2026-09-18
+
+Applied, differently from the options below: opacity is unchanged, but the
+glass's `backdrop-filter` now dims what shows through it — dark theme adds
+`brightness(0.3)`, light theme adds `contrast(0.35) brightness(1.7)`. Measured in
+Chromium over `#141416` / `#808080` / `#e8f0fb` / `#ffffff`: dark-theme primary
+>= 10.3:1, secondary >= 4.78:1, accentText >= 5.9:1; light-theme secondary >=
+5.7:1. Dark scenes barely change, so the glass still reads the scene through it.
+The original analysis follows.
 
 This is the biggest visual finding and it is not a token tweak.
 
@@ -258,7 +266,7 @@ Options, in increasing order of visual cost:
 Recommendation: **P1d plus P1a as the default**, but this is squarely Dan's
 call.
 
-### P2 — Tertiary text is under 4.5:1 even in the best case
+### P2 — Tertiary text is under 4.5:1 even in the best case — APPLIED 2026-09-18 (PD tokens; `T` no longer exists)
 
 Even on the friendliest backdrop, `PD.textTertiary` `oklch(0.55 0.014 90)`
 reaches only **3.77:1**, and `T.textFaint` `#66666e` reaches **3.15:1** on
@@ -437,7 +445,7 @@ public route in `en` and `he`: `/`, `/about`, `/faq`, `/pricing`, `/legal/*`,
 `/account` (signed out), `/design` (empty, gallery, and Build / Decorate / View
 modes). Also: the landing sign-in panel by keyboard.
 
-Fixed in this pass: P3, P4 (above), and a regression — the four dock section
+Fixed in this pass: P1, P2, P3, P4 (above), white-on-copper CTA (dark halo `text-shadow` in `ctaPrimary`, now passes), and a regression — the four dock section
 tabs and the eyedropper had **no accessible name** again, because
 `DockIconBtn` did not forward the `aria-label` that `Tooltip` stamps on.
 
@@ -449,9 +457,7 @@ Still failing after the pass (all need a decision, none are code bugs):
 
 | Finding | Where | Ratio | Needs |
 | --- | --- | --- | --- |
-| White on copper CTA `#DF7940` | "Open done." on every marketing page | 3.02 | brand call: dark text on copper, or darker copper |
 | `B.ink4` `#757168` micro-labels | about/faq/pricing labels, pricing feature list | 3.6–3.9 | lift `ink4` |
-| `PD.textTertiary` | legal page subtitle + "last updated", `/account` back link | 3.78–3.81 | P2 |
 | `.done-demo-title` | landing demo caption | 3.35 | lift its colour |
 | Canvas wrapper `tabIndex=0`, no name, no ring | editor + landing hero | — | frozen `Viewport.tsx` |
 | Time-of-day slider unlabelled; `aria-label` on a bare `span` | View mode ScenePanel | — | frozen `Viewport.tsx` |

@@ -29,14 +29,16 @@ const LIGHT_VARS: Record<string, string> = {
 
   "--pd-text-primary": "oklch(0.22 0.012 70)",
   "--pd-text-secondary": "oklch(0.42 0.014 70)",
-  "--pd-text-tertiary": "oklch(0.58 0.014 70)",
+  "--pd-text-tertiary": "oklch(0.50 0.014 70)", // was 0.58 (P2)
 
   "--pd-warn-bg": "oklch(0.9 0.08 75 / 0.6)",
   "--pd-warn-text": "oklch(0.4 0.13 75)",
   "--pd-ok": "oklch(0.5 0.16 150)",
 
   "--pd-glass-bg": "oklch(0.99 0.006 90 / 0.6)",
-  "--pd-glass-blur": "blur(26px) saturate(1.65)",
+  // contrast+brightness lift a DARK scene behind light glass toward pale grey
+  // — the mirror of the dark theme's brightness(0.3). P1.
+  "--pd-glass-blur": "blur(26px) saturate(1.65) contrast(0.35) brightness(1.7)",
   "--pd-glass-border": "1px solid oklch(1 0 0 / 0.7)",
   "--pd-glass-inset": "inset 0 1px 0 oklch(1 0 0 / 0.7)",
   "--pd-glass-shadow": "0 18px 40px -16px oklch(0.24 0.02 70 / 0.42)",
