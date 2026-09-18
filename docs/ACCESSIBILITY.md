@@ -508,6 +508,30 @@ Fixed (all verified in a production build, en + he, both themes):
 Still open: `ink4` / `.done-demo-title` (decision pending), and none of this
 was checked with a screen reader.
 
+## Israeli-law compliance pass, 2026-09-18 (branch `fix/a11y-compliance`)
+
+Checked `c300d8d` against the service-accessibility regulations (reg. 35: IS
+5568 = WCAG 2.0 AA, plus a published statement). Fixed, verified on a
+production build (`next start`, en + he, axe WCAG 2.0/2.1 A+AA):
+
+| Finding | Fix | Verified |
+| --- | --- | --- |
+| Statement (`/legal/accessibility`) still described the 2026-08-24 code audit: "no automated test", glass contrast failing, 3D camera ignoring reduced motion | Sections 2–3 rewritten from this doc, he + en; still no conformance claim | renders, axe clean |
+| Editor had no route to the statement (only marketing/legal footers) | "Accessibility statement" link in the Projects gallery header, new tab (autosave) | in Tab order, `/he/legal/accessibility` |
+| Project card was `role="button"` containing delete/rename buttons (4.1.2 nested-interactive) | Real `<button>` stretched under the card content; rename/delete/badges lifted above it; ring drawn inside the clipped tile | axe clean; Enter opens; delete/rename still hit-test to themselves |
+| Dock `ItemCard` variant dots were `role="button"` spans inside the card `<button>` (Known gap 1) | Dots are real buttons laid over a spacer row, outside the card button | typecheck only — **no catalog item has a `variantKey` since the IKEA removal, so this path renders nowhere today** |
+| `/account` entirely English on /he (3.1.2 language of parts) | `accountPage.*` messages, he + en; email field + value `dir=ltr` | /he text Hebrew, axe clean (signed-out state only) |
+| Live-room chrome (share popover, role rows, "N here", Save a copy, mode chips) English on /he; "Copied" silent (Known gap 7) | `collabRoom.*` messages; `role="status"` echo of Copied; server mint error logged, localized line shown | typecheck; room not opened in a browser |
+| Legal nav `aria-label="Legal"` English on /he | `footer.legal` | "מידע משפטי" |
+
+Open, waiting on Dan (visual): `ink4` micro-labels 3.6–3.9, `.done-demo-title`
+3.35, homepage rotating headline has no pause (2.2.2, level A). Listed in the
+statement's "not yet accessible" until decided.
+
+Open, product scope: keyboard/screen-reader operation of the 3D editing itself
+(2.1.1). The statement discloses it; closing it is a feature (see "The 3D
+canvas" above), not an audit fix.
+
 ## How to re-audit
 
 Nothing below was run for this pass. It is what the next person should do.

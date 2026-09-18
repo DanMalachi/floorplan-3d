@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useSession, displayName } from "@/lib/auth/useSession";
 import { wipeLocalData } from "@/store/projectPersistence";
@@ -44,6 +44,7 @@ interface StageReport {
 
 export default function AccountPage() {
   const locale = useLocale();
+  const t = useTranslations("accountPage");
   const { user, loading, configured, signOut } = useSession();
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [typed, setTyped] = useState("");
@@ -108,7 +109,7 @@ export default function AccountPage() {
       // server, and sign them out of the account they need in order to retry.
       if (!res.ok || !report?.ok) {
         throw new Error(
-          report?.stages?.find((s) => !s.ok)?.detail ?? "Deletion failed. Nothing was removed from this browser.",
+          report?.stages?.find((s) => !s.ok)?.detail ?? t("deleteFailed"),
         );
       }
       await wipeLocalData();
@@ -122,7 +123,7 @@ export default function AccountPage() {
     } finally {
       setBusy(null);
     }
-  }, [typed, signOut]);
+  }, [typed, signOut, t]);
 
   const expected = (user?.email ?? "DELETE").trim();
   const armed = typed.trim().toLowerCase() === expected.toLowerCase();
@@ -151,58 +152,52 @@ export default function AccountPage() {
       <PdThemeStyle />
       <div style={{ maxWidth: 660, margin: "0 auto", display: "grid", gap: 18 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: PD.textPrimary, margin: 0 }}>Your data</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: PD.textPrimary, margin: 0 }}>{t("title")}</h1>
           <BackToPlans />
         </div>
 
-        {!configured && <Card>Accounts are not configured on this deployment. Nothing is stored on a server.</Card>}
-        {configured && loading && <Card>Loading…</Card>}
-        {configured && !loading && !user && <Card>Sign in from the editor to see and manage the data on your account.</Card>}
+        {!configured && <Card>{t("notConfigured")}</Card>}
+        {configured && loading && <Card>{t("loading")}</Card>}
+        {configured && !loading && !user && <Card>{t("signedOut")}</Card>}
 
         {user && (
           <>
             <Card>
-              <Label>Account</Label>
-              <Row k="Signed in as" v={`${displayName(user)}${user.email ? ` · ${user.email}` : ""}`} />
-              <Row k="Sign-in method" v="Google" />
-              {info?.account.created_at && <Row k="Account created" v={new Date(info.account.created_at).toLocaleString(locale)} />}
+              <Label>{t("accountHeading")}</Label>
+              <Row k={t("signedInAs")} v={`${displayName(user)}${user.email ? ` · ${user.email}` : ""}`} />
+              <Row k={t("signInMethod")} v="Google" />
+              {info?.account.created_at && <Row k={t("accountCreated")} v={new Date(info.account.created_at).toLocaleString(locale)} />}
             </Card>
 
             <Card>
-              <Label>What this account holds</Label>
+              <Label>{t("holdsHeading")}</Label>
               {info ? (
                 <>
-                  <Row k="Plans synced to the cloud" v={String(info.holdings.projects)} />
+                  <Row k={t("plansSynced")} v={String(info.holdings.projects)} />
                   {info.holdings.pendingPurge > 0 && (
-                    <Row k="Deleted plans awaiting purge" v={String(info.holdings.pendingPurge)} />
+                    <Row k={t("pendingPurge")} v={String(info.holdings.pendingPurge)} />
                   )}
-                  <Row k="Shared live rooms" v={String(info.holdings.liveRooms)} />
+                  <Row k={t("liveRooms")} v={String(info.holdings.liveRooms)} />
                   <Row
-                    k="Uploaded images + thumbnails"
+                    k={t("uploads")}
                     v={
                       info.holdings.storageError
-                        ? `couldn't read storage (${info.holdings.storageError})`
-                        : `${info.holdings.files} file(s) · ${formatBytes(info.holdings.bytes)}`
+                        ? t("storageError", { detail: info.holdings.storageError })
+                        : t("filesSummary", { count: info.holdings.files, size: formatBytes(info.holdings.bytes) })
                     }
                   />
                 </>
               ) : (
-                <Row k="Loading…" v="" />
+                <Row k={t("loading")} v="" />
               )}
-              <Note>
-                Plans you never signed in with stay in this browser only and are not counted here — deleting your
-                account removes those too.
-              </Note>
+              <Note>{t("localPlansNote")}</Note>
             </Card>
 
             <Card>
-              <Label>Download a copy</Label>
-              <Note>
-                One JSON file with your profile, every plan&apos;s geometry, and the plan images and thumbnails
-                themselves, inlined. Large accounts take a moment — the images are included in full, not linked.
-              </Note>
+              <Label>{t("exportHeading")}</Label>
+              <Note>{t("exportNote")}</Note>
               <ActionButton onClick={() => void onExport()} disabled={busy !== null} dim={busy === "export"}>
-                {busy === "export" ? "Preparing…" : "Export my data"}
+                {busy === "export" ? t("exportBusy") : t("exportButton")}
               </ActionButton>
             </Card>
 
@@ -215,40 +210,36 @@ export default function AccountPage() {
                 border: `1px solid ${PD.warnText}`,
               }}
             >
-              <Label>Delete account and data</Label>
+              <Label>{t("deleteHeading")}</Label>
               {done ? (
                 // The page then reloads on a 1.5s timer, so this sentence is
                 // the only confirmation there will ever be that an
                 // irreversible action succeeded. It has to be announced.
-                <Note role="status">Your account and its data have been deleted. Signing you out…</Note>
+                <Note role="status">{t("deleted")}</Note>
               ) : info && !info.deletionAvailable ? (
-                <Note>
-                  Deletion is not available on this deployment: the server has no <code>SUPABASE_SERVICE_ROLE_KEY</code>,
-                  so the sign-in itself could not be removed. Rather than half-delete your account, the button is
-                  withheld.
-                </Note>
+                <Note>{t.rich("deletionUnavailable", { code: (c) => <code>{c}</code> })}</Note>
               ) : (
                 <>
-                  <Note>This cannot be undone. There is no backup to restore from. It removes:</Note>
+                  <Note>{t("deleteIntro")}</Note>
                   <ul style={{ margin: 0, paddingInlineStart: 18, color: PD.textSecondary, fontSize: 12.5, lineHeight: 1.7 }}>
-                    <li>every plan on your account, and its geometry</li>
-                    <li>every plan image and thumbnail you have uploaded</li>
-                    <li>
-                      every shared live room you own — <strong>share links you have sent will stop working</strong> for
-                      the people you sent them to
-                    </li>
-                    <li>your Google sign-in for this app</li>
-                    <li>
-                      <strong>every plan stored in this browser</strong>, including ones you made before signing in and
-                      never synced
-                    </li>
+                    <li>{t("removesPlans")}</li>
+                    <li>{t("removesImages")}</li>
+                    <li>{t.rich("removesRooms", { strong: (c) => <strong>{c}</strong> })}</li>
+                    <li>{t("removesSignIn")}</li>
+                    <li>{t.rich("removesLocal", { strong: (c) => <strong>{c}</strong> })}</li>
                   </ul>
-                  <Note>
-                    What it cannot remove: if you shared a plan, that person&apos;s own copy lives in their browser and,
-                    if they are signed in, on their own account. It is their data now and we have no way to reach it.
-                  </Note>
+                  <Note>{t("cannotRemove")}</Note>
                   <Note id="fp-delete-confirm-hint">
-                    Type <strong style={{ color: PD.textPrimary }}>{expected}</strong> to confirm.
+                    {t.rich("typeToConfirm", {
+                      value: expected,
+                      // bdi: an email address is LTR; in the Hebrew sentence it
+                      // would otherwise have its punctuation reordered.
+                      strong: (c) => (
+                        <strong style={{ color: PD.textPrimary }}>
+                          <bdi dir="ltr">{c}</bdi>
+                        </strong>
+                      ),
+                    })}
                   </Note>
                   <input
                     value={typed}
@@ -258,7 +249,9 @@ export default function AccountPage() {
                     // label at all — only a placeholder, which vanishes on the
                     // first keystroke. The instruction above it is now wired in
                     // as the field's description as well.
-                    aria-label="Type your email address to confirm account deletion"
+                    aria-label={t("confirmFieldLabel")}
+                    // An email address: typed LTR even on /he.
+                    dir="ltr"
                     aria-describedby="fp-delete-confirm-hint"
                     autoComplete="off"
                     spellCheck={false}
@@ -278,7 +271,7 @@ export default function AccountPage() {
                     dim={!armed || busy !== null}
                     extra={{ color: armed ? PD.warnText : PD.textTertiary }}
                   >
-                    {busy === "delete" ? "Deleting…" : "Permanently delete my account and data"}
+                    {busy === "delete" ? t("deleteBusy") : t("deleteButton")}
                   </ActionButton>
                 </>
               )}
@@ -309,15 +302,14 @@ export default function AccountPage() {
                             {s.ok ? <CheckIcon size={11} /> : <CloseIcon size={11} />}
                           </span>
                           <span>
-                            <span className="fp-sr-only">{s.ok ? "Succeeded:" : "Failed:"}</span> {s.stage}: {s.detail}
+                            <span className="fp-sr-only">{s.ok ? t("stageOk") : t("stageFailed")}</span> {s.stage}: {s.detail}
                           </span>
                         </li>
                       ))}
                     </ul>
                   )}
                   <div style={{ marginTop: 6 }}>
-                    Nothing was removed from this browser. Retrying is safe — every step that already succeeded is
-                    skipped.
+                    {t("retryNote")}
                   </div>
                 </div>
               )}
@@ -407,6 +399,7 @@ function ActionButton({
 
 /** Back to the editor. */
 function BackToPlans() {
+  const t = useTranslations("accountPage");
   const [hovered, hoverBind] = useHover();
   return (
     <Link
@@ -422,7 +415,7 @@ function BackToPlans() {
         transition: "color 140ms ease",
       }}
     >
-      <ChevronLeftIcon size={13} aria-hidden /> Back to plans
+      <ChevronLeftIcon size={13} aria-hidden /> {t("backToPlans")}
     </Link>
   );
 }

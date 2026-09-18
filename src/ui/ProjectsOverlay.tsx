@@ -251,7 +251,10 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
             </span>
           </div>
         </div>
-        <CloseButton onClose={onClose} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <AccessibilityLink />
+          <CloseButton onClose={onClose} />
+        </div>
       </div>
 
       {/* grid */}
@@ -308,7 +311,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                     // glyph, not the `▱` character it replaces.
                     <PlanMapIcon size={30} strokeWidth={1.35} style={{ color: PD.textTertiary }} />
                   )}
-                  <div style={{ position: "absolute", top: 8, insetInlineStart: 8, display: "flex", gap: 6 }}>
+                  <div style={{ position: "absolute", top: 8, insetInlineStart: 8, zIndex: 2, display: "flex", gap: 6 }}>
                     {isCurrent && (
                       <span
                         style={{
@@ -400,6 +403,7 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         fontFamily: PD.fontUi,
                         width: "100%",
                         boxSizing: "border-box",
+                        ...CARD_ABOVE,
                       }}
                     />
                   ) : (
@@ -472,6 +476,36 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** The accessibility statement, reachable from inside the editor. Israeli
+ *  service-accessibility regs (reg. 35) want the statement findable from the
+ *  service itself, and the editor has no footer — the gallery is its front
+ *  door. A new tab, for the same reason as BackToSite's full load: leaving in
+ *  place would unmount the editor before autosave flushes. */
+function AccessibilityLink() {
+  const t = useTranslations("editor.chrome");
+  const [hov, bind] = useHover();
+  const locale = useLocale();
+  return (
+    // eslint-disable-next-line @next/next/no-html-link-for-pages
+    <a
+      href={localePath(locale, "/legal/accessibility")}
+      target="_blank"
+      rel="noopener"
+      {...bind}
+      style={{
+        fontSize: 12.5,
+        fontFamily: PD.fontUi,
+        color: hov ? PD.textPrimary : PD.textSecondary,
+        textDecoration: "underline",
+        textUnderlineOffset: 2,
+        transition: pdHoverTransition(hov),
+      }}
+    >
+      {t("projectsOverlay.accessibilityLink")}
+    </a>
+  );
+}
+
 /** The dashed "New plan" tile. It already declared a border-color/color
  *  transition and had nothing to trigger it. */
 function NewPlanTile({ onClick }: { onClick: () => void }) {
@@ -505,9 +539,15 @@ function NewPlanTile({ onClick }: { onClick: () => void }) {
 
 /** A project card. The whole tile is the click target, so the whole tile is
  *  what has to answer the cursor — and, since the gallery is the only way to
- *  reach any saved plan, the keyboard too. It cannot be a `<button>` because
- *  it contains its own buttons (delete, rename) and a text input, so
- *  `role="button"` plus a key handler is the correct shape here. */
+ *  reach any saved plan, the keyboard too.
+ *
+ *  The tile itself cannot be a button: it contains its own buttons (delete,
+ *  rename) and a text input, and a `role="button"` wrapping other controls is
+ *  nested-interactive (WCAG 4.1.2 — screen readers flatten or skip the inner
+ *  buttons). So the keyboard/AT target is a real `<button>` stretched over the
+ *  tile underneath the content; the tile keeps the mouse click, which the
+ *  button's own click bubbles into. Anything else clickable inside the card
+ *  must sit above it — see `CARD_ABOVE`. */
 function ProjectCard({
   isCurrent,
   onClick,
@@ -530,19 +570,8 @@ function ProjectCard({
     <div
       onClick={onClick}
       {...bind}
-      role="button"
-      tabIndex={keyboardDisabled ? -1 : 0}
-      aria-label={ariaLabel}
-      onKeyDown={(e) => {
-        if (keyboardDisabled) return;
-        if (e.key !== "Enter" && e.key !== " ") return;
-        // Only the card itself; a key press inside the delete or rename
-        // button belongs to that button.
-        if (e.target !== e.currentTarget) return;
-        e.preventDefault();
-        onClick();
-      }}
       style={{
+        position: "relative",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
@@ -555,10 +584,35 @@ function ProjectCard({
         }),
       }}
     >
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        // While renaming, Enter belongs to the rename input, and the input
+        // already has its own tab stop.
+        tabIndex={keyboardDisabled ? -1 : 0}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+          margin: 0,
+          padding: 0,
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+          // The tile clips overflow, so the global 2px-outside ring would be
+          // cut off; draw it just inside the tile's edge instead.
+          outlineOffset: -3,
+          borderRadius: "inherit",
+        }}
+      />
       {children}
     </div>
   );
 }
+
+/** Lifts a control inside a ProjectCard above the card's stretched button, so
+ *  it gets its own clicks, hovers and tooltips. */
+const CARD_ABOVE: React.CSSProperties = { position: "relative", zIndex: 2 };
 
 /** Delete, over the thumbnail. Red on hover — it is the one destructive
  *  control in the gallery and should say so before it is clicked.
@@ -571,7 +625,7 @@ function DeleteButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   const [hov, bind] = useHover();
   const label = t("projectsOverlay.deleteLabel");
   return (
-    <div style={{ position: "absolute", top: 8, insetInlineEnd: 8 }}>
+    <div style={{ position: "absolute", top: 8, insetInlineEnd: 8, zIndex: 2 }}>
       <Tooltip label={label} placement="bottom">
         <button
           onClick={onClick}
@@ -614,6 +668,7 @@ function RenameButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
           padding: 3,
           flexShrink: 0,
           color: hov ? PD.textPrimary : PD.textTertiary,
+          ...CARD_ABOVE,
         })}
       >
         <PencilIcon size={13} />

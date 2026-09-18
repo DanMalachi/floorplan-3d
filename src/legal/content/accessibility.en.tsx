@@ -39,11 +39,19 @@ export function AccessibilityEn() {
         <li style={legalLi}>
           Every button and control on the site and in the editor has an
           accessible name a screen reader can announce, including icon-only
-          buttons.
+          buttons &mdash; in Hebrew on the Hebrew site.
         </li>
         <li style={legalLi}>
-          The project gallery, the illustrated navigators, panels and popovers
-          can be operated from the keyboard.
+          Everything around the 3D view &mdash; the project gallery, the
+          illustrated navigators, panels, dialogs, sharing and the account
+          page &mdash; can be operated from the keyboard, shows a visible focus
+          indicator, and never traps the keyboard.
+        </li>
+        <li style={legalLi}>
+          The 3D view can be reached with the keyboard, is named for screen
+          readers, and announces its keyboard controls: moving and orbiting
+          the camera, top view, framing, and rotating, deleting and deselecting
+          a selected item.
         </li>
         <li style={legalLi}>
           Selected state is exposed to assistive technology, not shown by colour
@@ -54,24 +62,44 @@ export function AccessibilityEn() {
           their labels.
         </li>
         <li style={legalLi}>
-          Interface animations are reduced or removed for anyone who has asked
-          their operating system for less motion.
+          Text in the editor&rsquo;s panels meets a 4.5:1 contrast ratio in both
+          the dark and light themes, including over the brightest parts of the
+          3D image. This was measured on the rendered screen.
         </li>
-        <li style={legalLi}>The Service is available in Hebrew (right-to-left) and English.</li>
+        <li style={legalLi}>
+          The site and the editor can be zoomed to 200% without controls
+          overlapping or disappearing.
+        </li>
+        <li style={legalLi}>
+          For anyone who has asked their operating system for less motion,
+          interface animations are removed, camera moves in the 3D view jump
+          instead of gliding, and the homepage demo shows the finished room
+          without animating. The demo&rsquo;s rotation can also be paused.
+        </li>
+        <li style={legalLi}>
+          Tooltips can be dismissed with the Escape key.
+        </li>
+        <li style={legalLi}>
+          The Service is available in Hebrew (right-to-left) and English, and
+          measurements read in the right order in both.
+        </li>
       </ul>
 
       <h2 style={legalH2}>3. What is not yet accessible</h2>
       <ul style={legalUl}>
         <li style={legalLi}>
-          <b>The 3D model itself.</b> Drawing walls, selecting, dragging and
+          <b>Editing the 3D model.</b> Drawing walls, selecting, dragging and
           rotating items, and the walkthrough are done with a mouse or touch on
           a graphical view. They currently have no screen-reader or full
           keyboard alternative.
         </li>
         <li style={legalLi}>
-          <b>Contrast.</b> The editor&rsquo;s semi-transparent panels sit over
-          the 3D image, so their text contrast varies and can fall below the
-          required level. Light secondary text is also below 4.5:1.
+          <b>Contrast.</b> Some small grey labels on the About, FAQ and Pricing
+          pages, and the caption under the homepage demo, are below the 4.5:1
+          contrast ratio.
+        </li>
+        <li style={legalLi}>
+          The rotating headline on the homepage cannot be paused.
         </li>
         <li style={legalLi}>
           <b>Single-key shortcuts</b> cannot be turned off or remapped.
@@ -84,13 +112,14 @@ export function AccessibilityEn() {
           screen readers, and some popovers do not behave as full menus.
         </li>
         <li style={legalLi}>
-          Motion inside the 3D view (camera moves, walkthrough, weather) does
-          not follow the reduced-motion setting.
+          The walkthrough, rain and time-of-day animation in the 3D view do not
+          yet follow the reduced-motion setting.
         </li>
         <li style={legalLi}>
           The Service has not yet been tested with screen readers (NVDA, JAWS,
-          VoiceOver), with full keyboard testing in a browser, or with an
-          automated checker. The review so far was a code review.
+          VoiceOver). It has been checked with an automated accessibility
+          checker (axe, WCAG 2.0 and 2.1 A/AA) and with a keyboard walk-through
+          of every public page in Hebrew and English.
         </li>
       </ul>
       <p style={legalP}>
