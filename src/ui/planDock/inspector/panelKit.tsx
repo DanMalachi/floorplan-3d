@@ -8,6 +8,7 @@
 // file builds its layout out of these instead of hand-rolling styles.
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { PD, pdGlass, pdChip } from "../tokens";
 import { useHover } from "../useHover";
 import { Tooltip } from "../Tooltip";
@@ -72,7 +73,7 @@ export const pdInspectorRow: React.CSSProperties = {
  *  `label`, not `title`: this is the heading you can read on screen, and while
  *  it shared a prop name with the controls' hover text there was no way to grep
  *  the difference. */
-export function PdSectionTitle({ label, meta }: { label: string; meta?: string }) {
+export function PdSectionTitle({ label, meta }: { label: ReactNode; meta?: ReactNode }) {
   return (
     <div style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>
       {label}
@@ -125,7 +126,12 @@ export function PdNumField({
   return (
     <label style={pdInspectorRow}>
       <span style={{ color: PD.textSecondary }}>{label}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      {/* `<bdi dir="ltr">`, not a plain `<span>`: in Hebrew this row's two
+          children (the number box, then the unit) render in visual order
+          "unit, number" unless isolated as its own left-to-right run — the
+          exact "2.00 m" -> "m 2.00" bug Dan flagged. `bdi` keeps the input
+          and unit box-identical; only the direction changes. */}
+      <bdi dir="ltr" style={{ display: "flex", alignItems: "center", gap: 5 }}>
         <input
           value={raw}
           disabled={disabled}
@@ -155,7 +161,7 @@ export function PdNumField({
           }}
         />
         <span style={{ color: PD.textTertiary, fontSize: 11 }}>{unit}</span>
-      </span>
+      </bdi>
     </label>
   );
 }
@@ -263,6 +269,13 @@ export function PdStepper({
   max?: number;
   onSet: (v: number) => void;
 }) {
+  // Top-level `editor` namespace, not this section's own — every *Section.tsx
+  // file that renders a PdStepper (Opening, Parametric) has a different
+  // namespace loaded as `t`, so this shared control carries its own two keys
+  // instead of asking every caller to supply "Decrease {label}" text. Full
+  // templated strings, not `Decrease ${label}` concatenation — Hebrew doesn't
+  // put the verb first.
+  const t = useTranslations("editor");
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
   return (
     // Not a <label>: a label may only be associated with ONE form control, and
@@ -274,11 +287,11 @@ export function PdStepper({
     <div role="group" aria-label={label} style={pdInspectorRow}>
       <span style={{ color: PD.textSecondary }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <PdStepBtn ariaLabel={`Decrease ${label.toLowerCase()}`} onClick={() => onSet(clamp(value - 1))}>–</PdStepBtn>
+        <PdStepBtn ariaLabel={t("decreaseLabel", { label: label.toLowerCase() })} onClick={() => onSet(clamp(value - 1))}>–</PdStepBtn>
         <span aria-live="polite" style={{ minWidth: 14, textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: PD.fontMono }}>
           {value}
         </span>
-        <PdStepBtn ariaLabel={`Increase ${label.toLowerCase()}`} onClick={() => onSet(clamp(value + 1))}>+</PdStepBtn>
+        <PdStepBtn ariaLabel={t("increaseLabel", { label: label.toLowerCase() })} onClick={() => onSet(clamp(value + 1))}>+</PdStepBtn>
       </span>
     </div>
   );

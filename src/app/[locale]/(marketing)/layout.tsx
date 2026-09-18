@@ -69,6 +69,14 @@ export default async function MarketingLayout({
         // The global focus ring (globals.css) in the brand copper, not the
         // editor's blue.
         ["--fp-focus" as string]: B.accent,
+        // At narrow widths the fixed cookie notice (ConsentNotice.tsx,
+        // mounted once at the root layout) sits over the bottom of the page
+        // and can cover the last CTA until it's dismissed. ConsentNotice
+        // keeps `--consent-h` on `documentElement` in sync with its own
+        // rendered height (0 whenever it isn't on screen), so reserving that
+        // much space at the bottom here just pushes the real content — the
+        // last section's CTA included — up above it instead of behind it.
+        paddingBottom: "var(--consent-h, 0px)",
       }}
     >
       {/* The brand palette. Inline <style> is already sanctioned by the CSP

@@ -13,6 +13,7 @@
 // this host renders in the DOM overlay beside PdToastHost.
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PD, pdGlass, pdIconBtn } from "./tokens";
 import { useHover } from "./useHover";
 import { CloseIcon } from "./icons";
@@ -46,6 +47,7 @@ export function setCameraOffer(o: CameraOffer | null) {
  *  2.2s and ignores the pointer, and this one has to persist and be clickable.
  *  Sibling, not variant. */
 export function CameraOfferChip() {
+  const t = useTranslations("editor.cameraOffer");
   const [offer, setOffer] = useState<CameraOffer | null>(current);
   // Two independent flags rather than one per-button component: this chip
   // renders nothing but the two buttons, so a re-render here is the buttons.
@@ -139,8 +141,8 @@ export function CameraOfferChip() {
           ⏎
         </kbd>
       </button>
-      <Tooltip label="Dismiss">
-        <button {...dismissHover} onClick={offer.dismiss} aria-label="Dismiss" style={pdIconBtn(false, 26, dismissHovered)}>
+      <Tooltip label={t("dismiss")}>
+        <button {...dismissHover} onClick={offer.dismiss} aria-label={t("dismiss")} style={pdIconBtn(false, 26, dismissHovered)}>
           <CloseIcon size={13} />
         </button>
       </Tooltip>

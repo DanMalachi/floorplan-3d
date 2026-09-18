@@ -47,15 +47,27 @@ export const PD = {
   // 0.55 (was 0.62): white label text on the accent fill (Go live, the
   // gallery badge) reaches ~4.6:1 instead of 3.68:1. docs/ACCESSIBILITY.md P3.
   accent: v("accent", "oklch(0.55 0.15 258)"),
-  accentText: v("accent-text", "oklch(0.82 0.11 258)"),
-  accentTint: v("accent-tint", "oklch(0.62 0.15 258 / 0.22)"),
+  // Blue text and the tint behind it are tuned as a PAIR (Dan, 2026-09-18:
+  // glass stays as it is; make the text near-white and the blue less
+  // transparent). The old tint (0.62 / 0.22) was LIGHTER than the glass over a
+  // bright wall, so the blue labels on it ("Custom", the selected chip) fell to
+  // 2.96:1. A deeper, more opaque tint (0.45 / 0.65) under 0.9 text passes in
+  // rendered pixels over the normal scene, a whitened backdrop and a black
+  // one. 0.9 not 0.88: at 0.88 the blue status line ("wall selected — …"),
+  // which sits on bare glass, measured 4.45:1 over a bright wall. Making the
+  // OLD tint more opaque made things worse (2.43:1).
+  accentText: v("accent-text", "oklch(0.9 0.11 258)"),
+  accentTint: v("accent-tint", "oklch(0.45 0.15 258 / 0.65)"),
 
-  // Near-white on purpose (Dan, 2026-09-18: "more white, it reads greyish").
-  // The glass is see-through, so the TEXT has to carry the contrast — the
-  // hierarchy is kept by the gaps between the three, not by grey-ness.
+  // Near-white on purpose (Dan, 2026-09-18: "more white, it reads greyish",
+  // then again after the a11y review: glass unchanged, text near-white).
+  // The glass is see-through, so the TEXT has to carry the contrast. Worst
+  // case (a bright wall filling the view behind a panel), measured in pixels
+  // with the halo: secondary 4.69:1, tertiary 4.82:1. At the old 0.88 / 0.76
+  // they were 4.0 / 3.0. The hierarchy now rests on size and weight.
   textPrimary: v("text-primary", "oklch(0.985 0.004 90)"),
-  textSecondary: v("text-secondary", "oklch(0.88 0.008 90)"),
-  textTertiary: v("text-tertiary", "oklch(0.76 0.01 90)"),
+  textSecondary: v("text-secondary", "oklch(0.93 0.008 90)"),
+  textTertiary: v("text-tertiary", "oklch(0.9 0.01 90)"),
 
   warnBg: v("warn-bg", "oklch(0.32 0.05 75 / 0.55)"),
   warnText: v("warn-text", "oklch(0.82 0.13 75)"),

@@ -478,6 +478,36 @@ and ringed. The reduced-motion camera path was NOT exercised in a browser.
 Not covered: a loaded plan (inspector, selection), live rooms, signed-in
 `/account`, light theme, mobile width, any screen reader.
 
+## Interface review and fixes, 2026-09-18 (later)
+
+A second pass that also covered a selected wall (inspector), light theme,
+Hebrew/RTL, widths 320–1280 and 200% zoom. Glass contrast was measured in
+rendered pixels with the text halo KEPT: glyph pixels are found by diffing
+text-on against text-off, and compared with the 3px ring around them. Every
+backdrop was measured three ways: the scene as rendered, the canvas whitened
+(a bright wall filling the view) and the canvas blacked out.
+
+Fixed (all verified in a production build, en + he, both themes):
+
+| Finding | Fix | Measured after |
+| --- | --- | --- |
+| Editor top bar: below ~810px (1440 laptop at 200% zoom) Sign in covered the View tab | Sign-in pill collapses to its G icon below 840px (`AccountMenu.tsx`, derivation in comment) | No overlap 720–1280px, Trace + Build, en + he |
+| Light tertiary text 3.85:1 (P2's arithmetic said 5.6) | `--pd-text-tertiary` 0.50→0.46, `--pd-accent-text` 0.42→0.38 | ≥4.58:1 worst backdrop |
+| Dark theme over a bright wall: tertiary 3.0, secondary 4.0, blue labels 2.96 | Dan's call: glass unchanged; text near-white (secondary 0.93, tertiary 0.90); blue tint deeper and more opaque (0.45 / 0.65) with blue text 0.90. A more opaque tint at the OLD lightness made it worse (2.43:1) | 0 runs under 4.5:1 on any backdrop |
+| Status line used `PD.accent` (a fill) as text, 3.92:1 | `PD.accentText` (`Viewport.tsx`, approved exception) | passes |
+| Sign-in error echoed `?authError=` text (spoofable, English on /he, no recovery) | Fixed codes only; localized message, Try again + dismiss; raw text to the server log | crafted text no longer renders |
+| Pricing "not included" marker was aria-hidden | `fp-sr-only` "Not included:" | read in the accessibility tree |
+| `Tooltip` replaced visible labels ("Go live" was named "Turn this into…") | A tooltip that does not START WITH the visible text becomes `aria-describedby`; Escape dismisses (1.4.13) | 0 label-in-name mismatches |
+| English accessible names on /he (theme toggle, "Selected:", steppers, …) | Moved to messages (en/he parity 825 keys) | 0 English names in a /he walk |
+| "2.00 m" rendered "m 2.00" in RTL | `<bdi dir="ltr">` / isolate in inspector and 3D labels; units localized | — |
+| "1:00 PM" and ⌘Z on /he and Windows | 24-hour on he; Ctrl on non-Mac | — |
+| Dock card text 7.5–9.5px | Names 11, kind 10, badge 10, count 11; cards 68→76px wide | — |
+| Navigator hotspots under 24×24 | Hit pads grown to ≥24px; kitchen art + clock capped at ~21/19px wide to avoid overlapping | — |
+| Cookie notice covered content at 320px | `--consent-h` reserved as bottom padding on marketing + legal | — |
+
+Still open: `ink4` / `.done-demo-title` (decision pending), and none of this
+was checked with a screen reader.
+
 ## How to re-audit
 
 Nothing below was run for this pass. It is what the next person should do.

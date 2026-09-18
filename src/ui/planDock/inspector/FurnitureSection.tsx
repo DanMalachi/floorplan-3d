@@ -19,6 +19,8 @@ import { VariantSwatchRow } from "./VariantSwatchRow";
 
 export function FurnitureSection({ item }: { item: FurnitureItem }) {
   const locale = useLocale();
+  const te = useTranslations("editor");
+  const tu = useTranslations("editor.units");
   const tp = useTranslations("editor.parametric");
   const tt = useTranslations("editor.toast");
   const spec = specOf(item);
@@ -46,7 +48,7 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
   return (
     // A labelled region, so the panel that appears on selection is findable by
     // landmark rather than only by tabbing past everything above it.
-    <div role="region" aria-label={`Selected: ${spec?.name ?? item.assetId}`} style={pdInspectorPanel}>
+    <div role="region" aria-label={te("selectedRegionLabel", { name: spec?.name ?? item.assetId })} style={pdInspectorPanel}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <div
           style={{
@@ -86,7 +88,12 @@ export function FurnitureSection({ item }: { item: FurnitureItem }) {
       </div>
 
       <div style={{ fontSize: 11.5, color: PD.textSecondary }}>
-        {spec ? `${spec.footprint.w} × ${spec.footprint.d} m · ` : ""}
+        {spec && (
+          <>
+            <bdi dir="ltr">{`${spec.footprint.w} × ${spec.footprint.d} ${tu("m")}`}</bdi>
+            {" · "}
+          </>
+        )}
         {deg}°
       </div>
 

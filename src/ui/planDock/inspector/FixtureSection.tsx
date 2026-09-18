@@ -15,6 +15,7 @@ import { pdInspectorPanel, PdHelpText, PdRangeRow } from "./panelKit";
 
 export function FixtureSection({ item }: { item: FixtureItem }) {
   const t = useTranslations("editor.inspector.fixture");
+  const te = useTranslations("editor");
   // RESOLVED: the catalogue now carries `nameKey` beside `name`, the same split
   // `FurnitureAsset` uses, so the three generic fixture names translate here.
   // `name` stays as the fallback and is what the Build-mode fixture picker in
@@ -41,7 +42,7 @@ export function FixtureSection({ item }: { item: FixtureItem }) {
   };
 
   return (
-    <div role="region" aria-label={`Selected: ${specName}`} style={pdInspectorPanel}>
+    <div role="region" aria-label={te("selectedRegionLabel", { name: specName })} style={pdInspectorPanel}>
       <div style={{ fontWeight: 600, fontSize: 13 }}>{specName}</div>
       <div style={{ fontSize: 11.5, color: PD.textSecondary }}>{deg}°</div>
       {item.assetId === "fx:linear" && <PdHelpText>{t("stripDimensions", { length: pathLength(item.path ?? []).toFixed(2) })}</PdHelpText>}

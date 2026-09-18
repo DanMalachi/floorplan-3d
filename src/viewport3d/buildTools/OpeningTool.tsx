@@ -166,6 +166,11 @@ export function OpeningTool({ offset }: { offset: { cx: number; cz: number } }) 
               fontFamily: PD.fontMono,
               fontSize: 12,
               whiteSpace: "nowrap",
+              // Isolate from RTL (Hebrew) context: this string embeds a
+              // "<number> m" measurement, and without isolation the bidi
+              // algorithm reorders it to "m 2.00".
+              direction: "ltr",
+              unicodeBidi: "isolate",
             }}
           >
             {g.valid ? `${openingType} · ${fmt(g.width)}` : "too tight"}

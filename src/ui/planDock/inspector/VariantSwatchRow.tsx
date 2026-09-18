@@ -6,16 +6,18 @@
 // footprint is identical by construction (same variantKey = same W×D×H), so
 // x/y/rotation/elevation never need to move, one undo step.
 
+import { useTranslations } from "next-intl";
 import type { FurnitureItem } from "@/schema/scene";
 import { useSceneStore } from "@/store/useSceneStore";
 import { variantGroupFor } from "@/furniture/variants";
 import { PdSwatch } from "./panelKit";
 
 export function VariantSwatchRow({ item }: { item: FurnitureItem }) {
+  const t = useTranslations("editor.parametric");
   const group = variantGroupFor(item.assetId);
   if (!group) return null;
   return (
-    <div role="group" aria-label="Colour and finish" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <div role="group" aria-label={t("colourAndFinish")} style={{ display: "flex", alignItems: "center", gap: 6 }}>
       {group.map((v) => (
         <PdSwatch
           key={v.assetId}

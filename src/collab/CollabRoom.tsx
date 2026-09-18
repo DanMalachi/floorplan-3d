@@ -7,6 +7,7 @@
 // rejects writes); Share mints role links; "Save a copy" forks into local projects.
 
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   LiveblocksProvider,
   RoomProvider,
@@ -265,6 +266,9 @@ const ROOM_MODES: { id: AppMode; label: string }[] = [
 ];
 
 function ModeSwitcher({ role }: { role: ShareRole }) {
+  // Reuses the design page's own key: this nav names the same thing
+  // (the Build/Decorate/View switcher) the editor's own chrome does.
+  const t = useTranslations("editor.chrome");
   const appMode = useSceneStore((s) => s.appMode);
   const setAppMode = useSceneStore((s) => s.setAppMode);
   const allowed = ROLE_MODES[role];
@@ -277,7 +281,7 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
 
   if (modes.length <= 1) return null; // view-only: no switcher
   return (
-    <nav aria-label="Editor mode" style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
+    <nav aria-label={t("modeSwitcherLabel")} style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
       {modes.map((m) => (
         <RoomChip
           key={m.id}
@@ -363,6 +367,7 @@ const SHARE_ROLES: ShareRole[] = ["view", "decorate", "build"];
  *  (src/lib/api/roomPolicy.ts), so offering a role above it would just produce a
  *  403. Offer exactly what `held` can actually hand out. */
 function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
+  const t = useTranslations("collabRoom");
   const [open, setOpen] = useState(false);
   const shareBtnRef = useRef<HTMLButtonElement>(null);
   const [role, setRole] = useState<ShareRole>("view");
@@ -441,13 +446,13 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       {open && (
         <div role="group" aria-labelledby="fp-share-title" style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
           <div id="fp-share-title" style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>Share this plan</div>
-          <div role="group" aria-label="Link permission" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div role="group" aria-label={t("linkPermissionLabel")} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
               <RoleRow key={r} selected={role === r} label={ROLE_LABEL[r]} onClick={() => makeLink(r)} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input readOnly aria-label="Share link" value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
+            <input readOnly aria-label={t("shareLinkLabel")} value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
             <RoomChip active onClick={copy} disabled={!link}>
               {copied ? "Copied" : "Copy"}
             </RoomChip>
@@ -528,6 +533,7 @@ function Avatar({ name, color }: Identity) {
 }
 
 function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
+  const t = useTranslations("collabRoom");
   const others = useOthers();
   const me = useSelf();
   const count = others.length + (me ? 1 : 0);
@@ -540,7 +546,7 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
           <Pip color={PD.ok} /> {count} here
           {role === "view" && <span style={{ color: PD.textTertiary }}>· view only</span>}
         </span>
-        <div role="group" aria-label="People in this room" style={{ display: "flex", paddingInlineStart: 6 }}>
+        <div role="group" aria-label={t("peopleInRoomLabel")} style={{ display: "flex", paddingInlineStart: 6 }}>
           {me && <Avatar name={me.presence.name} color={me.presence.color} />}
           {others.map(({ connectionId, presence }) => (
             <Avatar key={connectionId} name={presence.name} color={presence.color} />

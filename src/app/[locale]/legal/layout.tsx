@@ -40,6 +40,11 @@ export default async function LegalLayout({
         background: PD.bg,
         color: PD.textPrimary,
         fontFamily: PD.fontUi,
+        // Same reservation as the marketing layout (see its note): the fixed
+        // cookie notice can cover the end of a long-form legal page at narrow
+        // widths until it's dismissed, so this pushes the scrollable content
+        // up by exactly its live height instead.
+        paddingBottom: "var(--consent-h, 0px)",
       }}
     >
       {/* These are long-form documents whose only controls are links, and every

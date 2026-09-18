@@ -157,6 +157,8 @@ function FramePaintRow({ opening }: { opening: Opening }) {
 
 export function OpeningSection({ opening }: { opening: Opening }) {
   const t = useTranslations("editor.opening");
+  const te = useTranslations("editor");
+  const tu = useTranslations("editor.units");
   const patch = (label: string, p: Partial<Opening>) => {
     const s = useSceneStore.getState();
     s.commitScene(label, {
@@ -219,7 +221,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
   return (
     <div
       role="region"
-      aria-label={`Selected: ${t(`displayName.${openingDisplayNameKey(opening)}`)}`}
+      aria-label={te("selectedRegionLabel", { name: t(`displayName.${openingDisplayNameKey(opening)}`) })}
       style={pdInspectorPanel}
     >
       {/* One name for this element, shared with the 3D selection badge — the
@@ -227,7 +229,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           lowercase enum. */}
       <PdSectionTitle
         label={t(`displayName.${openingDisplayNameKey(opening)}`)}
-        meta={`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} m`}
+        meta={<bdi dir="ltr">{`${opening.width.toFixed(2)} × ${opening.height.toFixed(2)} ${tu("m")}`}</bdi>}
       />
 
       {/* Every chip row in this panel is a single-choice group whose selection
@@ -341,7 +343,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {/* A double door has no hinge to choose — each leaf hangs on its own
               jamb, and both swing the same way. */}
           {!double && (
-            <div role="group" aria-label="Hinge side" style={{ display: "flex", gap: 4 }}>
+            <div role="group" aria-label={t("hingeSideLabel")} style={{ display: "flex", gap: 4 }}>
               {(["start", "end"] as const).map((h) => (
                 <PdChip key={h} active={(opening.hinge ?? "start") === h} extra={pdChipFlex} onClick={() => patch("Door hinge", { hinge: h })}>
                   {h === "start" ? t("hingeStart") : t("hingeEnd")}
@@ -363,7 +365,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
           {slide.style === "bypass" && (
             <PdStepper label={t("panels")} value={slide.panels} min={2} max={3} onSet={(v) => patch("Slide panels", { slide: { ...slide, panels: v } })} />
           )}
-          <div role="group" aria-label="Which jamb the panels stack at" style={{ display: "flex", gap: 4 }}>
+          <div role="group" aria-label={t("slideSideTip")} style={{ display: "flex", gap: 4 }}>
             {(["start", "end"] as const).map((sd) => (
               <PdChip
                 key={sd}
@@ -393,7 +395,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
               value={w}
               onCommit={(v) => setLeafWidth(k, v)}
               displayScale={100}
-              unit="cm"
+              unit={tu("cm")}
             />
           ))}
           {opening.leafSplit && (
@@ -408,7 +410,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
       )}
 
       {opening.type === "passage" && (
-        <div role="group" aria-label="Passage lining" style={{ display: "flex", gap: 4 }}>
+        <div role="group" aria-label={t("passageLiningLabel")} style={{ display: "flex", gap: 4 }}>
           {([true, false] as const).map((l) => (
             <PdChip
               key={String(l)}
@@ -423,16 +425,16 @@ export function OpeningSection({ opening }: { opening: Opening }) {
         </div>
       )}
 
-      <PdNumField label={t("width")} value={opening.width} onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })} displayScale={100} unit="cm" />
+      <PdNumField label={t("width")} value={opening.width} onCommit={(v) => patch("Opening width", { width: Math.max(0.4, v) })} displayScale={100} unit={tu("cm")} />
       <PdNumField
         label={t("height")}
         value={opening.height}
         onCommit={(v) => patch("Opening height", { height: Math.max(0.4, v) })}
         displayScale={100}
-        unit="cm"
+        unit={tu("cm")}
       />
       {isWindow && (
-        <PdNumField label={t("sill")} value={opening.sill} onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })} displayScale={100} unit="cm" />
+        <PdNumField label={t("sill")} value={opening.sill} onCommit={(v) => patch("Opening sill", { sill: Math.max(0, v) })} displayScale={100} unit={tu("cm")} />
       )}
 
       {/* Frame finish — windows AND patio doors. A glazed slider is a window's

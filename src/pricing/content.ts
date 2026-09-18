@@ -32,6 +32,10 @@ export type PricingContent = {
   intro: string;
   plans: readonly PricingPlan[];
   footnote: string;
+  /** Screen-reader-only prefix on a feature the plan does NOT include. The
+   *  visible "–" marker is aria-hidden, so without this a screen reader reads
+   *  the free plan as including every listed feature. */
+  notIncluded: string;
 };
 
 const EN: PricingContent = {
@@ -82,6 +86,7 @@ const EN: PricingContent = {
       featured: true,
     },
   ],
+  notIncluded: "Not included:",
   footnote: "Final pricing and features will be announced before launch; no payment method is needed today.",
 };
 
@@ -133,6 +138,7 @@ const HE: PricingContent = {
       featured: true,
     },
   ],
+  notIncluded: "לא כלול:",
   footnote: "המחיר והיכולות הסופיות יפורסמו לפני ההשקה; אין צורך באמצעי תשלום היום.",
 };
 

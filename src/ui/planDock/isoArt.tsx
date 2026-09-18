@@ -529,14 +529,33 @@ export interface RoomItem {
   keywords: string[];
   box: IsoBox;
   art: ReactNode;
+  /** Forwarded to HitArea — see its own doc. Only set on hotspots that sit
+   *  close enough to a neighbor that both reaching the 24px hit-target
+   *  minimum would overlap. */
+  maxPad?: { x?: number; y?: number };
 }
 
-/** Invisible oversized hit target + accent outline on hover/active, sized
- *  from the box's bounding box so thin shapes stay easy to hit. Exported
- *  (Plan Dock P4) so BuildHouseScene can build its own custom hotspot layout
- *  — a house cutaway's wall/door/window/stair hotspots don't fit
- *  RoomSceneShell's one-backdrop-wall-plus-floor-row shape, but the hit-area
- *  mechanics are identical. */
+// A11y target size (WCAG 2.5.5/2.5.8): every hotspot's INVISIBLE hit rect
+// should measure at least 24×24 CSS px, even where the drawn object is
+// thinner. Every scene that uses HitArea — RoomSceneShell's 11 rooms and
+// BuildHouseScene — renders inside the same fixed 208×224 floating panel
+// (NavigatorPanel / BuildNavigator) against the shared `viewBox="0 0 220
+// 170"`, so the viewBox-unit→CSS-px scale is a real constant here, not a
+// guess: it was back-computed from four already-shipped hotspots (kitchen
+// trash bin, kitchen wall art, kitchen clock, Build's tape measure) against
+// their measured on-screen sizes, and all four land on s≈0.80 within a
+// rounded CSS pixel in both the room-scene and Build-scene chrome.
+const VB_SCALE = 0.8;
+const MIN_HIT_VB = 24 / VB_SCALE; // 30 viewBox units
+
+/** Invisible oversized hit target + accent outline on hover/active, grown
+ *  from the box's bounding box to at least MIN_HIT_VB per axis (so both
+ *  thin AND small shapes clear the 24px CSS target), floored at the old
+ *  2-unit pad so nothing ever shrinks. Exported (Plan Dock P4) so
+ *  BuildHouseScene can build its own custom hotspot layout — a house
+ *  cutaway's wall/door/window/stair hotspots don't fit RoomSceneShell's
+ *  one-backdrop-wall-plus-floor-row shape, but the hit-area mechanics are
+ *  identical. */
 export function HitArea({
   labelKey,
   box,
@@ -545,6 +564,7 @@ export function HitArea({
   onEnter,
   onLeave,
   onClick,
+  maxPad,
 }: {
   /** The accessible name, resolved via editor.rooms. The visible label is
    *  drawn by the parent. A11y: this used to be the only place the label
@@ -557,10 +577,22 @@ export function HitArea({
   onEnter: () => void;
   onLeave: () => void;
   onClick: () => void;
+  /** Caps the auto-grown pad (viewBox units, per axis) below what MIN_HIT_VB
+   *  would otherwise give — only for the rare hotspot pair that sits close
+   *  enough that BOTH growing to 24px would overlap. Undefined (the default)
+   *  is correct everywhere except the one call site that documents why it
+   *  passes one (KitchenScene's art/clock pair — see there). */
+  maxPad?: { x?: number; y?: number };
 }) {
   const t = useTranslations("editor.rooms");
   const { x0, y0, x1, y1 } = box.bbox;
-  const pad = 2;
+  const w = x1 - x0;
+  const h = y1 - y0;
+  const basePad = 2;
+  const wantPadX = Math.max(basePad, (MIN_HIT_VB - w) / 2);
+  const wantPadY = Math.max(basePad, (MIN_HIT_VB - h) / 2);
+  const padX = maxPad?.x !== undefined ? Math.min(wantPadX, maxPad.x) : wantPadX;
+  const padY = maxPad?.y !== undefined ? Math.min(wantPadY, maxPad.y) : wantPadY;
   // A11y: these hotspots carried role="button" but no tabindex and no key
   // handler, so the whole illustrated navigator — every room's hotspots and
   // the entire Build cutaway — was unreachable without a pointer. Focus +
@@ -585,13 +617,13 @@ export function HitArea({
       onClick={onClick}
       style={{ cursor: "pointer" }}
     >
-      <rect x={x0 - pad} y={y0 - pad} width={x1 - x0 + pad * 2} height={y1 - y0 + pad * 2} fill="transparent" />
+      <rect x={x0 - padX} y={y0 - padY} width={w + padX * 2} height={h + padY * 2} fill="transparent" />
       {(active || hovered) && (
         <rect
-          x={x0 - pad}
-          y={y0 - pad}
-          width={x1 - x0 + pad * 2}
-          height={y1 - y0 + pad * 2}
+          x={x0 - padX}
+          y={y0 - padY}
+          width={w + padX * 2}
+          height={h + padY * 2}
           fill="none"
           rx={3}
           stroke={PD.accent}
@@ -684,6 +716,7 @@ export function RoomSceneShell({
             onEnter={() => setHovered(it.id)}
             onLeave={() => setHovered((cur) => (cur === it.id ? null : cur))}
             onClick={() => onHotspotClick(it.id)}
+            maxPad={it.maxPad}
           />
         </g>
       ))}

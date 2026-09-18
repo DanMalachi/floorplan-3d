@@ -67,6 +67,9 @@ function LocaleLink({ href, locale, label }: { href: string; locale: Locale; lab
         // default would pull the other locale's editor bundle for a control that
         // is clicked once at most.
         prefetch={false}
+        // Named in full: the visible "עב"/"EN" is an abbreviation, and the
+        // label ("Switch to עברית") contains it, so voice control still works.
+        aria-label={label}
         // The text is IN the language it names, so say so — otherwise a screen
         // reader reads "עברית" with an English voice, or spells it.
         lang={locale}

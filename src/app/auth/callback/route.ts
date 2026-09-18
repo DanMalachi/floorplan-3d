@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { logError } from "@/lib/api/log";
 
 export const runtime = "nodejs";
 
@@ -43,11 +44,20 @@ export async function GET(request: NextRequest) {
   const next = safeNext(searchParams.get("next"), "/design");
 
   // Google or Supabase refused before we ever got a code. Carry the reason back
-  // to the UI — silently redirecting home leaves the user staring at a "Sign in"
-  // button with no idea why nothing happened.
-  const failure = searchParams.get("error_description") ?? searchParams.get("error");
-  if (failure) {
-    return NextResponse.redirect(`${origin}${next}?authError=${encodeURIComponent(failure)}`);
+  // to the UI as a fixed code, never the provider's own text — that text is
+  // arbitrary and rendering it verbatim under our brand is a content-spoofing
+  // hole (a crafted `?authError=` used to render as-is). The raw message still
+  // goes to the server log/Sentry, where it's useful without being on screen.
+  const errorParam = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
+  if (errorParam || errorDescription) {
+    logError("auth/callback", new Error(errorDescription ?? errorParam ?? "unknown"), {
+      reason: errorParam ?? "unknown",
+    });
+    // `access_denied` is Google's code for the user backing out of the consent
+    // screen — not a failure, just a change of mind, so it gets its own message.
+    const authErrorCode = errorParam === "access_denied" ? "cancelled" : "failed";
+    return NextResponse.redirect(`${origin}${next}?authError=${authErrorCode}`);
   }
 
   if (!code) return NextResponse.redirect(`${origin}${next}`);
@@ -57,7 +67,8 @@ export async function GET(request: NextRequest) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(`${origin}${next}?authError=${encodeURIComponent(error.message)}`);
+    logError("auth/callback", error, { reason: "exchange" });
+    return NextResponse.redirect(`${origin}${next}?authError=failed`);
   }
   return NextResponse.redirect(`${origin}${next}?claim=1`);
 }

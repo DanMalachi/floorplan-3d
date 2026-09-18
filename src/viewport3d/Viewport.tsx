@@ -15,7 +15,7 @@ import { PerfRig } from "@/render/perf/PerfRig";
 import { PerfHud } from "@/render/perf/PerfHud";
 import { RenderContractCheck } from "@/render/RenderContractCheck";
 import { RoomLights } from "@/render/RoomLights";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSceneStore, type WallViewMode, type EnvPreset, type Weather } from "@/store/useSceneStore";
 import { PD, pdGlass, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
@@ -227,18 +227,24 @@ function PanelChip({
   );
 }
 
-/** 13.5 → "1:30 PM" for the time slider readout. */
-function fmtHour(t: number): string {
+/** 13.5 → "1:30 PM" (English) or "13:30" (Hebrew, 24-hour) for the time
+ *  slider readout. Hebrew readers expect a 24-hour clock; AM/PM is an
+ *  English-locale convention, not a translation of it. */
+function fmtHour(t: number, locale: string): string {
   const h24 = Math.floor(t) % 24;
   const m = Math.round((t - Math.floor(t)) * 60) % 60;
-  const ampm = h24 < 12 ? "AM" : "PM";
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  const d = new Date(2000, 0, 1, h24, m);
+  return new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: locale !== "he",
+  }).format(d);
 }
 
 /** Scene panel (View mode): environment preset + a fun time-of-day slider. */
 function ScenePanel() {
   const t = useTranslations("editor");
+  const locale = useLocale();
   const preset = useSceneStore((s) => s.envPreset);
   const setEnvPreset = useSceneStore((s) => s.setEnvPreset);
   const time = useSceneStore((s) => s.timeOfDay);
@@ -314,12 +320,12 @@ function ScenePanel() {
           onChange={(e) => setTimeOfDay(Number(e.target.value))}
           disabled={preset === "none"}
           aria-label={t("timeOfDay")}
-          aria-valuetext={fmtHour(time)}
+          aria-valuetext={fmtHour(time, locale)}
           style={{ flex: 1, accentColor: PD.accent }}
         />
       </div>
       <div style={{ fontSize: 11, color: PD.textTertiary, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
-        {fmtHour(time)}
+        {fmtHour(time, locale)}
       </div>
       {preset !== "none" && (
         <div style={{ display: "flex", gap: 4 }}>
@@ -392,9 +398,24 @@ function WallModeToggle() {
   );
 }
 
+/** "⌘" on Mac/iPhone/iPad, "Ctrl+" everywhere else, for the undo/redo hint.
+ *  Starts as "Ctrl+" (a guess, not a locale) so server and first client
+ *  render match — no hydration mismatch — then corrects itself in an effect
+ *  once `navigator` is available. */
+function useModKey(): string {
+  const [mod, setMod] = useState("Ctrl+");
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+      setMod("⌘");
+    }
+  }, []);
+  return mod;
+}
+
 /** Selection + undo status pill. */
 function StatusOverlay() {
   const t = useTranslations("editor");
+  const mod = useModKey();
   const sel3d = useSceneStore((s) => s.sel3d);
   const past = useSceneStore((s) => s.scenePast.length);
   const future = useSceneStore((s) => s.sceneFuture.length);
@@ -430,14 +451,14 @@ function StatusOverlay() {
       }}
     >
       {sel3d ? (
-        <span style={{ color: PD.accent }}>
+        <span style={{ color: PD.accentText }}>
           {t("selectedHint", { kind: t(`kinds.${sel3d.kind}`) })}
         </span>
       ) : (
         <span style={{ color: PD.textSecondary }}>{t("nothingSelected")}</span>
       )}
       <span style={{ color: PD.textTertiary }}>
-        {t("undoRedo", { past, future })}
+        {t("undoRedo", { mod, past, future })}
       </span>
     </div>
   );
