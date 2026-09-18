@@ -2,8 +2,9 @@
 
 Status: **first real audit, partially remediated.** Commercial must-have #22.
 
-This is not a conformance claim. Nothing here was tested with a screen reader,
-with a keyboard in a running browser, or with any automated auditor. See
+This is not a conformance claim. Nothing here was tested with a screen reader.
+One automated axe + scripted-keyboard pass ran on 2026-09-18 — see
+[Automated pass](#automated-pass-2026-09-18) for exactly what it covered. See
 [Not verified](#not-verified) — read that section before quoting anything in
 this file.
 
@@ -275,7 +276,12 @@ These are one-line token changes; every consumer picks them up through the CSS
 variables. They will make the faint text visibly less faint, which is the
 entire point and also the entire objection.
 
-### P3 — White on the accent is 3.65:1
+### P3 — White on the accent is 3.65:1 — APPLIED 2026-09-18
+
+Applied: dark-theme `PD.accent` is now `oklch(0.55 0.15 258)`. `T.accent` no
+longer exists (tokens.ts was deleted in the one-token-set sweep). The one place
+that used `PD.accent` as *text* colour (the legal `[[VERIFY]]` marker) dropped
+to 3.78:1 with the darker value and was moved to `PD.accentText`.
 
 `Go live` is `#fff` on `PD.accent` `oklch(0.62 0.15 258)` → **3.68:1**. The
 Trace/View chip is `#fff` on `T.accent` `#0a84ff` → **3.65:1**. Both are below
@@ -283,7 +289,13 @@ Trace/View chip is `#fff` on `T.accent` `#0a84ff` → **3.65:1**. Both are below
 `oklch(0.55 0.15 258)` / `#0066d6` reaches ≈ 4.6:1 without changing the hue
 family.
 
-### P4 — There is no focus-visible style anywhere
+### P4 — There is no focus-visible style anywhere — APPLIED 2026-09-18
+
+Applied: a zero-specificity `:where(:focus-visible)` rule in `globals.css`
+(2px, accent, 2px offset; copper on marketing pages via `--fp-focus`), and every
+inline `outline: "none"` outside `src/viewport3d/` removed (account deletion,
+live-room field, NumField, dock search, gallery rename, colour-fan hex field).
+The frozen canvas wrapper in `Viewport.tsx` still sets `outline: none`.
 
 The app relies entirely on the browser's default focus ring, and two places
 suppress even that: `field()` in `src/ui/tokens.ts` sets `outline: "none"`, as
@@ -416,6 +428,37 @@ Real, found, not fixed. Roughly in priority order.
 9. **No automated auditing in CI.** See below.
 
 ---
+
+## Automated pass, 2026-09-18
+
+First browser-driven run. axe-core (WCAG 2.0 + 2.1, A + AA) plus a scripted
+Tab walk, headless Chromium 1440×900, `next start` production build, every
+public route in `en` and `he`: `/`, `/about`, `/faq`, `/pricing`, `/legal/*`,
+`/account` (signed out), `/design` (empty, gallery, and Build / Decorate / View
+modes). Also: the landing sign-in panel by keyboard.
+
+Fixed in this pass: P3, P4 (above), and a regression — the four dock section
+tabs and the eyedropper had **no accessible name** again, because
+`DockIconBtn` did not forward the `aria-label` that `Tooltip` stamps on.
+
+Clean: no keyboard trap anywhere; the projects gallery keeps focus inside and
+lists its cards; the sign-in panel is a labelled dialog, takes focus on open,
+sets `aria-expanded`, closes on Escape; `lang`/`dir` correct per locale.
+
+Still failing after the pass (all need a decision, none are code bugs):
+
+| Finding | Where | Ratio | Needs |
+| --- | --- | --- | --- |
+| White on copper CTA `#DF7940` | "Open done." on every marketing page | 3.02 | brand call: dark text on copper, or darker copper |
+| `B.ink4` `#757168` micro-labels | about/faq/pricing labels, pricing feature list | 3.6–3.9 | lift `ink4` |
+| `PD.textTertiary` | legal page subtitle + "last updated", `/account` back link | 3.78–3.81 | P2 |
+| `.done-demo-title` | landing demo caption | 3.35 | lift its colour |
+| Canvas wrapper `tabIndex=0`, no name, no ring | editor + landing hero | — | frozen `Viewport.tsx` |
+| Time-of-day slider unlabelled; `aria-label` on a bare `span` | View mode ScenePanel | — | frozen `Viewport.tsx` |
+| Project card `role=button` contains buttons | gallery | — | Known gap 1 pattern |
+
+Not covered: a loaded plan (inspector, selection), live rooms, signed-in
+`/account`, light theme, mobile width, any screen reader.
 
 ## How to re-audit
 

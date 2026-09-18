@@ -172,8 +172,12 @@ function DockIconBtn({
   active,
   size = 28,
   children,
+  "aria-label": ariaLabel,
 }: {
   onClick: () => void;
+  /** Usually stamped on by a wrapping `Tooltip`. The button's only content is
+   *  an icon, so if this is not forwarded the control has no name at all. */
+  "aria-label"?: string;
   /** Omit entirely for a one-shot action (search, close) — an explicit
    *  true/false marks a real toggle (tab, eyedropper) as a toggle button;
    *  `aria-pressed={undefined}` (not `false`) is what keeps a plain action
@@ -184,7 +188,7 @@ function DockIconBtn({
 }) {
   const [hovered, hoverBind] = useHover();
   return (
-    <button {...hoverBind} onClick={onClick} aria-pressed={active} style={pdIconBtn(active, size, hovered)}>
+    <button {...hoverBind} onClick={onClick} aria-pressed={active} aria-label={ariaLabel} style={pdIconBtn(active, size, hovered)}>
       {children}
     </button>
   );
@@ -859,7 +863,6 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
               fontSize: 11.5,
               fontFamily: PD.fontUi,
               color: PD.textPrimary,
-              outline: "none",
             }}
           />
           <Tooltip label={t("closeSearch")}>

@@ -398,7 +398,6 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                         padding: "3px 6px",
                         fontSize: 13,
                         fontFamily: PD.fontUi,
-                        outline: "none",
                         width: "100%",
                         boxSizing: "border-box",
                       }}

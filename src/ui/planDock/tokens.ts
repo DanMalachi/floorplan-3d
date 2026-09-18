@@ -44,7 +44,9 @@ export const PD = {
   // unaffected — they find IBM Plex Mono first and never reach this entry.
   fontMono: `"IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace, Rubik`,
 
-  accent: v("accent", "oklch(0.62 0.15 258)"),
+  // 0.55 (was 0.62): white label text on the accent fill (Go live, the
+  // gallery badge) reaches ~4.6:1 instead of 3.68:1. docs/ACCESSIBILITY.md P3.
+  accent: v("accent", "oklch(0.55 0.15 258)"),
   accentText: v("accent-text", "oklch(0.78 0.12 258)"),
   accentTint: v("accent-tint", "oklch(0.62 0.15 258 / 0.22)"),
 

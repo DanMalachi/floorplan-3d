@@ -66,6 +66,9 @@ export default async function MarketingLayout({
         // Long-form pages get a comfortable default line-height; sections that
         // want tighter display type override it locally.
         lineHeight: 1.6,
+        // The global focus ring (globals.css) in the brand copper, not the
+        // editor's blue.
+        ["--fp-focus" as string]: B.accent,
       }}
     >
       {/* The brand palette. Inline <style> is already sanctioned by the CSP

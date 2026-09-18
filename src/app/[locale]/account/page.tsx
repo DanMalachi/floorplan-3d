@@ -270,7 +270,6 @@ export default function AccountPage() {
                       background: PD.inputBg,
                       border: `1px solid ${PD.hairline}`,
                       borderRadius: PD.radiusS,
-                      outline: "none",
                     }}
                   />
                   <ActionButton

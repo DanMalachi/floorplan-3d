@@ -79,3 +79,15 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* One visible focus indicator for every keyboard-reachable control (WCAG 2.4.7).
+   Before this the app relied on the browser default, and several text fields
+   set `outline: none` inline, so a keyboard user typing into them could not
+   see where they were. `:where()` keeps specificity at zero, so any component
+   that already draws its own :focus-visible ring (landing CTAs, legal links)
+   still wins. `--fp-focus` lets a surface pick its own ring colour — the
+   marketing layout sets it to copper; the editor falls back to its accent. */
+:where(:focus-visible) {
+  outline: 2px solid var(--fp-focus, var(--pd-accent, oklch(0.55 0.15 258)));
+  outline-offset: 2px;
+}

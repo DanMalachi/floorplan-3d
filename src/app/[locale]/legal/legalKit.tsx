@@ -139,7 +139,7 @@ export function Placeholder({ children }: { children: ReactNode }) {
 /** [[VERIFY: ...]] — a claim counsel must confirm before relying on it. */
 export function Verify({ children }: { children: ReactNode }) {
   return (
-    <span style={{ color: PD.accent, fontWeight: 700 }}>
+    <span style={{ color: PD.accentText, fontWeight: 700 }}>
       [[VERIFY: {children}]]
     </span>
   );

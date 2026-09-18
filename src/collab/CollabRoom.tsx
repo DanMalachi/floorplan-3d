@@ -255,7 +255,6 @@ const roomField = (extra?: React.CSSProperties): React.CSSProperties => ({
   padding: "4px 8px",
   fontSize: 12.5,
   fontFamily: PD.fontUi,
-  outline: "none",
   ...extra,
 });
 
