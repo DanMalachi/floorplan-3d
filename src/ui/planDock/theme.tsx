@@ -42,6 +42,7 @@ const LIGHT_VARS: Record<string, string> = {
   "--pd-glass-border": "1px solid oklch(1 0 0 / 0.7)",
   "--pd-glass-inset": "inset 0 1px 0 oklch(1 0 0 / 0.7)",
   "--pd-glass-shadow": "0 18px 40px -16px oklch(0.24 0.02 70 / 0.42)",
+  "--pd-glass-text-shadow": "none", // dark text on light glass needs no halo
 
   "--pd-hairline": "oklch(0 0 0 / 0.08)",
   "--pd-surface-muted": "oklch(0 0 0 / 0.045)",

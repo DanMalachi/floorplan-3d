@@ -219,12 +219,17 @@ non-text UI boundaries.
 
 ### P1 — The glass panels have no fixed contrast at all (structural) — APPLIED 2026-09-18
 
-Applied, differently from the options below: opacity is unchanged, but the
-glass's `backdrop-filter` now dims what shows through it — dark theme adds
-`brightness(0.3)`, light theme adds `contrast(0.35) brightness(1.7)`. Measured in
-Chromium over `#141416` / `#808080` / `#e8f0fb` / `#ffffff`: dark-theme primary
->= 10.3:1, secondary >= 4.78:1, accentText >= 5.9:1; light-theme secondary >=
-5.7:1. Dark scenes barely change, so the glass still reads the scene through it.
+Applied, differently from the options below. The glass's `backdrop-filter`
+dims what shows through it instead of the glass getting more opaque — dark
+theme `brightness(0.5)` at 32% opacity, light theme `contrast(0.35)
+brightness(1.7)`. `brightness(0.3)` was tried first and Dan rejected it as
+"smokey"; 0.5 keeps the panel tinted by the scene behind it. Text tokens moved
+to near-white (primary 0.985, secondary 0.88, tertiary 0.76 L) at Dan's
+request, and `pdGlass` sets an inherited 2px dark `text-shadow` halo.
+Measured in Chromium, text vs the rendered glass, over a pure-white backdrop
+(worst case): primary 6.2:1, secondary 4.5:1 before the halo. axe CANNOT
+check this — it ignores `backdrop-filter` and reports ~1.9:1 — so glass
+contrast must be re-measured by pixels, not by axe.
 The original analysis follows.
 
 This is the biggest visual finding and it is not a token tweak.
@@ -459,9 +464,16 @@ Still failing after the pass (all need a decision, none are code bugs):
 | --- | --- | --- | --- |
 | `B.ink4` `#757168` micro-labels | about/faq/pricing labels, pricing feature list | 3.6–3.9 | lift `ink4` |
 | `.done-demo-title` | landing demo caption | 3.35 | lift its colour |
-| Canvas wrapper `tabIndex=0`, no name, no ring | editor + landing hero | — | frozen `Viewport.tsx` |
-| Time-of-day slider unlabelled; `aria-label` on a bare `span` | View mode ScenePanel | — | frozen `Viewport.tsx` |
 | Project card `role=button` contains buttons | gallery | — | Known gap 1 pattern |
+
+Step 3 (approved, see PROTECTED_PATHS.md 2026-09-18): the editor canvas is
+now `role="application"` named "3D view of your home" with a spoken key list,
+and shows the focus ring; the landing hero canvas is `role="img"` and out of
+the Tab order; the time-of-day slider is labelled; `Tooltip` no longer puts
+`aria-label` on bare spans; camera flights (fit, room focus, F / Home framing)
+jump instead of animate under `prefers-reduced-motion`. After this, Build,
+Decorate and View modes have zero axe violations and every Tab stop is named
+and ringed. The reduced-motion camera path was NOT exercised in a browser.
 
 Not covered: a loaded plan (inspector, selection), live rooms, signed-in
 `/account`, light theme, mobile width, any screen reader.

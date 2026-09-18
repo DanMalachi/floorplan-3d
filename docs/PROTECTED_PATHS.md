@@ -64,6 +64,21 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-18, accessibility pass (`Viewport.tsx`, `CameraFocusRig.tsx`,
+  `frameTarget.ts`, new `reducedMotion.ts`).** Approved directly by Dan ("yes
+  to the 3D folder, go ahead with step 3"), branch `feat/a11y-launch`. DOM and
+  camera-flight flags only; no scene, mesh, material or renderer change.
+  - `Viewport.tsx` canvas wrapper: in the editor it is `role="application"`
+    with a translated name and an sr-only key list (`aria-describedby`); the
+    chrome-less embed (landing hero) is `role="img"` and no longer a Tab stop.
+    Inline `outline: none` replaced by `outlineOffset: -3`, so the global
+    `:focus-visible` ring shows on keyboard focus only, inside the edge.
+  - `ScenePanel` time-of-day slider: `aria-label` + `aria-valuetext`.
+  - `FitCamera`, `CameraFocusRig`, `frameBox`: the camera-controls
+    `enableTransition` argument is `!prefersReducedMotion()` instead of `true`,
+    so under the OS reduce-motion setting camera moves jump instead of fly.
+    Default behaviour is unchanged.
+
 - **2026-09-11, automatic editor camera input routing (`Viewport.tsx`,
   `CameraRig.tsx`, `camera/inputVocabulary.ts` + tests, an additive Space-pan
   arbitration helper, and a guard in `CameraDoubleClickRig.tsx`'s native

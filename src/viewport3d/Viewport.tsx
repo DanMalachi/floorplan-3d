@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Canvas, events as createPointerEvents, useThree } from "@react-three/fiber";
 import { CameraControls, Grid, Html, Line } from "@react-three/drei";
 import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
+import { prefersReducedMotion } from "./reducedMotion";
 import { CONTEXT, DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract";
 import { AmbientOcclusion } from "@/render/AmbientOcclusion";
 import { useDprOverride } from "@/render/renderDebugFlags";
@@ -113,7 +114,7 @@ function FitCamera({ span }: { span: number }) {
     camera.far = dist * 20;
     camera.updateProjectionMatrix();
     if (controls && "setLookAt" in controls) {
-      controls.setLookAt(dir.x, dir.y, dir.z, 0, 0, 0, true);
+      controls.setLookAt(dir.x, dir.y, dir.z, 0, 0, 0, !prefersReducedMotion());
     } else {
       camera.position.copy(dir);
     }
@@ -312,6 +313,8 @@ function ScenePanel() {
           value={time}
           onChange={(e) => setTimeOfDay(Number(e.target.value))}
           disabled={preset === "none"}
+          aria-label={t("timeOfDay")}
+          aria-valuetext={fmtHour(time)}
           style={{ flex: 1, accentColor: PD.accent }}
         />
       </div>
@@ -490,6 +493,8 @@ export function Viewport({
   const scene = useSceneStore((s) => s.scene);
   const { cx, cz, span, halfX, halfZ } = useSceneBounds();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const tv = useTranslations("editor");
+  const keysId = useId();
   const hovering = useSceneStore((s) => s.hover3d !== null);
   // A walkthrough door swing folds its per-frame writes into a gesture too
   // (WalkthroughMode.tsx), but it isn't a drag: it shouldn't tear down N8AO
@@ -599,17 +604,36 @@ export function Viewport({
   return (
     <div
       ref={wrapRef}
-      tabIndex={0}
+      // Accessibility (approved 2026-09-18, docs/PROTECTED_PATHS.md): the
+      // editor canvas is a focusable widget that owns its own keys, so it is an
+      // "application" with a name and a spoken key list. The chrome-less embed
+      // (landing hero) has no editing to do from the keyboard: it is an image
+      // and stays out of the Tab order.
+      {...(chrome
+        ? {
+            tabIndex: 0,
+            role: "application",
+            "aria-label": tv("viewportLabel"),
+            "aria-describedby": keysId,
+          }
+        : { role: "img", "aria-label": tv("viewportPreviewLabel") })}
       onKeyDown={onKeyDown}
       onPointerDown={() => wrapRef.current?.focus()}
       style={{
         position: "relative",
         width: "100%",
         height: "100%",
-        outline: "none",
+        // No `outline: none`: the global :focus-visible ring shows on keyboard
+        // focus only, drawn INSIDE the edge because this box fills the screen.
+        outlineOffset: -3,
         cursor: brush ? BRUSH_CURSOR : dragging ? "grabbing" : hovering ? "pointer" : "auto",
       }}
     >
+      {chrome && (
+        <span id={keysId} className="fp-sr-only">
+          {tv("viewportKeys")}
+        </span>
+      )}
       <Canvas
         events={createViewportPointerEvents}
         // Every renderer value below is recorded in src/render/contract.ts and

@@ -87,11 +87,20 @@ export function Tooltip({
   // Wrap rather than nowrap once the label is a sentence rather than a name.
   const isSentence = label.length > 28;
 
-  // Keep the accessible name that the deleted `title` used to provide.
+  // Keep the accessible name that the deleted `title` used to provide. Not on
+  // a plain <span>/<div> with no role: ARIA forbids `aria-label` there and
+  // screen readers ignore it (axe `aria-prohibited-attr`, the View-mode sun
+  // icon). Components and real controls still get it.
+  const props = isValidElement(children) ? (children.props as Record<string, unknown>) : {};
+  const bareHost =
+    isValidElement(children) &&
+    (children.type === "span" || children.type === "div") &&
+    !props.role;
   const child =
     isValidElement(children) &&
-    !(children.props as Record<string, unknown>)["aria-label"] &&
-    !(children.props as Record<string, unknown>)["aria-labelledby"]
+    !bareHost &&
+    !props["aria-label"] &&
+    !props["aria-labelledby"]
       ? cloneElement(children as React.ReactElement<Record<string, unknown>>, { "aria-label": label })
       : children;
 
