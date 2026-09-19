@@ -22,6 +22,8 @@
 // else stays in the warm-neutral range. One coloured object, appearing once.
 // `accent` below is therefore used far less than an accent colour normally is:
 // the wordmark's full stop, and CTA fills. Not links, not rules, not icons.
+// One approved exception (2026-09-19, docs/design/hero-2026-09-19): the
+// homepage headline's serif line, "the plan.", is set in copper.
 //
 // ── How the values work ─────────────────────────────────────────────────────
 // Every colour is a CSS custom property with the DARK value inlined as its

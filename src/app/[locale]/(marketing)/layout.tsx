@@ -85,7 +85,7 @@ export default async function MarketingLayout({
       <style dangerouslySetInnerHTML={{ __html: BRAND_THEME_CSS }} />
       {/* Hover/focus for every control on the site. Inline styles cannot reach
           `:hover`, and this is the idiom the marketing pages already use for
-          that (Hero's TRACE_BTN_CSS, DemoStage's STAGE_CSS) — hoisted here so
+          that (Hero's HERO_CSS, DemoStage's STAGE_CSS) — hoisted here so
           one stylesheet serves every route instead of each page inventing its
           own. See src/landing/hoverCss.ts. */}
       <style dangerouslySetInnerHTML={{ __html: LANDING_HOVER_CSS }} />

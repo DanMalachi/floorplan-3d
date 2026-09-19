@@ -77,6 +77,10 @@ export function AccessibilityEn() {
           without animating. The demo&rsquo;s rotation can also be paused.
         </li>
         <li style={legalLi}>
+          The homepage demo starts on its own when you scroll to it. While it
+          plays, a visible &ldquo;Skip to the room&rdquo; button stops it.
+        </li>
+        <li style={legalLi}>
           Tooltips can be dismissed with the Escape key.
         </li>
         <li style={legalLi}>
@@ -92,14 +96,6 @@ export function AccessibilityEn() {
           rotating items, and the walkthrough are done with a mouse or touch on
           a graphical view. They currently have no screen-reader or full
           keyboard alternative.
-        </li>
-        <li style={legalLi}>
-          <b>Contrast.</b> Some small grey labels on the About, FAQ and Pricing
-          pages, and the caption under the homepage demo, are below the 4.5:1
-          contrast ratio.
-        </li>
-        <li style={legalLi}>
-          The rotating headline on the homepage cannot be paused.
         </li>
         <li style={legalLi}>
           <b>Single-key shortcuts</b> cannot be turned off or remapped.

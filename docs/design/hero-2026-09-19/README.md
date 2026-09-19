@@ -18,7 +18,7 @@ tomorrow". Nothing in `src/` implements it yet. This folder is the spec.
 | English sans | Archivo 800 (headline and hero copy) |
 | English serif | Newsreader Italic 500 |
 | Hebrew sans | Heebo 900 (Rubik rejected: too rounded) |
-| Hebrew serif | Bona Nova Italic 700, a true Hebrew italic. Hebrew must slant too |
+| Hebrew serif | Bona Nova Italic, a true Hebrew italic. Hebrew must slant too. Google ships the italic at 400 only; the mockup's 700 was browser-synthesised bold, and the build keeps it that way |
 | Background | `plan.svg`, masked: transparent to 44% of the hero, opaque by 84%. Mirrored in RTL, with labels un-mirrored and swapped to `data-he` |
 | Rotating slogans | Removed (this also closes WCAG 2.2.2 for the headline) |
 | "see how it's done." button | Removed. The trace→build demo moves to its own section and starts when scrolled into view. It MUST show a visible "Skip to the room" control while running (WCAG 2.2.2), and reduced motion shows the finished room straight away |

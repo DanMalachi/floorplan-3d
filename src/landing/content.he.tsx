@@ -28,13 +28,9 @@
 // ── Three choices worth a second opinion ────────────────────────────────────
 // Flagged for Dan rather than buried:
 //
-//   1. **The ghost CTA loses its pun.** English "see how it's done." ends on
-//      the product's name and means both "watch the process" and "watch it
-//      finish". Hebrew cannot land both without code-switching mid-sentence
-//      ("תראו איך זה done."), which reads as a gimmick rather than as the
-//      quiet confidence the voice is built on. Translated to its function —
-//      "תראו איך זה עובד." — because the button plays the hero animation, and
-//      a working button beats a broken joke.
+//   1. **The headline is "הכול מתחיל בשרטוט." ("everything starts with the
+//      drawing"), not "the plan".** תוכנית reads as a scheme before it reads
+//      as a floorplan, and drawing is what the visitor actually does here.
 //   2. **"A rehearsal of yours" → "חזרה גנרלית".** Literally "dress
 //      rehearsal", which is the live Hebrew idiom; the literal "חזרה" alone
 //      reads as "a repeat" and loses the whole image.
@@ -53,37 +49,20 @@ export const HE: LandingContent = {
     </span>
   ),
 
-  /**
-   * The rotating lines around the fixed `done.` wordmark. See `Slogan` in
-   * content.ts for the lead/tail geometry.
-   *
-   * Which slot each line uses is a Hebrew decision, not a copy of the English
-   * one — and two of them move. "upload, then it's done." keeps its lead
-   * because Hebrew builds the same way ("מעלים, וזה כבר" → done.), but a
-   * Hebrew line that has to end on the mark cannot simply be flipped into a
-   * tail, so those stay leads too. `id` is what pairs a Hebrew line with its
-   * English original; the order is the English order, because the first entry
-   * is the primary lockup and has to stay first.
-   */
-  slogans: [
-    { id: "beforeYouStart", tail: "עוד לפני שהתחלתם." },
-    { id: "uploadThenIts", lead: "מעלים, וזה כבר" },
-    { id: "beforeYouGuess", tail: "עוד לפני שניחשתם." },
-    { id: "yourOwnWalls", tail: "עם הקירות שלכם." },
-    { id: "drawItOnce", lead: "משרטטים פעם אחת, וזה" },
-    { id: "sofaThatFits", tail: "עם ספה שנכנסת." },
-    { id: "paintYouCanBuy", tail: "עם צבע שאפשר לקנות." },
-    { id: "roomThatsYours", tail: "עם חדר שהוא באמת שלכם." },
-  ],
-
   hero: {
+    // "Everything starts with the drawing." Not a word-for-word "the plan":
+    // תוכנית reads as a scheme or a programme before it reads as a floorplan,
+    // and שרטוט is what the visitor actually does in this product.
+    headline: { sans: "הכול מתחיל", serif: "בשרטוט." },
     subhead:
       "העלו את תוכנית הדירה שלכם כרקע לעבודה. שרטטו מעליה את הקירות שלכם, לפי קנה מידה, ומה שיוצא בצד השני הוא החדר האמיתי שלכם — ספה שנכנסת, צבע שאפשר לקנות, וסיור בבית שהוא שלכם.",
     note: "אפשר להתחיל בלי חשבון.",
-    // See note 1 at the top of this file — the pun does not cross.
-    ctaGhostLabel: "תראו איך זה עובד.",
-    ctaGhostLabelRunning: "דלגו לחדר",
-    ctaGhostLabelDone: "צפו שוב",
+    scrollCue: "גללו כדי לראות איך זה נבנה",
+  },
+
+  demo: {
+    eyebrow: "ככה זה נבנה",
+    title: "מקו משורטט לחדר שאפשר להסתובב בו.",
   },
 
   howItWorks: {

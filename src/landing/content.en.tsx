@@ -34,45 +34,28 @@ import type { LandingContent } from "./content";
 export const EN: LandingContent = {
   openApp: <span>Open <Brand /></span>,
 
-  /**
-   * The lines that rotate beside/below the fixed `done.` wordmark in the hero.
-   * Each one completes the sentence "done. …" — the primary lockup, the first
-   * entry, is "done. before you start.": it inverts the speed reading of the
-   * word "done", which otherwise files this product with the "design in
-   * minutes" competitors it exists to escape. The rest of the set keeps either
-   * that same inversion (done arrives before the guessing, not after it) or the
-   * same grounding (done is real: your own walls, a sofa that fits, paint you
-   * can buy).
-   *
-   * The primary lockup goes first: it is what a visitor sees on arrival, and it
-   * is the line that does the brand's single most important job.
-   */
-  slogans: [
-    { id: "beforeYouStart", tail: "before you start." },
-    { id: "uploadThenIts", lead: "upload, then it's" },
-    { id: "beforeYouGuess", tail: "before you guess." },
-    { id: "yourOwnWalls", tail: "with your own walls." },
-    { id: "drawItOnce", lead: "draw it once, and it's" },
-    { id: "sofaThatFits", tail: "with a sofa that fits." },
-    { id: "paintYouCanBuy", tail: "with paint you can buy." },
-    { id: "roomThatsYours", tail: "with a room that's really yours." },
-  ],
-
   hero: {
+    /**
+     * Replaced the rotating slogans (2026-09-19): a rotation that never stops
+     * fails WCAG 2.2.2 unless it can be paused, and the one claim the page
+     * exists to make fits in one sentence anyway. The plan is the one thing
+     * that has to be true; everything downstream inherits from it.
+     */
+    headline: { sans: "it starts with", serif: "the plan." },
     subhead:
       "Upload your floorplan as a reference underneath. Draw your own walls over it, to scale, and what comes out the other side is your actual room — a sofa that fits, paint you can buy, a walkthrough that's yours.",
     /** Trust microcopy under the CTAs. True today — no account gate anywhere
      *  in src/app/[locale]/design; see the FAQ "Do I need an account?" below. */
     note: "No account needed to start.",
-    /**
-     * The secondary button no longer goes anywhere — it plays the hero's own
-     * animation in place (see landing/heroSequence.ts). One button has to mean
-     * something at every stage of a thirteen-second sequence, so it has three
-     * labels rather than going dead once it has been pressed.
-     */
-    ctaGhostLabel: <span>{"see how it's "}<Brand /></span>,
-    ctaGhostLabelRunning: "Skip to the room",
-    ctaGhostLabelDone: "Watch it again",
+    /** Plain text, not a button: the demo below plays on its own once it is
+     *  scrolled into view (sections/DemoSection.tsx). */
+    scrollCue: "Scroll to watch it build",
+  },
+
+  demo: {
+    eyebrow: "Watch it build",
+    // "drawn", never "traced" — see the honesty constraint at the top.
+    title: "From a drawn line to a room you can walk through.",
   },
 
   howItWorks: {

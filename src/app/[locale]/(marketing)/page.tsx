@@ -4,6 +4,7 @@ import type { Locale } from "@/i18n/routing";
 import { alternatesFor } from "@/i18n/alternates";
 import { B } from "@/brand/tokens";
 import { Hero } from "@/landing/sections/Hero";
+import { DemoSection } from "@/landing/sections/DemoSection";
 import { HowItWorks } from "@/landing/sections/HowItWorks";
 import { Different } from "@/landing/sections/Different";
 import { Faq } from "@/landing/sections/Faq";
@@ -36,9 +37,9 @@ export async function generateMetadata({
  * redirects every marketing route to /design while the site is unlaunched — so
  * there is nothing to check here.
  *
- * The 3D room is passed INTO the hero rather than imported by it: the hero is
- * a presentational component that only reserves the slot, which keeps the
- * heaviest thing on the page swappable from one line here.
+ * The 3D room is passed INTO its section rather than imported by it: the
+ * section only reserves the slot, which keeps the heaviest thing on the page
+ * swappable from one line here.
  */
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   // Every layout and page under [locale] pins the request locale. Without it,
@@ -52,11 +53,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
-      <Hero demo={<DemoRoom />} />
+      <Hero locale={locale} />
 
       {/* A ground change is the only separator between sections — no rules, no
           dividers. Quiet is an attribute the brand actually commits to. */}
       <div style={{ background: B.canvas }}>
+        <DemoSection locale={locale} demo={<DemoRoom />} />
         <HowItWorks locale={locale} />
       </div>
 

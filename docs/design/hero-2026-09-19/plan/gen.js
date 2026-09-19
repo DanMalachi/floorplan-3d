@@ -479,10 +479,10 @@ labels.push(roomLabel(170,700,'Safe Room (Mamad)','ממ"ד',A_MAM));
 // Ensuite / W.I.C. are <1m2 — no font fits with 8cm clearance from fixtures,
 // so label them in the clear hall floor with a leader line + dot, per rule.
 leaderLabel(250,450,475,570,'Ensuite','חדר רחצה הורים',A_ENS);
-leaderLabel(400,450,575,570,'W.I.C.','ארון',A_WIC);
+leaderLabel(400,450,575,570,'W.I.C.','חדר ארונות',A_WIC);
 labels.push(roomLabel(525,738,'Main Bathroom','חדר אמבטיה',A_MBA,11,8));
-labels.push(roomLabel(482,818,'Entry','אמצפן כניסה',A_ENT,12));
-labels.push(roomLabel(680,50,'Laundry','מעבדת כביסה',A_LAU,11,8));
+labels.push(roomLabel(482,818,'Entry','כניסה',A_ENT,12));
+labels.push(roomLabel(680,50,'Laundry','חדר כביסה',A_LAU,11,8));
 // Guest WC is 1.0m2 — leader label into the open kitchen floor.
 leaderLabel(800,195,680,208,'Guest WC','שירותים',A_GWC);
 labels.push(roomLabel(1000,150,'Kitchen','מטבח',A_KITCH));

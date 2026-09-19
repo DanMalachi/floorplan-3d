@@ -524,9 +524,15 @@ production build (`next start`, en + he, axe WCAG 2.0/2.1 A+AA):
 | Live-room chrome (share popover, role rows, "N here", Save a copy, mode chips) English on /he; "Copied" silent (Known gap 7) | `collabRoom.*` messages; `role="status"` echo of Copied; server mint error logged, localized line shown | typecheck; room not opened in a browser |
 | Legal nav `aria-label="Legal"` English on /he | `footer.legal` | "מידע משפטי" |
 
-Open, waiting on Dan (visual): `ink4` micro-labels 3.6–3.9, `.done-demo-title`
-3.35, homepage rotating headline has no pause (2.2.2, level A). Listed in the
-statement's "not yet accessible" until decided.
+~~Open, waiting on Dan (visual): `ink4` micro-labels 3.6–3.9, `.done-demo-title`
+3.35, homepage rotating headline has no pause (2.2.2, level A).~~ **Closed
+2026-09-19** (branch `fix/a11y-compliance`): `ink4` text replaced by the
+`B.label` token (7.4–9.3:1), the demo title moved to `ink2` (6.54:1), and the
+rotating headline removed in the hero redesign (docs/design/hero-2026-09-19).
+The draw-then-build demo now autoplays once when scrolled into view and shows a
+visible "Skip to the room" button for as long as it moves (2.2.2); reduced
+motion shows the finished room. Both items removed from the statement's "not
+yet accessible", he + en.
 
 Open, product scope: keyboard/screen-reader operation of the 3D editing itself
 (2.1.1). The statement discloses it; closing it is a feature (see "The 3D

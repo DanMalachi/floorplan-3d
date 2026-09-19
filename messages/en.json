@@ -66,6 +66,8 @@
     "dragToOrbit": "Drag to orbit",
     "pauseOrbit": "Pause the orbit",
     "resumeOrbit": "Resume the orbit",
+    "skipToRoom": "Skip to the room",
+    "watchAgain": "Watch it again",
     "loadingPlan": "Loading the plan",
     "roomStudio": "STUDIO",
     "roomBath": "BATH",
