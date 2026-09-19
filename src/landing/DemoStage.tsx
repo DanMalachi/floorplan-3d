@@ -189,6 +189,21 @@ const IconPause = () => (
   </svg>
 );
 
+/** Skip to the end: the escape hatch a long animation owes its viewer. */
+const IconSkip = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M3.5 3.4 10 8l-6.5 4.6z" />
+    <path {...STROKE} d="M12.5 3.4v9.2" />
+  </svg>
+);
+
+const IconReplay = () => (
+  <svg {...ICON}>
+    <path {...STROKE} d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5" />
+    <path {...STROKE} d="M4.4 1.9v2.8h2.8" />
+  </svg>
+);
+
 const IconDrag = () => (
   <svg {...ICON}>
     <path {...STROKE} d="M8 7.2V3.5a1 1 0 0 1 2 0v3.5" />
@@ -452,8 +467,12 @@ function DemoControls({ dimmed }: { dimmed: boolean }) {
  * deliberately disabled — and it was doing it in the largest object on a canvas
  * that had no room to spare. The pause control stays: the orbit still runs
  * there, so stopping it is still a thing you can want.
+ *
+ * "Watch it again" lives here because the sequence plays on its own only once
+ * (DemoRoom.tsx): after that, replaying is the visitor's choice. It is absent
+ * under reduced motion, where there is nothing to replay.
  */
-function DemoToolbar() {
+function DemoToolbar({ onReplay }: { onReplay?: () => void }) {
   const t = useTranslations("demo");
   const playing = useSyncExternalStore(subscribeOrbitPlaying, getOrbitPlaying, getOrbitPlayingServer);
   return (
@@ -493,6 +512,33 @@ function DemoToolbar() {
       >
         {playing ? <IconPause /> : <IconPlay />}
       </button>
+      {onReplay && (
+        <button
+          type="button"
+          onClick={onReplay}
+          className={`${BTN_CLASS} ${REPLAY_CLASS}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            height: 34,
+            padding: "0 12px",
+            borderRadius: B.radiusS,
+            border: `1px solid ${B.hairline}`,
+            background: "transparent",
+            color: B.ink,
+            fontFamily: B.fontUi,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            flex: "none",
+            transition: `border-color ${B.dur} ${B.ease}`,
+          }}
+        >
+          <IconReplay />
+          {t("watchAgain")}
+        </button>
+      )}
     </div>
   );
 }
@@ -687,6 +733,7 @@ export default function DemoStage({
   useEffect(() => () => useSceneStore.setState(priorSlice), [priorSlice]);
 
   const built = stage === "done";
+  const running = stage === "tracing" || stage === "building";
   const lit = stage === "building" || built;
 
   // The orbit's play state lives in a module singleton (it has to cross the
@@ -802,7 +849,17 @@ export default function DemoStage({
 
         {/* Both only mean anything once there is a room: "Drag to orbit" over a
             drawing is a lie, and a call to action before the payoff is a nag. */}
-        {built && <DemoToolbar />}
+        {/* WCAG 2.2.2: the sequence starts on its own, so while it moves there
+            has to be a visible way to stop it. Top corner, clear of the drawn
+            "Generate model" button along the bottom. */}
+        {!reduced && running && (
+          <button type="button" className={SKIP_CLASS} onClick={() => onStage("done")}>
+            <span className={SKIP_DOT_CLASS} aria-hidden="true" />
+            <IconSkip />
+            {t("skipToRoom")}
+          </button>
+        )}
+        {built && <DemoToolbar onReplay={reduced ? undefined : () => onStage("tracing")} />}
         {built && (
           <Link href={APP_HREF} className={`${REVEAL_CLASS} ${CTA_CLASS}`} style={ctaPrimary()}>
             {landingContent(locale).openApp}
@@ -830,6 +887,9 @@ const WINDOW_CLASS = "done-demo-window";
 const TITLEBAR_CLASS = "done-demo-titlebar";
 const LIGHTS_CLASS = "done-demo-lights";
 const TITLE_CLASS = "done-demo-title";
+const SKIP_CLASS = "done-demo-skip";
+const SKIP_DOT_CLASS = "done-demo-skip-dot";
+const REPLAY_CLASS = "done-demo-replay";
 const BODY_CLASS = "done-demo-body";
 
 /* ── Why the canvas is no longer MASKED ──────────────────────────────────────
@@ -894,7 +954,7 @@ ${PLAN_TEXT_CSS}
   font-family: ${B.fontMono};
   font-size: 11.5px;
   letter-spacing: 0.1em;
-  color: ${B.ink4};
+  color: ${B.ink2};
   pointer-events: none;
 }
 .${BODY_CLASS} { padding: clamp(12px, 1.6vw, 20px); }
@@ -990,6 +1050,35 @@ ${PLAN_TEXT_CSS}
 .${BTN_CLASS}:hover { border-color: ${B.hairline2} !important; }
 .${BTN_CLASS}[data-active]:hover { border-color: ${B.accent} !important; }
 .${BTN_CLASS}:focus-visible { outline: 2px solid ${B.accent}; outline-offset: 2px; }
+
+.${SKIP_CLASS} {
+  position: absolute;
+  top: clamp(10px, 1.6vw, 16px);
+  inset-inline-end: clamp(10px, 1.6vw, 16px);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  border: 1px solid ${B.hairline2};
+  background: ${B.raised};
+  box-shadow: ${B.shadow};
+  color: ${B.ink};
+  font-family: ${B.fontUi};
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color ${B.dur} ${B.ease};
+}
+.${SKIP_CLASS}:hover { border-color: ${B.accent}; }
+.${SKIP_CLASS}:focus-visible { outline: 2px solid ${B.accent}; outline-offset: 2px; }
+[dir="rtl"] .${SKIP_CLASS} svg, [dir="rtl"] .${REPLAY_CLASS} svg { transform: scaleX(-1); }
+.${SKIP_DOT_CLASS} { width: 7px; height: 7px; border-radius: 50%; background: ${B.accent}; animation: done-demo-skip-pulse 1.6s ease-in-out infinite; }
+@keyframes done-demo-skip-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .${SKIP_DOT_CLASS} { animation: none; } }
 
 .${TOOLBAR_CLASS} {
   position: absolute;

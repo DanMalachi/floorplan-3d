@@ -25,6 +25,7 @@ export default async function LegalLayout({
   const { locale } = await params;
   setRequestLocale(locale as Locale);
   const t = await getTranslations("nav");
+  const tf = await getTranslations("footer");
 
   return (
     <div
@@ -64,7 +65,7 @@ export default async function LegalLayout({
       />
       <div className="fp-legal" style={{ maxWidth: 720, margin: "0 auto", padding: "56px 24px 96px" }}>
         <nav
-          aria-label="Legal"
+          aria-label={tf("legal")}
           style={{
             display: "flex",
             flexWrap: "wrap",

@@ -5,13 +5,13 @@
 //
 // A module-level store rather than a prop, for exactly the reason
 // `viewport3d/autoOrbitPlayback.ts` is one: the two things that need it sit on
-// opposite sides of a boundary that must not be crossed. The button lives in
-// `sections/Hero.tsx`, the animation lives in `TraceOverlay.tsx` inside the
-// demo — and the demo reaches Hero as an opaque `ReactNode` slot injected by
-// `(marketing)/page.tsx`, so there is no prop path between them at all.
+// opposite sides of a boundary that must not be crossed. The autoplay trigger
+// and the live region live in `DemoRoom.tsx` (the light side), the animation
+// lives in `TraceOverlay.tsx` inside the lazily loaded `DemoStage`.
+// (Until 2026-09-19 the trigger was a button in `sections/Hero.tsx`.)
 //
-// Lifting the state into Hero and threading it down would mean Hero importing
-// the demo, which is the one thing the code-split forbids: anything Hero
+// Holding it in React state and threading it down would mean the light side
+// importing the demo, which is the one thing the code-split forbids: anything it
 // imports that reaches `useSceneStore` puts three.js back into the marketing
 // page's first load, with no error to tell you (see DemoStage.tsx's header).
 // This file imports nothing, so both sides can hold it safely.
@@ -21,8 +21,8 @@
 // ever mounts, this becomes per-instance state and moves into a context.
 //
 // ── The one rule that keeps it a singleton ──────────────────────────────────
-// EVERY importer of this file must live in the page's main chunk. Hero.tsx and
-// DemoRoom.tsx do. DemoStage.tsx MUST NOT — it is reached only through
+// EVERY importer of this file must live in the page's main chunk. DemoRoom.tsx
+// does. DemoStage.tsx MUST NOT — it is reached only through
 // `dynamic(() => import("./DemoStage"))`, so it lands in its own chunk, and a
 // module imported by two chunks is instantiated once per chunk. That is not a
 // theoretical risk: this file was imported on both sides first, `stage` was
@@ -68,20 +68,6 @@ export function setHeroStage(next: HeroStage): void {
   if (stage === next) return;
   stage = next;
   emit();
-}
-
-/**
- * What the hero's secondary button does.
- *
- * One button drives the whole sequence, so it has to mean something at every
- * stage rather than going dead once the animation is running:
- *   - at rest it starts the sequence,
- *   - while the sequence runs it SKIPS to the finished room, which is the
- *     escape hatch a 13-second animation owes anyone who has seen it once,
- *   - once the room is built it replays from the blank plan.
- */
-export function advanceHeroStage(): void {
-  setHeroStage(stage === "idle" ? "tracing" : stage === "done" ? "tracing" : "done");
 }
 
 /** Reset on mount, so a client-side navigation back to the homepage doesn't

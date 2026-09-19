@@ -13,12 +13,13 @@ import { LEGAL_FACTS as F } from "../facts";
 // NOT accessible and any alternative, contact details for accessibility
 // requests, and the date of the statement.
 //
-// Every claim below comes from docs/ACCESSIBILITY.md (code audit, 2026-08-24).
-// That audit says outright that nothing was tested with a screen reader, a
-// keyboard in a live browser or an automated tool, so this statement does NOT
-// claim conformance — claiming it untested is the one thing worse than having
-// no statement. When a real test pass happens, update both this file and that
-// doc, and move items out of "not yet accessible".
+// Every claim below comes from docs/ACCESSIBILITY.md: the code audit
+// (2026-08-24), the axe + keyboard pass and the rendered-pixel contrast
+// measurements (both 2026-09-18). Nothing has been tested with a screen reader,
+// so this statement does NOT claim conformance — claiming it untested is the
+// one thing worse than having no statement. When a screen-reader pass happens,
+// update both this file and that doc, and move items out of "not yet
+// accessible".
 
 export function AccessibilityHe() {
   return (
@@ -48,11 +49,18 @@ export function AccessibilityHe() {
       <ul style={legalUl}>
         <li style={legalLi}>
           לכל הכפתורים והפקדים באתר ובעורך יש שם נגיש שקורא מסך יכול להקריא,
-          כולל כפתורים שמוצג בהם אייקון בלבד.
+          כולל כפתורים שמוצג בהם אייקון בלבד — ובעברית באתר העברי.
         </li>
         <li style={legalLi}>
-          גלריית הפרויקטים, תפריטי הניווט המאוירים, הלוחות והחלונות הקופצים
-          ניתנים להפעלה מהמקלדת.
+          כל מה שמסביב לתצוגת התלת-ממד — גלריית הפרויקטים, תפריטי הניווט
+          המאוירים, הלוחות, החלונות, השיתוף ועמוד החשבון — ניתן להפעלה
+          מהמקלדת, מציג סימון פוקוס גלוי, ולעולם לא &quot;לוכד&quot; את
+          המקלדת.
+        </li>
+        <li style={legalLi}>
+          אפשר להגיע לתצוגת התלת-ממד מהמקלדת. היא מזוהה בשם לקוראי מסך ומכריזה
+          על מקשי השליטה שלה: הזזה וסיבוב של המצלמה, מבט מלמעלה, מיקוד, וסיבוב,
+          מחיקה וביטול בחירה של פריט נבחר.
         </li>
         <li style={legalLi}>
           מצב נבחר מסומן גם בתכונות נגישות ולא רק בצבע, והודעות מצב מוכרזות
@@ -63,25 +71,39 @@ export function AccessibilityHe() {
           מקושרים לתוויות שלהם.
         </li>
         <li style={legalLi}>
-          אנימציות בממשק מצטמצמות או מבוטלות אצל מי שביקשו במערכת ההפעלה
-          להפחית תנועה.
+          הטקסט בלוחות העורך עומד ביחס ניגודיות של 4.5:1 בערכת הנושא הכהה
+          ובבהירה, גם מעל החלקים הבהירים ביותר של התמונה התלת-ממדית. הדבר נמדד
+          על המסך כפי שהוא מוצג בפועל.
         </li>
         <li style={legalLi}>
-          השירות זמין בעברית, בכיוון מימין לשמאל, ובאנגלית.
+          אפשר להגדיל את האתר ואת העורך עד 200% בלי שפקדים יחפפו זה לזה או
+          ייעלמו.
+        </li>
+        <li style={legalLi}>
+          אצל מי שביקשו במערכת ההפעלה להפחית תנועה, האנימציות בממשק מבוטלות,
+          תנועות המצלמה בתצוגת התלת-ממד קופצות ישירות ליעד במקום לגלוש, והדגמה
+          בעמוד הבית מציגה את החדר המוגמר בלי אנימציה. אפשר גם לעצור את סיבוב
+          ההדגמה.
+        </li>
+        <li style={legalLi}>
+          ההדגמה בעמוד הבית מתחילה לבד כשגוללים אליה. כל עוד היא פועלת, מוצג
+          כפתור &quot;דלגו לחדר&quot; שעוצר אותה.
+        </li>
+        <li style={legalLi}>
+          אפשר לסגור חלוניות עזרה (tooltips) במקש Escape.
+        </li>
+        <li style={legalLi}>
+          השירות זמין בעברית, בכיוון מימין לשמאל, ובאנגלית, ומידות מוצגות בסדר
+          הנכון בשתי השפות.
         </li>
       </ul>
 
       <h2 style={legalH2}>3. מה עדיין לא נגיש</h2>
       <ul style={legalUl}>
         <li style={legalLi}>
-          <b>מודל התלת-ממד עצמו.</b> שרטוט קירות, בחירה, גרירה וסיבוב של
+          <b>עריכת מודל התלת-ממד.</b> שרטוט קירות, בחירה, גרירה וסיבוב של
           פריטים והסיור הווירטואלי מתבצעים באמצעות עכבר או מגע על גבי תצוגה
           גרפית. אין להם כרגע חלופה שמתאימה לקורא מסך או להפעלה מלאה מהמקלדת.
-        </li>
-        <li style={legalLi}>
-          <b>ניגודיות.</b> הלוחות השקופים למחצה בעורך מוצגים מעל התמונה
-          התלת-ממדית, ולכן הניגודיות של הטקסט בהם משתנה ועלולה לרדת מתחת לנדרש.
-          גם טקסט משני בגוון בהיר נמצא מתחת ליחס 4.5:1.
         </li>
         <li style={legalLi}>
           <b>קיצורי מקשים</b> של תו בודד אינם ניתנים לכיבוי או לשינוי.
@@ -94,12 +116,13 @@ export function AccessibilityHe() {
           מהחלונות הקופצים לא מתנהגים כתפריטים מלאים.
         </li>
         <li style={legalLi}>
-          התנועה בתוך התצוגה התלת-ממדית (מעברי מצלמה, סיור, מזג אוויר) לא
-          מצטמצמת לפי הגדרת הפחתת התנועה.
+          הסיור הווירטואלי, הגשם והאנימציה של שעות היום בתצוגת התלת-ממד עדיין
+          לא מצטמצמים לפי הגדרת הפחתת התנועה.
         </li>
         <li style={legalLi}>
-          השירות טרם נבדק עם קוראי מסך (NVDA,&rlm; JAWS,&rlm; VoiceOver), בבדיקת
-          מקלדת מלאה בדפדפן או בכלי בדיקה אוטומטי. הבדיקה שנעשתה היא סקירת קוד.
+          השירות טרם נבדק עם קוראי מסך (NVDA,&rlm; JAWS,&rlm; VoiceOver). הוא
+          נבדק בכלי בדיקה אוטומטי (axe, לפי WCAG 2.0 ו-2.1 ברמות A ו-AA)
+          ובמעבר מלא במקלדת על כל העמודים הציבוריים, בעברית ובאנגלית.
         </li>
       </ul>
       <p style={legalP}>

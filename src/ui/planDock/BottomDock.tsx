@@ -546,49 +546,10 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
           <img src={thumb} alt="" width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
         )}
       </div>
-      {group && (
-        <div style={{ display: "flex", gap: 3 }}>
-          {group.slice(0, 4).map((v) => (
-            <span
-              key={v.assetId}
-              role="button"
-              aria-label={`${v.name} · ${v.colors?.[0]?.name ?? "variant"}`}
-              aria-pressed={v.assetId === activeSpec.assetId}
-              // Was pointer-only: role="button" with no tabindex and no key
-              // handler is a button nobody can reach or operate from the
-              // keyboard. See docs/ACCESSIBILITY.md for the remaining
-              // structural problem here (this control is nested inside the
-              // card's own <button>, which no amount of ARIA fixes).
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                e.preventDefault();
-                e.stopPropagation();
-                setActiveVariantId(v.assetId);
-                arm(v.assetId);
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveVariantId(v.assetId);
-                arm(v.assetId);
-              }}
-              // No tooltip of its own, and no `title`. The colour name is
-              // already this dot's `aria-label` above, and a 9px target nested
-              // INSIDE a card that carries its own tooltip would fire both at
-              // once — two labels for one cursor. Clicking it swaps the card's
-              // caption to that variant, which is the same answer, immediately.
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: "50%",
-                background: v.colors?.[0]?.hex ?? "#999",
-                border: v.assetId === activeSpec.assetId ? `1.5px solid ${PD.accent}` : `1px solid ${PD.hairline}`,
-                cursor: "pointer",
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Holds the variant dots' row open. The dots themselves are drawn
+          OUTSIDE this button (see `dots` below): a control inside a <button>
+          is nested-interactive (WCAG 4.1.2) and screen readers flatten it. */}
+      {group && <div aria-hidden="true" style={{ height: DOT_ROW, flexShrink: 0 }} />}
       <span style={{ fontSize: 11, fontWeight: 600, color: PD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
         {activeSpec.name}
       </span>
@@ -606,7 +567,7 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   // caption is ellipsized at 68px and the size appears nowhere else on the
   // card. BELOW the card: this grid scrolls and its first row is flush with the
   // container's top edge, which clips anything drawn above it.
-  return (
+  const tooltipped = (
     <Tooltip
       // Tooltip's `label` is a plain string (also cloned onto aria-label), so
       // the "W×D m" measurement can't be isolated with a `<bdi>` — it gets the
@@ -618,7 +579,63 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
       {card}
     </Tooltip>
   );
+  if (!group) return tooltipped;
+  // Variant dots: siblings of the card, laid over the spacer row inside it.
+  // Outside the Tooltip host too, so hovering a dot does not also fire the
+  // card's tooltip — two labels for one cursor. No tooltip of their own: the
+  // colour name is the aria-label, and a click swaps the card's caption to
+  // that variant, which is the same answer, immediately.
+  const dots = (
+    <div
+      style={{
+        position: "absolute",
+        top: DOT_TOP,
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        gap: 3,
+      }}
+    >
+      {group.slice(0, 4).map((v) => (
+        <button
+          key={v.assetId}
+          type="button"
+          aria-label={`${v.name} · ${v.colors?.[0]?.name ?? "variant"}`}
+          aria-pressed={v.assetId === activeSpec.assetId}
+          onClick={() => {
+            setActiveVariantId(v.assetId);
+            arm(v.assetId);
+          }}
+          style={{
+            width: DOT,
+            height: DOT,
+            padding: 0,
+            borderRadius: "50%",
+            background: v.colors?.[0]?.hex ?? "#999",
+            border: v.assetId === activeSpec.assetId ? `1.5px solid ${PD.accent}` : `1px solid ${PD.hairline}`,
+            // content-box, as the old <span> dots were: 9px of colour plus
+            // the border, so the row renders exactly as before.
+            boxSizing: "content-box",
+            cursor: "pointer",
+          }}
+        />
+      ))}
+    </div>
+  );
+  return (
+    <div style={{ position: "relative", display: "inline-flex", flex: "0 0 auto" }}>
+      {tooltipped}
+      {dots}
+    </div>
+  );
 }
+
+/** Variant dot size, and where its row starts inside an ItemCard: the card's
+ *  4px padding + 1.5px border + 48px thumbnail + 3px gap. */
+const DOT = 9;
+/** Tallest dot: the selected one's 1.5px border on both sides. */
+const DOT_ROW = DOT + 3;
+const DOT_TOP = 4 + 1.5 + 48 + 3;
 
 
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms

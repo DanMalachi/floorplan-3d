@@ -1,0 +1,288 @@
+<title>done. hero mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800;900&family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Heebo:wght@500;800;900&family=Noto+Sans+Hebrew:wght@800;900&family=Secular+One&family=IBM+Plex+Sans+Hebrew:wght@500;700&family=Newsreader:ital,opsz,wght@1,6..72,500&family=Source+Serif+4:ital,opsz,wght@1,8..60,500&family=Literata:ital,opsz,wght@1,7..72,500&family=EB+Garamond:ital,wght@1,500&family=Crimson+Pro:ital,wght@1,500&family=Bona+Nova:ital,wght@1,400;1,700&family=Tinos:ital,wght@1,700&family=Frank+Ruhl+Libre:wght@700;900&family=Noto+Rashi+Hebrew:wght@700&family=David+Libre:wght@700&display=swap">
+<style>
+  :root {
+    --ground: #F8F7F4; --canvas: #FFFFFF; --ink: #26241F; --ink2: #535047; --ink3: #757168;
+    --accent: #A74900; --accent-tint: rgba(167,73,0,0.10); --hair: rgba(11,10,7,0.13); --hair2: rgba(11,10,7,0.22);
+    --sel-bg: #26241F; --sel-fg: #FFFFFF; --bar: #FFFFFF; --bar-shadow: 0 1px 2px rgba(11,10,7,.08), 0 8px 24px -10px rgba(11,10,7,.22);
+    --ui: "Manrope", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ground: #101014; --canvas: #18191D; --ink: #F0EEEA; --ink2: #A7A49C; --ink3: #8C8980;
+    --accent: #DF7940; --accent-tint: rgba(223,121,64,0.14); --hair: rgba(255,255,255,0.10); --hair2: rgba(255,255,255,0.18);
+    --sel-bg: #F0EEEA; --sel-fg: #101014; --bar: #1E2025; --bar-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 10px 30px -12px rgba(0,0,0,.8); } }
+  :root[data-theme="dark"] {
+    --ground: #101014; --canvas: #18191D; --ink: #F0EEEA; --ink2: #A7A49C; --ink3: #8C8980;
+    --accent: #DF7940; --accent-tint: rgba(223,121,64,0.14); --hair: rgba(255,255,255,0.10); --hair2: rgba(255,255,255,0.18);
+    --sel-bg: #F0EEEA; --sel-fg: #101014; --bar: #1E2025; --bar-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 10px 30px -12px rgba(0,0,0,.8); }
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--ui); line-height: 1.55; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 40px 16px 96px; display: grid; gap: 28px; }
+  .micro { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink3); }
+  h1.page { font-size: clamp(26px, 4vw, 38px); margin: 6px 0 0; letter-spacing: -.02em; font-weight: 800; text-wrap: balance; }
+  p { margin: 0; max-width: 72ch; }
+  .muted { color: var(--ink2); }
+  ul.heard { margin: 0; padding-inline-start: 20px; color: var(--ink2); display: grid; gap: 4px; }
+  ul.heard b { color: var(--ink); }
+
+  /* ── Preview controls: a raised bar of labelled segmented controls ── */
+  .controls { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 5; background: var(--bar); box-shadow: var(--bar-shadow); border-radius: 18px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: end; }
+  .grp { display: grid; gap: 6px; }
+  .grp-label { font-size: 12px; font-weight: 700; color: var(--ink2); padding-inline-start: 4px; }
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 14px; background: var(--ground); box-shadow: inset 0 0 0 1px var(--hair2); }
+  .seg button { font: inherit; font-size: 14px; font-weight: 600; min-height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer;
+    transition-property: background-color, color, scale; transition-duration: 150ms; transition-timing-function: cubic-bezier(0.2, 0, 0, 1); }
+  .seg button:hover { background: var(--accent-tint); }
+  .seg button:active { scale: 0.96; }
+  .seg button[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-fg); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ── The mock site ── */
+  .site { --g: #101014; --c: #18191D; --r: #1E2025; --i: #F0EEEA; --i2: #A7A49C; --lbl: #B3B5BA; --cu: #DF7940; --h: rgba(255,255,255,.10); --planInk: #ECEAE5;
+    --sans: "Archivo", system-ui, sans-serif; --heavy: 800; --track: -.03em;
+    --serif: "Newsreader", Georgia, serif; --serifStyle: italic; --serifW: 500; --serifScale: 1.08;
+    background: var(--g); color: var(--i); border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 1px var(--hair2); }
+  .site[data-t="light"] { --g: #F8F7F4; --c: #FFFFFF; --r: #FFFFFF; --i: #26241F; --i2: #535047; --lbl: #4E5157; --cu: #A74900; --h: rgba(11,10,7,.13); --planInk: #2B2925; }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(16px, 4vw, 44px); position: relative; z-index: 2; }
+  .wm { font-family: "Manrope", sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -.04em; }
+  .wm i, .cta i { color: inherit; font-style: normal; }
+  .wm i { color: var(--cu); }
+  .nav .links { display: flex; gap: 22px; font-size: 14px; color: var(--i2); font-family: var(--sans); font-weight: 500; }
+  .nav .pill { font-family: var(--sans); font-size: 13.5px; font-weight: 700; padding: 8px 14px; border-radius: 999px; background: var(--cu); color: #fff; text-shadow: 0 0 1px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.45); }
+  bdi.brand { font-family: "Manrope", sans-serif; font-weight: 800; letter-spacing: -.02em; }
+
+  .hero { position: relative; min-height: clamp(470px, 60vw, 640px); display: grid; align-items: center; padding: 20px clamp(16px, 4vw, 44px) 56px; }
+  /* The plan spans the hero; the mask is measured against the hero. Fully
+     clear until 44%, so nothing but open ground sits behind the text. */
+  .plan { position: absolute; top: -120px; bottom: -60px; inset-inline-start: 0; inset-inline-end: -6%; color: var(--planInk); pointer-events: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 44%, rgba(0,0,0,.22) 56%, rgba(0,0,0,.7) 70%, #000 84%);
+            mask-image: linear-gradient(to right, transparent 0%, transparent 44%, rgba(0,0,0,.22) 56%, rgba(0,0,0,.7) 70%, #000 84%); }
+  .site[dir="rtl"] .plan { -webkit-mask-image: linear-gradient(to left, transparent 0%, transparent 44%, rgba(0,0,0,.22) 56%, rgba(0,0,0,.7) 70%, #000 84%);
+            mask-image: linear-gradient(to left, transparent 0%, transparent 44%, rgba(0,0,0,.22) 56%, rgba(0,0,0,.7) 70%, #000 84%); }
+  .plan svg { width: 100%; height: 100%; display: block; }
+  .site[dir="rtl"] .plan svg { transform: scaleX(-1); }
+  .site[dir="rtl"] .plan svg text { transform-box: fill-box; transform-origin: center; transform: scaleX(-1); }
+
+  .copy { position: relative; z-index: 1; display: grid; gap: clamp(18px, 2.4vw, 28px); max-width: min(640px, 58%); }
+  .hl { margin: 0; font-family: var(--sans); font-weight: var(--heavy); font-size: clamp(44px, 7.2vw, 104px); line-height: .98; letter-spacing: var(--track); }
+  .hl .l { display: block; white-space: nowrap; }
+  .hl .serif { font-family: var(--serif); font-style: var(--serifStyle); font-weight: var(--serifW); color: var(--cu); font-size: calc(1em * var(--serifScale)); letter-spacing: -.005em; line-height: 1.02; }
+  .sub { font-family: var(--sans); font-weight: 400; font-size: clamp(16px, 1.55vw, 18.5px); line-height: 1.6; color: var(--i2); max-width: 46ch; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+  .cta { font-family: var(--sans); font-weight: 700; font-size: 16.5px; padding: 15px 26px; border-radius: 999px; background: var(--cu); color: #fff; text-shadow: 0 0 1px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.45); }
+  .note { font-family: var(--sans); font-size: 14px; color: var(--lbl); }
+  .scroll-cue { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--lbl); }
+  .site[dir="rtl"] .scroll-cue, .site[dir="rtl"] .eyebrow { font-family: var(--sans); letter-spacing: .02em; font-size: 12.5px; text-transform: none; }
+
+  .demo-sec { background: var(--c); padding: 40px clamp(16px, 4vw, 44px) 44px; display: grid; gap: 16px; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--lbl); }
+  .demo-sec h2 { margin: 0; font-family: var(--sans); font-weight: 800; font-size: clamp(22px, 3vw, 32px); letter-spacing: -.02em; }
+  .win { border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--h); background: var(--g); }
+  .bar { position: relative; height: 40px; display: flex; align-items: center; padding: 0 14px; background: var(--r); border-bottom: 1px solid var(--h); }
+  .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .lights { display: flex; gap: 8px; }
+  .bar .t { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .1em; color: var(--i2); }
+  .stage { height: 160px; position: relative; display: grid; place-items: center; color: var(--i2); font-size: 13px; font-family: var(--sans); padding: 0 16px; text-align: center; }
+  .playing { position: absolute; bottom: 12px; inset-inline-end: 12px; display: inline-flex; gap: 8px; align-items: center; font-family: var(--sans); font-size: 12.5px; padding: 6px 12px; border-radius: 999px; background: var(--r); box-shadow: 0 0 0 1px var(--h); color: var(--i); }
+  .playing .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cu); }
+
+  .phone { max-width: 393px; }
+  .phone .hero { min-height: 600px; align-items: start; padding-top: 12px; }
+  .phone .copy { max-width: 100%; }
+  .phone .plan { top: auto; bottom: -40px; height: 50%; inset-inline-start: -30%; inset-inline-end: -30%;
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 80%); mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 80%); }
+  .phone .nav .links { display: none; }
+  .phone .hl { font-size: 46px; }
+  .previews { display: grid; gap: 20px; }
+  .cap { font-size: 13px; color: var(--ink2); margin-top: 8px; }
+
+  /* ── Type specimens ── */
+  .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 10px; }
+  .spec { display: grid; gap: 6px; padding: 16px 16px 12px; border-radius: 14px; background: var(--canvas); box-shadow: 0 0 0 1px var(--hair); text-align: start; font: inherit; color: var(--ink); cursor: pointer;
+    transition-property: box-shadow, background-color; transition-duration: 150ms; }
+  .spec:hover { box-shadow: 0 0 0 1px var(--hair2); }
+  .spec[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); background: var(--accent-tint); }
+  .spec:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .spec .sample { font-size: 44px; line-height: 1.05; color: var(--accent); white-space: nowrap; overflow: hidden; }
+  .spec .sample.sans { color: var(--ink); font-size: 38px; }
+  .spec .meta { font-size: 13px; color: var(--ink2); display: flex; justify-content: space-between; gap: 8px; }
+  .spec .meta b { color: var(--ink); font-weight: 700; }
+  .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); white-space: nowrap; }
+  section.q { display: grid; gap: 14px; padding-top: 24px; border-top: 1px solid var(--hair2); }
+  section.q h2 { margin: 0; font-size: clamp(20px, 2.6vw, 25px); letter-spacing: -.01em; }
+  textarea { width: 100%; min-height: 110px; font: inherit; font-size: 15px; padding: 12px; border-radius: 12px; border: 1px solid var(--hair2); background: var(--canvas); color: var(--ink); }
+  .send { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  button.primary { font: inherit; font-weight: 700; padding: 11px 20px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; cursor: pointer; text-shadow: 0 0 1px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.45); transition-property: scale; transition-duration: 150ms; }
+  button.primary:active { scale: 0.96; }
+  button.primary:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .flag { border-inline-start: 3px solid var(--accent); padding: 10px 14px; background: var(--accent-tint); border-radius: 0 10px 10px 0; font-size: 14.5px; }
+  @media (max-width: 720px) { .copy { max-width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .seg button, .spec, button.primary { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:12px">
+    <div class="micro">done.design · homepage hero · FINAL PICKS 19 Sep 2026: Archivo 800 + Newsreader Italic · Heebo Black + Bona Nova Italic</div>
+    <h1 class="page">Round 2: sharper type, a real floorplan, new serifs</h1>
+    <ul class="heard">
+      <li><b>English headline</b> is now Archivo 800. The rest of the page copy uses Archivo too.</li>
+      <li><b>Hebrew sans:</b> Rubik is out. Four sharper, heavier options are below.</li>
+      <li><b>Serifs:</b> a new round, and all of them slant, Hebrew included. Hebrew rarely has true italics, so each Hebrew option is labelled true italic, traditional semi-cursive, or slanted by the browser.</li>
+      <li><b>Floorplan:</b> redrawn by a stronger model. CAD-style rectangular furniture, no wooden floors, tiles only in wet rooms.</li>
+      <li><b>The fade:</b> the plan is fully clear under the whole left 44%, so it never sits behind the text.</li>
+      <li><b>"done."</b> stays "done." in Hebrew, with the dot always on the right. It's isolated as a left-to-right word.</li>
+    </ul>
+    <p class="muted">About the Claude/Anthropic look: Anthropic's own serifs are paid, licensed fonts, and the no-paid-assets rule means done. can't ship them. The Latin options below are free fonts (OFL) in the same spirit: literary, calligraphic italics that sit well beside a heavy sans. Newsreader and Source Serif 4 are the closest in feel.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Preview options">
+    <div class="grp"><span class="grp-label" id="gl-lang">Language</span><span class="seg" data-set="lang" role="group" aria-labelledby="gl-lang"><button type="button" data-v="en">English</button><button type="button" data-v="he">עברית</button></span></div>
+    <div class="grp"><span class="grp-label" id="gl-theme">Theme</span><span class="seg" data-set="theme" role="group" aria-labelledby="gl-theme"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></span></div>
+    <div class="grp"><span class="grp-label" id="gl-view">Width</span><span class="seg" data-set="view" role="group" aria-labelledby="gl-view"><button type="button" data-v="both">Desktop + phone</button><button type="button" data-v="desk">Desktop</button></span></div>
+  </div>
+
+  <div class="previews">
+    <div><div class="site" id="desk"></div><div class="cap" id="deskCap"></div></div>
+    <div id="phoneWrap"><div class="site phone" id="phone"></div><div class="cap">Phone, 393 px: the plan sits under the text.</div></div>
+  </div>
+
+  <div class="flag"><b>From the law:</b> the demo that starts on its own when you scroll to it has to show a visible <b>Skip to the room</b> or pause control while it plays (WCAG 2.2.2). It's in the mockup and it'll be in the build.</div>
+
+  <form id="f" style="display:grid;gap:28px">
+    <section class="q">
+      <div class="micro">Pick 1 · English serif (italic)</div>
+      <h2>"the plan."</h2>
+      <p class="muted">Click a card to see it in the preview above (switch Language to English).</p>
+      <div class="spec-grid" data-pick="serifEn"></div>
+    </section>
+    <section class="q">
+      <div class="micro">Pick 2 · Hebrew serif (slanted)</div>
+      <h2>"בשרטוט."</h2>
+      <p class="muted">Click a card to see it in the preview (switch Language to עברית). Bona Nova is the only one with a true Hebrew italic. Tinos has a real slanted Hebrew, like a newspaper italic. Noto Rashi is the traditional semi-cursive "Rashi script", sideways in spirit rather than tilted. For the rest, the browser tilts an upright font.</p>
+      <div class="spec-grid" data-pick="serifHe"></div>
+    </section>
+    <section class="q">
+      <div class="micro">Pick 3 · Hebrew heavy sans</div>
+      <h2>"הכול מתחיל"</h2>
+      <p class="muted">All four have straight, cut corners instead of Rubik's rounded ones.</p>
+      <div class="spec-grid" data-pick="sansHe"></div>
+    </section>
+    <section class="q">
+      <div class="micro">Notes</div>
+      <h2>Anything else</h2>
+      <label for="note" class="muted">Changes to the plan drawing, the fade, sizes, or anything else.</label>
+      <textarea id="note" name="note"></textarea>
+      <div class="send"><button type="submit" class="primary">Send to Claude</button><span id="msg" role="status" class="muted"></span></div>
+    </section>
+  </form>
+</div>
+
+<template id="plan-svg"><!--PLAN_SVG--></template>
+
+<script>
+(() => {
+  const SERIF_EN = [
+    { id: "newsreader", name: "Newsreader", css: '"Newsreader", Georgia, serif', w: 500, scale: 1.08, tag: "closest to the Claude feel" },
+    { id: "source-serif-4", name: "Source Serif 4", css: '"Source Serif 4", Georgia, serif', w: 500, scale: 1.04, tag: "calm, bookish" },
+    { id: "literata", name: "Literata", css: '"Literata", Georgia, serif', w: 500, scale: 1.02, tag: "warm, sturdy" },
+    { id: "eb-garamond", name: "EB Garamond", css: '"EB Garamond", Georgia, serif', w: 500, scale: 1.16, tag: "classical" },
+    { id: "crimson-pro", name: "Crimson Pro", css: '"Crimson Pro", Georgia, serif', w: 500, scale: 1.14, tag: "elegant, narrow" },
+    { id: "bona-nova", name: "Bona Nova", css: '"Bona Nova", Georgia, serif', w: 700, scale: 1.04, tag: "matches Hebrew option 1" },
+  ];
+  const SERIF_HE = [
+    { id: "bona-nova", name: "Bona Nova Italic", css: '"Bona Nova", serif', style: "italic", w: 700, scale: 1.0, tag: "true Hebrew italic" },
+    { id: "tinos", name: "Tinos Italic", css: '"Tinos", serif', style: "italic", w: 700, scale: 1.0, tag: "real slanted Hebrew" },
+    { id: "noto-rashi", name: "Noto Rashi Hebrew", css: '"Noto Rashi Hebrew", serif', style: "normal", w: 700, scale: 1.02, tag: "traditional semi-cursive" },
+    { id: "frank-ruhl-oblique", name: "Frank Ruhl Libre, slanted", css: '"Frank Ruhl Libre", serif', style: "oblique 12deg", w: 900, scale: 1.0, tag: "browser-slanted" },
+    { id: "david-oblique", name: "David Libre, slanted", css: '"David Libre", serif', style: "oblique 12deg", w: 700, scale: 1.02, tag: "browser-slanted" },
+  ];
+  const SANS_HE = [
+    { id: "heebo-900", name: "Heebo Black", css: '"Heebo", sans-serif', w: 900, track: "-.02em", tag: "sharp, closest to Archivo" },
+    { id: "noto-sans-he-900", name: "Noto Sans Hebrew Black", css: '"Noto Sans Hebrew", sans-serif', w: 900, track: "-.015em", tag: "neutral, heavy" },
+    { id: "secular-one", name: "Secular One", css: '"Secular One", sans-serif', w: 400, track: "-.01em", tag: "most statement" },
+    { id: "plex-he-700", name: "IBM Plex Sans Hebrew Bold", css: '"IBM Plex Sans Hebrew", sans-serif', w: 700, track: "-.01em", tag: "technical, lighter" },
+  ];
+  const T = {
+    en: { nav: ["How it works", "Pricing", "FAQ"], open: 'Open <bdi class="brand" dir="ltr">done<i>.</i></bdi>', l1: "it starts with", l2: "the plan.", sub: "Upload your floorplan as a reference underneath. Draw your own walls over it, to scale, and what comes out the other side is your actual room — a sofa that fits, paint you can buy, a walkthrough that's yours.", note: "No account needed to start.", cue: "↓ Scroll to watch it build", eb: "How it works", h2: "From a traced line to a room you can walk through.", title: "STUDIO APARTMENT", stage: "(today's 3D trace → build demo, starting on its own when scrolled into view)", play: "Playing", skip: "Skip to the room" },
+    he: { nav: ["איך זה עובד", "מחירים", "שאלות"], open: 'פתחו את <bdi class="brand" dir="ltr">done<i>.</i></bdi>', l1: "הכול מתחיל", l2: "בשרטוט.", sub: "העלו את תוכנית הדירה שלכם כרקע לעבודה. שרטטו מעליה את הקירות שלכם, לפי קנה מידה, ומה שיוצא בצד השני הוא החדר האמיתי שלכם — ספה שנכנסת, צבע שאפשר לקנות, וסיור בבית שהוא שלכם.", note: "אפשר להתחיל בלי חשבון.", cue: "↓ גללו כדי לראות איך זה נבנה", eb: "איך זה עובד", h2: "מקו משורטט לחדר שאפשר להסתובב בו.", title: "STUDIO APARTMENT", stage: "(ההדגמה התלת־ממדית של היום, מתחילה לבד כשמגיעים אליה)", play: "מתנגן", skip: "דלגו לחדר" },
+  };
+  const state = { lang: "en", theme: "dark", view: "both", serifEn: "newsreader", serifHe: "bona-nova", sansHe: "heebo-900" };
+  try { Object.assign(state, JSON.parse(localStorage.getItem("hero-mock-2") || "{}")); } catch {}
+
+  const planMarkup = document.getElementById("plan-svg").innerHTML;
+  const byId = (list, id) => list.find(x => x.id === id) || list[0];
+
+  function render(host) {
+    const t = T[state.lang], he = state.lang === "he";
+    host.dir = he ? "rtl" : "ltr"; host.lang = state.lang; host.dataset.t = state.theme;
+    const s = he ? byId(SERIF_HE, state.serifHe) : byId(SERIF_EN, state.serifEn);
+    host.style.setProperty("--serif", s.css); host.style.setProperty("--serifStyle", s.style || "italic");
+    host.style.setProperty("--serifW", s.w); host.style.setProperty("--serifScale", s.scale);
+    if (he) { const h = byId(SANS_HE, state.sansHe); host.style.setProperty("--sans", h.css); host.style.setProperty("--heavy", h.w); host.style.setProperty("--track", h.track); }
+    else { host.style.setProperty("--sans", '"Archivo", system-ui, sans-serif'); host.style.setProperty("--heavy", 800); host.style.setProperty("--track", "-.03em"); }
+    host.innerHTML = `
+      <div class="nav"><span class="wm" dir="ltr">done<i>.</i></span><span class="links">${t.nav.map(n => `<span>${n}</span>`).join("")}</span><span class="pill">${t.open}</span></div>
+      <div class="hero">
+        <div class="plan">${planMarkup}</div>
+        <div class="copy">
+          <h2 class="hl"><span class="l">${t.l1}</span><span class="l serif">${t.l2}</span></h2>
+          <p class="sub">${t.sub}</p>
+          <div class="actions"><span class="cta">${t.open}</span><span class="note">${t.note}</span></div>
+          <span class="scroll-cue">${t.cue}</span>
+        </div>
+      </div>
+      <div class="demo-sec">
+        <span class="eyebrow">${t.eb}</span>
+        <h2>${t.h2}</h2>
+        <div class="win"><div class="bar"><span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span><span class="t">${t.title}</span></div>
+          <div class="stage">${t.stage}<span class="playing"><span class="dot"></span>${t.play} · <u>${t.skip}</u></span></div></div>
+      </div>`;
+    host.querySelectorAll(".plan svg #labels text, .plan svg text[data-en]").forEach(n => { const v = n.getAttribute("data-" + state.lang); if (v) n.textContent = v; });
+  }
+
+  function specimens() {
+    const mk = (key, list, sample, kind) => {
+      const host = document.querySelector(`[data-pick="${key}"]`);
+      host.innerHTML = list.map(f => `<button type="button" class="spec" data-id="${f.id}" aria-pressed="${state[key] === f.id}">
+        <span class="sample ${kind === "sans" ? "sans" : ""}" ${kind !== "en" ? 'dir="rtl" lang="he"' : ""} style="font-family:${f.css.replace(/"/g, "&quot;")};font-weight:${f.w};font-style:${kind === "sans" ? "normal" : (f.style || "italic")};${f.track ? `letter-spacing:${f.track}` : ""}">${sample}</span>
+        <span class="meta"><b>${f.name}</b><span class="tag">${f.tag}</span></span></button>`).join("");
+      host.onclick = e => { const b = e.target.closest(".spec"); if (!b) return; state[key] = b.dataset.id; if (key !== "serifEn") state.lang = "he"; else state.lang = "en"; all(); };
+    };
+    mk("serifEn", SERIF_EN, "the plan.", "en");
+    mk("serifHe", SERIF_HE, "בשרטוט.", "he");
+    mk("sansHe", SANS_HE, "הכול מתחיל", "sans");
+  }
+
+  const desk = document.getElementById("desk"), phone = document.getElementById("phone"), cap = document.getElementById("deskCap"), phoneWrap = document.getElementById("phoneWrap");
+  function all() {
+    render(desk); if (state.view === "both") render(phone); phoneWrap.hidden = state.view !== "both";
+    specimens();
+    const he = state.lang === "he";
+    cap.textContent = he
+      ? `Hebrew · ${state.theme} · sans: ${byId(SANS_HE, state.sansHe).name} · serif: ${byId(SERIF_HE, state.serifHe).name}`
+      : `English · ${state.theme} · sans: Archivo 800 · serif: ${byId(SERIF_EN, state.serifEn).name} Italic`;
+    document.querySelectorAll(".seg").forEach(sg => sg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(state[sg.dataset.set] === b.dataset.v))));
+    try { localStorage.setItem("hero-mock-2", JSON.stringify(state)); } catch {}
+  }
+  document.querySelectorAll(".seg").forEach(sg => sg.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state[sg.dataset.set] = b.dataset.v; all(); }));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(all);
+  all();
+
+  // answers → db
+  const form = document.getElementById("f"), msg = document.getElementById("msg");
+  let db = null;
+  (window.claude && window.claude.use ? window.claude.use("db") : Promise.resolve(null)).then(async x => {
+    db = x; if (!db) return;
+    try { const s = await db.doc("decisions/hero2").get(); if (s.exists) { const d = s.data(); for (const k of ["serifEn", "serifHe", "sansHe"]) if (d[k]) state[k] = d[k]; if (d.note) document.getElementById("note").value = d.note; all(); msg.textContent = "Your saved picks are loaded."; } } catch {}
+  }).catch(() => {});
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const d = { serifEn: state.serifEn, serifHe: state.serifHe, sansHe: state.sansHe, note: document.getElementById("note").value.trim(), savedAt: new Date().toISOString() };
+    if (!db) { msg.textContent = `Can't save from this view. Tell Claude in chat: ${d.serifEn}, ${d.serifHe}, ${d.sansHe}.`; return; }
+    msg.textContent = "Saving…";
+    try { await db.doc("decisions/hero2").set(d); msg.textContent = "Sent. Tell Claude it's in."; } catch { msg.textContent = "Couldn't save. Tell Claude your picks in chat."; }
+  });
+})();
+</script>

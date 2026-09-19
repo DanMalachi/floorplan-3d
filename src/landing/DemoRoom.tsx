@@ -4,7 +4,13 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { B, microLabel } from "@/brand/tokens";
-import { getHeroStage, getHeroStageServer, setHeroStage, subscribeHeroStage } from "./heroSequence";
+import {
+  getHeroStage,
+  getHeroStageServer,
+  resetHeroStage,
+  setHeroStage,
+  subscribeHeroStage,
+} from "./heroSequence";
 
 // -----------------------------------------------------------------------------
 // The hero's interactive room — the light half.
@@ -27,6 +33,15 @@ import { getHeroStage, getHeroStageServer, setHeroStage, subscribeHeroStage } fr
 // unavailable the placeholder stays, because a picture of an interaction
 // pretending to be one is worse than an honest empty frame.
 // -----------------------------------------------------------------------------
+
+/** What a screen reader is told as the sequence moves. `idle` is deliberately
+ *  absent and resolves to the empty string, so the live region says nothing
+ *  before the sequence starts. */
+const ANNOUNCEMENT_KEY: Record<string, string> = {
+  tracing: "announceTracing",
+  building: "announceBuilding",
+  done: "announceDone",
+};
 
 const DemoStage = dynamic(() => import("./DemoStage"), {
   ssr: false,
@@ -123,30 +138,38 @@ export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeigh
     return () => io.disconnect();
   }, [mounted, capable, visible]);
 
-  // The button that starts the sequence sits in the hero's copy, ABOVE this —
-  // and on most screens the plan is below the fold when it is pressed. Two
-  // things follow, and without either the visitor presses "see how it's done."
-  // and watches nothing happen:
-  //
-  //   1. Pressing it has to mount the stage, whatever the observer thinks. The
-  //      observer only fires when the plan is already near the viewport, which
-  //      it is not at the top of the page.
-  //   2. The plan has to come into view. This is not the "scroll to another
-  //      section" the old anchor CTA did — the animation still plays in place,
-  //      in the hero; it just cannot play off-screen.
-  //
-  // `scrollIntoView` finds the marketing layout's own scroll container (a fixed
-  // `overflow-y: auto` region, because globals.css pins the body for the WebGL
-  // canvas) on its own, so this must NOT be aimed at `window`.
   const stage = useSyncExternalStore(subscribeHeroStage, getHeroStage, getHeroStageServer);
+  const tHero = useTranslations("hero");
+
+  // A client-side navigation back to the homepage must not inherit a finished
+  // sequence — the section would open on a built room with no story behind it.
+  useEffect(() => resetHeroStage(), []);
+
+  // Autoplay, ONCE, when the demo is well into the screen. There is no button to
+  // start it any more (the hero's "see how it's done." went with the 2026-09-19
+  // redesign), so arriving is the trigger. Once only: a visitor who scrolls
+  // past and back has seen it, and replaying is theirs to ask for (DemoStage's
+  // toolbar). Reduced motion goes straight to the finished room.
+  //
+  // WCAG 2.2.2 is why DemoStage shows "Skip to the room" for as long as it runs.
   useEffect(() => {
-    if (stage === "idle") return;
-    setVisible(true);
-  }, [stage]);
-  useEffect(() => {
-    if (stage !== "tracing") return;
-    rootRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
-  }, [stage, reduced]);
+    if (!mounted || !capable) return;
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        if (getHeroStage() === "idle") setHeroStage(reduced ? "done" : "tracing");
+      },
+      // Not a visibility ratio: stacked on a phone the demo can be taller than
+      // the screen, and a ratio would never be reached. Fire once its top edge
+      // is a third of the way up the viewport instead.
+      { rootMargin: "0px 0px -33% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [mounted, capable, reduced]);
 
   return (
     <div
@@ -181,6 +204,23 @@ export function DemoRoom({ minHeight = "clamp(400px, 62vh, 680px)" }: { minHeigh
       ) : (
         <DemoPlaceholder />
       )}
+
+      {/* A thirteen-second animation with no text has to say what it is doing
+          to anyone not watching it. Polite, so it never interrupts. */}
+      <div
+        aria-live="polite"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          clipPath: "inset(50%)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {ANNOUNCEMENT_KEY[stage] ? tHero(ANNOUNCEMENT_KEY[stage]) : ""}
+      </div>
     </div>
   );
 }

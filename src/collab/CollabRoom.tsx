@@ -41,7 +41,7 @@ import { randomIdentity, identityForUser, initials, type Identity } from "./iden
 import { displayName } from "@/lib/auth/profile";
 import { useSession } from "@/lib/auth/useSession";
 import type { RemoteSelection } from "./liveblocks";
-import { ROLE_MODES, ROLE_LABEL, roleFromGrant, mintGrant, lbRoom, type ShareRole } from "./share";
+import { ROLE_MODES, roleFromGrant, mintGrant, lbRoom, type ShareRole } from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
 // next/headers, no Supabase), so the UI offers exactly what the API will allow.
 import { canAttenuateTo } from "@/lib/api/roomPolicy";
@@ -259,20 +259,18 @@ const roomField = (extra?: React.CSSProperties): React.CSSProperties => ({
   ...extra,
 });
 
-const ROOM_MODES: { id: AppMode; label: string }[] = [
-  { id: "build", label: "Build" },
-  { id: "furnish", label: "Decorate" },
-  { id: "view", label: "View" },
-];
+// Labels come from the editor's own `editor.modes` keys — same switcher.
+const ROOM_MODES: AppMode[] = ["build", "furnish", "view"];
 
 function ModeSwitcher({ role }: { role: ShareRole }) {
   // Reuses the design page's own key: this nav names the same thing
   // (the Build/Decorate/View switcher) the editor's own chrome does.
   const t = useTranslations("editor.chrome");
+  const tm = useTranslations("editor.modes");
   const appMode = useSceneStore((s) => s.appMode);
   const setAppMode = useSceneStore((s) => s.setAppMode);
   const allowed = ROLE_MODES[role];
-  const modes = ROOM_MODES.filter((m) => allowed.includes(m.id));
+  const modes = ROOM_MODES.filter((m) => allowed.includes(m));
 
   // Keep the current mode within the role's allowance.
   useEffect(() => {
@@ -284,16 +282,16 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
     <nav aria-label={t("modeSwitcherLabel")} style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", gap: 3, padding: 4, ...pdGlass({ borderRadius: 999 }) }}>
       {modes.map((m) => (
         <RoomChip
-          key={m.id}
-          active={appMode === m.id}
-          onClick={() => setAppMode(m.id)}
+          key={m}
+          active={appMode === m}
+          onClick={() => setAppMode(m)}
           // Only the shape is overridden now. The active fill used to be a
           // hand-set solid `T.accent` with white text — the exact "different
           // shade of blue" Dan flagged — and it is `pdChip`'s accent tint here
           // like every other control in the app.
           extra={{ borderRadius: 999, padding: "6px 18px" }}
         >
-          {m.label}
+          {tm(m)}
         </RoomChip>
       ))}
     </nav>
@@ -389,10 +387,13 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       // Minting can fail for reasons the UI cannot rule out in advance —
       // an unconfigured signing secret, or ownership that has since moved.
       // Say so; a silent rejected promise leaves a stale link in the box.
+      // The server's own message is English and not written for users; log
+      // it, show the localized line.
+      console.warn("[share] mint failed:", (e as Error).message);
       setLink("");
-      setErr((e as Error).message || "Could not create a link.");
+      setErr(t("linkError"));
     }
-  }, [roomId]);
+  }, [roomId, t]);
 
   useEffect(() => {
     if (open && !link) void makeLink("view");
@@ -419,7 +420,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   };
 
   const saveCopy = async () => {
-    await importProject("Copy of shared plan", { scene: useSceneStore.getState().scene, appMode: "view" });
+    await importProject(t("copyOfSharedPlan"), { scene: useSceneStore.getState().scene, appMode: "view" });
     setSaved(true);
   };
 
@@ -428,40 +429,41 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       <div style={{ display: "flex", gap: 6 }}>
         <RoomChip
           onClick={saveCopy}
-          tooltip="Fork this plan into your own projects"
+          tooltip={t("saveCopyTooltip")}
           extra={{ display: "inline-flex", alignItems: "center", gap: 5 }}
         >
           {saved ? (
             <>
-              Saved <CheckIcon size={12} aria-hidden />
+              {t("saved")} <CheckIcon size={12} aria-hidden />
             </>
           ) : (
-            "Save a copy"
+            t("saveCopy")
           )}
         </RoomChip>
         <RoomChip active ref={shareBtnRef} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          Share
+          {t("share")}
         </RoomChip>
       </div>
       {open && (
         <div role="group" aria-labelledby="fp-share-title" style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
-          <div id="fp-share-title" style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>Share this plan</div>
+          <div id="fp-share-title" style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>{t("shareTitle")}</div>
           <div role="group" aria-label={t("linkPermissionLabel")} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
-              <RoleRow key={r} selected={role === r} label={ROLE_LABEL[r]} onClick={() => makeLink(r)} />
+              <RoleRow key={r} selected={role === r} label={t(`roles.${r}`)} onClick={() => makeLink(r)} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <input readOnly aria-label={t("shareLinkLabel")} value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
             <RoomChip active onClick={copy} disabled={!link}>
-              {copied ? "Copied" : "Copy"}
+              {copied ? t("copied") : t("copy")}
             </RoomChip>
           </div>
+          {/* The chip's label change alone is silent to a screen reader. */}
+          <span role="status" className="fp-sr-only">{copied ? t("copied") : ""}</span>
           {err && <div role="alert" style={{ fontSize: 11.5, color: PD.warnText }}>{err}</div>}
           {held !== "build" && (
             <div style={{ fontSize: 11, color: PD.textTertiary }}>
-              You joined with a {ROLE_LABEL[held].toLowerCase()} link, so you can only
-              share at that level or below.
+              {t("heldNote", { role: t(`roles.${held}`) })}
             </div>
           )}
         </div>
@@ -481,6 +483,7 @@ function RoleRow({
   label: string;
   onClick: () => void;
 }) {
+  const t = useTranslations("collabRoom");
   const [hov, bind] = useHover();
   return (
     <button
@@ -505,7 +508,7 @@ function RoleRow({
     >
       {selected && <CheckIcon size={12} aria-hidden />}
       <span>
-        Anyone with the link — <b>{label}</b>
+        {t.rich("anyoneWithLink", { role: label, b: (c) => <b>{c}</b> })}
       </span>
     </button>
   );
@@ -543,8 +546,8 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
         {/* The head count changes as people join and leave — the one fact in
             this room that arrives without the user doing anything. */}
         <span role="status" style={{ fontSize: 12.5, color: PD.textPrimary, display: "flex", alignItems: "center", gap: 6 }}>
-          <Pip color={PD.ok} /> {count} here
-          {role === "view" && <span style={{ color: PD.textTertiary }}>· view only</span>}
+          <Pip color={PD.ok} /> {t("hereCount", { count })}
+          {role === "view" && <span style={{ color: PD.textTertiary }}>· {t("viewOnly")}</span>}
         </span>
         <div role="group" aria-label={t("peopleInRoomLabel")} style={{ display: "flex", paddingInlineStart: 6 }}>
           {me && <Avatar name={me.presence.name} color={me.presence.color} />}
@@ -560,6 +563,7 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
 
 function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
   useRoomBinding(roomId, role);
+  const t = useTranslations("collabRoom");
 
   // useSceneStore.projectName is NOT set on /v — persistence never initializes
   // on this route, so it stays stuck at the local-editor default. The room's
@@ -605,7 +609,7 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
       <PdThemeStyle />
       <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
       <ModeSwitcher role={role} />
-      <ProjectBar name={title ?? "Shared plan"} onOpenProjects={leave} />
+      <ProjectBar name={title ?? t("sharedPlan")} onOpenProjects={leave} />
       <TopBar roomId={roomId} role={role} />
     </div>
   );

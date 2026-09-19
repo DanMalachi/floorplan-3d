@@ -10,11 +10,10 @@
 // for it, and they are the same three reasons `docs/HEBREW-HANDOFF.md` already
 // gives for keeping the legal pages out of the catalogue:
 //
-//   1. **The structure is part of the translation.** A slogan is set AROUND the
-//      wordmark — some lines put their words above it, some below (see `Slogan`
-//      and the diagram in content.en.tsx). Which half a line uses is a decision
-//      about Hebrew word order, not a constant to be filled in. A flat key can
-//      hold the words; it cannot hold that choice.
+//   1. **The structure is part of the translation.** The hero headline is two
+//      lines with the second set in a serif, and where Hebrew breaks the line
+//      is a decision about Hebrew word order, not a constant to be filled in.
+//      A flat key can hold the words; it cannot hold that choice.
 //   2. **The rationale has to live beside the copy.** Every line below is
 //      constrained — a voice with a banned-word list, an honesty rule that
 //      forbids implying the app understands a plan by itself, and a per-answer
@@ -58,30 +57,6 @@ export interface FaqItem {
   a: ReactNode;
 }
 
-/**
- * A slogan is set AROUND the wordmark, not just after it — `lead` runs above
- * the mark, `tail` below, and either may be omitted:
- *
- *        upload, then it's        <- lead
- *              done.              <- the mark, which never moves
- *         before you start.       <- tail
- *
- * Both slots hold a fixed height in Hero.tsx, so the mark stays anchored in
- * exactly one place for the whole rotation however long the lines are. That
- * anchoring is the point: the wordmark is the constant and the sentence around
- * it is the variable, which is the opposite of a headline that animates.
- *
- * The mark supplies the full stop, so a `lead`-only line still reads as a
- * finished sentence — "upload, then it's done." — and a tail never starts with
- * a capital.
- *
- * Which slot a line uses is a per-language decision, not a fixed property of
- * the line: Hebrew puts the subject where Hebrew puts it. So the two tables are
- * free to disagree about lead versus tail for the same idea, and `id` is what
- * pairs them.
- */
-export type Slogan = { id: string; lead?: ReactNode; tail?: ReactNode };
-
 export interface LandingContent {
   /**
    * The primary call to action, in ONE place because it is one button.
@@ -94,13 +69,18 @@ export interface LandingContent {
    * should stay spelled the same way.
    */
   openApp: ReactNode;
-  slogans: Slogan[];
   hero: {
+    /** The headline, two lines. `serif` is set in the copper italic. */
+    headline: { sans: ReactNode; serif: ReactNode };
     subhead: ReactNode;
     note: ReactNode;
-    ctaGhostLabel: ReactNode;
-    ctaGhostLabelRunning: ReactNode;
-    ctaGhostLabelDone: ReactNode;
+    /** Points down at the demo section, which plays when it scrolls in. */
+    scrollCue: ReactNode;
+  };
+  /** The section under the hero where the draw-then-build demo plays. */
+  demo: {
+    eyebrow: ReactNode;
+    title: ReactNode;
   };
   howItWorks: {
     eyebrow: ReactNode;

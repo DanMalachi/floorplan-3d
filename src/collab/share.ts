@@ -14,11 +14,7 @@ export const ROLE_MODES: Record<ShareRole, AppMode[]> = {
   build: ["build", "furnish", "view"],
 };
 
-export const ROLE_LABEL: Record<ShareRole, string> = {
-  view: "Can view",
-  decorate: "Can view + decorate",
-  build: "Can edit everything",
-};
+// Role labels are UI copy and live in messages (`collabRoom.roles.*`).
 
 const ROOM_PREFIX = "floorplan-";
 

@@ -3,7 +3,7 @@
 // The editor holds hover in React state (src/ui/planDock/useHover.ts) because
 // its chrome is absolutely-positioned inline-styled panels over a canvas, and a
 // style object cannot express `:hover`. The marketing site had already made the
-// opposite bargain twice — `Hero.tsx`'s `TRACE_BTN_CSS` and `DemoStage.tsx`'s
+// opposite bargain twice — `Hero.tsx`'s `HERO_CSS` and `DemoStage.tsx`'s
 // `STAGE_CSS` both inject a real stylesheet and hang `:hover` / `:focus-visible`
 // off a class — so this follows that, rather than dragging the dock's hook onto
 // pages styled from the brand tokens. One idiom per surface.

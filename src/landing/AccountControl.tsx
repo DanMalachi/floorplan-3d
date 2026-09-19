@@ -189,7 +189,7 @@ export function AccountControl() {
                 style={{
                   fontFamily: B.fontUi,
                   fontSize: 12,
-                  color: B.ink4,
+                  color: B.label,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
