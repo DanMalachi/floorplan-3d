@@ -1,0 +1,9 @@
+[
+ {"name":"profile","loc":[4.2,0.0,0.3],"target":[0,0,0.25],"lens":50},
+ {"name":"side_low","loc":[3.0,-0.6,0.22],"target":[0.0,0.0,0.25],"lens":42},
+ {"name":"close_door_reveal","loc":[-0.35,-0.75,0.42],"target":[-0.3,-0.21,0.3],"lens":50},
+ {"name":"close_end_radius","loc":[1.35,-0.75,0.5],"target":[0.9,-0.2,0.32],"lens":50},
+ {"name":"close_leg","loc":[1.35,-0.8,0.2],"target":[0.66,-0.05,0.1],"lens":45},
+ {"name":"top","loc":[0.0,-0.2,3.2],"target":[0,0,0.5],"lens":40},
+ {"name":"under","loc":[0.7,-0.9,0.06],"target":[0.4,0.0,0.14],"lens":35}
+]

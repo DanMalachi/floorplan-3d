@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "status": "approved-original",
+  "intendedRelease": "CC0-1.0",
+  "ownerDedicationRecorded": false,
+  "artifactSha256": "cc13c2b070c28fd25adf0503c8312d301ce8d1819582a231ea9a92ccba0bc3f1",
+  "notes": [
+    "Do not declare CC0 until every input and provider output right is resolved for the exact artifact hash."
+  ]
+}

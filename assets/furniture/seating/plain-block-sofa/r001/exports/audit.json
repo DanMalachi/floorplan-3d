@@ -1,0 +1,89 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\seating\\plain-block-sofa\\r001\\exports\\plain-block-sofa_r001.glb",
+  "sha256": "bfbf4b6874e62432aa442ba5ba0532702d68e36d7d55051a40c721e7edb867e7",
+  "fileBytes": 7887004,
+  "bounds": {
+    "min": [
+      -1.053134799003601,
+      0,
+      -0.4590921401977539
+    ],
+    "max": [
+      1.053134799003601,
+      0.8307714462280273,
+      0.4590921401977539
+    ]
+  },
+  "dimensionsXYZM": [
+    2.106269598007202,
+    0.8307714462280273,
+    0.9181842803955078
+  ],
+  "nodes": 20,
+  "meshes": 20,
+  "primitives": 20,
+  "vertices": 49956,
+  "triangles": 91496,
+  "materials": [
+    {
+      "name": "hess",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "oak",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "hessian_380_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 3932047
+    },
+    {
+      "name": "hess_grey",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 888524
+    },
+    {
+      "name": "hessian_380_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 970897
+    },
+    {
+      "name": "oak_veneer_01_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 7767
+    },
+    {
+      "name": "oak_veneer_01_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 32217
+    },
+    {
+      "name": "oak_veneer_01_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 50001
+    }
+  ],
+  "embeddedTextureBytes": 5881453,
+  "missing": {
+    "baseColor": [],
+    "roughness": [],
+    "normal": []
+  }
+}

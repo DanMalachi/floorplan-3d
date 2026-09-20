@@ -1,0 +1,172 @@
+[
+  {
+    "assetId": "factory:oak-platform-bed",
+    "name": "Oak Platform Bed",
+    "category": "Beds",
+    "footprint": {
+      "w": 1.788,
+      "d": 2.189
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/oak-platform-bed.glb",
+    "thumbnail": "/furniture/factory/oak-platform-bed.png",
+    "brand": "Done",
+    "subtitle": "platform bed, solid oak, dressed",
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:block-arm-sofa",
+    "name": "Block-Arm Sofa",
+    "category": "Seating",
+    "footprint": {
+      "w": 2.106,
+      "d": 0.948
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/block-arm-sofa.glb",
+    "thumbnail": "/furniture/factory/block-arm-sofa.png",
+    "brand": "Done",
+    "subtitle": "3-seat sofa, linen, oak legs",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:flare-arm-sofa",
+    "name": "Flare-Arm Sofa",
+    "category": "Seating",
+    "footprint": {
+      "w": 2.09,
+      "d": 0.919
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/flare-arm-sofa.glb",
+    "thumbnail": "/furniture/factory/flare-arm-sofa.png",
+    "brand": "Done",
+    "subtitle": "Scandinavian, cream bouclé, oak legs",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:plain-block-sofa",
+    "name": "Plain Block-Arm Sofa",
+    "category": "Seating",
+    "footprint": {
+      "w": 2.106,
+      "d": 0.918
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/plain-block-sofa.glb",
+    "thumbnail": "/furniture/factory/plain-block-sofa.png",
+    "brand": "Done",
+    "subtitle": "Square arms, woven linen, oak legs",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:tufted-sage-sofa",
+    "name": "Tufted Sage Sofa",
+    "category": "Seating",
+    "footprint": {
+      "w": 2.091,
+      "d": 0.918
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/tufted-sage-sofa.glb",
+    "thumbnail": "/furniture/factory/tufted-sage-sofa.png",
+    "brand": "Done",
+    "subtitle": "3-seat mid-century sofa, button-tufted sage velvet, oak base",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:beige-leather-sofa",
+    "name": "Beige Leather Sofa",
+    "category": "Seating",
+    "footprint": {
+      "w": 2.077,
+      "d": 0.92
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/beige-leather-sofa.glb",
+    "thumbnail": "/furniture/factory/beige-leather-sofa.png",
+    "brand": "Done",
+    "subtitle": "3-seat sofa, stitched beige leather, oak legs",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:grey-chaise-sectional",
+    "name": "Grey Chaise Sectional",
+    "category": "Seating",
+    "footprint": {
+      "w": 2.857,
+      "d": 1.659
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/grey-chaise-sectional.glb",
+    "thumbnail": "/furniture/factory/grey-chaise-sectional.png",
+    "brand": "Done",
+    "subtitle": "L-shape sectional, grey fabric, nickel legs",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:walnut-tv-console",
+    "name": "Walnut TV Console",
+    "category": "Storage",
+    "footprint": {
+      "w": 1.8,
+      "d": 0.42
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/walnut-tv-console.glb",
+    "thumbnail": "/furniture/factory/walnut-tv-console.png",
+    "brand": "Done",
+    "subtitle": "Low wrap-around console, three flush doors, walnut veneer",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:black-travertine-tv-console",
+    "name": "Black Travertine TV Console",
+    "category": "Storage",
+    "footprint": {
+      "w": 2,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/black-travertine-tv-console.glb",
+    "thumbnail": "/furniture/factory/black-travertine-tv-console.png",
+    "brand": "Done",
+    "subtitle": "Black frame, travertine panels, blade legs",
+    "rooms": [
+      "living"
+    ]
+  },
+  {
+    "assetId": "factory:walnut-mesh-tv-console",
+    "name": "Walnut Mesh TV Console",
+    "category": "Storage",
+    "footprint": {
+      "w": 2,
+      "d": 0.42
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/walnut-mesh-tv-console.glb",
+    "thumbnail": "/furniture/factory/walnut-mesh-tv-console.png",
+    "brand": "Done",
+    "subtitle": "Walnut, black mesh bays, open cubby, tapered legs",
+    "rooms": [
+      "living"
+    ]
+  }
+]

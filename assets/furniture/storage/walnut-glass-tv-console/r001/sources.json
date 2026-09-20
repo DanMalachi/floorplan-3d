@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "inputs": [],
+  "provider": null,
+  "materialSources": [
+    { "name": "walnut_veneer", "url": "https://polyhaven.com/a/walnut_veneer", "license": "CC0-1.0", "files": ["walnut_veneer_diff_2k.jpg", "walnut_veneer_rough_2k.jpg", "walnut_veneer_nor_gl_2k.jpg"], "derivatives": ["walnut_glass_console_diff_2k.png (desaturate + lighter multiply)"], "tileM": 1.8 }
+  ]
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Done Furniture Factory"
+  short_description: "Create original high-quality textured furniture"
+  default_prompt: "Use $done-furniture-factory to turn this original furniture reference or brief into one immutable, textured GLB candidate and a real-app review package."
+policy:
+  allow_implicit_invocation: true

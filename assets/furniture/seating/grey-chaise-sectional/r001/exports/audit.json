@@ -1,0 +1,77 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\seating\\grey-chaise-sectional\\r001\\exports\\grey-chaise-sectional_r001.glb",
+  "sha256": "cc13c2b070c28fd25adf0503c8312d301ce8d1819582a231ea9a92ccba0bc3f1",
+  "fileBytes": 9021476,
+  "bounds": {
+    "min": [
+      -1.4286015033721924,
+      0,
+      -0.8296741843223572
+    ],
+    "max": [
+      1.4286015033721924,
+      0.8215203285217285,
+      0.8296741843223572
+    ]
+  },
+  "dimensionsXYZM": [
+    2.8572030067443848,
+    0.8215203285217285,
+    1.6593483686447144
+  ],
+  "nodes": 49,
+  "meshes": 49,
+  "primitives": 49,
+  "vertices": 59006,
+  "triangles": 104704,
+  "materials": [
+    {
+      "name": "hess",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "nickel",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "hessian_380_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 3932047
+    },
+    {
+      "name": "hess_grey",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 888524
+    },
+    {
+      "name": "hessian_380_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 970897
+    }
+  ],
+  "embeddedTextureBytes": 5791468,
+  "missing": {
+    "baseColor": [
+      "nickel"
+    ],
+    "roughness": [
+      "nickel"
+    ],
+    "normal": [
+      "nickel"
+    ]
+  }
+}

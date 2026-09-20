@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "inputs": [
+    { "role": "design-inspiration-only", "creator": "unknown retailer photo supplied by user (screenshot 154204)", "license": "unknown / not cleared", "usedAsInput": false }
+  ],
+  "provider": null,
+  "materialSources": [
+    {
+      "role": "sofa fabric (luminance-normalised derivative; colour applied as baseColorFactor)",
+      "name": "Hessian 380",
+      "creator": "Poly Haven",
+      "url": "https://polyhaven.com/a/hessian_380",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-09-20",
+      "tileSizeM": 0.274
+    },
+    { "role": "legs (plain metallic material, no texture)", "name": "polished nickel", "creator": "self-authored", "license": "CC0-1.0" }
+  ],
+  "authoring": {
+    "route": "C procedural static Blender, parametric",
+    "tool": "Blender 5.2.1 LTS",
+    "scripts": ["build_sofa.py"],
+    "author": "Claude (Sonnet 5) for Dan; original geometry"
+  }
+}

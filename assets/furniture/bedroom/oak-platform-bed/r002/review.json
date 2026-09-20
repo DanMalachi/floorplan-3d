@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "technical": "pass-with-notes",
+  "visual": "pending",
+  "user": "pending",
+  "promotion": "candidate",
+  "artifactSha256": "21b457c3bc4bde5ddf65d8a7eaac13b727db5e02ef7bd300faf51571e28e475a",
+  "revision": "r002",
+  "notes": [
+    "Supersedes r001 (kept as evidence) after user feedback: headboard grain repeated 5x, pillows unrealistic, mattress needed bedding.",
+    "technical: bounds 1.789x1.04x2.189 m (frame 1.72 x 2.135; duvet drape adds the rest), grounded y=0, front +Z, 5 materials all baseColor+metallicRoughness+normal, 85864 tris / 45564 verts / 63 primitives / 8.7 MB",
+    "known weak spots: pillows slightly pinched, duvet creases soft, no separate throw; earlier attempt with a folded double-layer duvet edge blew up the sim and was replaced by a modelled cuff"
+  ]
+}

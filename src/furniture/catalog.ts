@@ -174,6 +174,13 @@ export const SKETCHFAB_ASSETS = sketchfabRaw as unknown as IkeaAsset[];
 import polypizzaRaw from "../../data/furniture-polypizza.catalog.json";
 export const POLYPIZZA_ASSETS = polypizzaRaw as unknown as IkeaAsset[];
 
+// Done-original "factory" catalog — furniture authored in-house with the
+// done-furniture-factory skill (.agents/skills/done-furniture-factory): original geometry, CC0
+// Poly Haven textures, owner-approved per candidate hash. Nothing third-party is redistributed
+// beyond CC0 textures; see public/furniture/factory/ATTRIBUTION.json and docs/DATA_RIGHTS.md.
+import factoryRaw from "../../data/furniture-factory.catalog.json";
+export const FACTORY_ASSETS = factoryRaw as unknown as IkeaAsset[];
+
 import { retagRooms } from "./roomRetag";
 
 export const CATEGORIES: FurnitureCategory[] = [
@@ -234,6 +241,7 @@ const byRoom = (assets: IkeaAsset[]): Record<string, string[]> => {
 
 // IKEA is deliberately NOT included here — see the top-of-file note. No
 // `ikeaByRoom`, so no IKEA assetId ever reaches a RoomSection or the picker.
+const factoryByRoom = byRoom(FACTORY_ASSETS);
 const blenderkitByRoom = byRoom(BLENDERKIT_ASSETS);
 const polyhavenByRoom = byRoom(POLYHAVEN_ASSETS);
 const sketchfabByRoom = byRoom(SKETCHFAB_ASSETS);
@@ -243,6 +251,7 @@ export const ROOMS: RoomSection[] = BASE_ROOMS.map((r) => ({
   ...r,
   assetIds: [
     ...r.assetIds,
+    ...(factoryByRoom[r.id] ?? []),
     ...(blenderkitByRoom[r.id] ?? []),
     ...(polyhavenByRoom[r.id] ?? []),
     ...(sketchfabByRoom[r.id] ?? []),
@@ -276,6 +285,7 @@ const withRoomTags = <T extends FurnitureAsset>(a: T): T => {
   return tags ? { ...a, roomTags: [...new Set(tags)] } : a;
 };
 Object.assign(CATALOG, CATALOG.map(withRoomTags));
+Object.assign(FACTORY_ASSETS, FACTORY_ASSETS.map(withRoomTags));
 Object.assign(BLENDERKIT_ASSETS, BLENDERKIT_ASSETS.map(withRoomTags));
 Object.assign(POLYHAVEN_ASSETS, POLYHAVEN_ASSETS.map(withRoomTags));
 Object.assign(SKETCHFAB_ASSETS, SKETCHFAB_ASSETS.map(withRoomTags));
@@ -286,7 +296,7 @@ Object.assign(POLYPIZZA_ASSETS, POLYPIZZA_ASSETS.map(withRoomTags));
 // saved plan degrades gracefully instead of erroring.
 
 export const CATALOG_BY_ID: ReadonlyMap<string, FurnitureAsset> = new Map(
-  [...CATALOG, ...BLENDERKIT_ASSETS, ...POLYHAVEN_ASSETS, ...SKETCHFAB_ASSETS, ...POLYPIZZA_ASSETS].map(
+  [...CATALOG, ...FACTORY_ASSETS, ...BLENDERKIT_ASSETS, ...POLYHAVEN_ASSETS, ...SKETCHFAB_ASSETS, ...POLYPIZZA_ASSETS].map(
     (a) => [a.assetId, a],
   ),
 );

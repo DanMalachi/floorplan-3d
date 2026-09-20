@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "technical": "pass (audit: fabric+oak have baseColor/metallicRoughness/normal; 59628 tris, 7505068 bytes)",
+  "visual": "approved by user",
+  "user": "approved",
+  "promotion": "promoted",
+  "artifactSha256": "0468bc5db94f609dd90672e4c45474652142969eca62d68ec9e7ecbd3cf0b4ae",
+  "variants": {
+    "loveseat_168_sage": "69c2b4736b2e4095cc33a6fdb40aa100806b1a4513e69a06c837421172ca38ac",
+    "xl_245_sand": "dfefcd6013efff6ece587c28ceadc1c0a1bf56bcc6c07e1fc8ba9ac3319ba7d9"
+  }
+}

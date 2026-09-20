@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "seating:beige-leather-sofa:r001",
+  "category": "sofa",
+  "dimensionsM": {
+    "width": 2.077,
+    "depth": 0.92,
+    "height": 0.822,
+    "note": "parametric via build_sofa.py --width/--depth/--height/--color"
+  },
+  "style": [
+    "contemporary 3-seater",
+    "curved outward-leaning slim arms with rolled tops",
+    "split back: two separate back cushions with a real gap",
+    "two seat cushions",
+    "splayed tapered wood legs",
+    "leather-look upholstery"
+  ],
+  "materials": [
+    "own tileable leather grain maps (make_leather_maps.py), colour = baseColorFactor, tone = vertex colours",
+    "Oak Veneer 01 (Poly Haven CC0) legs"
+  ],
+  "preflight": {
+    "standsOn": "floor -> 4 splayed tapered wood legs (from base corners) -> leather-wrapped base box whose outline equals the arm underside outline -> seat cushions between arms; arms rest on the base; back panel behind the base",
+    "mechanisms": {
+      "rolledArm": "stuffed cylinder-ish pad wrapped in cloth: large radius on all long edges, slight crown, sheared outward, top slopes down toward the front",
+      "splitBack": "two independent stuffed back cushions leaned back with a real 6 mm gap, each with a waist seam (welt) like the reference fold line, on a slim rear back panel",
+      "leatherCreases": "seat/back settling wrinkles from puff(wr) so highlights sit on crease ridges"
+    },
+    "lightResponse": "leather: roughness map ~0.4-0.55, spec 0.4, fine grain normal, NO sheen"
+  },
+  "mustKeep": [
+    "grain identical across colour variants",
+    "physical grain scale"
+  ],
+  "avoid": [
+    "near-copy of any reference photo",
+    "baked lighting",
+    "headrest-like pads",
+    "smooth plastic look"
+  ],
+  "referenceImages": [
+    "inspiration only (retailer photo, not copied): user screenshot 2026-09-20 154216"
+  ],
+  "roomContext": [
+    "living"
+  ],
+  "status": "r004-approved",
+  "borrowed": "vocabulary: beige 3-seater, curved flared arms, split back with fold line, two seat cushions, splayed tapered legs",
+  "changed": "own proportions, one-dome cushion with inward stitched divot, 1128 modelled stitches, self-authored leather grain, oak legs",
+  "dressed": "bare (no scatter cushions; not in the reference)"
+}

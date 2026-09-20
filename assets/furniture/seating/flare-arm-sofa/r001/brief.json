@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "seating:flare-arm-sofa:r001",
+  "category": "sofa",
+  "dimensionsM": {
+    "width": 2.1,
+    "depth": 0.92,
+    "height": 0.82,
+    "note": "parametric via build_sofa.py --width/--depth/--height/--color; audited bounds 2.090 x 0.919 x 0.829"
+  },
+  "style": [
+    "scandinavian",
+    "flared slim arms (continuous form, no pad)",
+    "splayed tapered oak legs",
+    "two seat + two back cushions",
+    "piped cushion seams",
+    "boucle upholstery"
+  ],
+  "materials": [
+    "Curly Teddy Natural (Poly Haven CC0), luminance-normalised, colour = baseColorFactor",
+    "Oak Veneer 01 (Poly Haven CC0) legs"
+  ],
+  "mustKeep": [
+    "fabric weave identical across colour variants",
+    "physical weave + grain scale across sizes"
+  ],
+  "avoid": [
+    "near-copy of any reference photo",
+    "baked lighting",
+    "smooth fabric at room distance (sofa-1 weak spot)"
+  ],
+  "referenceImages": [
+    "inspiration only (retailer photo, not copied): user screenshot 2026-09-20 154235"
+  ],
+  "roomContext": [
+    "living"
+  ],
+  "status": "r001-draft",
+  "borrowed": "vocabulary: cream 3-seater, arms that lean outward, splayed tapered wood legs, two seat + two back cushions",
+  "changed": "arm is one sheared rounded form with own proportions, piped cushion seams, plumper back cushions, own leg splay/taper, coarser boucle weave",
+  "dressed": "bare (scatter cushions are a separate future part)"
+}

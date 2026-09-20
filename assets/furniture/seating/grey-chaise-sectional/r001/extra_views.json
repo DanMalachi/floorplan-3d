@@ -1,0 +1,10 @@
+[
+ {"name":"profile","loc":[4.2,-0.2,0.5],"target":[0,-0.2,0.42],"lens":50},
+ {"name":"side_low","loc":[3.0,-0.5,0.32],"target":[0.0,0.1,0.42],"lens":42},
+ {"name":"close_chaise_top","loc":[-1.0,-1.45,1.05],"target":[-1.0,-0.6,0.45],"lens":50},
+ {"name":"close_tuft","loc":[0.55,-0.95,0.75],"target":[0.0,0.35,0.55],"lens":42},
+ {"name":"tuft_front","loc":[-0.3,-1.6,0.75],"target":[-0.3,0.4,0.6],"lens":45},
+ {"name":"close_arm_seam","loc":[2.1,-0.9,0.62],"target":[1.35,-0.12,0.48],"lens":50},
+ {"name":"close_leg","loc":[-1.9,-1.2,0.30],"target":[-1.25,-0.85,0.12],"lens":45},
+ {"name":"under","loc":[0.4,-1.6,0.08],"target":[0.0,-0.2,0.2],"lens":35}
+]

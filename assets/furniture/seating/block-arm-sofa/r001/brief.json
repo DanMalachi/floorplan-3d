@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "seating:block-arm-sofa:r001",
+  "category": "sofa",
+  "dimensionsM": {
+    "width": 2.1,
+    "depth": 0.94,
+    "height": 0.84,
+    "note": "parametric: --width/--depth/--height/--color in build_sofa.py; audited bounds 2.106 x 0.948 x 0.846"
+  },
+  "style": [
+    "scandinavian",
+    "block arm",
+    "tapered oak legs",
+    "two seat + two back cushions",
+    "piped seams"
+  ],
+  "materials": [
+    "Rough Linen (Poly Haven CC0), grey-normalised, colour = baseColorFactor multiply",
+    "Oak Veneer 01 (Poly Haven CC0) legs"
+  ],
+  "mustKeep": [
+    "fabric weave/roughness/normal identical across colour variants",
+    "physical weave + grain scale across sizes"
+  ],
+  "avoid": [
+    "near-copy of any reference photo",
+    "baked lighting",
+    "pure blob cushions"
+  ],
+  "referenceImages": [
+    "inspiration only (retailer photos, not copied): 8 user screenshots 2026-09-19/20"
+  ],
+  "borrowed": "vocabulary: 3-seat, two seat cushions, block/track arms, tapered wood legs, neutral upholstery",
+  "changed": "original arm-pad-on-arm construction, piped cushions, proportions, leg splay, plinth frame",
+  "roomContext": [
+    "living"
+  ],
+  "dressed": "bare (no throw pillows) - accessories are separate future parts",
+  "status": "r001-draft"
+}
