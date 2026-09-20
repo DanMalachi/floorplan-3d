@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "storage:black-travertine-tv-console:r001",
+  "category": "storage",
+  "dimensionsM": { "width": 2.0, "depth": 0.4, "height": 0.5 },
+  "style": ["contemporary", "low media console", "thin square black frame", "flush stone panels", "splayed blade legs"],
+  "materials": ["ambientCG Travertine009 (CC0), desaturated warm-taupe derivative", "matte charcoal powder-coat (plain colour, roughness 0.84)", "dark satin steel blade legs (metallic 0.65, roughness 0.52)"],
+  "mustKeep": ["three equal stone panels flush with the frame, 4 mm dark reveals", "square-edged black frame", "splayed thin blade legs, a pair at each end", "veining continuous across the three panels"],
+  "avoid": ["glossy sealed-looking black body", "orange or saturated stone", "black-rendering metal legs in the app viewer"],
+  "referenceImages": [
+    { "file": "Screenshot 2026-09-20 190526.png", "use": "design-inspiration-only, never copied into repo or GLB" }
+  ],
+  "roomContext": ["living"],
+  "partTable": [
+    { "part": "frame", "features": "solid box, front pocket 22 mm, square edges, matte black, no hardware" },
+    { "part": "panels x3", "features": "flush travertine, equal width, 4 mm reveals, horizontal veining" },
+    { "part": "legs x4", "features": "flat tapered steel blades, splayed front/back and outward" }
+  ],
+  "inspiration": {
+    "borrowed": "low black frame with three stone panels and splayed blade legs",
+    "changed": "own proportions, frame widths, blade geometry, own stone tint, own matte finish"
+  },
+  "status": "approved"
+}

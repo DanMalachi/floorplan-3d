@@ -1,0 +1,89 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\seating\\tufted-sage-sofa\\r001\\exports\\tufted-sage-sofa_r001.glb",
+  "sha256": "13876b8dcb0367302cc85fc2b55ab00e32610945af6ab1fb083075330939f920",
+  "fileBytes": 6970860,
+  "bounds": {
+    "min": [
+      -1.0452630519866943,
+      0,
+      -0.4589681625366211
+    ],
+    "max": [
+      1.0452630519866943,
+      0.8480039834976196,
+      0.4589681625366211
+    ]
+  },
+  "dimensionsXYZM": [
+    2.0905261039733887,
+    0.8480039834976196,
+    0.9179363250732422
+  ],
+  "nodes": 30,
+  "meshes": 30,
+  "primitives": 34,
+  "vertices": 47218,
+  "triangles": 85764,
+  "materials": [
+    {
+      "name": "velour",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "oak",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "velour_velvet_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 2656496
+    },
+    {
+      "name": "velour_grey",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 1007611
+    },
+    {
+      "name": "velour_velvet_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 974751
+    },
+    {
+      "name": "oak_veneer_01_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 43643
+    },
+    {
+      "name": "oak_veneer_01_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 125181
+    },
+    {
+      "name": "oak_veneer_01_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 212201
+    }
+  ],
+  "embeddedTextureBytes": 5019883,
+  "missing": {
+    "baseColor": [],
+    "roughness": [],
+    "normal": []
+  }
+}

@@ -1,0 +1,4 @@
+[{"name":"seam_close","loc":[0.25,-0.62,0.78],"target":[0.25,0.18,0.56],"lens":55},
+ {"name":"side_low","loc":[-1.7,-0.75,0.62],"target":[-0.35,0.12,0.5],"lens":40},
+ {"name":"profile","loc":[-2.6,0.0,0.55],"target":[0,0,0.45],"lens":50},
+ {"name":"seat_corner","loc":[0.9,-0.9,0.72],"target":[0.5,-0.42,0.42],"lens":50}]

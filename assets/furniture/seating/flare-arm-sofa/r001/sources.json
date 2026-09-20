@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "inputs": [
+    {
+      "role": "design-inspiration-only",
+      "creator": "unknown retailer photo supplied by user",
+      "license": "unknown / not cleared",
+      "usedAsInput": false
+    }
+  ],
+  "provider": null,
+  "materialSources": [
+    {
+      "role": "sofa fabric (luminance-normalised derivative; colour applied as baseColorFactor)",
+      "name": "Curly Teddy Natural",
+      "creator": "Poly Haven (colormass photography, Rico Cilliers processing)",
+      "url": "https://polyhaven.com/a/curly_teddy_natural",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-09-20",
+      "tileSizeM": 0.333
+    },
+    {
+      "role": "legs",
+      "name": "Oak Veneer 01",
+      "creator": "Poly Haven",
+      "url": "https://polyhaven.com/a/oak_veneer_01",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-09-19",
+      "tileSizeM": 1.83
+    }
+  ],
+  "authoring": {
+    "route": "C procedural static Blender, parametric",
+    "tool": "Blender 5.2.1 LTS",
+    "scripts": [
+      "build_sofa.py"
+    ],
+    "author": "Claude (Sonnet 5) for Dan; original geometry"
+  }
+}

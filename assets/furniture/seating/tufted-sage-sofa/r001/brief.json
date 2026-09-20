@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "seating:tufted-sage-sofa:r001",
+  "category": "sofa",
+  "dimensionsM": {
+    "width": 2.09,
+    "depth": 0.917,
+    "height": 0.848,
+    "note": "parametric via build_sofa.py --width/--depth/--height/--color; audited bounds 2.090 x 0.917 x 0.848"
+  },
+  "style": [
+    "mid-century",
+    "grid-tufted back (6x3 cells, covered buttons, pinched creases)",
+    "flared arms sloping to the front",
+    "splayed tapered oak legs + slim oak rails",
+    "two seat cushions with fine piping",
+    "velour upholstery"
+  ],
+  "materials": [
+    "Velour Velvet (Poly Haven CC0), luminance-normalised, colour = baseColorFactor",
+    "Oak Veneer 01 (Poly Haven CC0) legs and rails"
+  ],
+  "mustKeep": [
+    "fabric weave identical across colour variants",
+    "physical weave + grain scale across sizes"
+  ],
+  "avoid": [
+    "near-copy of any reference photo",
+    "baked lighting",
+    "half-done tufting",
+    "smooth fabric at room distance"
+  ],
+  "referenceImages": [
+    "inspiration only (retailer photo, not copied): user screenshot 2026-09-20 154159"
+  ],
+  "roomContext": [
+    "living"
+  ],
+  "status": "r001-draft",
+  "borrowed": "vocabulary: sage mid-century 3-seater, grid-tufted back with buttons, flared arms, splayed oak legs, two seat cushions",
+  "changed": "own proportions, real modelled tufting (mesh creases + buttons), arm slopes to the front, own leg taper, oak rails, velour from Poly Haven",
+  "dressed": "bare (no scatter cushions; not in the reference)"
+}
