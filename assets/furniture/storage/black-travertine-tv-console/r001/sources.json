@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "inputs": [],
+  "provider": null,
+  "materialSources": [
+    { "name": "Travertine009", "url": "https://ambientcg.com/a/Travertine009", "license": "CC0-1.0", "files": ["travertine009_diff_2k.jpg", "travertine009_rough_2k.jpg", "travertine009_nor_gl_2k.jpg"], "derivatives": ["travertine_console_diff_2k.png (desaturate + warm multiply)"], "tileM": 1.6 }
+  ]
+}

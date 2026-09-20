@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "inputs": [],
+  "provider": null,
+  "materialSources": [
+    { "name": "walnut_veneer", "url": "https://polyhaven.com/a/walnut_veneer", "license": "CC0-1.0", "files": ["walnut_veneer_diff_2k.jpg", "walnut_veneer_rough_2k.jpg", "walnut_veneer_nor_gl_2k.jpg"], "derivatives": ["walnut_console_diff_2k.png (colour multiply)", "walnut_console_end_2k.png (darker end grain)"], "tileM": 1.8 },
+    { "name": "oak_veneer_01", "url": "https://polyhaven.com/a/oak_veneer_01", "license": "CC0-1.0", "files": ["oak_veneer_01_diff_2k.jpg", "oak_veneer_01_rough_2k.jpg", "oak_veneer_01_nor_gl_2k.jpg"], "derivatives": ["oak_console_diff_2k.png", "oak_console_end_2k.png"], "tileM": 1.83, "note": "used only by the --wood oak build argument, not in the walnut GLB" }
+  ]
+}

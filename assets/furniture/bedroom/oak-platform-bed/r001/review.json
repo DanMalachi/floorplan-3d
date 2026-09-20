@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "technical": "pass-with-notes",
+  "visual": "pending",
+  "user": "pending",
+  "promotion": "candidate",
+  "artifactSha256": "b7f945c029daaecfd3d2eaf8900c9ed8fe8717f1bff5403f1df8185aad26f4dd",
+  "revision": "r001",
+  "notes": [
+    "technical: dims 1.72x1.04x2.135 m, grounded at y=0, centred, front +Z, 3 materials all with baseColor+metallicRoughness+normal, 17384 tris / 71 primitives / 7.1 MB",
+    "SHA-256 bound to renders and dev-page review",
+    "Superseded build: audit.superseded-00280b95.json (12.6 MB, flat pillows, headboard reveals leaked light)",
+    "Repair budget: 1 build + 2 repairs used (repair 1 back panel/piping/pillow/textures; repair 2 pillow grid scale + shape)"
+  ]
+}

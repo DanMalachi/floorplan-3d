@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "seating:grey-chaise-sectional:r001",
+  "category": "seating",
+  "dimensionsM": { "width": 2.85, "depth": 1.65, "height": 0.82 },
+  "style": ["modern", "L-shaped sectional", "button-tufted", "slim metal legs"],
+  "materials": ["Poly Haven Hessian 380 (CC0) tinted light grey", "polished nickel legs (plain metallic material, self-authored)"],
+  "mustKeep": ["chaise extends forward from the LEFT end, no arm on the chaise side", "two block arms (right end, back-left end)", "three button-tufted back cushions", "tufted chaise top", "slim splayed nickel legs, fabric body down to the leg tops", "divots pull inward, silhouette stays clean"],
+  "avoid": ["raised tuft cells (abs)", "loose legs floating under nothing", "gloss on the fabric", "fine-grain fabric that reads smooth at room distance", "any vertex pushed outward by a divot"],
+  "referenceImages": [{ "file": "Screenshot 2026-09-20 154204.png", "use": "design-inspiration-only, never copied into repo or GLB" }],
+  "roomContext": ["living"],
+  "preflight": {
+    "standsOn": "floor, 6 nickel pin legs (4 at the run corners, 2 under the chaise front), legs screw into the fabric-wrapped base box (0.15 to 0.30 m) that carries arms, back panel and cushions. One shared variable per junction (BASE_Z, FZ).",
+    "mechanisms": "Tufting = padding held down by buttons: one padded dome per cushion, conical tension divot at each button, faint radial folds (tufted_slab from the sage sofa, plus a top-facing variant for the chaise). Block arm = padded slab, small radius. Legs = tapered cone splayed outward.",
+    "lightResponse": "Woven hessian: diffuse, normal strength 2.4, spec 0.2, no sheen. Nickel: metallic 1, roughness 0.22, judged in the app viewer.",
+    "outline": "Nothing changes the outline: divots pull inward only, dome kept to 2 cm, profile and side_low rendered in the first draft."
+  },
+  "inspiration": {
+    "borrowed": "L-shape with left chaise, tufted back cushions, block arms, slim metal legs, light grey woven fabric",
+    "changed": "own proportions, own tuft layout and dimensions, own leg geometry"
+  },
+  "status": "draft"
+}

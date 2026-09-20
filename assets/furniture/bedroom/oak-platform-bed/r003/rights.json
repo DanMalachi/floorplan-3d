@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "status": "approved-original",
+  "intendedRelease": "CC0-1.0",
+  "ownerDedicationRecorded": false,
+  "artifactSha256": "3f1a42663808317eb0103581c1369196dbf469e74dbc96b2c3488dccbc5c138f",
+  "notes": [
+    "Geometry original and owner-controlled (Dan); textures Poly Haven CC0 (sources.json); screenshot was inspiration only, not an input. Shipped in the app per docs/DATA_RIGHTS.md. CC0 dedication of the geometry is NOT recorded — only Dan can do that, for this exact hash."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "storage:walnut-tv-console:r001",
+  "category": "storage",
+  "dimensionsM": { "width": 1.8, "depth": 0.42, "height": 0.5 },
+  "style": ["mid-century modern", "low media console", "wrap-around rounded body", "handle-less flush doors", "slab legs"],
+  "materials": ["Poly Haven walnut_veneer (CC0), darkened + reddened derivative", "Poly Haven oak_veneer_01 (CC0) for the oak build argument"],
+  "mustKeep": ["one large-radius wrap-around body", "three flush handle-less doors inside a slim frame with real reveals", "two rectangular slab legs set in from the ends", "veneer grain continuous across the three doors"],
+  "avoid": ["light leaking through reveals", "facet shading on the big flat faces", "legs poking outside the body outline", "repeated identical grain on neighbouring parts"],
+  "referenceImages": [
+    { "file": "Screenshot 2026-09-20 190453.png", "use": "design-inspiration-only, never copied into repo or GLB" },
+    { "file": "Screenshot 2026-09-20 190459.png", "use": "design-inspiration-only (same model in light oak)" }
+  ],
+  "roomContext": ["living"],
+  "preflight": {
+    "standsOn": "floor, two slab legs (LEG_H 0.14) butting the body underside; one shared variable LEG_H for the contact chain.",
+    "mechanisms": "Shell = rounded box r 4.5 cm on all edges with a boolean front pocket (2 cm deep, 6 cm end frame, 3 cm top frame). Doors = three separate prisms in the pocket, 3 mm reveals, 1 mm behind the frame face, 1 mm front-edge bevel; the solid pocket floor is the back panel so no light leaks. Push-to-open, no handles.",
+    "lightResponse": "Satin veneer: roughness map from the scan, spec 0.42, normal 1.0, darker end grain on the legs; walnut albedo tinted [0.64,0.53,0.52] multiplied.",
+    "outline": "Edge radius IS the outline (profile and side_low rendered). Legs stay inside the body footprint."
+  },
+  "partTable": [
+    { "part": "body shell", "features": "large-radius wrap, plain veneer, no handles" },
+    { "part": "doors x3", "features": "flush, handle-less, equal width (assumed), grain sequence-matched" },
+    { "part": "legs x2", "features": "rectangular slabs, vertical grain, straight (no splay)" },
+    { "part": "interior/back", "features": "closed: solid pocket floor, no modelled interior" }
+  ],
+  "inspiration": {
+    "borrowed": "low wrap-around console, three flush doors, slab legs, dark walnut",
+    "changed": "own proportions, own frame widths and pocket, own leg geometry, own veneer maps"
+  },
+  "status": "draft"
+}

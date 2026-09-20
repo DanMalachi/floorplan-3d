@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "technical": "pass-with-notes",
+  "visual": "pass (owner)",
+  "user": "approved",
+  "promotion": "promoted",
+  "artifactSha256": "3f1a42663808317eb0103581c1369196dbf469e74dbc96b2c3488dccbc5c138f",
+  "revision": "r003",
+  "notes": [
+    "Only change vs r002 (user request): pillows are firm visco-style slabs instead of soft cloth-sim sacks.",
+    "Review renders are 14-sample drafts, not the 40-sample set used for r002.",
+    "Known weak spots: duvet creases soft, no throw.",
+    "User approved r003 on 2026-09-20 (bound to artifactSha256). Promoted to catalog as factory:oak-platform-bed."
+  ]
+}

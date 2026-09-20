@@ -1,0 +1,131 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\bedroom\\oak-platform-bed\\r003\\exports\\oak-platform-bed_r003.glb",
+  "sha256": "3f1a42663808317eb0103581c1369196dbf469e74dbc96b2c3488dccbc5c138f",
+  "fileBytes": 7958320,
+  "bounds": {
+    "min": [
+      -0.9108759760856628,
+      0,
+      -1.0674999286420643
+    ],
+    "max": [
+      0.8775023221969604,
+      1.0399999618530273,
+      1.121630139183253
+    ]
+  },
+  "dimensionsXYZM": [
+    1.7883782982826233,
+    1.0399999618530273,
+    2.1891300678253174
+  ],
+  "nodes": 35,
+  "meshes": 35,
+  "primitives": 63,
+  "vertices": 28638,
+  "triangles": 50816,
+  "materials": [
+    {
+      "name": "duvet_linen",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "oak_face",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "oak_endgrain",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "cotton_linen",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "cotton_white",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "terlenka_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 184665
+    },
+    {
+      "name": "linen_greige_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 21442
+    },
+    {
+      "name": "terlenka_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 137370
+    },
+    {
+      "name": "oak_veneer_01_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 2429019
+    },
+    {
+      "name": "oak_veneer_01_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 2831117
+    },
+    {
+      "name": "oak_veneer_01_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 1016026
+    },
+    {
+      "name": "oak_endgrain_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 26384
+    },
+    {
+      "name": "cotton_offwhite_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 26663
+    },
+    {
+      "name": "cotton_white_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 24398
+    }
+  ],
+  "embeddedTextureBytes": 6697084,
+  "missing": {
+    "baseColor": [],
+    "roughness": [],
+    "normal": []
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\storage\\black-travertine-tv-console\\r001\\exports\\black-travertine-tv-console_r001.glb",
+  "sha256": "eb6d95e8f0d347559b3a1ff866c96be177c4f6bd688b57e021f6ba52cde6093d",
+  "fileBytes": 515268,
+  "bounds": {
+    "min": [
+      -1,
+      0,
+      -0.20000000298023224
+    ],
+    "max": [
+      1,
+      0.5,
+      0.20000000298023224
+    ]
+  },
+  "dimensionsXYZM": [
+    2,
+    0.5,
+    0.4000000059604645
+  ],
+  "nodes": 8,
+  "meshes": 8,
+  "primitives": 11,
+  "vertices": 196,
+  "triangles": 208,
+  "materials": [
+    {
+      "name": "black_frame",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "blade_steel",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "travertine",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "travertine009_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 17031
+    },
+    {
+      "name": "travertine_console_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 458949
+    },
+    {
+      "name": "travertine009_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 24619
+    }
+  ],
+  "embeddedTextureBytes": 500599,
+  "missing": {
+    "baseColor": [
+      "black_frame",
+      "blade_steel"
+    ],
+    "roughness": [
+      "black_frame",
+      "blade_steel"
+    ],
+    "normal": [
+      "black_frame",
+      "blade_steel"
+    ]
+  }
+}

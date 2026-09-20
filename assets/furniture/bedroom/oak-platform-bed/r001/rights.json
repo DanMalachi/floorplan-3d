@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "status": "pending",
+  "intendedRelease": "CC0-1.0",
+  "ownerDedicationRecorded": false,
+  "artifactSha256": "b7f945c029daaecfd3d2eaf8900c9ed8fe8717f1bff5403f1df8185aad26f4dd",
+  "notes": [
+    "Geometry is original. Textures are Poly Haven CC0 (see sources.json). The screenshot is NOT an input. CC0 dedication NOT recorded; only Dan can approve, after visual verdict."
+  ]
+}

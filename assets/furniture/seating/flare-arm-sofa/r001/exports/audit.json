@@ -1,0 +1,89 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\seating\\flare-arm-sofa\\r001\\exports\\flare-arm-sofa_r001.glb",
+  "sha256": "f40b291f979739d31fa6eea11fcc556b6845d5fdb28132e7defa21d47aa3a199",
+  "fileBytes": 4223288,
+  "bounds": {
+    "min": [
+      -1.0452454090118408,
+      0,
+      -0.4596683084964752
+    ],
+    "max": [
+      1.0452454090118408,
+      0.8286258578300476,
+      0.4596683084964752
+    ]
+  },
+  "dimensionsXYZM": [
+    2.0904908180236816,
+    0.8286258578300476,
+    0.9193366169929504
+  ],
+  "nodes": 20,
+  "meshes": 20,
+  "primitives": 20,
+  "vertices": 28514,
+  "triangles": 50028,
+  "materials": [
+    {
+      "name": "teddy",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "oak",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "curly_teddy_natural_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 1952612
+    },
+    {
+      "name": "teddy_grey",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 309046
+    },
+    {
+      "name": "curly_teddy_natural_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 697241
+    },
+    {
+      "name": "oak_veneer_01_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 7767
+    },
+    {
+      "name": "oak_veneer_01_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 32217
+    },
+    {
+      "name": "oak_veneer_01_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 50001
+    }
+  ],
+  "embeddedTextureBytes": 3048884,
+  "missing": {
+    "baseColor": [],
+    "roughness": [],
+    "normal": []
+  }
+}

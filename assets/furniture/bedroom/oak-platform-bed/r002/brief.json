@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:oak-platform-bed:r002",
+  "category": "bed",
+  "dimensionsM": {
+    "width": null,
+    "depth": null,
+    "height": null
+  },
+  "style": [],
+  "materials": [],
+  "mustKeep": [],
+  "avoid": [],
+  "referenceImages": [],
+  "roomContext": [],
+  "status": "unresolved"
+}

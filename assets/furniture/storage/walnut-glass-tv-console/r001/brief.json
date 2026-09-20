@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "storage:walnut-glass-tv-console:r001",
+  "category": "storage",
+  "dimensionsM": { "width": 2.0, "depth": 0.42, "height": 0.52 },
+  "style": ["mid-century modern", "low media console", "bullnose ends", "black wire-mesh bays", "open cubby over one drawer", "splayed round tapered legs"],
+  "materials": ["Poly Haven walnut_veneer (CC0), desaturated lighter derivative", "black satin steel woven wire mesh (real geometry, 9 mm pitch, 1.8 mm wire)"],
+  "mustKeep": ["bullnose vertical corners, slightly overhanging top", "two mesh bays in slim walnut frames", "centre open cubby above one handle-less drawer with a 3 mm reveal", "four round tapered splayed legs"],
+  "avoid": ["reddish saturated walnut", "glass or transparency (the reference is black metal mesh, not glass)", "coplanar seam lines under the top slab"],
+  "referenceImages": [
+    { "file": "Screenshot 2026-09-20 190450.png", "use": "design-inspiration-only, never copied into repo or GLB" }
+  ],
+  "roomContext": ["living"],
+  "partTable": [
+    { "part": "body", "features": "bullnose plan, pockets cut by boolean, walnut veneer, grain along the length" },
+    { "part": "top slab", "features": "10 mm overhang, softened edges" },
+    { "part": "mesh bays x2", "features": "walnut frame 22 mm, black wire mesh set back 7 mm, dark interior panel behind" },
+    { "part": "centre column", "features": "open cubby (real cavity), 36 mm shelf, handle-less drawer" },
+    { "part": "legs x4", "features": "round tapered, splayed outward, vertical grain" }
+  ],
+  "inspiration": {
+    "borrowed": "low walnut console, bullnose ends, mesh doors, cubby over drawer, splayed round legs",
+    "changed": "own proportions, frame widths, mesh construction, own veneer tint"
+  },
+  "status": "approved"
+}

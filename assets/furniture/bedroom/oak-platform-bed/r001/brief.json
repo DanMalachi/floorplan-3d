@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:oak-platform-bed:r001",
+  "category": "bed",
+  "dimensionsM": { "width": 1.72, "depth": 2.12, "height": 1.04 },
+  "style": ["Scandinavian", "low-profile platform", "solid oak", "restrained", "warm natural"],
+  "materials": [
+    "European white oak, clear matte oil finish, straight grain; grain runs along each member's length",
+    "Mattress: off-white cotton-linen weave, piped edge, 220 mm thick",
+    "Pillows: white percale, two, separate nodes"
+  ],
+  "mustKeep": [
+    "Original design: five vertical V-groove boards in a rebated headboard, top cap rail overhanging 15 mm, headboard 1.04 m from floor",
+    "Four square posts 60x60 mm with 3 mm bevels; side and foot rails 160 mm tall, 40 mm thick, set 140 mm above floor",
+    "Open negative space under the rails on all sides",
+    "Slat deck visible only as a shadow-gap 20 mm below mattress edge",
+    "Fits 160x200 mattress (Israeli/EU double-large); frame outer 1.72 x 2.12 m",
+    "Local front is +Z (foot end), origin centred on X/Z, base at Y=0",
+    "Separate meshes/nodes: frame, headboard, mattress, pillow_L, pillow_R; real member thickness and joinery"
+  ],
+  "avoid": [
+    "Copying the reference screenshot's exact proportions (open rectangular foot base, slab panel with border)",
+    "Baked shadows or light in base colour",
+    "Procedural-noise wood, generic single-colour fills",
+    "Plastic-looking cloth, random corrugation, intersecting pillows",
+    "Plant, curtains, room, props in the asset",
+    "Texture scale that changes between parts"
+  ],
+  "referenceImages": [],
+  "roomContext": ["bedroom, against a wall at the headboard end", "Done normal room lighting"],
+  "authoringMode": "route-c-procedural-blender-static",
+  "inspiration": {
+    "note": "User screenshot 2026-09-19 20:40 (search result, source unknown, NOT an input). Used for broad style vocabulary only: light oak, low platform, tall plain headboard.",
+    "usedAsInput": false
+  },
+  "status": "resolved-pending-user-confirm"
+}

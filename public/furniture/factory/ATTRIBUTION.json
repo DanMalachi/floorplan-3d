@@ -1,0 +1,208 @@
+{
+  "note": "Original Done furniture built with the done-furniture-factory skill. Geometry is original (procedural Blender + cloth simulation). Textures are CC0 (no attribution required); listed for provenance. Rights record: docs/DATA_RIGHTS.md.",
+  "items": [
+    {
+      "assetId": "factory:oak-platform-bed",
+      "file": "oak-platform-bed.glb",
+      "sha256": "3f1a42663808317eb0103581c1369196dbf469e74dbc96b2c3488dccbc5c138f",
+      "candidate": "assets/furniture/bedroom/oak-platform-bed/r003",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Oak Veneer 01",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "Terlenka",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/terlenka",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:block-arm-sofa",
+      "file": "block-arm-sofa.glb",
+      "sha256": "0468bc5db94f609dd90672e4c45474652142969eca62d68ec9e7ecbd3cf0b4ae",
+      "candidate": "assets/furniture/seating/block-arm-sofa/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Rough Linen",
+          "creator": "Poly Haven (colormass photography, Rico Cilliers processing)",
+          "url": "https://polyhaven.com/a/rough_linen",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "Oak Veneer 01",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:flare-arm-sofa",
+      "file": "flare-arm-sofa.glb",
+      "sha256": "f40b291f979739d31fa6eea11fcc556b6845d5fdb28132e7defa21d47aa3a199",
+      "candidate": "assets/furniture/seating/flare-arm-sofa/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Curly Teddy Natural",
+          "creator": "Poly Haven (colormass photography, Rico Cilliers processing)",
+          "url": "https://polyhaven.com/a/curly_teddy_natural",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "Oak Veneer 01",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:plain-block-sofa",
+      "file": "plain-block-sofa.glb",
+      "sha256": "bfbf4b6874e62432aa442ba5ba0532702d68e36d7d55051a40c721e7edb867e7",
+      "candidate": "assets/furniture/seating/plain-block-sofa/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Hessian 380",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/hessian_380",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "Oak Veneer 01",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:tufted-sage-sofa",
+      "file": "tufted-sage-sofa.glb",
+      "sha256": "13876b8dcb0367302cc85fc2b55ab00e32610945af6ab1fb083075330939f920",
+      "candidate": "assets/furniture/seating/tufted-sage-sofa/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Velour Velvet",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/velour_velvet",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "Oak Veneer 01",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:beige-leather-sofa",
+      "file": "beige-leather-sofa.glb",
+      "sha256": "46e1916bf173e169ebfcff33e9a9ad5af897052875d43cd3bc97fedf95a16bfb",
+      "candidate": "assets/furniture/seating/beige-leather-sofa/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "done. leather grain (self-authored)",
+          "creator": "Claude (Sonnet 5) for Dan; no third-party input",
+          "url": "assets/furniture/seating/beige-leather-sofa/r001/make_leather_maps.py",
+          "license": "original, owner-controlled"
+        },
+        {
+          "name": "Oak Veneer 01",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:grey-chaise-sectional",
+      "file": "grey-chaise-sectional.glb",
+      "sha256": "cc13c2b070c28fd25adf0503c8312d301ce8d1819582a231ea9a92ccba0bc3f1",
+      "candidate": "assets/furniture/seating/grey-chaise-sectional/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Hessian 380",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/hessian_380",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "polished nickel",
+          "creator": "self-authored",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:walnut-tv-console",
+      "file": "walnut-tv-console.glb",
+      "sha256": "938adc2bb0e0212987dfb1166d85386ec7f757e08dd368d486cbc7d809767071",
+      "candidate": "assets/furniture/storage/walnut-tv-console/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "walnut_veneer",
+          "url": "https://polyhaven.com/a/walnut_veneer",
+          "license": "CC0-1.0"
+        },
+        {
+          "name": "oak_veneer_01",
+          "url": "https://polyhaven.com/a/oak_veneer_01",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:black-travertine-tv-console",
+      "file": "black-travertine-tv-console.glb",
+      "sha256": "eb6d95e8f0d347559b3a1ff866c96be177c4f6bd688b57e021f6ba52cde6093d",
+      "candidate": "assets/furniture/storage/black-travertine-tv-console/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Travertine009",
+          "url": "https://ambientcg.com/a/Travertine009",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:walnut-mesh-tv-console",
+      "file": "walnut-mesh-tv-console.glb",
+      "sha256": "5e67c87a38d36bb28ff751547faa09392cc6e04d2a9c8add62663a6b398e7eca",
+      "candidate": "assets/furniture/storage/walnut-glass-tv-console/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "walnut_veneer",
+          "url": "https://polyhaven.com/a/walnut_veneer",
+          "license": "CC0-1.0"
+        }
+      ]
+    }
+  ]
+}

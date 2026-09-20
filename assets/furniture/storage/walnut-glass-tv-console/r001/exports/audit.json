@@ -1,0 +1,88 @@
+{
+  "file": "C:\\Users\\dandu\\floorplan-3d\\assets\\furniture\\storage\\walnut-glass-tv-console\\r001\\exports\\walnut-glass-tv-console_r001.glb",
+  "sha256": "5e67c87a38d36bb28ff751547faa09392cc6e04d2a9c8add62663a6b398e7eca",
+  "fileBytes": 584680,
+  "bounds": {
+    "min": [
+      -1,
+      -2.3283064365386963e-10,
+      -0.20999999344348907
+    ],
+    "max": [
+      1,
+      0.5199999809265137,
+      0.20999999344348907
+    ]
+  },
+  "dimensionsXYZM": [
+    2,
+    0.5199999811593443,
+    0.41999998688697815
+  ],
+  "nodes": 19,
+  "meshes": 19,
+  "primitives": 19,
+  "vertices": 2968,
+  "triangles": 3468,
+  "materials": [
+    {
+      "name": "walnut",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "dark_interior",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "black_mesh",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "walnut_veneer_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 41261
+    },
+    {
+      "name": "walnut_glass_console_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 340402
+    },
+    {
+      "name": "walnut_veneer_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 90701
+    }
+  ],
+  "embeddedTextureBytes": 472364,
+  "missing": {
+    "baseColor": [
+      "dark_interior",
+      "black_mesh"
+    ],
+    "roughness": [
+      "dark_interior",
+      "black_mesh"
+    ],
+    "normal": [
+      "dark_interior",
+      "black_mesh"
+    ]
+  }
+}

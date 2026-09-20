@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "inputs": [
+    {
+      "role": "design-inspiration-only",
+      "creator": "unknown (search-result image supplied by user)",
+      "sourcePath": "user screenshot 2026-09-19 20:40, not copied into this candidate",
+      "license": "unknown / not cleared",
+      "usedAsInput": false,
+      "note": "Broad style vocabulary only (light oak, low platform, tall plain headboard). Design, proportions and joinery are original; see brief.json."
+    }
+  ],
+  "provider": null,
+  "authoring": {
+    "route": "C procedural static Blender",
+    "tool": "Blender 5.2.1 LTS",
+    "scripts": ["build_bed.py", "render_views.py"],
+    "author": "Claude (Opus 5 / Sonnet 5) for Dan; original geometry"
+  },
+  "materialSources": [
+    {
+      "role": "oak face + end grain (end grain is a 0.72x darkened derivative)",
+      "name": "Oak Veneer 01",
+      "creator": "Poly Haven",
+      "url": "https://polyhaven.com/a/oak_veneer_01",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-09-19",
+      "files": ["inputs/materials/oak_veneer_01_diff_2k.jpg", "inputs/materials/oak_veneer_01_rough_2k.jpg", "inputs/materials/oak_veneer_01_nor_gl_2k.jpg", "inputs/materials/oak_endgrain_diff_2k.png"],
+      "tileSizeM": 1.83
+    },
+    {
+      "role": "mattress + pillow fabric (diffuse lifted to off-white derivative)",
+      "name": "Terlenka",
+      "creator": "Poly Haven",
+      "url": "https://polyhaven.com/a/terlenka",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-09-19",
+      "files": ["inputs/materials/terlenka_diff_2k.jpg", "inputs/materials/terlenka_rough_2k.jpg", "inputs/materials/terlenka_nor_gl_2k.jpg", "inputs/materials/cotton_offwhite_diff_2k.png"],
+      "tileSizeM": 0.27
+    }
+  ]
+}
