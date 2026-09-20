@@ -436,6 +436,17 @@ the mesh bays were "not glass, black metal mesh" (the 390 px reference could not
    (own verts per face) so hard edges survive the forced smooth export.
 9. **Bullnose body:** extrude a rounded-rectangle PLAN (`rounded_rect_pts` used as x, y) then bevel top/bottom loops (arc chords must exceed the offset); dominant-normal planar UVs with V along x keep grain
    continuous on the front and fine on the arcs.
+10. **Promotion can rename the asset.** `promote-candidate.mjs --slug` may differ from the candidate folder (the "glass" console became `walnut-mesh-tv-console` after the owner corrected the material).
+    Keep the folder, note it in the handoff, and make sure the dev-page name (`iterate.mjs --name`) and `brief.json` describe the FINAL design; fill `brief.json` and `sources.json` (CC0 URL, files, derivatives, tile size)
+    BEFORE promoting, because the promote step copies them into `ATTRIBUTION.json` and the DATA_RIGHTS row.
+11. **Node cannot see Git Bash `/tmp`.** A heredoc written to `/tmp/x` is invisible to `node -e` (it resolves `C:\tmp`): pass `$(cygpath -m /tmp/x)` or write into the scratchpad with an absolute Windows path.
+    The same applies to Blender (`-b` resolves relative and `/tmp` paths against `C:\`): always hand it `C:/...` absolute paths.
+12. **Committing factory work in a shared tree.** The working tree usually also holds other sessions' edits (kitchen editor, i18n, parametric). Stage by explicit path: `.agents/`, `data/furniture-factory.catalog.json`,
+    `public/furniture/factory/`, the factory rows of `docs/DATA_RIGHTS.md`, the factory wiring in `src/furniture/catalog.ts`, the handoff, and per-candidate RECORDS only
+    (`brief|sources|rights|review|extra_views.json`, `build_*.py`, `exports/audit.json`). Never stage `assets/**/exports|renders|inputs` (about 600 MB) or `__pycache__`; `git diff --cached --stat` before committing.
+    Diff `docs/PROTECTED_PATHS.md` / `catalog.ts` first: only take hunks that are the factory's.
+13. **A stale `.git/index.lock` (0 bytes, a day old, no git process) blocks every `git add`** with dozens of identical fatal lines. Check `tasklist //FI "IMAGENAME eq git.exe"` and the lock's age, then delete it; do not loop `git add`.
+14. **Push the BRANCH, never `main`, unless the owner says so:** `git push origin main` is a production deploy. Factory work lives on `codex/furniture-addition`.
 
 ## 8. The one-shot recipe (condensed)
 
