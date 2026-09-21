@@ -124,6 +124,20 @@ export async function pushProject(args: PushArgs): Promise<PushResult | null> {
   return { rev: Number(row.rev), conflict: Boolean(row.conflict) };
 }
 
+/**
+ * Ids of projects the account has soft-deleted (tombstones). Null means "couldn't
+ * reach the server" — callers must treat that as "do not decide anything", never as
+ * "no tombstones". This is what lets reconcile tell "deleted on another device"
+ * from "the server lost the row" (see store/missingRemote.ts).
+ */
+export async function listRemoteTombstones(): Promise<Set<string> | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("projects").select("id").not("deleted_at", "is", null);
+  if (error) return null;
+  return new Set((data as { id: string }[]).map((r) => r.id));
+}
+
 /** Soft delete, so the user's other devices learn the project is gone. */
 export async function softDeleteRemote(projectId: string): Promise<boolean> {
   const supabase = getSupabase();

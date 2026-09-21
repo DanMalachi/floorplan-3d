@@ -166,6 +166,7 @@ Postgres backups at all. §9.
 | F-13 | **GitHub repo is public with secret scanning, push protection and Dependabot alerts all disabled; no review requirement; the one required check (`pytest`) is unsatisfiable for direct pushes; `enforce_admins` off** | `gh api repos/DanMalachi/floorplan-3d` (`security_and_analysis: disabled`), `…/branches/main/protection` | MANUAL — §7 G-1..G-3 |
 | F-14 | **Supabase email sign-up may be open.** The anon key is public; if the Email provider is enabled, anyone can `POST /auth/v1/signup` and create accounts without Google | Supabase default; provider settings not readable from the repo | MANUAL — §7 S-2. *Test on staging only* |
 | F-15 | **Sentry (when switched on) would have stored working share links** — `?g=` is in every event/breadcrumb URL | `sentry.shared.ts` had no scrubbing | FIXED — `beforeSend`/`beforeBreadcrumb` redact `g`, `code`, tokens, fragments; drop cookies/headers/body/email/IP. 5 tests |
+| F-29 | **Sync deleted a device's LAST copy whenever the server lost a project.** Reconcile treated "previously synced and now absent" as "deleted elsewhere" and ran `forgetProject` (erases doc, image, thumbnail). A table wipe, bad migration, restore or empty response would have propagated to every user's device on the next tab focus. Matters most with no backups | `src/store/syncEngine.ts:171` (origin/main) | FIXED — only a server **tombstone** (`deleted_at`) means forget; a vanished row is re-uploaded from the device (self-healing). Unreadable tombstones = decide nothing. `missingRemote.ts`, 6 tests. Cost: a device offline >30 days can resurrect a project deleted elsewhere |
 | F-16 | **CSP still allows inline script** (needed by Next's hydration) so it does not yet stop an injected inline `<script>` | doc: `node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md` | OPEN (P2 after F-10) — nonces force every page dynamic (loses static/CDN caching); alternative is experimental SRI. Product/cost call. No XSS sink exists today (§4 #9) |
 
 ### P2
@@ -380,7 +381,9 @@ I did **not** perform any of these. Values are never invented; where a value is 
 
 ## 9. Backup and restore
 
-**Result: nothing verified. No backup was confirmed enabled; no restore was performed.**
+**Decision (Dan, 2026-09-21): no paid Supabase backups for the first launch — RISK ACCEPTED, not resolved.** The free plan has no backups, so a database or storage loss cannot be restored. Compensating controls today: the app is local-first (each signed-in browser keeps its own copy of its projects and images), F-29's fix makes devices **re-upload** a project the server lost instead of deleting it, users can export their data from the account page, and account deletion is separate. What this does NOT cover: guests' data (never on the server), a user with a single device that is wiped, live-room history, and anything that was only ever on the server. **RPO = unbounded, RTO = n/a until a plan with backups is bought.** Revisit before any paid tier or any user base that cannot afford to lose plans; the cheapest upgrade is Supabase Pro daily backups.
+
+**Result of verification: no backup was enabled; no restore was performed.**
 State on file: `docs/BACKUPS.md` (unmerged branch `docs/backups-pitr`, 555 lines) is a *decision* runbook — plan/PITR
 not chosen or bought. Coverage gap it documents and I confirmed applies: Postgres backups do **not** contain Storage
 bytes (`plans`, `thumbs`) or Liveblocks rooms; the client's IndexedDB copy is outside any restore. **To close (MANUAL):**
