@@ -15,11 +15,11 @@ Repository facts (floorplan-3d):
 ## One command (steps 2 to 7)
 
 ```
-node .agents/skills/done-furniture-factory/scripts/promote-candidate.mjs --repo . --candidate assets/furniture/<family>/<asset>/r001   --slug <slug> --name "<Display Name>" --category Seating --subtitle "<style, material>" --rooms living --approved-on YYYY-MM-DD
+node .agents/skills/done-furniture-factory/scripts/promote-candidate.mjs --repo . --candidate assets/furniture/<family>/<asset>/r001   --slug <slug> --name "<Display Name>" --kind "<what it is: sofa | sectional sofa | bed | tv console>" [--tags a,b] --category Seating --subtitle "<style, material>" --rooms living --approved-on YYYY-MM-DD
 ```
 
 It verifies the audit hash against the GLB, copies GLB and `renders/thumb.png`, writes the catalog entry (footprint from the audit),
-ATTRIBUTION.json, the DATA_RIGHTS row and flips rights.json/review.json. Then do step 8 (verify) yourself. Used for the block-arm
+ATTRIBUTION.json, the DATA_RIGHTS row and flips rights.json/review.json. **`--kind` is required and must contain the Plan Dock hotspot keyword** (sofa/couch, bed, tv, lamp, rug ...): hotspots match name + kind + typeTags only, never the subtitle, so an item whose name lacks the keyword ("Grey Chaise Sectional") silently disappears from its room card. `src/furniture/factoryCatalog.test.ts` fails if a factory item is unreachable. Then do step 8 (verify) yourself. Used for the block-arm
 sofa (2026-09-20, worked first time). Render `renders/thumb.png` from the FINAL GLB first (`render-views.py ... --thumb renders/thumb.png`).
 
 ## Steps (manual reference)

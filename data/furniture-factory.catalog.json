@@ -1,5 +1,28 @@
 [
   {
+    "assetId": "factory:upholstered-queen-bed",
+    "name": "Upholstered Queen Bed",
+    "category": "Beds",
+    "footprint": {
+      "w": 1.812,
+      "d": 2.191
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/upholstered-queen-bed.glb",
+    "thumbnail": "/furniture/factory/upholstered-queen-bed.png",
+    "brand": "Done",
+    "subtitle": "soft upholstered queen, oak feet, dressed",
+    "kind": "upholstered queen bed",
+    "typeTags": [
+      "bed",
+      "upholstered bed",
+      "soft headboard"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
     "assetId": "factory:oak-platform-bed",
     "name": "Oak Platform Bed",
     "category": "Beds",
@@ -14,6 +37,11 @@
     "subtitle": "platform bed, solid oak, dressed",
     "rooms": [
       "bedroom"
+    ],
+    "kind": "platform bed",
+    "typeTags": [
+      "bed",
+      "platform bed"
     ]
   },
   {
@@ -31,6 +59,11 @@
     "subtitle": "3-seat sofa, linen, oak legs",
     "rooms": [
       "living"
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "couch"
     ]
   },
   {
@@ -48,6 +81,11 @@
     "subtitle": "Scandinavian, cream bouclé, oak legs",
     "rooms": [
       "living"
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "couch"
     ]
   },
   {
@@ -65,6 +103,11 @@
     "subtitle": "Square arms, woven linen, oak legs",
     "rooms": [
       "living"
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "couch"
     ]
   },
   {
@@ -82,6 +125,11 @@
     "subtitle": "3-seat mid-century sofa, button-tufted sage velvet, oak base",
     "rooms": [
       "living"
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "couch"
     ]
   },
   {
@@ -99,6 +147,11 @@
     "subtitle": "3-seat sofa, stitched beige leather, oak legs",
     "rooms": [
       "living"
+    ],
+    "kind": "sofa",
+    "typeTags": [
+      "sofa",
+      "couch"
     ]
   },
   {
@@ -116,6 +169,13 @@
     "subtitle": "L-shape sectional, grey fabric, nickel legs",
     "rooms": [
       "living"
+    ],
+    "kind": "sectional sofa",
+    "typeTags": [
+      "sofa",
+      "couch",
+      "sectional",
+      "chaise"
     ]
   },
   {
@@ -133,6 +193,12 @@
     "subtitle": "Low wrap-around console, three flush doors, walnut veneer",
     "rooms": [
       "living"
+    ],
+    "kind": "tv console",
+    "typeTags": [
+      "tv",
+      "console",
+      "media cabinet"
     ]
   },
   {
@@ -150,6 +216,12 @@
     "subtitle": "Black frame, travertine panels, blade legs",
     "rooms": [
       "living"
+    ],
+    "kind": "tv console",
+    "typeTags": [
+      "tv",
+      "console",
+      "media cabinet"
     ]
   },
   {
@@ -167,6 +239,12 @@
     "subtitle": "Walnut, black mesh bays, open cubby, tapered legs",
     "rooms": [
       "living"
+    ],
+    "kind": "tv console",
+    "typeTags": [
+      "tv",
+      "console",
+      "media cabinet"
     ]
   }
 ]

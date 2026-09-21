@@ -2,6 +2,22 @@
   "note": "Original Done furniture built with the done-furniture-factory skill. Geometry is original (procedural Blender + cloth simulation). Textures are CC0 (no attribution required); listed for provenance. Rights record: docs/DATA_RIGHTS.md.",
   "items": [
     {
+      "assetId": "factory:upholstered-queen-bed",
+      "file": "upholstered-queen-bed.glb",
+      "sha256": "e7d3d236e33baa86e63ba2e80eeb2ace2f6aa88930e7a5660a36bed4c583e93d",
+      "candidate": "scripts/curated/build-bed-benchmark.py (Astra benchmark, branch codex/furniture-expansion; script not in this repo)",
+      "owner": "Done.design",
+      "geometryLicense": "original work; CC0-1.0 dedication stated in the asset LICENSE.txt (authored by the Astra/Codex agent, dated 2026-09; Dan has not separately recorded it)",
+      "textures": [
+        {
+          "name": "natural-oak, oatmeal-upholstery, ivory-washed-linen (authored, embedded)",
+          "creator": "Done.design",
+          "url": "",
+          "license": "CC0-1.0 (self-authored pixels, per LICENSE.txt)"
+        }
+      ]
+    },
+    {
       "assetId": "factory:oak-platform-bed",
       "file": "oak-platform-bed.glb",
       "sha256": "3f1a42663808317eb0103581c1369196dbf469e74dbc96b2c3488dccbc5c138f",

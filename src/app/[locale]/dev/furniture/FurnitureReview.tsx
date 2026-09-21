@@ -28,6 +28,7 @@ import { DPR, FRAME_BUFFER_TYPE, SHADOW, TONE_MAPPING } from "@/render/contract"
 import {
   BLENDERKIT_ASSETS,
   CATEGORIES,
+  FACTORY_ASSETS,
   POLYHAVEN_ASSETS,
   POLYPIZZA_ASSETS,
   SKETCHFAB_ASSETS,
@@ -42,13 +43,16 @@ import { clearance, packRows, type Placed } from "./reviewLayout";
 
 const GAP = 0.4;
 
-type Source = "BlenderKit" | "Poly Haven" | "Sketchfab" | "Poly Pizza";
+type Source = "Done" | "BlenderKit" | "Poly Haven" | "Sketchfab" | "Poly Pizza";
 interface Entry {
   asset: FurnitureAsset;
   source: Source;
 }
 
+// FACTORY_ASSETS is the SAME list the editor ships (data/furniture-factory.catalog.json), read straight from
+// the catalog, so this page cannot drift from what the editor shows. Do not hand-list factory candidates here.
 const ENTRIES: Entry[] = [
+  ...FACTORY_ASSETS.map((asset) => ({ asset, source: "Done" as const })),
   ...BLENDERKIT_ASSETS.map((asset) => ({ asset, source: "BlenderKit" as const })),
   ...POLYHAVEN_ASSETS.map((asset) => ({ asset, source: "Poly Haven" as const })),
   ...SKETCHFAB_ASSETS.map((asset) => ({ asset, source: "Sketchfab" as const })),
