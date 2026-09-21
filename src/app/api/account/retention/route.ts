@@ -67,6 +67,8 @@ interface Summary {
   windows: { purgeAfterDays: number; orphanGraceHours: number };
   purged: { projects: number; files: number };
   orphans: { files: number; bytes: number };
+  /** Room ids named by a purged project row but owned by someone else — deliberately NOT deleted. */
+  foreignRooms: number;
   skipped: string[];
   errors: string[];
   /** Populated on a dry run — the actual list, so it can be eyeballed. */
@@ -97,6 +99,7 @@ export async function GET(request: Request) {
     windows: { purgeAfterDays: PURGE_DAYS, orphanGraceHours: GRACE_HOURS },
     purged: { projects: 0, files: 0 },
     orphans: { files: 0, bytes: 0 },
+    foreignRooms: 0,
     skipped: [],
     errors: [],
   };
@@ -131,13 +134,37 @@ export async function GET(request: Request) {
       }
       const mine = files.filter((f) => projectIdFromPath(f.path) === id);
 
+      // A project row NAMES a live room; it does not prove the owner owns it.
+      // `live_room_id` is client-written, and a collaborator's copy of a shared
+      // plan legitimately carries the OWNER's room id — purging that copy used to
+      // delete the owner's live room. Only a room whose `live_rooms` claim belongs
+      // to this row's owner is deletable. If the claim lookup itself fails we
+      // cannot tell, so the row is kept and retried rather than guessed at.
+      // See src/lib/api/roomDeletion.ts.
+      let room: string | null = null;
+      if (row.live_room_id) {
+        const named = canonicalRoom(row.live_room_id as string);
+        const claim = await admin
+          .from("live_rooms")
+          .select("room_id")
+          .eq("room_id", named)
+          .eq("owner", owner)
+          .maybeSingle();
+        if (claim.error) {
+          summary.errors.push(`purge ${id}: could not verify room ownership: ${claim.error.message}`);
+          summary.ok = false;
+          summary.skipped.push(`project ${id}: room ownership unverified, row kept for the next run`);
+          continue;
+        }
+        if (claim.data) room = named;
+        else summary.foreignRooms++;
+      }
+
       if (dryRun) {
         wouldDelete.push(
           // The room is reported in the same canonical form the real run deletes,
           // so the dry run's list is the truth rather than the stored spelling.
-          `purge project ${id} (+${mine.length} file(s)${
-            row.live_room_id ? `, live room ${canonicalRoom(row.live_room_id as string)}` : ""
-          })`,
+          `purge project ${id} (+${mine.length} file(s)${room ? `, live room ${room}` : ""})`,
         );
         summary.purged.projects++;
         summary.purged.files += mine.length;
@@ -172,9 +199,8 @@ export async function GET(request: Request) {
       // `live_rooms.room_id` both use the `floorplan-` prefixed form. Deleting by
       // the raw id deletes nothing AND reports success (deleteLiveRoom counts a 404
       // as "already gone"), and the claim row match finds no rows and errors on
-      // none — so the failure was completely silent. Normalise once, use the same
-      // value for both.
-      const room = row.live_room_id ? canonicalRoom(row.live_room_id as string) : null;
+      // none — so the failure was completely silent. `room` was normalised (and
+      // ownership-checked) above, so the same value is used for both.
       if (room) {
         const deleted = await deleteLiveRoom(room);
         if (!deleted) {

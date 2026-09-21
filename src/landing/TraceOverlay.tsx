@@ -223,7 +223,13 @@ export function TraceOverlay({ running, onGenerate, onComplete }: TraceOverlayPr
   const runTextRef = useRef<SVGTextElement>(null);
 
   const cb = useRef({ onGenerate, onComplete });
-  cb.current = { onGenerate, onComplete };
+  // Kept current from an effect, not during render (writing a ref while rendering
+  // is unsafe under concurrent rendering). It is declared BEFORE the animation
+  // effect below, so on every commit it runs first and the loop always reads the
+  // latest callbacks.
+  useEffect(() => {
+    cb.current = { onGenerate, onComplete };
+  });
 
   useEffect(() => {
     let raf = 0;

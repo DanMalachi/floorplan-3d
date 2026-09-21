@@ -1,0 +1,5 @@
+# Security contact for done.design (RFC 9116)
+Contact: mailto:done.design.app@gmail.com
+Expires: 2027-09-21T00:00:00.000Z
+Preferred-Languages: en, he
+Canonical: https://done.design/.well-known/security.txt

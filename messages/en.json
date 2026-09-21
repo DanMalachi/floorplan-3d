@@ -105,6 +105,9 @@
       "build": "Can edit everything"
     },
     "heldNote": "You joined with a “{role}” link, so you can only share at that level or below.",
+    "revokeLinks": "Revoke all links",
+    "revoked": "Old links no longer work",
+    "revokeError": "Could not revoke links. Only the plan’s owner can do this.",
     "hereCount": "{count} here",
     "viewOnly": "view only",
     "sharedPlan": "Shared plan",
@@ -1145,6 +1148,7 @@
     "import": {
       "tooSmall": "Image too small ({width}×{height}px) — plans need ≥{min}px on the long edge.",
       "unsupported": "Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG).",
+      "tooLarge": "File too large — plans must be under {maxMb} MB and {maxPx}px on the long edge.",
       "failed": "Import failed: {message}"
     },
     "inspector": {

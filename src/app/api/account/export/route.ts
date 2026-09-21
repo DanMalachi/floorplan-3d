@@ -1,6 +1,8 @@
 import { getServerSupabase, getServerUser } from "@/lib/supabase/server";
 import { sendEmailAfterResponse } from "@/lib/email";
 import { dataExportNoticeEmail } from "@/lib/email/templates";
+import { enforceRateLimit, rateLimitIdentity } from "@/lib/api/rateLimit";
+import { logError } from "@/lib/api/log";
 
 // -----------------------------------------------------------------------------
 // GET /api/account/export — access + portability (GDPR Art. 15 / Art. 20).
@@ -41,10 +43,20 @@ interface ProjectRow {
   deleted_at: string | null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await getServerSupabase();
   const user = await getServerUser();
   if (!supabase || !user) return new Response("not signed in", { status: 401 });
+
+  // A full export streams every project and image the account holds and fires an
+  // email; cap it so a script (or a stolen session) cannot turn it into a
+  // bandwidth and mail-spam tap.
+  const limited = await enforceRateLimit("account-export", rateLimitIdentity(request, user.id), {
+    limit: 6,
+    windowSec: 60 * 60,
+    kind: "abuse",
+  });
+  if (limited) return limited;
 
   const { data, error } = await supabase
     .from("projects")
@@ -52,7 +64,12 @@ export async function GET() {
       "id,name,created_at,updated_at,rev,schema_version,plan_image_path,plan_image_hash,thumb_path,live_room_id,live_role,deleted_at",
     )
     .order("created_at", { ascending: true });
-  if (error) return new Response(`export failed: ${error.message}`, { status: 500 });
+  if (error) {
+    // The database's own message can name tables and columns; it belongs in the
+    // server log, not in a response.
+    logError("account/export", error);
+    return new Response("export failed", { status: 500 });
+  }
   const rows = (data ?? []) as ProjectRow[];
 
   // Security/audit notice, not a "your download is ready" link: the export
@@ -127,7 +144,8 @@ export async function GET() {
         // The response has already begun, so the status is long since sent. Make
         // the truncation visible in the file itself rather than handing back a
         // silently short archive that looks complete.
-        write(`\n], "error": ${JSON.stringify(e instanceof Error ? e.message : String(e))}, "complete": false }\n`);
+        logError("account/export", e);
+        write(`\n], "error": "export interrupted; retry", "complete": false }\n`);
         controller.close();
       }
     },
