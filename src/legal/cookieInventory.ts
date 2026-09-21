@@ -41,11 +41,11 @@ export const COOKIE_INVENTORY: StorageEntry[] = [
     name: "fp_owned_rooms",
     kind: "cookie",
     he: {
-      purpose: "זוכר אילו חדרי שיתוף נפתחו מהדפדפן הזה, כדי שרק הבעלים יוכלו לנהל אותם. חתום, ולא ניתן לקריאה על ידי סקריפטים בדף.",
+      purpose: "זוכר אילו חדרי שיתוף נוצרו מהדפדפן הזה ועל ידי איזה חשבון, כדי שרק הבעלים יוכלו לנהל אותם. חתום, ולא ניתן לקריאה על ידי סקריפטים בדף.",
       lifetime: "שנה",
     },
     en: {
-      purpose: "Remembers which share rooms this browser opened, so only their owner can manage them. Signed, not readable by page scripts.",
+      purpose: "Remembers which share rooms were created from this browser and by which account, so only their owner can manage them. Signed, not readable by page scripts.",
       lifetime: "1 year",
     },
   },

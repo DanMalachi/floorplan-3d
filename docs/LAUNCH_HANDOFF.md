@@ -51,8 +51,9 @@ Sentry project → set `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN` (Production), `SEN
 notification. Spend caps on Vercel, Supabase, Liveblocks, Upstash. Thresholds: `INCIDENT_RESPONSE.md` §8.
 Then trigger one deliberate 500 on the preview and confirm the alert arrives.
 
-### 3. Backups and a real restore test (Dan) — P0
-Merge `docs/backups-pitr` (`docs/BACKUPS.md`), choose a Supabase plan with daily backups (PITR recommended), restore
+### 3. Backups and a real restore test — DEFERRED BY DECISION (2026-09-21), risk accepted for first launch
+Dan chose not to pay for Supabase backups yet. Compensating controls and their limits: `SECURITY_AUDIT.md` §9 and F-29
+(devices now re-upload a project the server lost). Revisit before paid tiers. When ready: merge `docs/backups-pitr` (`docs/BACKUPS.md`), choose a Supabase plan with daily backups (PITR recommended), restore
 into a **new** project, check row counts and 3 plan images, sign in as a test user, record measured RPO/RTO.
 Note the client-`rev` regression (F-26) before the first real restore.
 
@@ -82,4 +83,4 @@ protection-bypass token for a protected URL) and one load test.
   per-user room-claim cap (F-24).
 
 ## Gate to "safe for limited beta"
-Items 1 (deployed and checks pass), 2 and 3 done. **Full launch**: add 4, 5, the `decorate` decision, DNS, legal.
+Item 1 (deployed and checks pass — done, incl. the F-29 sync fix once merged) and item 2 (monitoring). Backups are a documented, accepted risk for first launch. **Full launch**: add 4, 5, the `decorate` decision, DNS, legal.

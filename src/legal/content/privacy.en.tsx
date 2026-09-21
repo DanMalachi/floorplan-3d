@@ -56,7 +56,13 @@ export function PrivacyEn() {
         </li>
         <li style={legalLi}>
           Anyone you give a live share link can view (and, depending on the
-          role you pick, edit) that shared project.
+          role you pick, edit) that shared project. You can revoke every link
+          you have sent, at any time.
+        </li>
+        <li style={legalLi}>
+          We do not keep separate backups of our database. The cloud copy is
+          there to sync your devices, not to serve as a backup, so keep an
+          export of anything you cannot afford to lose.
         </li>
         <li style={legalLi}>
           You can download all your data and delete your account yourself, at
@@ -70,7 +76,7 @@ export function PrivacyEn() {
         You are under no legal obligation to give us any information. Doing so
         depends on your choice and consent. If you choose not to sign in, you
         can still use the Service on your device, but syncing across devices,
-        cloud backup and account-based sharing will not be available.
+        cloud storage and account-based sharing will not be available.
       </p>
 
       <h3 style={legalH3}>Account &amp; project data — Supabase</h3>
@@ -133,27 +139,40 @@ export function PrivacyEn() {
           database or written to logs.
         </li>
         <li style={legalLi}>
+          <b>UptimeRobot</b> checks every few minutes that the site is up, by
+          requesting our public health page. That page contains no personal
+          data, and the monitor receives no information about visitors.
+        </li>
+        <li style={legalLi}>
           <b>Google:</b> your profile picture loads directly from
           Google&rsquo;s servers, so your browser contacts Google when it is
           shown.
         </li>
       </ul>
 
-      <h3 style={legalH3}>Services wired in but currently switched off</h3>
+      <h3 style={legalH3}>Error reports — Sentry</h3>
+      <p style={legalP}>
+        When the Service crashes or hits an error, a report may be sent to
+        Functional Software, Inc. (Sentry) so we can fix it. A report contains
+        the error message and technical trace, your browser, device and
+        operating-system type, the version of the Service, and the page
+        address. Before a report leaves the Service we strip the secret part of
+        a share link and any sign-in code from that address, and we remove
+        cookies, request contents, your name and email. Reports never contain
+        your floor plan or images, and session replay is switched off
+        deliberately so your plan is never recorded. Performance tracing is off.
+        Reports are stored in the United States and kept for 30 days.
+      </p>
+
+      <h3 style={legalH3}>A service wired in but currently switched off</h3>
       <ul style={legalUl}>
         <li style={legalLi}>
           <b>Resend, Inc.</b>, for operational email only, such as an
           account-deletion receipt or a policy-change notice. No marketing
           email.
         </li>
-        <li style={legalLi}>
-          <b>Functional Software, Inc. (Sentry)</b>, for error reporting. It
-          is configured not to send identifying details on its own initiative,
-          and session replay is deliberately off so your plan is never
-          recorded.
-        </li>
       </ul>
-      <p style={legalP}>If we switch either on, we will update this policy first.</p>
+      <p style={legalP}>If we switch it on, we will update this policy first.</p>
 
       <h3 style={legalH3}>AI — none</h3>
       <p style={legalP}>
@@ -176,9 +195,18 @@ export function PrivacyEn() {
         share it.
       </p>
       <p style={legalP}>
-        <b>In the cloud (only if signed in):</b> the same data is backed up to
+        <b>In the cloud (only if signed in):</b> the same data is synced to
         Supabase so it is available on your other devices, and stays private
-        to your account.
+        to your account. This is a sync copy, not a backup: we do not keep
+        separate backups of the database. If our server ever loses a project
+        you had synced, a device of yours that still holds it uploads it again
+        instead of deleting it.
+      </p>
+      <p style={legalP}>
+        To keep storage and abuse in check, an account can hold up to 500
+        projects, each project document up to 16 MB, and each imported plan
+        image up to 50 MB. Only PNG, JPEG, WebP and GIF images are accepted for
+        cloud storage.
       </p>
       <p style={legalP}>
         Cookies and local storage are listed in the{" "}
@@ -189,11 +217,19 @@ export function PrivacyEn() {
       <p style={legalP}>
         A share link grants access to the shared project only, not to your
         account or your other projects. The role you choose (view / decorate
-        / build) sets what the recipient can do. A link works until it
-        expires ({F.shareLinkDays} days) or the room is deleted, for example
-        when you delete your account. There is currently no button to revoke
-        a single link before it expires, so share a link as you would any
-        editable document: only with people you trust.
+        / build) sets what the recipient can do. A view link cannot edit.
+        Take care with the other two: &ldquo;decorate&rdquo; limits the
+        editor&rsquo;s controls but is not a technical barrier, so treat anyone
+        holding a decorate or build link as able to change the shared project.
+      </p>
+      <p style={legalP}>
+        A link works until it expires ({F.shareLinkDays} days), you revoke it, or
+        the room is deleted, for example when you delete your account. In the
+        share panel, &ldquo;Revoke all links&rdquo; cancels every link you have
+        sent for that project at once; links you create afterwards work
+        normally. Revoking stops new entries: someone already inside the room
+        may stay connected until they reload or their access expires. Share a
+        link as you would any editable document: only with people you trust.
       </p>
 
       <h2 style={legalH2}>6. Transfers outside Israel</h2>
@@ -220,8 +256,15 @@ export function PrivacyEn() {
         <li style={legalLi}>
           Deleting your account from the{" "}
           <Link href="/account" style={{ color: "inherit" }}>Your data</Link> page
-          immediately erases every project, file, share room and the account
-          itself. It cannot be undone.
+          immediately erases every project, file, share room you created and
+          the account itself. It cannot be undone. It does not delete rooms that
+          other people created and shared with you, and it cannot reach copies
+          that people you shared with saved for themselves.
+        </li>
+        <li style={legalLi}>
+          Because we keep no separate backups, deleted data does not linger in
+          backups. A device that was offline for more than {F.purgeDays} days may
+          upload again a project you deleted elsewhere; you can delete it again.
         </li>
         <li style={legalLi}>
           We keep no personal data beyond what the purposes here require,
@@ -233,8 +276,11 @@ export function PrivacyEn() {
       <p style={legalP}>
         Traffic is encrypted (HTTPS). Cloud data is protected by row-level
         access rules so each account sees only its own data. Share links are
-        cryptographically signed and time-limited. No system is completely
-        secure. If a serious security incident occurs, we will act as the
+        cryptographically signed, time-limited and revocable. Error reports are
+        stripped of secrets and account details before they leave the Service.
+        No system is completely secure. If you find a security problem, please
+        write to <Mail address={F.contactEmail} />; our security contact is also
+        published at <code>/.well-known/security.txt</code>. If a serious security incident occurs, we will act as the
         Privacy Protection (Data Security) Regulations 2017 require, including
         notifying the Privacy Protection Authority where required.
       </p>

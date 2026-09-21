@@ -13,6 +13,7 @@ import {
   downloadPlanImage,
   downloadThumb,
   listRemote,
+  listRemoteTombstones,
   pullDoc,
   pushProject,
   softDeleteRemote,
@@ -22,6 +23,7 @@ import {
 } from "./cloudProjects";
 import { SCHEMA_VERSION, hashString } from "./projectDoc";
 import { useSyncStore } from "./useSyncStore";
+import { decideMissingRemote } from "./missingRemote";
 
 // -----------------------------------------------------------------------------
 // Cloud sync: the thing that makes a project follow the user to another machine.
@@ -146,6 +148,14 @@ async function reconcileInner(): Promise<void> {
     sync().setStatus(navigator.onLine ? "error" : "offline");
     return;
   }
+  // Deletions are only ever believed if the server RECORDED them. If we cannot read
+  // the tombstones we cannot tell "deleted elsewhere" from "server lost it", so we
+  // decide nothing this pass.
+  const tombstones = await listRemoteTombstones();
+  if (!tombstones) {
+    sync().setStatus(navigator.onLine ? "error" : "offline");
+    return;
+  }
   lastReconcileAt = Date.now();
 
   const remoteById = new Map(remote.map((r) => [r.id, r]));
@@ -165,10 +175,21 @@ async function reconcileInner(): Promise<void> {
     const r = remoteById.get(m.id);
 
     if (!r) {
-      // Never been pushed → this is the first sign-in claiming local work.
-      // Previously synced and now absent → deleted from another device.
-      if (m.remoteRev === undefined) markDirty(m.id);
-      else await forgetProject(m.id);
+      // See store/missingRemote.ts: only a recorded tombstone means "deleted from
+      // another device". A row that is merely gone is server-side damage, and this
+      // device may hold the only copy — so it is kept and uploaded again.
+      const action = decideMissingRemote(m, tombstones);
+      if (action === "claim") markDirty(m.id);
+      else if (action === "forget") await forgetProject(m.id);
+      else {
+        await patchProjectMeta(m.id, {
+          remoteRev: undefined,
+          syncedRev: 0,
+          syncedImageHash: undefined,
+          syncedThumbHash: undefined,
+        });
+        markDirty(m.id);
+      }
       continue;
     }
 
