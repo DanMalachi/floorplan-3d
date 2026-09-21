@@ -5,10 +5,12 @@ import { verifyGrant, shareSigningConfigured } from "@/collab/grant.server";
 import { getServerUser } from "@/lib/supabase/server";
 import { avatarUrl, displayName } from "@/lib/auth/profile";
 import { readJson, KB } from "@/lib/api/body";
+import { rejectCrossSiteWrite } from "@/lib/api/csrf";
 import { forbidden, unavailable } from "@/lib/api/http";
 import { enforceRateLimit, rateLimitIdentity } from "@/lib/api/rateLimit";
 import { resolveJoinRole, type GrantHeld } from "@/lib/api/rooms";
 import { grantSchema, roomSchema } from "@/lib/api/schemas";
+import { checkGrantRevocation } from "@/lib/api/revocation";
 
 // Liveblocks access-token endpoint. The client sends the room it wants to join
 // plus the share grant from the link. We verify the grant server-side and grant
@@ -38,6 +40,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const blocked = rejectCrossSiteWrite(req);
+  if (blocked) return blocked;
+
   if (!process.env.LIVEBLOCKS_SECRET_KEY) {
     return unavailable(
       "live collaboration is not configured",
@@ -74,7 +79,17 @@ export async function POST(req: Request) {
     // A grant that doesn't verify, or is for a different room, is an attempt —
     // not a typo. Refuse rather than quietly falling back to a lesser role.
     if (!g || g.room !== room) return forbidden("invalid share link for this room");
-    held = { room: g.room, role: g.role, exp: g.exp };
+    // A link the owner has since withdrawn (migration 0005). Two different
+    // outcomes, both deliberate: a revoked link is simply not a credential any
+    // more — it is dropped, so the OWNER, who may well still have it in their
+    // own address bar or local storage, falls through to ownership and is not
+    // locked out of their own room — while a link we cannot check is refused
+    // outright, because an outage must not be the way around a revocation.
+    const state = await checkGrantRevocation(g.room, g.iat);
+    if (state === "unavailable") {
+      return unavailable("could not verify this share link", "try again in a moment");
+    }
+    if (state === "ok") held = { room: g.room, role: g.role, exp: g.exp };
   }
 
   const role = await resolveJoinRole({ room, held, userId: user?.id ?? null });

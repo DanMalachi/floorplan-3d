@@ -3,7 +3,9 @@ import { getServerUser } from "@/lib/supabase/server";
 import { getAdminSupabase, serviceRoleConfigured } from "@/lib/supabase/admin";
 import { logRequest } from "@/lib/api/log";
 import { BUCKETS, listUserObjects, removeObjects, type Bucket } from "@/lib/supabase/accountData";
-import { canonicalRoom } from "@/collab/share";
+import { partitionRoomsForDeletion } from "@/lib/api/roomDeletion";
+import { rejectCrossSiteWrite } from "@/lib/api/csrf";
+import { enforceRateLimit, rateLimitIdentity } from "@/lib/api/rateLimit";
 import { sendEmailAfterResponse } from "@/lib/email";
 import { accountDeletionReceiptEmail } from "@/lib/email/templates";
 
@@ -85,18 +87,36 @@ export async function POST(request: Request) {
   // Cross-site request forgery guard. Deletion is a cookie-authenticated state
   // change, so a page on another origin must not be able to trigger it. A JSON
   // content-type forces a CORS preflight, and the Origin check covers the rest.
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (origin && host && new URL(origin).host !== host) {
-    return fail({ ok: false, stages: [{ stage: "origin", ok: false, detail: "cross-origin request refused" }] }, 403);
-  }
-  if (!request.headers.get("content-type")?.includes("application/json")) {
-    return fail({ ok: false, stages: [{ stage: "origin", ok: false, detail: "expected application/json" }] }, 415);
+  // (Shared guard: also refuses `Origin: null` and Sec-Fetch-Site cross-site, and
+  // no longer throws on a malformed Origin, which used to surface as a bare 500.)
+  const blocked = rejectCrossSiteWrite(request);
+  if (blocked) {
+    return fail(
+      {
+        ok: false,
+        stages: [
+          { stage: "origin", ok: false, detail: blocked.status === 415 ? "expected application/json" : "cross-origin request refused" },
+        ],
+      },
+      blocked.status,
+    );
   }
 
   const user = await getServerUser();
   if (!user) {
     return fail({ ok: false, stages: [{ stage: "auth", ok: false, detail: "not signed in" }] }, 401);
+  }
+
+  // Deletion is heavy (it lists and removes every object and calls a third party
+  // per room) and irreversible; a runaway client or a stolen session must not be
+  // able to hammer it. Five attempts an hour is far above any honest retry.
+  const limited = await enforceRateLimit("account-delete", rateLimitIdentity(request, user.id), {
+    limit: 5,
+    windowSec: 60 * 60,
+    kind: "abuse",
+  });
+  if (limited) {
+    return fail({ ok: false, stages: [{ stage: "rate-limit", ok: false, detail: "too many attempts, try again later" }] }, 429);
   }
 
   const body = (await request.json().catch(() => ({}))) as { confirm?: unknown };
@@ -136,6 +156,7 @@ export async function POST(request: Request) {
   // ---- 1. enumerate ---------------------------------------------------------
 
   let roomIds: string[] = [];
+  let foreignRooms = 0;
   let objects: { bucket: Bucket; path: string }[] = [];
   try {
     const { data: rows, error } = await admin
@@ -144,35 +165,32 @@ export async function POST(request: Request) {
       .eq("owner", uid);
     if (error) throw new Error(error.message);
 
-    // Two sources, unioned. `public.live_rooms` (migration 0002) is the server's
-    // own record of who claimed a room and is the more complete one: a room the
-    // user claimed whose project row was since deleted still has a row there,
-    // and it would otherwise survive as an orphaned live copy of their scene.
+    // ONLY rooms this user provably OWNS are deletable. `projects.live_room_id`
+    // is written by the client and also holds the room of every plan SHARED WITH
+    // this user (their local copy is tagged with the owner's room and cloud sync
+    // pushes that tag), so treating it as "this user's room" let a collaborator's
+    // account deletion destroy the OWNER's live room. `public.live_rooms`
+    // (migration 0002, written only by the claim RPC) is the one server-held
+    // record of ownership: a room the user claimed whose project row was since
+    // deleted still has a row there and must still go. Rooms a project row merely
+    // NAMES are left alone and counted. The two tables also spell one room
+    // differently (raw vs `floorplan-` prefixed); partitionRoomsForDeletion
+    // canonicalises both. See src/lib/api/roomDeletion.ts.
     const claimed = await admin.from("live_rooms").select("room_id").eq("owner", uid);
     if (claimed.error) throw new Error(claimed.error.message);
-
-    // The two sources spell the same room differently: `projects.live_room_id`
-    // holds the RAW share id, `live_rooms.room_id` the `floorplan-` prefixed one
-    // Liveblocks actually uses. Unioning them unnormalised meant every room known
-    // only through `projects` was deleted by a name Liveblocks has never heard of
-    // — a 404 the loop below reads as "already gone". canonicalRoom is idempotent,
-    // so the already-prefixed half passes through untouched and the de-dupe now
-    // collapses the two spellings of one room into a single id.
-    roomIds = [
-      ...new Set(
-        [
-          ...(rows ?? []).map((r) => r.live_room_id),
-          ...(claimed.data ?? []).map((r) => r.room_id as string),
-        ]
-          .filter((r): r is string => Boolean(r))
-          .map(canonicalRoom),
-      ),
-    ];
+    const partition = partitionRoomsForDeletion(
+      (rows ?? []).map((r) => r.live_room_id as string | null),
+      (claimed.data ?? []).map((r) => r.room_id as string),
+    );
+    roomIds = partition.deletable;
+    foreignRooms = partition.foreign.length;
     objects = (await listUserObjects(admin, uid)).map((o) => ({ bucket: o.bucket, path: o.path }));
     stages.push({
       stage: "enumerate",
       ok: true,
-      detail: `${rows?.length ?? 0} project(s), ${objects.length} file(s), ${roomIds.length} live room(s)`,
+      detail: `${rows?.length ?? 0} project(s), ${objects.length} file(s), ${roomIds.length} live room(s) owned${
+        foreignRooms ? `, ${foreignRooms} shared room(s) owned by others left untouched` : ""
+      }`,
     });
   } catch (e) {
     stages.push({ stage: "enumerate", ok: false, detail: message(e) });

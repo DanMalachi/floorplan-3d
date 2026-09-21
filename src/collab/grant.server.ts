@@ -10,6 +10,14 @@ export interface GrantPayload {
   room: string; // the Liveblocks room this grant authorizes
   role: ShareRole;
   exp?: number; // epoch ms; links auto-expire (stateless time-boxed revoke)
+  /**
+   * Epoch ms the grant was minted. A room owner can revoke every link minted
+   * BEFORE a moment they choose (`live_rooms.grants_valid_after`, migration 0005),
+   * which is what makes an already-sent link revocable without rotating the
+   * signing secret. Grants minted before this field existed have no `iat` and are
+   * treated as minted at 0, so any revocation covers them.
+   */
+  iat?: number;
 }
 
 /** Thrown when there is no usable signing secret. Routes turn this into a 503. */
@@ -58,7 +66,8 @@ const DEFAULT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export function signGrant(p: Omit<GrantPayload, "exp"> & { ttlMs?: number }): string {
   const { ttlMs, ...rest } = p;
-  const payload: GrantPayload = { ...rest, exp: Date.now() + (ttlMs ?? DEFAULT_TTL_MS) };
+  const now = Date.now();
+  const payload: GrantPayload = { ...rest, iat: now, exp: now + (ttlMs ?? DEFAULT_TTL_MS) };
   const body = b64(JSON.stringify(payload));
   const sig = crypto.createHmac("sha256", shareSecret()).update(body).digest("base64url");
   return `${body}.${sig}`;
@@ -87,6 +96,7 @@ export function verifyGrant(grant: string): GrantPayload | null {
     if (typeof p.room !== "string" || !p.room) return null;
     if (p.role !== "view" && p.role !== "decorate" && p.role !== "build") return null;
     if (p.exp && Date.now() > p.exp) return null; // expired link
+    if (p.iat !== undefined && (typeof p.iat !== "number" || !Number.isFinite(p.iat))) return null;
     return p;
   } catch {
     return null;

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { signGrant, verifyGrant, shareSigningConfigured } from "@/collab/grant.server";
 import { readJson, KB } from "@/lib/api/body";
+import { rejectCrossSiteWrite } from "@/lib/api/csrf";
 import { optionalUser } from "@/lib/api/auth";
 import { unavailable } from "@/lib/api/http";
 import { enforceRateLimit, rateLimitIdentity } from "@/lib/api/rateLimit";
 import { authorizeMint, type GrantHeld } from "@/lib/api/rooms";
 import { grantSchema, roomSchema, shareRoleSchema } from "@/lib/api/schemas";
+import { checkGrantRevocation } from "@/lib/api/revocation";
 
 // Mint a signed grant for (room, role) — the tamper-proof capability inside a
 // share link's ?g=. Signing needs the secret, so it lives server-side.
@@ -28,6 +30,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const blocked = rejectCrossSiteWrite(req);
+  if (blocked) return blocked;
+
   if (!shareSigningConfigured()) {
     return unavailable(
       "sharing is not configured",
@@ -51,7 +56,16 @@ export async function POST(req: Request) {
   let held: GrantHeld | null = null;
   if (holding) {
     const g = verifyGrant(holding);
-    if (g && g.room === room) held = { room: g.room, role: g.role, exp: g.exp };
+    if (g && g.room === room) {
+      // A revoked grant must not be able to mint fresh ones: attenuation
+      // ("re-share at my level or below") would otherwise be a way to launder a
+      // withdrawn link into a new, unrevoked one.
+      const state = await checkGrantRevocation(g.room, g.iat);
+      if (state === "unavailable") {
+        return unavailable("could not verify your access", "try again in a moment");
+      }
+      if (state === "ok") held = { room: g.room, role: g.role, exp: g.exp };
+    }
   }
 
   const decision = await authorizeMint({

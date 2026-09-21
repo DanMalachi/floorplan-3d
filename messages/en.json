@@ -105,6 +105,9 @@
       "build": "Can edit everything"
     },
     "heldNote": "You joined with a “{role}” link, so you can only share at that level or below.",
+    "revokeLinks": "Revoke all links",
+    "revoked": "Old links no longer work",
+    "revokeError": "Could not revoke links. Only the plan’s owner can do this.",
     "hereCount": "{count} here",
     "viewOnly": "view only",
     "sharedPlan": "Shared plan",

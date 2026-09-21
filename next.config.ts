@@ -38,7 +38,19 @@ const isDev = process.env.NODE_ENV !== "production";
  * adding 'unsafe-inline' to script-src — which does work, but gives up most
  * of what script-src is for. Your call.
  */
-const CSP_ENFORCE = false;
+const CSP_ENFORCE = process.env.CSP_REPORT_ONLY !== "1";
+
+// 2026-09 audit (SECURITY_AUDIT.md F-09): the policy is now ENFORCED. A headless-
+// browser pass over nine pages (scripts/security/csp-audit.mjs) found exactly one
+// class of violation — Next's own inline hydration scripts — and nothing else, so
+// script-src below adds 'unsafe-inline' (the no-nonce configuration Next's own
+// docs give) and every other directive now blocks for real: no framing, no
+// plugins, no <base> hijack, no form posts off-site, and connect-src/img-src/
+// worker-src limit where injected code could send data. What this does NOT yet do
+// is stop an injected INLINE script; that needs per-request nonces, which force
+// every page to render dynamically (loses static prerender + CDN caching) and is
+// a product/cost decision — see the audit. Set CSP_REPORT_ONLY=1 at BUILD time to
+// drop back to report-only without a code change if this ever blocks something.
 
 /**
  * Supabase project origin, derived from the same env var the client reads
@@ -72,7 +84,7 @@ function csp(): string {
   // instantiation happen at all, enforcing or not.
   const scriptSrc = isDev
     ? `'self' 'wasm-unsafe-eval' 'unsafe-eval' 'unsafe-inline'`
-    : `'self' 'wasm-unsafe-eval'`;
+    : `'self' 'unsafe-inline' 'wasm-unsafe-eval'`;
 
   const directives = [
     `default-src 'self'`,
@@ -146,6 +158,11 @@ const securityHeaders = [
     value: "max-age=63072000; includeSubDomains; preload",
   },
   { key: "X-Content-Type-Options", value: "nosniff" },
+  // Severs the window.opener link with any page that opens us (and any we open),
+  // which closes tab-nabbing and cross-window XS-Leaks. Sign-in is a full-page
+  // redirect, not a popup, and nothing here calls window.open, so nothing relies
+  // on an opener relationship.
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Belt-and-braces alongside CSP's frame-ancestors, for the handful of older
   // browsers that honor X-Frame-Options but not frame-ancestors.
@@ -168,6 +185,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Don't advertise the framework (and version family) to every visitor and scanner.
+  poweredByHeader: false,
+
   // Dev-only — `next build` ignores this entirely, so it changes nothing about
   // production. Next blocks cross-origin requests to its /_next/* DEV resources
   // by default, which means opening the dev server from a phone on the LAN
@@ -183,6 +203,18 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // Every route handler answers per-caller (session, share grant, owner
+        // cookie) or mutates. None may ever be stored by a CDN or a browser cache,
+        // or one visitor could be served another's response. Set once here so a
+        // new route cannot forget it; /auth/* sets session cookies on a redirect.
+        source: "/api/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
+      },
+      {
+        source: "/auth/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
       },
     ];
   },

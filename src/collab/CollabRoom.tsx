@@ -41,7 +41,8 @@ import { randomIdentity, identityForUser, initials, type Identity } from "./iden
 import { displayName } from "@/lib/auth/profile";
 import { useSession } from "@/lib/auth/useSession";
 import type { RemoteSelection } from "./liveblocks";
-import { ROLE_MODES, roleFromGrant, mintGrant, lbRoom, type ShareRole } from "./share";
+import { inspectScene } from "./sceneGuard";
+import { ROLE_MODES, roleFromGrant, mintGrant, revokeAllLinks, lbRoom, type ShareRole } from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
 // next/headers, no Supabase), so the UI offers exactly what the API will allow.
 import { canAttenuateTo } from "@/lib/api/roomPolicy";
@@ -90,6 +91,15 @@ function useRoomBinding(roomId: string, role: ShareRole) {
       if (useSceneStore.getState().gestureBase) return;
       const scene = readScene(doc);
       if (scene.nodes.length === 0 && scene.walls.length === 0) return; // not seeded yet
+      // The document is written by every editor in the room and cannot be
+      // validated server-side, so a hostile or corrupt one is stopped HERE — before
+      // it reaches this editor, the local project mirror, or the cloud copy that
+      // mirror feeds. Refusing keeps the last good scene on screen and on disk.
+      const verdict = inspectScene(scene);
+      if (!verdict.ok) {
+        console.warn("[collab] refused a shared scene:", verdict.reason);
+        return;
+      }
       // Ids arriving from the shared doc were minted in SOMEONE ELSE's session,
       // so this client's counter has to clear them before it mints its own —
       // otherwise two peers create the same id and their edits merge into one
@@ -373,6 +383,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [revoked, setRevoked] = useState(false);
 
   const offerable = useMemo(() => SHARE_ROLES.filter((r) => canAttenuateTo(held, r)), [held]);
 
@@ -419,6 +430,21 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     setCopied(true);
   };
 
+  // Withdraw every link sent so far, then mint a fresh one for the box — the link
+  // that was showing was minted before the cut-off, so it is dead too.
+  const revoke = async () => {
+    setErr(null);
+    setRevoked(false);
+    try {
+      await revokeAllLinks(lbRoom(roomId));
+      await makeLink(role);
+      setRevoked(true);
+    } catch (e) {
+      console.warn("[share] revoke failed:", (e as Error).message);
+      setErr(t("revokeError"));
+    }
+  };
+
   const saveCopy = async () => {
     await importProject(t("copyOfSharedPlan"), { scene: useSceneStore.getState().scene, appMode: "view" });
     setSaved(true);
@@ -461,6 +487,12 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
           {/* The chip's label change alone is silent to a screen reader. */}
           <span role="status" className="fp-sr-only">{copied ? t("copied") : ""}</span>
           {err && <div role="alert" style={{ fontSize: 11.5, color: PD.warnText }}>{err}</div>}
+          {held === "build" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <RoomChip onClick={revoke}>{t("revokeLinks")}</RoomChip>
+              <span role="status" style={{ fontSize: 11, color: PD.textTertiary }}>{revoked ? t("revoked") : ""}</span>
+            </div>
+          )}
           {held !== "build" && (
             <div style={{ fontSize: 11, color: PD.textTertiary }}>
               {t("heldNote", { role: t(`roles.${held}`) })}

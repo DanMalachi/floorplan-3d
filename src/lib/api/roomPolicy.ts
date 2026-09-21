@@ -39,6 +39,21 @@ export type ClaimOutcome = "claimed" | "taken" | "unavailable";
 export const claimOutcome = (answer: OwnerState | null): ClaimOutcome =>
   answer === "owner" ? "claimed" : answer === "other" ? "taken" : "unavailable";
 
+/**
+ * One entry of the signed owner cookie: the room AND the account that claimed it.
+ *
+ * The cookie is a fallback for when the database cannot answer, and it is
+ * browser-scoped, not person-scoped — so an entry that names only the room is
+ * honoured for whoever next sits at that browser (sign out, then act as a guest;
+ * or sign in as someone else). Binding the entry to the claiming account means the
+ * fallback can only ever confirm the same person the database already confirmed.
+ * A guest-only deployment (no accounts) has no account to bind to, and uses the
+ * empty prefix. Entries written before this binding was added are bare room ids,
+ * match nothing here, and simply fall back to the database — which is authoritative
+ * anyway.
+ */
+export const ownedCookieEntry = (userId: string | null, room: string) => `${userId ?? ""}|${room}`;
+
 export const ROLE_RANK: Record<ShareRole, number> = { view: 1, decorate: 2, build: 3 };
 
 /**

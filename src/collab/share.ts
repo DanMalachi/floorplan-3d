@@ -134,3 +134,29 @@ export async function mintGrant(
   rememberGrant(grant);
   return grant;
 }
+
+/**
+ * POST /api/share/revoke — withdraw every share link minted for `room` so far.
+ * Owner only (the server decides); anything else rejects. New links minted after
+ * this keep working. Grants this browser remembered for the room are cleared too,
+ * so a stale strong grant is not replayed as proof of access it no longer confers.
+ */
+export async function revokeAllLinks(room: string): Promise<void> {
+  const res = await fetch("/api/share/revoke", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ room }),
+  });
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((b: { error?: string }) => b?.error)
+      .catch(() => null);
+    throw new Error(detail ?? "revoke failed");
+  }
+  try {
+    window.localStorage.removeItem(GRANT_KEY(room));
+  } catch {
+    /* private mode — nothing was stored */
+  }
+}

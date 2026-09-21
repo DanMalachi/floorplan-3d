@@ -38,7 +38,13 @@ import type { ShareRole } from "@/collab/share";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { accountsConfigured } from "./auth";
 import { forbidden, unauthorized, unavailable, isProduction } from "./http";
-import { canAttenuateTo, claimOutcome, isUnguessableRoom, type OwnerState } from "./roomPolicy";
+import {
+  canAttenuateTo,
+  claimOutcome,
+  isUnguessableRoom,
+  ownedCookieEntry,
+  type OwnerState,
+} from "./roomPolicy";
 
 // The pure predicates live in ./roomPolicy so they can be unit-tested without a
 // Next request context; re-exported here so callers have one import.
@@ -78,10 +84,11 @@ async function writeOwnedCookie(rooms: string[]): Promise<void> {
   });
 }
 
-async function rememberOwned(room: string): Promise<void> {
+async function rememberOwned(room: string, userId: string | null): Promise<void> {
   const rooms = await readOwnedCookie();
-  if (rooms.includes(room)) return;
-  await writeOwnedCookie([...rooms, room]);
+  const entry = ownedCookieEntry(userId, room);
+  if (rooms.includes(entry)) return;
+  await writeOwnedCookie([...rooms, entry]);
 }
 
 // ---------------------------------------------------------------------------
@@ -125,7 +132,11 @@ export async function ownsRoom(room: string, userId: string | null): Promise<boo
   if (state === "owner") return true;
   // "other" is a definitive no: a stale cookie must not outrank the database.
   if (state === "other") return false;
-  return (await readOwnedCookie()).includes(room);
+  // The cookie entry is bound to the account that claimed the room. It used to be
+  // a bare room id, so it survived sign-out: anyone at the same browser — a
+  // signed-out guest, or a different account — kept owner rights for a year
+  // whenever the database could not contradict it. See ownedCookieEntry.
+  return (await readOwnedCookie()).includes(ownedCookieEntry(userId, room));
 }
 
 export type ClaimResult = "claimed" | "already-yours" | "taken" | "not-allowed" | "unavailable";
@@ -166,14 +177,14 @@ export async function claimRoom(room: string, userId: string | null): Promise<Cl
     // has no authoritative record to claim in yet, and inventing ownership on
     // either one is the same mistake.
     const outcome = claimOutcome(await dbClaim(room, userId));
-    if (outcome === "claimed") await rememberOwned(room);
+    if (outcome === "claimed") await rememberOwned(room, userId);
     return outcome;
   }
 
   // No Supabase at all — a guest-only deployment. The cookie is the only record,
   // so a claim is only safe on a room id nobody can guess.
   if (isUnguessableRoom(room) || process.env.SHARE_LEGACY_ROOM_CLAIM === "true") {
-    await rememberOwned(room);
+    await rememberOwned(room, userId);
     return "claimed";
   }
   return "not-allowed";

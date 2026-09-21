@@ -1,6 +1,7 @@
 import { getServerSupabase, getServerUser } from "@/lib/supabase/server";
 import { serviceRoleConfigured } from "@/lib/supabase/admin";
 import { BUCKETS, listObjects, totalBytes, type StoredObject } from "@/lib/supabase/accountData";
+import { logError } from "@/lib/api/log";
 
 // -----------------------------------------------------------------------------
 // GET /api/account — "what do you hold about me", for the account page.
@@ -20,7 +21,10 @@ export async function GET() {
   if (!supabase || !user) return new Response("not signed in", { status: 401 });
 
   const { data, error } = await supabase.from("projects").select("id,live_room_id,deleted_at");
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    logError("account", error);
+    return Response.json({ error: "could not read account" }, { status: 500 });
+  }
   const rows = data ?? [];
 
   let objects: StoredObject[] = [];
@@ -31,7 +35,8 @@ export async function GET() {
     // Report the gap instead of a confident zero — "0 files" would read as
     // "nothing stored", which is the opposite of what an unreadable listing means.
     objects = [];
-    storageError = e instanceof Error ? e.message : String(e);
+    logError("account", e);
+    storageError = "storage listing failed";
   }
 
   return Response.json({
