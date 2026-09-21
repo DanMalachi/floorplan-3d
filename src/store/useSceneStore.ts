@@ -16,6 +16,7 @@ import { sanitizeSpec, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
 import { pdToastKey } from "@/ui/planDock/toast";
+import { exceedsImportBytes, exceedsImageEdge, MAX_IMPORT_MB, MAX_IMAGE_EDGE_PX } from "@/lib/import/importLimits";
 import type { ImportText } from "@/lib/import/importPdfClient";
 import type {
   TracePoint,
@@ -195,6 +196,7 @@ export type ImportStatus = "ok" | "warn" | "error";
 export type ImportMsgKey =
   | { key: "tooSmall"; width: number; height: number; min: number }
   | { key: "unsupported" }
+  | { key: "tooLarge"; maxMb: number; maxPx: number }
   | { key: "failed"; message: string };
 
 /** Resolves an `ImportMsgKey` into words. `t` is whatever
@@ -209,6 +211,8 @@ export function resolveImportMsg(
       return t("tooSmall", { width: m.width, height: m.height, min: m.min });
     case "unsupported":
       return t("unsupported");
+    case "tooLarge":
+      return t("tooLarge", { maxMb: m.maxMb, maxPx: m.maxPx });
     case "failed":
       return t("failed", { message: m.message });
   }
@@ -890,6 +894,18 @@ export const useSceneStore = create<StoreState>((set, get) => {
       const fail = (importMsgKey: ImportMsgKey) =>
         set({ ...prior, importBusy: false, importMsg: null, importMsgKey, importStatus: "error" });
 
+      // Refuse absurd files before reading a byte of them. Non-destructive: the
+      // current plan is untouched, only the status line changes.
+      if (exceedsImportBytes(file)) {
+        set({
+          importBusy: false,
+          importMsg: null,
+          importMsgKey: { key: "tooLarge", maxMb: MAX_IMPORT_MB, maxPx: MAX_IMAGE_EDGE_PX },
+          importStatus: "error",
+        });
+        return;
+      }
+
       // Non-destructive: only the spinner and the previous run's status line.
       set({ importBusy: true, importMsg: null, importMsgKey: null, importStatus: "ok" });
 
@@ -967,6 +983,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
           };
         } else if (isImageFile(file)) {
           const img = await loadImageFile(file);
+          if (exceedsImageEdge(img)) {
+            fail({ key: "tooLarge", maxMb: MAX_IMPORT_MB, maxPx: MAX_IMAGE_EDGE_PX });
+            return;
+          }
           if (Math.max(img.width, img.height) < MIN_IMAGE_PX) {
             fail({ key: "tooSmall", width: img.width, height: img.height, min: MIN_IMAGE_PX });
             return;

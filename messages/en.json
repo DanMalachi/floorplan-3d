@@ -1148,6 +1148,7 @@
     "import": {
       "tooSmall": "Image too small ({width}×{height}px) — plans need ≥{min}px on the long edge.",
       "unsupported": "Unsupported file — use an image (PNG/JPG/WebP), a PDF, or a CAD file (DXF/DWG).",
+      "tooLarge": "File too large — plans must be under {maxMb} MB and {maxPx}px on the long edge.",
       "failed": "Import failed: {message}"
     },
     "inspector": {

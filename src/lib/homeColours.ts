@@ -41,8 +41,8 @@ let cache: ColourSwatch[] | null = null;
 
 export async function loadHomeColours(): Promise<ColourSwatch[]> {
   if (cache) return cache;
-  const module = await import("../../data/fan.done.v1.json");
-  cache = module.default as ColourSwatch[];
+  const fan = await import("../../data/fan.done.v1.json");
+  cache = fan.default as ColourSwatch[];
   return cache;
 }
 
