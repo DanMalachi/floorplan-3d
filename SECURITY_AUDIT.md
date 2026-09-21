@@ -16,6 +16,27 @@ rotated or read, no production data was touched.
 
 ---
 
+## 0. Closure — first-launch period (2026-09-21)
+
+**Final status: SAFE FOR A FIRST LAUNCH, with the accepted risks below.** The verdict in section 11 was written before the fixes were deployed; this section supersedes it.
+
+Closed and verified: F-01 room-deletion scope, F-02 link revocation (Dan confirmed the two-browser revoke test in production), F-03 public credentialed previews (Deployment Protection on, every secret Production-only), F-04 framework advisories (`npm audit` 0), F-05 monitoring (UptimeRobot alerting to the support address confirmed by Dan; Sentry active, US region, 30-day retention), F-07, F-08, F-10 (CSP enforced), F-11/F-12 (migration 0005 applied and exercised), F-14 (Supabase email sign-up off; verified from Supabase's public auth settings: only `google` enabled), F-15, F-19, F-25, F-29. GitHub secret scanning, push protection and Dependabot are on; CodeQL runs on every PR. Privacy policy (en + he) updated to match. Vercel deployment storage brought under the free-plan limit and retention tightened.
+
+**Accepted risks for the first launch (Dan, 2026-09-21):**
+
+| Risk | Why it is acceptable now | Revisit when |
+|---|---|---|
+| No database or storage backups (free Supabase) — F-06 | Local-first copies on users' devices; F-29 makes devices re-upload lost projects; users can export | Before paid plans or a user base that cannot lose plans |
+| `decorate` share role is not server-enforced — F-09 | Disclosed in the privacy policy; links are chosen by the owner and revocable | Before marketing "decorate" as a safe limited role |
+| CSP still allows inline scripts — F-16 | No XSS sink exists; enforced policy still blocks off-site scripts, framing, `<base>`, off-site form posts | When nonces (dynamic rendering) are affordable |
+| No CAA / DNSSEC / DMARC — F-22 | Certificates are issued and renewed by Vercel; no mail is sent from the domain | Before sending email from the domain |
+| No staging environment, ZAP or load test | Free-tier limits; previews are guest-only | Before scaling up |
+| No recent-authentication for account deletion (F-17); sign-out keeps local data (F-18); grant in URL query (F-20); no per-user room-claim cap (F-24) | Low likelihood; mitigations in section 3 | Post-launch backlog |
+| Free-plan hard limits instead of spend caps | On free plans a limit pauses the service rather than billing | Before upgrading any plan |
+| Legal entity / address / jurisdiction placeholders | Needs Dan and a lawyer; not a security control | Before paid plans (`docs/LEGAL-LAUNCH-CHECKLIST.md`) |
+
+---
+
 ## 1. Executive summary
 
 **Recommendation: NOT SAFE TO LAUNCH as deployed today.** With the code changes in this branch

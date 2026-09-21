@@ -160,8 +160,8 @@ export function PrivacyEn() {
         a share link and any sign-in code from that address, and we remove
         cookies, request contents, your name and email. Reports never contain
         your floor plan or images, and session replay is switched off
-        deliberately so your plan is never recorded. Performance tracing is off.{" "}
-        <Verify>Sentry region and retention period</Verify>
+        deliberately so your plan is never recorded. Performance tracing is off.
+        Reports are stored in the United States and kept for 30 days.
       </p>
 
       <h3 style={legalH3}>A service wired in but currently switched off</h3>
