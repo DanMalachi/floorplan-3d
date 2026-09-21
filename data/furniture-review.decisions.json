@@ -609,6 +609,72 @@
     "at": "2026-09-15T18:47:40.398Z",
     "name": "Wooden Bookshelf Worn"
   },
+  "factory:beige-leather-sofa": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Beige Leather Sofa"
+  },
+  "factory:black-travertine-tv-console": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Black Travertine TV Console"
+  },
+  "factory:block-arm-sofa": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Block-Arm Sofa"
+  },
+  "factory:flare-arm-sofa": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Flare-Arm Sofa"
+  },
+  "factory:grey-chaise-sectional": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Grey Chaise Sectional"
+  },
+  "factory:oak-platform-bed": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Oak Platform Bed"
+  },
+  "factory:plain-block-sofa": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Plain Block-Arm Sofa"
+  },
+  "factory:tufted-sage-sofa": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Tufted Sage Sofa"
+  },
+  "factory:upholstered-queen-bed": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-18T12:00:00.000Z",
+    "name": "Upholstered Queen Bed"
+  },
+  "factory:walnut-mesh-tv-console": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Walnut Mesh TV Console"
+  },
+  "factory:walnut-tv-console": {
+    "status": "approved",
+    "note": "seeded from the promotion record; shipped in the editor catalog",
+    "at": "2026-09-20T12:00:00.000Z",
+    "name": "Walnut TV Console"
+  },
   "polyhaven:dining_chair_02": {
     "status": "approved",
     "at": "2026-09-15T18:39:45.959Z",

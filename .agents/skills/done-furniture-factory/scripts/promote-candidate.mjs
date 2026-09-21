@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Promote an APPROVED candidate into Done in one command (promotion.md steps 2-7). Never commits.
 //   node promote-candidate.mjs --repo <floorplan-3d root> --candidate assets/furniture/<family>/<asset>/r001 --slug block-arm-sofa
-//        --name "Block-Arm Sofa" --category Seating --subtitle "3-seat sofa, linen, oak legs" --rooms living [--approved-on 2026-09-20]
+//        --name "Block-Arm Sofa" --kind sofa [--tags sofa,couch] --category Seating --subtitle "3-seat sofa, linen, oak legs" --rooms living [--approved-on 2026-09-20]
 // Preconditions: exports/audit.json exists and matches the GLB it names; renders/thumb.png was rendered from that GLB;
 // sources.json lists materialSources (name, creator, url, license). Run ONLY after the user approved the audited hash.
 import { readFile, writeFile, copyFile } from "node:fs/promises";
@@ -12,7 +12,7 @@ const a = Object.fromEntries(process.argv.slice(2).reduce((p, v, i, all) => {
   if (v.startsWith("--")) p.push([v.slice(2), all[i + 1] && !all[i + 1].startsWith("--") ? all[i + 1] : true]);
   return p;
 }, []));
-for (const k of ["repo", "candidate", "slug", "name", "category", "subtitle", "rooms"]) {
+for (const k of ["repo", "candidate", "slug", "name", "kind", "category", "subtitle", "rooms"]) {
   if (!a[k]) { console.error(`missing --${k}`); process.exit(2); }
 }
 const repo = path.resolve(a.repo), cand = path.resolve(repo, a.candidate);
@@ -36,7 +36,7 @@ const cat = await j(catPath);
 const entry = {
   assetId: `factory:${a.slug}`, name: a.name, category: a.category, footprint: { w, d }, wallSnap: true,
   realModel: `/furniture/factory/${a.slug}.glb`, thumbnail: `/furniture/factory/${a.slug}.png`,
-  brand: "Done", subtitle: a.subtitle, rooms: String(a.rooms).split(","),
+  brand: "Done", subtitle: a.subtitle, kind: a.kind, ...(a.tags ? { typeTags: String(a.tags).split(",") } : {}), rooms: String(a.rooms).split(","),
 };
 const i = cat.findIndex((x) => x.assetId === entry.assetId);
 if (i >= 0) cat[i] = entry; else cat.push(entry);
