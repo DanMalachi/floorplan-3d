@@ -814,5 +814,6 @@ profile, close-up), then a Playwright pass in the editor.
 ## Status
 - V3-0 fixtures + tiles — done (`cb82a88`).
 - V3-1 `sofaBlockArm` pilot — W 1.50–2.80, D 0.80–1.10, H 0.74–0.90 (height capped at 0.90:
-  above it the script's arm clamp leaves the arms low against a tall back). Awaiting Dan.
+  above it the script's arm clamp leaves the arms low against a tall back). Approved by
+  Dan 2026-09-23 (`c699ce6`). Remaining work: `docs/PARAMETRIC-FACTORY-V3-HANDOFF.md`.
 - V3-2 remaining 5 sofas, V3-3 Astra bed — after pilot approval.
