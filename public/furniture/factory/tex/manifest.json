@@ -1,0 +1,154 @@
+{
+  "_notes": [
+    "Phase 0 reference texture tiles for the parametric-factory port. Each material id maps to a folder",
+    "public/furniture/factory/tex/<id>/{color,normal,roughness}.webp.",
+    "tinted:true materials store a NEUTRAL, luminance-normalised grey `color` tile (mean 0.72, exactly",
+    "furniture_lib.py's tinted_fabric() recipe: lum = px . [0.2126,0.7152,0.0722]; lum = lum/lum.mean()*0.72;",
+    "clip 0..1) — the live app is expected to multiply this by a runtime colour (baseColorFactor), matching",
+    "how every one of these scripts renders colour variants today. tinted:false materials keep their diffuse as-is.",
+    "normal and roughness maps are never tinted and are kept as-is (just resized/re-encoded) for every material.",
+    "sourceFiles are read-only originals under assets/furniture/**/inputs/materials/ (Poly Haven CC0) or, for the",
+    "bed, scratch PNGs baked by build-bed-benchmark.py's own numpy texture generator (own work, no external source).",
+    "tileMetres is the script's own physical tile size (the divisor in its world-scale UV projection), not the",
+    "pixel resolution — it is what determines whether we kept 1024px or 2048px (>0.5m physical -> keep 2048)."
+  ],
+  "materials": {
+    "rough-linen": {
+      "sourceFiles": [
+        "assets/furniture/seating/block-arm-sofa/r001/inputs/materials/rough_linen_Diffuse_2k.jpg (used only to derive the grey cache linen_grey_2k.png, which is what we tiled)",
+        "assets/furniture/seating/block-arm-sofa/r001/inputs/materials/rough_linen_Rough_2k.jpg",
+        "assets/furniture/seating/block-arm-sofa/r001/inputs/materials/rough_linen_nor_gl_2k.jpg"
+      ],
+      "sourceLicence": "Poly Haven \"Rough Linen\" — CC0 (polyhaven.com/a/rough_linen, polyhaven.com/license)",
+      "tileMetres": 0.271,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColor": "#8a8f96",
+      "usedBy": ["block-arm-sofa"],
+      "normalStrength": 1.8,
+      "specularIorLevel": 0.25
+    },
+    "oak-veneer-01": {
+      "sourceFiles": [
+        "assets/furniture/seating/block-arm-sofa/r001/inputs/materials/oak_veneer_01_diff_2k.jpg",
+        "assets/furniture/seating/block-arm-sofa/r001/inputs/materials/oak_veneer_01_rough_2k.jpg",
+        "assets/furniture/seating/block-arm-sofa/r001/inputs/materials/oak_veneer_01_nor_gl_2k.jpg",
+        "(byte-identical copies also live under flare-arm-sofa/, plain-block-sofa/, tufted-sage-sofa/, beige-leather-sofa/ inputs/materials/ — same Poly Haven source, one tile used here)"
+      ],
+      "sourceLicence": "Poly Haven \"Oak Veneer 01\" — CC0 (polyhaven.com/a/oak_veneer_01, polyhaven.com/license)",
+      "tileMetres": 1.83,
+      "resolutionPx": 2048,
+      "resolutionNote": "kept at 2048px: tile covers 1.83 m of physical surface (>0.5 m threshold in the task brief)",
+      "tinted": false,
+      "defaultColor": null,
+      "usedBy": ["block-arm-sofa", "flare-arm-sofa", "plain-block-sofa", "tufted-sage-sofa", "beige-leather-sofa"],
+      "specularIorLevel": 0.4
+    },
+    "curly-teddy-natural": {
+      "sourceFiles": [
+        "assets/furniture/seating/flare-arm-sofa/r001/inputs/materials/curly_teddy_natural_diff_2k.jpg (derives teddy_grey.png, tiled here)",
+        "assets/furniture/seating/flare-arm-sofa/r001/inputs/materials/curly_teddy_natural_rough_2k.jpg",
+        "assets/furniture/seating/flare-arm-sofa/r001/inputs/materials/curly_teddy_natural_nor_gl_2k.jpg"
+      ],
+      "sourceLicence": "Poly Haven \"Curly Teddy Natural\" — CC0 (polyhaven.com/a/curly_teddy_natural, polyhaven.com/license)",
+      "tileMetres": 0.333,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColor": "#f1eadb",
+      "usedBy": ["flare-arm-sofa"],
+      "normalStrength": 1.6,
+      "specularIorLevel": 0.2
+    },
+    "hessian-380": {
+      "sourceFiles": [
+        "assets/furniture/seating/plain-block-sofa/r001/inputs/materials/hessian_380_diff_2k.jpg (derives hess_grey.png, tiled here; byte-identical hess_grey.png also cached under grey-chaise-sectional/)",
+        "assets/furniture/seating/plain-block-sofa/r001/inputs/materials/hessian_380_rough_2k.jpg",
+        "assets/furniture/seating/plain-block-sofa/r001/inputs/materials/hessian_380_nor_gl_2k.jpg"
+      ],
+      "sourceLicence": "Poly Haven \"Hessian 380\" — CC0 (polyhaven.com/a/hessian_380, polyhaven.com/license)",
+      "tileMetres": 0.274,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColorByUsedBy": { "plain-block-sofa": "#d8cab2", "grey-chaise-sectional": "#b9bbbe" },
+      "usedBy": ["plain-block-sofa", "grey-chaise-sectional"],
+      "normalStrengthByUsedBy": { "plain-block-sofa": 2.8, "grey-chaise-sectional": 2.4 },
+      "specularIorLevel": 0.2
+    },
+    "velour-velvet": {
+      "sourceFiles": [
+        "assets/furniture/seating/tufted-sage-sofa/r001/inputs/materials/velour_velvet_diff_2k.jpg (derives velour_grey.png, tiled here)",
+        "assets/furniture/seating/tufted-sage-sofa/r001/inputs/materials/velour_velvet_rough_2k.jpg",
+        "assets/furniture/seating/tufted-sage-sofa/r001/inputs/materials/velour_velvet_nor_gl_2k.jpg"
+      ],
+      "sourceLicence": "Poly Haven \"Velour Velvet\" — CC0 (polyhaven.com/a/velour_velvet, polyhaven.com/license)",
+      "tileMetres": 0.284,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColor": "#9ca993",
+      "usedBy": ["tufted-sage-sofa"],
+      "normalStrength": 1.5,
+      "specularIorLevel": 0.12,
+      "sheen": { "weight": 0.4, "roughness": 0.42, "note": "furniture_lib.pile_sheen(), KHR_materials_sheen on export" }
+    },
+    "leather-grain": {
+      "sourceFiles": [
+        "assets/furniture/seating/beige-leather-sofa/r001/inputs/materials/leather_grain_diff_2k.png (own work, derives leather_grey.png, tiled here; produced by make_leather_maps.py — Worley pebble + micro-grain + crease net, NOT a Poly Haven download)",
+        "assets/furniture/seating/beige-leather-sofa/r001/inputs/materials/leather_grain_rough_2k.png",
+        "assets/furniture/seating/beige-leather-sofa/r001/inputs/materials/leather_grain_nor_gl_2k.png"
+      ],
+      "sourceLicence": "Own work (done. / Dan) — authored by assets/furniture/seating/beige-leather-sofa/r001/make_leather_maps.py, no third-party rights",
+      "tileMetres": 0.25,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColor": "#cdb794",
+      "usedBy": ["beige-leather-sofa"],
+      "normalStrength": 1.0,
+      "specularIorLevel": 0.55
+    },
+    "oatmeal-upholstery": {
+      "sourceFiles": [
+        "procedural: build-bed-benchmark.py textured('oatmeal-upholstery', COLOR, weave=122, seed=13) — deterministic numpy weave+noise, no external file. The colour tile here was recovered from a default-colour (#918473) bake by dividing out that colour per-channel, then applying furniture_lib's EXACT tinted_fabric normalise-to-mean*0.72 recipe (see manifest _notes), since this script bakes colour directly instead of caching a separate grey PNG the way furniture_lib does."
+      ],
+      "sourceLicence": "Own work (Astra/Codex agent for Dan) — script header states CC0-1.0, deterministic numpy authoring, no external art",
+      "tileMetres": 0.42,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColor": "#918473",
+      "usedBy": ["upholstered-queen-bed"],
+      "roughnessBase": 0.82,
+      "normalStrength": 0.45
+    },
+    "ivory-washed-linen": {
+      "sourceFiles": [
+        "procedural: build-bed-benchmark.py textured('ivory-washed-linen', (.89,.865,.81), weave=162, seed=23) — deterministic numpy weave+noise, no external file. Colour is a FIXED constant baked in regardless of the --color CLI arg (duvet/pillows/mattress ticking stay off-white by design, real-bed convention) — kept as-is, not tinted."
+      ],
+      "sourceLicence": "Own work (Astra/Codex agent for Dan) — script header states CC0-1.0",
+      "tileMetres": 0.42,
+      "resolutionPx": 1024,
+      "tinted": false,
+      "defaultColor": "#e3ddce",
+      "usedBy": ["upholstered-queen-bed"],
+      "roughnessBase": 0.82,
+      "normalStrength": 0.45
+    },
+    "bed-natural-oak": {
+      "sourceFiles": [
+        "procedural: build-bed-benchmark.py textured('natural-oak', (.39,.25,.135), wood=True, seed=9) — deterministic numpy grain+noise, no external file. Distinct from the Poly Haven 'oak-veneer-01' used by the sofas/oak-platform-bed; this bed has its own self-authored oak. Not tinted (colour fixed)."
+      ],
+      "sourceLicence": "Own work (Astra/Codex agent for Dan) — script header states CC0-1.0",
+      "tileMetres": 0.42,
+      "resolutionPx": 1024,
+      "tinted": false,
+      "defaultColor": "#644022",
+      "usedBy": ["upholstered-queen-bed"],
+      "roughnessBase": 0.5,
+      "normalStrength": 0.6
+    }
+  },
+  "nonTexturedMaterials": {
+    "_note": "Plain-colour PBR materials with no image maps — listed for completeness, not tiled.",
+    "nickel": { "usedBy": ["grey-chaise-sectional"], "baseColor": "#e0e1e4", "metallic": 0.72, "roughness": 0.34, "sourceLicence": "Own work (procedural metal_material(), no source images)" },
+    "thread": { "usedBy": ["beige-leather-sofa"], "note": "tone-on-tone: hide colour * 0.58, matte, no texture (furniture_lib.thread_material)", "sourceLicence": "Own work" },
+    "warm-ivory-cotton-thread": { "usedBy": ["upholstered-queen-bed"], "baseColor": "#857a63", "roughness": 0.9, "sourceLicence": "Own work" }
+  }
+}

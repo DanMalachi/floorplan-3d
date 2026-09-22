@@ -1,0 +1,483 @@
+{
+  "slug": "upholstered-queen-bed",
+  "set": "default",
+  "args": {
+    "width": 1.75,
+    "depth": 2.18,
+    "color": "#918473"
+  },
+  "bbox": {
+    "min": [
+      -0.905791,
+      0,
+      -1.09536
+    ],
+    "max": [
+      0.905791,
+      1.1,
+      1.09536
+    ]
+  },
+  "triangles": 143396,
+  "parts": [
+    {
+      "name": "duvet sewn rolled hem",
+      "bbox": {
+        "min": [
+          -0.900919,
+          0.301024,
+          -0.50615
+        ],
+        "max": [
+          0.90095,
+          0.67571,
+          1.09157
+        ]
+      },
+      "triangles": 9600,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "duvet turnback seam",
+      "bbox": {
+        "min": [
+          -0.810502,
+          0.671182,
+          -0.25516
+        ],
+        "max": [
+          0.810505,
+          0.706818,
+          -0.25076
+        ]
+      },
+      "triangles": 2080,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "headboard upholstered rear shell",
+      "bbox": {
+        "min": [
+          -0.874998,
+          0,
+          -1.09296
+        ],
+        "max": [
+          0.875002,
+          1.1,
+          -0.95296
+        ]
+      },
+      "triangles": 588,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "headboard welt seam",
+      "bbox": {
+        "min": [
+          -0.846498,
+          0.087501,
+          -0.945159
+        ],
+        "max": [
+          -0.289503,
+          1.074492,
+          -0.93876
+        ]
+      },
+      "triangles": 5120,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "headboard welt seam.001",
+      "bbox": {
+        "min": [
+          -0.278498,
+          0.087501,
+          -0.945159
+        ],
+        "max": [
+          0.278497,
+          1.074492,
+          -0.93876
+        ]
+      },
+      "triangles": 5120,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "headboard welt seam.002",
+      "bbox": {
+        "min": [
+          0.289502,
+          0.087501,
+          -0.945159
+        ],
+        "max": [
+          0.846497,
+          1.074492,
+          -0.93876
+        ]
+      },
+      "triangles": 5120,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "inset natural-oak plinth",
+      "bbox": {
+        "min": [
+          -0.734998,
+          0,
+          -0.90296
+        ],
+        "max": [
+          0.735002,
+          0.115,
+          0.96704
+        ]
+      },
+      "triangles": 588,
+      "material": "natural-oak"
+    },
+    {
+      "name": "ivory duvet with settled folds and draped skirt",
+      "bbox": {
+        "min": [
+          -0.905791,
+          0.303609,
+          -0.504701
+        ],
+        "max": [
+          0.905791,
+          0.685742,
+          1.09536
+        ]
+      },
+      "triangles": 44840,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "left padded side rail",
+      "bbox": {
+        "min": [
+          -0.874998,
+          0.13,
+          -1.00796
+        ],
+        "max": [
+          -0.769998,
+          0.345,
+          1.05204
+        ]
+      },
+      "triangles": 588,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "linen pillow lower tailored surface",
+      "bbox": {
+        "min": [
+          -0.755338,
+          0.578389,
+          -0.861992
+        ],
+        "max": [
+          -0.034659,
+          0.74605,
+          -0.377927
+        ]
+      },
+      "triangles": 4872,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "linen pillow lower tailored surface.001",
+      "bbox": {
+        "min": [
+          0.029665,
+          0.578389,
+          -0.853061
+        ],
+        "max": [
+          0.746338,
+          0.74605,
+          -0.376858
+        ]
+      },
+      "triangles": 4872,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "linen pillow upper tailored surface",
+      "bbox": {
+        "min": [
+          -0.755338,
+          0.64595,
+          -0.861992
+        ],
+        "max": [
+          -0.034659,
+          0.813611,
+          -0.377927
+        ]
+      },
+      "triangles": 4872,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "linen pillow upper tailored surface.001",
+      "bbox": {
+        "min": [
+          0.029665,
+          0.64595,
+          -0.853061
+        ],
+        "max": [
+          0.746338,
+          0.813611,
+          -0.376858
+        ]
+      },
+      "triangles": 4872,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "mattress taped edge",
+      "bbox": {
+        "min": [
+          -0.795697,
+          0.3568,
+          -0.973659
+        ],
+        "max": [
+          0.795701,
+          0.3632,
+          1.017739
+        ]
+      },
+      "triangles": 1088,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "mattress taped edge.001",
+      "bbox": {
+        "min": [
+          -0.795697,
+          0.5568,
+          -0.973659
+        ],
+        "max": [
+          0.795701,
+          0.5632,
+          1.017739
+        ]
+      },
+      "triangles": 1088,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "padded foot rail",
+      "bbox": {
+        "min": [
+          -0.874998,
+          0.13,
+          0.97204
+        ],
+        "max": [
+          0.875002,
+          0.345,
+          1.07704
+        ]
+      },
+      "triangles": 588,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "pillow cotton piping",
+      "bbox": {
+        "min": [
+          -0.75745,
+          0.643853,
+          -0.863941
+        ],
+        "max": [
+          -0.032557,
+          0.748,
+          -0.375831
+        ]
+      },
+      "triangles": 5760,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "pillow cotton piping.001",
+      "bbox": {
+        "min": [
+          0.027597,
+          0.643853,
+          -0.855016
+        ],
+        "max": [
+          0.748414,
+          0.748,
+          -0.374757
+        ]
+      },
+      "triangles": 5760,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "rear headboard panel stitch",
+      "bbox": {
+        "min": [
+          -0.286398,
+          0.045,
+          -1.09536
+        ],
+        "max": [
+          -0.283598,
+          1.055,
+          -1.09256
+        ]
+      },
+      "triangles": 1264,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "rear headboard panel stitch.001",
+      "bbox": {
+        "min": [
+          0.283602,
+          0.045,
+          -1.09536
+        ],
+        "max": [
+          0.286402,
+          1.055,
+          -1.09256
+        ]
+      },
+      "triangles": 1264,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "recessed mattress support",
+      "bbox": {
+        "min": [
+          -0.794998,
+          0.2575,
+          -0.96796
+        ],
+        "max": [
+          0.795002,
+          0.3325,
+          1.00204
+        ]
+      },
+      "triangles": 588,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "right padded side rail",
+      "bbox": {
+        "min": [
+          0.770002,
+          0.13,
+          -1.00796
+        ],
+        "max": [
+          0.875002,
+          0.345,
+          1.05204
+        ]
+      },
+      "triangles": 588,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "rounded pocket-spring mattress",
+      "bbox": {
+        "min": [
+          -0.799998,
+          0.335,
+          -0.97796
+        ],
+        "max": [
+          0.800002,
+          0.595,
+          1.02204
+        ]
+      },
+      "triangles": 588,
+      "material": "ivory-washed-linen"
+    },
+    {
+      "name": "sewn padded headboard panel",
+      "bbox": {
+        "min": [
+          -0.845709,
+          0.088927,
+          -0.948132
+        ],
+        "max": [
+          -0.290287,
+          1.073079,
+          -0.91146
+        ]
+      },
+      "triangles": 8080,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "sewn padded headboard panel.001",
+      "bbox": {
+        "min": [
+          -0.277709,
+          0.088927,
+          -0.948132
+        ],
+        "max": [
+          0.277713,
+          1.073079,
+          -0.91146
+        ]
+      },
+      "triangles": 8080,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "sewn padded headboard panel.002",
+      "bbox": {
+        "min": [
+          0.290291,
+          0.088927,
+          -0.948132
+        ],
+        "max": [
+          0.845713,
+          1.073079,
+          -0.91146
+        ]
+      },
+      "triangles": 8080,
+      "material": "oatmeal-upholstery"
+    },
+    {
+      "name": "turned-back duvet edge",
+      "bbox": {
+        "min": [
+          -0.811795,
+          0.667284,
+          -0.48585
+        ],
+        "max": [
+          0.8118,
+          0.728767,
+          -0.250051
+        ]
+      },
+      "triangles": 7448,
+      "material": "ivory-washed-linen"
+    }
+  ]
+}
