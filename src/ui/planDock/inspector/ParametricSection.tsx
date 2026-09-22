@@ -50,6 +50,7 @@ const HANDLE_LABEL_KEY: Record<ParametricSpec["handle"], string> = {
 // Representative swatch colors — a flat UI stand-in for the actual procedural/
 // photo finish, not the finish itself. Extend alongside new finish ids.
 const FINISH_HEX: Record<string, string> = {
+  "factory-rough-linen": "#8a8f96",
   painted: "#f4f4f2",
   "painted-white": "#f4f4f2",
   "painted-charcoal": "#3a3d40",
@@ -276,7 +277,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       )}
 
       {g.finishesLabelKey && <span style={{ fontSize: 10.5, color: PD.textTertiary }}>{t(g.finishesLabelKey)}</span>}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {/* One finish is no choice — same single-option rule as fronts/handles.
+          The colour control below still shows when that finish is colourable. */}
+      {g.finishes.length > 1 && <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         {g.finishes.map((f) => {
           // Wall art's finishes ARE pictures: the swatch shows the painting,
           // because a dot in its average colour is a choice made blind.
@@ -292,7 +295,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             />
           );
         })}
-      </div>
+      </div>}
       {isColorable(spec.finish) && (
         <ColorControl value={spec.color ?? FINISH_HEX[spec.finish] ?? "#ffffff"} onCommit={(color) => update({ color })} />
       )}

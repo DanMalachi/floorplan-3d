@@ -1143,6 +1143,9 @@
         "label": "Match run below",
         "on": "On",
         "off": "Off"
+      },
+      "sofaBlockArm": {
+        "label": "Block-arm sofa"
       }
     },
     "import": {

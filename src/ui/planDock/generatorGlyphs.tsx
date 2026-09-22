@@ -930,6 +930,9 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   kitchenBase: BaseRunGlyph,
   kitchenWall: WallCabinetsGlyph,
   sofa: SofaGlyph,
+  // Factory ports show their product photo on the card (GeneratorDef.thumbnail);
+  // the glyph is only the fallback the invariant tests ask every card to have.
+  sofaBlockArm: SofaGlyph,
   sink: SinkGlyph,
   cooktop: CooktopGlyph,
   toilet: ToiletGlyph,

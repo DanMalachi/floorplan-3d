@@ -46,6 +46,9 @@ const COLORABLE = new Set([
   "rug-wool-navy",
   "rug-shag",
   "rug-flat",
+  // v3 factory ports: the grey weave is multiplied by the colour, exactly as
+  // the Blender build scripts do it (src/parametric/factory/materials.ts).
+  "factory-rough-linen",
 ]);
 
 /** Photo-wood and counter-oak finishes ignore the color wheel — they keep

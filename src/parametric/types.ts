@@ -164,6 +164,14 @@ export interface GeneratorDef {
    *  — spell it out whenever the id alone wouldn't say what the thing is
    *  ("Mirror & accessories" also covers towels and bins). */
   hotspotKeywords?: string[];
+  /** v3 factory ports: the dock card shows this rendered product photo instead
+   *  of a line glyph — it is a specific approved design, not a generic kit. */
+  thumbnail?: string;
+  /** v3 factory ports: the baked catalog asset this generator supersedes in
+   *  the picker. The catalog entry stays registered so items already placed
+   *  with it keep rendering; the dock just stops offering it (Dan, 2026-09-22:
+   *  one card per sofa, and it is the parametric one). */
+  replacesAsset?: string;
   /** Pure build: spec → group. Origin at floor center (y=0 at floor, x/z centered),
    *  front faces +Z — same convention FurnitureLayer's normalize() produces. */
   build(spec: ParametricSpec): THREE.Group;
