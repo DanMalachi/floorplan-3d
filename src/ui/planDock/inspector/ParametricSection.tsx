@@ -56,6 +56,7 @@ const FINISH_HEX: Record<string, string> = {
   "factory-velour": "#9ca993",
   "factory-leather": "#cdb794",
   "factory-hessian-chaise": "#b9bbbe",
+  "factory-oatmeal": "#918473",
   painted: "#f4f4f2",
   "painted-white": "#f4f4f2",
   "painted-charcoal": "#3a3d40",
@@ -191,13 +192,17 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             displayScale={100}
             unit={tu("cm")}
           />
-          <PdNumField
-            label={t("height")}
-            value={spec.dims.h}
-            onCommit={(h) => update({ dims: { ...spec.dims, h } })}
-            displayScale={100}
-            unit={tu("cm")}
-          />
+          {/* A height the generator fixes (a bed's headboard, a cooktop's
+              glass) is not a control: typing into it would snap back. */}
+          {g.dimLimits.h[0] !== g.dimLimits.h[1] && (
+            <PdNumField
+              label={t("height")}
+              value={spec.dims.h}
+              onCommit={(h) => update({ dims: { ...spec.dims, h } })}
+              displayScale={100}
+              unit={tu("cm")}
+            />
+          )}
         </>
       )}
       <PdNumField

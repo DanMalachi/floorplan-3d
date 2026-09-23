@@ -47,6 +47,10 @@ export const FACTORY_MATERIALS = {
   // Polished nickel, metallic 0.72: a pure mirror renders black in the dark
   // viewer env (build script's note).
   nickel: { specular: 0.5, color: [0.7454, 0.7529, 0.7758], roughness: 0.34, metalness: 0.72 },
+  // Astra bed: the script's own numpy tiles, Principled defaults otherwise.
+  "oatmeal-upholstery": { tex: "oatmeal-upholstery", normalScale: 0.45, specular: 0.5 },
+  "ivory-washed-linen": { tex: "ivory-washed-linen", normalScale: 0.45, specular: 0.5 },
+  "bed-natural-oak": { tex: "bed-natural-oak", normalScale: 0.6, specular: 0.5 },
 } satisfies Record<string, FactoryMaterialDef>;
 
 export type FactoryMaterialId = keyof typeof FACTORY_MATERIALS;

@@ -65,6 +65,7 @@ const PORTS: Port[] = [
   { generator: "sofaPlainBlock", slug: "plain-block-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaTuftedSage", slug: "tufted-sage-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaBeigeLeather", slug: "beige-leather-sofa", sets: ["min", "default", "max"] },
+  { generator: "bedUpholstered", slug: "upholstered-queen-bed", sets: ["min", "below_switch", "at_switch", "default", "max"] },
   {
     generator: "sofaGreyChaise", slug: "grey-chaise-sectional", sets: ["min", "default", "max", "default_mirror"],
     // --depth is the RUN; the inspector's depth is the whole footprint.

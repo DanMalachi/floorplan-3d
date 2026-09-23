@@ -56,6 +56,17 @@ function SofaGlyph({ size }: { size: number }) {
   );
 }
 
+function BedGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="5" y="2.5" width="14" height="19" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="7" y="4.5" width="4.4" height="3" rx="1" stroke="currentColor" strokeWidth="1.1" />
+      <rect x="12.6" y="4.5" width="4.4" height="3" rx="1" stroke="currentColor" strokeWidth="1.1" />
+      <line x1="5" y1="10" x2="19" y2="10" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
 function SinkGlyph({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -938,6 +949,7 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   sofaTuftedSage: SofaGlyph,
   sofaBeigeLeather: SofaGlyph,
   sofaGreyChaise: SofaGlyph,
+  bedUpholstered: BedGlyph,
   sink: SinkGlyph,
   cooktop: CooktopGlyph,
   toilet: ToiletGlyph,

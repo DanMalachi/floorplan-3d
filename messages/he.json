@@ -1156,6 +1156,9 @@
       "sofaBeigeLeather": {
         "label": "ספת עור"
       },
+      "bedUpholstered": {
+        "label": "מיטה מרופדת"
+      },
       "sofaGreyChaise": {
         "label": "ספה פינתית עם שזלונג",
         "modules": {

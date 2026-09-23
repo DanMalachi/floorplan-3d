@@ -1156,6 +1156,9 @@
       "sofaBeigeLeather": {
         "label": "Leather sofa"
       },
+      "bedUpholstered": {
+        "label": "Upholstered bed"
+      },
       "sofaGreyChaise": {
         "label": "Chaise sectional",
         "modules": {

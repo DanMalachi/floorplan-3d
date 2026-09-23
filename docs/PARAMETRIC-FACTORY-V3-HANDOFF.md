@@ -47,6 +47,17 @@ king or even bigger. i want both of them to come in single bed size with one pil
   range W 1.05–2.15, D 2.08–2.18. GLBs + renders per size in `v3-3/m090x190 … m200x200/`; sheet
   `v3-3/astra-v33-sizes-sheet.png`. Pre-existing (also in shipped default): small dash marks on the duvet's
   front-left drape — cosmetic, not from resizing.
+- **Dan approved the sizes sheet; V3-3a Astra PORTED 2026-09-23** (`bedUpholstered`,
+  `src/parametric/factory/bedUpholstered.ts`). Parity: every part ≤5mm at min / below_switch (1.34) /
+  at_switch (1.35) / default / max, tris == Blender (127,892 one pillow, 143,396 two), warm rebuild ~43ms
+  (tighter than the sofas; `finish` over 143k tris dominates). Default fixture unchanged = V3-3 script
+  reproduces the shipped bed exactly. Editor-verified (dock card replaces the baked one, W/D + colour only,
+  single → 1 pillow, max, recolour). Tint: the grey tile is normalised to 0.72 but the script's weave
+  averages 0.935, so upholstery meshes carry `userData.tintGain` = (0.935/0.72)^2.2 (ParametricModel
+  multiplies it in); measured linear base colour vs baked GLB within 2–8% per channel (45% dark without).
+  Inspector now hides Height when `dimLimits.h` is fixed (also hides cooktop's 0.8cm). NEXT: V3-3b oak
+  platform bed (`floorplan-3d/assets/furniture/bedroom/oak-platform-bed/r003/build_bed.py`, build from the
+  `C:\Users\dandu\floorplan-3d` checkout — inputs/materials is gitignored): same range + pillow rule.
 - Single size + one pillow is NEW geometry the approved script never built: headboard panels and
   duvet drape at 0.90 m need a look. Build a Blender variant of the script (copy, never edit the
   approved original) at 90×190 / 140×190 / 160×200 / max, render them for Dan, THEN port.
