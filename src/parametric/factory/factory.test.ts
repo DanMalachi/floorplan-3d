@@ -53,6 +53,8 @@ function tris(o: THREE.Object3D): number {
 
 const PORTS: { generator: ParametricSpec["generator"]; slug: string; sets: string[] }[] = [
   { generator: "sofaBlockArm", slug: "block-arm-sofa", sets: ["min", "default", "max"] },
+  { generator: "sofaFlareArm", slug: "flare-arm-sofa", sets: ["min", "default", "max"] },
+  { generator: "sofaPlainBlock", slug: "plain-block-sofa", sets: ["min", "default", "max"] },
 ];
 
 for (const port of PORTS) {
@@ -91,11 +93,15 @@ for (const port of PORTS) {
 
     const n = tris(group);
     check(`triangles ≤ shipped GLB (${shipped.triangles})`, n <= shipped.triangles, `${n}`);
-    // First build pays JIT warm-up; time a second one.
-    const t1 = performance.now();
-    g.build(spec);
-    const ms2 = performance.now() - t1;
-    check(`rebuild under ${BUILD_MS}ms`, ms2 < BUILD_MS, `${ms2.toFixed(1)}ms (cold ${ms.toFixed(1)}ms)`);
+    // First build pays JIT warm-up. One warm sample is at the mercy of GC
+    // (the same build measured 34-60ms run to run), so gate the median of 5.
+    const warm = Array.from({ length: 5 }, () => {
+      const t1 = performance.now();
+      g.build(spec);
+      return performance.now() - t1;
+    }).sort((x, y) => x - y);
+    const ms2 = warm[2];
+    check(`rebuild under ${BUILD_MS}ms (median of 5: ${ms2.toFixed(1)}ms)`, ms2 < BUILD_MS, `${ms2.toFixed(1)}ms (cold ${ms.toFixed(1)}ms)`);
   }
 }
 

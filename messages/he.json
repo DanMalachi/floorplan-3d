@@ -1144,6 +1144,12 @@
         "on": "פעיל",
         "off": "כבוי"
       },
+      "sofaFlareArm": {
+        "label": "ספה עם ידיות נטויות"
+      },
+      "sofaPlainBlock": {
+        "label": "ספה מרובעת פשוטה"
+      },
       "sofaBlockArm": {
         "label": "ספה עם ידיות מרובעות"
       }

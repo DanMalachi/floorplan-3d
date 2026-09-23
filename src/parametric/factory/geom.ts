@@ -144,19 +144,26 @@ export function roundedBox(
   const S = h.map(samples);
   // Faces share their border samples exactly (same arrays), so a vertex is
   // identified by its sample INDEX on each axis — cheap to key, no rounding.
-  const [n0, n1] = [S[0].length, S[1].length];
-  const lookup = new Map<number, number>();
+  const [n0, n1, n2] = [S[0].length, S[1].length, S[2].length];
+  // Hot path (every vertex of every cushion, on every inspector drag): a
+  // typed index table and scalar maths, no per-vertex arrays.
+  const lookup = new Int32Array(n0 * n1 * n2).fill(-1);
+  const [c0, c1, c2] = [h[0] - re, h[1] - re, h[2] - re];
+  const zOff = z0 + sz / 2;
   const vert = (p: number[], idx: number[]): number => {
     const k = idx[0] + n0 * (idx[1] + n1 * idx[2]);
-    let i = lookup.get(k);
-    if (i === undefined) {
+    let i = lookup[k];
+    if (i < 0) {
       // Project the cube-surface point onto the rounded box.
-      const q = p.map((v, ax) => Math.max(-(h[ax] - re), Math.min(h[ax] - re, v)));
-      const d = p.map((v, ax) => v - q[ax]);
-      const l = Math.hypot(d[0], d[1], d[2]);
-      const o = l > 1e-12 ? q.map((v, ax) => v + (d[ax] / l) * re) : p;
-      i = part.addVert(o[0], o[1], o[2] + z0 + sz / 2);
-      lookup.set(k, i);
+      const q0 = Math.max(-c0, Math.min(c0, p[0]));
+      const q1 = Math.max(-c1, Math.min(c1, p[1]));
+      const q2 = Math.max(-c2, Math.min(c2, p[2]));
+      const d0 = p[0] - q0, d1 = p[1] - q1, d2 = p[2] - q2;
+      const l = Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
+      i = l > 1e-12
+        ? part.addVert(q0 + (d0 / l) * re, q1 + (d1 / l) * re, q2 + (d2 / l) * re + zOff)
+        : part.addVert(p[0], p[1], p[2] + zOff);
+      lookup[k] = i;
     }
     return i;
   };

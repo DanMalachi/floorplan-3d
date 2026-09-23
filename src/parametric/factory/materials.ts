@@ -20,6 +20,9 @@ export interface FactoryMaterialDef {
 export const FACTORY_MATERIALS = {
   "rough-linen": { tex: "rough-linen", normalScale: 1.8, specular: 0.25 },
   "oak-veneer-01": { tex: "oak-veneer-01", normalScale: 1.0, specular: 0.4 },
+  "curly-teddy-natural": { tex: "curly-teddy-natural", normalScale: 1.6, specular: 0.2 },
+  // Same hessian tiles, each script's own normal strength.
+  "hessian-380-plain": { tex: "hessian-380", normalScale: 2.8, specular: 0.2 },
 } satisfies Record<string, FactoryMaterialDef>;
 
 export type FactoryMaterialId = keyof typeof FACTORY_MATERIALS;

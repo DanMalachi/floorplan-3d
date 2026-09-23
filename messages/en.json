@@ -1144,6 +1144,12 @@
         "on": "On",
         "off": "Off"
       },
+      "sofaFlareArm": {
+        "label": "Flare-arm sofa"
+      },
+      "sofaPlainBlock": {
+        "label": "Plain block sofa"
+      },
       "sofaBlockArm": {
         "label": "Block-arm sofa"
       }

@@ -51,6 +51,8 @@ const HANDLE_LABEL_KEY: Record<ParametricSpec["handle"], string> = {
 // photo finish, not the finish itself. Extend alongside new finish ids.
 const FINISH_HEX: Record<string, string> = {
   "factory-rough-linen": "#8a8f96",
+  "factory-curly-teddy": "#f1eadb",
+  "factory-hessian": "#d8cab2",
   painted: "#f4f4f2",
   "painted-white": "#f4f4f2",
   "painted-charcoal": "#3a3d40",

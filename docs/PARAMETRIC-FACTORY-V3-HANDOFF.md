@@ -10,6 +10,12 @@ Written 2026-09-23 at the end of the session that built V3-0 and V3-1. The spec 
 - `cb82a88` V3-0: parity fixtures for all 7 pieces + WebP texture tiles
   (`public/furniture/factory/tex/`, `manifest.json`).
 - `c699ce6` V3-1: `sofaBlockArm` pilot. **Dan approved it 2026-09-23 ("works great").**
+- `0ca8f03` V3-2 prep: real min/max fixtures for the 5 sofas (ranges Dan-approved
+  2026-09-23 — see the table's per-piece limits in each generator's `dimLimits`).
+- V3-2a: `sofaFlareArm` + `sofaPlainBlock` (one shared builder,
+  `src/parametric/factory/sofaFlareArm.ts`) — parity passes at min/default/max, Blender
+  side-by-side renders match, editor-verified (dock card, inspector, live resize + recolour).
+  **Remaining for V3-2: tufted-sage, beige-leather, grey-chaise.**
 - Out of scope, do not touch: the oak platform bed (Codex-made, not approved), the Codex
   WIP generic `bed.ts` in the dev-main worktree.
 
@@ -20,7 +26,7 @@ Written 2026-09-23 at the end of the session that built V3-0 and V3-1. The spec 
 - Controls = the script's CLI: width/depth/height + colour (chaise also chaise length +
   side). Counts the script keeps fixed stay fixed.
 
-## FIRST: ask Dan for the 5 sofas' size ranges
+## DONE: the 5 sofas' size ranges (approved 2026-09-23; kept for the method)
 None were ever recorded. Proposal already put to him (unanswered): same proportional range
 as block-arm — width −30%/+33%, depth −15%/+17%, height −12%/+7% of each default — then
 build every sofa at those extremes in Blender and show renders BEFORE porting (block-arm's
