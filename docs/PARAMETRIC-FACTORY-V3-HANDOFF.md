@@ -24,6 +24,26 @@ Written 2026-09-23 at the end of the session that built V3-0 and V3-1. The spec 
 - Out of scope, do not touch: the oak platform bed (Codex-made, not approved), the Codex
   WIP generic `bed.ts` in the dev-main worktree.
 
+## NEXT SESSION: V3-3 Astra bed — start here
+V3-2 is DONE and approved (Dan 2026-09-23, after the chaise-length fix ). Tree is clean.
+
+**Dan's bed brief (2026-09-23, his words: "smallest double size should be 140X190, biggest can be
+king or even bigger. i want both of them to come in single bed size with one pillow starting at
+90X190, 120+ should get two pillows"):**
+- Sizes are MATTRESS sizes (W × L, cm). Range: single 90×190 up to king or bigger. 140×190 is the
+  smallest double. Inspector dims stay the OUTER footprint: frame = mattress + the script's own
+  margins. Measure them from the script (default frame 1.75×2.18 around a 1.60×2.00 mattress).
+- Pillows: mattress width < 120 → ONE centred pillow; ≥ 120 → two. Count is a function of width,
+  not a separate control.
+- **Ask Dan first (ambiguous):** "both of them" — the Astra bed plus which other bed? The oak
+  platform bed was ruled OUT earlier (Codex-made, unapproved). Don't touch it until he says so.
+- Also propose the max (e.g. 200×200 king / 200×220) and show renders before porting.
+- Single size + one pillow is NEW geometry the approved script never built: headboard panels and
+  duvet drape at 0.90 m need a look. Build a Blender variant of the script (copy, never edit the
+  approved original) at 90×190 / 140×190 / 160×200 / max, render them for Dan, THEN port.
+- Then regenerate the bed min/max fixtures: today they are 1.75×1.95 and 2.05×2.18 placeholders.
+  If one pillow changes the part list, add a fixture set on each side of the 120 switch.
+
 ## Decisions already made (don't re-ask)
 - Port each Blender script line for line to TS; no GLB deformation.
 - Dock shows ONLY the live card (`replacesAsset` + `thumbnail` on the GeneratorDef).
