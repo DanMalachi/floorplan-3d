@@ -816,4 +816,9 @@ profile, close-up), then a Playwright pass in the editor.
 - V3-1 `sofaBlockArm` pilot — W 1.50–2.80, D 0.80–1.10, H 0.74–0.90 (height capped at 0.90:
   above it the script's arm clamp leaves the arms low against a tall back). Approved by
   Dan 2026-09-23 (`c699ce6`). Remaining work: `docs/PARAMETRIC-FACTORY-V3-HANDOFF.md`.
-- V3-2 remaining 5 sofas, V3-3 Astra bed — after pilot approval.
+- V3-2 remaining 5 sofas — ported (`30b20f1`…`e518862`), awaiting Dan's review; the
+  chaise's width range and depth/chaise-length mapping are provisional until he rules.
+  The parity test compares triangles with the Blender build AT THE SAME SIZE (leather
+  stitches follow the size). Tone (the scripts' vertex-colour noise) runs in the vertex
+  shader (`ToneMaterial`), not on the CPU.
+- V3-3 Astra bed — next, alone.

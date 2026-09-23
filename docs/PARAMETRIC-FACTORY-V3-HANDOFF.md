@@ -12,10 +12,16 @@ Written 2026-09-23 at the end of the session that built V3-0 and V3-1. The spec 
 - `c699ce6` V3-1: `sofaBlockArm` pilot. **Dan approved it 2026-09-23 ("works great").**
 - `0ca8f03` V3-2 prep: real min/max fixtures for the 5 sofas (ranges Dan-approved
   2026-09-23 — see the table's per-piece limits in each generator's `dimLimits`).
-- V3-2a: `sofaFlareArm` + `sofaPlainBlock` (one shared builder,
-  `src/parametric/factory/sofaFlareArm.ts`) — parity passes at min/default/max, Blender
-  side-by-side renders match, editor-verified (dock card, inspector, live resize + recolour).
-  **Remaining for V3-2: tufted-sage, beige-leather, grey-chaise.**
+- V3-2 — all 5 sofas ported, every one: parity at min/default/max, Blender side-by-side
+  renders match, editor-verified (dock card, inspector, live resize + recolour).
+  `30b20f1` flare-arm + plain-block (one shared builder) · `d466c94` tufted velvet ·
+  `82049f6` leather (+ perf: GPU ToneMaterial, lazy raycaster, indexed finish) ·
+  `e518862` chaise sectional (CPython-exact button jitter via `pyRandom`).
+  **Waiting on Dan:** review of all 5, and two chaise calls — (1) width range: the
+  approved default is 2.85 but `0ca8f03` proposed a 2.30–2.70 cap (code ships 2.30–2.85
+  provisionally); (2) inspector Depth = whole footprint (run + chaise) with chaise length
+  as a cm stepper and run depth clamped 0.80–1.10 — provisional, his call.
+  **Next: V3-3 Astra bed alone** (ask Dan its W/D range first — see table).
 - Out of scope, do not touch: the oak platform bed (Codex-made, not approved), the Codex
   WIP generic `bed.ts` in the dev-main worktree.
 
