@@ -24,6 +24,7 @@ import { wallClockGenerator } from "./wallClock";
 import { sofaBlockArmGenerator } from "./factory/sofaBlockArm";
 import { sofaFlareArmGenerator, sofaPlainBlockGenerator } from "./factory/sofaFlareArm";
 import { sofaTuftedSageGenerator } from "./factory/sofaTuftedSage";
+import { sofaBeigeLeatherGenerator } from "./factory/sofaBeigeLeather";
 
 const ALL: GeneratorDef[] = [
   wardrobeGenerator,
@@ -51,6 +52,7 @@ const ALL: GeneratorDef[] = [
   sofaFlareArmGenerator,
   sofaPlainBlockGenerator,
   sofaTuftedSageGenerator,
+  sofaBeigeLeatherGenerator,
 ];
 
 export const GENERATORS: Record<ParametricSpec["generator"], GeneratorDef> = Object.fromEntries(

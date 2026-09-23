@@ -56,11 +56,11 @@ const PORTS: { generator: ParametricSpec["generator"]; slug: string; sets: strin
   { generator: "sofaFlareArm", slug: "flare-arm-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaPlainBlock", slug: "plain-block-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaTuftedSage", slug: "tufted-sage-sofa", sets: ["min", "default", "max"] },
+  { generator: "sofaBeigeLeather", slug: "beige-leather-sofa", sets: ["min", "default", "max"] },
 ];
 
 for (const port of PORTS) {
   const g = GENERATORS[port.generator];
-  const shipped = load(port.slug, "default");
   for (const set of port.sets) {
     const fx = load(port.slug, set);
     console.log(`\n${port.generator} vs ${port.slug} @ ${set} (${fx.args.width} × ${fx.args.depth}${fx.args.height ? ` × ${fx.args.height}` : ""})`);
@@ -93,7 +93,10 @@ for (const port of PORTS) {
     check(`every part within ${TOL * 1000}mm`, off.length === 0, off.map((r) => `${r.name} ${(r.e * 1000).toFixed(1)}mm`).join(", "));
 
     const n = tris(group);
-    check(`triangles ≤ shipped GLB (${shipped.triangles})`, n <= shipped.triangles, `${n}`);
+    // Against the Blender build at THIS size: the shipped GLB is the default
+    // set, and a piece whose detail follows the size (leather stitches at a
+    // fixed pitch) legitimately carries more of it when it is bigger.
+    check(`triangles ≤ Blender build (${fx.triangles})`, n <= fx.triangles, `${n}`);
     // First build pays JIT warm-up. One warm sample is at the mercy of GC
     // (the same build measured 34-60ms run to run), so gate the median of 5.
     const warm = Array.from({ length: 5 }, () => {

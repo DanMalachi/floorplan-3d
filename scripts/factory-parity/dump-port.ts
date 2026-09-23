@@ -17,7 +17,8 @@ group.updateMatrixWorld(true);
 const parts: unknown[] = [];
 group.traverse((o) => {
   if (!(o instanceof THREE.Mesh)) return;
-  const geo = o.geometry as THREE.BufferGeometry;
+  // render-compare.py reads flat triangle soup.
+  const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry) as THREE.BufferGeometry;
   parts.push({
     name: o.name,
     material: (o.material as THREE.Material).name,

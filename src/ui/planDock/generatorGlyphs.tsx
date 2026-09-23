@@ -936,6 +936,7 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   sofaFlareArm: SofaGlyph,
   sofaPlainBlock: SofaGlyph,
   sofaTuftedSage: SofaGlyph,
+  sofaBeigeLeather: SofaGlyph,
   sink: SinkGlyph,
   cooktop: CooktopGlyph,
   toilet: ToiletGlyph,

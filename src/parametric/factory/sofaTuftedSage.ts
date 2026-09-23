@@ -163,7 +163,10 @@ export function buildTuftedSageSofa(W: number, D: number, H: number, color: stri
   const group = finish(parts);
   // Grey pile × colour, default colour included (see sofaBlockArm.ts).
   group.traverse((o) => {
-    if (o instanceof THREE.Mesh && o.material === fab) o.userData.tintColor = color;
+    if (o instanceof THREE.Mesh && o.material === fab) {
+      o.userData.tintColor = color;
+      o.userData.keepSheen = true; // the baked GLB's pale sheen, not the tint
+    }
   });
   return group;
 }

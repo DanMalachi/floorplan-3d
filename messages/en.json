@@ -1153,6 +1153,9 @@
       "sofaTuftedSage": {
         "label": "Tufted velvet sofa"
       },
+      "sofaBeigeLeather": {
+        "label": "Leather sofa"
+      },
       "sofaBlockArm": {
         "label": "Block-arm sofa"
       }

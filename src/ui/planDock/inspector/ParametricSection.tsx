@@ -54,6 +54,7 @@ const FINISH_HEX: Record<string, string> = {
   "factory-curly-teddy": "#f1eadb",
   "factory-hessian": "#d8cab2",
   "factory-velour": "#9ca993",
+  "factory-leather": "#cdb794",
   painted: "#f4f4f2",
   "painted-white": "#f4f4f2",
   "painted-charcoal": "#3a3d40",

@@ -52,6 +52,7 @@ const COLORABLE = new Set([
   "factory-curly-teddy",
   "factory-hessian",
   "factory-velour",
+  "factory-leather",
 ]);
 
 /** Photo-wood and counter-oak finishes ignore the color wheel — they keep

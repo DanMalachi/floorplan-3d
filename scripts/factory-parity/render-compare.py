@@ -46,6 +46,11 @@ def import_port(p):
             uvl.data[li].uv = (uv[v * 2], uv[v * 2 + 1])
         me.normals_split_custom_set_from_vertices([(nor[i * 3], -nor[i * 3 + 2], nor[i * 3 + 1]) for i in range(n)])
         me.shade_smooth()
+        # Baked materials that multiply a 'Col' tone attribute (leather, chaise)
+        # would read black without one; the port computes tone in its shader.
+        ca = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+        for d in ca.data:
+            d.color = (1.0, 1.0, 1.0, 1.0)
         ob = bpy.data.objects.new(part["name"], me)
         scene.collection.objects.link(ob)
         ob["port_material"] = part["material"]

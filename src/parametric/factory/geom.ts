@@ -20,6 +20,10 @@ export class Part {
   tris: number[] = [];
   /** Per triangle corner, aligned with `tris`. */
   uv: number[] = [];
+  /** Per corner: the axis `fabricUV` projected it on. A corner's UV is a
+   *  function of (vertex, axis), so `finish` can share a vertex between every
+   *  corner with the same pair — identical shading, a sixth of the vertices. */
+  uvAxis: Uint8Array | null = null;
   smooth = true;
   material: THREE.Material;
 
@@ -91,12 +95,25 @@ export class Part {
     return n;
   }
 
+  /** `randomise_uv`: rotate + offset this part's UVs at random so identical
+   *  grain never lines up between parts. */
+  randomiseUV(random: () => number): void {
+    const th = random() * 6.283, ox = random(), oy = random();
+    const c = Math.cos(th), sn = Math.sin(th), U = this.uv;
+    for (let i = 0; i < U.length; i += 2) {
+      const x = U[i], y = U[i + 1];
+      U[i] = c * x - sn * y + ox;
+      U[i + 1] = sn * x + c * y + oy;
+    }
+  }
+
   /** `fabric_uv`: world-scale planar UVs (metres / tile) per face, projected
    *  on the face's dominant axis. Call it where the script does — BEFORE any
    *  puff/place — so the weave keeps its physical scale on every size. */
   fabricUV(tile: number): void {
     const T = this.tris, P = this.pos;
     const uv = (this.uv = new Array(T.length * 2));
+    const ax = (this.uvAxis = new Uint8Array(T.length));
     // Quads were pushed as consecutive triangle pairs (a,b,c, a,c,d); a quad's
     // diagonal (a-c) is shared, so (c-a)x(d-b) is its normal — project both
     // halves on that axis so a quad never tears along its own diagonal.
@@ -109,6 +126,7 @@ export class Part {
       const p = dom === 0 ? 1 : 0, q = dom === 2 ? 1 : 2;
       for (let k = 0; k < 6; k++) {
         const v = T[t + k] * 3;
+        ax[t + k] = dom;
         uv[(t + k) * 2] = P[v + p] / tile;
         uv[(t + k) * 2 + 1] = P[v + q] / tile;
       }
@@ -130,10 +148,15 @@ export function roundedBox(
 
 /** The rounded grid behind `roundedBox`, with its own flat cell count per
  *  axis — `tufted_slab`'s bevel(seg) + per-axis `subdivide_edges(cuts)` is
- *  band = seg/2 and cells = cuts+1 (the short bevel edges are never cut). */
+ *  band = seg/2 and cells = cuts+1 (the short bevel edges are never cut).
+ *  `cuts[axis]` replaces that axis's uniform cells with explicit loop
+ *  positions (centred frame) — `cushion_mesh`'s bisect planes. A cut inside
+ *  a bevel lands at its true height on the arc; one past the arc's 45° point
+ *  belongs to the neighbouring face and is dropped. */
 export function roundedGrid(
   name: string, sx: number, sy: number, sz: number, z0: number,
   r: number, band: number, cells: [number, number, number], mat: THREE.Material, tile: number,
+  cuts?: (number[] | undefined)[],
 ): Part {
   const part = new Part(name, mat);
   const h = [sx / 2, sy / 2, sz / 2];
@@ -141,16 +164,23 @@ export function roundedGrid(
   const re = Math.min(r, ...h);
   // Parameter samples along one axis of half extent `he`: [-he, he] with the
   // rounded bands [he-r, he] sampled `band` times each.
-  const samples = (he: number, flat: number): number[] => {
+  const samples = (he: number, flat: number, cut?: number[]): number[] => {
     const rr = re;
     const inner = he - rr;
     const out: number[] = [];
     for (let i = 0; i <= band; i++) out.push(-he + (rr * i) / band);
-    for (let i = 1; i < flat; i++) out.push(-inner + (2 * inner * i) / flat);
+    if (cut) {
+      for (const c of cut) {
+        const t = Math.abs(c) - inner;
+        if (t <= 0) out.push(c);
+        else if (t < rr * Math.SQRT1_2) out.push(Math.sign(c) * (inner + (t * rr) / Math.sqrt(rr * rr - t * t)));
+      }
+    } else for (let i = 1; i < flat; i++) out.push(-inner + (2 * inner * i) / flat);
     for (let i = 0; i <= band; i++) out.push(inner + (rr * i) / band);
-    return out.filter((v, i, arr) => i === 0 || v - arr[i - 1] > 1e-9);
+    // bisect_plane(dist=1e-5): a cut on an existing loop adds nothing.
+    return out.sort((a, b) => a - b).filter((v, i, arr) => i === 0 || v - arr[i - 1] > 1e-5);
   };
-  const S = h.map((he, ax) => samples(he, cells[ax]));
+  const S = h.map((he, ax) => samples(he, cells[ax], cuts?.[ax]));
   // Faces share their border samples exactly (same arrays), so a vertex is
   // identified by its sample INDEX on each axis — cheap to key, no rounding.
   const [n0, n1, n2] = [S[0].length, S[1].length, S[2].length];
@@ -308,15 +338,14 @@ export function smoothstep(t: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Turned leg: bmesh `create_cone(segments=28, radius1=bot, radius2=top)`
+/** Turned leg: bmesh `create_cone(segments=N, radius1=bot, radius2=top)`
  *  stretched to height h, its foot splayed out by (sx·splay, sy·splay·ky).
  *  Smooth sides, n-gon caps fan-triangulated as the glTF exporter does. */
 export function coneLeg(
   name: string, x: number, y: number, h: number, bot: number, top: number,
-  splay: number, ky: number, sx: number, sy: number, mat: THREE.Material, tile: number,
+  splay: number, ky: number, sx: number, sy: number, mat: THREE.Material, tile: number, N = 28,
 ): Part {
   const p = new Part(name, mat);
-  const N = 28;
   const ring = (r: number, t: number) =>
     Array.from({ length: N }, (_, i) => p.addVert(
       r * Math.cos((2 * Math.PI * i) / N) + sx * splay * (1 - t) + x,
@@ -388,6 +417,123 @@ export function member(
   return p;
 }
 
+export interface Hit { p: [number, number, number]; n: [number, number, number] }
+
+/** `surface(ob).ray_cast` for HORIZONTAL rays (every stitch row in the
+ *  scripts is cast at a fixed height). Only the triangles crossing a ray's
+ *  height matter, so each height is indexed on first use (a row reuses it):
+ *  those triangles binned into 3cm plan cells; a ray walks the cells along
+ *  its path, nearest first, and stops once no later cell can hold a closer
+ *  hit. Face normal on hit, as BVHTree returns. */
+export class HorizontalRaycaster {
+  private levels = new Map<number, Map<number, number[]>>();
+  private stamp: Uint32Array;
+  private epoch = 0;
+  private static readonly DXY = 0.03;
+
+  constructor(private part: Part) {
+    this.stamp = new Uint32Array(part.tris.length / 3);
+  }
+
+  private static key(x: number, y: number): number {
+    return (x + 1024) * 2048 + (y + 1024);
+  }
+
+  private level(oz: number): Map<number, number[]> {
+    let cells = this.levels.get(oz);
+    if (cells) return cells;
+    cells = new Map();
+    this.levels.set(oz, cells);
+    const P = this.part.pos, T = this.part.tris, { DXY } = HorizontalRaycaster;
+    for (let t = 0; t < T.length; t += 3) {
+      const a = T[t] * 3, b = T[t + 1] * 3, c = T[t + 2] * 3;
+      if (Math.min(P[a + 2], P[b + 2], P[c + 2]) > oz || Math.max(P[a + 2], P[b + 2], P[c + 2]) < oz) continue;
+      const x0 = Math.floor(Math.min(P[a], P[b], P[c]) / DXY), x1 = Math.floor(Math.max(P[a], P[b], P[c]) / DXY);
+      const y0 = Math.floor(Math.min(P[a + 1], P[b + 1], P[c + 1]) / DXY), y1 = Math.floor(Math.max(P[a + 1], P[b + 1], P[c + 1]) / DXY);
+      for (let x = x0; x <= x1; x++)
+        for (let y = y0; y <= y1; y++) {
+          const k = HorizontalRaycaster.key(x, y);
+          let bin = cells.get(k);
+          if (!bin) cells.set(k, (bin = []));
+          bin.push(t);
+        }
+    }
+    return cells;
+  }
+
+  /** Nearest hit of the ray (ox, oy, oz) + d·(dx, dy, 0), |d| ≤ maxDist. */
+  cast(ox: number, oy: number, oz: number, dx: number, dy: number, maxDist = 2): Hit | null {
+    const P = this.part.pos, T = this.part.tris, { DXY } = HorizontalRaycaster;
+    const cells = this.level(oz);
+    const epoch = ++this.epoch;
+    let best = Infinity, hit: Hit | null = null;
+    const step = DXY / 2;
+    let lastKey = NaN;
+    for (let d = 0; d <= maxDist + step; d += step) {
+      // A hit closer than the cells still ahead is final.
+      if (best < d - DXY * 1.5) break;
+      const k = HorizontalRaycaster.key(Math.floor((ox + dx * d) / DXY), Math.floor((oy + dy * d) / DXY));
+      if (k === lastKey) continue;
+      lastKey = k;
+      const bin = cells.get(k);
+      if (!bin) continue;
+      for (const t of bin) {
+        if (this.stamp[t / 3] === epoch) continue;
+        this.stamp[t / 3] = epoch;
+        const a = T[t] * 3, b = T[t + 1] * 3, c = T[t + 2] * 3;
+        // Möller–Trumbore with direction (dx, dy, 0).
+        const e1x = P[b] - P[a], e1y = P[b + 1] - P[a + 1], e1z = P[b + 2] - P[a + 2];
+        const e2x = P[c] - P[a], e2y = P[c + 1] - P[a + 1], e2z = P[c + 2] - P[a + 2];
+        const px = dy * e2z, py = -dx * e2z, pz = dx * e2y - dy * e2x;
+        const det = e1x * px + e1y * py + e1z * pz;
+        if (Math.abs(det) < 1e-14) continue;
+        const inv = 1 / det;
+        const sx = ox - P[a], sy = oy - P[a + 1], sz = oz - P[a + 2];
+        const u = (sx * px + sy * py + sz * pz) * inv;
+        if (u < 0 || u > 1) continue;
+        const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x;
+        const v = (dx * qx + dy * qy) * inv;
+        if (v < 0 || u + v > 1) continue;
+        const dist = (e2x * qx + e2y * qy + e2z * qz) * inv;
+        if (dist <= 0 || dist >= best) continue;
+        best = dist;
+        const nx = e1y * e2z - e1z * e2y, ny = e1z * e2x - e1x * e2z, nz = e1x * e2y - e1y * e2x;
+        const l = Math.hypot(nx, ny, nz) || 1;
+        hit = { p: [ox + dx * dist, oy + dy * dist, oz], n: [nx / l, ny / l, nz / l] };
+      }
+    }
+    return hit;
+  }
+}
+
+/** `stitch_mesh`: one tiny lens per stitch (axis along the row, half sunk in
+ *  the surface), 8 triangles each. rows = hits in path order. */
+export function stitchMesh(name: string, rows: Hit[][], mat: THREE.Material, L = 0.0085, w = 0.0021, h = 0.0018): Part {
+  const part = new Part(name, mat);
+  for (const row of rows) {
+    const m = row.length;
+    row.forEach(({ p, n }, i) => {
+      const a = row[Math.max(i - 1, 0)].p, b = row[Math.min(i + 1, m - 1)].p;
+      let tx = b[0] - a[0], ty = b[1] - a[1], tz = b[2] - a[2];
+      const dn = tx * n[0] + ty * n[1] + tz * n[2];
+      tx -= n[0] * dn; ty -= n[1] * dn; tz -= n[2] * dn;
+      const tl = Math.hypot(tx, ty, tz);
+      if (tl < 1e-6) return;
+      tx /= tl; ty /= tl; tz /= tl;
+      const s = [n[1] * tz - n[2] * ty, n[2] * tx - n[0] * tz, n[0] * ty - n[1] * tx];
+      const c = [p[0] - n[0] * 0.0004, p[1] - n[1] * 0.0004, p[2] - n[2] * 0.0004];
+      const at = (k: number[], f: number) => part.addVert(c[0] + k[0] * f, c[1] + k[1] * f, c[2] + k[2] * f);
+      const ring = [at(s, w), at(n, h), at(s, -w), at(n, -h * 0.4)];
+      const t0 = at([tx, ty, tz], -L / 2), t1 = at([tx, ty, tz], L / 2);
+      for (let j = 0; j < 4; j++) {
+        part.tris.push(t0, ring[(j + 1) % 4], ring[j]);
+        part.tris.push(t1, ring[j], ring[(j + 1) % 4]);
+      }
+    });
+  }
+  return part;
+}
+
 /** Blender Z-up / -Y front  →  app Y-up / +Z front (the glTF exporter's map). */
 const TO_APP = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
@@ -407,11 +553,41 @@ export function finish(parts: Part[]): THREE.Group {
     p.transform(shift);
     p.transform(TO_APP);
     const vn = p.smooth ? p.vertexNormals() : null;
+    const P = p.pos, T = p.tris, U = p.uv;
+    const g = new THREE.BufferGeometry();
+    if (vn && (p.uvAxis || U.length === 0)) {
+      // Indexed: one output vertex per (vertex, UV projection axis).
+      const A = p.uvAxis;
+      const slot = new Int32Array((P.length / 3) * 3).fill(-1);
+      const index = new Uint32Array(T.length);
+      const cap = Math.min(T.length, P.length); // at most one per (vertex, axis) used
+      const pos = new Float32Array(cap * 3), nor = new Float32Array(cap * 3), uv = new Float32Array(cap * 2);
+      let n = 0;
+      for (let c = 0; c < T.length; c++) {
+        const k = T[c] * 3 + (A ? A[c] : 0);
+        let o = slot[k];
+        if (o < 0) {
+          const v = T[c] * 3;
+          o = slot[k] = n++;
+          pos[o * 3] = P[v]; pos[o * 3 + 1] = P[v + 1]; pos[o * 3 + 2] = P[v + 2];
+          nor[o * 3] = vn[v]; nor[o * 3 + 1] = vn[v + 1]; nor[o * 3 + 2] = vn[v + 2];
+          uv[o * 2] = U[c * 2] ?? 0; uv[o * 2 + 1] = U[c * 2 + 1] ?? 0;
+        }
+        index[c] = o;
+      }
+      g.setIndex(new THREE.BufferAttribute(index, 1));
+      g.setAttribute("position", new THREE.BufferAttribute(pos.slice(0, n * 3), 3));
+      g.setAttribute("normal", new THREE.BufferAttribute(nor.slice(0, n * 3), 3));
+      g.setAttribute("uv", new THREE.BufferAttribute(uv.slice(0, n * 2), 2));
+      const mesh = new THREE.Mesh(g, p.material);
+      mesh.name = p.name;
+      group.add(mesh);
+      continue;
+    }
     const count = p.tris.length;
     const pos = new Float32Array(count * 3);
     const nor = new Float32Array(count * 3);
     const uv = new Float32Array(count * 2);
-    const P = p.pos, T = p.tris, U = p.uv;
     for (let c = 0; c < count; c++) {
       const v = T[c] * 3, o = c * 3;
       pos[o] = P[v]; pos[o + 1] = P[v + 1]; pos[o + 2] = P[v + 2];
@@ -419,7 +595,6 @@ export function finish(parts: Part[]): THREE.Group {
       uv[c * 2] = U[c * 2] ?? 0;
       uv[c * 2 + 1] = U[c * 2 + 1] ?? 0;
     }
-    const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     if (vn) g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));

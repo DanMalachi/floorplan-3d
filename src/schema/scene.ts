@@ -257,7 +257,8 @@ export interface ParametricSpec {
     | "sofaBlockArm"
     | "sofaFlareArm"
     | "sofaPlainBlock"
-    | "sofaTuftedSage";
+    | "sofaTuftedSage"
+    | "sofaBeigeLeather";
   /** Outer bounding dims in meters: w along local X, d along local Z, h up. */
   dims: { w: number; d: number; h: number };
   /** Generator-specific integer counts, e.g. { doors: 3, drawers: 2 }.
