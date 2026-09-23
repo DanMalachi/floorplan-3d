@@ -124,15 +124,24 @@ export function roundedBox(
   name: string, sx: number, sy: number, sz: number, z0: number,
   r: number, sub: number, mat: THREE.Material, tile: number, seg = 4,
 ): Part {
+  const band = Math.max(1, Math.round((seg * (sub + 1)) / 2));
+  return roundedGrid(name, sx, sy, sz, z0, r, band, [sub + 1, sub + 1, sub + 1], mat, tile);
+}
+
+/** The rounded grid behind `roundedBox`, with its own flat cell count per
+ *  axis — `tufted_slab`'s bevel(seg) + per-axis `subdivide_edges(cuts)` is
+ *  band = seg/2 and cells = cuts+1 (the short bevel edges are never cut). */
+export function roundedGrid(
+  name: string, sx: number, sy: number, sz: number, z0: number,
+  r: number, band: number, cells: [number, number, number], mat: THREE.Material, tile: number,
+): Part {
   const part = new Part(name, mat);
   const h = [sx / 2, sy / 2, sz / 2];
   // A bevel can't exceed the thinnest half extent.
   const re = Math.min(r, ...h);
-  const flat = sub + 1;
-  const band = Math.max(1, Math.round((seg * (sub + 1)) / 2));
   // Parameter samples along one axis of half extent `he`: [-he, he] with the
   // rounded bands [he-r, he] sampled `band` times each.
-  const samples = (he: number): number[] => {
+  const samples = (he: number, flat: number): number[] => {
     const rr = re;
     const inner = he - rr;
     const out: number[] = [];
@@ -141,7 +150,7 @@ export function roundedBox(
     for (let i = 0; i <= band; i++) out.push(inner + (rr * i) / band);
     return out.filter((v, i, arr) => i === 0 || v - arr[i - 1] > 1e-9);
   };
-  const S = h.map(samples);
+  const S = h.map((he, ax) => samples(he, cells[ax]));
   // Faces share their border samples exactly (same arrays), so a vertex is
   // identified by its sample INDEX on each axis — cheap to key, no rounding.
   const [n0, n1, n2] = [S[0].length, S[1].length, S[2].length];
@@ -292,6 +301,91 @@ export function place(part: Part, x: number, y: number, z: number, rx = 0, bz?: 
     .multiply(new THREE.Matrix4().makeRotationX(rx))
     .multiply(new THREE.Matrix4().makeTranslation(0, 0, -base));
   part.transform(m);
+}
+
+export function smoothstep(t: number): number {
+  t = Math.max(0, Math.min(1, t));
+  return t * t * (3 - 2 * t);
+}
+
+/** Turned leg: bmesh `create_cone(segments=28, radius1=bot, radius2=top)`
+ *  stretched to height h, its foot splayed out by (sx·splay, sy·splay·ky).
+ *  Smooth sides, n-gon caps fan-triangulated as the glTF exporter does. */
+export function coneLeg(
+  name: string, x: number, y: number, h: number, bot: number, top: number,
+  splay: number, ky: number, sx: number, sy: number, mat: THREE.Material, tile: number,
+): Part {
+  const p = new Part(name, mat);
+  const N = 28;
+  const ring = (r: number, t: number) =>
+    Array.from({ length: N }, (_, i) => p.addVert(
+      r * Math.cos((2 * Math.PI * i) / N) + sx * splay * (1 - t) + x,
+      r * Math.sin((2 * Math.PI * i) / N) + sy * splay * ky * (1 - t) + y,
+      t * h,
+    ));
+  const B = ring(bot, 0), T = ring(top, 1);
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    p.quad(B[i], B[j], T[j], T[i]);
+  }
+  // One cap's fan, then the other's: fabricUV reads triangles in pairs.
+  for (let i = 1; i < N - 1; i++) p.tris.push(T[0], T[i], T[i + 1]);
+  for (let i = 1; i < N - 1; i++) p.tris.push(B[0], B[i + 1], B[i]);
+  p.fabricUV(tile);
+  return p;
+}
+
+/** Covered button: `create_uvsphere(u=16, v=10, radius)` squashed to half
+ *  depth along Y, centred on (x, y, z). */
+export function button(name: string, x: number, y: number, z: number, rad: number, mat: THREE.Material, tile: number): Part {
+  const p = new Part(name, mat);
+  const U = 16, V = 10;
+  const top = p.addVert(x, y, z + rad);
+  const rings: number[][] = [];
+  for (let j = 1; j < V; j++) {
+    const th = (Math.PI * j) / V;
+    rings.push(Array.from({ length: U }, (_, i) => {
+      const ph = (2 * Math.PI * i) / U;
+      return p.addVert(x + rad * Math.sin(th) * Math.cos(ph), y + 0.5 * rad * Math.sin(th) * Math.sin(ph), z + rad * Math.cos(th));
+    }));
+  }
+  const bot = p.addVert(x, y, z - rad);
+  // Quads first, then each pole's fan: fabricUV reads triangles in pairs.
+  for (let i = 0; i < U; i++)
+    for (let j = 0; j < V - 2; j++) p.quad(rings[j][i], rings[j + 1][i], rings[j + 1][(i + 1) % U], rings[j][(i + 1) % U]);
+  for (let i = 0; i < U; i++) p.tris.push(top, rings[0][i], rings[0][(i + 1) % U]);
+  for (let i = 0; i < U; i++) p.tris.push(bot, rings[V - 2][(i + 1) % U], rings[V - 2][i]);
+  p.fabricUV(tile);
+  return p;
+}
+
+/** `member()`: a solid timber rail, UVs with V along the grain axis and a
+ *  random offset per member. Its 3-4mm bevel is left out (invisible at room
+ *  scale, and it would cost 5x the triangles), so it is shaded flat. */
+export function member(
+  name: string, cx: number, cy: number, z0: number, sx: number, sy: number, sz: number,
+  grain: 0 | 1 | 2, mat: THREE.Material, tile: number, random: () => number,
+): Part {
+  const p = new Part(name, mat);
+  p.smooth = false;
+  const v = (a: number, b: number, c: number) => p.addVert(cx + (a * sx) / 2, cy + (b * sy) / 2, z0 + ((c + 1) * sz) / 2);
+  const [b0, b1, b2, b3] = [v(-1, -1, -1), v(1, -1, -1), v(1, 1, -1), v(-1, 1, -1)];
+  const [t0, t1, t2, t3] = [v(-1, -1, 1), v(1, -1, 1), v(1, 1, 1), v(-1, 1, 1)];
+  const faces: [number[], number][] = [
+    [[b3, b2, b1, b0], 2], [[t0, t1, t2, t3], 2],
+    [[b0, b1, t1, t0], 1], [[b2, b3, t3, t2], 1],
+    [[b1, b2, t2, t1], 0], [[b3, b0, t0, t3], 0],
+  ];
+  const ou = random(), ov = random();
+  const others = ([0, 1, 2] as const).filter((a) => a !== grain);
+  for (const [[a, b, c, d], n] of faces) {
+    p.quad(a, b, c, d);
+    // Across-grain axis: the face's end grain uses the other two axes;
+    // a long face uses whichever in-plane axis is not the grain.
+    const across = n === grain ? others[1] : others.find((ax) => ax !== n)!;
+    for (const i of [a, b, c, a, c, d]) p.uv.push(p.pos[i * 3 + across] / tile + ou, p.pos[i * 3 + grain] / tile + ov);
+  }
+  return p;
 }
 
 /** Blender Z-up / -Y front  →  app Y-up / +Z front (the glTF exporter's map). */

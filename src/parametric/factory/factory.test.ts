@@ -55,6 +55,7 @@ const PORTS: { generator: ParametricSpec["generator"]; slug: string; sets: strin
   { generator: "sofaBlockArm", slug: "block-arm-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaFlareArm", slug: "flare-arm-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaPlainBlock", slug: "plain-block-sofa", sets: ["min", "default", "max"] },
+  { generator: "sofaTuftedSage", slug: "tufted-sage-sofa", sets: ["min", "default", "max"] },
 ];
 
 for (const port of PORTS) {

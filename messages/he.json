@@ -1150,6 +1150,9 @@
       "sofaPlainBlock": {
         "label": "ספה מרובעת פשוטה"
       },
+      "sofaTuftedSage": {
+        "label": "ספת קטיפה מכופתרת"
+      },
       "sofaBlockArm": {
         "label": "ספה עם ידיות מרובעות"
       }

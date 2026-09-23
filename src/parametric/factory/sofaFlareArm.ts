@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "../types";
-import { Part, finish, piping, place, puff, rng, roundedBox } from "./geom";
+import { Part, coneLeg, finish, piping, place, puff, rng, roundedBox } from "./geom";
 import { factoryMaterial, type FactoryMaterialId } from "./materials";
 
 // Flare-arm and plain-block 3-seat sofas — live ports of the approved factory
@@ -83,38 +83,22 @@ const PLAIN_BLOCK: FlareArmStyle = {
 function leg(st: FlareArmStyle, name: string, x: number, y: number, mat: THREE.Material, sx: number, sy: number): Part {
   const { kind, top, bot, splay } = st.leg;
   const h = st.LEG_H + 0.012;
+  if (kind === "cone") return coneLeg(name, x, y, h, bot, top, splay, 0.7, sx, sy, mat, OAK_TILE);
   const p = new Part(name, mat);
   const at = (cx: number, cy: number, t: number): number =>
     p.addVert(cx + sx * splay * (1 - t) + x, cy + sy * splay * 0.7 * (1 - t) + y, t * h);
-  if (kind === "block") {
-    p.smooth = false;
-    const ring = (t: number) => {
-      const s = bot + (top - bot) * t;
-      return [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]].map(([cx, cy]) => at(cx * s, cy * s, t));
-    };
-    const [b0, b1, b2, b3] = ring(0), [t0, t1, t2, t3] = ring(1);
-    p.quad(b3, b2, b1, b0);
-    p.quad(t0, t1, t2, t3);
-    p.quad(b0, b1, t1, t0);
-    p.quad(b1, b2, t2, t1);
-    p.quad(b2, b3, t3, t2);
-    p.quad(b3, b0, t0, t3);
-  } else {
-    // bmesh create_cone(segments=28, radius1=bot, radius2=top): smooth sides,
-    // n-gon caps (fan-triangulated, as the glTF exporter does).
-    const N = 28;
-    const ring = (r: number, t: number) =>
-      Array.from({ length: N }, (_, i) => at(r * Math.cos((2 * Math.PI * i) / N), r * Math.sin((2 * Math.PI * i) / N), t));
-    const B = ring(bot, 0), T = ring(top, 1);
-    for (let i = 0; i < N; i++) {
-      const j = (i + 1) % N;
-      p.quad(B[i], B[j], T[j], T[i]);
-    }
-    for (let i = 1; i < N - 1; i++) {
-      p.tris.push(T[0], T[i], T[i + 1]);
-      p.tris.push(B[0], B[i + 1], B[i]);
-    }
-  }
+  p.smooth = false;
+  const ring = (t: number) => {
+    const s = bot + (top - bot) * t;
+    return [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]].map(([cx, cy]) => at(cx * s, cy * s, t));
+  };
+  const [b0, b1, b2, b3] = ring(0), [t0, t1, t2, t3] = ring(1);
+  p.quad(b3, b2, b1, b0);
+  p.quad(t0, t1, t2, t3);
+  p.quad(b0, b1, t1, t0);
+  p.quad(b1, b2, t2, t1);
+  p.quad(b2, b3, t3, t2);
+  p.quad(b3, b0, t0, t3);
   p.fabricUV(OAK_TILE);
   return p;
 }

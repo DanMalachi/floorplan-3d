@@ -15,6 +15,10 @@ export interface FactoryMaterialDef {
   normalScale: number;
   /** Blender "Specular IOR Level" (0.5 = the glTF default F0 of 0.04). */
   specular: number;
+  /** `pile_sheen`: the baked GLBs carry KHR_materials_sheen (colour +
+   *  roughness; the exporter drops Blender's weight, so three loads it at
+   *  sheen 1 — match what the app showed when the piece was approved). */
+  sheen?: { color: [number, number, number]; roughness: number };
 }
 
 export const FACTORY_MATERIALS = {
@@ -23,6 +27,10 @@ export const FACTORY_MATERIALS = {
   "curly-teddy-natural": { tex: "curly-teddy-natural", normalScale: 1.6, specular: 0.2 },
   // Same hessian tiles, each script's own normal strength.
   "hessian-380-plain": { tex: "hessian-380", normalScale: 2.8, specular: 0.2 },
+  "velour-velvet": {
+    tex: "velour-velvet", normalScale: 1.5, specular: 0.12,
+    sheen: { color: [0.94, 1, 0.94], roughness: 0.42 },
+  },
 } satisfies Record<string, FactoryMaterialDef>;
 
 export type FactoryMaterialId = keyof typeof FACTORY_MATERIALS;
@@ -59,6 +67,11 @@ export function factoryMaterial(id: FactoryMaterialId): THREE.MeshPhysicalMateri
   m.normalScale.set(def.normalScale, def.normalScale);
   // Blender's level 0.5 is F0 0.04; three's specularIntensity scales that F0.
   m.specularIntensity = def.specular / 0.5;
+  if (def.sheen) {
+    m.sheen = 1;
+    m.sheenColor.setRGB(...def.sheen.color, THREE.LinearSRGBColorSpace); // glTF factors are linear
+    m.sheenRoughness = def.sheen.roughness;
+  }
   m.name = id;
   cache.set(id, m);
   return m;

@@ -1150,6 +1150,9 @@
       "sofaPlainBlock": {
         "label": "Plain block sofa"
       },
+      "sofaTuftedSage": {
+        "label": "Tufted velvet sofa"
+      },
       "sofaBlockArm": {
         "label": "Block-arm sofa"
       }
