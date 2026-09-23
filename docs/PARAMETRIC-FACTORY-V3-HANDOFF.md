@@ -25,7 +25,7 @@ Written 2026-09-23 at the end of the session that built V3-0 and V3-1. The spec 
   WIP generic `bed.ts` in the dev-main worktree.
 
 ## NEXT SESSION: V3-3 Astra bed — start here
-V3-2 is DONE and approved (Dan 2026-09-23, after the chaise-length fix ). Tree is clean.
+V3-2 is DONE and approved (Dan 2026-09-23, after the chaise-length fix `e72e202`). Tree is clean.
 
 **Dan's bed brief (2026-09-23, his words: "smallest double size should be 140X190, biggest can be
 king or even bigger. i want both of them to come in single bed size with one pillow starting at
