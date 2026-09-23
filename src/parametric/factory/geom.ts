@@ -246,6 +246,48 @@ export function rng(seed: number): () => number {
   };
 }
 
+/** CPython's `random.Random(seed).random()` for a non-negative int seed <
+ *  2^32 — MT19937 with init_by_array, 53-bit doubles. Where a script's
+ *  randomness decides WHERE geometry goes (per-button jitter), a stand-in
+ *  generator moves parts by centimetres; this reproduces it exactly. */
+export function pyRandom(seed: number): () => number {
+  const N = 624, M = 397;
+  const mt = new Uint32Array(N);
+  let mti = N;
+  mt[0] = 19650218;
+  for (let i = 1; i < N; i++) mt[i] = Math.imul(1812433253, mt[i - 1] ^ (mt[i - 1] >>> 30)) + i;
+  const key = [seed >>> 0];
+  let i = 1, j = 0;
+  for (let k = Math.max(N, key.length); k; k--) {
+    mt[i] = (mt[i] ^ Math.imul(mt[i - 1] ^ (mt[i - 1] >>> 30), 1664525)) + key[j] + j;
+    i++; j++;
+    if (i >= N) { mt[0] = mt[N - 1]; i = 1; }
+    if (j >= key.length) j = 0;
+  }
+  for (let k = N - 1; k; k--) {
+    mt[i] = (mt[i] ^ Math.imul(mt[i - 1] ^ (mt[i - 1] >>> 30), 1566083941)) - i;
+    i++;
+    if (i >= N) { mt[0] = mt[N - 1]; i = 1; }
+  }
+  mt[0] = 0x80000000;
+  const next = (): number => {
+    if (mti >= N) {
+      for (let k = 0; k < N; k++) {
+        const y = (mt[k] & 0x80000000) | (mt[(k + 1) % N] & 0x7fffffff);
+        mt[k] = mt[(k + M) % N] ^ (y >>> 1) ^ (y & 1 ? 0x9908b0df : 0);
+      }
+      mti = 0;
+    }
+    let y = mt[mti++];
+    y ^= y >>> 11;
+    y ^= (y << 7) & 0x9d2c5680;
+    y ^= (y << 15) & 0xefc60000;
+    y ^= y >>> 18;
+    return y >>> 0;
+  };
+  return () => ((next() >>> 5) * 67108864 + (next() >>> 6)) / 9007199254740992;
+}
+
 const perlin = new ImprovedNoise();
 
 /** `crease(ob, amp, freq, seed)`: ridged noise pushed along vertex normals. */

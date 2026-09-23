@@ -1156,6 +1156,21 @@
       "sofaBeigeLeather": {
         "label": "Leather sofa"
       },
+      "sofaGreyChaise": {
+        "label": "Chaise sectional",
+        "modules": {
+          "chaiseLen": {
+            "label": "Chaise length (cm)"
+          },
+          "chaiseRight": {
+            "label": "Chaise side",
+            "toggle": {
+              "on": "Right",
+              "off": "Left"
+            }
+          }
+        }
+      },
       "sofaBlockArm": {
         "label": "Block-arm sofa"
       }

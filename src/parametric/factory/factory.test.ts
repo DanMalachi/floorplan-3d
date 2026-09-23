@@ -24,7 +24,7 @@ const check = (name: string, cond: boolean, detail = "") => {
 interface Fixture {
   slug: string;
   set: string;
-  args: { width: number; depth: number; height?: number; color: string };
+  args: { width: number; depth: number; height?: number; color: string; "chaise-len"?: number; "chaise-side"?: string };
   bbox: { min: number[]; max: number[] };
   triangles: number;
   parts: { name: string; bbox: { min: number[]; max: number[] }; triangles: number }[];
@@ -51,12 +51,28 @@ function tris(o: THREE.Object3D): number {
   return n;
 }
 
-const PORTS: { generator: ParametricSpec["generator"]; slug: string; sets: string[] }[] = [
+interface Port {
+  generator: ParametricSpec["generator"];
+  slug: string;
+  sets: string[];
+  /** Script arguments → spec, when the script's CLI isn't just w/d/h. */
+  toSpec?: (a: Fixture["args"]) => Pick<ParametricSpec, "dims" | "modules">;
+}
+
+const PORTS: Port[] = [
   { generator: "sofaBlockArm", slug: "block-arm-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaFlareArm", slug: "flare-arm-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaPlainBlock", slug: "plain-block-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaTuftedSage", slug: "tufted-sage-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaBeigeLeather", slug: "beige-leather-sofa", sets: ["min", "default", "max"] },
+  {
+    generator: "sofaGreyChaise", slug: "grey-chaise-sectional", sets: ["min", "default", "max", "default_mirror"],
+    // --depth is the RUN; the inspector's depth is the whole footprint.
+    toSpec: (a) => ({
+      dims: { w: a.width, d: a.depth + (a["chaise-len"] ?? 0), h: a.height ?? 0 },
+      modules: { chaiseLen: Math.round((a["chaise-len"] ?? 0) * 100), chaiseRight: a["chaise-side"] === "right" ? 1 : 0 },
+    }),
+  },
 ];
 
 for (const port of PORTS) {
@@ -64,13 +80,14 @@ for (const port of PORTS) {
   for (const set of port.sets) {
     const fx = load(port.slug, set);
     console.log(`\n${port.generator} vs ${port.slug} @ ${set} (${fx.args.width} × ${fx.args.depth}${fx.args.height ? ` × ${fx.args.height}` : ""})`);
-    const spec = sanitizeSpec({
-      ...g.defaultSpec,
+    const want = port.toSpec?.(fx.args) ?? {
       dims: { w: fx.args.width, d: fx.args.depth, h: fx.args.height ?? g.defaultSpec.dims.h },
-    });
+      modules: g.defaultSpec.modules,
+    };
+    const spec = sanitizeSpec({ ...g.defaultSpec, ...want });
     check("fixture size is inside the inspector's limits (sanitize left it alone)",
-      spec.dims.w === fx.args.width && spec.dims.d === fx.args.depth && (fx.args.height === undefined || spec.dims.h === fx.args.height),
-      JSON.stringify(spec.dims));
+      JSON.stringify(spec.dims) === JSON.stringify(want.dims) && JSON.stringify(spec.modules) === JSON.stringify(want.modules),
+      JSON.stringify({ dims: spec.dims, modules: spec.modules }));
 
     const t0 = performance.now();
     const group = g.build(spec);
