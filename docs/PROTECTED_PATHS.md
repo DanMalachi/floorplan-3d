@@ -64,6 +64,15 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-22/23, `src/schema/scene.ts` — eight new members of the
+  `ParametricSpec["generator"]` union** (branch `feat/parametric-factory`:
+  `sofaBlockArm`, `sofaFlareArm`, `sofaPlainBlock`, `sofaTuftedSage`,
+  `sofaBeigeLeather`, `sofaGreyChaise`, `bedUpholstered`, `bedOakPlatform`).
+  Approved by Dan 2026-09-22 as the ONLY protected edit of the live parametric
+  factory-furniture plan. String-literal additions to an existing union and
+  nothing else: no field, type, import or other member changed, so every
+  saved scene still parses and validates exactly as before.
+
 - **2026-09-18, a11y review — contrast/RTL/locale/platform text fixes
   (`Viewport.tsx`, `WallMesh.tsx`, `MeasureTool.tsx`,
   `buildTools/WallTool.tsx`, `buildTools/OpeningTool.tsx`).** Approved by Dan
