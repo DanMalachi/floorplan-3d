@@ -35,9 +35,18 @@ king or even bigger. i want both of them to come in single bed size with one pil
   margins. Measure them from the script (default frame 1.75×2.18 around a 1.60×2.00 mattress).
 - Pillows: mattress width < 120 → ONE centred pillow; ≥ 120 → two. Count is a function of width,
   not a separate control.
-- **Ask Dan first (ambiguous):** "both of them" — the Astra bed plus which other bed? The oak
-  platform bed was ruled OUT earlier (Codex-made, unapproved). Don't touch it until he says so.
-- Also propose the max (e.g. 200×200 king / 200×220) and show renders before porting.
+- **ANSWERED 2026-09-23:** "both" = Astra + the **oak platform bed** (`factory:oak-platform-bed`).
+  Dan reversed the 2026-09-22 exclusion: the oak bed is now IN scope, same size range + pillow rule.
+  Order: Astra first, then oak.
+- **Max mattress = 200×200** (Dan 2026-09-23). Range 90×190 → 200×200. Show renders before porting.
+- **Astra Blender variant BUILT 2026-09-23** (awaiting Dan's look): `floorplan-3d-refs/parametric-factory/
+  upholstered-queen-bed/v3-3/build-bed-v33.py` (copy; original untouched). Changes vs original: (1) mattress
+  W < 1.20 → one centred pillow (cx 0, yaw −1); (2) two-pillow width = min(0.705, 2·|cx| − 0.005) so 120–139
+  mattresses don't overlap/overhang (first 120 render did) — default 160 is byte-identical logic; (3) render
+  engine `BLENDER_EEVEE` (NEXT crashes on 5.2). Frame = mattress + 0.15 W / + 0.18 D, so inspector frame
+  range W 1.05–2.15, D 2.08–2.18. GLBs + renders per size in `v3-3/m090x190 … m200x200/`; sheet
+  `v3-3/astra-v33-sizes-sheet.png`. Pre-existing (also in shipped default): small dash marks on the duvet's
+  front-left drape — cosmetic, not from resizing.
 - Single size + one pillow is NEW geometry the approved script never built: headboard panels and
   duvet drape at 0.90 m need a look. Build a Blender variant of the script (copy, never edit the
   approved original) at 90×190 / 140×190 / 160×200 / max, render them for Dan, THEN port.
