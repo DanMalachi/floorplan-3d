@@ -13,6 +13,9 @@ export interface FactoryMaterialDef {
   /** Folder under /furniture/factory/tex/. Absent = a plain colour (thread,
    *  metal), which the scripts also build without maps. */
   tex?: string;
+  /** Folder for normal + roughness when they are shared with another tile
+   *  (the oak bed's cotton colours reuse terlenka's weave). Default `tex`. */
+  maps?: string;
   normalScale?: number;
   /** Blender "Specular IOR Level" (0.5 = the glTF default F0 of 0.04). */
   specular: number;
@@ -51,6 +54,14 @@ export const FACTORY_MATERIALS = {
   "oatmeal-upholstery": { tex: "oatmeal-upholstery", normalScale: 0.45, specular: 0.5 },
   "ivory-washed-linen": { tex: "ivory-washed-linen", normalScale: 0.45, specular: 0.5 },
   "bed-natural-oak": { tex: "bed-natural-oak", normalScale: 0.6, specular: 0.5 },
+  // Oak platform bed (r003 build_bed.py): Principled "Specular IOR Level" 0.35
+  // on its own materials, 0.25 on the tinted duvet. End grain is the same oak
+  // darkened x0.72 in sRGB (0.72^2.2 linear on the colour factor).
+  "oak-face": { tex: "oak-veneer-01", normalScale: 1.0, specular: 0.35 },
+  "oak-endgrain": { tex: "oak-veneer-01", normalScale: 0.6, specular: 0.35, color: [0.486, 0.486, 0.486] },
+  "cotton-offwhite": { tex: "cotton-offwhite", maps: "terlenka", normalScale: 0.8, specular: 0.35 },
+  "cotton-white": { tex: "cotton-white", maps: "terlenka", normalScale: 0.8, specular: 0.35 },
+  terlenka: { tex: "terlenka", normalScale: 1.0, specular: 0.25 },
 } satisfies Record<string, FactoryMaterialDef>;
 
 export type FactoryMaterialId = keyof typeof FACTORY_MATERIALS;
@@ -143,8 +154,9 @@ export function factoryMaterial(id: FactoryMaterialId): THREE.MeshPhysicalMateri
   // they measure.
   if (def.tex && typeof document !== "undefined") {
     m.map = tex(base + "color.webp", true);
-    m.normalMap = tex(base + "normal.webp", false);
-    m.roughnessMap = tex(base + "roughness.webp", false);
+    const maps = `/furniture/factory/tex/${def.maps ?? def.tex}/`;
+    m.normalMap = tex(maps + "normal.webp", false);
+    m.roughnessMap = tex(maps + "roughness.webp", false);
   }
   if (def.normalScale) m.normalScale.set(def.normalScale, def.normalScale);
   // Blender's level 0.5 is F0 0.04; three's specularIntensity scales that F0.

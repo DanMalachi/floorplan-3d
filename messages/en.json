@@ -1156,6 +1156,9 @@
       "sofaBeigeLeather": {
         "label": "Leather sofa"
       },
+      "bedOakPlatform": {
+        "label": "Oak platform bed"
+      },
       "bedUpholstered": {
         "label": "Upholstered bed"
       },

@@ -26,6 +26,10 @@ export class Part {
   uvAxis: Uint8Array | null = null;
   smooth = true;
   material: THREE.Material;
+  /** Several materials on one part (oak face + end grain): `triMat` indexes
+   *  `mats` per triangle. Flat-shaded parts only. */
+  mats?: THREE.Material[];
+  triMat?: Uint8Array;
 
   constructor(name: string, material: THREE.Material) {
     this.name = name;
@@ -289,6 +293,11 @@ export function pyRandom(seed: number): () => number {
 }
 
 const perlin = new ImprovedNoise();
+
+/** Blender `mathutils.noise.noise` stand-in (gradient noise, [-1, 1]). */
+export function noise3(x: number, y: number, z: number): number {
+  return perlin.noise(x, y, z);
+}
 
 /** `crease(ob, amp, freq, seed)`: ridged noise pushed along vertex normals. */
 export function crease(part: Part, amp: number, freq: number, seed: number): void {
@@ -576,20 +585,101 @@ export function stitchMesh(name: string, rows: Hit[][], mat: THREE.Material, L =
   return part;
 }
 
+/** Blender's SOLIDIFY (simple mode) on an (nu × nv) grid part: the shell spans
+ *  [t(o−1)/2, t(o+1)/2] along each vertex normal (offset 0 = centred, 1 = all
+ *  in front of the normal), the back shell reversed, a rim on every boundary
+ *  edge. `uv` is per vertex and is extended for the new shell. */
+export function solidifyGrid(p: Part, nu: number, nv: number, thickness: number, offset: number, uv: number[]): void {
+  const at = (i: number, j: number) => j * (nu + 1) + i;
+  const N = p.vertexCount;
+  const n = p.vertexNormals();
+  const P = p.pos;
+  const front = (thickness * (offset + 1)) / 2, back = (thickness * (offset - 1)) / 2;
+  for (let k = 0; k < N; k++) {
+    const x = P[k * 3], y = P[k * 3 + 1], z = P[k * 3 + 2];
+    const nx = n[k * 3], ny = n[k * 3 + 1], nz = n[k * 3 + 2];
+    P[k * 3] = x + nx * front; P[k * 3 + 1] = y + ny * front; P[k * 3 + 2] = z + nz * front;
+    p.addVert(x + nx * back, y + ny * back, z + nz * back);
+    uv.push(uv[k * 2], uv[k * 2 + 1]);
+  }
+  const outer = p.tris.length;
+  for (let t = 0; t < outer; t += 3) p.tris.push(p.tris[t] + N, p.tris[t + 2] + N, p.tris[t + 1] + N);
+  // Boundary edges in the faces' own winding; rim (b, a, a', b').
+  const rim = (a: number, b: number) => p.quad(b, a, a + N, b + N);
+  for (let i = 0; i < nu; i++) rim(at(i, 0), at(i + 1, 0));
+  for (let j = 0; j < nv; j++) rim(at(nu, j), at(nu, j + 1));
+  for (let i = nu; i > 0; i--) rim(at(i, nv), at(i - 1, nv));
+  for (let j = nv; j > 0; j--) rim(at(0, j), at(0, j - 1));
+}
+
+/** Per-vertex UVs → the per-corner layout `finish` reads (one axis: a vertex
+ *  never needs a second UV). */
+export function vertexUV(p: Part, uv: number[]): void {
+  p.uv = new Array(p.tris.length * 2);
+  for (let c = 0; c < p.tris.length; c++) {
+    p.uv[c * 2] = uv[p.tris[c] * 2];
+    p.uv[c * 2 + 1] = uv[p.tris[c] * 2 + 1];
+  }
+  p.uvAxis = new Uint8Array(p.tris.length);
+}
+
+/** A POLY curve with bevel_depth = radius converted to a mesh: a `ring`-sided
+ *  tube (bevel_resolution r gives 2r + 4 sides), no caps. Frames are
+ *  parallel-transported along the path. UVs are left empty. */
+export function tubePath(
+  name: string, coords: [number, number, number][], mat: THREE.Material, radius: number, closed: boolean, ring: number,
+): Part {
+  const p = new Part(name, mat);
+  const n = coords.length;
+  const V = coords.map((c) => new THREE.Vector3(...c));
+  const tan = V.map((_, i) => {
+    const a = V[closed ? (i - 1 + n) % n : Math.max(i - 1, 0)];
+    const b = V[closed ? (i + 1) % n : Math.min(i + 1, n - 1)];
+    return b.clone().sub(a).normalize();
+  });
+  const t0 = tan[0];
+  let nrm = new THREE.Vector3(Math.abs(t0.z) < 0.9 ? 0 : 1, 0, Math.abs(t0.z) < 0.9 ? 1 : 0).cross(t0).normalize();
+  const bin = new THREE.Vector3();
+  const rings: number[][] = [];
+  for (let i = 0; i < n; i++) {
+    if (i > 0) {
+      // Parallel transport: drop the component along the new tangent.
+      nrm = nrm.sub(tan[i].clone().multiplyScalar(nrm.dot(tan[i])));
+      if (nrm.lengthSq() < 1e-12) nrm = new THREE.Vector3(0, 0, 1).cross(tan[i]);
+      nrm.normalize();
+    }
+    bin.crossVectors(tan[i], nrm);
+    const rg: number[] = [];
+    for (let j = 0; j < ring; j++) {
+      const a = (2 * Math.PI * j) / ring, c = Math.cos(a) * radius, s = Math.sin(a) * radius;
+      rg.push(p.addVert(V[i].x + nrm.x * c + bin.x * s, V[i].y + nrm.y * c + bin.y * s, V[i].z + nrm.z * c + bin.z * s));
+    }
+    rings.push(rg);
+  }
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const a = rings[i], b = rings[(i + 1) % n];
+    for (let j = 0; j < ring; j++) p.quad(a[j], a[(j + 1) % ring], b[(j + 1) % ring], b[j]);
+  }
+  return p;
+}
+
 /** Blender Z-up / -Y front  →  app Y-up / +Z front (the glTF exporter's map). */
 const TO_APP = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
 /** Centre like the build scripts (X/Y on the bbox centre, base at Z=0), convert
  *  axes, and emit one named THREE.Mesh per part. Smooth parts get the shared
  *  vertex normals; flat parts (hard-edged legs) get per-face ones. */
-export function finish(parts: Part[]): THREE.Group {
+export function finish(parts: Part[], opts: { centre?: boolean } = {}): THREE.Group {
   const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
   const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
   for (const p of parts) {
     const b = p.bounds();
     lo.min(b.lo); hi.max(b.hi);
   }
-  const shift = new THREE.Matrix4().makeTranslation(-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z);
+  // centre: false = the script places the piece itself (no bbox recentring).
+  const shift = opts.centre === false
+    ? new THREE.Matrix4()
+    : new THREE.Matrix4().makeTranslation(-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z);
   const group = new THREE.Group();
   for (const p of parts) {
     p.transform(shift);
@@ -630,18 +720,31 @@ export function finish(parts: Part[]): THREE.Group {
     const pos = new Float32Array(count * 3);
     const nor = new Float32Array(count * 3);
     const uv = new Float32Array(count * 2);
+    // Multi-material parts: corners written grouped by material, one draw group each.
+    const order = p.triMat
+      ? Array.from({ length: count / 3 }, (_, t) => t).sort((a, b) => p.triMat![a] - p.triMat![b])
+      : null;
     for (let c = 0; c < count; c++) {
-      const v = T[c] * 3, o = c * 3;
+      const src = order ? order[Math.floor(c / 3)] * 3 + (c % 3) : c;
+      const v = T[src] * 3, o = c * 3;
       pos[o] = P[v]; pos[o + 1] = P[v + 1]; pos[o + 2] = P[v + 2];
       if (vn) { nor[o] = vn[v]; nor[o + 1] = vn[v + 1]; nor[o + 2] = vn[v + 2]; }
-      uv[c * 2] = U[c * 2] ?? 0;
-      uv[c * 2 + 1] = U[c * 2 + 1] ?? 0;
+      uv[c * 2] = U[src * 2] ?? 0;
+      uv[c * 2 + 1] = U[src * 2 + 1] ?? 0;
+    }
+    if (order && p.mats) {
+      let start = 0;
+      for (let m = 0; m < p.mats.length; m++) {
+        const n3 = order.filter((t) => p.triMat![t] === m).length * 3;
+        if (n3) g.addGroup(start, n3, m);
+        start += n3;
+      }
     }
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     if (vn) g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
     else g.computeVertexNormals();
-    const mesh = new THREE.Mesh(g, p.material);
+    const mesh = new THREE.Mesh(g, p.mats ?? p.material);
     mesh.name = p.name;
     group.add(mesh);
   }

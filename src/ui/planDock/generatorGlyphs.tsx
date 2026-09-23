@@ -950,6 +950,7 @@ export const GENERATOR_GLYPH: Record<string, (props: { size: number }) => ReactE
   sofaBeigeLeather: SofaGlyph,
   sofaGreyChaise: SofaGlyph,
   bedUpholstered: BedGlyph,
+  bedOakPlatform: BedGlyph,
   sink: SinkGlyph,
   cooktop: CooktopGlyph,
   toilet: ToiletGlyph,

@@ -55,9 +55,28 @@ king or even bigger. i want both of them to come in single bed size with one pil
   single → 1 pillow, max, recolour). Tint: the grey tile is normalised to 0.72 but the script's weave
   averages 0.935, so upholstery meshes carry `userData.tintGain` = (0.935/0.72)^2.2 (ParametricModel
   multiplies it in); measured linear base colour vs baked GLB within 2–8% per channel (45% dark without).
-  Inspector now hides Height when `dimLimits.h` is fixed (also hides cooktop's 0.8cm). NEXT: V3-3b oak
-  platform bed (`floorplan-3d/assets/furniture/bedroom/oak-platform-bed/r003/build_bed.py`, build from the
-  `C:\Users\dandu\floorplan-3d` checkout — inputs/materials is gitignored): same range + pillow rule.
+  Inspector now hides Height when `dimLimits.h` is fixed (also hides cooktop's 0.8cm).
+- **V3-3b oak platform bed PORTED 2026-09-23** (`bedOakPlatform`, `src/parametric/factory/bedOakPlatform.ts`).
+  Dan skipped the sizes sheet ("no need for the renders … go on"). Variant script + a COPY of r003's
+  inputs/materials: `floorplan-3d-refs/parametric-factory/oak-platform-bed/v3-3/` (changes: pillow rule —
+  one `pillow_C` under a 1.20 m mattress, two pillows fit their halves; cuff droop starts 0.26 m in from
+  the cuff's end instead of a fixed 0.55). Frame W 1.02–2.12, D 2.02–2.12 (mattress + 0.12), h 1.04 fixed.
+  - **The duvet is a 110-frame cloth SIM in the script** → the port drapes it analytically (same 83×74 grid,
+    UVs, crease, solidify), fitted to the sim's cross-sections. Parity: 34 parts ≤5mm; `duvet_sim` ≤24mm
+    (the sim itself leans ~33mm side to side; the drape is symmetric) — `tol` hook in factory.test.ts.
+    Rebuild ~12ms.
+  - **Script quirk kept on purpose:** `bake_xform` reads a stale `matrix_world`, so the cuff's
+    `location.y` and piping_bottom's −1cm never apply — the approved bed's cuff sits MID-bed (the band in
+    the approved side render). Port reproduces what shipped.
+  - **Duvet tone:** the 2026-09-22 parametric rework swapped the approved greige duvet for grey-tile ×
+    #cdba96, ~45% darker than the approved GLB. Port default `#f3dabb` × tintGain 1.25 = approved linear
+    base colour within 0.5%. Oak/cotton match within 1%. The r003 script in `floorplan-3d` still has the dark
+    default (uncommitted there) — tell Dan if a rebuild from it is ever planned.
+  - New tiles: `tex/terlenka` (grey, tinted), `tex/cotton-offwhite`, `tex/cotton-white` (maps from terlenka
+    via the new `maps` field). geom: `solidifyGrid`, `tubePath`, `vertexUV`, `noise3`, `finish({centre:false})`,
+    multi-material flat parts (`mats`/`triMat`, oak end grain).
+  - Editor-verified: dock shows both custom bed cards (baked ones replaced), W/D + colour, single → one
+    pillow, max, recolour.
 - Single size + one pillow is NEW geometry the approved script never built: headboard panels and
   duvet drape at 0.90 m need a look. Build a Blender variant of the script (copy, never edit the
   approved original) at 90×190 / 140×190 / 160×200 / max, render them for Dan, THEN port.

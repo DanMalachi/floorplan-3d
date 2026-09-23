@@ -21,7 +21,8 @@ group.traverse((o) => {
   const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry) as THREE.BufferGeometry;
   parts.push({
     name: o.name,
-    material: (o.material as THREE.Material).name,
+    // Multi-material parts (oak face + end grain) render in their first one.
+    material: (Array.isArray(o.material) ? o.material[0] : o.material).name,
     tint: o.userData.tintColor ?? null,
     position: Array.from(geo.attributes.position.array),
     normal: Array.from(geo.attributes.normal.array),

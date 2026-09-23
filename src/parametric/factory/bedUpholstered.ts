@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { ParametricSpec } from "@/schema/scene";
 import type { GeneratorDef } from "../types";
-import { Part, finish, roundedGrid } from "./geom";
+import { Part, finish, roundedGrid, solidifyGrid, tubePath, vertexUV } from "./geom";
 import { factoryMaterial } from "./materials";
 
 // Astra upholstered bed — live port of the approved build
@@ -48,17 +48,6 @@ function cube(name: string, dims: [number, number, number], loc: [number, number
   return p;
 }
 
-/** Per-vertex UVs → the per-corner layout `finish` reads (one axis: a vertex
- *  never needs a second UV). */
-function vertexUV(p: Part, uv: number[]): void {
-  p.uv = new Array(p.tris.length * 2);
-  for (let c = 0; c < p.tris.length; c++) {
-    p.uv[c * 2] = uv[p.tris[c] * 2];
-    p.uv[c * 2 + 1] = uv[p.tris[c] * 2 + 1];
-  }
-  p.uvAxis = new Uint8Array(p.tris.length);
-}
-
 type Fn = (u: number, v: number) => [number, number, number];
 
 /** `surface()`: an (nu × nv) grid of fn(u, v), UVs as the script sets them,
@@ -76,64 +65,15 @@ function surface(name: string, nu: number, nv: number, fn: Fn, mat: THREE.Materi
   const at = (i: number, j: number) => j * (nu + 1) + i;
   for (let j = 0; j < nv; j++)
     for (let i = 0; i < nu; i++) p.quad(at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1));
-  if (thickness) {
-    const N = p.vertexCount;
-    const n = p.vertexNormals();
-    const P = p.pos;
-    for (let k = 0; k < N; k++) {
-      const x = P[k * 3], y = P[k * 3 + 1], z = P[k * 3 + 2], h = thickness / 2;
-      P[k * 3] = x + n[k * 3] * h; P[k * 3 + 1] = y + n[k * 3 + 1] * h; P[k * 3 + 2] = z + n[k * 3 + 2] * h;
-      p.addVert(x - n[k * 3] * h, y - n[k * 3 + 1] * h, z - n[k * 3 + 2] * h);
-      uv.push(uv[k * 2], uv[k * 2 + 1]);
-    }
-    const outer = p.tris.length;
-    for (let t = 0; t < outer; t += 3) p.tris.push(p.tris[t] + N, p.tris[t + 2] + N, p.tris[t + 1] + N);
-    // Boundary edges in the faces' own winding; rim (b, a, a', b').
-    const rim = (a: number, b: number) => p.quad(b, a, a + N, b + N);
-    for (let i = 0; i < nu; i++) rim(at(i, 0), at(i + 1, 0));
-    for (let j = 0; j < nv; j++) rim(at(nu, j), at(nu, j + 1));
-    for (let i = nu; i > 0; i--) rim(at(i, nv), at(i - 1, nv));
-    for (let j = nv; j > 0; j--) rim(at(0, j), at(0, j - 1));
-  }
+  if (thickness) solidifyGrid(p, nu, nv, thickness, 0, uv);
   vertexUV(p, uv);
   return p;
 }
 
 /** `pipe()`: a POLY curve with bevel_depth = radius, bevel_resolution 2 —
- *  an 8-sided tube, no caps. Frames are parallel-transported along the path. */
+ *  an 8-sided tube, no caps. */
 function pipe(name: string, coords: [number, number, number][], mat: THREE.Material, radius = 0.002, closed = false): Part {
-  const p = new Part(name, mat);
-  const RING = 8;
-  const n = coords.length;
-  const V = coords.map((c) => new THREE.Vector3(...c));
-  const tan = V.map((_, i) => {
-    const a = V[closed ? (i - 1 + n) % n : Math.max(i - 1, 0)];
-    const b = V[closed ? (i + 1) % n : Math.min(i + 1, n - 1)];
-    return b.clone().sub(a).normalize();
-  });
-  const t0 = tan[0];
-  let nrm = new THREE.Vector3(Math.abs(t0.z) < 0.9 ? 0 : 1, 0, Math.abs(t0.z) < 0.9 ? 1 : 0).cross(t0).normalize();
-  const rings: number[][] = [];
-  const bin = new THREE.Vector3();
-  for (let i = 0; i < n; i++) {
-    if (i > 0) {
-      // Parallel transport: drop the component along the new tangent.
-      nrm = nrm.sub(tan[i].clone().multiplyScalar(nrm.dot(tan[i])));
-      if (nrm.lengthSq() < 1e-12) nrm = new THREE.Vector3(0, 0, 1).cross(tan[i]);
-      nrm.normalize();
-    }
-    bin.crossVectors(tan[i], nrm);
-    const rg: number[] = [];
-    for (let j = 0; j < RING; j++) {
-      const a = (2 * Math.PI * j) / RING, c = Math.cos(a) * radius, s = Math.sin(a) * radius;
-      rg.push(p.addVert(V[i].x + nrm.x * c + bin.x * s, V[i].y + nrm.y * c + bin.y * s, V[i].z + nrm.z * c + bin.z * s));
-    }
-    rings.push(rg);
-  }
-  for (let i = 0; i < (closed ? n : n - 1); i++) {
-    const a = rings[i], b = rings[(i + 1) % n];
-    for (let j = 0; j < RING; j++) p.quad(a[j], a[(j + 1) % RING], b[(j + 1) % RING], b[j]);
-  }
+  const p = tubePath(name, coords, mat, radius, closed, 8);
   vertexUV(p, new Array(p.vertexCount * 2).fill(0));
   return p;
 }

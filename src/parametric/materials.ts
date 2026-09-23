@@ -55,6 +55,7 @@ const COLORABLE = new Set([
   "factory-leather",
   "factory-hessian-chaise",
   "factory-oatmeal",
+  "factory-terlenka",
 ]);
 
 /** Photo-wood and counter-oak finishes ignore the color wheel — they keep

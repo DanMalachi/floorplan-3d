@@ -143,6 +143,46 @@
       "usedBy": ["upholstered-queen-bed"],
       "roughnessBase": 0.5,
       "normalStrength": 0.6
+    },
+    "terlenka": {
+      "sourceFiles": [
+        "assets/furniture/bedroom/oak-platform-bed/r003/inputs/materials/bed_duvet_fabric_grey.png (build_bed.py tinted_fabric() grey cache of terlenka_diff_2k.jpg, 1024px)",
+        "assets/furniture/bedroom/oak-platform-bed/r003/inputs/materials/terlenka_nor_gl_2k.jpg",
+        "assets/furniture/bedroom/oak-platform-bed/r003/inputs/materials/terlenka_rough_2k.jpg"
+      ],
+      "sourceLicence": "Poly Haven \"Terlenka\" — CC0 (polyhaven.com/a/terlenka, polyhaven.com/license), checked 2026-09-19",
+      "tileMetres": 0.30,
+      "resolutionPx": 1024,
+      "tinted": true,
+      "defaultColor": "#f3dabb",
+      "tintGain": 1.25,
+      "usedBy": ["oak-platform-bed (duvet + cuff)"],
+      "normalStrength": 1.0,
+      "specularIorLevel": 0.25
+    },
+    "cotton-offwhite": {
+      "sourceFiles": [
+        "assets/furniture/bedroom/oak-platform-bed/r003/inputs/materials/cotton_offwhite_diff_2k.png (build_bed.py derive() of terlenka_diff_2k.jpg); normal + roughness shared from tex/terlenka"
+      ],
+      "sourceLicence": "Poly Haven \"Terlenka\" — CC0 (derivative), checked 2026-09-19",
+      "tileMetres": 0.27,
+      "resolutionPx": 1024,
+      "tinted": false,
+      "usedBy": ["oak-platform-bed (mattress + piping)"],
+      "normalStrength": 0.8,
+      "specularIorLevel": 0.35
+    },
+    "cotton-white": {
+      "sourceFiles": [
+        "assets/furniture/bedroom/oak-platform-bed/r003/inputs/materials/cotton_white_diff_2k.png (build_bed.py derive() of terlenka_diff_2k.jpg); normal + roughness shared from tex/terlenka"
+      ],
+      "sourceLicence": "Poly Haven \"Terlenka\" — CC0 (derivative), checked 2026-09-19",
+      "tileMetres": 0.27,
+      "resolutionPx": 1024,
+      "tinted": false,
+      "usedBy": ["oak-platform-bed (pillows)"],
+      "normalStrength": 0.8,
+      "specularIorLevel": 0.35
     }
   },
   "nonTexturedMaterials": {

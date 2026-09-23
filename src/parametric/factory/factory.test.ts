@@ -57,6 +57,9 @@ interface Port {
   sets: string[];
   /** Script arguments → spec, when the script's CLI isn't just w/d/h. */
   toSpec?: (a: Fixture["args"]) => Pick<ParametricSpec, "dims" | "modules">;
+  /** Looser per-part bounds, metres — only where the port is a MODEL of the
+   *  script rather than a line-for-line copy (a cloth simulation). */
+  tol?: Record<string, number>;
 }
 
 const PORTS: Port[] = [
@@ -66,6 +69,14 @@ const PORTS: Port[] = [
   { generator: "sofaTuftedSage", slug: "tufted-sage-sofa", sets: ["min", "default", "max"] },
   { generator: "sofaBeigeLeather", slug: "beige-leather-sofa", sets: ["min", "default", "max"] },
   { generator: "bedUpholstered", slug: "upholstered-queen-bed", sets: ["min", "below_switch", "at_switch", "default", "max"] },
+  {
+    generator: "bedOakPlatform", slug: "oak-platform-bed", sets: ["min", "below_switch", "at_switch", "default", "max"],
+    // The script SIMULATES its duvet (110 cloth frames); the port drapes it
+    // analytically. The residual is the simulated sheet's own side-to-side
+    // lean (its hem sits 33mm further out on one side than the other at the
+    // default size) against a symmetric drape: <=24mm at every size.
+    tol: { duvet_sim: 0.025 },
+  },
   {
     generator: "sofaGreyChaise", slug: "grey-chaise-sectional", sets: ["min", "default", "max", "default_mirror"],
     // --depth is the RUN; the inspector's depth is the whole footprint.
@@ -96,7 +107,9 @@ for (const port of PORTS) {
     group.updateMatrixWorld(true);
 
     const all = new THREE.Box3().setFromObject(group);
-    check(`overall bbox within ${TOL * 1000}mm`, worst(all, fx.bbox) <= TOL, `off by ${(worst(all, fx.bbox) * 1000).toFixed(1)}mm`);
+    // The whole piece can only be as close as its loosest part (the duvet sets the oak bed's outline).
+    const allTol = Math.max(TOL, ...Object.values(port.tol ?? {}));
+    check(`overall bbox within ${allTol * 1000}mm`, worst(all, fx.bbox) <= allTol, `off by ${(worst(all, fx.bbox) * 1000).toFixed(1)}mm`);
 
     const byName = new Map<string, THREE.Object3D>();
     group.traverse((o) => o.name && byName.set(o.name, o));
@@ -107,7 +120,11 @@ for (const port of PORTS) {
     const off = fx.parts
       .filter((p) => byName.has(p.name))
       .map((p) => ({ name: p.name, e: worst(new THREE.Box3().setFromObject(byName.get(p.name)!), p.bbox) }))
-      .filter((r) => r.e > TOL);
+      .filter((r) => r.e > (port.tol?.[r.name] ?? TOL));
+    for (const [name, t] of Object.entries(port.tol ?? {})) {
+      const p = fx.parts.find((q) => q.name === name);
+      if (p && byName.has(name)) console.log(`  info ${name} off by ${(worst(new THREE.Box3().setFromObject(byName.get(name)!), p.bbox) * 1000).toFixed(1)}mm (allowed ${t * 1000}mm)`);
+    }
     check(`every part within ${TOL * 1000}mm`, off.length === 0, off.map((r) => `${r.name} ${(r.e * 1000).toFixed(1)}mm`).join(", "));
 
     const n = tris(group);
