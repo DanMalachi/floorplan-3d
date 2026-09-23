@@ -12,7 +12,7 @@ import { clampStairWidth, perpDistanceToFlight } from "@/lib/stairs/stairGeometr
 import { seedRoomFixtures } from "@/fixtures/seedRoomFixtures";
 import { specOf } from "@/furniture/spec";
 import { frameColorPatch, frameMaterialPatch, type FrameFinish } from "@/render/frameFinish";
-import { sanitizeSpec, elevationOf } from "@/parametric";
+import { GENERATORS, sanitizeSpec, elevationOf } from "@/parametric";
 import { applyKitchenGesture, syncKitchenAttachments, isCounterHost } from "@/parametric/kitchenAttach";
 import { legsToSpec } from "@/parametric/runPath";
 import { pdToastKey } from "@/ui/planDock/toast";
@@ -1287,12 +1287,17 @@ export const useSceneStore = create<StoreState>((set, get) => {
         ...patch,
         modules: { ...item.parametric.modules, ...(patch.modules ?? {}) },
       };
-      const parametric = sanitizeSpec(merged);
+      const reconcile = GENERATORS[merged.generator]?.reconcile;
+      const parametric = sanitizeSpec(reconcile ? reconcile(item.parametric, merged) : merged);
+      // A reconciled depth change grows the piece FORWARD: shift the centre
+      // by half of it along the item's front (+Z local) so the back stays put.
+      const dd = reconcile && !patch.dims ? parametric.dims.d - item.parametric.dims.d : 0;
+      const pose = dd ? { x: item.x - Math.sin(item.rotation) * (dd / 2), y: item.y + Math.cos(item.rotation) * (dd / 2) } : {};
       // Sync after: a resized run re-clamps/carries its counter items, a
       // resized sink re-cuts its hole.
       commitScene("Edit custom furniture", syncKitchenAttachments({
         ...scene,
-        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, parametric } : f)),
+        furniture: scene.furniture.map((f) => (f.id === id ? { ...f, ...pose, parametric } : f)),
       }));
     },
     setFurnitureElevation: (id, elevation) => {

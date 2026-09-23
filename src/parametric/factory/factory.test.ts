@@ -126,5 +126,20 @@ for (const port of PORTS) {
   }
 }
 
+// Chaise length moves only the chaise (Dan, 2026-09-23: it used to eat into
+// the run's depth). Run depth = footprint − chaise length.
+{
+  console.log("\nsofaGreyChaise: chaise length leaves the run alone");
+  const g = GENERATORS.sofaGreyChaise;
+  const prev = g.defaultSpec;
+  const runOf = (sp: ParametricSpec) => +(sp.dims.d - sp.modules.chaiseLen / 100).toFixed(4);
+  for (const len of [55, 95]) {
+    const next = sanitizeSpec(g.reconcile!(prev, { ...prev, modules: { ...prev.modules, chaiseLen: len } }));
+    check(`chaise ${len}cm: run depth stays ${runOf(prev)}`, runOf(next) === runOf(prev), `run ${runOf(next)}`);
+  }
+  const deep = sanitizeSpec(g.reconcile!(prev, { ...prev, dims: { ...prev.dims, d: 9 } }));
+  check("typed depth keeps the run inside 0.80–1.10", runOf(deep) === 1.1, `run ${runOf(deep)}`);
+}
+
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

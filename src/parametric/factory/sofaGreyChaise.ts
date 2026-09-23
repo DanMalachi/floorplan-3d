@@ -218,11 +218,10 @@ export function buildGreyChaise(W: number, D: number, CHL: number, H: number, si
   return group;
 }
 
-// PROVISIONAL inspector mapping — open questions for Dan (see handoff):
-// Depth is the whole footprint (run + chaise), so the bounding-box contract
-// of ParametricSpec.dims holds; the chaise's reach is its own control and the
-// run takes the rest. Width tops out at the approved 2.85 default until Dan
-// rules on the 2.30–2.70 cap.
+// Inspector mapping (Dan, 2026-09-23): Depth is the whole footprint (run +
+// chaise), so the bounding-box contract of ParametricSpec.dims holds. Chaise
+// length is its own control and moves ONLY the chaise: `reconcile` grows the
+// footprint with it, the run keeps its depth. Width 2.30–2.85 (approved).
 const CHAISE_LEN = { min: 55, max: 95, default: 70 }; // cm
 const RUN_D: [number, number] = [0.8, 1.1];
 
@@ -254,6 +253,15 @@ export const sofaGreyChaiseGenerator: GeneratorDef = {
     handle: "none",
     finish: "factory-hessian-chaise",
     color: GREY_CHAISE_DEFAULT_COLOR,
+  },
+  reconcile(prev, next) {
+    const chl = (next.modules.chaiseLen ?? CHAISE_LEN.default) / 100;
+    const was = (prev.modules.chaiseLen ?? CHAISE_LEN.default) / 100;
+    // Chaise length changed: the run keeps its depth, the footprint follows.
+    let d = next.dims.d + (chl - was);
+    // Any depth must leave the run inside its own range at this chaise length.
+    d = Math.min(RUN_D[1] + chl, Math.max(RUN_D[0] + chl, d));
+    return { ...next, dims: { ...next.dims, d } };
   },
   build(spec: ParametricSpec): THREE.Group {
     const { w, d, h } = spec.dims;
