@@ -11,6 +11,36 @@
  * pattern (plank, chevron, basketweave, hexagon, checker), because a picker of
  * sixteen similar mid-brown floors is functionally a picker of one.
  *
+ * ── A 17th entry lives outside this list ────────────────────────────────────
+ * `wood-smoked-walnut` was hand-curated from Poly Haven (`laminate_floor_02`)
+ * instead of ambientCG, because nothing in ambientCG's WoodFloor/Planks
+ * categories reads as a modern matte wide-plank floor at that tone (checked
+ * ~15 candidates — everything was either narrow-strip parquet, glossy, or
+ * warm honey-oak). The colour map went through two grading rounds against a
+ * reference photo before Dan approved it (2026-09-24):
+ *   - round 1 graded darker/redder (`brightness 0.8, saturation 1.0, hue -5`)
+ *     — too orange/yellow.
+ *   - round 1 follow-up (`{a,b,c,d}`) pushed hue further negative to fix that,
+ *     which was backwards: rotating negative from the source's ~31° orange
+ *     hue moves TOWARD red (0°), not away from it, so "D" (the closest of
+ *     that batch) still read red despite being desaturated.
+ *   - round 2 (`{e,f,g,h}`) rotated toward 0/positive (grey/green-grey)
+ *     instead and raised brightness (pale = lighter, not darker). "E" was
+ *     approved and is what `color.jpg` now is; `{f,g,h}` are gone.
+ * `thumb.webp` is graded a step darker/less saturated than `color.jpg`
+ * (`brightness 0.83, saturation 0.9`, done once by hand, not part of
+ * repack.ts's shared per-material thumb crop) — flat sRGB swatch crops read
+ * paler than the same matte material under real scene lighting, which is why
+ * the plain crop didn't look "close enough" to the applied floor.
+ *
+ * This entry was appended directly to `data/materials-floors.resolved.json`,
+ * not to CURATED below — this file only drives the ambientCG fetch. Rerunning
+ * fetch-materials.ts rebuilds resolved.json from CURATED alone and will drop
+ * it; re-append by hand (raw maps kept at
+ * scripts/materials/.raw/wood-smoked-walnut/) if that ever happens, then
+ * rerun repack.ts and redo the thumb grade above (repack.ts will otherwise
+ * regenerate a plain, too-pale crop).
+ *
  * ── Structured vs scale-free, and why only some need a real size ────────────
  * A floor's tiling scale is only perceptible when the material has a feature
  * whose real size people know: plank width, tile grid, hexagon pitch. Those are

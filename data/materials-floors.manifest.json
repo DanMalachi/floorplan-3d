@@ -225,6 +225,21 @@
     "source": "https://ambientcg.com/view?id=WoodFloor039"
   },
   {
+    "id": "wood-smoked-walnut",
+    "name": "Smoked walnut",
+    "family": "wood",
+    "coverM": 1.7,
+    "roughness": 0.82,
+    "maps": {
+      "color": "/materials/floors/wood-smoked-walnut/color.webp",
+      "normal": "/materials/floors/wood-smoked-walnut/normal.webp",
+      "roughness": "/materials/floors/wood-smoked-walnut/roughness.webp"
+    },
+    "thumb": "/materials/floors/wood-smoked-walnut/thumb.webp",
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://polyhaven.com/a/laminate_floor_02"
+  },
+  {
     "id": "wood-grey-weathered",
     "name": "Weathered grey",
     "family": "wood",

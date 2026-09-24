@@ -254,5 +254,21 @@
     },
     "license": "CC0 1.0 Universal (public domain dedication)",
     "source": "https://ambientcg.com/view?id=Concrete031"
+  },
+  {
+    "id": "wood-smoked-walnut",
+    "name": "Smoked walnut",
+    "family": "wood",
+    "assetId": "polyhaven:laminate_floor_02",
+    "coverM": 1.7,
+    "sizeSource": "polyhaven-published",
+    "roughness": 0.82,
+    "maps": {
+      "color": "wood-smoked-walnut/color.jpg",
+      "normal": "wood-smoked-walnut/normal.jpg",
+      "roughness": "wood-smoked-walnut/roughness.jpg"
+    },
+    "license": "CC0 1.0 Universal (public domain dedication)",
+    "source": "https://polyhaven.com/a/laminate_floor_02"
   }
 ]
