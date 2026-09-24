@@ -115,7 +115,12 @@ export function ParametricModel({ spec, tint, opacity }: {
         // — the shared base material in materials.ts's cache never mutates.
         if (o.userData.tintColor && m instanceof THREE.MeshStandardMaterial) {
           m.color.set(o.userData.tintColor);
-          if (m instanceof THREE.MeshPhysicalMaterial) m.sheenColor?.set(o.userData.tintColor);
+          // tintGain: a factory tile normalised darker than its script's own
+          // weave (bedUpholstered.ts) gets the script's brightness back.
+          if (o.userData.tintGain) m.color.multiplyScalar(o.userData.tintGain);
+          // keepSheen: a factory port whose approved GLB carries its own
+          // sheen colour (src/parametric/factory/materials.ts).
+          if (m instanceof THREE.MeshPhysicalMaterial && !o.userData.keepSheen) m.sheenColor?.set(o.userData.tintColor);
         }
       }
     });

@@ -1,0 +1,602 @@
+{
+  "slug": "oak-platform-bed",
+  "set": "below_switch",
+  "args": {
+    "width": 1.31,
+    "depth": 2.02,
+    "color": "#cdba96"
+  },
+  "bbox": {
+    "min": [
+      -0.694998,
+      0,
+      -1.0175
+    ],
+    "max": [
+      0.70473,
+      1.04,
+      1.064679
+    ]
+  },
+  "triangles": 37916,
+  "parts": [
+    {
+      "name": "duvet_cuff",
+      "bbox": {
+        "min": [
+          -0.607722,
+          0.465639,
+          -0.090329
+        ],
+        "max": [
+          0.606539,
+          0.582183,
+          0.1062
+        ]
+      },
+      "triangles": 4800,
+      "material": "bed_duvet_fabric"
+    },
+    {
+      "name": "duvet_sim",
+      "bbox": {
+        "min": [
+          -0.694998,
+          0.343239,
+          -0.423871
+        ],
+        "max": [
+          0.70473,
+          0.528729,
+          1.064679
+        ]
+      },
+      "triangles": 19796,
+      "material": "bed_duvet_fabric"
+    },
+    {
+      "name": "head_cap",
+      "bbox": {
+        "min": [
+          -0.655,
+          1,
+          -1.0175
+        ],
+        "max": [
+          0.655,
+          1.04,
+          -0.9275
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "head_panel",
+      "bbox": {
+        "min": [
+          -0.595,
+          0.3,
+          -0.9845
+        ],
+        "max": [
+          0.595,
+          1,
+          -0.9605
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "ledger_L",
+      "bbox": {
+        "min": [
+          -0.615,
+          0.212,
+          -0.9425
+        ],
+        "max": [
+          -0.585,
+          0.242,
+          0.9575
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "ledger_R",
+      "bbox": {
+        "min": [
+          0.585,
+          0.212,
+          -0.9425
+        ],
+        "max": [
+          0.615,
+          0.242,
+          0.9575
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "mattress",
+      "bbox": {
+        "min": [
+          -0.595,
+          0.26,
+          -0.9325
+        ],
+        "max": [
+          0.595,
+          0.48,
+          0.9675
+        ]
+      },
+      "triangles": 2700,
+      "material": "cotton_linen"
+    },
+    {
+      "name": "pillow_C",
+      "bbox": {
+        "min": [
+          -0.31,
+          0.485473,
+          -0.933938
+        ],
+        "max": [
+          0.31,
+          0.706037,
+          -0.520399
+        ]
+      },
+      "triangles": 7500,
+      "material": "cotton_white"
+    },
+    {
+      "name": "piping_bottom",
+      "bbox": {
+        "min": [
+          -0.592241,
+          0.264069,
+          -0.939741
+        ],
+        "max": [
+          0.592241,
+          0.276433,
+          0.954741
+        ]
+      },
+      "triangles": 720,
+      "material": "cotton_linen"
+    },
+    {
+      "name": "piping_top",
+      "bbox": {
+        "min": [
+          -0.592241,
+          0.463567,
+          -0.929741
+        ],
+        "max": [
+          0.592241,
+          0.475931,
+          0.964741
+        ]
+      },
+      "triangles": 720,
+      "material": "cotton_linen"
+    },
+    {
+      "name": "post_foot_L",
+      "bbox": {
+        "min": [
+          -0.655,
+          0,
+          0.9575
+        ],
+        "max": [
+          -0.595,
+          0.33,
+          1.0175
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "post_foot_R",
+      "bbox": {
+        "min": [
+          0.595,
+          0,
+          0.9575
+        ],
+        "max": [
+          0.655,
+          0.33,
+          1.0175
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "post_head_L",
+      "bbox": {
+        "min": [
+          -0.655,
+          0,
+          -1.0025
+        ],
+        "max": [
+          -0.595,
+          1,
+          -0.9425
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "post_head_R",
+      "bbox": {
+        "min": [
+          0.595,
+          0,
+          -1.0025
+        ],
+        "max": [
+          0.655,
+          1,
+          -0.9425
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "rail_foot",
+      "bbox": {
+        "min": [
+          -0.595,
+          0.14,
+          0.9775
+        ],
+        "max": [
+          0.595,
+          0.3,
+          1.0175
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "rail_head",
+      "bbox": {
+        "min": [
+          -0.595,
+          0.14,
+          -1.0025
+        ],
+        "max": [
+          0.595,
+          0.3,
+          -0.9625
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "rail_side_L",
+      "bbox": {
+        "min": [
+          -0.655,
+          0.14,
+          -0.9425
+        ],
+        "max": [
+          -0.615,
+          0.3,
+          0.9575
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "rail_side_R",
+      "bbox": {
+        "min": [
+          0.615,
+          0.14,
+          -0.9425
+        ],
+        "max": [
+          0.655,
+          0.3,
+          0.9575
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_00",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.8875
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.9575
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_01",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.7655
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.8355
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_02",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.6435
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.7135
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_03",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.5215
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.5915
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_04",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.3995
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.4695
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_05",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.2775
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.3475
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_06",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.1555
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.2255
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_07",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          0.0335
+        ],
+        "max": [
+          0.614,
+          0.26,
+          0.1035
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_08",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.0885
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.0185
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_09",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.2105
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.1405
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_10",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.3325
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.2625
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_11",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.4545
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.3845
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_12",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.5765
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.5065
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_13",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.6985
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.6285
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_14",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.8205
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.7505
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    },
+    {
+      "name": "slat_15",
+      "bbox": {
+        "min": [
+          -0.614,
+          0.242,
+          -0.9425
+        ],
+        "max": [
+          0.614,
+          0.26,
+          -0.8725
+        ]
+      },
+      "triangles": 60,
+      "material": "oak_face+oak_endgrain"
+    }
+  ]
+}

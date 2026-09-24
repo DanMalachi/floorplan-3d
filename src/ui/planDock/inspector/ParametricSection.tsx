@@ -50,6 +50,14 @@ const HANDLE_LABEL_KEY: Record<ParametricSpec["handle"], string> = {
 // Representative swatch colors — a flat UI stand-in for the actual procedural/
 // photo finish, not the finish itself. Extend alongside new finish ids.
 const FINISH_HEX: Record<string, string> = {
+  "factory-rough-linen": "#8a8f96",
+  "factory-curly-teddy": "#f1eadb",
+  "factory-hessian": "#d8cab2",
+  "factory-velour": "#9ca993",
+  "factory-leather": "#cdb794",
+  "factory-hessian-chaise": "#b9bbbe",
+  "factory-oatmeal": "#918473",
+  "factory-terlenka": "#f3dabb",
   painted: "#f4f4f2",
   "painted-white": "#f4f4f2",
   "painted-charcoal": "#3a3d40",
@@ -185,13 +193,17 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             displayScale={100}
             unit={tu("cm")}
           />
-          <PdNumField
-            label={t("height")}
-            value={spec.dims.h}
-            onCommit={(h) => update({ dims: { ...spec.dims, h } })}
-            displayScale={100}
-            unit={tu("cm")}
-          />
+          {/* A height the generator fixes (a bed's headboard, a cooktop's
+              glass) is not a control: typing into it would snap back. */}
+          {g.dimLimits.h[0] !== g.dimLimits.h[1] && (
+            <PdNumField
+              label={t("height")}
+              value={spec.dims.h}
+              onCommit={(h) => update({ dims: { ...spec.dims, h } })}
+              displayScale={100}
+              unit={tu("cm")}
+            />
+          )}
         </>
       )}
       <PdNumField
@@ -276,7 +288,9 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
       )}
 
       {g.finishesLabelKey && <span style={{ fontSize: 10.5, color: PD.textTertiary }}>{t(g.finishesLabelKey)}</span>}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {/* One finish is no choice — same single-option rule as fronts/handles.
+          The colour control below still shows when that finish is colourable. */}
+      {g.finishes.length > 1 && <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         {g.finishes.map((f) => {
           // Wall art's finishes ARE pictures: the swatch shows the painting,
           // because a dot in its average colour is a choice made blind.
@@ -292,7 +306,7 @@ export function ParametricSection({ item }: { item: FurnitureItem }) {
             />
           );
         })}
-      </div>
+      </div>}
       {isColorable(spec.finish) && (
         <ColorControl value={spec.color ?? FINISH_HEX[spec.finish] ?? "#ffffff"} onCommit={(color) => update({ color })} />
       )}

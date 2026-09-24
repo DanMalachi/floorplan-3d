@@ -774,3 +774,51 @@ they never flag red-collision against the run they sit on.
 - After each phase: `npx tsc --noEmit`, browser verification of the ✔ list
   (visible tab — hidden tabs get 0 rAF ticks), commit `R1: …` style.
 - Deviations from this doc go in the commit message under "Deviations:".
+
+---
+---
+
+# v3 Revision (2026-09-23) — bespoke factory pieces, live
+
+APPROVED DESIGN (Dan, 2026-09-22/23). The approved done-furniture-factory designs
+(Blender, baked GLBs in `data/furniture-factory.catalog.json`) become live parametric
+generators, keeping their exact silhouettes. Scope: the 6 factory sofas + the Astra
+upholstered bed. **The oak platform bed is out of scope** (Codex-made, not approved).
+
+## Decisions
+- **Port, don't deform.** Every piece has fixed-metre features (tuft divots, pinch seams,
+  stitch pitch, arm-height clamp, chaise mirror) that stretching a baked GLB breaks. Each
+  build script is ported line for line to TypeScript in `src/parametric/factory/`.
+- **One generator per design** (`sofaBlockArm`, …), one dock card each.
+- **The dock offers only the live version.** `GeneratorDef.replacesAsset` hides the baked
+  catalog card; the catalog entry stays registered so already-placed items keep rendering.
+  `GeneratorDef.thumbnail` puts the product photo on the Custom card.
+- **Same textures as the GLBs**, served as WebP tiles from `public/furniture/factory/tex/`
+  (`manifest.json`). Upholstery = luminance-normalised grey × colour, exactly the Blender
+  multiply; UVs are metres/tile (`fabricUV`), so weave scale never changes with size.
+- **Controls mirror the script's CLI**: width/depth/height (+colour). Counts the script
+  keeps fixed stay fixed. Limits: only ranges Dan approved, recorded on each generator.
+- A single-finish generator hides its lone swatch (same single-option rule as fronts/handles).
+
+## Parity gate (every port, `npm run test:factory`)
+Fixtures in `src/parametric/factory/__fixtures__/` are exported by the ORIGINAL script
+(`scripts/factory-parity/extract-parts.mjs`) at min/default/max. The port must match
+**every named part's bbox within 5mm** at all three, have **≤ the shipped GLB's triangles**,
+and **rebuild in < 50ms** warm. Visual check: `scripts/factory-parity/dump-port.ts` +
+`render-compare.py` render baked vs port in Blender with identical materials (front, 3/4,
+profile, close-up), then a Playwright pass in the editor.
+
+## Protected-file diff
+`scene.ts`: one union member per generator. Nothing else.
+
+## Status
+- V3-0 fixtures + tiles — done (`cb82a88`).
+- V3-1 `sofaBlockArm` pilot — W 1.50–2.80, D 0.80–1.10, H 0.74–0.90 (height capped at 0.90:
+  above it the script's arm clamp leaves the arms low against a tall back). Approved by
+  Dan 2026-09-23 (`c699ce6`). Remaining work: `docs/PARAMETRIC-FACTORY-V3-HANDOFF.md`.
+- V3-2 remaining 5 sofas — ported (`30b20f1`…`e518862`), awaiting Dan's review; the
+  chaise's width range and depth/chaise-length mapping are provisional until he rules.
+  The parity test compares triangles with the Blender build AT THE SAME SIZE (leather
+  stitches follow the size). Tone (the scripts' vertex-colour noise) runs in the vertex
+  shader (`ToneMaterial`), not on the CPU.
+- V3-3 Astra bed — next, alone.

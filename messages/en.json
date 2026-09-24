@@ -1144,6 +1144,42 @@
         "label": "Match run below",
         "on": "On",
         "off": "Off"
+      },
+      "sofaFlareArm": {
+        "label": "Flare-arm sofa"
+      },
+      "sofaPlainBlock": {
+        "label": "Plain block sofa"
+      },
+      "sofaTuftedSage": {
+        "label": "Tufted velvet sofa"
+      },
+      "sofaBeigeLeather": {
+        "label": "Leather sofa"
+      },
+      "bedOakPlatform": {
+        "label": "Oak platform bed"
+      },
+      "bedUpholstered": {
+        "label": "Upholstered bed"
+      },
+      "sofaGreyChaise": {
+        "label": "Chaise sectional",
+        "modules": {
+          "chaiseLen": {
+            "label": "Chaise length (cm)"
+          },
+          "chaiseRight": {
+            "label": "Chaise side",
+            "toggle": {
+              "on": "Right",
+              "off": "Left"
+            }
+          }
+        }
+      },
+      "sofaBlockArm": {
+        "label": "Block-arm sofa"
       }
     },
     "import": {

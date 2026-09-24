@@ -1144,6 +1144,42 @@
         "label": "התאמה לשורה התחתונה",
         "on": "פעיל",
         "off": "כבוי"
+      },
+      "sofaFlareArm": {
+        "label": "ספה עם ידיות נטויות"
+      },
+      "sofaPlainBlock": {
+        "label": "ספה מרובעת פשוטה"
+      },
+      "sofaTuftedSage": {
+        "label": "ספת קטיפה מכופתרת"
+      },
+      "sofaBeigeLeather": {
+        "label": "ספת עור"
+      },
+      "bedOakPlatform": {
+        "label": "מיטת במה מעץ אלון"
+      },
+      "bedUpholstered": {
+        "label": "מיטה מרופדת"
+      },
+      "sofaGreyChaise": {
+        "label": "ספה פינתית עם שזלונג",
+        "modules": {
+          "chaiseLen": {
+            "label": "אורך השזלונג (ס״מ)"
+          },
+          "chaiseRight": {
+            "label": "צד השזלונג",
+            "toggle": {
+              "on": "ימין",
+              "off": "שמאל"
+            }
+          }
+        }
+      },
+      "sofaBlockArm": {
+        "label": "ספה עם ידיות מרובעות"
       }
     },
     "import": {

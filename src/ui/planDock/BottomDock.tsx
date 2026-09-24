@@ -112,6 +112,11 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   outdoors: OUTDOORS_HOTSPOTS,
 };
 
+/** Baked catalog assets superseded in the picker by a live factory port. */
+const REPLACED_ASSETS = new Set(
+  Object.values(GENERATORS).flatMap((g) => (g.replacesAsset ? [g.replacesAsset] : [])),
+);
+
 // Item dock resize (Plan Dock P9). One ItemCard ≈ 4(pad-top) + 48(thumb) +
 // 3(gap) + ~13.2(name line, 11px/1.2) + 3(gap) + ~12(kind line, 10px/1.2) +
 // 4(pad-bottom) ≈ 87px (a11y type-size pass raised name/kind off the sub-10px
@@ -728,7 +733,13 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       }}
     >
       <div aria-hidden style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
-        {Glyph && <Glyph size={30} />}
+        {generator.thumbnail ? (
+          // A factory port is one specific approved design: show the product.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={generator.thumbnail} alt="" width={48} height={48} style={{ objectFit: "contain" }} />
+        ) : (
+          Glyph && <Glyph size={30} />
+        )}
       </div>
       <span
         style={{
@@ -819,7 +830,9 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
     setQuery("");
   };
 
-  const roomItems = useMemo(() => getItemsForRoom(room), [room]);
+  // A factory design with a live parametric port is offered ONLY as its custom
+  // card — the baked catalog entry stays registered for items already placed.
+  const roomItems = useMemo(() => getItemsForRoom(room).filter((i) => !REPLACED_ASSETS.has(i.assetId)), [room]);
   const hotspot = ROOM_HOTSPOTS[room]?.find((h) => h.id === activeHotspot);
 
   // Pinned first and unaffected by the category chips, but the HOTSPOT filter
