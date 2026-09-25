@@ -13,19 +13,17 @@
 // sheet), which src/doors/geometry.ts relies on to lay grain up the stiles and
 // across the rails.
 //
-// Usage: node scripts/doors/bake-veneers.mjs [--only id,id] [--cache <dir>]
+// Usage: node scripts/doors/bake-veneers.mjs [--only id,id]
 // Licence: https://polyhaven.com/license (CC0-1.0), checked 2026-09-25.
 
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import sharp from "sharp";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, "$1")), "../..");
 const OUT = path.join(ROOT, "public/materials/doors/veneer");
 const args = process.argv.slice(2);
 const argVal = (k) => (args.includes(k) ? args[args.indexOf(k) + 1] : undefined);
-const CACHE = argVal("--cache") ?? path.join(os.tmpdir(), "done-door-veneers");
 const ONLY = argVal("--only")?.split(",");
 
 // id -> Poly Haven source + the FINISHED species' mean colour (sRGB, a
@@ -54,18 +52,22 @@ export const VENEERS = {
 
 const SIZE = 1024; // Poly Haven veneers are 1 m square: 1 px ~ 1 mm on the door.
 
-async function fetchTo(url, file) {
-  if (fs.existsSync(file) && fs.statSync(file).size > 1000) return;
-  const r = await fetch(url);
+/** Download into memory, never to a temp file: sharp decodes the buffer
+ *  directly, so nothing unvalidated is ever written to disk. Only Poly
+ *  Haven's own download host is accepted. */
+async function fetchImage(url) {
+  const u = new URL(url);
+  if (u.protocol !== "https:" || u.hostname !== "dl.polyhaven.org") throw new Error(`unexpected host: ${u.hostname}`);
+  const r = await fetch(u);
   if (!r.ok) throw new Error(`${r.status} ${url}`);
-  fs.writeFileSync(file, Buffer.from(await r.arrayBuffer()));
+  return Buffer.from(await r.arrayBuffer());
 }
 
 const toLin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const toSrgb = (c) => (c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055);
 
-async function grade(file, { target, contrast }) {
-  const { data, info } = await sharp(file).resize(SIZE, SIZE).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+async function grade(image, { target, contrast }) {
+  const { data, info } = await sharp(image).resize(SIZE, SIZE).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const n = data.length / 3;
   const lin = new Float32Array(data.length);
   const mean = [0, 0, 0];
@@ -84,7 +86,6 @@ async function grade(file, { target, contrast }) {
 }
 
 async function main() {
-  fs.mkdirSync(CACHE, { recursive: true });
   const manifest = {};
   for (const [id, v] of Object.entries(VENEERS)) {
     if (ONLY && !ONLY.includes(id)) continue;
@@ -92,32 +93,37 @@ async function main() {
     const info = await (await fetch(`https://api.polyhaven.com/info/${v.src}`)).json();
     const pick = (k) => files[k]["1k"].jpg.url;
     const raw = {
-      color: path.join(CACHE, `${v.src}_diff.jpg`),
-      normal: path.join(CACHE, `${v.src}_nor_gl.jpg`),
-      roughness: path.join(CACHE, `${v.src}_rough.jpg`),
+      color: await fetchImage(pick("Diffuse")),
+      normal: await fetchImage(pick("nor_gl")),
+      roughness: await fetchImage(pick("Rough")),
     };
-    await fetchTo(pick("Diffuse"), raw.color);
-    await fetchTo(pick("nor_gl"), raw.normal);
-    await fetchTo(pick("Rough"), raw.roughness);
     const dir = path.join(OUT, id);
     fs.mkdirSync(dir, { recursive: true });
     await (await grade(raw.color, v)).webp({ quality: 88 }).toFile(path.join(dir, "color.webp"));
     // Data maps: never graded, never chroma-subsampled into mush.
     await sharp(raw.normal).resize(SIZE, SIZE).webp({ quality: 90, smartSubsample: true }).toFile(path.join(dir, "normal.webp"));
     await sharp(raw.roughness).resize(SIZE, SIZE).greyscale().webp({ quality: 90 }).toFile(path.join(dir, "roughness.webp"));
-    const [dx, dy] = info.dimensions ?? [1000, 1000]; // mm
+    // Only our own constants and validated numbers go into the manifest.
+    const mm = (x) => (Number.isFinite(Number(x)) && Number(x) > 0 && Number(x) < 100000 ? Math.round(Number(x)) : 1000);
+    const [dx, dy] = Array.isArray(info.dimensions) ? info.dimensions : [1000, 1000];
     manifest[id] = {
       source: `https://polyhaven.com/a/${v.src}`,
-      name: info.name,
+      name: v.src,
       licence: "CC0-1.0 (https://polyhaven.com/license)",
-      authors: Object.keys(info.authors ?? {}),
-      tileMetres: [dx / 1000, dy / 1000],
+      tileMetres: [mm(dx) / 1000, mm(dy) / 1000],
       grade: { target: v.target, contrast: v.contrast },
     };
     console.log(id, "<-", v.src, manifest[id].tileMetres.join("x"), "m");
   }
   const mf = path.join(OUT, "manifest.json");
-  const prev = fs.existsSync(mf) ? JSON.parse(fs.readFileSync(mf, "utf8")) : {};
+  // Read-then-write without an existence check (no check/use race): a
+  // missing manifest is simply an empty one.
+  let prev = {};
+  try {
+    prev = JSON.parse(fs.readFileSync(mf, "utf8"));
+  } catch {
+    prev = {};
+  }
   fs.writeFileSync(mf, JSON.stringify({ ...prev, ...manifest }, null, 2) + "\n");
 }
 
