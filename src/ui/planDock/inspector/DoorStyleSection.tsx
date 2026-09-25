@@ -33,8 +33,9 @@ import { PdChip, PdSwatch, PdActionRow, PdActionButton, pdChipFlex } from "./pan
 import { pdMicroLabel, PD } from "../tokens";
 
 const DESIGNS: DoorDesign[] = [
-  "flush", "flush-grooves", "shaker", "shaker-3", "panel-5", "raised-4",
-  "glass-full", "glass-lites", "glass-slot", "entry-slab", "entry-grooves", "entry-slot",
+  "flush", "flush-grooves", "flush-inlay", "planked", "shaker", "shaker-3", "panel-2", "panel-5", "raised-4",
+  "glass-full", "glass-grid", "glass-lites", "glass-slot", "french",
+  "entry-slab", "entry-grooves", "entry-lines", "entry-slot", "entry-grille",
 ];
 const SPECIES: VeneerId[] = [
   "white-oak", "natural-oak", "rift-oak", "smoked-oak", "grey-oak", "black-oak",
@@ -42,12 +43,12 @@ const SPECIES: VeneerId[] = [
   "cherry", "teak", "sapele", "flamed-black",
 ];
 const POLYMERS: PolymerId[] = ["hpl", "supermatte", "upvc", "fibreglass"];
-const HANDLES: HandleId[] = ["lever-round", "lever-square", "lever-plate", "knob", "pull-bar", "none"];
+const HANDLES: HandleId[] = ["lever-round", "lever-square", "lever-plate", "knob", "pull-bar", "pull-bar-long", "pull-recessed", "none"];
 const METALS: MetalId[] = [
   "stainless-brushed", "stainless-polished", "chrome", "nickel-satin", "brass-satin",
   "brass-polished", "bronze", "copper", "aluminium-anodised", "black-matte", "gunmetal",
 ];
-const GLASSES: GlassId[] = ["clear", "frosted", "fluted", "reeded", "bronze", "grey"];
+const GLASSES: GlassId[] = ["clear", "frosted", "fluted", "reeded", "textured", "bronze", "grey"];
 const TRIMS: TrimId[] = ["flat", "stepped", "classic", "minimal"];
 const SHEENS: Sheen[] = ["matte", "satin", "gloss"];
 type SurfaceKind = DoorSurface["kind"];
@@ -59,6 +60,7 @@ const DOOR_COLOUR_IDS = [
   "done-whites-warm-ivory-08", "done-neutrals-olive-taupe-04", "done-neutrals-neutral-grey-07",
   "done-neutrals-mineral-plaster-12", "done-neutrals-smoke-grey-12", "done-blacks-neutral-near-black-03",
   "done-blacks-neutral-near-black-06", "done-greens-grey-sage-07", "done-greens-grey-sage-11",
+  "done-whites-chalk-white-07", "done-neutrals-sand-grey-10", "done-blues-slate-blue-09",
   "done-blues-architectural-blue-grey-07", "done-blues-architectural-blue-grey-12",
   "done-warm_earth-heritage-clay-08", "done-reds-burgundy-08",
 ];
@@ -230,10 +232,25 @@ export function DoorStyleSection({ opening }: { opening: Opening }) {
         </div>
       )}
 
+      {surf.kind === "powder" && (
+        <PdChip
+          active={!!surf.metallic}
+          tip={t("metallicTip")}
+          onClick={() => editSurface("Door metallic", { ...surf, metallic: !surf.metallic })}
+        >
+          {t("metallic")}
+        </PdChip>
+      )}
+
       <Select label={t("handle")} value={look.handle} options={HANDLES} name={(v) => t(`handles.${v}`)} onChange={(v) => edit("Door handle", { handle: v })} />
       <Select label={t("hardware")} value={look.hardware} options={METALS} name={(v) => t(`metals.${v}`)} onChange={(v) => edit("Door hardware", { hardware: v })} />
       {GLAZED_DESIGNS.has(look.design) && (
         <Select label={t("glass")} value={look.glass} options={GLASSES} name={(v) => t(`glass.${v}`)} onChange={(v) => edit("Door glass", { glass: v })} />
+      )}
+      {kind === "entry" && (
+        <PdChip active={!!look.sidelight} tip={t("sidelightTip")} onClick={() => edit("Door sidelight", { sidelight: !look.sidelight })}>
+          {t("sidelight")}
+        </PdChip>
       )}
       <Select label={t("trim")} value={look.trim} options={TRIMS} name={(v) => t(`trims.${v}`)} onChange={(v) => edit("Door trim", { trim: v })} />
 

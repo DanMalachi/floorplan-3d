@@ -11,6 +11,7 @@ import {
   houseLooks,
   outsideSide,
   resolveDoorLook,
+  GLAZED_DESIGNS,
   type DoorDesign,
   type DoorLook,
 } from "./look";
@@ -119,20 +120,23 @@ const bbox = (g: THREE.BufferGeometry) => {
 const designs: DoorDesign[] = [
   "flush", "flush-grooves", "shaker", "shaker-3", "panel-5", "raised-4",
   "glass-full", "glass-lites", "glass-slot", "entry-slab", "entry-grooves", "entry-slot",
+  "panel-2", "flush-inlay", "planked", "glass-grid", "french", "entry-grille", "entry-lines",
 ];
 for (const design of designs) {
   const look: DoorLook = { ...DEFAULT_LOOKS.interior, design, handle: "lever-round" };
   for (const [W, H] of [[0.6, 1.9], [0.9, 2.1], [1.2, 2.6]] as const) {
     const T = design.startsWith("entry") ? 0.068 : 0.04;
+    // Applied relief and inlays stand a few mm proud of the face by design.
+    const proud = design === "entry-lines" ? 0.0031 : 0;
     const p = buildLeaf(look, { W, H, T, handleY: HANDLE_HEIGHT - H / 2 });
     const b = p.body ? bbox(p.body) : null;
     const within =
       !!b && b.min.x >= -W / 2 - 1e-4 && b.max.x <= W / 2 + 1e-4 && b.min.y >= -H / 2 - 1e-4 && b.max.y <= H / 2 + 1e-4 &&
-      b.max.z <= T / 2 + 1e-4 && b.min.z >= -T / 2 - 1e-4;
+      b.max.z <= T / 2 + proud + 1e-4 && b.min.z >= -T / 2 - proud - 1e-4;
     check(`${design} ${W}x${H} body fills the leaf, no spill`, within &&
       Math.abs(b!.max.x - b!.min.x - W) < 0.005 && Math.abs(b!.max.y - b!.min.y - H) < 0.005,
       b ? `${b.min.toArray().map((v) => v.toFixed(3))} ${b.max.toArray().map((v) => v.toFixed(3))}` : "no body");
-    const glazed = ["glass-full", "glass-lites", "glass-slot", "entry-slot"].includes(design);
+    const glazed = GLAZED_DESIGNS.has(design);
     check(`${design} ${W}x${H} glass iff glazed`, glazed === tris(p.glass) > 0);
     const total = tris(p.body) + tris(p.recess) + tris(p.glass) + tris(p.hardware) + tris(p.seal);
     check(`${design} ${W}x${H} budget`, total < 60_000, `${total} tris`);

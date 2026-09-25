@@ -25,7 +25,14 @@ export type DoorDesign =
   | "glass-slot" // slab with a narrow vertical light near the latch
   | "entry-slab" // thick flush entry slab
   | "entry-grooves" // thick entry slab, horizontal grooves
-  | "entry-slot"; // thick entry slab with a vertical glass slot
+  | "entry-slot" // thick entry slab with a vertical glass slot
+  | "panel-2" // two raised panels, mid rail at handle height
+  | "flush-inlay" // flush slab with thin metal inlay lines
+  | "planked" // vertical boards between a top and bottom rail
+  | "glass-grid" // frame with a 2 x 5 grid of glazed lites
+  | "french" // 2 x 3 glazed lites over a raised panel
+  | "entry-grille" // security entry: glazed top behind a grille, panel below
+  | "entry-lines"; // thick slab with an applied relief of raised lines
 
 export type Sheen = "matte" | "satin" | "gloss";
 
@@ -36,7 +43,7 @@ export type Sheen = "matte" | "satin" | "gloss";
 export type DoorSurface =
   | { kind: "wood"; species: VeneerId; sheen: Sheen }
   | { kind: "paint"; color: string; sheen: Sheen } // painted wood / MDF
-  | { kind: "powder"; color: string; sheen: Sheen } // powder-coated steel or aluminium
+  | { kind: "powder"; color: string; sheen: Sheen; metallic?: boolean } // powder-coated steel or aluminium
   | { kind: "polymer"; color: string; polymer: PolymerId }
   | { kind: "metal"; metal: MetalId };
 
@@ -61,11 +68,13 @@ export type HandleId =
   | "lever-square" // slim square lever on a square rose
   | "lever-plate" // lever on a long backplate with keyhole
   | "knob" // round knob on a rose
-  | "pull-bar" // long pull bar (entry, outside face)
+  | "pull-bar" // pull bar (entry, outside face)
+  | "pull-bar-long" // floor-to-shoulder pull bar (pivot / modern entry)
+  | "pull-recessed" // long recessed channel pull, integrated in the leaf
   | "flush-pull" // recessed pull (sliding leaves)
   | "none";
 
-export type GlassId = "clear" | "frosted" | "fluted" | "reeded" | "bronze" | "grey";
+export type GlassId = "clear" | "frosted" | "fluted" | "reeded" | "textured" | "bronze" | "grey";
 
 export type TrimId =
   | "flat" // square-edged flat casing, eased
@@ -80,6 +89,9 @@ export interface DoorLook {
   hardware: MetalId;
   glass: GlassId;
   trim: TrimId;
+  /** Entry doors: a fixed glazed sidelight beside the leaf, on the hinge
+   *  side. The leaf narrows to what is left and swings on its own axis. */
+  sidelight?: boolean;
   /** Casing + jamb lining finish. Absent = painted to match the house trim
    *  (satin white), which is how nearly every home finishes its casings. */
   trimSurface?: DoorSurface;
@@ -108,13 +120,16 @@ export const DEFAULT_LOOKS: Record<DoorKind, DoorLook> = {
 
 /** Designs that carry glass (so the glass picker only shows for these). */
 export const GLAZED_DESIGNS: ReadonlySet<DoorDesign> = new Set<DoorDesign>([
-  "glass-full", "glass-lites", "glass-slot", "entry-slot",
+  "glass-full", "glass-lites", "glass-slot", "entry-slot", "glass-grid", "french", "entry-grille",
 ]);
 
 /** Entry designs are built to entry-door thickness. */
 export const ENTRY_DESIGNS: ReadonlySet<DoorDesign> = new Set<DoorDesign>([
-  "entry-slab", "entry-grooves", "entry-slot",
+  "entry-slab", "entry-grooves", "entry-slot", "entry-grille", "entry-lines",
 ]);
+
+/** Share of the opening a sidelight takes (the leaf gets the rest). */
+export const SIDELIGHT_SHARE = 0.27;
 
 /** Leaf thickness a design is built at (metres). Interior doors are 40 mm
  *  hollow/solid-core leaves; entry doors are 68 mm insulated leaves. */

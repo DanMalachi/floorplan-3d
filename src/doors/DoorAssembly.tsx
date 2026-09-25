@@ -8,8 +8,8 @@ import { shadowProps } from "@/render/materialClass";
 import { isDoubleDoor } from "@/render/doorStyle";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { JoineryFrame, JoineryPiece } from "@/viewport3d/geometry/buildJoinery";
-import { doorRenderKey, leafThickness, DEFAULT_TRIM_SURFACE, type DoorRenderInfo } from "./look";
-import { buildLeaf, buildLining, buildTrim, HANDLE_HEIGHT, type LeafParts, type Slot } from "./geometry";
+import { doorRenderKey, leafThickness, DEFAULT_TRIM_SURFACE, SIDELIGHT_SHARE, type DoorRenderInfo } from "./look";
+import { buildLeaf, buildLining, buildSidelight, buildTrim, HANDLE_HEIGHT, type LeafParts, type Slot } from "./geometry";
 import { doorEnvMap, glassMaterial, metalMaterial, recessMaterial, sealMaterial, surfaceMaterial } from "./materials";
 
 /**
@@ -52,6 +52,7 @@ function setEnvLevel(m: Mats, level: number) {
   }
 }
 
+/** `metalLeaf`: the leaf itself is (partly) metal, bare or metallic flake. */
 function reflective(x: THREE.MeshPhysicalMaterial, metalLeaf: boolean): boolean {
   const slot = x.userData.slot as string;
   return slot === "hardware" || slot === "glass" || (metalLeaf && (slot === "body" || slot === "recess"));
@@ -95,7 +96,8 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
       // own environment, so a white door is lit exactly like a white wall
       // beside it (a room map also brightens DIFFUSE light, which made
       // painted doors glow against their walls).
-      if (!reflective(x, look.surface.kind === "metal")) continue;
+      const metalLeaf = look.surface.kind === "metal" || (look.surface.kind === "powder" && !!look.surface.metallic);
+      if (!reflective(x, metalLeaf)) continue;
       x.envMap = env;
       x.userData.envScale = x.envMapIntensity; // per-material weight (metals > 1)
     }
@@ -159,6 +161,24 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
   const swingSign = sgn(opening.swingDeg ?? 0);
   const swingZ: 1 | -1 = isDoubleDoor(opening) ? swingSign : ((swingSign * (opening.hinge === "end" ? -1 : 1)) as 1 | -1);
 
+  // Sidelight: single hinged doors only. It takes the hinge side of the
+  // inner opening; the leaf narrows and hangs on the post beside it.
+  const hingeAtStart = (opening.hinge ?? "start") === "start";
+  const iw = end - start - 2 * liningW;
+  const sideW = info?.look.sidelight && !sliding && !isDoubleDoor(opening) && iw > 0.8 ? iw * SIDELIGHT_SHARE : 0;
+  const sideGeom = useMemo(() => {
+    if (!sideW) return null;
+    const s0 = hingeAtStart ? start + liningW : end - liningW - sideW;
+    return buildSidelight({
+      s0, s1: s0 + sideW, postAtS1: hingeAtStart, top: top - liningW, depth,
+      zGlass: swingZ * (depth / 2 - FACE_INSET - T / 2),
+    });
+  }, [sideW, hingeAtStart, start, end, liningW, top, depth, swingZ, T]);
+  useEffect(() => () => {
+    sideGeom?.frame?.dispose();
+    sideGeom?.glass?.dispose();
+  }, [sideGeom]);
+
   const trimGeom = useMemo(() => {
     if (!info || !hasLining) return null;
     const lining = buildLining(start, end, top, depth, liningW);
@@ -204,16 +224,22 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
           {trimGeom.trim && (
             <mesh geometry={trimGeom.trim} material={mats.trim} raycast={() => null} {...shadowProps("opaqueArchitecture")} />
           )}
+          {sideGeom?.frame && (
+            <mesh geometry={sideGeom.frame} material={mats.body} raycast={() => null} {...shadowProps("opaqueArchitecture")} />
+          )}
+          {sideGeom?.glass && (
+            <mesh geometry={sideGeom.glass} material={mats.glass} raycast={() => null} {...shadowProps("glass")} />
+          )}
         </group>
       )}
       {leaves.map((l) => (
-        <Leaf key={l.key} info={info} lookKey={lookKey} mats={mats} leaf={l} T={T} frame={frame} faceZ={depth / 2 - FACE_INSET} swingZ={swingZ} />
+        <Leaf key={l.key} info={info} lookKey={lookKey} mats={mats} leaf={l} T={T} frame={frame} faceZ={depth / 2 - FACE_INSET} swingZ={swingZ} sideW={sideW} hingeAtStart={hingeAtStart} />
       ))}
     </>
   );
 }
 
-function Leaf({ info, lookKey, mats, leaf, T, frame, faceZ, swingZ }: {
+function Leaf({ info, lookKey, mats, leaf, T, frame, faceZ, swingZ, sideW, hingeAtStart }: {
   info: DoorRenderInfo;
   lookKey: string;
   mats: Mats;
@@ -223,9 +249,13 @@ function Leaf({ info, lookKey, mats, leaf, T, frame, faceZ, swingZ }: {
   /** Wall-local Z of the frame edge the leaf hangs flush with. */
   faceZ: number;
   swingZ: 1 | -1;
+  /** Width a sidelight takes from the hinge side (0 = none). */
+  sideW: number;
+  hingeAtStart: boolean;
 }) {
   const { piece, sigma } = leaf;
-  const [W, H] = piece.size;
+  const [fullW, H] = piece.size;
+  const W = fullW - sideW;
   // Leaf frame: +X = hinge->latch (sigma along the piece's own +X).
   const rotY = piece.rotationY + (sigma < 0 ? Math.PI : 0);
   // Rounded to the millimetre so float noise in the piece's centre can't
@@ -244,7 +274,8 @@ function Leaf({ info, lookKey, mats, leaf, T, frame, faceZ, swingZ }: {
   // leaf.hingeFace is already in THIS frame (+Z = left normal of
   // hinge->latch), so the PI flip for sigma < 0 needs no correction.
   const hingeFace = leaf.hingeFace;
-  const concealed = info.look.trim === "minimal";
+  // A sidelight leaf hangs on pivots/concealed hinges at the post.
+  const concealed = info.look.trim === "minimal" || sideW > 0;
 
   const parts = useMemo<LeafParts>(
     () =>
@@ -271,14 +302,22 @@ function Leaf({ info, lookKey, mats, leaf, T, frame, faceZ, swingZ }: {
   //   centre = C + swingN * faceZ - R(0, 0, hingeFace * T/2)
   // Sliding leaves ride their tracks at buildJoinery's depths, unchanged.
   let pos = piece.position;
+  if (sideW > 0) {
+    // The leaf now runs from P = hinge + d0 * sideW (d0: hinge->latch when
+    // shut, fixed) to P + d * W (d: its current direction), so its centre
+    // moves by d0 * sideW - d * sideW / 2 from buildJoinery's.
+    const d0x = frame.ux * (hingeAtStart ? 1 : -1), d0z = frame.uy * (hingeAtStart ? 1 : -1);
+    const dx = Math.cos(rotY), dz = -Math.sin(rotY);
+    pos = [pos[0] + d0x * sideW - (dx * sideW) / 2, pos[1], pos[2] + d0z * sideW - (dz * sideW) / 2];
+  }
   if (!leaf.sliding) {
     const sx = -frame.uy * swingZ; // swing normal, world (X, Z)
     const sz = frame.ux * swingZ;
     const k = (hingeFace * T) / 2;
     pos = [
-      piece.position[0] + sx * faceZ - Math.sin(rotY) * k,
-      piece.position[1],
-      piece.position[2] + sz * faceZ - Math.cos(rotY) * k,
+      pos[0] + sx * faceZ - Math.sin(rotY) * k,
+      pos[1],
+      pos[2] + sz * faceZ - Math.cos(rotY) * k,
     ];
   }
 

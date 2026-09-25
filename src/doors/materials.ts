@@ -163,6 +163,11 @@ const MICRO = {
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) h[y * N + x] = rows[y] + 0.3 * rows[(y * 7 + ((x / 64) | 0)) % N];
       return heightToNormalTex(h, N, 0.9, 0.03);
     }),
+  // Textured ("hammered") glass: soft irregular dimples a few mm across,
+  // the obscure glazing of older panelled doors.
+  hammered: () => generated("hammered", () => heightToNormalTex(tileNoise(256, [18, 40], [1, 0.45], 71), 256, 5, 0.12)),
+  // Metallic powder coat: aluminium flake just under the film, a fine sparkle.
+  flake: () => generated("flake", () => heightToNormalTex(tileNoise(256, [128, 256], [1, 1], 83), 256, 6, 0.02)),
   // Fluted glass: vertical half-round flutes. `pitch` metres per flute; the
   // texture holds 8 flutes, so tileM = 8 * pitch.
   flutes: (pitch: number) =>
@@ -260,6 +265,16 @@ export function surfaceMaterial(s: DoorSurface): THREE.MeshPhysicalMaterial {
       m.roughness = s.kind === "powder" ? r * 0.9 : r;
       m.clearcoat = cc;
       m.clearcoatRoughness = ccr;
+      if (s.kind === "powder" && s.metallic) {
+        // Metallic powder: flake in the film makes it partly conductor-like;
+        // the clear topcoat keeps a sharp dielectric highlight over it.
+        m.metalness = 0.55;
+        m.roughness = 0.38;
+        m.normalMap = MICRO.flake();
+        m.normalScale.set(0.18, 0.18);
+        m.clearcoat = Math.max(cc, 0.4);
+        m.clearcoatRoughness = 0.18;
+      }
       break;
     }
     case "polymer": {
@@ -310,11 +325,12 @@ export function metalMaterial(id: MetalId): THREE.MeshPhysicalMaterial {
  *  see face-on is mostly what's behind it. Opacity stands in for
  *  transmission (see header); frosting scatters, so it raises opacity and
  *  roughness together; tints absorb, so they darken + raise opacity. */
-export const GLASS: Record<GlassId, { color: string; opacity: number; roughness: number; flutes?: number }> = {
+export const GLASS: Record<GlassId, { color: string; opacity: number; roughness: number; flutes?: number; hammered?: boolean }> = {
   clear: { color: "#eef6f6", opacity: 0.16, roughness: 0.03 },
   frosted: { color: "#f4f7f7", opacity: 0.72, roughness: 0.55 }, // acid-etched
   fluted: { color: "#eef5f4", opacity: 0.42, roughness: 0.12, flutes: 0.013 }, // 13 mm flutes
   reeded: { color: "#eef5f4", opacity: 0.45, roughness: 0.1, flutes: 0.006 }, // 6 mm reeds
+  textured: { color: "#f1f5f3", opacity: 0.5, roughness: 0.14, hammered: true },
   bronze: { color: "#6b5440", opacity: 0.55, roughness: 0.03 },
   grey: { color: "#4a4f52", opacity: 0.58, roughness: 0.03 },
 };
@@ -334,6 +350,10 @@ export function glassMaterial(id: GlassId): THREE.MeshPhysicalMaterial {
   m.envMapIntensity = 1.4;
   if (g.flutes) {
     m.normalMap = MICRO.flutes(g.flutes);
+    m.normalScale.set(1, 1);
+  }
+  if (g.hammered) {
+    m.normalMap = MICRO.hammered();
     m.normalScale.set(1, 1);
   }
   m.userData.baseOpacity = g.opacity;

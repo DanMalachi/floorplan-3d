@@ -149,6 +149,8 @@ function frameFor(design: DoorDesign, W: number): Frame {
   const clampStile = (s: number) => Math.min(s, W * 0.22);
   if (design === "glass-lites") return { stile: clampStile(0.065), top: 0.065, bottom: 0.1, mid: 0.028 };
   if (design === "raised-4") return { stile: clampStile(0.12), top: 0.12, bottom: 0.22, mid: 0.16 };
+  if (design === "entry-grille") return { stile: clampStile(0.13), top: 0.13, bottom: 0.2, mid: 0.13 };
+  if (design === "french" || design === "glass-grid") return { stile: clampStile(0.1), top: 0.1, bottom: 0.2, mid: 0.1 };
   return { stile: clampStile(0.11), top: 0.11, bottom: 0.2, mid: 0.09 };
 }
 
@@ -266,6 +268,110 @@ function slotSlab(a: Acc, W: number, H: number, T: number) {
   a.seal.push(ebox(sx + sw / 2 - g / 2, 0.5 * (sy0 + sy1), 0, g, sy1 - sy0, T * 0.98, "y", 0));
 }
 
+type Cell = { cx: number; cy: number; w: number; h: number };
+
+/** A raised (fielded) panel filling a cell, with its corner shadow. */
+function raisedCell(a: Acc, c: Cell, T: number) {
+  const tongue = T - 2 * 0.012 - 0.008;
+  a.body.push(raisedPanel(c.cx, c.cy, c.w + 0.004, c.h + 0.004, tongue, 0.004, Math.min(0.05, c.w * 0.14, c.h * 0.14)));
+  cornerShadow(a, c, tongue / 2, 0.004);
+}
+
+/** Glazing bars splitting a cell into cols x rows lites. Bars are integral
+ *  to the frame (eased, a little thinner than it), each lite its own pane. */
+function litesCell(a: Acc, c: Cell, T: number, cols: number, rows: number, bar = 0.03) {
+  const lw = (c.w - (cols - 1) * bar) / cols;
+  const lh = (c.h - (rows - 1) * bar) / rows;
+  for (let i = 1; i < cols; i++) {
+    const x = c.cx - c.w / 2 + i * lw + (i - 0.5) * bar;
+    a.body.push(ebox(x, c.cy, 0, bar, c.h + 0.002, T * 0.8, "y", 0.003));
+  }
+  for (let j = 1; j < rows; j++) {
+    const y = c.cy - c.h / 2 + j * lh + (j - 0.5) * bar;
+    a.body.push(ebox(c.cx, y, 0, c.w + 0.002, bar, T * 0.8, "x", 0.003));
+  }
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      const lite = { cx: c.cx - c.w / 2 + i * (lw + bar) + lw / 2, cy: c.cy - c.h / 2 + j * (lh + bar) + lh / 2, w: lw, h: lh };
+      glazedCell(a, lite, T, false);
+    }
+  }
+}
+
+/** Flush slab with thin metal inlay lines across both faces (hardware slot,
+ *  so the lines take the door's hardware finish). */
+function inlaySlab(a: Acc, W: number, H: number, T: number) {
+  a.body.push(ebox(0, 0, 0, W, H, T, "y", 0.002));
+  for (const f of [0.18, 0.4, 0.62, 0.84]) {
+    const y = -H / 2 + f * H;
+    for (const s of [1, -1]) a.hardware.push(ebox(0, y, s * (T / 2 + 0.0002), W - 0.002, 0.005, 0.0008, "x", 0));
+  }
+}
+
+/** Vertical boards between a top and a bottom rail, V-jointed. Each board is
+ *  its own piece of wood: a grain offset per board so no two match. */
+function plankedSlab(a: Acc, W: number, H: number, T: number) {
+  const topR = Math.min(0.1, H * 0.05), botR = Math.min(0.14, H * 0.07);
+  const n = Math.max(3, Math.round(W / 0.13));
+  const bw = W / n;
+  const y0 = -H / 2 + botR, y1 = H / 2 - topR;
+  a.body.push(ebox(0, H / 2 - topR / 2, 0, W, topR, T, "x", 0.002, 0.3, 0.1));
+  a.body.push(ebox(0, -H / 2 + botR / 2, 0, W, botR, T, "x", 0.002, 0.7, 0.5));
+  for (let i = 0; i < n; i++) {
+    const x = -W / 2 + bw * (i + 0.5);
+    a.body.push(ebox(x, (y0 + y1) / 2, 0, bw - GROOVE_W, y1 - y0, T, "y", 0.0015, 0.173 * i, 0.61 * i));
+    if (i < n - 1) a.recess.push(ebox(x + bw / 2, (y0 + y1) / 2, 0, GROOVE_W + 0.0004, y1 - y0, T - 2 * GROOVE_D, "y", 0));
+  }
+  // The rail-to-board joints read as grooves too.
+  for (const y of [y0, y1]) a.recess.push(ebox(0, y, 0, W, GROOVE_W * 0.7, T - 2 * GROOVE_D, "x", 0));
+}
+
+/** An original relief of raised lines for a thick entry slab: long verticals
+ *  and cross strokes stopping short of each other, clear of the latch edge
+ *  where the hardware goes. (u across from the hinge edge, v up), 0..1. */
+const RELIEF: [number, number, number, number][] = [
+  [0.14, 0.08, 0.14, 0.7], [0.34, 0.2, 0.34, 0.92], [0.5, 0.08, 0.5, 0.46],
+  [0.14, 0.7, 0.66, 0.7], [0.34, 0.46, 0.7, 0.46], [0.22, 0.86, 0.6, 0.86], [0.5, 0.58, 0.5, 0.7],
+];
+function linesSlab(a: Acc, W: number, H: number, T: number) {
+  a.body.push(ebox(0, 0, 0, W, H, T, "y", 0.002));
+  const w = 0.008, d = 0.003;
+  for (const [u0, v0, u1, v1] of RELIEF) {
+    const x0 = -W / 2 + u0 * W, x1 = -W / 2 + u1 * W, y0 = -H / 2 + v0 * H, y1 = -H / 2 + v1 * H;
+    const vertical = Math.abs(x1 - x0) < 1e-6;
+    for (const s of [1, -1]) {
+      const z = s * (T / 2 + d / 2);
+      a.body.push(vertical
+        ? ebox(x0, (y0 + y1) / 2, z, w, y1 - y0, d, "y", 0.0012)
+        : ebox((x0 + x1) / 2, y0, z, x1 - x0, w, d, "x", 0.0012));
+      // Contact shadow where the strip meets the face (no AO here): what
+      // makes a same-colour relief read at room distance.
+      const zs = s * (T / 2 + 0.0002), b = 0.004;
+      for (const e of [-1, 1]) {
+        a.recess.push(vertical
+          ? ebox(x0 + e * (w / 2 + b / 2), (y0 + y1) / 2, zs, b, y1 - y0, 0.0003, "y", 0)
+          : ebox((x0 + x1) / 2, y0 + e * (w / 2 + b / 2), zs, x1 - x0, b, 0.0003, "x", 0));
+      }
+    }
+  }
+}
+
+/** Security-door glazing: glass with a dark steel grille in its plane. */
+function grilleCell(a: Acc, c: Cell, T: number) {
+  glazedCell(a, c, T);
+  const bar = 0.012, t = 0.014, ins = 0.04;
+  const L = c.cx - c.w / 2 + ins, R = c.cx + c.w / 2 - ins, B = c.cy - c.h / 2 + ins, Tp = c.cy + c.h / 2 - ins;
+  const g: [number, number, number, number][] = [
+    [L, B, L, Tp], [R, B, R, Tp], [L, B, R, B], [L, Tp, R, Tp],
+    [L + (R - L) * 0.35, B, L + (R - L) * 0.35, Tp], [L + (R - L) * 0.65, B, L + (R - L) * 0.65, Tp],
+    [L, B + (Tp - B) * 0.72, R, B + (Tp - B) * 0.72], [L, B + (Tp - B) * 0.86, R, B + (Tp - B) * 0.86],
+  ];
+  for (const [x0, y0, x1, y1] of g) {
+    const v = Math.abs(x1 - x0) < 1e-6;
+    a.seal.push(v ? ebox(x0, (y0 + y1) / 2, 0, bar, y1 - y0 + bar, t, "y", 0.001) : ebox((x0 + x1) / 2, y0, 0, x1 - x0 + bar, bar, t, "x", 0.001));
+  }
+}
+
 function buildBody(a: Acc, design: DoorDesign, W: number, H: number, T: number) {
   const f = frameFor(design, W);
   switch (design) {
@@ -313,6 +419,33 @@ function buildBody(a: Acc, design: DoorDesign, W: number, H: number, T: number) 
       return;
     case "glass-lites":
       stileAndRail(a, W, H, T, f, [1, 1, 1, 1]).forEach((c) => glazedCell(a, c, T, false));
+      return;
+    case "panel-2": // the mid rail lands near handle height
+      stileAndRail(a, W, H, T, f, [0.82, 1]).forEach((c) => raisedCell(a, c, T));
+      return;
+    case "flush-inlay":
+      inlaySlab(a, W, H, T);
+      return;
+    case "planked":
+      plankedSlab(a, W, H, T);
+      return;
+    case "glass-grid":
+      stileAndRail(a, W, H, T, f, [1]).forEach((c) => litesCell(a, c, T, 2, 5));
+      return;
+    case "french": {
+      const [low, up] = stileAndRail(a, W, H, T, f, [0.55, 1.45]);
+      raisedCell(a, low, T);
+      litesCell(a, up, T, 2, 3);
+      return;
+    }
+    case "entry-grille": {
+      const [low, up] = stileAndRail(a, W, H, T, f, [0.9, 1.1]);
+      raisedCell(a, low, T);
+      grilleCell(a, up, T);
+      return;
+    }
+    case "entry-lines":
+      linesSlab(a, W, H, T);
       return;
   }
 }
@@ -365,8 +498,7 @@ function knob(out: THREE.BufferGeometry[], x: number, y: number, z0: number, s: 
 }
 
 /** Long pull bar on two stand-offs, centred on the latch stile. */
-function pullBar(out: THREE.BufferGeometry[], x: number, H: number, yMid: number, z0: number, s: 1 | -1) {
-  const len = Math.min(1.2, H * 0.55);
+function pullBar(out: THREE.BufferGeometry[], x: number, yMid: number, z0: number, s: 1 | -1, len: number) {
   const r = 0.016;
   const off = 0.065; // bar centre stand-off from the face
   out.push(cylinder(r, len, "y", x, yMid, z0 + s * off, 32));
@@ -380,6 +512,32 @@ function pullBar(out: THREE.BufferGeometry[], x: number, H: number, yMid: number
   out.push(cylinder(r, 0.002, "y", x, yMid - len / 2, z0 + s * off, 32));
 }
 
+/** Recessed channel pull, integrated in the leaf: a dark channel with thin
+ *  metal lips running most of the leaf's height. */
+function pullRecessed(out: THREE.BufferGeometry[], seal: THREE.BufferGeometry[], x: number, H: number, z0: number, s: 1 | -1, carved: boolean) {
+  const len = Math.min(1.5, H * 0.62), w = 0.026, lip = 0.003;
+  // Carved: the channel is real geometry; only its metal lips are added.
+  if (!carved) seal.push(ebox(x, 0, z0 + s * 0.0003, w, len, 0.0006, "y", 0));
+  for (const e of [-1, 1]) out.push(ebox(x + (e * (w + lip)) / 2, 0, z0 + s * 0.0004, lip, len + lip * 2, 0.0008, "y", 0));
+  for (const e of [-1, 1]) out.push(ebox(x, (e * (len + lip)) / 2, z0 + s * 0.0004, w + 2 * lip, lip, 0.0008, "x", 0));
+}
+
+/** A slab with a real vertical channel on both faces near the latch edge,
+ *  20 mm deep, for the recessed pull. Built from the blocks around it plus
+ *  the web at its bottom; the web takes the recess (occluded) material. */
+const CHANNEL = { x: 0.09, w: 0.03, d: 0.02 };
+function channelSlab(a: Acc, W: number, H: number, T: number) {
+  const len = Math.min(1.5, H * 0.62);
+  const cx = W / 2 - CHANNEL.x, cw = CHANNEL.w;
+  const lw = cx - cw / 2 + W / 2, rw = W / 2 - (cx + cw / 2);
+  a.body.push(ebox(-W / 2 + lw / 2, 0, 0, lw, H, T, "y", 0.002));
+  a.body.push(ebox(W / 2 - rw / 2, 0, 0, rw, H, T, "y", 0.002, 0.3));
+  const cap = (H - len) / 2;
+  a.body.push(ebox(cx, H / 2 - cap / 2, 0, cw, cap, T, "y", 0.001));
+  a.body.push(ebox(cx, -H / 2 + cap / 2, 0, cw, cap, T, "y", 0.001));
+  a.recess.push(ebox(cx, 0, 0, cw, len, Math.max(0.01, T - 2 * CHANNEL.d), "y", 0));
+}
+
 /** Recessed finger pull for sliding leaves: metal rim, dark cup. */
 function flushPull(out: THREE.BufferGeometry[], seal: THREE.BufferGeometry[], x: number, y: number, z0: number, s: 1 | -1) {
   const w = 0.03, h = 0.16, rim = 0.004;
@@ -391,13 +549,15 @@ function flushPull(out: THREE.BufferGeometry[], seal: THREE.BufferGeometry[], x:
   seal.push(ebox(x, y, z0 - s * 0.006, w - 2 * rim, h - 2 * rim, 0.004, "y", 0));
 }
 
-/** Euro-cylinder escutcheon (key lock), for entry doors. */
-function escutcheon(out: THREE.BufferGeometry[], seal: THREE.BufferGeometry[], x: number, y: number, z0: number, s: 1 | -1) {
-  out.push(cylinder(0.024, 0.008, "z", x, y, z0 + s * 0.004, 32, 0.023));
+/** Lock rose: key cylinder (entry) or key / thumb-turn (interior). Square
+ *  beside a square rose, round otherwise. */
+function escutcheon(out: THREE.BufferGeometry[], seal: THREE.BufferGeometry[], x: number, y: number, z0: number, s: 1 | -1, square = false) {
+  if (square) out.push(ebox(x, y, z0 + s * 0.004, 0.052, 0.052, 0.008, "x", 0.0015));
+  else out.push(cylinder(0.024, 0.008, "z", x, y, z0 + s * 0.004, 32, 0.023));
   seal.push(ebox(x, y - 0.003, z0 + s * 0.0085, 0.009, 0.02, 0.001, "y", 0));
 }
 
-function addHandle(a: Acc, id: HandleId, W: number, H: number, T: number, yLocal: number, face: 1 | -1) {
+function addHandle(a: Acc, id: HandleId, W: number, H: number, T: number, yLocal: number, face: 1 | -1, carved = false) {
   const x = W / 2 - HANDLE_BACKSET;
   const z0 = face * (T / 2);
   switch (id) {
@@ -405,7 +565,9 @@ function addHandle(a: Acc, id: HandleId, W: number, H: number, T: number, yLocal
     case "lever-square": leverSquare(a.hardware, x, yLocal, z0, face); break;
     case "lever-plate": leverPlate(a.hardware, x, yLocal, z0, face); break;
     case "knob": knob(a.hardware, x, yLocal, z0, face); break;
-    case "pull-bar": pullBar(a.hardware, W / 2 - 0.1, H, yLocal + 0.05, z0, face); break;
+    case "pull-bar": pullBar(a.hardware, W / 2 - 0.1, yLocal + 0.05, z0, face, Math.min(1.2, H * 0.55)); break;
+    case "pull-bar-long": pullBar(a.hardware, W / 2 - 0.12, H * 0.02, z0, face, Math.min(1.8, H * 0.72)); break;
+    case "pull-recessed": pullRecessed(a.hardware, a.seal, W / 2 - CHANNEL.x, H, z0, face, carved); break;
     case "flush-pull": flushPull(a.hardware, a.seal, W / 2 - 0.06, yLocal, z0, face); break;
     case "none": break;
   }
@@ -456,7 +618,11 @@ export function buildLeaf(look: DoorLook, o: LeafOptions): LeafParts {
   const a: Acc = { body: [], recess: [], glass: [], hardware: [], seal: [] };
   const { W, H, T } = o;
   if (W < 0.05 || H < 0.2) return {};
-  buildBody(a, look.design, W, H, T);
+  // A recessed channel pull on a plain slab is carved for real, so light
+  // falls into it; on other designs it is an inlaid channel.
+  const carve = look.handle === "pull-recessed" && !o.sliding && (look.design === "flush" || look.design === "entry-slab");
+  if (carve) channelSlab(a, W, H, T);
+  else buildBody(a, look.design, W, H, T);
 
   const y = Math.min(H / 2 - 0.15, Math.max(-H / 2 + 0.3, o.handleY));
   if (o.sliding) {
@@ -467,9 +633,14 @@ export function buildLeaf(look: DoorLook, o: LeafOptions): LeafParts {
       if (id === "flush-pull") id = "lever-square"; // a hinged leaf needs a latch
       // Entry pull bar: outside only when we know which face that is; the
       // inside gets a lever to work the latch.
-      if (id === "pull-bar" && o.outsideFace && f !== o.outsideFace) id = "lever-square";
-      addHandle(a, id, W, H, T, y, f);
-      if (o.entry) escutcheon(a.hardware, a.seal, W / 2 - HANDLE_BACKSET, y - 0.085, f * (T / 2), f);
+      if (id.startsWith("pull-") && o.outsideFace && f !== o.outsideFace) id = "lever-square";
+      addHandle(a, id, W, H, T, y, f, carve);
+      // Every hinged door locks: a key cylinder / thumb-turn rose under the
+      // lever, or at latch height beside a pull (a pull has no lever).
+      if (id === "none") continue;
+      const ex = W / 2 - HANDLE_BACKSET;
+      if (id.startsWith("pull-")) escutcheon(a.hardware, a.seal, ex, y, f * (T / 2), f);
+      else escutcheon(a.hardware, a.seal, ex, y - 0.085, f * (T / 2), f, id === "lever-square");
     }
     if (!o.concealedHinges) hinges(a, W, H, T, !!o.entry, o.hingeFace ?? 1);
   }
@@ -562,6 +733,20 @@ export function buildTrim(o: TrimOptions): THREE.BufferGeometry | undefined {
   out.push(ebox(js1 - stopD / 2, jt / 2, zc, stopD, jt, stopW, "y", 0.001));
   out.push(ebox((js0 + js1) / 2, jt - stopD / 2, zc, js1 - js0 - 2 * stopD, stopD, stopW, "x", 0.001));
   return merge(out);
+}
+
+/** A fixed glazed sidelight beside the leaf (wall-local frame, as
+ *  `buildTrim`): glass in the leaf's plane from the hinge-side jamb to a
+ *  mullion post, which the leaf closes against. */
+export function buildSidelight(o: { s0: number; s1: number; postAtS1: boolean; top: number; depth: number; zGlass: number }) {
+  const post = 0.05;
+  const h = o.top;
+  const ps = o.postAtS1 ? o.s1 - post / 2 : o.s0 + post / 2;
+  const g0 = o.postAtS1 ? o.s0 : o.s0 + post;
+  const g1 = o.postAtS1 ? o.s1 - post : o.s1;
+  const frame = merge([ebox(ps, h / 2, 0, post, h, o.depth * 0.92, "y", 0.002)]);
+  const glass = merge([ebox((g0 + g1) / 2, h / 2, o.zGlass, g1 - g0 + 0.01, h, 0.01, "y", 0)]);
+  return { frame, glass };
 }
 
 /** Jamb lining boxes (the same placement buildJoinery's frame pieces use) but
