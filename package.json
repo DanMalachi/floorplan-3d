@@ -58,7 +58,7 @@
     "@liveblocks/react": "^3.22.0",
     "@liveblocks/yjs": "^3.22.0",
     "@react-three/drei": "10.7.7",
-    "@react-three/fiber": "9.6.1",
+    "@react-three/fiber": "9.7.0",
     "@react-three/postprocessing": "^3.0.4",
     "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.12.4",
