@@ -1,0 +1,257 @@
+{
+  "white-oak": {
+    "source": "https://polyhaven.com/a/oak_veneer_03",
+    "name": "oak_veneer_03",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        196,
+        170,
+        134
+      ],
+      "contrast": 1.25
+    }
+  },
+  "natural-oak": {
+    "source": "https://polyhaven.com/a/oak_veneer_04",
+    "name": "oak_veneer_04",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        182,
+        144,
+        100
+      ],
+      "contrast": 1.3
+    }
+  },
+  "rift-oak": {
+    "source": "https://polyhaven.com/a/silver_oak_veneer_01",
+    "name": "silver_oak_veneer_01",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        204,
+        178,
+        142
+      ],
+      "contrast": 1.2
+    }
+  },
+  "smoked-oak": {
+    "source": "https://polyhaven.com/a/oak_veneer_05",
+    "name": "oak_veneer_05",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        112,
+        84,
+        62
+      ],
+      "contrast": 1.35
+    }
+  },
+  "grey-oak": {
+    "source": "https://polyhaven.com/a/washed_grey_oak_veneer",
+    "name": "washed_grey_oak_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        172,
+        163,
+        150
+      ],
+      "contrast": 1.25
+    }
+  },
+  "black-oak": {
+    "source": "https://polyhaven.com/a/black_oak_veneer",
+    "name": "black_oak_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        54,
+        50,
+        47
+      ],
+      "contrast": 1.3
+    }
+  },
+  "american-walnut": {
+    "source": "https://polyhaven.com/a/american_walnut_veneer",
+    "name": "american_walnut_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        98,
+        68,
+        50
+      ],
+      "contrast": 1.5
+    }
+  },
+  "european-walnut": {
+    "source": "https://polyhaven.com/a/european_walnut_veneer_04",
+    "name": "european_walnut_veneer_04",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        126,
+        90,
+        63
+      ],
+      "contrast": 1.4
+    }
+  },
+  "figured-walnut": {
+    "source": "https://polyhaven.com/a/walnut_veneer_02",
+    "name": "walnut_veneer_02",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        118,
+        84,
+        60
+      ],
+      "contrast": 1.2
+    }
+  },
+  "ash": {
+    "source": "https://polyhaven.com/a/ash_veneer",
+    "name": "ash_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        206,
+        188,
+        158
+      ],
+      "contrast": 1.3
+    }
+  },
+  "white-maple": {
+    "source": "https://polyhaven.com/a/white_maple_veneer",
+    "name": "white_maple_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        224,
+        204,
+        170
+      ],
+      "contrast": 1.2
+    }
+  },
+  "cherry": {
+    "source": "https://polyhaven.com/a/cherry_veneer",
+    "name": "cherry_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        168,
+        104,
+        70
+      ],
+      "contrast": 1.3
+    }
+  },
+  "teak": {
+    "source": "https://polyhaven.com/a/teak_veneer",
+    "name": "teak_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        150,
+        102,
+        58
+      ],
+      "contrast": 1.1
+    }
+  },
+  "sapele": {
+    "source": "https://polyhaven.com/a/sapele_veneer_02",
+    "name": "sapele_veneer_02",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        134,
+        72,
+        46
+      ],
+      "contrast": 1.3
+    }
+  },
+  "flamed-black": {
+    "source": "https://polyhaven.com/a/flamed_black_veneer",
+    "name": "flamed_black_veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        46,
+        43,
+        41
+      ],
+      "contrast": 1.2
+    }
+  }
+}

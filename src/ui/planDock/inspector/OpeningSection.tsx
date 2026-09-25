@@ -41,6 +41,7 @@ import {
   pdChipFlex,
 } from "./panelKit";
 import { pdMicroLabel } from "../tokens";
+import { DoorStyleSection } from "./DoorStyleSection";
 
 // The sliding presets, as the product thinks of them. Each is just a point in
 // the one SlideSpec parameterisation — see buildJoinery.
@@ -101,13 +102,6 @@ const OPENING_TYPES: {
 
 const matchesPreset = (s: SlideSpec, p: SlideSpec) =>
   s.style === p.style && s.panels === p.panels && (s.glazed ?? false) === (p.glazed ?? false);
-
-const DOOR_MATERIALS: { key: NonNullable<Opening["doorMaterial"]>; labelKey: string }[] = [
-  { key: "painted-white", labelKey: "doorMaterials.painted-white" },
-  { key: "painted-charcoal", labelKey: "doorMaterials.painted-charcoal" },
-  { key: "oak", labelKey: "doorMaterials.oak" },
-  { key: "walnut", labelKey: "doorMaterials.walnut" },
-];
 
 // Two finishes, not three: "Painted" was tinted matte under another name, so
 // it offered a choice that changed nothing (it survives in the schema for
@@ -255,23 +249,7 @@ export function OpeningSection({ opening }: { opening: Opening }) {
         <>
           {/* A patio door has no solid leaf to finish — its sashes are glass in
               a frame, so it takes the window materials further down instead. */}
-          {!glazedDoor && (
-            <>
-              <div style={pdMicroLabel()}>{t("material")}</div>
-              <div role="group" aria-label={t("material")} style={{ display: "flex", gap: 4 }}>
-                {DOOR_MATERIALS.map((m) => (
-                  <PdChip
-                    key={m.key}
-                    active={(opening.doorMaterial ?? "painted-white") === m.key}
-                    extra={pdChipFlex}
-                    onClick={() => patch(`Door material: ${m.key}`, { doorMaterial: m.key })}
-                  >
-                    {t(m.labelKey)}
-                  </PdChip>
-                ))}
-              </div>
-            </>
-          )}
+          {!glazedDoor && <DoorStyleSection opening={opening} />}
           <div style={pdMicroLabel()}>{t("howItOpens")}</div>
           <div role="group" aria-label={t("howItOpens")} style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {/* Writing swingDeg (not just clearing `slide`) is what makes this

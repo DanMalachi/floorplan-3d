@@ -59,6 +59,7 @@ export function preserveSceneEdits(prev: Scene | null | undefined, next: Scene):
       ...(before.mullions !== undefined ? { mullions: before.mullions } : {}),
       ...(before.lining !== undefined ? { lining: before.lining } : {}),
       ...(before.doorMaterial !== undefined ? { doorMaterial: before.doorMaterial } : {}),
+      ...(before.door !== undefined ? { door: before.door } : {}),
       ...(before.frameMaterial !== undefined ? { frameMaterial: before.frameMaterial } : {}),
       ...(before.frameColor !== undefined ? { frameColor: before.frameColor } : {}),
     };
