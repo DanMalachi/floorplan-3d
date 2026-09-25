@@ -1,0 +1,302 @@
+{
+  "white-oak": {
+    "source": "https://polyhaven.com/a/oak_veneer_03",
+    "name": "Oak Veneer 03",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        196,
+        170,
+        134
+      ],
+      "contrast": 1.25
+    }
+  },
+  "natural-oak": {
+    "source": "https://polyhaven.com/a/oak_veneer_04",
+    "name": "Oak Veneer 04",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        182,
+        144,
+        100
+      ],
+      "contrast": 1.3
+    }
+  },
+  "rift-oak": {
+    "source": "https://polyhaven.com/a/silver_oak_veneer_01",
+    "name": "Silver Oak Veneer 01",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        204,
+        178,
+        142
+      ],
+      "contrast": 1.2
+    }
+  },
+  "smoked-oak": {
+    "source": "https://polyhaven.com/a/oak_veneer_05",
+    "name": "Oak Veneer 05",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        112,
+        84,
+        62
+      ],
+      "contrast": 1.35
+    }
+  },
+  "grey-oak": {
+    "source": "https://polyhaven.com/a/washed_grey_oak_veneer",
+    "name": "Washed Grey Oak Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        172,
+        163,
+        150
+      ],
+      "contrast": 1.25
+    }
+  },
+  "black-oak": {
+    "source": "https://polyhaven.com/a/black_oak_veneer",
+    "name": "Black Oak Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        54,
+        50,
+        47
+      ],
+      "contrast": 1.3
+    }
+  },
+  "american-walnut": {
+    "source": "https://polyhaven.com/a/american_walnut_veneer",
+    "name": "American Walnut Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        98,
+        68,
+        50
+      ],
+      "contrast": 1.5
+    }
+  },
+  "european-walnut": {
+    "source": "https://polyhaven.com/a/european_walnut_veneer_04",
+    "name": "European Walnut Veneer 04",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        126,
+        90,
+        63
+      ],
+      "contrast": 1.4
+    }
+  },
+  "figured-walnut": {
+    "source": "https://polyhaven.com/a/walnut_veneer_02",
+    "name": "Walnut Veneer 02",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        118,
+        84,
+        60
+      ],
+      "contrast": 1.2
+    }
+  },
+  "ash": {
+    "source": "https://polyhaven.com/a/ash_veneer",
+    "name": "Ash Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        206,
+        188,
+        158
+      ],
+      "contrast": 1.3
+    }
+  },
+  "white-maple": {
+    "source": "https://polyhaven.com/a/white_maple_veneer",
+    "name": "White Maple Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        224,
+        204,
+        170
+      ],
+      "contrast": 1.2
+    }
+  },
+  "cherry": {
+    "source": "https://polyhaven.com/a/cherry_veneer",
+    "name": "Cherry Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        168,
+        104,
+        70
+      ],
+      "contrast": 1.3
+    }
+  },
+  "teak": {
+    "source": "https://polyhaven.com/a/teak_veneer",
+    "name": "Teak Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        150,
+        102,
+        58
+      ],
+      "contrast": 1.1
+    }
+  },
+  "sapele": {
+    "source": "https://polyhaven.com/a/sapele_veneer_02",
+    "name": "Sapele Veneer 02",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        134,
+        72,
+        46
+      ],
+      "contrast": 1.3
+    }
+  },
+  "flamed-black": {
+    "source": "https://polyhaven.com/a/flamed_black_veneer",
+    "name": "Flamed Black Veneer",
+    "licence": "CC0-1.0 (https://polyhaven.com/license)",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "tileMetres": [
+      1,
+      1
+    ],
+    "grade": {
+      "target": [
+        46,
+        43,
+        41
+      ],
+      "contrast": 1.2
+    }
+  }
+}

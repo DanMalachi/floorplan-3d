@@ -98,6 +98,10 @@ export interface Opening {
   lining?: boolean; // passages only: jamb+head casing (default true; false = bare reveal)
   // --- Materials (Realism sprint, additive) ---
   doorMaterial?: "walnut" | "painted-white" | "painted-charcoal" | "oak"; // doors only (default "painted-white")
+  // Solid doors only: design, material, hardware, glass and trim (src/doors/).
+  // Absent = the house look for this door's kind (entry/interior), see
+  // `resolveDoorLook`. Stored whole, edited as a unit, synced as opaque JSON.
+  door?: import("@/doors/look").DoorLook;
   // Windows and patio doors (default "aluminum-matte"). "painted" is LEGACY —
   // it duplicated tinted matte, so it no longer has a control and resolves to
   // matte on render; it stays in the union because saved projects hold it.

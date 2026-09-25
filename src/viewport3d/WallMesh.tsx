@@ -40,6 +40,8 @@ import {
 import { solveJunctions, SQUARE_ENDS, type WallEnds } from "./geometry/wallJunctions";
 import { buildWallGeometry } from "./geometry/wallGeometry";
 import { buildJoinery, mergeJoineryBoxes, type JoineryRole } from "./geometry/buildJoinery";
+import { DoorAssembly } from "@/doors/DoorAssembly";
+import { usesDoorLook } from "@/doors/look";
 import { GRID, openingEdgeBounds, snapDelta, snapPlanPoint } from "./snap";
 import { buildToolBlocksSelect } from "./buildTools/gate";
 import { sampleWallFace } from "@/decorate/eyedropper";
@@ -654,14 +656,21 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
   // threshold keeps its own distinct material rather than being folded into
   // `frame`'s, so this merge changes zero pixels, only draw calls.
   const isWindowOpening = opening.type === "window";
+  // A solid door is drawn by DoorAssembly (src/doors/): its lining, leaf and
+  // handle pieces leave the box path here and are rebuilt as real joinery
+  // from the same pieces. Threshold and sliding track stay below.
+  const isDoorLook = usesDoorLook(opening);
   const { framePieces, mullionPieces, restPieces } = useMemo(() => {
-    const framePieces = pieces.filter((p) => p.role === "frame");
+    const framePieces = isDoorLook ? [] : pieces.filter((p) => p.role === "frame");
     const mullionPieces = isWindowOpening ? pieces.filter((p) => p.role === "mullion") : [];
     const restPieces = pieces.filter(
-      (p) => p.role !== "frame" && !(isWindowOpening && p.role === "mullion"),
+      (p) =>
+        p.role !== "frame" &&
+        !(isWindowOpening && p.role === "mullion") &&
+        !(isDoorLook && (p.role === "leaf" || p.role === "handle")),
     );
     return { framePieces, mullionPieces, restPieces };
-  }, [pieces, isWindowOpening]);
+  }, [pieces, isWindowOpening, isDoorLook]);
   const frameGeom = useMemo(
     () => (framePieces.length > 0 ? mergeJoineryBoxes(framePieces) : null),
     [framePieces],
@@ -981,6 +990,16 @@ function OpeningPick({ vol, opening, siblings, frame, offset }: {
               material={mats.mullion}
               raycast={() => null}
               {...shadowProps("opaqueArchitecture")}
+            />
+          )}
+          {isDoorLook && (
+            <DoorAssembly
+              opening={opening}
+              frame={frame}
+              pieces={pieces}
+              glow={selected ? 0.16 : hovered ? 0.07 : 0}
+              accent={ACCENT}
+              fade={fade}
             />
           )}
           {/* Everything that moves mid-gesture (leaf, handle, track, sliding

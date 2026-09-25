@@ -64,6 +64,16 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-25, doors (branch `feat/door-factory`) — `src/schema/scene.ts` and
+  `src/viewport3d/WallMesh.tsx`.** Approved by Dan 2026-09-25 ("approved") for the
+  parametric door work. `scene.ts`: one new optional field, `Opening.door`
+  (a type-only import of `DoorLook` from `src/doors/look.ts`); nothing else
+  changed, every saved scene parses as before. `WallMesh.tsx`: for a solid
+  door (`usesDoorLook`), the frame/leaf/handle boxes leave the box path and
+  `DoorAssembly` (src/doors/) draws them from the same `buildJoinery` pieces;
+  windows, patio sliders, passages, threshold and track are unchanged.
+  `buildJoinery.ts` and the walkthrough are untouched.
+
 - **2026-09-22/23, `src/schema/scene.ts` — eight new members of the
   `ParametricSpec["generator"]` union** (branch `feat/parametric-factory`:
   `sofaBlockArm`, `sofaFlareArm`, `sofaPlainBlock`, `sofaTuftedSage`,
