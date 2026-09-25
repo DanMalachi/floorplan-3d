@@ -1282,6 +1282,7 @@
         "sidelightTip": "A fixed glass panel beside the door, on the hinge side",
         "presets": {
           "custom": "Custom",
+          "shaker-2-laminate-white": "Shaker two-panel, white laminate",
           "shaker-white": "Shaker, white",
           "flush-white-minimal": "Flush, white, frameless",
           "flush-white-oak": "Flush, white oak",
@@ -1313,6 +1314,7 @@
           "flush": "Flush",
           "flush-grooves": "Flush, grooved",
           "shaker": "Shaker, one panel",
+          "shaker-2": "Shaker, two panels",
           "shaker-3": "Shaker, three panels",
           "panel-5": "Five panels",
           "raised-4": "Raised four-panel",

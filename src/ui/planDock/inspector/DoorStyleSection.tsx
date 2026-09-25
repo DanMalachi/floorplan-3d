@@ -33,7 +33,7 @@ import { PdChip, PdSwatch, PdActionRow, PdActionButton, pdChipFlex } from "./pan
 import { pdMicroLabel, PD } from "../tokens";
 
 const DESIGNS: DoorDesign[] = [
-  "flush", "flush-grooves", "flush-inlay", "planked", "shaker", "shaker-3", "panel-2", "panel-5", "raised-4",
+  "flush", "flush-grooves", "flush-inlay", "planked", "shaker", "shaker-2", "shaker-3", "panel-2", "panel-5", "raised-4",
   "glass-full", "glass-grid", "glass-lites", "glass-slot", "french",
   "entry-slab", "entry-grooves", "entry-lines", "entry-slot", "entry-grille",
 ];

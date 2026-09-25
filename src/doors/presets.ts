@@ -9,6 +9,11 @@ import type { DoorLook } from "./look";
  */
 export const LOOK_PRESETS: Record<string, DoorLook> = {
   // --- Interior -------------------------------------------------------------
+  // The house default (DEFAULT_LOOKS.interior), listed first.
+  "shaker-2-laminate-white": {
+    design: "shaker-2", surface: { kind: "polymer", color: "#f4f3f2", polymer: "hpl" },
+    handle: "lever-round", hardware: "stainless-brushed", glass: "frosted", trim: "flat",
+  },
   "shaker-white": {
     design: "shaker", surface: { kind: "paint", color: "#f4efea", sheen: "satin" },
     handle: "lever-round", hardware: "stainless-brushed", glass: "frosted", trim: "flat",

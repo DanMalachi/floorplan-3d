@@ -17,6 +17,7 @@ export type DoorDesign =
   | "flush" // plain slab, eased edges
   | "flush-grooves" // slab with horizontal routed grooves
   | "shaker" // one recessed flat panel
+  | "shaker-2" // two flat panels, mid rail at handle height
   | "shaker-3" // three stacked flat panels
   | "panel-5" // five stacked flat panels
   | "raised-4" // four raised (bevelled) panels, classic
@@ -92,17 +93,31 @@ export interface DoorLook {
   /** Entry doors: a fixed glazed sidelight beside the leaf, on the hinge
    *  side. The leaf narrows to what is left and swings on its own axis. */
   sidelight?: boolean;
-  /** Casing + jamb lining finish. Absent = painted to match the house trim
-   *  (satin white), which is how nearly every home finishes its casings. */
+  /** Casing + jamb lining finish, for a deliberate combination (oak casing
+   *  on a painted door, say). Absent = the casing matches the door itself;
+   *  see `trimSurfaceOf`. */
   trimSurface?: DoorSurface;
 }
 
+/** Casing for a bare-metal leaf, where a matching metal casing would read as
+ *  a steel box: satin white paint. */
 export const DEFAULT_TRIM_SURFACE: DoorSurface = { kind: "paint", color: "#f4efea", sheen: "satin" };
 
+/** What the casing and lining are finished in: the look's own trim surface
+ *  if it names one, otherwise the door's (Dan, 2026-09-25: casings match the
+ *  door unless the look is a special material + colour combination). */
+export function trimSurfaceOf(look: DoorLook): DoorSurface {
+  if (look.trimSurface) return look.trimSurface;
+  return look.surface.kind === "metal" ? DEFAULT_TRIM_SURFACE : look.surface;
+}
+
 export const DEFAULT_LOOKS: Record<DoorKind, DoorLook> = {
+  // Dan's house default (2026-09-25): white laminate, two shaker panels, in
+  // done. fan "Clean Neutral White 02"; brushed stainless lever on a round
+  // rose; flat casing in the same finish as the door.
   interior: {
-    design: "shaker",
-    surface: { kind: "paint", color: "#f4efea", sheen: "satin" },
+    design: "shaker-2",
+    surface: { kind: "polymer", color: "#f4f3f2", polymer: "hpl" },
     handle: "lever-round",
     hardware: "stainless-brushed",
     glass: "frosted",

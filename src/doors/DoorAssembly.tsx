@@ -8,7 +8,7 @@ import { shadowProps } from "@/render/materialClass";
 import { isDoubleDoor } from "@/render/doorStyle";
 import { useSceneStore } from "@/store/useSceneStore";
 import type { JoineryFrame, JoineryPiece } from "@/viewport3d/geometry/buildJoinery";
-import { doorRenderKey, leafThickness, DEFAULT_TRIM_SURFACE, SIDELIGHT_SHARE, type DoorRenderInfo } from "./look";
+import { doorRenderKey, leafThickness, trimSurfaceOf, SIDELIGHT_SHARE, type DoorRenderInfo } from "./look";
 import { buildLeaf, buildLining, buildSidelight, buildTrim, HANDLE_HEIGHT, type LeafParts, type Slot } from "./geometry";
 import { doorEnvMap, glassMaterial, metalMaterial, recessMaterial, sealMaterial, surfaceMaterial } from "./materials";
 
@@ -78,7 +78,7 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
     const m: Mats = {
       body,
       recess: recessMaterial(body),
-      trim: surfaceMaterial(look.trimSurface ?? DEFAULT_TRIM_SURFACE),
+      trim: surfaceMaterial(trimSurfaceOf(look)),
       hardware: metalMaterial(look.hardware),
       glass: glassMaterial(look.glass),
       seal: sealMaterial(),

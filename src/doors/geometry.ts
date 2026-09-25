@@ -392,6 +392,9 @@ function buildBody(a: Acc, design: DoorDesign, W: number, H: number, T: number) 
     case "shaker":
       stileAndRail(a, W, H, T, f, [1]).forEach((c, i) => flatPanel(a, c, T, i));
       return;
+    case "shaker-2": // the mid rail lands near handle height
+      stileAndRail(a, W, H, T, f, [0.82, 1]).forEach((c, i) => flatPanel(a, c, T, i));
+      return;
     case "shaker-3":
       stileAndRail(a, W, H, T, f, [1, 1, 1]).forEach((c, i) => flatPanel(a, c, T, i));
       return;

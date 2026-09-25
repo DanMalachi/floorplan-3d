@@ -12,6 +12,7 @@ import {
   outsideSide,
   resolveDoorLook,
   GLAZED_DESIGNS,
+  trimSurfaceOf,
   type DoorDesign,
   type DoorLook,
 } from "./look";
@@ -92,6 +93,15 @@ console.log("house look");
   check("override resolves as own", resolveDoorLook(s4, s4.openings[0]).own);
 }
 
+console.log("casing");
+{
+  const d = DEFAULT_LOOKS.interior;
+  check("default casing matches the door", JSON.stringify(trimSurfaceOf(d)) === JSON.stringify(d.surface));
+  check("explicit casing wins", trimSurfaceOf(LOOK_PRESETS["flush-white-oak"]).kind === "wood");
+  check("bare metal leaf gets painted casing", trimSurfaceOf({ ...d, surface: { kind: "metal", metal: "stainless-brushed" } }).kind === "paint");
+  check("default is white laminate two-panel shaker", d.design === "shaker-2" && d.surface.kind === "polymer" && d.surface.color === "#f4f3f2" && d.handle === "lever-round" && d.hardware === "stainless-brushed" && d.trim === "flat");
+}
+
 console.log("legacy doorMaterial");
 {
   const s = base();
@@ -118,7 +128,7 @@ const bbox = (g: THREE.BufferGeometry) => {
   return g.boundingBox!;
 };
 const designs: DoorDesign[] = [
-  "flush", "flush-grooves", "shaker", "shaker-3", "panel-5", "raised-4",
+  "flush", "flush-grooves", "shaker", "shaker-2", "shaker-3", "panel-5", "raised-4",
   "glass-full", "glass-lites", "glass-slot", "entry-slab", "entry-grooves", "entry-slot",
   "panel-2", "flush-inlay", "planked", "glass-grid", "french", "entry-grille", "entry-lines",
 ];
