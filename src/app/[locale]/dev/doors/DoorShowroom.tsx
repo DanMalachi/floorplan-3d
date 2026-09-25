@@ -12,6 +12,8 @@ import { Walls } from "@/viewport3d/WallMesh";
 import { Environment3d } from "@/viewport3d/environment/Environment3d";
 import { applyLookToKind, DEFAULT_LOOKS, type DoorLook } from "@/doors/look";
 import { LOOK_PRESETS } from "@/doors/presets";
+import { DoorStyleSection } from "@/ui/planDock/inspector/DoorStyleSection";
+import { pdInspectorPanel } from "@/ui/planDock/inspector/panelKit";
 
 /**
  * Door review room. A front room and a back room share one wall carrying
@@ -66,7 +68,8 @@ interface Shot {
 /** Plan coordinates (x, height, plan y); offset applied on use. */
 const SHOTS: Record<string, Shot> = {
   row: { pos: [3.5, 1.45, 4.3], target: [3.5, 1.05, 0] },
-  door: { pos: [1.1, 1.25, 2.1], target: [1.1, 1.05, 0] },
+  door: { pos: [1.1, 1.15, 3.1], target: [1.1, 1.05, 0] },
+  panel: { pos: [0.85, 1.35, 1.1], target: [1.1, 0.9, 0] },
   ajar: { pos: [3.3, 1.3, 1.9], target: [2.4, 1.0, 0] },
   double: { pos: [4.25, 1.3, 2.4], target: [4.25, 1.05, 0] },
   handle: { pos: [1.28, 1.12, 0.42], target: [1.5, 1.04, 0] },
@@ -103,6 +106,8 @@ export default function DoorShowroom() {
   const [entry, setEntry] = useState<DoorLook>(DEFAULT_LOOKS.entry);
   const [ui, setUi] = useState(true);
   const [hour, setHour] = useState(10);
+  const [picked, setPicked] = useState("d1");
+  const pickedOpening = scene.openings.find((o) => o.id === picked);
 
   const built = useMemo(() => applyLookToKind(applyLookToKind(SHOWROOM, "interior", interior), "entry", entry), [interior, entry]);
   useEffect(() => setScene(built), [built, setScene]);
@@ -120,6 +125,7 @@ export default function DoorShowroom() {
     w.__setShot = setShot;
     w.__setUi = setUi;
     w.__setHour = setHour;
+    w.__pick = setPicked;
     w.__presets = LOOK_PRESETS;
   }, []);
 
@@ -165,9 +171,19 @@ export default function DoorShowroom() {
               {presetNames.map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
+          <label>inspect&nbsp;
+            <select value={picked} onChange={(e) => setPicked(e.target.value)}>
+              {SHOWROOM.openings.map((o) => <option key={o.id} value={o.id}>{o.id}</option>)}
+            </select>
+          </label>
           <label>hour {hour}
             <input type="range" min={6} max={18} step={0.5} value={hour} onChange={(e) => setHour(Number(e.target.value))} />
           </label>
+        </div>
+      )}
+      {ui && pickedOpening && (
+        <div style={{ ...pdInspectorPanel, top: 12, width: 230 }}>
+          <DoorStyleSection opening={pickedOpening} />
         </div>
       )}
     </div>

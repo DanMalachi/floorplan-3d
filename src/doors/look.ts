@@ -85,12 +85,12 @@ export interface DoorLook {
   trimSurface?: DoorSurface;
 }
 
-export const DEFAULT_TRIM_SURFACE: DoorSurface = { kind: "paint", color: "#f2efe8", sheen: "satin" };
+export const DEFAULT_TRIM_SURFACE: DoorSurface = { kind: "paint", color: "#f4efea", sheen: "satin" };
 
 export const DEFAULT_LOOKS: Record<DoorKind, DoorLook> = {
   interior: {
     design: "shaker",
-    surface: { kind: "paint", color: "#f2efe8", sheen: "satin" },
+    surface: { kind: "paint", color: "#f4efea", sheen: "satin" },
     handle: "lever-round",
     hardware: "stainless-brushed",
     glass: "frosted",
@@ -216,7 +216,15 @@ export function outsideSide(scene: Scene, o: Opening): -1 | 0 | 1 {
 
 // --- House look --------------------------------------------------------------
 
-const lookKey = (l: DoorLook) => JSON.stringify(l);
+/** Key-order-independent identity for a look: two looks built in different
+ *  orders (a preset vs an inspector edit) are the same look. */
+export function lookKey(l: DoorLook): string {
+  const norm = (v: unknown): unknown =>
+    v && typeof v === "object"
+      ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, norm((v as Record<string, unknown>)[k])]))
+      : v;
+  return JSON.stringify(norm(l));
+}
 
 /** The legacy `doorMaterial` field, read as a surface. Saved projects carry
  *  it; it keeps meaning what it meant, now as a real material. */
@@ -227,7 +235,7 @@ export function legacySurface(o: Opening): DoorSurface | undefined {
     case "oak":
       return { kind: "wood", species: "natural-oak", sheen: "satin" };
     case "painted-charcoal":
-      return { kind: "paint", color: "#3a3a3e", sheen: "satin" };
+      return { kind: "paint", color: "#413f44", sheen: "satin" };
     default:
       return undefined; // "painted-white" (the old default) = the house look
   }

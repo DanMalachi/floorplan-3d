@@ -44,8 +44,17 @@ const FACE_INSET = 0.003;
 
 /** Materials are mutated in place (glow, fade), never re-created on
  *  interaction, same as WallMesh's own joinery materials. */
+/** Only materials that carry their own (room) env map are scaled here; the
+ *  rest use the scene environment, which the scene already scales. */
 function setEnvLevel(m: Mats, level: number) {
-  for (const x of Object.values(m)) x.envMapIntensity = level * ((x.userData.envScale as number) ?? 1);
+  for (const x of Object.values(m)) {
+    if (x.envMap) x.envMapIntensity = level * ((x.userData.envScale as number) ?? 1);
+  }
+}
+
+function reflective(x: THREE.MeshPhysicalMaterial, metalLeaf: boolean): boolean {
+  const slot = x.userData.slot as string;
+  return slot === "hardware" || slot === "glass" || (metalLeaf && (slot === "body" || slot === "recess"));
 }
 
 function setGlow(m: Mats, glow: number) {
@@ -73,13 +82,22 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
       glass: glassMaterial(look.glass),
       seal: sealMaterial(),
     };
-    const env = doorEnvMap(gl);
-    for (const x of Object.values(m)) {
-      x.envMap = env;
-      x.userData.envScale = x.envMapIntensity; // per-material weight (metals > 1)
+    for (const [slot, x] of Object.entries(m)) {
+      x.userData.slot = slot;
+      x.userData.baseOpacity ??= 1;
       x.emissive = new THREE.Color(accent);
       x.emissiveIntensity = 0;
-      x.userData.baseOpacity ??= 1;
+    }
+    const env = doorEnvMap(gl);
+    for (const x of Object.values(m)) {
+      // Room reflections for what is (almost) all reflection: hardware,
+      // glass, bare-metal leaves. Paint, wood and laminate keep the scene's
+      // own environment, so a white door is lit exactly like a white wall
+      // beside it (a room map also brightens DIFFUSE light, which made
+      // painted doors glow against their walls).
+      if (!reflective(x, look.surface.kind === "metal")) continue;
+      x.envMap = env;
+      x.userData.envScale = x.envMapIntensity; // per-material weight (metals > 1)
     }
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,13 +116,15 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
   // Cutaway fade: follow WallMesh's damped value, same blend-pass rule.
   const applied = useRef(-1);
   const envLevel = useRef(-1);
+  const envFor = useRef<Mats | null>(null);
   useFrame(() => {
     if (!mats) return;
     // Track the scene IBL level (time of day, camera preset) so the door's
     // own reflections stay in step with everything else's.
     const level = threeScene.environmentIntensity ?? 1;
-    if (level !== envLevel.current) {
+    if (level !== envLevel.current || envFor.current !== mats) {
       envLevel.current = level;
+      envFor.current = mats;
       setEnvLevel(mats, level);
     }
     const o = fade.current;
@@ -143,10 +163,10 @@ export function DoorAssembly({ opening, frame, pieces, glow, accent, fade }: Pro
     if (!info || !hasLining) return null;
     const lining = buildLining(start, end, top, depth, liningW);
     // Sliding leaves run in a track, so there is nothing to close against.
-    const trim = buildTrim({ start, end, top, faceZ: depth / 2, lining: liningW, swingZ, leafT: T, leafFaceZ: depth / 2 - FACE_INSET, trim: info.look.trim, stop: !sliding });
+    const trim = buildTrim({ start, end, top, faceZ: depth / 2, lining: liningW, swingZ, leafT: T, leafFaceZ: depth / 2 - FACE_INSET, trim: info.look.trim, stop: !sliding, outside: info.outside });
     return { lining, trim };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lookKey, start, end, top, depth, liningW, swingZ, T, sliding, hasLining]);
+  }, [lookKey, start, end, top, depth, liningW, swingZ, T, sliding, hasLining, info?.outside]);
   useEffect(() => () => {
     trimGeom?.lining?.dispose();
     trimGeom?.trim?.dispose();

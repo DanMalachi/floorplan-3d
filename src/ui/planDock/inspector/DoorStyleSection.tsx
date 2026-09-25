@@ -12,6 +12,8 @@ import type { Opening } from "@/schema/scene";
 import {
   applyLookToKind,
   doorKinds,
+  houseLooks,
+  lookKey,
   GLAZED_DESIGNS,
   resolveDoorLook,
   type DoorDesign,
@@ -53,9 +55,10 @@ const KINDS: SurfaceKind[] = ["paint", "wood", "powder", "polymer", "metal"];
 
 /** A curated row from the done. Home Colours fan (ids resolve exactly). */
 const DOOR_COLOUR_IDS = [
-  "done-whites-soft-neutral-white-01", "done-whites-soft-neutral-white-03", "done-whites-warm-ivory-03",
-  "done-neutrals-olive-taupe-04", "done-neutrals-mineral-plaster-12", "done-neutrals-soft-grey-12",
-  "done-blacks-neutral-near-black-06", "done-greens-heritage-sage-06", "done-greens-grey-sage-11",
+  "done-whites-clean-neutral-white-02", "done-whites-chalk-white-02", "done-whites-warm-ivory-03",
+  "done-whites-warm-ivory-08", "done-neutrals-olive-taupe-04", "done-neutrals-neutral-grey-07",
+  "done-neutrals-mineral-plaster-12", "done-neutrals-smoke-grey-12", "done-blacks-neutral-near-black-03",
+  "done-blacks-neutral-near-black-06", "done-greens-grey-sage-07", "done-greens-grey-sage-11",
   "done-blues-architectural-blue-grey-07", "done-blues-architectural-blue-grey-12",
   "done-warm_earth-heritage-clay-08", "done-reds-burgundy-08",
 ];
@@ -92,7 +95,7 @@ function Select<T extends string>({ label, value, options, name, onChange }: {
 
 /** Carry a colour across material kinds where it means something. */
 function surfaceOfKind(kind: SurfaceKind, prev: DoorSurface): DoorSurface {
-  const color = "color" in prev ? prev.color : "#f3f0ee";
+  const color = "color" in prev ? prev.color : "#f4efea";
   const sheen: Sheen = "sheen" in prev ? prev.sheen : "satin";
   switch (kind) {
     case "wood": return { kind, species: prev.kind === "wood" ? prev.species : "natural-oak", sheen };
@@ -107,7 +110,10 @@ export function DoorStyleSection({ opening }: { opening: Opening }) {
   const t = useTranslations("editor.opening.doorStyle");
   const locale = useLocale();
   const scene = useSceneStore((s) => s.scene);
-  const { look, kind, own } = resolveDoorLook(scene, opening);
+  const { look, kind } = resolveDoorLook(scene, opening);
+  // "Own" = differs from the house look. After "use on all doors" every door
+  // carries the look itself, and still IS the house style.
+  const own = lookKey(look) !== lookKey(houseLooks(scene)[kind]);
   // doorKinds is cached per scene object, so this is a map walk, not a solve.
   let sameKind = 0;
   for (const k of doorKinds(scene).values()) if (k === kind) sameKind++;
@@ -161,7 +167,7 @@ export function DoorStyleSection({ opening }: { opening: Opening }) {
   };
 
   const surf = look.surface;
-  const presetNow = Object.entries(LOOK_PRESETS).find(([, l]) => JSON.stringify(l) === JSON.stringify(look))?.[0] ?? "custom";
+  const presetNow = Object.entries(LOOK_PRESETS).find(([, l]) => lookKey(l) === lookKey(look))?.[0] ?? "custom";
   const hasColour = surf.kind === "paint" || surf.kind === "powder" || surf.kind === "polymer";
 
   return (

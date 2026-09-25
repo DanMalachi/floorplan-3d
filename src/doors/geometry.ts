@@ -171,12 +171,15 @@ interface Acc {
 function stileAndRail(a: Acc, W: number, H: number, T: number, f: Frame, weights: number[]) {
   const x0 = -W / 2, x1 = W / 2, y0 = -H / 2, y1 = H / 2;
   // Stiles run full height (grain up); rails sit between them (grain across).
-  a.body.push(ebox(x0 + f.stile / 2, 0, 0, f.stile, H, T, "y"));
-  a.body.push(ebox(x1 - f.stile / 2, 0, 0, f.stile, H, T, "y", 0.0015, 0.37));
+  // 3 mm eased arris: the highlight along a frame edge is half of what makes
+  // the panel read (the other half is the corner shadow).
+  const R = 0.003;
+  a.body.push(ebox(x0 + f.stile / 2, 0, 0, f.stile, H, T, "y", R));
+  a.body.push(ebox(x1 - f.stile / 2, 0, 0, f.stile, H, T, "y", R, 0.37));
   const iw = W - 2 * f.stile;
   const cx = 0;
-  a.body.push(ebox(cx, y1 - f.top / 2, 0, iw, f.top, T, "x", 0.0015, 0.21, 0.4));
-  a.body.push(ebox(cx, y0 + f.bottom / 2, 0, iw, f.bottom, T, "x", 0.0015, 0.63, 0.1));
+  a.body.push(ebox(cx, y1 - f.top / 2, 0, iw + 0.002, f.top, T, "x", R, 0.21, 0.4));
+  a.body.push(ebox(cx, y0 + f.bottom / 2, 0, iw + 0.002, f.bottom, T, "x", R, 0.63, 0.1));
   const n = weights.length;
   const inner = H - f.top - f.bottom - (n - 1) * f.mid;
   const sum = weights.reduce((s, w) => s + w, 0);
@@ -187,15 +190,30 @@ function stileAndRail(a: Acc, W: number, H: number, T: number, f: Frame, weights
     cells.push({ cx, cy: y + h / 2, w: iw, h });
     y += h;
     if (i < n - 1) {
-      a.body.push(ebox(cx, y + f.mid / 2, 0, iw, f.mid, T, "x", 0.0015, 0.13 * i, 0.27 * i));
+      a.body.push(ebox(cx, y + f.mid / 2, 0, iw + 0.002, f.mid, T, "x", R, 0.13 * i, 0.27 * i));
       y += f.mid;
     }
   }
   return cells;
 }
 
+/** Where a recessed panel meets its frame, the inside corner sees little of
+ *  the room: that dark line is what makes a panel door read as one. The
+ *  renderer has no AO, so a thin occluded band stands in for it, on both
+ *  faces, just proud of the panel so it can't z-fight. */
+function cornerShadow(a: Acc, c: { cx: number; cy: number; w: number; h: number }, zFace: number, band = 0.005) {
+  for (const s of [1, -1]) {
+    const z = s * (zFace + 0.0003);
+    a.recess.push(ebox(c.cx, c.cy + c.h / 2 - band / 2, z, c.w, band, 0.0004, "x", 0));
+    a.recess.push(ebox(c.cx, c.cy - c.h / 2 + band / 2, z, c.w, band, 0.0004, "x", 0));
+    a.recess.push(ebox(c.cx - c.w / 2 + band / 2, c.cy, z, band, c.h - 2 * band, 0.0004, "y", 0));
+    a.recess.push(ebox(c.cx + c.w / 2 - band / 2, c.cy, z, band, c.h - 2 * band, 0.0004, "y", 0));
+  }
+}
+
 function flatPanel(a: Acc, c: { cx: number; cy: number; w: number; h: number }, T: number, i: number) {
   a.body.push(ebox(c.cx, c.cy, 0, c.w + 0.004, c.h + 0.004, T - 2 * RECESS, "y", 0.001, 0.11 * i, 0.3));
+  cornerShadow(a, c, T / 2 - RECESS);
 }
 
 /** Glass in an opening, held by beads on both faces. */
@@ -283,7 +301,9 @@ function buildBody(a: Acc, design: DoorDesign, W: number, H: number, T: number) 
         const pw = (c.w - mw) / 2;
         for (const s of [-1, 1]) {
           const px = c.cx + s * (mw / 2 + pw / 2);
-          a.body.push(raisedPanel(px, c.cy, pw + 0.004, c.h + 0.004, T - 2 * 0.012 - 0.008, 0.004, Math.min(0.045, pw * 0.2)));
+          const tongue = T - 2 * 0.012 - 0.008;
+          a.body.push(raisedPanel(px, c.cy, pw + 0.004, c.h + 0.004, tongue, 0.004, Math.min(0.045, pw * 0.2)));
+          cornerShadow(a, { cx: px, cy: c.cy, w: pw, h: c.h }, tongue / 2, 0.004);
         }
       }
       return;
@@ -478,6 +498,9 @@ export interface TrimOptions {
   trim: TrimId;
   /** Door stop on the lining (swing doors). */
   stop?: boolean;
+  /** Wall-local side that is OUTSIDE (entry doors): no casing there, an
+   *  exterior reveal is plaster or render, not joinery. 0 = both faces. */
+  outside?: -1 | 0 | 1;
 }
 
 /** One mitred casing ring on a face: jambs + head, as extruded trapezoids. */
@@ -513,6 +536,7 @@ export function buildTrim(o: TrimOptions): THREE.BufferGeometry | undefined {
   const t0 = top - lining + 0.004;
   if (o.trim !== "minimal") {
     for (const dir of [1, -1] as const) {
+      if (o.outside && dir === o.outside) continue;
       const z = dir * faceZ;
       if (o.trim === "flat") casingRing(out, s0, s1, t0, 0.07, 0.016, z, dir, 0.002);
       if (o.trim === "stepped") {

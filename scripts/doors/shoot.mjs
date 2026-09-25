@@ -25,6 +25,9 @@ const entry = opt("--entry");
 const W = Number(opt("--w", "1400"));
 const H = Number(opt("--h", "900"));
 const tag = opt("--tag", "");
+// --each interior|entry --list a,b,c : loop presets, one set of shots each.
+const each = opt("--each");
+const list = opt("--list", "").split(",").filter(Boolean);
 fs.mkdirSync(out, { recursive: true });
 
 const b = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
@@ -38,6 +41,8 @@ await p.evaluate(({ interior, entry }) => {
   window.__setUi(false);
   window.__setLooks({ interior: interior ? P[interior] : undefined, entry: entry ? P[entry] : undefined });
 }, { interior, entry });
+if (opt("--hour")) await p.evaluate((h) => window.__setHour(h), Number(opt("--hour")));
+if (argv.includes("--ui")) await p.evaluate(() => window.__setUi(true));
 await p.evaluate(() => {
   for (const el of document.querySelectorAll("div,section,aside")) {
     if (el.textContent?.startsWith("This app uses only") && getComputedStyle(el).position === "fixed") el.remove();
@@ -45,13 +50,20 @@ await p.evaluate(() => {
   document.querySelectorAll("nextjs-portal").forEach((e) => e.remove());
 });
 await p.waitForTimeout(6000); // textures
-for (const s of shots) {
-  await p.evaluate((s) => window.__setShot(s), s);
-  await p.waitForTimeout(1500);
-  await p.screenshot({ path: path.join(out, `_warm.png`) });
-  const file = path.join(out, `${tag}${s}.png`);
-  await p.screenshot({ path: file });
-  console.log("wrote", file);
+const runs = each ? list : [""];
+for (const name of runs) {
+  if (each) {
+    await p.evaluate(({ each, name }) => window.__setLooks({ [each]: window.__presets[name] }), { each, name });
+    await p.waitForTimeout(4000);
+  }
+  for (const s of shots) {
+    await p.evaluate((s) => window.__setShot(s), s);
+    await p.waitForTimeout(1500);
+    await p.screenshot({ path: path.join(out, `_warm.png`) });
+    const file = path.join(out, `${tag}${name ? name + "_" : ""}${s}.png`);
+    await p.screenshot({ path: file });
+    console.log("wrote", file);
+  }
 }
 fs.rmSync(path.join(out, "_warm.png"), { force: true });
 await b.close();
