@@ -56,7 +56,7 @@
     "@liveblocks/client": "^3.22.0",
     "@liveblocks/node": "^3.22.0",
     "@liveblocks/react": "^3.22.0",
-    "@liveblocks/yjs": "^3.22.0",
+    "@liveblocks/yjs": "^3.24.1",
     "@react-three/drei": "10.7.7",
     "@react-three/fiber": "9.6.1",
     "@react-three/postprocessing": "^3.0.4",
