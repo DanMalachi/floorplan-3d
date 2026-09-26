@@ -11,7 +11,7 @@
 // only thing standing between that bug and a repeat of it.
 
 import assert from "node:assert/strict";
-import { canonicalRoom, lbRoom } from "./share";
+import { canonicalRoom, lbRoom, pickGrantFrom } from "./share";
 
 let failures = 0;
 function check(name: string, fn: () => void) {
@@ -55,6 +55,27 @@ check("passes an array through .map() unbound — how the delete route calls it"
     PREFIXED,
     "floorplan-1a2b3c4d",
   ]);
+});
+
+console.log("pickGrantFrom — F-20, grant in URL query vs fragment");
+check("new links: reads a fragment grant (#g=)", () => {
+  assert.equal(pickGrantFrom("", "#g=NEWGRANT"), "NEWGRANT");
+});
+check("old links already sent to people: falls back to the query form (?g=)", () => {
+  // The exact path that MUST keep working: a link minted before this change,
+  // carrying nothing in the fragment.
+  assert.equal(pickGrantFrom("?g=OLDGRANT", ""), "OLDGRANT");
+});
+check("a fragment grant wins over a query one when both are present", () => {
+  assert.equal(pickGrantFrom("?g=OLDGRANT", "#g=NEWGRANT"), "NEWGRANT");
+});
+check("tolerates a hash/search with no leading # or ?", () => {
+  assert.equal(pickGrantFrom("g=OLDGRANT", ""), "OLDGRANT");
+  assert.equal(pickGrantFrom("", "g=NEWGRANT"), "NEWGRANT");
+});
+check("neither present: null, not an empty string or a crash", () => {
+  assert.equal(pickGrantFrom("", ""), null);
+  assert.equal(pickGrantFrom("?utm=1", "#other=1"), null);
 });
 
 console.log(failures === 0 ? "\nall passed" : `\n${failures} FAILED`);

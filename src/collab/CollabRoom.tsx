@@ -42,7 +42,17 @@ import { displayName } from "@/lib/auth/profile";
 import { useSession } from "@/lib/auth/useSession";
 import type { RemoteSelection } from "./liveblocks";
 import { inspectScene } from "./sceneGuard";
-import { ROLE_MODES, roleFromGrant, mintGrant, revokeAllLinks, lbRoom, type ShareRole } from "./share";
+import {
+  ROLE_MODES,
+  roleFromGrant,
+  mintGrant,
+  revokeAllLinks,
+  lbRoom,
+  currentGrant,
+  grantFromLocation,
+  stripGrantFromUrl,
+  type ShareRole,
+} from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
 // next/headers, no Supabase), so the UI offers exactly what the API will allow.
 import { canAttenuateTo } from "@/lib/api/roomPolicy";
@@ -393,7 +403,10 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     setErr(null);
     try {
       const grant = await mintGrant(lbRoom(roomId), r);
-      setLink(`${window.location.origin}/v/${roomId}?g=${grant}`);
+      // Fragment, not query (F-20): the grant never leaves this browser in a
+      // request, a Referer header, or a server log. Old links already sent to
+      // people used `?g=` and CollabRoom below still reads that form too.
+      setLink(`${window.location.origin}/v/${roomId}#g=${grant}`);
     } catch (e) {
       // Minting can fail for reasons the UI cannot rule out in advance —
       // an unconfigured signing secret, or ownership that has since moved.
@@ -663,13 +676,22 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     () => (user ? identityForUser(displayName(user), user.id) : guest),
     [user, guest],
   );
-  const role = useMemo<ShareRole>(
-    () => (mounted ? roleFromGrant(new URLSearchParams(window.location.search).get("g")) : "view"),
-    [mounted],
-  );
+  // Read once, before the URL is cleaned up below. `roleFromGrant`'s side effect
+  // remembers the grant in localStorage, so every later read (a Liveblocks
+  // reconnect, a tab refocus) has it even after stripGrantFromUrl runs.
+  const initialGrant = useMemo(() => (mounted ? grantFromLocation() : null), [mounted]);
+  const role = useMemo<ShareRole>(() => roleFromGrant(initialGrant), [initialGrant]);
+
+  // F-20: take the grant out of the visible URL once it is safely remembered.
+  // New links already arrive in the fragment, which never reached the server in
+  // the first place; an old-format `?g=` link did reach the server on this very
+  // request, but this at least keeps it out of this tab's later history entries.
+  useEffect(() => {
+    if (initialGrant) stripGrantFromUrl();
+  }, [initialGrant]);
 
   const authEndpoint = useCallback(async (room?: string) => {
-    const grant = new URLSearchParams(window.location.search).get("g");
+    const grant = currentGrant(lbRoom(roomId));
     const res = await fetch("/api/liveblocks-auth", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -677,7 +699,7 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     });
     if (!res.ok) throw new Error("auth failed");
     return res.json();
-  }, []);
+  }, [roomId]);
 
   if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: PD.bg }} />;
 
