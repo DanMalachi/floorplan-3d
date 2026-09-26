@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { B, type as ty } from "@/brand/tokens";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
+import { useSignOutGuard } from "@/lib/auth/signOutGuard";
 import { MENU_ITEM_CLASS, OUTLINE_BTN_CLASS, TEXT_BTN_CLASS } from "./hoverCss";
 import { SignInConsent } from "@/legal/SignInConsent";
+import { SignOutConfirmDialog } from "@/ui/SignOutConfirmDialog";
 import { POP_IN_CLASS, PopInStyle } from "@/ui/motion/popIn";
 
 // -----------------------------------------------------------------------------
@@ -31,6 +33,8 @@ export function AccountControl() {
   const t = useTranslations("account");
   const tc = useTranslations("signInConsent");
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
+  // F-18: same unsynced-work gate as the editor's AccountMenu.
+  const signOutGuard = useSignOutGuard(signOut);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -204,7 +208,7 @@ export function AccountControl() {
           <button
             onClick={() => {
               setOpen(false);
-              void signOut();
+              signOutGuard.requestSignOut();
             }}
             className={MENU_ITEM_CLASS}
             style={{ ...itemStyle, width: "100%", textAlign: "start", background: "transparent", border: "none", cursor: "pointer" }}
@@ -213,6 +217,12 @@ export function AccountControl() {
           </button>
         </div>
       )}
+      <SignOutConfirmDialog
+        state={signOutGuard.state}
+        onCancel={signOutGuard.cancel}
+        onSyncAndSignOut={() => void signOutGuard.syncAndSignOut()}
+        onKeepLocal={() => void signOutGuard.signOutKeepingLocal()}
+      />
     </div>
   );
 }
