@@ -38,7 +38,8 @@ export const { Link, redirect, usePathname, useRouter, getPathname } = createNav
  * instead: `/faq` for English, `/he/faq` for Hebrew.
  *
  * Pass the query string along in `pathWithQuery` — this app keeps real state
- * there (`?g=` share grants, `?perf=1`/`?dpr=1`, `?home=1`). Unlike
+ * there (`?perf=1`/`?dpr=1`, `?home=1`; share grants moved to the URL fragment
+ * — see F-20 in SECURITY_AUDIT.md — which this function never sees). Unlike
  * `localePath`, this handles a query on the site ROOT correctly: `/?perf=1`
  * becomes `/he?perf=1`, not the `/he/?perf=1` that 308s.
  *
@@ -57,7 +58,8 @@ export function switchLocaleHref(locale: Locale, pathWithQuery: string): string 
  *    the point there, because autosave is debounced and a client-side unmount
  *    would lose the last edits.
  *  • the two live-room handoffs in `src/collab/` — the room is a full-reload
- *    route, and one of them carries a freshly minted grant token in the query.
+ *    route, and one of them carries a freshly minted grant token in the URL
+ *    fragment (never sent to the server; see F-20 in SECURITY_AUDIT.md).
  *
  * They are still internal navigations, so without a prefix a Hebrew session
  * drops into the English app the moment it leaves or goes live.

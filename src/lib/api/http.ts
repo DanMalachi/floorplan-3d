@@ -6,17 +6,21 @@
 export interface ApiErrorBody {
   error: string;
   detail?: string;
+  /** Machine-readable, for the rare case a client reacts to a specific failure
+   *  rather than just displaying `error`/`detail` (e.g. F-24's room-claim cap). */
+  code?: string;
 }
 
-export function apiError(status: number, error: string, detail?: string): Response {
-  const body: ApiErrorBody = detail ? { error, detail } : { error };
+export function apiError(status: number, error: string, detail?: string, code?: string): Response {
+  const body: ApiErrorBody = { error, ...(detail ? { detail } : {}), ...(code ? { code } : {}) };
   return Response.json(body, { status });
 }
 
 export const badRequest = (error = "bad request", detail?: string) => apiError(400, error, detail);
 export const unauthorized = (error = "sign in required", detail?: string) =>
   apiError(401, error, detail);
-export const forbidden = (error = "forbidden", detail?: string) => apiError(403, error, detail);
+export const forbidden = (error = "forbidden", detail?: string, code?: string) =>
+  apiError(403, error, detail, code);
 export const payloadTooLarge = (error = "request too large", detail?: string) =>
   apiError(413, error, detail);
 export const tooManyRequests = (error = "rate limit exceeded", retryAfterSec?: number) => {

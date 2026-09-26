@@ -67,6 +67,7 @@ export async function Footer({ locale }: { locale: string }) {
             </FooterLink>
           ))}
           <FooterLink href="/account">{tFooter("yourData")}</FooterLink>
+          <FooterLink href="/report">{tFooter("report")}</FooterLink>
         </FooterCol>
       </div>
 

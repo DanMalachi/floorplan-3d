@@ -109,17 +109,19 @@ async function dbOwnerState(room: string, userId: string | null): Promise<OwnerS
  * First-come-wins insert. Returns who owns it afterwards, or null if unavailable.
  *
  * null is ALWAYS "no answer", never "the room is free": claim_live_room returns
- * 'owner' or 'other' and nothing else, so every null here is a client that could
- * not be built, an RPC that errored, or a migration that is not applied. Callers
- * must not read it as permission — see claimOutcome in ./roomPolicy.
+ * 'owner', 'other' or 'limit' and nothing else, so every null here is a client
+ * that could not be built, an RPC that errored, or a migration that is not
+ * applied. Callers must not read it as permission — see claimOutcome in
+ * ./roomPolicy. 'limit' (F-24, migration 0007) is a definite answer too: the
+ * caller already owns ROOM_CLAIM_CAP rooms and the database refused the insert.
  */
-async function dbClaim(room: string, userId: string | null): Promise<OwnerState | null> {
+async function dbClaim(room: string, userId: string | null): Promise<OwnerState | "limit" | null> {
   if (!userId) return null;
   const supabase = await getServerSupabase().catch(() => null);
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("claim_live_room", { p_room_id: room });
   if (error) return null;
-  return data === "owner" || data === "other" ? data : null;
+  return data === "owner" || data === "other" || data === "limit" ? data : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +141,20 @@ export async function ownsRoom(room: string, userId: string | null): Promise<boo
   return (await readOwnedCookie()).includes(ownedCookieEntry(userId, room));
 }
 
-export type ClaimResult = "claimed" | "already-yours" | "taken" | "not-allowed" | "unavailable";
+/** Server-enforced cap on how many live rooms one account may own at once
+ *  (F-24: `claim_live_room` was unbounded first-come-wins with no limit at
+ *  all). Enforced inside migration 0007's `claim_live_room()` — this constant
+ *  is for the client-facing message only; the database is what actually stops
+ *  the insert, so the two must be changed together.
+ *
+ *  50 is a first, deliberately generous number for the alpha's household/small-
+ *  team usage (a handful of live rooms at a time is the honest case); it bounds
+ *  the abuse case (one account claiming rooms without limit) rather than
+ *  reflecting real observed usage, which has not been measured. Confirm with
+ *  Dan before treating it as tuned. */
+export const ROOM_CLAIM_CAP = 50;
+
+export type ClaimResult = "claimed" | "already-yours" | "taken" | "not-allowed" | "unavailable" | "limit";
 
 /**
  * Claim `room` for the caller. Called only when a room is first created (Go live).
@@ -255,6 +270,20 @@ export async function authorizeMint(opts: {
 
   // Nothing authorized this caller. Say which of the two doors was the near miss.
   //
+  // F-24: the cap is a definite "no", not an "unavailable" — the database
+  // answered, it just answered "you already have enough rooms". `code` lets the
+  // client show a specific message instead of the generic share-link failure.
+  if (claim === "limit") {
+    return {
+      ok: false,
+      response: forbidden(
+        "room limit reached",
+        `you already own ${ROOM_CLAIM_CAP} live rooms — delete or stop sharing one before creating another`,
+        "ROOM_LIMIT",
+      ),
+    };
+  }
+
   // "unavailable" is a THIRD answer and must not be spelled as either of them: the
   // caller is signed in (claimRoom only reaches it with a user), so "sign in" would
   // be a lie that bounces them to the sign-in page, and 403 would tell them they

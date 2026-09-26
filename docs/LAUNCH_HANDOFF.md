@@ -74,7 +74,7 @@ migrations 0001, 0002, 0004, 0005, run `supabase/tests/rls_audit.sql` (expect `A
 protection-bypass token for a protected URL) and one load test.
 
 ### 6. Decisions and hygiene
-* **`decorate` role is not server-enforced** (F-09): relabel, drop, or redesign.
+* **`decorate` role is not server-enforced** (F-09): **CLOSED 2026-09-26 — Dan chose relabel.** The share-role label now reads "Can edit — opens in Decorate" (en) / "עריכה — נפתח במצב עיצוב" (he) instead of promising a restriction Liveblocks/Yjs cannot enforce. No role id, grant, `ROLE_MODES`, or server logic changed.
 * Confirm the quota numbers in `0005` (500 projects, 16 MiB/doc, 50 MiB/5 MiB buckets).
 * DNS: CAA `0 issue "letsencrypt.org"`, DNSSEC, DMARC; registrar 2FA + domain lock. **Do not submit to hstspreload.org**
   until every subdomain is confirmed HTTPS-only.
@@ -84,8 +84,11 @@ protection-bypass token for a protected URL) and one load test.
   previews' Preview scope for weeks; old preview deployments keep their build-time copies). Procedure:
   `INCIDENT_RESPONSE.md` §4. Old previews are now behind login, so this is defence in depth, not an emergency.
 * Legal placeholders (entity, address, jurisdiction) need Dan + a lawyer.
-* P2s not done: recent-auth for account deletion (F-17), sign-out keeps local data (F-18), grant in URL query (F-20),
-  per-user room-claim cap (F-24).
+* P2s **closed 2026-09-26, branch `fix/security-p2`, PR pending Dan's review/merge**: recent-auth for account
+  deletion (F-17), sign-out keeps local data (F-18), grant in URL query (F-20), per-user room-claim cap (F-24).
+  See `SECURITY_AUDIT.md`'s P2 table for what changed in each. Needs: the branch merged + deployed, and migration
+  `0007_room_claim_cap.sql` applied (F-24's cap does nothing until then). `ROOM_CLAIM_CAP = 50` is a first number
+  — confirm with Dan.
 
 ## Gate to "safe for limited beta"
-Item 1 (deployed and checks pass — done, incl. the F-29 sync fix once merged) and item 2 (monitoring). Backups are a documented, accepted risk for first launch. **Full launch**: add 4, 5, the `decorate` decision, DNS, legal.
+Item 1 (deployed and checks pass — done, incl. the F-29 sync fix once merged) and item 2 (monitoring). Backups are a documented, accepted risk for first launch. **Full launch**: add 4, 5, DNS, legal. (The `decorate` decision is closed — see item 6.)

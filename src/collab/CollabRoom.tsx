@@ -42,7 +42,18 @@ import { displayName } from "@/lib/auth/profile";
 import { useSession } from "@/lib/auth/useSession";
 import type { RemoteSelection } from "./liveblocks";
 import { inspectScene } from "./sceneGuard";
-import { ROLE_MODES, roleFromGrant, mintGrant, revokeAllLinks, lbRoom, type ShareRole } from "./share";
+import {
+  ROLE_MODES,
+  roleFromGrant,
+  mintGrant,
+  revokeAllLinks,
+  lbRoom,
+  currentGrant,
+  grantFromLocation,
+  stripGrantFromUrl,
+  ShareApiError,
+  type ShareRole,
+} from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
 // next/headers, no Supabase), so the UI offers exactly what the API will allow.
 import { canAttenuateTo } from "@/lib/api/roomPolicy";
@@ -393,16 +404,21 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     setErr(null);
     try {
       const grant = await mintGrant(lbRoom(roomId), r);
-      setLink(`${window.location.origin}/v/${roomId}?g=${grant}`);
+      // Fragment, not query (F-20): the grant never leaves this browser in a
+      // request, a Referer header, or a server log. Old links already sent to
+      // people used `?g=` and CollabRoom below still reads that form too.
+      setLink(`${window.location.origin}/v/${roomId}#g=${grant}`);
     } catch (e) {
       // Minting can fail for reasons the UI cannot rule out in advance —
       // an unconfigured signing secret, or ownership that has since moved.
       // Say so; a silent rejected promise leaves a stale link in the box.
       // The server's own message is English and not written for users; log
-      // it, show the localized line.
+      // it, show the localized line. F-24's room-claim cap gets its own,
+      // specific message rather than the generic one — "could not create a
+      // link" would send someone looking for a network problem that isn't there.
       console.warn("[share] mint failed:", (e as Error).message);
       setLink("");
-      setErr(t("linkError"));
+      setErr(e instanceof ShareApiError && e.code === "ROOM_LIMIT" ? t("roomLimitError") : t("linkError"));
     }
   }, [roomId, t]);
 
@@ -589,7 +605,30 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
         </div>
       </div>
       <ShareControls roomId={roomId} held={role} />
+      <ReportRoomLink roomId={roomId} />
     </div>
+  );
+}
+
+/** A viewer of a public share link has no other way to flag this room — it
+ *  needs no sign-in, no ownership, and no held role, so it renders for
+ *  everyone in the room regardless of `role`. Opens /report in a new tab with
+ *  the room id pre-filled (never trusted there — see that page's own
+ *  comment), so reporting never interrupts whatever the visitor is doing in
+ *  the 3D view. */
+function ReportRoomLink({ roomId }: { roomId: string }) {
+  const t = useTranslations("collabRoom");
+  return (
+    <Tooltip label={t("reportTooltip")} placement="bottom">
+      <a
+        href={hardNavHref(`/report?target=${encodeURIComponent(lbRoom(roomId))}`)}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ ...pdChip(false), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+      >
+        {t("report")}
+      </a>
+    </Tooltip>
   );
 }
 
@@ -663,13 +702,22 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     () => (user ? identityForUser(displayName(user), user.id) : guest),
     [user, guest],
   );
-  const role = useMemo<ShareRole>(
-    () => (mounted ? roleFromGrant(new URLSearchParams(window.location.search).get("g")) : "view"),
-    [mounted],
-  );
+  // Read once, before the URL is cleaned up below. `roleFromGrant`'s side effect
+  // remembers the grant in localStorage, so every later read (a Liveblocks
+  // reconnect, a tab refocus) has it even after stripGrantFromUrl runs.
+  const initialGrant = useMemo(() => (mounted ? grantFromLocation() : null), [mounted]);
+  const role = useMemo<ShareRole>(() => roleFromGrant(initialGrant), [initialGrant]);
+
+  // F-20: take the grant out of the visible URL once it is safely remembered.
+  // New links already arrive in the fragment, which never reached the server in
+  // the first place; an old-format `?g=` link did reach the server on this very
+  // request, but this at least keeps it out of this tab's later history entries.
+  useEffect(() => {
+    if (initialGrant) stripGrantFromUrl();
+  }, [initialGrant]);
 
   const authEndpoint = useCallback(async (room?: string) => {
-    const grant = new URLSearchParams(window.location.search).get("g");
+    const grant = currentGrant(lbRoom(roomId));
     const res = await fetch("/api/liveblocks-auth", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -677,7 +725,7 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     });
     if (!res.ok) throw new Error("auth failed");
     return res.json();
-  }, []);
+  }, [roomId]);
 
   if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: PD.bg }} />;
 
