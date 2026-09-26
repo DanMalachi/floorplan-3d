@@ -168,11 +168,19 @@ Paste in the Supabase SQL editor to see the last 14 runs:
 ```sql
 select started_at, finished_at, dry_run, ok, capped, trigger,
        purged_projects, purged_files, orphan_files, orphan_bytes,
-       foreign_rooms, errors_count, skipped_count
+       foreign_rooms, errors_count, skipped_count,
+       summary->>'abuseReportsPurged' as abuse_reports_purged
   from public.retention_runs
  order by started_at desc
  limit 14;
 ```
+
+**Pass C — closed abuse reports.** The same run deletes `abuse_reports` rows
+with status `actioned`/`dismissed` whose `resolved_at` is more than 12 calendar
+months old (Privacy Policy §7; `src/lib/supabase/abuseReportsPurge.ts`).
+`open`/`in_review` rows and closed rows with no `resolved_at` are never
+touched. The count is stored in `summary` only (0008 was already applied when
+this pass was added, so it has no column of its own).
 
 A quick "is the cron actually still running" check:
 

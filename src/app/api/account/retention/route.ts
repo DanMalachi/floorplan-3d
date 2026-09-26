@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase/accountData";
 import { canonicalRoom } from "@/collab/share";
 import { persistRetentionRun, retentionTrigger, summaryToRunRow } from "@/lib/supabase/retentionLog";
+import { purgeResolvedAbuseReports } from "@/lib/supabase/abuseReportsPurge";
 
 // -----------------------------------------------------------------------------
 // GET /api/account/retention — the scheduled retention sweep.
@@ -20,7 +21,8 @@ import { persistRetentionRun, retentionTrigger, summaryToRunRow } from "@/lib/su
 // client-side cleanup would only ever fire for users who are still active — the
 // exact population whose files are still in use.
 //
-// Two passes, both idempotent, both safe to run twice in a row:
+// Three passes, all idempotent, all safe to run twice in a row (C, closed
+// abuse reports after 12 months, is documented at its call site below):
 //
 //   A. PURGE — a project the user deleted is soft-deleted (`deleted_at` set) so
 //      their other devices learn it is gone. That tombstone is a sync mechanism,
@@ -70,6 +72,8 @@ interface Summary {
   orphans: { files: number; bytes: number };
   /** Room ids named by a purged project row but owned by someone else — deliberately NOT deleted. */
   foreignRooms: number;
+  /** Closed abuse reports deleted 12 months after handling (pass C). */
+  abuseReports: { purged: number };
   skipped: string[];
   errors: string[];
   /** Populated on a dry run — the actual list, so it can be eyeballed. */
@@ -106,6 +110,7 @@ export async function GET(request: Request) {
     purged: { projects: 0, files: 0 },
     orphans: { files: 0, bytes: 0 },
     foreignRooms: 0,
+    abuseReports: { purged: 0 },
     skipped: [],
     errors: [],
   };
@@ -320,6 +325,19 @@ export async function GET(request: Request) {
         summary.ok = false;
       }
     }
+  }
+
+  // ---- pass C: closed abuse reports past 12 months ---------------------------
+  // Promised by the Privacy Policy §7. Counts only — report ids are not added to
+  // `wouldDelete`, which is for eyeballing user data.
+
+  const abuse = await purgeResolvedAbuseReports(admin, { dryRun, budget });
+  summary.abuseReports.purged = abuse.count;
+  budget -= abuse.count;
+  if (abuse.skipped) summary.skipped.push(abuse.skipped);
+  if (abuse.error) {
+    summary.errors.push(abuse.error);
+    summary.ok = false;
   }
 
   if (budget <= 0) summary.capped = true;

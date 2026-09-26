@@ -24,6 +24,8 @@ export interface RetentionSummary {
   purged: { projects: number; files: number };
   orphans: { files: number; bytes: number };
   foreignRooms: number;
+  /** Optional so rows from before pass C existed still map. */
+  abuseReports?: { purged: number };
   skipped: string[];
   errors: string[];
   wouldDelete?: string[];
@@ -83,6 +85,9 @@ export function summaryToRunRow(
     purged: summary.purged,
     orphans: summary.orphans,
     foreignRooms: summary.foreignRooms,
+    // No column for this: migration 0008 was already applied when pass C was
+    // added, so the count lives in `summary` (summary->'abuseReportsPurged').
+    abuseReportsPurged: summary.abuseReports?.purged ?? 0,
     capped: Boolean(summary.capped),
     errorsCount: summary.errors.length,
     skippedCount: summary.skipped.length,
