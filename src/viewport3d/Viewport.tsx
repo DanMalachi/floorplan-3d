@@ -516,6 +516,37 @@ export function Viewport({
   const wrapRef = useRef<HTMLDivElement>(null);
   const tv = useTranslations("editor");
   const keysId = useId();
+  // Trackpad pinch fires `wheel` with `ctrlKey: true` (the cross-platform
+  // pinch signal — see camera/inputVocabulary.ts's own use of it) or, on
+  // Safari, the non-standard `gesturestart/change/end` events instead. Orbit
+  // mode is covered today only because CameraControls happens to
+  // preventDefault on the wheel events it's actively handling — but
+  // Walkthrough disables it (`enabled={false}`) without unmounting it, and a
+  // disabled CameraControls does NOT preventDefault. Nothing else in this
+  // tree guards the browser's native pinch-to-zoom, so a MacBook trackpad
+  // pinch during Walkthrough zooms the whole PAGE instead of the camera —
+  // reads as "view mode is broken", doesn't reset without a manual zoom-out,
+  // and survives switching back out of Walkthrough since it's a page zoom,
+  // not a camera state. Guard here, once, independent of mode/tool/controls
+  // state, so it can never regress the same way again.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const stop = (e: Event) => e.preventDefault();
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) e.preventDefault();
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("gesturestart", stop);
+    el.addEventListener("gesturechange", stop);
+    el.addEventListener("gestureend", stop);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("gesturestart", stop);
+      el.removeEventListener("gesturechange", stop);
+      el.removeEventListener("gestureend", stop);
+    };
+  }, []);
   const hovering = useSceneStore((s) => s.hover3d !== null);
   // A walkthrough door swing folds its per-frame writes into a gesture too
   // (WalkthroughMode.tsx), but it isn't a drag: it shouldn't tear down N8AO
