@@ -302,17 +302,15 @@ plan) that it shouldn't be one flag away from `remove-asset`.
   that does exactly that sequence before you rely on it. Do not skip steps or
   reorder them; the ordering in §4.1 exists so a partial failure never strands
   data with no owner pointing at it.
-- **No automatic retention/expiry on `abuse_reports` itself.** Unlike
-  projects and orphaned files (`docs/DATA_RETENTION.md` §3), nothing purges
-  old reports. They accumulate until someone deletes them. A reasonable future
-  policy — purge `dismissed`/`actioned` reports after some window, keep `open`
-  ones indefinitely — would slot into the existing
-  `/api/account/retention` cron pattern, but that is **not implemented**;
-  don't describe it as implemented anywhere Dan-facing (a legal page
-  included) until it is. The Privacy Policy currently says reports are kept
-  "until reviewed" and not covered by the ordinary purge window — that is the
-  accurate description of today's code (indefinite retention), not a
-  commitment to a shorter window.
+- **Report retention: 12 months after handling (Dan, 2026-09-26).** The
+  Privacy Policy (§7) promises reports are deleted 12 months after we finish
+  handling them. Enforcement is a pass in the `/api/account/retention` cron
+  (branch `feat/retention-runs`): it deletes `actioned`/`dismissed` rows whose
+  `resolved_at` is older than 12 months; `open`/`in_review` rows are never
+  purged. **Always set `resolved_at` when closing a report** (abuse-admin
+  does) — a closed row with no `resolved_at` is never purged. No report can
+  reach 12 months before 2027-09, so the policy is not yet at risk if that
+  branch ships after this one — but it must ship.
 - **No automated acknowledgement email.** `src/app/api/abuse-report/route.ts`
   has a `TODO(email)` marking where a "we got your report" email belongs,
   once `src/lib/email/` exists and Resend is switched on in production (it is

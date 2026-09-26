@@ -196,9 +196,9 @@ export function PrivacyEn() {
         the details you write, and — only if you choose to give it — an email
         address to hear back on. We also record the IP address a report was
         sent from, to keep the form itself from being abused. A report is
-        visible only to us, is never shown to the person or account it names,
-        and is used only to review and, where warranted, act on what you
-        reported.
+        visible only to us, is not shown to the person or account it names
+        unless the law requires it, and is used only to review and, where
+        warranted, act on what you reported.
       </p>
 
       <h2 style={legalH2}>4. What is stored where</h2>
@@ -285,9 +285,10 @@ export function PrivacyEn() {
           unless the law requires it.
         </li>
         <li style={legalLi}>
-          Abuse and takedown reports are kept until reviewed and are not
-          covered by the {F.purgeDays}-day purge above — they are our record
-          of what was reported and what we did about it.
+          Abuse and takedown reports are not covered by the {F.purgeDays}-day
+          purge above. They are kept for 12 months after we finish handling
+          them, as our record of what was reported and what we did about it,
+          and are then deleted.
         </li>
       </ul>
 
