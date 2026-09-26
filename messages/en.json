@@ -35,12 +35,14 @@
     "accessibility": "Accessibility",
     "home": "done. home",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "report": "Report"
   },
   "footer": {
     "product": "Product",
     "legal": "Legal",
-    "yourData": "Your data"
+    "yourData": "Your data",
+    "report": "Report content"
   },
   "hero": {
     "announceTracing": "Drawing the floorplan: walls, then windows and doors.",
@@ -112,7 +114,9 @@
     "hereCount": "{count} here",
     "viewOnly": "view only",
     "sharedPlan": "Shared plan",
-    "copyOfSharedPlan": "Copy of shared plan"
+    "copyOfSharedPlan": "Copy of shared plan",
+    "report": "Report",
+    "reportTooltip": "Report this room"
   },
   "smallScreen": {
     "title": "The editor wants a bigger screen.",
@@ -1586,5 +1590,48 @@
     "reauthRequired": "For your security, deleting an account needs a fresh sign-in. Sign in again, then come back here and delete.",
     "reauthButton": "Sign in again with Google",
     "reauthBusy": "Opening…"
+  },
+  "report": {
+    "metaTitle": "Report content · done.",
+    "metaDescription": "Report a plan, a shared link, a live room, or an uploaded image on done.",
+    "backHome": "done.",
+    "backPrivacy": "Privacy Policy",
+    "title": "Report content",
+    "intro": "Use this form to report a plan, a shared link, a live collaboration room, or an uploaded image on done. that infringes your rights, exposes someone's private information, or otherwise violates our policies. You do not need an account to file a report, and we do not require your contact information.",
+    "targetKindLabel": "What are you reporting?",
+    "targetKind": {
+      "project": "A specific plan or project",
+      "share_link": "A share link someone sent me",
+      "live_room": "A live collaboration room",
+      "asset": "An uploaded image",
+      "other": "Something else"
+    },
+    "targetIdLabel": "Link, room, or plan",
+    "targetIdHint": "Paste the share link (e.g. .../v/floorplan-...), the plan's name, or however you identify it. If you're not sure, just describe where you saw it — this is free text.",
+    "targetIdPlaceholder": "https://.../v/floorplan-… or a description",
+    "reasonLabel": "Why are you reporting it?",
+    "reason": {
+      "copyright": "Copyright or trademark infringement",
+      "privacy": "Someone's private information (address, personal details)",
+      "illegal_content": "Illegal content",
+      "harassment": "Harassment or abuse",
+      "malware": "Malware or a harmful file",
+      "spam": "Spam or a scam",
+      "other": "Something else"
+    },
+    "detailLabel": "Details",
+    "detailHint": "What's wrong, and anything else that helps us find and review it.",
+    "contactLabel": "Your email (optional)",
+    "contactHint": "Only if you'd like to hear back. Leave blank to report anonymously.",
+    "contactPlaceholder": "you@example.com",
+    "honeypotLabel": "Leave this field blank",
+    "submit": "Submit report",
+    "submitting": "Submitting…",
+    "doneBody": "Thank you. Your report has been received and will be reviewed. Because a report can involve another person's account, we generally do not share details about what action was taken — if you gave an email address and it would help to hear back, we may follow up there.",
+    "errorGeneric": "Could not submit the report. Please try again.",
+    "errorRateLimited": "You're submitting reports faster than we can accept them. Please wait a few minutes and try again.",
+    "errorUnavailable": "Reporting is temporarily unavailable on this deployment. Please try again shortly.",
+    "privacyNoteBefore": "See our",
+    "privacyNoteAfter": "for how any personal information you include in a report is handled."
   }
 }

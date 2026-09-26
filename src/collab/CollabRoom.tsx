@@ -605,7 +605,30 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
         </div>
       </div>
       <ShareControls roomId={roomId} held={role} />
+      <ReportRoomLink roomId={roomId} />
     </div>
+  );
+}
+
+/** A viewer of a public share link has no other way to flag this room — it
+ *  needs no sign-in, no ownership, and no held role, so it renders for
+ *  everyone in the room regardless of `role`. Opens /report in a new tab with
+ *  the room id pre-filled (never trusted there — see that page's own
+ *  comment), so reporting never interrupts whatever the visitor is doing in
+ *  the 3D view. */
+function ReportRoomLink({ roomId }: { roomId: string }) {
+  const t = useTranslations("collabRoom");
+  return (
+    <Tooltip label={t("reportTooltip")} placement="bottom">
+      <a
+        href={hardNavHref(`/report?target=${encodeURIComponent(lbRoom(roomId))}`)}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ ...pdChip(false), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+      >
+        {t("report")}
+      </a>
+    </Tooltip>
   );
 }
 

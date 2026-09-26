@@ -187,6 +187,20 @@ export function PrivacyEn() {
         Your browser does not contact Google to load them.
       </p>
 
+      <h3 style={legalH3}>Abuse &amp; takedown reports</h3>
+      <p style={legalP}>
+        Anyone — with or without an account — can report a plan, a share
+        link, a live collaboration room, or an uploaded image at{" "}
+        <Link href="/report" style={{ color: "inherit" }}>Report content</Link>.
+        We store what you tell us in that form: what you are reporting, why,
+        the details you write, and — only if you choose to give it — an email
+        address to hear back on. We also record the IP address a report was
+        sent from, to keep the form itself from being abused. A report is
+        visible only to us, is not shown to the person or account it names
+        unless the law requires it, and is used only to review and, where
+        warranted, act on what you reported.
+      </p>
+
       <h2 style={legalH2}>4. What is stored where</h2>
       <p style={legalP}>
         <b>In your browser:</b> every project is saved automatically to your
@@ -269,6 +283,12 @@ export function PrivacyEn() {
         <li style={legalLi}>
           We keep no personal data beyond what the purposes here require,
           unless the law requires it.
+        </li>
+        <li style={legalLi}>
+          Abuse and takedown reports are not covered by the {F.purgeDays}-day
+          purge above. They are kept for 12 months after we finish handling
+          them, as our record of what was reported and what we did about it,
+          and are then deleted.
         </li>
       </ul>
 
