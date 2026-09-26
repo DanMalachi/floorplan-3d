@@ -10,6 +10,8 @@ import {
   type StoredObject,
 } from "@/lib/supabase/accountData";
 import { canonicalRoom } from "@/collab/share";
+import { persistRetentionRun, retentionTrigger, summaryToRunRow } from "@/lib/supabase/retentionLog";
+import { purgeResolvedAbuseReports } from "@/lib/supabase/abuseReportsPurge";
 
 // -----------------------------------------------------------------------------
 // GET /api/account/retention — the scheduled retention sweep.
@@ -19,7 +21,8 @@ import { canonicalRoom } from "@/collab/share";
 // client-side cleanup would only ever fire for users who are still active — the
 // exact population whose files are still in use.
 //
-// Two passes, both idempotent, both safe to run twice in a row:
+// Three passes, all idempotent, all safe to run twice in a row (C, closed
+// abuse reports after 12 months, is documented at its call site below):
 //
 //   A. PURGE — a project the user deleted is soft-deleted (`deleted_at` set) so
 //      their other devices learn it is gone. That tombstone is a sync mechanism,
@@ -69,11 +72,17 @@ interface Summary {
   orphans: { files: number; bytes: number };
   /** Room ids named by a purged project row but owned by someone else — deliberately NOT deleted. */
   foreignRooms: number;
+  /** Closed abuse reports deleted 12 months after handling (pass C). */
+  abuseReports: { purged: number };
   skipped: string[];
   errors: string[];
   /** Populated on a dry run — the actual list, so it can be eyeballed. */
   wouldDelete?: string[];
   capped?: boolean;
+  /** Set when the run itself succeeded (or failed) as normal, but writing its
+   *  audit row to `retention_runs` failed. Never changes `ok` or the response
+   *  status — a logging failure must not be reported as a sweep failure. */
+  logError?: string;
 }
 
 export async function GET(request: Request) {
@@ -93,6 +102,7 @@ export async function GET(request: Request) {
 
   const dryRun = new URL(request.url).searchParams.has("dryRun");
   const admin = getAdminSupabase();
+  const startedAt = new Date();
   const summary: Summary = {
     ok: true,
     dryRun,
@@ -100,6 +110,7 @@ export async function GET(request: Request) {
     purged: { projects: 0, files: 0 },
     orphans: { files: 0, bytes: 0 },
     foreignRooms: 0,
+    abuseReports: { purged: 0 },
     skipped: [],
     errors: [],
   };
@@ -316,8 +327,36 @@ export async function GET(request: Request) {
     }
   }
 
+  // ---- pass C: closed abuse reports past 12 months ---------------------------
+  // Promised by the Privacy Policy §7. Counts only — report ids are not added to
+  // `wouldDelete`, which is for eyeballing user data.
+
+  const abuse = await purgeResolvedAbuseReports(admin, { dryRun, budget });
+  summary.abuseReports.purged = abuse.count;
+  budget -= abuse.count;
+  if (abuse.skipped) summary.skipped.push(abuse.skipped);
+  if (abuse.error) {
+    summary.errors.push(abuse.error);
+    summary.ok = false;
+  }
+
   if (budget <= 0) summary.capped = true;
   if (dryRun) summary.wouldDelete = wouldDelete;
+
+  // Persist the audit row LAST, after `ok`/`capped`/counts are final, so it
+  // reflects the run it describes. This must never change the response this
+  // route was already going to give: the status code below is computed from
+  // `summary.ok`, decided above, before this runs — a logging failure only
+  // ever appends `logError` to the body, and is reported to Sentry via
+  // `persistRetentionRun` -> `logError` for what happens without a monitor.
+  const finishedAt = new Date();
+  const trigger = retentionTrigger(request);
+  const logResult = await persistRetentionRun(
+    admin,
+    summaryToRunRow(summary, startedAt, finishedAt, trigger),
+  );
+  if (!logResult.ok) summary.logError = logResult.error;
+
   return Response.json(summary, { status: summary.ok ? 200 : 500 });
 }
 

@@ -37,6 +37,11 @@ production**; three operational blockers need accounts/decisions only Dan has.
    * Retention dry run, read `foreignRooms` and `wouldDelete`:
      `curl.exe -H "Authorization: Bearer $CRON_SECRET" "https://done.design/api/account/retention?dryRun=1"`
      (use `done.design`, **not** the `*.vercel.app` alias, which is now behind login).
+     Apply `supabase/migrations/0008_retention_runs.sql` before this if it hasn't run yet — otherwise
+     the response's `logError` field will say the audit-row insert failed (the sweep itself still runs
+     fine either way). Confirm the row landed: `select * from public.retention_runs order by started_at desc limit 1;`
+     — see `docs/DATA_RETENTION.md` §3.1.1 for the full 14-run query and what it does/doesn't store (counts only,
+     no ids or paths).
    * **Watch the next 03:17 UTC cron** (Vercel → Cron Jobs). Deployment Protection is set to spare custom domains, and
      Vercel documents cron as unaffected, but this has not been observed on this project. If it fails with 401/403,
      switch the project's `ssoProtection.deploymentType` to `"preview"` (previews only; `vercel api` PATCH as in
