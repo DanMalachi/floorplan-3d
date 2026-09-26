@@ -147,6 +147,19 @@ export function currentGrant(room?: string): string | null {
   return room ? rememberedGrant(room) : fromUrl;
 }
 
+/** Thrown by mintGrant/revokeAllLinks on a non-2xx response. `code` is the
+ *  server's machine-readable failure (e.g. "ROOM_LIMIT", F-24) when it sent
+ *  one, for a caller that wants to show something more specific than the
+ *  generic failure message. */
+export class ShareApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ShareApiError";
+    this.code = code;
+  }
+}
+
 /**
  * POST /api/share to mint a signed grant for (room, role).
  *
@@ -165,11 +178,11 @@ export async function mintGrant(
     body: JSON.stringify({ room, role, holding: currentGrant(room), create: opts.create ?? false }),
   });
   if (!res.ok) {
-    const detail = await res
+    const body = await res
       .json()
-      .then((b: { error?: string }) => b?.error)
+      .then((b: { error?: string; code?: string }) => b)
       .catch(() => null);
-    throw new Error(detail ?? "share failed");
+    throw new ShareApiError(body?.error ?? "share failed", body?.code);
   }
   const grant = (await res.json()).grant as string;
   rememberGrant(grant);

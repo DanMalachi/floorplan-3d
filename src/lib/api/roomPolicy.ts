@@ -23,21 +23,25 @@ export const isUnguessableRoom = (room: string) =>
 /** The caller's relationship to a room, as the database reports it. */
 export type OwnerState = "owner" | "other" | "free";
 
-/** What a claim attempt resolved to. "unavailable" means the database never answered. */
-export type ClaimOutcome = "claimed" | "taken" | "unavailable";
+/** What a claim attempt resolved to. "unavailable" means the database never
+ *  answered. "limit" (F-24) means it answered, definitively, "no": the caller
+ *  already owns as many live rooms as `claim_live_room()` will let one account
+ *  hold — see migration 0007 and ROOM_CLAIM_CAP in rooms.ts. */
+export type ClaimOutcome = "claimed" | "taken" | "unavailable" | "limit";
 
 /**
  * Turn the database's answer to a claim into a decision.
  *
- * The load-bearing case is `null`. The claim RPC itself only ever returns 'owner'
- * or 'other' (migration 0002), so null never means "the room is free" — it means
- * the question did not get through: unreachable Supabase, an unapplied migration,
- * a failed RPC. Ownership may only be CREATED on a definite 'owner', because the
- * owner cookie a claim mints is trusted by ownsRoom precisely when the database is
- * too unwell to contradict it. Silence is not consent.
+ * The load-bearing case is `null`. The claim RPC itself only ever returns
+ * 'owner', 'other' or 'limit' (migrations 0002, 0007), so null never means "the
+ * room is free" — it means the question did not get through: unreachable
+ * Supabase, an unapplied migration, a failed RPC. Ownership may only be CREATED
+ * on a definite 'owner', because the owner cookie a claim mints is trusted by
+ * ownsRoom precisely when the database is too unwell to contradict it. Silence
+ * is not consent.
  */
-export const claimOutcome = (answer: OwnerState | null): ClaimOutcome =>
-  answer === "owner" ? "claimed" : answer === "other" ? "taken" : "unavailable";
+export const claimOutcome = (answer: OwnerState | "limit" | null): ClaimOutcome =>
+  answer === "owner" ? "claimed" : answer === "other" ? "taken" : answer === "limit" ? "limit" : "unavailable";
 
 /**
  * One entry of the signed owner cookie: the room AND the account that claimed it.

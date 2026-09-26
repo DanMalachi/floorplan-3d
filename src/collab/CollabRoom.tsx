@@ -51,6 +51,7 @@ import {
   currentGrant,
   grantFromLocation,
   stripGrantFromUrl,
+  ShareApiError,
   type ShareRole,
 } from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
@@ -412,10 +413,12 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       // an unconfigured signing secret, or ownership that has since moved.
       // Say so; a silent rejected promise leaves a stale link in the box.
       // The server's own message is English and not written for users; log
-      // it, show the localized line.
+      // it, show the localized line. F-24's room-claim cap gets its own,
+      // specific message rather than the generic one — "could not create a
+      // link" would send someone looking for a network problem that isn't there.
       console.warn("[share] mint failed:", (e as Error).message);
       setLink("");
-      setErr(t("linkError"));
+      setErr(e instanceof ShareApiError && e.code === "ROOM_LIMIT" ? t("roomLimitError") : t("linkError"));
     }
   }, [roomId, t]);
 
