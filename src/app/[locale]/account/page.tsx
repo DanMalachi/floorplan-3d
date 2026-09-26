@@ -40,18 +40,26 @@ interface StageReport {
   stage: string;
   ok: boolean;
   detail: string;
+  /** F-17: set only on the "recent-auth" stage; drives the re-auth CTA. */
+  code?: string;
 }
 
 export default function AccountPage() {
   const locale = useLocale();
   const t = useTranslations("accountPage");
-  const { user, loading, configured, signOut } = useSession();
+  const { user, loading, configured, signOut, signInWithGoogle } = useSession();
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [typed, setTyped] = useState("");
-  const [busy, setBusy] = useState<null | "export" | "delete">(null);
+  const [busy, setBusy] = useState<null | "export" | "delete" | "reauth">(null);
   const [stages, setStages] = useState<StageReport[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // F-17: the server refuses deletion without a RECENT sign-in (`code:
+  // "REAUTH_REQUIRED"`). This is the one failure the UI treats specially — a
+  // button that starts a fresh Google sign-in — rather than showing it in the
+  // generic stage-failure list below, which would leave the user typing the
+  // confirmation email again with no way to satisfy the real gate.
+  const [reauthNeeded, setReauthNeeded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -92,6 +100,7 @@ export default function AccountPage() {
     setBusy("delete");
     setError(null);
     setStages(null);
+    setReauthNeeded(false);
     try {
       const res = await fetch("/api/account/delete", {
         method: "POST",
@@ -101,6 +110,17 @@ export default function AccountPage() {
       const report = (await res.json().catch(() => null)) as
         | { ok: boolean; stages?: StageReport[]; remaining?: string[] }
         | null;
+
+      const failedStage = report?.stages?.find((s) => !s.ok);
+      if (failedStage?.code === "REAUTH_REQUIRED") {
+        // Not a real failure of the deletion — nothing ran. Show the specific
+        // CTA instead of the generic stage list; there is nothing to retry
+        // until a fresh sign-in happens.
+        setReauthNeeded(true);
+        setError(t("reauthRequired"));
+        return;
+      }
+
       setStages(report?.stages ?? null);
 
       // The local wipe and the sign-out happen ONLY on a verified-complete
@@ -108,9 +128,7 @@ export default function AccountPage() {
       // destroy the user's last copy of plans that are still sitting on the
       // server, and sign them out of the account they need in order to retry.
       if (!res.ok || !report?.ok) {
-        throw new Error(
-          report?.stages?.find((s) => !s.ok)?.detail ?? t("deleteFailed"),
-        );
+        throw new Error(failedStage?.detail ?? t("deleteFailed"));
       }
       await wipeLocalData();
       await signOut();
@@ -124,6 +142,21 @@ export default function AccountPage() {
       setBusy(null);
     }
   }, [typed, signOut, t]);
+
+  // F-17: force a real round-trip through Google (`prompt: "login"`), which is
+  // the only thing that advances `last_sign_in_at`. This is a full-page redirect,
+  // so nothing here "resumes" the deletion afterward — the user lands back in the
+  // editor signed in fresh, comes back to /account, and Delete now passes the
+  // server's recent-auth check. Simpler and more honest than threading deletion
+  // intent through the OAuth round-trip, at the cost of one extra click.
+  const onReauth = useCallback(async () => {
+    setBusy("reauth");
+    try {
+      await signInWithGoogle({ forceReauth: true });
+    } finally {
+      setBusy(null);
+    }
+  }, [signInWithGoogle]);
 
   const expected = (user?.email ?? "DELETE").trim();
   const armed = typed.trim().toLowerCase() === expected.toLowerCase();
@@ -289,6 +322,13 @@ export default function AccountPage() {
                   }}
                 >
                   {error}
+                  {reauthNeeded && (
+                    <div style={{ marginTop: 8 }}>
+                      <ActionButton onClick={() => void onReauth()} disabled={busy !== null} dim={busy === "reauth"}>
+                        {busy === "reauth" ? t("reauthBusy") : t("reauthButton")}
+                      </ActionButton>
+                    </div>
+                  )}
                   {stages && (
                     <ul style={{ margin: "6px 0 0", paddingInlineStart: 16 }}>
                       {stages.map((s) => (
@@ -308,9 +348,11 @@ export default function AccountPage() {
                       ))}
                     </ul>
                   )}
-                  <div style={{ marginTop: 6 }}>
-                    {t("retryNote")}
-                  </div>
+                  {!reauthNeeded && (
+                    <div style={{ marginTop: 6 }}>
+                      {t("retryNote")}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

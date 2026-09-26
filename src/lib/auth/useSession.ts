@@ -18,7 +18,7 @@ export interface SessionState {
   loading: boolean;
   /** False when this deployment has no Supabase configured at all. */
   configured: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (opts?: { forceReauth?: boolean }) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -65,19 +65,25 @@ export function useSession(): SessionState {
     };
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (opts?: { forceReauth?: boolean }) => {
     const supabase = getSupabase();
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      // No access_type/prompt overrides: we never call Google's own APIs, and
-      // forcing the consent screen would re-prompt on every single sign-in.
-      // Supabase issues its own refresh token either way.
-      // No query string on redirectTo: Supabase matches this against its Redirect
-      // URLs allowlist, and a trailing `?next=/` stops a plain `https://host/**`
-      // entry from matching — at which point it silently falls back to the
-      // project's Site URL and the code lands on the wrong origin entirely.
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      // No access_type/prompt overrides on an ORDINARY sign-in: we never call
+      // Google's own APIs, and forcing the consent screen would re-prompt on
+      // every single sign-in. Supabase issues its own refresh token either way.
+      //
+      // `forceReauth` is the one exception (F-17): account deletion requires a
+      // RECENT authentication, enforced server-side against `last_sign_in_at`
+      // (src/lib/api/recentAuth.ts) — and `last_sign_in_at` only advances on an
+      // actual round-trip through Google, not on Supabase silently refreshing
+      // an existing session. `prompt: "login"` is what forces that round-trip
+      // even for someone Google still has signed in.
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        ...(opts?.forceReauth ? { queryParams: { prompt: "login" } } : {}),
+      },
     });
   }, []);
 
