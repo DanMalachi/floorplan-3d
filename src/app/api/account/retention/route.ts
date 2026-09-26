@@ -10,6 +10,7 @@ import {
   type StoredObject,
 } from "@/lib/supabase/accountData";
 import { canonicalRoom } from "@/collab/share";
+import { persistRetentionRun, retentionTrigger, summaryToRunRow } from "@/lib/supabase/retentionLog";
 
 // -----------------------------------------------------------------------------
 // GET /api/account/retention — the scheduled retention sweep.
@@ -74,6 +75,10 @@ interface Summary {
   /** Populated on a dry run — the actual list, so it can be eyeballed. */
   wouldDelete?: string[];
   capped?: boolean;
+  /** Set when the run itself succeeded (or failed) as normal, but writing its
+   *  audit row to `retention_runs` failed. Never changes `ok` or the response
+   *  status — a logging failure must not be reported as a sweep failure. */
+  logError?: string;
 }
 
 export async function GET(request: Request) {
@@ -93,6 +98,7 @@ export async function GET(request: Request) {
 
   const dryRun = new URL(request.url).searchParams.has("dryRun");
   const admin = getAdminSupabase();
+  const startedAt = new Date();
   const summary: Summary = {
     ok: true,
     dryRun,
@@ -318,6 +324,21 @@ export async function GET(request: Request) {
 
   if (budget <= 0) summary.capped = true;
   if (dryRun) summary.wouldDelete = wouldDelete;
+
+  // Persist the audit row LAST, after `ok`/`capped`/counts are final, so it
+  // reflects the run it describes. This must never change the response this
+  // route was already going to give: the status code below is computed from
+  // `summary.ok`, decided above, before this runs — a logging failure only
+  // ever appends `logError` to the body, and is reported to Sentry via
+  // `persistRetentionRun` -> `logError` for what happens without a monitor.
+  const finishedAt = new Date();
+  const trigger = retentionTrigger(request);
+  const logResult = await persistRetentionRun(
+    admin,
+    summaryToRunRow(summary, startedAt, finishedAt, trigger),
+  );
+  if (!logResult.ok) summary.logError = logResult.error;
+
   return Response.json(summary, { status: summary.ok ? 200 : 500 });
 }
 

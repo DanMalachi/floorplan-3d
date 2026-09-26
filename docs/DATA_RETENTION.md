@@ -8,7 +8,7 @@ document, so if you change a retention window, a bucket, or a deletion step, cha
 it here in the same edit — a policy that overstates what the code does is the
 failure mode this file exists to prevent.
 
-Last verified against the code: 2026-08-23.
+Last verified against the code: 2026-09-26.
 
 ---
 
@@ -140,6 +140,47 @@ Safety rails, because it deletes data nobody is watching:
   it is reported and the next run continues.
 - The route refuses to run unless `CRON_SECRET` is set and matches the caller's
   `Authorization: Bearer` header.
+
+### 3.1.1 Auditing runs
+
+Vercel Hobby keeps roughly 12 hours of function logs, and the cron
+(`vercel.json`) fires once a day at 03:17 UTC — so without a durable record,
+whether last night's run happened at all is unanswerable once the logs roll
+over. As of `supabase/migrations/0008_retention_runs.sql`, every invocation
+that gets past the `CRON_SECRET`/service-role checks (a bare 403/503 does not
+write a row) inserts one row into `public.retention_runs`, including dry runs
+and runs that errored. Writing that row can never itself change the sweep's own
+result or status code — see `persistRetentionRun` in
+`src/lib/supabase/retentionLog.ts` — and the table prunes itself to the last
+180 days in the same request that writes the newest row.
+
+**What is stored: counts and booleans, never ids or paths.** The route's JSON
+response (`Summary`) can include a dry run's `wouldDelete` — concrete project
+ids, room ids and `<user id>/<file>` storage paths — plus `errors`/`skipped`
+strings that interpolate those same ids into free text. None of that survives
+into `retention_runs`: `summaryToRunRow` drops `wouldDelete` entirely and
+collapses `errors`/`skipped` to `errors_count`/`skipped_count`. Every other
+field it stores (purged/orphan counts, `foreignRooms`, `ok`, `capped`,
+`dry_run`, the retention windows) was already just a number or a boolean.
+
+Paste in the Supabase SQL editor to see the last 14 runs:
+
+```sql
+select started_at, finished_at, dry_run, ok, capped, trigger,
+       purged_projects, purged_files, orphan_files, orphan_bytes,
+       foreign_rooms, errors_count, skipped_count
+  from public.retention_runs
+ order by started_at desc
+ limit 14;
+```
+
+A quick "is the cron actually still running" check:
+
+```sql
+select now() - max(started_at) as time_since_last_run
+  from public.retention_runs
+ where trigger = 'cron';
+```
 
 ### 3.2 Known gap: dormant accounts
 
@@ -291,6 +332,12 @@ To make everything in this document true in a deployment:
    `wouldDelete`. Do this again after changing either retention window.
 5. Optionally set `RETENTION_PURGE_DAYS` / `RETENTION_ORPHAN_GRACE_HOURS`, and
    update §3 of this file if you do.
+6. Apply `supabase/migrations/0008_retention_runs.sql` (SQL editor) so runs are
+   auditable — see §3.1.1. Without it, every run's `logError` field in the
+   response body will say the insert failed; the sweep itself still runs and
+   still deletes/purges normally, since a logging failure never changes its
+   result.
 
-No database migration is required: the sweep and the deletion route act through
-the existing schema with the service role, which bypasses RLS.
+Deleting an account needs no migration beyond what already exists: it acts
+through the existing schema with the service role, which bypasses RLS. The
+retention sweep now needs one — `0008` above — purely for its own audit trail.
