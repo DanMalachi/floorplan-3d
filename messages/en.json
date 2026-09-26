@@ -100,10 +100,11 @@
     "copy": "Copy",
     "copied": "Copied",
     "linkError": "Could not create a link.",
+    "roomLimitError": "You already own the maximum number of live shared rooms. Delete or stop sharing one, then try again.",
     "anyoneWithLink": "Anyone with the link — <b>{role}</b>",
     "roles": {
       "view": "Can view",
-      "decorate": "Can view + decorate",
+      "decorate": "Can edit — opens in Decorate",
       "build": "Can edit everything"
     },
     "heldNote": "You joined with a “{role}” link, so you can only share at that level or below.",
@@ -268,7 +269,16 @@
         "savedToAccount": "Your plans are saved to this account.",
         "yourData": "Your data",
         "signOut": "Sign out",
-        "account": "Account"
+        "account": "Account",
+        "signOutConfirm": {
+          "title": "You have unsynced changes",
+          "body": "Some recent work in this browser hasn't finished saving to your account yet. Sync it before signing out, or sign out and leave it saved only on this device.",
+          "syncFailed": "Couldn't reach the cloud to finish syncing — check your connection and try again, or sign out and leave the changes saved only on this device.",
+          "syncAndSignOut": "Sync, then sign out",
+          "syncing": "Syncing…",
+          "keepLocal": "Sign out, keep changes on this device",
+          "cancel": "Cancel"
+        }
       }
     },
     "dock": {
@@ -1576,7 +1586,10 @@
     "stageOk": "Succeeded:",
     "stageFailed": "Failed:",
     "retryNote": "Nothing was removed from this browser. Retrying is safe — every step that already succeeded is skipped.",
-    "backToPlans": "Back to plans"
+    "backToPlans": "Back to plans",
+    "reauthRequired": "For your security, deleting an account needs a fresh sign-in. Sign in again, then come back here and delete.",
+    "reauthButton": "Sign in again with Google",
+    "reauthBusy": "Opening…"
   },
   "report": {
     "metaTitle": "Report content · done.",

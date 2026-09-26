@@ -97,13 +97,67 @@ export function roleFromGrant(grant: string | null | undefined): ShareRole {
   return role === "view" || role === "decorate" || role === "build" ? role : "view";
 }
 
-/** The caller's proof of access to `room`: the ?g= it was opened with, or the one
- *  remembered from the link that first brought them here. */
+/**
+ * Find a grant in a URL's fragment or query string, fragment first. Pure — takes
+ * the two pieces rather than reading `window.location` — so the parsing itself is
+ * unit-testable without a DOM (see share.test.ts).
+ *
+ * New links (minted by this build) carry the grant in the fragment (`#g=…`),
+ * which a browser never sends in the request line, a Referer header, or a
+ * server access log — the fix for F-20 (grant in URL query). Links already sent
+ * to people before this shipped used the query form (`?g=…`) and MUST keep
+ * working, so it is read here as a fallback, never dropped.
+ */
+export function pickGrantFrom(search: string, hash: string): string | null {
+  const fromHash = new URLSearchParams(hash.replace(/^#/, "")).get("g");
+  if (fromHash) return fromHash;
+  return new URLSearchParams(search.replace(/^\?/, "")).get("g");
+}
+
+/** `pickGrantFrom` against the real address bar. */
+export function grantFromLocation(): string | null {
+  if (typeof window === "undefined") return null;
+  return pickGrantFrom(window.location.search, window.location.hash);
+}
+
+/**
+ * Take a grant out of the visible URL (query or fragment) without a navigation,
+ * once it has been captured (remembered in localStorage by `roleFromGrant`/
+ * `currentGrant`). Keeps it out of this tab's later history entries and off the
+ * address bar; for an old-format (`?g=`) link it is the only way to stop that
+ * exposure going forward, since the initial request to the server already
+ * carried it before this can run.
+ */
+export function stripGrantFromUrl(): void {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("g") && !url.hash) return;
+  url.searchParams.delete("g");
+  url.hash = "";
+  window.history.replaceState(window.history.state, "", url.toString());
+}
+
+/** The caller's proof of access to `room`: the grant it was opened with (fragment
+ *  or, for an older link, query), or the one remembered from the link that first
+ *  brought them here. */
 export function currentGrant(room?: string): string | null {
   if (typeof window === "undefined") return null;
-  const fromUrl = new URLSearchParams(window.location.search).get("g");
+  const fromUrl = grantFromLocation();
   if (fromUrl && (!room || payloadOf(fromUrl)?.room === room)) return fromUrl;
   return room ? rememberedGrant(room) : fromUrl;
+}
+
+/** Thrown by mintGrant/revokeAllLinks on a non-2xx response. `code` is the
+ *  server's machine-readable failure (e.g. "ROOM_LIMIT", F-24) when it sent
+ *  one, for a caller that wants to show something more specific than the
+ *  generic failure message. */
+export class ShareApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ShareApiError";
+    this.code = code;
+  }
 }
 
 /**
@@ -124,11 +178,11 @@ export async function mintGrant(
     body: JSON.stringify({ room, role, holding: currentGrant(room), create: opts.create ?? false }),
   });
   if (!res.ok) {
-    const detail = await res
+    const body = await res
       .json()
-      .then((b: { error?: string }) => b?.error)
+      .then((b: { error?: string; code?: string }) => b)
       .catch(() => null);
-    throw new Error(detail ?? "share failed");
+    throw new ShareApiError(body?.error ?? "share failed", body?.code);
   }
   const grant = (await res.json()).grant as string;
   rememberGrant(grant);

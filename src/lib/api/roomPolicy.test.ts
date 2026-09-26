@@ -85,6 +85,14 @@ check("'free' is not a claim either — only the claim RPC's 'owner' is", () => 
   // reaches here it means nobody has claimed yet, NOT that we have claimed it.
   assert.equal(claimOutcome("free"), "unavailable");
 });
+check("F-24: the room-claim cap is a definite 'no', not 'unavailable'", () => {
+  // The database DID answer here — it just refused the insert because the
+  // caller is already at ROOM_CLAIM_CAP (migration 0007). Spelling this as
+  // "unavailable" would tell authorizeMint's caller to just retry, which would
+  // never succeed.
+  assert.equal(claimOutcome("limit"), "limit");
+  assert.notEqual(claimOutcome("limit"), "unavailable");
+});
 
 console.log("grant signing");
 process.env.SHARE_SIGNING_SECRET = "test-secret-not-a-real-key";

@@ -4,6 +4,7 @@ import { getAdminSupabase, serviceRoleConfigured } from "@/lib/supabase/admin";
 import { logRequest } from "@/lib/api/log";
 import { BUCKETS, listUserObjects, removeObjects, type Bucket } from "@/lib/supabase/accountData";
 import { partitionRoomsForDeletion } from "@/lib/api/roomDeletion";
+import { isRecentlyAuthenticated } from "@/lib/api/recentAuth";
 import { rejectCrossSiteWrite } from "@/lib/api/csrf";
 import { enforceRateLimit, rateLimitIdentity } from "@/lib/api/rateLimit";
 import { sendEmailAfterResponse } from "@/lib/email";
@@ -54,6 +55,9 @@ interface StageReport {
   stage: string;
   ok: boolean;
   detail: string;
+  /** Machine-readable, for the one stage the client reacts to specially
+   *  (F-17: prompt a fresh Google sign-in rather than show a generic error). */
+  code?: string;
 }
 
 interface DeleteReport {
@@ -105,6 +109,30 @@ export async function POST(request: Request) {
   const user = await getServerUser();
   if (!user) {
     return fail({ ok: false, stages: [{ stage: "auth", ok: false, detail: "not signed in" }] }, 401);
+  }
+
+  // F-17: require a RECENT authentication, not merely an active session.
+  // `last_sign_in_at` comes back from Supabase's own `getUser()` above — the
+  // server's record of when this session was established, never something the
+  // request can assert about itself. Checked before the rate limit below so a
+  // stale-auth retry (the expected first attempt for most users) doesn't spend
+  // one of the five deletion attempts/hour; typing the confirmation email is a
+  // separate, later gate and does not substitute for this one.
+  if (!isRecentlyAuthenticated(user.last_sign_in_at)) {
+    return fail(
+      {
+        ok: false,
+        stages: [
+          {
+            stage: "recent-auth",
+            ok: false,
+            detail: "sign in again to confirm it's you before deleting your account",
+            code: "REAUTH_REQUIRED",
+          },
+        ],
+      },
+      401,
+    );
   }
 
   // Deletion is heavy (it lists and removes every object and calls a third party

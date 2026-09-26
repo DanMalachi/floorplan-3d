@@ -26,5 +26,9 @@ export async function enterLiveRoom(
   // Keeps the caller's locale across the reload. The share links already out in
   // the world are unprefixed and stay valid — this only affects the hand-off a
   // Hebrew session makes for itself.
-  window.location.href = hardNavHref(`/v/${roomId}?g=${grant}`);
+  //
+  // Fragment, not query (F-20): a fragment never reaches the server on this
+  // navigation, so even the owner's own grant doesn't land in a request log.
+  // CollabRoom reads both the fragment and (for old links) the query form.
+  window.location.href = hardNavHref(`/v/${roomId}#g=${grant}`);
 }

@@ -7,8 +7,10 @@ import { useHover } from "./planDock/useHover";
 import { Tooltip } from "./planDock/Tooltip";
 import { CloseIcon } from "./planDock/icons";
 import { avatarUrl, displayName, useSession } from "@/lib/auth/useSession";
+import { useSignOutGuard } from "@/lib/auth/signOutGuard";
 import { Link } from "@/i18n/navigation";
 import { SignInConsent } from "@/legal/SignInConsent";
+import { SignOutConfirmDialog } from "./SignOutConfirmDialog";
 import { POP_IN_CLASS, PopInStyle } from "./motion/popIn";
 
 // -----------------------------------------------------------------------------
@@ -98,6 +100,8 @@ export function AccountMenu() {
   const t = useTranslations("editor.chrome");
   const tc = useTranslations("signInConsent");
   const { user, loading, configured, signInWithGoogle, signOut } = useSession();
+  // F-18: gate sign-out on unsynced local work rather than signing out silently.
+  const signOutGuard = useSignOutGuard(signOut);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<AuthErrorCode | null>(null);
@@ -499,13 +503,19 @@ export function AccountMenu() {
           <MenuRow
             onSelect={() => {
               setOpen(false);
-              void signOut();
+              signOutGuard.requestSignOut();
             }}
           >
             {t("accountMenu.signOut")}
           </MenuRow>
         </div>
       )}
+      <SignOutConfirmDialog
+        state={signOutGuard.state}
+        onCancel={signOutGuard.cancel}
+        onSyncAndSignOut={() => void signOutGuard.syncAndSignOut()}
+        onKeepLocal={() => void signOutGuard.signOutKeepingLocal()}
+      />
     </div>
   );
 }
