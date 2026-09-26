@@ -546,43 +546,6 @@ export function Viewport({
   useEffect(() => {
     if (walkthroughActive) setWalkthroughMounted(true);
   }, [walkthroughActive]);
-  // Trackpad pinch fires `wheel` with `ctrlKey: true` (the cross-platform
-  // pinch signal — see camera/inputVocabulary.ts's own use of it) or, on
-  // Safari, the non-standard `gesturestart/change/end` events instead.
-  // CameraControls' own wheel handler already calls `preventDefault` on every
-  // event it processes while `enabled` — see node_modules/camera-controls'
-  // `onMouseWheel` — so guarding here too during orbit/View would be
-  // redundant at best; on Safari, preventing `gesturestart` unconditionally
-  // turned out to also suppress the `wheel` events camera-controls needed for
-  // its own dolly, breaking trackpad zoom there (caught 2026-09-26, same
-  // session as this fix). Walkthrough is the one place with a real gap: it
-  // sets `enabled={false}` below without unmounting CameraControls, and a
-  // disabled CameraControls returns before its own preventDefault — so a
-  // trackpad pinch during Walkthrough falls through to the browser's native
-  // page zoom (reads as "view mode is stuck zoomed in"). Walkthrough has no
-  // wheel-zoom of its own (FOV slider only, by design), so this guard is safe
-  // to scope exactly to `walkthroughMounted` — the same flag that gates
-  // CameraControls' `enabled` prop — and never fires while camera-controls is
-  // the one actually driving the wheel.
-  useEffect(() => {
-    if (!walkthroughMounted) return;
-    const el = wrapRef.current;
-    if (!el) return;
-    const stop = (e: Event) => e.preventDefault();
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) e.preventDefault();
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    el.addEventListener("gesturestart", stop);
-    el.addEventListener("gesturechange", stop);
-    el.addEventListener("gestureend", stop);
-    return () => {
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("gesturestart", stop);
-      el.removeEventListener("gesturechange", stop);
-      el.removeEventListener("gestureend", stop);
-    };
-  }, [walkthroughMounted]);
   // The CAD grid is an editing aid; hide it in the immersive View presets, and
   // whenever the caller has asked for no chrome at all — the grid is an
   // affordance for someone editing, not part of the model, so a presentation

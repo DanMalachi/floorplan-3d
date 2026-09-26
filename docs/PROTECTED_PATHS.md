@@ -64,6 +64,18 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-26, `src/viewport3d/CameraRig.tsx` — trackpad pinch dollies
+  instead of lens-zooming** (branch `fix/pinch-dolly`). Approved by Dan
+  2026-09-26 ("approved, go ahead"). camera-controls 3.1.2 forces
+  `ctrlKey` wheels (trackpad pinch) to `ACTION.ZOOM`, which changed
+  `camera.zoom`; Walkthrough never resets it, so on a MacBook it came up
+  magnified by the orbit pinch. The existing wheel-classifier listener now
+  stops every ctrlKey wheel at the canvas and re-dispatches it without
+  ctrlKey, so camera-controls dollies. Nothing else in the rig changed.
+  Same approval: `src/viewport3d/Viewport.tsx` reverted byte-for-byte to
+  `9b4c4e7`, removing today's two unlogged pinch-guard commits (`46db328`,
+  `013f764`), which the CameraRig listener supersedes.
+
 - **2026-09-25, doors (branch `feat/door-factory`) — `src/schema/scene.ts` and
   `src/viewport3d/WallMesh.tsx`.** Approved by Dan 2026-09-25 ("approved") for the
   parametric door work. `scene.ts`: one new optional field, `Opening.door`

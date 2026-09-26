@@ -159,29 +159,72 @@ export function CameraRig({ span, halfX, halfZ }: {
   // two-finger movement orbits, and the browser-signalled pinch zooms. The
   // capture listener only selects an action — camera-controls still owns the
   // actual motion, damping, cursor anchor and boundary enforcement.
+  //
+  // PINCH IS RE-ISSUED AS A PLAIN WHEEL. camera-controls hard-codes
+  // `event.ctrlKey ? ACTION.ZOOM : mouseButtons.wheel` (camera-controls
+  // 3.1.2, onMouseWheel), so a trackpad pinch ignored the DOLLY set here and
+  // changed `camera.zoom` — a lens zoom — instead of moving the camera. Nothing
+  // resets that lens zoom, and camera-controls re-applies it every frame even
+  // while disabled, so Walkthrough came up magnified by however much the orbit
+  // view had been pinched (Dan, MacBook/Safari, 2026-09-26; a mouse wheel never
+  // sets ctrlKey, which is why Windows never showed it). The original event is
+  // stopped at the canvas — camera-controls listens on R3F's wrapper div, the
+  // canvas's parent — and a copy without ctrlKey is dispatched in its place.
+  // deltaMode 0 keeps the step size identical to camera-controls' pinch
+  // formula. Every ctrlKey wheel is also preventDefault-ed, including during
+  // Walkthrough (pointer lock is on the canvas, so it still lands here), which
+  // is what keeps the browser's own pinch/ctrl-wheel page zoom out of it.
   useEffect(() => {
     if (!controls) return;
     const baseDollySpeed = Math.abs(controls.dollySpeed) || 1;
     const isMac = /^Mac/.test(navigator.platform) || /Macintosh/.test(navigator.userAgent);
     controls.mouseButtons.wheel = ACTION.DOLLY;
     controls.dollySpeed = baseDollySpeed;
+    const reissuedPinches = new WeakSet<Event>();
 
     const restoreRestingInput = () => {
       controls.mouseButtons.wheel = ACTION.DOLLY;
       controls.dollySpeed = baseDollySpeed;
     };
     const onWheel = (event: WheelEvent) => {
-      const intent = classifyWheel(event);
-      controls.mouseButtons.wheel = intent === "orbit" ? ACTION.ROTATE : ACTION.DOLLY;
-      // Scope natural-scroll compensation to this classified mouse event. A
-      // global negative speed would also reverse trackpad pinch and touch.
-      controls.dollySpeed = shouldReverseMacMouseZoom(event, isMac)
-        ? -baseDollySpeed
-        : baseDollySpeed;
+      if (event.ctrlKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!controls.enabled) return;
+        const pinch = new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          screenX: event.screenX,
+          screenY: event.screenY,
+          deltaX: event.deltaX,
+          deltaY: event.deltaY,
+          deltaZ: event.deltaZ,
+          deltaMode: 0,
+        });
+        reissuedPinches.add(pinch);
+        canvas.dispatchEvent(pinch);
+        return;
+      }
+      if (reissuedPinches.has(event)) {
+        // Pinch always dollies, never reversed for natural scrolling.
+        controls.mouseButtons.wheel = ACTION.DOLLY;
+        controls.dollySpeed = baseDollySpeed;
+      } else {
+        const intent = classifyWheel(event);
+        controls.mouseButtons.wheel = intent === "orbit" ? ACTION.ROTATE : ACTION.DOLLY;
+        // Scope natural-scroll compensation to this classified mouse event. A
+        // global negative speed would also reverse trackpad pinch and touch.
+        controls.dollySpeed = shouldReverseMacMouseZoom(event, isMac)
+          ? -baseDollySpeed
+          : baseDollySpeed;
+      }
       queueMicrotask(restoreRestingInput);
     };
 
-    canvas.addEventListener("wheel", onWheel, { capture: true, passive: true });
+    canvas.addEventListener("wheel", onWheel, { capture: true, passive: false });
     return () => {
       canvas.removeEventListener("wheel", onWheel, { capture: true });
       restoreRestingInput();
