@@ -13,6 +13,9 @@ interface Persisted {
   /** Only a device the person picked themselves is remembered. A guess or a
    *  wheel classification is re-derived every visit. */
   device?: InputDevice;
+  /** The help panel has been opened at least once: its button stops
+   *  pulsing for good. */
+  helpOpened?: boolean;
 }
 
 /** The slice of `Storage` this module uses, so tests can pass a fake. */
@@ -25,7 +28,7 @@ export function readPersisted(storage: GuideStorage | null): Persisted {
     const parsed = JSON.parse(raw) as Partial<Persisted> | null;
     const seen = Array.isArray(parsed?.seen) ? parsed.seen.filter(isGuideId) : [];
     const device = parsed?.device === "mouse" || parsed?.device === "trackpad" ? parsed.device : undefined;
-    return { seen: [...new Set(seen)], device };
+    return { seen: [...new Set(seen)], device, helpOpened: parsed?.helpOpened === true || undefined };
   } catch {
     // Private browsing, blocked site data, or a hand-edited value: start clean.
     return { seen: [] };
@@ -62,6 +65,9 @@ export interface GuideState {
   enabled: boolean;
   device: InputDevice;
   deviceSource: DeviceSource;
+  /** The help panel is open. Not persisted. */
+  helpOpen: boolean;
+  helpOpened: boolean;
 
   request: (ids: GuideId | GuideId[]) => void;
   /** Close the active guide and mark it seen; the next queued one opens. */
@@ -71,12 +77,17 @@ export interface GuideState {
   setAvailable: (ids: GuideId[]) => void;
   setEnabled: (enabled: boolean) => void;
   setDevice: (device: InputDevice, source: DeviceSource) => void;
+  setHelpOpen: (open: boolean) => void;
 }
 
 export function createGuideStore(storage: GuideStorage | null, guessedDevice: InputDevice) {
   const initial = readPersisted(storage);
-  const persist = (s: Pick<GuideState, "seen" | "device" | "deviceSource">) =>
-    writePersisted(storage, { seen: s.seen, device: s.deviceSource === "user" ? s.device : undefined });
+  const persist = (s: Pick<GuideState, "seen" | "device" | "deviceSource" | "helpOpened">) =>
+    writePersisted(storage, {
+      seen: s.seen,
+      device: s.deviceSource === "user" ? s.device : undefined,
+      helpOpened: s.helpOpened || undefined,
+    });
 
   const byPriority = (a: GuideId, b: GuideId) => GUIDE_PRIORITY[a] - GUIDE_PRIORITY[b];
 
@@ -89,6 +100,8 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
     enabled: true,
     device: initial.device ?? guessedDevice,
     deviceSource: initial.device ? "user" : "guess",
+    helpOpen: false,
+    helpOpened: initial.helpOpened === true,
 
     request: (ids) => {
       const s = get();
@@ -138,6 +151,17 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
       if (device === s.device && source === s.deviceSource) return;
       set({ device, deviceSource: source });
       if (source === "user") persist({ ...get() });
+    },
+
+    setHelpOpen: (open) => {
+      const s = get();
+      if (open === s.helpOpen) return;
+      if (open && !s.helpOpened) {
+        set({ helpOpen: true, helpOpened: true });
+        persist({ ...get() });
+      } else {
+        set({ helpOpen: open });
+      }
     },
   }));
 }

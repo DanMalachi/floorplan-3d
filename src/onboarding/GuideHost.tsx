@@ -5,10 +5,13 @@ import { useSceneStore, type StoreState } from "@/store/useSceneStore";
 import { listProjects } from "@/store/projectPersistence";
 import { MIN_SHORT_SIDE } from "@/ui/SmallScreenNotice";
 import { deviceFromWheel } from "./device";
+import { trackViewportClicks } from "./gestures";
 import { guideStore, useGuides } from "./guideStore";
 import type { GuideId } from "./guides";
 import { guidesFor, outgrown, wantsWelcome, type TriggerSnapshot } from "./triggers";
 import { GUIDE_VIEWS } from "./views";
+import { HelpPanel } from "./HelpPanel";
+import { Nudges } from "./Nudges";
 
 function snapshotOf(s: StoreState): TriggerSnapshot {
   return {
@@ -59,6 +62,9 @@ export function GuideHost({ ready }: { ready: boolean }) {
     };
   }, []);
 
+  // Where clicks land on the 3D view, for the "first piece placed" card.
+  useEffect(() => trackViewportClicks(), []);
+
   // The first scroll tells us mouse or trackpad.
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
@@ -97,7 +103,12 @@ export function GuideHost({ ready }: { ready: boolean }) {
     });
   }, [ready]);
 
-  if (!enabled || !active) return null;
-  const View = GUIDE_VIEWS[active];
-  return View ? <View onDone={dismiss} /> : null;
+  const View = enabled && active ? GUIDE_VIEWS[active] : undefined;
+  return (
+    <>
+      {View && <View onDone={dismiss} />}
+      {enabled && <Nudges />}
+      <HelpPanel />
+    </>
+  );
 }

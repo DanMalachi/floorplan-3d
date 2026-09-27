@@ -1,6 +1,6 @@
 "use client";
 
-// The card every step guide is drawn with: a glass card beside the control it
+// The card every guide is drawn with: a glass card beside the control it
 // explains, a pointer tip aimed at that control, and a pulsing ring around it.
 //
 // Non-blocking by design (the artifact's "never in the way" rule): nothing is
@@ -10,20 +10,22 @@
 //
 // Anchors are plain `data-guide="<name>"` attributes on the real controls, so
 // the card follows the control through layout changes, window resizes and the
-// trace rail's own scrolling, in both reading directions.
+// trace rail's own scrolling, in both reading directions. A card can instead
+// point at a spot (a piece just placed in 3D) or park with nothing to point at.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { dirOf } from "@/i18n/routing";
 import { PD, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { GUIDE_CSS } from "./demos";
-import { placeCard, type Box, type Placement } from "./place";
+import { useGuides, guideStore } from "./guideStore";
+import { parkCard, placeCard, type Box, type CardSide, type Placement } from "./place";
 
 /** Above the dock, the inspector (60) and the camera offer (61); below the
  *  tooltip (70), so a hovered control's tooltip still reads over a card. */
-const CARD_Z = 65;
+export const CARD_Z = 65;
 
 /** The card is text-heavy and sits over a busy plan, so it takes a much
  *  heavier fill than the dock's see-through glass. `color-mix` keeps it on
@@ -75,16 +77,46 @@ function useAnchorBox(name: string | null): Box | null {
   return box;
 }
 
+/** An extra highlighted control, optionally numbered to match a step in the
+ *  card (the Decorate navigator guide's 1-2-3). */
+export interface RingSpec {
+  anchor: string;
+  badge?: number;
+  /** Which top corner the badge sits on, in reading terms. */
+  badgeAt?: "start" | "end";
+  radius?: number | "pill";
+}
+
 export interface GuideCardProps {
   /** `data-guide` name of the control this card explains. */
-  anchor: string;
+  anchor?: string;
+  /** A spot in the window to point at instead, e.g. where a piece was just
+   *  placed in the 3D view (no DOM element to anchor to). */
+  point?: { x: number; y: number } | null;
+  /** Nothing to point at: sit centred, or near the bottom. Also the fallback
+   *  while an anchor is off screen, so a guide never holds the queue unseen. */
+  park?: "centre" | "bottom";
+  /** With `park="bottom"`, the room left free below the card. */
+  parkBottom?: number;
   /** `data-guide` name of a panel the card must sit clear of: the card goes
    *  beside the panel, level with the anchor, instead of beside the anchor
    *  itself and over the panel's other controls. */
   clearOf?: string;
+  /** Sides to try, in order (see `placeCard`). */
+  sides?: CardSide[];
+  /** False: position by the anchor but don't ring it (the rings below say
+   *  more precisely what to look at). */
+  ringAnchor?: boolean;
+  /** More controls to highlight besides the anchor. */
+  rings?: RingSpec[];
   kicker: React.ReactNode;
+  /** Beside the kicker, on the inline-end side (the device switch). */
+  aside?: React.ReactNode;
   title: React.ReactNode;
   children: React.ReactNode;
+  /** A picture that takes its own column beside the text. */
+  media?: React.ReactNode;
+  mediaWidth?: number;
   /** Buttons row, usually a `<GuideFoot>`. */
   foot: React.ReactNode;
   width?: number;
@@ -94,13 +126,44 @@ export interface GuideCardProps {
   onClose: () => void;
 }
 
-export function GuideCard({ anchor, clearOf, kicker, title, children, foot, width = 460, ringRadius = 12, onClose }: GuideCardProps) {
+/** A point's stand-in box: roughly one piece of furniture seen from the
+ *  default camera, so the ring reads as "that thing", not a pixel. */
+const POINT_BOX = { width: 96, height: 72 };
+
+export function GuideCard({
+  anchor,
+  point,
+  park = "bottom",
+  parkBottom = 110,
+  clearOf,
+  sides,
+  ringAnchor = true,
+  rings = [],
+  kicker,
+  aside,
+  title,
+  children,
+  media,
+  mediaWidth = 300,
+  foot,
+  width = 460,
+  ringRadius = 12,
+  onClose,
+}: GuideCardProps) {
   const rtl = useIsRtl();
-  const box = useAnchorBox(anchor);
+  const anchorBox = useAnchorBox(anchor ?? null);
   const panel = useAnchorBox(clearOf ?? null);
+  const px = point?.x;
+  const py = point?.y;
+  const box: Box | null =
+    anchorBox ??
+    (px !== undefined && py !== undefined
+      ? { left: px - POINT_BOX.width / 2, top: py - POINT_BOX.height / 2, ...POINT_BOX }
+      : null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<Placement | null>(null);
   const titleId = useId();
+  const sideKey = sides?.join() ?? "";
 
   useLayoutEffect(() => {
     const card = cardRef.current;
@@ -108,14 +171,13 @@ export function GuideCard({ anchor, clearOf, kicker, title, children, foot, widt
     const measure = () => {
       const view = { width: window.innerWidth, height: window.innerHeight };
       const size = { width: card.offsetWidth, height: card.offsetHeight };
-      // No anchor on screen (a collapsed step, say): park the card bottom
-      // centre rather than leave an invisible guide holding the queue.
-      const target = box
-        ? panel
-          ? { left: panel.left, width: panel.width, top: box.top, height: box.height }
-          : box
-        : { left: view.width / 2, top: view.height - 24, width: 0, height: 0 };
-      setPlace(placeCard(target, size, view, rtl));
+      if (!box) {
+        // tip -1 marks a parked card, which draws no tip.
+        setPlace({ ...parkCard(size, view, park, parkBottom), side: "below", tip: -1 });
+        return;
+      }
+      const target = panel ? { left: panel.left, width: panel.width, top: box.top, height: box.height } : box;
+      setPlace(placeCard(target, size, view, rtl, sideKey ? (sideKey.split(",") as CardSide[]) : undefined));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -125,30 +187,31 @@ export function GuideCard({ anchor, clearOf, kicker, title, children, foot, widt
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [box, panel, rtl]);
+    // `box` is rebuilt every render from anchorBox/px/py, so key on those.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchorBox, px, py, panel, rtl, park, parkBottom, sideKey]);
 
-  const pad = 5;
+  const body = (
+    <>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <span style={kickerStyle(rtl)}>{kicker}</span>
+        {aside}
+      </div>
+      <h2 id={titleId} style={{ margin: 0, fontSize: 22, lineHeight: 1.2, fontWeight: 800, letterSpacing: "-0.01em" }}>
+        {title}
+      </h2>
+      {children}
+      {foot}
+    </>
+  );
+
   return (
     <>
       <style>{GUIDE_CSS}</style>
-      {box && (
-        <div
-          aria-hidden
-          className="dg-ring"
-          style={{
-            position: "fixed",
-            left: box.left - pad,
-            top: box.top - pad,
-            width: box.width + pad * 2,
-            height: box.height + pad * 2,
-            borderRadius: ringRadius === "pill" ? 999 : ringRadius,
-            border: `2px solid ${PD.accentText}`,
-            boxShadow: "0 0 0 5px oklch(0.6 0.15 258 / .22), 0 0 26px oklch(0.6 0.15 258 / .45)",
-            pointerEvents: "none",
-            zIndex: CARD_Z,
-          }}
-        />
-      )}
+      {box && ringAnchor && <RingBox box={box} radius={anchorBox ? ringRadius : 16} />}
+      {rings.map((r) => (
+        <AnchorRing key={r.anchor} spec={r} rtl={rtl} />
+      ))}
       <div
         ref={cardRef}
         role="dialog"
@@ -175,24 +238,88 @@ export function GuideCard({ anchor, clearOf, kicker, title, children, foot, widt
         }}
       >
         {/* The tip lives outside the scrolling box, or the scroll would clip it. */}
-        {place && box && <Tip place={place} rtl={rtl} />}
+        {place && place.tip >= 0 && <Tip place={place} rtl={rtl} />}
         <div
           style={{
             maxHeight: "calc(100vh - 24px)",
             overflowY: "auto",
             padding: 20,
-            display: "grid",
-            gap: 14,
+            display: media ? "flex" : "grid",
+            gap: media ? 22 : 14,
+            alignItems: "start",
           }}
         >
-          <span style={kickerStyle(rtl)}>{kicker}</span>
-          <h2 id={titleId} style={{ margin: 0, fontSize: 22, lineHeight: 1.2, fontWeight: 800, letterSpacing: "-0.01em" }}>
-            {title}
-          </h2>
-          {children}
-          {foot}
+          {media ? (
+            <>
+              <div style={{ flex: `0 0 ${mediaWidth}px`, borderRadius: 12, overflow: "hidden" }}>{media}</div>
+              <div style={{ display: "grid", gap: 14, flex: 1, minWidth: 0 }}>{body}</div>
+            </>
+          ) : (
+            body
+          )}
         </div>
       </div>
+    </>
+  );
+}
+
+const RING_PAD = 5;
+
+function RingBox({ box, radius }: { box: Box; radius: number | "pill" }) {
+  return (
+    <div
+      aria-hidden
+      className="dg-ring"
+      style={{
+        position: "fixed",
+        left: box.left - RING_PAD,
+        top: box.top - RING_PAD,
+        width: box.width + RING_PAD * 2,
+        height: box.height + RING_PAD * 2,
+        borderRadius: radius === "pill" ? 999 : radius,
+        border: `2px solid ${PD.accentText}`,
+        boxShadow: "0 0 0 5px oklch(0.6 0.15 258 / .22), 0 0 26px oklch(0.6 0.15 258 / .45)",
+        pointerEvents: "none",
+        zIndex: CARD_Z,
+      }}
+    />
+  );
+}
+
+function AnchorRing({ spec, rtl }: { spec: RingSpec; rtl: boolean }) {
+  const box = useAnchorBox(spec.anchor);
+  if (!box) return null;
+  const size = 28;
+  // Physical side of the badge: "end" is right in LTR, left in RTL.
+  const onRight = (spec.badgeAt ?? "end") === "end" ? !rtl : rtl;
+  return (
+    <>
+      <RingBox box={box} radius={spec.radius ?? 16} />
+      {spec.badge !== undefined && (
+        <span
+          aria-hidden
+          style={{
+            position: "fixed",
+            top: box.top - RING_PAD - size / 2,
+            left: onRight ? box.left + box.width + RING_PAD - size / 2 - 4 : box.left - RING_PAD - size / 2 + 4,
+            width: size,
+            height: size,
+            borderRadius: "50%",
+            background: PD.accent,
+            color: "white",
+            display: "grid",
+            placeItems: "center",
+            fontFamily: PD.fontUi,
+            fontWeight: 800,
+            fontSize: 14,
+            boxShadow: `0 0 0 3px ${PD.surfaceSolid}, 0 6px 16px -4px oklch(0 0 0 / 0.6)`,
+            pointerEvents: "none",
+            zIndex: CARD_Z,
+          }}
+        >
+          {spec.badge}
+        </span>
+      )}
     </>
   );
 }
@@ -341,9 +468,148 @@ export function GuideDemo({ children }: { children: React.ReactNode }) {
   return <div style={{ borderRadius: 12, overflow: "hidden" }}>{children}</div>;
 }
 
-/** The buttons row, with page dots on the inline-start side when a guide has
- *  more than one page. */
-export function GuideFoot({ page, children }: { page?: { index: number; count: number }; children: React.ReactNode }) {
+/** One gesture or key, with its picture: used by the 3D guides and the help
+ *  panel. `done` turns it green (the practice card ticks rows off). */
+export function ControlRow({
+  icon,
+  title,
+  body,
+  done,
+  compact,
+}: {
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  body: React.ReactNode;
+  done?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: done === undefined ? `${compact ? 44 : 64}px 1fr` : "64px 1fr 30px",
+        gap: compact ? 12 : 14,
+        alignItems: "center",
+        padding: compact ? "8px 10px" : "10px 12px",
+        borderRadius: compact ? 12 : PD.radiusM,
+        background: done ? `color-mix(in oklch, ${PD.ok} 12%, transparent)` : PD.surfaceMuted,
+        border: `1px solid ${done ? `color-mix(in oklch, ${PD.ok} 50%, transparent)` : PD.hairline}`,
+        transition: `background ${PD.dur} ${PD.ease}, border-color ${PD.dur} ${PD.ease}`,
+      }}
+    >
+      <span style={{ display: "grid", placeItems: "center", color: PD.textPrimary }}>{icon}</span>
+      <span style={{ display: "grid", gap: 1 }}>
+        <b style={{ fontSize: compact ? 14.5 : 15.5, color: PD.textPrimary }}>{title}</b>
+        <span style={{ fontSize: compact ? 13 : 14, lineHeight: 1.4, color: PD.textSecondary }}>{body}</span>
+      </span>
+      {done !== undefined && (
+        <span
+          aria-hidden
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: "50%",
+            border: `2px solid ${done ? PD.ok : PD.textTertiary}`,
+            background: done ? PD.ok : "transparent",
+            opacity: done ? 1 : 0.5,
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
+          {done && (
+            <svg viewBox="0 0 12 12" width={12} height={12}>
+              <path d="M2 6.5 L5 9 L10 3" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Mouse / Trackpad switch. Picking one is remembered (the store persists a
+ *  device only when the person chose it). */
+export function DeviceSwitch() {
+  const t = useTranslations("editor.guides");
+  const device = useGuides((s) => s.device);
+  const opt = (d: "mouse" | "trackpad") => (
+    <button
+      type="button"
+      aria-pressed={device === d}
+      onClick={() => guideStore().getState().setDevice(d, "user")}
+      style={{
+        fontFamily: PD.fontUi,
+        fontSize: 13,
+        fontWeight: 700,
+        padding: "5px 12px",
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        textShadow: "none",
+        background: device === d ? PD.accentTint : "transparent",
+        color: device === d ? PD.accentText : PD.textSecondary,
+      }}
+    >
+      {t(d === "mouse" ? "mouse" : "trackpad")}
+    </button>
+  );
+  return (
+    <span
+      role="group"
+      aria-label={t("deviceLabel")}
+      style={{
+        display: "inline-flex",
+        gap: 3,
+        padding: 3,
+        borderRadius: 999,
+        background: PD.surfaceMuted,
+        border: `1px solid ${PD.hairline}`,
+        flex: "none",
+      }}
+    >
+      {opt("mouse")}
+      {opt("trackpad")}
+    </span>
+  );
+}
+
+/** A keyboard key, drawn as a keycap. */
+export function Keycap({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <kbd
+      style={{
+        fontFamily: PD.fontUi,
+        fontWeight: 800,
+        fontSize: 14,
+        minWidth: wide ? undefined : 34,
+        height: 34,
+        padding: wide ? "0 12px" : 0,
+        borderRadius: 7,
+        background: PD.surfaceMutedHover,
+        border: `1px solid ${PD.hairline}`,
+        borderBottomWidth: 3,
+        color: PD.textPrimary,
+        display: "inline-grid",
+        placeItems: "center",
+        direction: "ltr",
+      }}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+/** The buttons row, with page dots (or a status line) on the inline-start
+ *  side. */
+export function GuideFoot({
+  page,
+  status,
+  children,
+}: {
+  page?: { index: number; count: number };
+  status?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
       {page && (
@@ -363,6 +629,11 @@ export function GuideFoot({ page, children }: { page?: { index: number; count: n
             />
           ))}
         </div>
+      )}
+      {status && (
+        <span role="status" style={{ marginInlineEnd: "auto", fontSize: 13, color: PD.textTertiary }}>
+          {status}
+        </span>
       )}
       {children}
     </div>

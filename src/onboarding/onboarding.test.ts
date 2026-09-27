@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { GUIDE_IDS, type GuideId } from "./guides";
 import { createGuideStore, readPersisted, GUIDES_STORAGE_KEY, type GuideStorage } from "./guideStore";
 import { deviceFromWheel, guessDevice } from "./device";
-import { CARD_GAP, VIEW_MARGIN, placeCard } from "./place";
+import { CARD_GAP, VIEW_MARGIN, parkCard, placeCard } from "./place";
+import { dragMove, wheelMove } from "./gestures";
 import { guidesFor, outgrown, wantsWelcome, type TriggerSnapshot } from "./triggers";
 
 let failures = 0;
@@ -284,6 +285,17 @@ check("a guessed or scrolled device is NOT remembered", () => {
   assert.equal(b.getState().device, "mouse");
 });
 
+check("the help button's pulse stops for good once help has been opened", () => {
+  const storage = memoryStorage();
+  const a = createGuideStore(storage, "mouse");
+  assert.equal(a.getState().helpOpened, false);
+  a.getState().setHelpOpen(true);
+  a.getState().setHelpOpen(false);
+  const b = createGuideStore(storage, "mouse");
+  assert.equal(b.getState().helpOpened, true);
+  assert.equal(b.getState().helpOpen, false, "the panel itself never reopens on load");
+});
+
 console.log("card placement");
 const VIEW = { width: 1440, height: 900 };
 // A step control in the trace rail: inline-start edge, 264 px wide.
@@ -319,6 +331,32 @@ check("no room on either side: below, centred and kept on screen", () => {
 check("a card taller than the window pins to the top margin", () => {
   const p = placeCard(railL, { width: 500, height: 1200 }, VIEW, false);
   assert.equal(p.top, VIEW_MARGIN);
+});
+
+check("a preferred side wins when it fits: above the Decorate navigator", () => {
+  const nav = { left: 16, top: 660, width: 208, height: 224 };
+  const p = placeCard(nav, { width: 760, height: 400 }, VIEW, false, ["above", "end"]);
+  assert.equal(p.side, "above");
+  assert.equal(p.top + 400 + CARD_GAP, nav.top);
+  assert.equal(p.left, VIEW_MARGIN, "clamped to the window, not centred off screen");
+});
+check("parked cards: centred, or clear of a dock at the bottom", () => {
+  assert.deepEqual(parkCard({ width: 500, height: 300 }, VIEW, "centre"), { left: 470, top: 300 });
+  assert.deepEqual(parkCard({ width: 560, height: 400 }, VIEW, "bottom", 280), { left: 440, top: 220 });
+});
+
+console.log("camera gestures");
+check("drags: right turns, middle slides, Space+left slides, plain left does nothing", () => {
+  assert.equal(dragMove(2, false), "turn");
+  assert.equal(dragMove(1, false), "slide");
+  assert.equal(dragMove(0, true), "slide");
+  assert.equal(dragMove(0, false), null, "a plain left drag acts on the scene, never the camera");
+});
+check("wheel: a notch or a pinch zooms, a two-finger swipe turns", () => {
+  const w = (o: Partial<Parameters<typeof wheelMove>[0]>) => ({ deltaX: 0, deltaY: 0, deltaMode: 0, ctrlKey: false, ...o });
+  assert.equal(wheelMove(w({ deltaY: 100, wheelDeltaY: -120 })), "zoom");
+  assert.equal(wheelMove(w({ deltaY: 3, ctrlKey: true })), "zoom");
+  assert.equal(wheelMove(w({ deltaX: 4, deltaY: 2.5 })), "turn");
 });
 
 console.log("ids");

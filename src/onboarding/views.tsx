@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { GuideId } from "./guides";
 import { BuildGuide, OpeningsGuide, Scale2Guide, ScaleGuide, WallsGuide } from "./traceGuides";
+import { BuildNavGuide, CameraGuide, DecNavGuide, PlacedGuide, WalkGuide } from "./threeDGuides";
 import { WelcomeGuide } from "./WelcomeGuide";
 
 export interface GuideViewProps {
@@ -17,4 +18,9 @@ export const GUIDE_VIEWS: Partial<Record<GuideId, ComponentType<GuideViewProps>>
   walls: WallsGuide,
   openings: OpeningsGuide,
   build: BuildGuide,
+  camera: CameraGuide,
+  buildnav: BuildNavGuide,
+  decnav: DecNavGuide,
+  placed: PlacedGuide,
+  walk: WalkGuide,
 };

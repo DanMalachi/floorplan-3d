@@ -23,6 +23,7 @@ import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 import { SmallScreenNotice } from "@/ui/SmallScreenNotice";
 import { ProjectBar } from "@/ui/ProjectBar";
 import { GuideHost } from "@/onboarding/GuideHost";
+import { HelpButton } from "@/onboarding/HelpPanel";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
  *  button into the Projects gallery. State is persisted to IndexedDB, so a
@@ -449,6 +450,7 @@ export default function Home() {
           gap: 8,
         }}
       >
+        <HelpButton />
         <AccountMenu />
         <LocaleSwitch />
         <ThemeToggle />

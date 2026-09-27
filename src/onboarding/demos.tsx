@@ -11,6 +11,7 @@
 // (the result visible, no cursor, no ripple). See `GUIDE_CSS`.
 
 import type React from "react";
+import { PD } from "@/ui/planDock/tokens";
 
 /** Keyframes and classes for the cards and their pictures. Rendered once by
  *  `GuideCard` / `WelcomeGuide` as a <style> element; everything is prefixed
@@ -32,8 +33,17 @@ export const GUIDE_CSS = `
 @keyframes dg-curOpen{0%{transform:translate(30px,90px)}25%,30%{transform:translate(78px,52px)}48%,52%{transform:translate(150px,52px)}70%,100%{transform:translate(200px,92px)}}
 @keyframes dg-drawLine{0%,12%{stroke-dashoffset:520}90%,100%{stroke-dashoffset:0}}
 @keyframes dg-fillIn{0%,90%{opacity:0}94%,100%{opacity:1}}
+@keyframes dg-blink{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes dg-wheel{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+@keyframes dg-swipe{0%,100%{transform:translateX(-7px)}50%{transform:translateX(7px)}}
+@keyframes dg-pinch1{0%,100%{transform:translate(-8px,-6px)}50%{transform:translate(0,0)}}
+@keyframes dg-pinch2{0%,100%{transform:translate(8px,6px)}50%{transform:translate(0,0)}}
+@keyframes dg-hl{0%,46%{opacity:0}52%,100%{opacity:1}}
+@keyframes dg-curNav{0%{transform:translate(20px,20px)}20%,26%{transform:translate(58px,26px)}46%,52%{transform:translate(96px,70px)}70%,100%{transform:translate(160px,122px)}}
+.dg-pulse{animation:dg-pulse 2s ease-out infinite}
+@keyframes dg-pulse{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
 @media (prefers-reduced-motion: reduce){
-  .dg-anim,.dg-ring{animation:none!important}
+  .dg-anim,.dg-ring,.dg-pulse{animation:none!important}
   .dg-cur,.dg-rip{display:none}
 }
 `;
@@ -238,5 +248,169 @@ export function DemoOpenings() {
       <rect x={78} y={46} width={72} height={12} fill="#f28c38" className="dg-anim" style={loop("dg-at40")} />
       <Cursor path="dg-curOpen" />
     </Paper>
+  );
+}
+
+// ── Device pictures (3D guides and the help panel) ──────────────────────────
+// Line art in `currentColor`, so they take the text colour of whatever row
+// they sit in, dark theme or light; the part being used is in the accent.
+
+const HOT = PD.accentText;
+const blink = (d = "1.4s", delay = "0s"): React.CSSProperties => ({ animation: `dg-blink ${d} infinite ${delay}` });
+
+export type MousePart = "left" | "right" | "wheel" | "wheeldrag" | "none";
+
+export function MouseIcon({ part, size = 64 }: { part: MousePart; size?: number }) {
+  return (
+    <svg viewBox="0 0 64 48" width={size} height={(size * 48) / 64} aria-hidden>
+      <rect x={20} y={4} width={24} height={40} rx={12} fill="none" stroke="currentColor" strokeWidth={2} />
+      <line x1={32} y1={4} x2={32} y2={20} stroke="currentColor" strokeWidth={2} />
+      <line x1={20} y1={20} x2={44} y2={20} stroke="currentColor" strokeWidth={1.4} opacity={0.5} />
+      {part === "right" && <path d="M32 5 A11 11 0 0 1 43 16 L43 20 L32 20Z" fill={HOT} className="dg-anim" style={blink()} />}
+      {part === "left" && <path d="M32 5 A11 11 0 0 0 21 16 L21 20 L32 20Z" fill={HOT} className="dg-anim" style={blink()} />}
+      <rect
+        x={29.5}
+        y={8}
+        width={5}
+        height={9}
+        rx={2.5}
+        fill={part === "wheel" || part === "wheeldrag" ? HOT : "currentColor"}
+        className={part === "wheel" ? "dg-anim" : undefined}
+        style={part === "wheel" ? { animation: "dg-wheel 1s infinite" } : undefined}
+      />
+      {part === "right" && (
+        <>
+          <path d="M6 30 A26 16 0 0 0 58 30" fill="none" stroke="currentColor" strokeWidth={1.6} strokeDasharray="3 3" />
+          <path d="M54 25 L58 30 L52 32" fill="none" stroke="currentColor" strokeWidth={1.6} />
+        </>
+      )}
+      {part === "wheeldrag" && (
+        <path d="M4 24 L14 24 M50 24 L60 24 M8 20 L4 24 L8 28 M56 20 L60 24 L56 28" fill="none" stroke="currentColor" strokeWidth={1.6} />
+      )}
+      {part === "wheel" && (
+        <path d="M52 12 L52 36 M48 16 L52 12 L56 16 M48 32 L52 36 L56 32" fill="none" stroke="currentColor" strokeWidth={1.6} />
+      )}
+    </svg>
+  );
+}
+
+export type PadGesture = "swipe" | "pinch" | "one" | "space";
+
+export function PadIcon({ gesture, size = 64 }: { gesture: PadGesture; size?: number }) {
+  const move = (name: string): React.CSSProperties => ({ animation: `${name} 1.6s ease-in-out infinite` });
+  return (
+    <svg viewBox="0 0 64 48" width={size} height={(size * 48) / 64} aria-hidden>
+      <rect x={6} y={6} width={52} height={36} rx={6} fill="none" stroke="currentColor" strokeWidth={2} />
+      {gesture === "swipe" && (
+        <g className="dg-anim" style={move("dg-swipe")}>
+          <circle cx={27} cy={24} r={4} fill={HOT} />
+          <circle cx={37} cy={24} r={4} fill={HOT} />
+        </g>
+      )}
+      {gesture === "pinch" && (
+        <>
+          <circle cx={32} cy={24} r={4} fill={HOT} className="dg-anim" style={move("dg-pinch1")} />
+          <circle cx={32} cy={24} r={4} fill={HOT} className="dg-anim" style={move("dg-pinch2")} />
+        </>
+      )}
+      {gesture === "one" && <circle cx={32} cy={24} r={4} fill={HOT} className="dg-anim" style={move("dg-swipe")} />}
+      {gesture === "space" && (
+        <>
+          <rect x={14} y={30} width={36} height={8} rx={2} fill={HOT} />
+          <circle cx={32} cy={18} r={4} fill="currentColor" className="dg-anim" style={move("dg-swipe")} />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** Space bar held while the cursor drags. */
+export function SpaceDragIcon({ size = 64 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 64 48" width={size} height={(size * 48) / 64} aria-hidden>
+      <rect x={4} y={26} width={56} height={14} rx={4} fill={HOT} opacity={0.85} />
+      <g transform="translate(24,2)">
+        <g className="dg-anim" style={{ animation: "dg-swipe 1.6s ease-in-out infinite" }}>
+          {CURSOR}
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+/** Double-click to fly to something. */
+export function DoubleClickIcon({ size = 64 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 64 48" width={size} height={(size * 48) / 64} aria-hidden>
+      <circle cx={30} cy={22} r={10} fill="none" stroke={HOT} strokeWidth={2} className="dg-anim" style={blink(".8s")} />
+      <circle cx={30} cy={22} r={17} fill="none" stroke={HOT} strokeWidth={1.5} opacity={0.6} className="dg-anim" style={blink(".8s", ".2s")} />
+      <g transform="translate(30,22)">{CURSOR}</g>
+    </svg>
+  );
+}
+
+/** A key, drawn small for icon slots (R, Delete). */
+export function KeyIcon({ label, size = 44 }: { label: string; size?: number }) {
+  const wide = label.length > 1;
+  return (
+    <svg viewBox="0 0 44 34" width={size} height={(size * 34) / 44} aria-hidden>
+      <rect
+        x={wide ? 4 : 10}
+        y={5}
+        width={wide ? 36 : 24}
+        height={24}
+        rx={5}
+        fill="currentColor"
+        fillOpacity={0.12}
+        stroke="currentColor"
+        strokeOpacity={0.3}
+      />
+      <text x={22} y={wide ? 21 : 22} textAnchor="middle" fontSize={wide ? 9 : 13} fontWeight={800} fill="currentColor" fontFamily={FIELD_FONT}>
+        {label}
+      </text>
+    </svg>
+  );
+}
+
+/** The Decorate navigator in miniature: pick a room, click the bed in the
+ *  picture, and the shelf below shows only beds. Dark on purpose, like the
+ *  navigator panel it copies. */
+export function DemoNavigator() {
+  return (
+    <svg viewBox="0 0 240 150" aria-hidden style={{ width: "100%", height: "auto", display: "block", background: "#1e2025", borderRadius: 12 }}>
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <rect key={i} x={14 + i * 26} y={10} width={20} height={18} rx={5} fill={i === 2 ? "#34518c" : "#2b2d33"} />
+      ))}
+      <polygon points="14,112 150,112 176,96 40,96" fill="#2a2b30" />
+      <rect x={30} y={70} width={46} height={18} rx={3} fill="#8d7c69" />
+      <rect x={30} y={62} width={14} height={10} rx={2} fill="#d8d2c8" />
+      <rect x={86} y={54} width={22} height={36} fill="#6b6457" />
+      <rect x={118} y={48} width={30} height={18} fill="#222" stroke="#555" />
+      <rect x={60} y={100} width={44} height={6} rx={3} fill="#a8906f" />
+      <rect x={26} y={58} width={54} height={34} rx={6} fill="none" stroke="oklch(0.8 0.12 258)" strokeWidth={2} className="dg-anim" style={loop("dg-hl")} />
+      <g className="dg-anim" style={loop("dg-hl")}>
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+          <rect
+            key={i}
+            x={10 + i * 32}
+            y={122}
+            width={28}
+            height={22}
+            rx={5}
+            fill={i < 2 ? "#34518c" : "#2b2d33"}
+            stroke={i < 2 ? "oklch(0.8 0.12 258)" : "none"}
+          />
+        ))}
+        {/* Two beds on the shelf, drawn rather than emoji so they render the
+            same on every OS. */}
+        {[0, 1].map((i) => (
+          <g key={i} transform={`translate(${16 + i * 32},128)`}>
+            <rect x={0} y={4} width={16} height={6} rx={1.5} fill="#d8d2c8" />
+            <rect x={0} y={1} width={5} height={4} rx={1} fill="#fff" />
+          </g>
+        ))}
+      </g>
+      <Cursor path="dg-curNav" />
+    </svg>
   );
 }

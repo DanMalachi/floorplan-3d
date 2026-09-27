@@ -36,43 +36,63 @@ const TIP_INSET = 24;
  *  the tip line up with the control instead of the card hanging off it. */
 const TIP_FROM_TOP = 56;
 
+/** The default order: after the anchor in reading order (the trace rail sits
+ *  on the inline-start edge, so the card opens over the plan), then the other
+ *  side, then below, then above. */
+export const SIDE_ORDER: CardSide[] = ["end", "start", "below", "above"];
+
 /** Like a normal clamp, except an empty range (the card is bigger than the
  *  room it has) resolves to `lo`: pin to the top/start margin. */
 const clamp = (v: number, lo: number, hi: number) => (hi < lo ? lo : Math.min(hi, Math.max(lo, v)));
 
 /**
- * Prefers the side AFTER the anchor in reading order (the trace rail sits on
- * the inline-start edge, so the card opens over the plan), then the other
- * side, then below, then above. A card taller than the window pins to the top
- * margin; the view caps its height to scroll.
+ * The first side in `order` the card fits on. If it fits nowhere it takes the
+ * last side anyway, pinned inside the window; the view caps its height to
+ * scroll.
  */
-export function placeCard(anchor: Box, card: Size, view: Size, rtl: boolean): Placement {
+export function placeCard(anchor: Box, card: Size, view: Size, rtl: boolean, order: CardSide[] = SIDE_ORDER): Placement {
   const right = anchor.left + anchor.width;
   const bottom = anchor.top + anchor.height;
   const cx = anchor.left + anchor.width / 2;
   const cy = anchor.top + anchor.height / 2;
 
-  const toRight = right + CARD_GAP;
-  const toLeft = anchor.left - CARD_GAP - card.width;
-  const fitsRight = toRight + card.width <= view.width - VIEW_MARGIN;
-  const fitsLeft = toLeft >= VIEW_MARGIN;
-
   const sideTop = clamp(cy - TIP_FROM_TOP, VIEW_MARGIN, view.height - card.height - VIEW_MARGIN);
   const sideTip = clamp(cy - sideTop, TIP_INSET, card.height - TIP_INSET);
-  const order: Array<"right" | "left"> = rtl ? ["left", "right"] : ["right", "left"];
-  for (const phys of order) {
-    if (phys === "right" && fitsRight) {
-      return { left: toRight, top: sideTop, side: rtl ? "start" : "end", tip: sideTip };
-    }
-    if (phys === "left" && fitsLeft) {
-      return { left: toLeft, top: sideTop, side: rtl ? "end" : "start", tip: sideTip };
-    }
-  }
+  const flatLeft = clamp(cx - card.width / 2, VIEW_MARGIN, view.width - card.width - VIEW_MARGIN);
+  const flatTip = clamp(cx - flatLeft, TIP_INSET, card.width - TIP_INSET);
 
-  const left = clamp(cx - card.width / 2, VIEW_MARGIN, view.width - card.width - VIEW_MARGIN);
-  const tip = clamp(cx - left, TIP_INSET, card.width - TIP_INSET);
-  const below = bottom + CARD_GAP;
-  if (below + card.height <= view.height - VIEW_MARGIN) return { left, top: below, side: "below", tip };
-  const above = anchor.top - CARD_GAP - card.height;
-  return { left, top: Math.max(VIEW_MARGIN, above), side: "above", tip };
+  const attempt = (side: CardSide): { p: Placement; fits: boolean } => {
+    if (side === "end" || side === "start") {
+      // `end` is physically right in LTR, left in RTL.
+      const toRight = (side === "end") !== rtl;
+      const left = toRight ? right + CARD_GAP : anchor.left - CARD_GAP - card.width;
+      const fits = toRight ? left + card.width <= view.width - VIEW_MARGIN : left >= VIEW_MARGIN;
+      return { p: { left, top: sideTop, side, tip: sideTip }, fits };
+    }
+    if (side === "below") {
+      const top = bottom + CARD_GAP;
+      return { p: { left: flatLeft, top, side, tip: flatTip }, fits: top + card.height <= view.height - VIEW_MARGIN };
+    }
+    const top = anchor.top - CARD_GAP - card.height;
+    return { p: { left: flatLeft, top: Math.max(VIEW_MARGIN, top), side, tip: flatTip }, fits: top >= VIEW_MARGIN };
+  };
+
+  let last: Placement | null = null;
+  for (const side of order) {
+    const { p, fits } = attempt(side);
+    if (fits) return p;
+    last = p;
+  }
+  return last ?? attempt("above").p;
+}
+
+/** A card with nothing to point at: centred, or near the bottom of the
+ *  window with `bottom` px clear below it (room for a dock). */
+export function parkCard(card: Size, view: Size, at: "centre" | "bottom", bottom = 0): { left: number; top: number } {
+  const left = Math.max(VIEW_MARGIN, (view.width - card.width) / 2);
+  const top =
+    at === "centre"
+      ? Math.max(VIEW_MARGIN, (view.height - card.height) / 2)
+      : Math.max(VIEW_MARGIN, view.height - card.height - bottom);
+  return { left, top };
 }
