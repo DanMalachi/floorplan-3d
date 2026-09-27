@@ -1,7 +1,40 @@
 # Onboarding guides + help: handoff
 
 Written 2026-09-27 at the end of the design session. The next session builds it.
-Launch list item 9. Branch `feat/onboarding-help`, worktree `C:\Users\dandu\fp-wt\onboarding`, based on `origin/main` `747866f`. No product code has been written yet.
+Launch list item 9. Branch `feat/onboarding-help`, worktree `C:\Users\dandu\fp-wt\onboarding`, based on `origin/main` `747866f`.
+
+## 0. START HERE: status and next step (updated 2026-09-27, end of the engine session)
+
+**Done:** step 1 of §7, the guide engine, commit `cd02d95` (pushed; no PR yet, the plan is one PR at the end). `node_modules` is installed in this worktree.
+
+**Dan's decisions (all of §6 is closed):**
+1. The bugs went into a separate PR first: **#47** (`fix/sim-bugs`, worktree `fp-wt/sim-bugs`), open and not merged. It waits for Dan to try Space+drag in a real browser. It touches `src/app/[locale]/design/page.tsx` too (a `SpacePanFocusGuard` import plus a `data-viewport-host` attribute), so expect a small conflict there. Resolve it by merging `origin/main` into this branch, never by rebasing (auto mode blocks force-push).
+2. Help contact line: use the contact email the legal pages use (`src/legal/facts.ts`).
+3. Existing beta users: no welcome if they already have a plan, but step guides show to them once. The model-home button on the welcome stays hidden until Dan's model home exists.
+
+**What the engine gives you** (`src/onboarding/`, read these first, they're short):
+- `guides.ts`: the 11 `GuideId`s (`welcome scale scale2 walls openings build camera buildnav decnav placed walk`), `GUIDE_STAGE` for the help panel, and `GUIDE_PRIORITY` (array order).
+- `triggers.ts`: `guidesFor(prev, next)` is pure. It uses state rules (the store drops guides already seen). `placed` is the only edge rule: exactly +1 furniture in `furnish`, same project. `wantsWelcome()` means at most 1 project, no plan image, no traced points, and no live room. (The first project is created automatically and starts from `sampleScene`, which is why "no project" or "no walls" can't be the test.)
+- `guideStore.ts`: a vanilla zustand store. `guideStore()` is the singleton and `useGuides(selector)` the hook. Actions are `request`, `dismiss` (marks the guide seen and opens the next), `replay(id)` (for help), `setDevice(device, "guess"|"input"|"user")`, and `setEnabled`. Storage key: `localStorage` `done:guides:v1` = `{seen, device?}`. Only a device the person picked is persisted.
+- `device.ts`: `InputDevice = "mouse"|"trackpad"`, `guessDevice` (Mac means trackpad), and `deviceFromWheel` (pinch means trackpad, otherwise it defers to the camera's `classifyWheelSource`).
+- `GuideHost.tsx`: mounted once at the end of the design page as `<GuideHost ready={guidesReady} />`. `guidesReady` flips after `initProjectPersistence()`, and never on the `?hero` or `?gt=` dev hatches. It turns guides off on small screens (`MIN_SHORT_SIDE`, now exported from `SmallScreenNotice.tsx`) and when `liveRoomId` is set. `/v/` rooms render `CollabRoom` and never mount it. It renders `GUIDE_VIEWS[active]` with `{ onDone }`.
+- `views.tsx`: `GUIDE_VIEWS` is **empty**. A guide is only ever queued if it has an entry here. **Registering a card is what switches its guide on.**
+- Tests: `npm run test:onboarding` runs 33 checks, also in CI (`nextjs-ci.yml`). Add checks there as you add logic.
+
+**Next session: step 2 of §7, then step 3's trace guides.**
+1. `GuideCard` (new, `src/onboarding/GuideCard.tsx`): a glass card built from PD tokens only (`PD`, `pdGlass`, `pdChip` in `src/ui/planDock/tokens.ts`; a light theme exists, so no raw colours). It needs a pointer tip, a kicker/title/body/foot layout like the artifact's `.card`, and `Got it`/`Next`/`Back`/`Skip`. Anchor it to `[data-guide="<name>"]` using `getBoundingClientRect` plus resize/scroll observers, and flip it to the other side in RTL (`dir` on `<html>`). A ring highlights the anchor, and there's no dimming (only the welcome dims). It needs to be non-blocking: the card is focusable and `aria-live="polite"`-ish, Esc closes it, and clicks outside keep working. Inline SVG gesture loops must stop under `prefers-reduced-motion`.
+2. `data-guide` anchors (attributes only, no logic changes). `legacy/src/trace2d/TraceRail.tsx` is **active and editable** (see `docs/LEGACY_PATHS.md:48`):
+   - Scale step: `stepBody` `case 2:` at about line 757; the distance `<input value={distance}>` at about line 796.
+   - Wall/Rail/Open chips: `DrawTools` at about lines 350-375 (`pickWall("wall"|"rail"|"portal")`). Anchor the chip row.
+   - Door/Window: `case 4:` at about line 839, `<DrawTools tools={["door","window"]} />`.
+   - Build summary and Generate: `case 6:` at about line 921, `PrimaryButton` at about line 941.
+   - The step list is `steps.map` at about line 986 (`StepHeader`).
+   - Later guides: `BuildNavigator.tsx` (`BuildNavigator`), `BottomDock.tsx` (`NavigatorPanel` at about line 423, room icons, item shelf), and the mode tabs in page.tsx (`ALL_MODES` at about line 206).
+3. Welcome (guide 1): a modal with the real `Wordmark` from `src/brand/Wordmark.tsx`. Buttons: "Upload my floor plan" (opens the import, same as TraceRail's file input `fileRef`; find a store or DOM route, and don't duplicate import logic) and "I'll look around first". The model-home button stays hidden.
+4. Trace guides 2-6 (`scale`, `scale2`, `walls` with its 2-page Rail page, `openings`, `build`). "Back to Walls" on `build` calls `setTraceStep(3)`. Copy comes from the artifact: EN+HE for every string is in `C:\Users\dandu\done-onboarding-research\north-star-artifact\index.html` (the `GUIDES` array at about lines 427-650). Put it under `editor.guides.*` in `messages/en.json` and `messages/he.json`. Hebrew uses plural imperatives. The `scale` note switches on `device`.
+5. Verify each guide in headless Playwright at 1440×900, in EN and HE, dark and light. **Read the rendered Hebrew text**; no `MISSING_MESSAGE` is not enough. Starting points: the scratchpad pattern in the `browser-verify-3d-app` memory, and a fresh browser context (a fresh visitor gets the welcome). Uploading a plan in headless: `page.setInputFiles` on the trace file input with a plan from `done-onboarding-research\sim\` (don't commit it; it's a third-party plan). A useful trick from the engine session: temporarily register a debug view in `GUIDE_VIEWS` to watch the queue, then delete it before committing.
+
+**Don't:** edit `src/viewport3d/**` (protected, and imports from it are fine), `git add -A`, commit anything from `done-onboarding-research`, or merge without Dan. On PS 5.1, write commit messages to a file and use `git commit -F`.
 
 ## 1. The north star (read this first)
 
@@ -82,7 +115,7 @@ Recommendation given to Dan: fix 1, 4 and 5 (plus a workaround for 3) in a **sma
 
 ## 7. Suggested build order
 
-1. Guide engine: `src/onboarding/` store (seen flags in `localStorage` `done:guides:v1`, try/catch), the device detector, triggers from the store (`traceStep`, `appMode`, first 3D frame), and suppression in live rooms, `/v/` and small screens.
+1. **DONE `cd02d95`.** Guide engine: `src/onboarding/` store (seen flags in `localStorage` `done:guides:v1`, try/catch), the device detector, triggers from the store (`traceStep`, `appMode`, first 3D frame), and suppression in live rooms, `/v/` and small screens.
 2. `GuideCard` + anchoring via `data-guide="…"` attributes on the real controls (add them in TraceRail, BottomDock, BuildNavigator, page.tsx). It mirrors in RTL, follows resizes, and uses inline SVG animations that stop under reduced motion.
 3. Trace guides (2-6), then the 3D practice card (7), navigators (8-9), placed (10), walk (11), the help panel and `?` (12), then the struggle hints.
 4. EN + HE copy from the artifact. Check for MISSING_MESSAGE, **and read the rendered Hebrew text** (see the hebrew-i18n memory).
