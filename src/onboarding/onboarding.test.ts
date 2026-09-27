@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { GUIDE_IDS, type GuideId } from "./guides";
 import { createGuideStore, readPersisted, GUIDES_STORAGE_KEY, type GuideStorage } from "./guideStore";
 import { deviceFromWheel, guessDevice } from "./device";
-import { guidesFor, wantsWelcome, type TriggerSnapshot } from "./triggers";
+import { CARD_GAP, VIEW_MARGIN, placeCard } from "./place";
+import { guidesFor, outgrown, wantsWelcome, type TriggerSnapshot } from "./triggers";
 
 let failures = 0;
 function check(name: string, fn: () => void) {
@@ -62,8 +63,20 @@ check("step 2 waits for the plan image", () => {
   assert.deepEqual(guidesFor(null, snap({ traceStep: 2 })), []);
   assert.deepEqual(guidesFor(null, snap({ traceStep: 2, hasImage: true })), ["scale"]);
 });
-check("two scale points, scale not applied: scale2 as well", () => {
-  assert.deepEqual(guidesFor(null, snap({ traceStep: 2, hasImage: true, calibrationPts: 2 })), ["scale", "scale2"]);
+check("two scale points, scale not applied: scale2 takes over from scale", () => {
+  assert.deepEqual(guidesFor(null, snap({ traceStep: 2, hasImage: true, calibrationPts: 2 })), ["scale2"]);
+});
+check("a trace guide is outgrown once its step is behind the person", () => {
+  assert.equal(outgrown("scale", snap({ traceStep: 2, hasImage: true, calibrationPts: 1 })), false);
+  assert.equal(outgrown("scale", snap({ traceStep: 2, hasImage: true, calibrationPts: 2 })), true);
+  assert.equal(outgrown("walls", snap({ traceStep: 3 })), false);
+  assert.equal(outgrown("walls", snap({ traceStep: 4 })), true);
+  assert.equal(outgrown("build", snap({ traceStep: 6, appMode: "build" })), true);
+});
+check("3D guides and the welcome are never outgrown", () => {
+  assert.equal(outgrown("camera", snap({ appMode: "trace" })), false);
+  assert.equal(outgrown("decnav", snap({ appMode: "build" })), false);
+  assert.equal(outgrown("welcome", snap({ traceStep: 2, hasImage: true })), false);
 });
 check("scale already set: no scale guides even on step 2", () => {
   assert.deepEqual(guidesFor(null, snap({ traceStep: 2, hasImage: true, scaleSet: true, calibrationPts: 2 })), []);
@@ -180,11 +193,14 @@ check("replay opens a seen guide and puts the open one back first", () => {
   s.getState().request("walls");
   s.getState().dismiss();
   s.getState().request(["camera", "decnav"]);
+  assert.equal(s.getState().activeSource, "trigger");
   s.getState().replay("walls");
   assert.equal(s.getState().active, "walls");
+  assert.equal(s.getState().activeSource, "replay", "a replayed step guide must not close itself");
   assert.deepEqual(s.getState().queue, ["camera", "decnav"]);
   s.getState().dismiss();
   assert.equal(s.getState().active, "camera");
+  assert.equal(s.getState().activeSource, "trigger");
 });
 check("a queued guide replayed early isn't shown twice", () => {
   const s = storeWithAll();
@@ -266,6 +282,43 @@ check("a guessed or scrolled device is NOT remembered", () => {
   a.getState().dismiss(); // forces a write
   const b = createGuideStore(storage, "mouse");
   assert.equal(b.getState().device, "mouse");
+});
+
+console.log("card placement");
+const VIEW = { width: 1440, height: 900 };
+// A step control in the trace rail: inline-start edge, 264 px wide.
+const railL = { left: 22, top: 200, width: 248, height: 40 };
+const railR = { left: 1440 - 22 - 248, top: 200, width: 248, height: 40 };
+check("LTR: the card opens after the rail, over the plan", () => {
+  const p = placeCard(railL, { width: 500, height: 400 }, VIEW, false);
+  assert.equal(p.side, "end");
+  assert.equal(p.left, 22 + 248 + CARD_GAP);
+});
+check("RTL: the same card mirrors to the left of a right-hand rail", () => {
+  const p = placeCard(railR, { width: 500, height: 400 }, VIEW, true);
+  assert.equal(p.side, "end");
+  assert.equal(p.left + 500, railR.left - CARD_GAP);
+});
+check("the tip points at the anchor's middle", () => {
+  const p = placeCard(railL, { width: 500, height: 400 }, VIEW, false);
+  assert.equal(p.top + p.tip, railL.top + railL.height / 2);
+});
+check("near the bottom the card moves up but the tip still finds the anchor", () => {
+  const low = { ...railL, top: 820 };
+  const p = placeCard(low, { width: 500, height: 400 }, VIEW, false);
+  assert.equal(p.top + 400, VIEW.height - VIEW_MARGIN);
+  assert.equal(p.top + p.tip, low.top + low.height / 2);
+});
+check("no room on either side: below, centred and kept on screen", () => {
+  const wide = { left: 100, top: 100, width: 1240, height: 40 };
+  const p = placeCard(wide, { width: 500, height: 300 }, VIEW, false);
+  assert.equal(p.side, "below");
+  assert.equal(p.left, 100 + 620 - 250);
+  assert.equal(p.tip, 250);
+});
+check("a card taller than the window pins to the top margin", () => {
+  const p = placeCard(railL, { width: 500, height: 1200 }, VIEW, false);
+  assert.equal(p.top, VIEW_MARGIN);
 });
 
 console.log("ids");

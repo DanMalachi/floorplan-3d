@@ -1,5 +1,5 @@
 import type { AppMode } from "@/store/useSceneStore";
-import type { GuideId } from "./guides";
+import { GUIDE_STAGE, type GuideId } from "./guides";
 
 /** The few store facts the guides react to, read once per store change. */
 export interface TriggerSnapshot {
@@ -28,9 +28,10 @@ export function guidesFor(prev: TriggerSnapshot | null, next: TriggerSnapshot): 
     // Step 2 only opens once a plan has loaded; `hasImage` guards a restored
     // project that sits on step 2 with its image still loading.
     if (next.traceStep === 2 && next.hasImage && !next.scaleSet) {
-      out.push("scale");
-      // Both points clicked, distance not applied yet.
-      if (next.calibrationPts >= 2) out.push("scale2");
+      // Choosing the two points, then typing the distance between them. Two
+      // separate states, so the first card closes itself on the second click
+      // (see `outgrown`) and the second takes its place.
+      out.push(next.calibrationPts >= 2 ? "scale2" : "scale");
     }
     if (next.traceStep === 3) out.push("walls");
     if (next.traceStep === 4) out.push("openings");
@@ -64,4 +65,14 @@ export function guidesFor(prev: TriggerSnapshot | null, next: TriggerSnapshot): 
  *  image or a single traced point means they have already started. */
 export function wantsWelcome(s: { projectCount: number; hasImage: boolean; tracedPoints: number; liveRoomId: string | null }): boolean {
   return s.projectCount <= 1 && !s.hasImage && s.tracedPoints === 0 && s.liveRoomId === null;
+}
+
+/** Whether a guide that opened from its trigger no longer fits the state: the
+ *  person has moved past its step without closing it, so it closes itself
+ *  (and counts as seen) and makes room for the next one. Only the trace step
+ *  guides work this way. The 3D guides stay until closed, and so does anything
+ *  reopened from the help panel. */
+export function outgrown(id: GuideId, next: TriggerSnapshot): boolean {
+  if (GUIDE_STAGE[id] !== "trace") return false;
+  return !guidesFor(null, next).includes(id);
 }

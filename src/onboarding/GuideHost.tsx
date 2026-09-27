@@ -7,7 +7,7 @@ import { MIN_SHORT_SIDE } from "@/ui/SmallScreenNotice";
 import { deviceFromWheel } from "./device";
 import { guideStore, useGuides } from "./guideStore";
 import type { GuideId } from "./guides";
-import { guidesFor, wantsWelcome, type TriggerSnapshot } from "./triggers";
+import { guidesFor, outgrown, wantsWelcome, type TriggerSnapshot } from "./triggers";
 import { GUIDE_VIEWS } from "./views";
 
 function snapshotOf(s: StoreState): TriggerSnapshot {
@@ -88,6 +88,10 @@ export function GuideHost({ ready }: { ready: boolean }) {
     guides.request(guidesFor(null, prev));
     return useSceneStore.subscribe((state) => {
       const next = snapshotOf(state);
+      const g = guideStore().getState();
+      // A step guide the person has moved past closes itself first, so the
+      // next step's guide can open in its place rather than queue behind it.
+      if (g.active && g.activeSource === "trigger" && outgrown(g.active, next)) g.dismiss();
       guideStore().getState().request(guidesFor(prev, next));
       prev = next;
     });

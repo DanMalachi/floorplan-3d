@@ -21,7 +21,17 @@ Launch list item 9. Branch `feat/onboarding-help`, worktree `C:\Users\dandu\fp-w
 - `views.tsx`: `GUIDE_VIEWS` is **empty**. A guide is only ever queued if it has an entry here. **Registering a card is what switches its guide on.**
 - Tests: `npm run test:onboarding` runs 33 checks, also in CI (`nextjs-ci.yml`). Add checks there as you add logic.
 
-**Next session: step 2 of §7, then step 3's trace guides.**
+**UPDATE 2026-09-27, guide-card session: guides 1-6 are DONE** (welcome + the five trace guides), headless-verified at 1440×900 in en/he × dark/light (rendered Hebrew read, zero console errors, Esc, auto-close, reduced motion). What landed:
+- `GuideCard.tsx` (card, ring, tip, `GuideText`/`GuideSteps`/`GuideOptions`/`GuideDemo`/`GuideFoot`/`GuideButton`, `richTags` for `<b>`/`<chip>`), `place.ts` (pure placement, tested), `demos.tsx` (SVG loops + `GUIDE_CSS`), `traceGuides.tsx`, `WelcomeGuide.tsx`; all six registered in `views.tsx`.
+- Anchors in `TraceRail.tsx`: `trace-rail-panel`, `trace-step-<n>` (every step body), `trace-scale-distance`, `trace-wall-tools`, `trace-rail`, `trace-opening-tools`. Trace cards use `clearOf="trace-rail-panel"` so they sit beside the rail, not over its controls.
+- Engine change: a trace guide opened by its trigger closes itself when the person moves past its step (`outgrown()` in triggers.ts, `activeSource` in the store); `scale` and `scale2` are now exclusive (0-1 points vs 2). A guide replayed from help never auto-closes.
+- Copy is under `editor.guides.*`; control names are passed in from `editor.trace.tools.*` etc. as ICU args, so a guide always names a chip exactly as the rail does. The JSON files contain duplicate keys, so **never re-serialise them** (a `JSON.stringify` round trip silently drops keys); insert text.
+- Headless verify script: scratchpad `verify-guides.mjs` pattern (fresh context → welcome → `setInputFiles` on the welcome's input → click plan points clear of the card, mirrored for he).
+- Known limits: the card is reachable by Tab only at the end of the page's tab order (it never steals focus, by design); the welcome still mentions the `?` button, which lands with guide 12 in this same PR.
+
+**Next: step 3 continued: guide 7 (3D practice card), then 8-11, then help panel `?` (12), then struggle hints.** Guide 7 must detect gestures from DOM events on the canvas without touching `src/viewport3d/**` (§4).
+
+**Original plan for this session (kept for reference): step 2 of §7, then step 3's trace guides.**
 1. `GuideCard` (new, `src/onboarding/GuideCard.tsx`): a glass card built from PD tokens only (`PD`, `pdGlass`, `pdChip` in `src/ui/planDock/tokens.ts`; a light theme exists, so no raw colours). It needs a pointer tip, a kicker/title/body/foot layout like the artifact's `.card`, and `Got it`/`Next`/`Back`/`Skip`. Anchor it to `[data-guide="<name>"]` using `getBoundingClientRect` plus resize/scroll observers, and flip it to the other side in RTL (`dir` on `<html>`). A ring highlights the anchor, and there's no dimming (only the welcome dims). It needs to be non-blocking: the card is focusable and `aria-live="polite"`-ish, Esc closes it, and clicks outside keep working. Inline SVG gesture loops must stop under `prefers-reduced-motion`.
 2. `data-guide` anchors (attributes only, no logic changes). `legacy/src/trace2d/TraceRail.tsx` is **active and editable** (see `docs/LEGACY_PATHS.md:48`):
    - Scale step: `stepBody` `case 2:` at about line 757; the distance `<input value={distance}>` at about line 796.

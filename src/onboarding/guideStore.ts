@@ -50,6 +50,10 @@ export interface GuideState {
   queue: GuideId[];
   /** The guide on screen, if any. Only one at a time. */
   active: GuideId | null;
+  /** How the active guide opened. A step guide opened by its trigger closes
+   *  itself once the person moves past the step; one reopened from the help
+   *  panel stays until they close it. */
+  activeSource: "trigger" | "replay";
   /** Guides that have a view to render. A request for anything else is
    *  ignored, so a trigger can be wired before its card exists without
    *  queueing an invisible guide that blocks the rest. */
@@ -80,6 +84,7 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
     seen: initial.seen,
     queue: [],
     active: null,
+    activeSource: "trigger",
     available: [],
     enabled: true,
     device: initial.device ?? guessedDevice,
@@ -94,7 +99,7 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
       if (wanted.length === 0) return;
       const queue = [...s.queue, ...new Set(wanted)].sort(byPriority);
       if (s.active) set({ queue });
-      else set({ active: queue[0], queue: queue.slice(1) });
+      else set({ active: queue[0], activeSource: "trigger", queue: queue.slice(1) });
     },
 
     dismiss: () => {
@@ -103,7 +108,7 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
       const seen = s.seen.includes(s.active) ? s.seen : [...s.seen, s.active];
       // A queued guide may have been seen meanwhile (replayed from help).
       const queue = s.queue.filter((id) => !seen.includes(id));
-      set({ seen, active: queue[0] ?? null, queue: queue.slice(1) });
+      set({ seen, active: queue[0] ?? null, activeSource: "trigger", queue: queue.slice(1) });
       persist({ ...get() });
     },
 
@@ -112,7 +117,7 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
       if (s.active === id) return;
       // Whatever was open goes back to the front of the line, unseen.
       const queue = s.active ? [s.active, ...s.queue.filter((q) => q !== id)] : s.queue.filter((q) => q !== id);
-      set({ active: id, queue });
+      set({ active: id, activeSource: "replay", queue });
     },
 
     setAvailable: (ids) => set({ available: [...new Set(ids)] }),

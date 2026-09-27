@@ -349,7 +349,8 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={microLabel()}>{t("tools.drawByHand")}</div>
-      <div style={{ display: "flex", gap: 4 }}>
+      {/* data-guide: onboarding anchors (src/onboarding), attributes only. */}
+      <div data-guide={tools.includes("wall") ? "trace-wall-tools" : "trace-opening-tools"} style={{ display: "flex", gap: 4 }}>
         {tools.includes("wall") && (
           <>
             <Chip
@@ -360,6 +361,7 @@ function DrawTools({ tools }: { tools: ("wall" | "door" | "window")[] }) {
               <WallToolIcon size={13} /> {t("tools.wall")}
             </Chip>
             <Chip
+              data-guide="trace-rail"
               active={mode === "wall" && drawKind === "rail"}
               extra={toolChip}
               onClick={() => pickWall("rail")}
@@ -790,7 +792,7 @@ export function TraceRail() {
                 {mode === "calibrate" && calibrationPts.length >= 2 && (
                   <>
                     <div style={hintText}>{t("scale.realDistance")}</div>
-                    <div style={{ display: "flex", gap: 5 }}>
+                    <div data-guide="trace-scale-distance" style={{ display: "flex", gap: 5 }}>
                       <input
                         type="number" step="1" min="0" autoFocus
                         value={distance}
@@ -969,6 +971,7 @@ export function TraceRail() {
 
   return (
     <div
+      data-guide="trace-rail-panel"
       style={{
         position: "absolute",
         insetInlineStart: 14,
@@ -987,7 +990,7 @@ export function TraceRail() {
         <div key={s.n}>
           <StepHeader step={s} active={traceStep === s.n} onOpen={() => !s.locked && setTraceStep(s.n)} />
           {traceStep === s.n && !s.locked && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 9px 12px 41px" }}>
+            <div data-guide={`trace-step-${s.n}`} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 9px 12px 41px" }}>
               {stepBody(s.n)}
             </div>
           )}
