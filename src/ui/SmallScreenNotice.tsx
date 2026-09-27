@@ -52,7 +52,7 @@ const STORAGE_KEY = "editor:smallScreenAcknowledged";
  * correct rather than a false positive: the editor is just as broken at that
  * size, and the way through is one tap.
  */
-const MIN_SHORT_SIDE = 700;
+export const MIN_SHORT_SIDE = 700;
 
 const tooSmall = () => Math.min(window.innerWidth, window.innerHeight) < MIN_SHORT_SIDE;
 

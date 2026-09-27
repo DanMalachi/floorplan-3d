@@ -50,6 +50,10 @@ jobs:
       - name: Security tests
         run: npm run test:security
 
+      # Onboarding guide engine: triggers, queue, seen-once persistence, device.
+      - name: Onboarding tests
+        run: npm run test:onboarding
+
   audit:
     name: npm audit (high+)
     runs-on: ubuntu-latest
