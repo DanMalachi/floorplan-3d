@@ -127,6 +127,15 @@
   },
   "editor": {
     "guides": {
+      "notBuilt": {
+        "kicker": "Nothing to show yet",
+        "title": "Your home isn't built yet",
+        "bodyTraced": "You've traced your walls. To see them in 3D, open the last Trace step, check the green, and press <b>{generate}</b>.",
+        "bodyEmpty": "Trace your plan's walls first, then build them in the last Trace step.",
+        "goBuild": "Go to the Build step",
+        "goTrace": "Back to Trace",
+        "stay": "Stay here"
+      },
       "nudges": {
         "dragTurnMouse": "To turn the view, hold the right mouse button and drag.",
         "dragTurnPad": "To turn the view, swipe with two fingers.",
@@ -161,7 +170,8 @@
         "title": "Find furniture room by room",
         "step1": "<b>Pick a room</b>: kitchen, bathroom, bedroom and more.",
         "step2": "<b>Click something in the picture</b>: the bed, the rug, the lamp.",
-        "step3": "<b>The shelf shows only that kind of item.</b> Click one, then click the floor where you want it."
+        "step3": "<b>The shelf shows only that kind of item.</b> Click one, then click the floor where you want it.",
+      "noFloor": "Can't see the floor? Choose {cutaway} or {top} at the top to look inside."
       },
       "placed": {
         "title": "It's in",
@@ -169,9 +179,11 @@
         "move": "Move it",
         "moveHow": "Drag it",
         "turn": "Turn it",
-        "turnHow": "Press R",
+        "turnHow": "Click it, then press R",
         "remove": "Remove it",
-        "removeHow": "Press Delete"
+        "removeHow": "Click it, then press Delete",
+      "stop": "Stop adding more",
+      "stopHow": "Press Esc. Until then, every click adds another."
       },
       "walk": {
         "kicker": "View · Walk through",

@@ -131,6 +131,7 @@ export function DecNavGuide({ onDone }: GuideViewProps) {
           { body: t.rich("guides.decnav.step3", richTags) },
         ]}
       />
+      <GuideText note>{t("guides.decnav.noFloor", { cutaway: t("wallModes.cutaway"), top: t("wallModes.top") })}</GuideText>
     </GuideCard>
   );
 }
@@ -156,6 +157,9 @@ export function PlacedGuide({ onDone }: GuideViewProps) {
     >
       <GuideText>{t.rich("guides.placed.body", richTags)}</GuideText>
       <div style={{ display: "grid", gap: 6 }}>
+        {/* First: placing stays armed after a placement, and until Esc every
+            click adds another piece and R turns the NEXT one, not this one. */}
+        <ControlRow compact icon={<KeyIcon label="Esc" />} title={t("guides.placed.stop")} body={t("guides.placed.stopHow")} />
         <ControlRow
           compact
           icon={device === "mouse" ? <MouseIcon part="left" size={44} /> : <PadIcon gesture="one" size={44} />}

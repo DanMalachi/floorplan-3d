@@ -11,6 +11,8 @@ export interface TriggerSnapshot {
   calibrationPts: number;
   walkthroughActive: boolean;
   furnitureCount: number;
+  /** No walls in the 3D scene: a plan was imported but never generated. */
+  sceneEmpty: boolean;
   projectId: string | null;
 }
 
@@ -38,6 +40,10 @@ export function guidesFor(prev: TriggerSnapshot | null, next: TriggerSnapshot): 
     if (next.traceStep === 6) out.push("build");
     return out;
   }
+
+  // An empty 3D view has nothing to practise on or navigate: the not-built
+  // notice (NotBuiltNotice.tsx) talks instead, and these wait for walls.
+  if (next.sceneEmpty) return out;
 
   // Any 3D mode: the camera card comes first (queue priority), then the
   // mode's own navigator guide.

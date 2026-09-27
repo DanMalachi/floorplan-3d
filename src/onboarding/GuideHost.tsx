@@ -12,6 +12,7 @@ import { guidesFor, outgrown, wantsWelcome, type TriggerSnapshot } from "./trigg
 import { GUIDE_VIEWS } from "./views";
 import { HelpPanel } from "./HelpPanel";
 import { Nudges } from "./Nudges";
+import { NotBuiltNotice } from "./NotBuiltNotice";
 
 function snapshotOf(s: StoreState): TriggerSnapshot {
   return {
@@ -22,6 +23,7 @@ function snapshotOf(s: StoreState): TriggerSnapshot {
     calibrationPts: s.calibrationPts.length,
     walkthroughActive: s.walkthroughActive,
     furnitureCount: s.scene.furniture.length,
+    sceneEmpty: s.scene.walls.length === 0,
     projectId: s.currentProjectId,
   };
 }
@@ -97,7 +99,12 @@ export function GuideHost({ ready }: { ready: boolean }) {
       const g = guideStore().getState();
       // A step guide the person has moved past closes itself first, so the
       // next step's guide can open in its place rather than queue behind it.
-      if (g.active && g.activeSource === "trigger" && outgrown(g.active, next)) g.dismiss();
+      // Leaving Trace altogether only shelves it: that step is still ahead of
+      // them, so its guide should be there when they come back.
+      if (g.active && g.activeSource === "trigger" && outgrown(g.active, next)) {
+        if (next.appMode === "trace") g.dismiss();
+        else g.shelve();
+      }
       guideStore().getState().request(guidesFor(prev, next));
       prev = next;
     });
@@ -108,6 +115,7 @@ export function GuideHost({ ready }: { ready: boolean }) {
     <>
       {View && <View onDone={dismiss} />}
       {enabled && <Nudges />}
+      {enabled && <NotBuiltNotice />}
       <HelpPanel />
     </>
   );

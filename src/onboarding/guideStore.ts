@@ -72,6 +72,9 @@ export interface GuideState {
   request: (ids: GuideId | GuideId[]) => void;
   /** Close the active guide and mark it seen; the next queued one opens. */
   dismiss: () => void;
+  /** Close the active guide WITHOUT marking it seen: its trigger can bring
+   *  it back (the person left Trace mid-step and will return to it). */
+  shelve: () => void;
   /** Open a guide from the help panel, seen or not. */
   replay: (id: GuideId) => void;
   setAvailable: (ids: GuideId[]) => void;
@@ -123,6 +126,12 @@ export function createGuideStore(storage: GuideStorage | null, guessedDevice: In
       const queue = s.queue.filter((id) => !seen.includes(id));
       set({ seen, active: queue[0] ?? null, activeSource: "trigger", queue: queue.slice(1) });
       persist({ ...get() });
+    },
+
+    shelve: () => {
+      const s = get();
+      if (!s.active) return;
+      set({ active: s.queue[0] ?? null, activeSource: "trigger", queue: s.queue.slice(1) });
     },
 
     replay: (id) => {

@@ -46,6 +46,7 @@ const snap = (over: Partial<TriggerSnapshot> = {}): TriggerSnapshot => ({
   calibrationPts: 0,
   walkthroughActive: false,
   furnitureCount: 0,
+  sceneEmpty: false,
   projectId: "p1",
   ...over,
 });
@@ -294,6 +295,22 @@ check("the help button's pulse stops for good once help has been opened", () => 
   const b = createGuideStore(storage, "mouse");
   assert.equal(b.getState().helpOpened, true);
   assert.equal(b.getState().helpOpen, false, "the panel itself never reopens on load");
+});
+
+check("an empty 3D scene (imported, never generated) asks for no 3D guides", () => {
+  assert.deepEqual(guidesFor(null, snap({ appMode: "build", sceneEmpty: true })), []);
+  assert.deepEqual(guidesFor(null, snap({ appMode: "furnish", sceneEmpty: true })), []);
+  assert.deepEqual(guidesFor(null, snap({ appMode: "build", sceneEmpty: false })), ["camera", "buildnav"]);
+});
+
+check("shelve closes a guide without marking it seen, so it can come back", () => {
+  const s = storeWithAll();
+  s.getState().request("scale");
+  s.getState().shelve();
+  assert.equal(s.getState().active, null);
+  assert.deepEqual(s.getState().seen, []);
+  s.getState().request("scale");
+  assert.equal(s.getState().active, "scale");
 });
 
 console.log("card placement");
