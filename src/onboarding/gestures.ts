@@ -4,6 +4,7 @@
 // classify them with the camera's own vocabulary (inputVocabulary.ts) —
 // the practice card can then never disagree with what the camera did.
 
+import { useSceneStore } from "@/store/useSceneStore";
 import { classifyWheel, PAN_MODIFIER_CODE, type WheelSignal } from "@/viewport3d/camera/inputVocabulary";
 
 /** The three moves the "Move around in 3D" card teaches. */
@@ -44,8 +45,16 @@ export function viewportCanvas(): HTMLCanvasElement | null {
   return null;
 }
 
-const typingTarget = (t: EventTarget | null) =>
-  t instanceof HTMLElement && !!t.closest('input, textarea, select, [contenteditable="true"]');
+/** Whether Space, pressed now, turns the next left-drag into a pan. Mirrors
+ *  CameraRig's own test line for line (it ignores Space while a control has
+ *  focus, and in Trace or a walk), so the practice card can never tick a
+ *  slide the camera refused. */
+const spacePans = (e: KeyboardEvent) => {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest?.('button, input, textarea, select, [contenteditable="true"]')) return false;
+  const s = useSceneStore.getState();
+  return !(s.gestureBase || s.walkthroughActive || s.appMode === "trace");
+};
 
 /**
  * Calls `onMove` for each camera move the person makes on the viewport.
@@ -59,7 +68,7 @@ export function watchCameraMoves(onMove: (m: CameraMove) => void): () => void {
   let swipe = 0;
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.code === PAN_MODIFIER_CODE && !typingTarget(e.target)) spaceHeld = true;
+    if (e.code === PAN_MODIFIER_CODE && spacePans(e)) spaceHeld = true;
   };
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.code === PAN_MODIFIER_CODE) spaceHeld = false;
@@ -144,7 +153,7 @@ export function watchLeftDrags(onStart: () => void, onEnd: (at: { x: number; y: 
   let spaceHeld = false;
   let drag: { id: number; x: number; y: number } | null = null;
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.code === PAN_MODIFIER_CODE && !typingTarget(e.target)) spaceHeld = true;
+    if (e.code === PAN_MODIFIER_CODE && spacePans(e)) spaceHeld = true;
   };
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.code === PAN_MODIFIER_CODE) spaceHeld = false;
