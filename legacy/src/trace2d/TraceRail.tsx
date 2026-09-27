@@ -36,6 +36,7 @@ import { MAX_STAIR_WIDTH, MIN_STAIR_WIDTH, stairMetrics } from "@/lib/stairs/sta
 import { traceToScene } from "./traceToScene";
 import { preserveSceneEdits } from "@/lib/scene/preserveEdits";
 import { squareUpScene } from "@/lib/scene/squareUp";
+import { devToolsEnabled } from "@/lib/featureFlags";
 import { reglueKitchen } from "@/parametric/kitchenAttach";
 import { pdToast } from "@/ui/planDock/toast";
 import { buildGroundTruth, downloadGroundTruth } from "./exportGroundTruth";
@@ -942,6 +943,8 @@ export function TraceRail() {
               {t("build.generate")}
             </PrimaryButton>
             <div style={hintText}>{t("build.generateHint")}</div>
+            {/* Eval tooling, not a product action: hidden in production builds. */}
+            {devToolsEnabled && (
             <TextAction
               extra={{ cursor: segments.length ? "pointer" : "default", opacity: segments.length ? 1 : 0.4 }}
               disabled={!segments.length}
@@ -960,6 +963,7 @@ export function TraceRail() {
             >
               <DownloadIcon size={12} /> {t("build.exportGt")}
             </TextAction>
+            )}
           </>
         );
       default:
