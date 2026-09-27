@@ -10,6 +10,7 @@ import { createGuideStore, readPersisted, GUIDES_STORAGE_KEY, type GuideStorage 
 import { deviceFromWheel, guessDevice } from "./device";
 import { CARD_GAP, VIEW_MARGIN, parkCard, placeCard } from "./place";
 import { dragMove, wheelMove } from "./gestures";
+import { useSceneStore } from "@/store/useSceneStore";
 import { guidesFor, outgrown, wantsWelcome, type TriggerSnapshot } from "./triggers";
 
 let failures = 0;
@@ -374,6 +375,29 @@ check("wheel: a notch or a pinch zooms, a two-finger swipe turns", () => {
   assert.equal(wheelMove(w({ deltaY: 100, wheelDeltaY: -120 })), "zoom");
   assert.equal(wheelMove(w({ deltaY: 3, ctrlKey: true })), "zoom");
   assert.equal(wheelMove(w({ deltaX: 4, deltaY: 2.5 })), "turn");
+});
+
+console.log("view defaults (store)");
+check("Decorate opens in Cutaway; a view picked inside Decorate is kept", () => {
+  const st = useSceneStore.getState();
+  st.setAppMode("build");
+  st.setWallMode("full");
+  st.setAppMode("furnish");
+  assert.equal(useSceneStore.getState().wallMode, "cutaway");
+  useSceneStore.getState().setWallMode("top");
+  useSceneStore.getState().setAppMode("furnish");
+  assert.equal(useSceneStore.getState().wallMode, "top", "re-selecting Decorate doesn't override the person");
+});
+check("walking through forces Full with ceilings, whatever came before", () => {
+  const st = useSceneStore.getState();
+  st.setAppMode("view");
+  st.setWallMode("top");
+  st.setShowCeilings(false);
+  st.setWalkthroughActive(true);
+  assert.equal(useSceneStore.getState().wallMode, "full");
+  assert.equal(useSceneStore.getState().showCeilings, true);
+  useSceneStore.getState().setWalkthroughActive(false);
+  assert.equal(useSceneStore.getState().wallMode, "full", "leaving the walk changes nothing");
 });
 
 console.log("ids");

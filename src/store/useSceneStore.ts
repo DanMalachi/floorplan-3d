@@ -777,6 +777,11 @@ export const useSceneStore = create<StoreState>((set, get) => {
       if (s.gestureBase) s.cancelGesture();
       // Leaving a mode drops its transient interaction state.
       set({ appMode, placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, hover3d: null, buildTool: "select", openingType: "door", replaceTarget: null, eyedropper: false });
+      // Decorate opens looking INTO the rooms (Dan, 2026-09-27). In Full with
+      // ceilings on, a first-time user's click to place furniture hit the
+      // roof and the piece landed outside the house (sim round 3). Only on
+      // arrival: a view chosen while already in Decorate is left alone.
+      if (appMode === "furnish" && s.appMode !== "furnish") set({ wallMode: "cutaway" });
     },
     setWallMode: (wallMode) => set({ wallMode }),
     setShowCeilings: (showCeilings) => set({ showCeilings }),
@@ -797,7 +802,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setWeather: (weather) => set({ weather }),
 
     walkthroughActive: false,
-    setWalkthroughActive: (walkthroughActive) => set({ walkthroughActive }),
+    // Walking through is seeing the home as it really is: full walls and
+    // ceilings on, whatever view the orbit camera was in (Dan, 2026-09-27).
+    setWalkthroughActive: (walkthroughActive) =>
+      set(walkthroughActive ? { walkthroughActive, wallMode: "full", showCeilings: true } : { walkthroughActive }),
 
     traceStep: 1,
     importBusy: false,
