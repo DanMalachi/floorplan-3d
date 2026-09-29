@@ -23,12 +23,6 @@ export const LEGAL_FACTS = {
 
   contactEmail: "done.design.app@gmail.com",
 
-  /** Accessibility coordinator named in the accessibility statement (reg. 35).
-   *  Dan, 2026-09-29, email only for now (whether a phone is also required
-   *  is on the lawyer list). Hebrew spelling not yet confirmed by Dan. */
-  accessibilityContactHe: null as string | null,
-  accessibilityContactEn: "Dan Malachi" as string | null,
-
   /** Set on launch day, in both languages. */
   effectiveDateHe: null as string | null,
   effectiveDateEn: null as string | null,

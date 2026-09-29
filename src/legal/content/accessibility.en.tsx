@@ -133,7 +133,11 @@ export function AccessibilityEn() {
       </p>
       <ul style={legalUl}>
         <li style={legalLi}>
-          Accessibility contact: <Fact value={F.accessibilityContactEn} missing="name" />
+          {/* The company, not a person: Dan's call 2026-09-29 (the entity
+              being registered is "done."). Whether reg. 35 needs a named
+              person is on the lawyer list. */}
+          Accessibility contact: <Brand />{" "}
+          <Verify>whether the accessibility contact must be a named person rather than the company</Verify>
         </li>
         <li style={legalLi}>
           Email: <Mail address={F.contactEmail} />

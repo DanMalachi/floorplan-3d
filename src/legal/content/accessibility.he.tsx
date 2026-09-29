@@ -138,7 +138,11 @@ export function AccessibilityHe() {
       </p>
       <ul style={legalUl}>
         <li style={legalLi}>
-          אחראי נגישות: <Fact value={F.accessibilityContactHe} missing="שם" />
+          {/* The company, not a person: Dan's call 2026-09-29 (the entity
+              being registered is "done."). Whether reg. 35 needs a named
+              person is on the lawyer list. */}
+          אחראי נגישות: <Brand />{" "}
+          <Verify>האם אחראי הנגישות חייב להיות אדם בשמו ולא החברה</Verify>
         </li>
         <li style={legalLi}>
           דוא&quot;ל: <Mail address={F.contactEmail} />

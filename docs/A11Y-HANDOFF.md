@@ -7,12 +7,12 @@ Written 2026-09-29. Launch list item 10. Branch `feat/a11y-gaps`, worktree
 
 | # | State |
 |---|-------|
-| 1 | English name filled ("Dan Malachi", `LEGAL_FACTS.accessibilityContactEn`). **Hebrew spelling still needed from Dan** (`accessibilityContactHe`, shows a placeholder until then). Phone: email only for now, question stays on the lawyer list |
+| 1 | Contact = the company, "done." (Dan 2026-09-29: no personal name on the site; entity being registered). Lawyer list: may it be the company rather than a person? Phone: email only for now, also on the lawyer list |
 | 2 | Script below (§2) ready. **Dan runs it** |
 | 3 | DONE: card not live, title announced once; cards 9 Tabs in (were up to 100); focus returns to `?`; hints/eyedropper/brush lines announced; eyedropper + "Replacing" translated |
 | 4 | DONE (Dan approved toggle + exception 2026-09-29): Help panel switch; `CameraKeyboardRig.tsx` exception logged |
 | 5 | DONE (Dan chose the hidden status line): "Wall · 2.00 m selected" |
-| 6 | MEASURED: all pass 2.5.8 by size or spacing except two Decorate navigator hotspots (Wall art, Clock). **Dan: grow them or leave** (drawn art, and 2.5.8 is outside IS 5568) |
+| 6 | MEASURED: all pass 2.5.8 by size or spacing except two Decorate navigator hotspots (Wall art, Clock). Left as they are (Dan 2026-09-29): 2.5.8 is WCAG 2.2, outside IS 5568 |
 | 7 | DONE: dock sections are a real tablist |
 | 8 | DONE: `src/ui/a11y/useModal.ts` for all four modals (+ `inert`); account/share are plain disclosures |
 | 9 | DONE: `npm run test:a11y` in nextjs-ci (24 states); jsx-a11y warnings (48 → 61, 0 errors). **The first CI run on the PR is the real test** that `/design` renders from CI's build |
