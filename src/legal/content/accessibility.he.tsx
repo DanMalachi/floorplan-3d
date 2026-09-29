@@ -93,6 +93,14 @@ export function AccessibilityHe() {
           אפשר לסגור חלוניות עזרה (tooltips) במקש Escape.
         </li>
         <li style={legalLi}>
+          בחירה של פריט בתצוגת התלת-ממד מוכרזת לקורא המסך, למשל &quot;נבחר: קיר
+          · 3.20 מ׳&quot;.
+        </li>
+        <li style={legalLi}>
+          אפשר לכבות בחלונית העזרה את קיצורי המקשים של תו בודד (כמו 1–4,&rlm; E,&rlm;
+          T ו-?), למי שמשתמשים בשליטה קולית.
+        </li>
+        <li style={legalLi}>
           השירות זמין בעברית, בכיוון מימין לשמאל, ובאנגלית, ומידות מוצגות בסדר
           הנכון בשתי השפות.
         </li>
@@ -106,14 +114,7 @@ export function AccessibilityHe() {
           גרפית. אין להם כרגע חלופה שמתאימה לקורא מסך או להפעלה מלאה מהמקלדת.
         </li>
         <li style={legalLi}>
-          <b>קיצורי מקשים</b> של תו בודד אינם ניתנים לכיבוי או לשינוי.
-        </li>
-        <li style={legalLi}>
           <b>עורך במסך קטן.</b> העורך עדיין לא מותאם לטלפון.
-        </li>
-        <li style={legalLi}>
-          כשבוחרים פריט במודל, לוח ההגדרות שנפתח לא מוכרז לקורא מסך, וחלק
-          מהחלונות הקופצים לא מתנהגים כתפריטים מלאים.
         </li>
         <li style={legalLi}>
           הסיור הווירטואלי, הגשם והאנימציה של שעות היום בתצוגת התלת-ממד עדיין
@@ -137,7 +138,7 @@ export function AccessibilityHe() {
       </p>
       <ul style={legalUl}>
         <li style={legalLi}>
-          אחראי נגישות: <Placeholder>שם</Placeholder>
+          אחראי נגישות: <Fact value={F.accessibilityContactHe} missing="שם" />
         </li>
         <li style={legalLi}>
           דוא&quot;ל: <Mail address={F.contactEmail} />

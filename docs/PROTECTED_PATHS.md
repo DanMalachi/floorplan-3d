@@ -64,6 +64,17 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-29, `src/viewport3d/CameraKeyboardRig.tsx` — single-key shortcut
+  switch** (branch `feat/a11y-gaps`, docs/A11Y-HANDOFF.md §4). Approved by Dan
+  2026-09-29 ("Toggle + exception"). WCAG 2.1.4 (level A) needs a way to turn
+  off one-character shortcuts that act from anywhere. The rig now asks
+  `singleKeysOn()` (`src/ui/a11y/singleKeys.ts`, new file) before a W/A/S/D ,
+  . press and before T/F; arrows and Home are untouched, and a key already
+  held still releases. One import and two guard lines; nothing else in the
+  rig changed. `Viewport.tsx` was NOT touched: its R/Delete handler is on the
+  viewport element, so it only acts while the 3D view has focus, which 2.1.4
+  exempts.
+
 - **2026-09-26, `src/viewport3d/CameraRig.tsx` — trackpad pinch dollies
   instead of lens-zooming** (branch `fix/pinch-dolly`). Approved by Dan
   2026-09-26 ("approved, go ahead"). camera-controls 3.1.2 forces

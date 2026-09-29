@@ -2,9 +2,29 @@
 
 Written 2026-09-29. Launch list item 10. Branch `feat/a11y-gaps`, worktree
 `C:\Users\dandu\fp-wt\a11y`, based on `origin/main` `f55422e` (onboarding live).
-No code yet; this file is the only commit.
 
-## 0. START HERE
+## STATUS 2026-09-29 (second session): §3-9 BUILT, one PR, not merged
+
+| # | State |
+|---|-------|
+| 1 | English name filled ("Dan Malachi", `LEGAL_FACTS.accessibilityContactEn`). **Hebrew spelling still needed from Dan** (`accessibilityContactHe`, shows a placeholder until then). Phone: email only for now, question stays on the lawyer list |
+| 2 | Script below (§2) ready. **Dan runs it** |
+| 3 | DONE: card not live, title announced once; cards 9 Tabs in (were up to 100); focus returns to `?`; hints/eyedropper/brush lines announced; eyedropper + "Replacing" translated |
+| 4 | DONE (Dan approved toggle + exception 2026-09-29): Help panel switch; `CameraKeyboardRig.tsx` exception logged |
+| 5 | DONE (Dan chose the hidden status line): "Wall · 2.00 m selected" |
+| 6 | MEASURED: all pass 2.5.8 by size or spacing except two Decorate navigator hotspots (Wall art, Clock). **Dan: grow them or leave** (drawn art, and 2.5.8 is outside IS 5568) |
+| 7 | DONE: dock sections are a real tablist |
+| 8 | DONE: `src/ui/a11y/useModal.ts` for all four modals (+ `inert`); account/share are plain disclosures |
+| 9 | DONE: `npm run test:a11y` in nextjs-ci (24 states); jsx-a11y warnings (48 → 61, 0 errors). **The first CI run on the PR is the real test** that `/design` renders from CI's build |
+| 10 | NOT STARTED. Waiting on Dan's yes after the plain-English explanation. Add: the Walkthrough FOV slider has no label and reads English on /he |
+| 11 | Post-launch, unchanged |
+
+The full record, with how each was verified, is the "Gaps pass, 2026-09-29"
+section of `docs/ACCESSIBILITY.md`. The statement (he + en) dropped the two
+gaps that closed (single-key shortcuts; unannounced selection and popovers)
+and says what was added.
+
+## 0. START HERE (original plan)
 
 **Read first:** `docs/ACCESSIBILITY.md` (the full audit record, 646 lines — the
 "Known gaps", "The 3D canvas" and "Not verified" sections matter most) and
@@ -52,6 +72,34 @@ himself) and decides phone yes/no — the phone question goes on the lawyer list
 `<Verify>` once answered.
 
 ## 2. Screen-reader test (Dan)
+
+**The script.** Windows: install NVDA (free, nvaccess.org), start it
+(Ctrl+Alt+N), open `done.design/he/design` in Chrome once this PR ships
+(before that, the PR's preview link). Mac: VoiceOver is Cmd+F5. For each step,
+write down roughly what you heard:
+
+1. Fresh visitor, the welcome opens. Do you hear its title and the "Upload my
+   floor plan" button? Press Tab a few times: does it stay in the welcome?
+2. Esc. Where are you now (what does it say)?
+3. Press `?` (or Tab to the help button, Enter). Does it say "Help, dialog"?
+4. Tab to "Single-key shortcuts". Does it say "switch, on"? Space: "off"?
+   Turn it back on.
+5. Esc. Are you back on the help button?
+6. Press 3 (Decorate). Tab to the dock's section tabs. Does it say "tab,
+   selected, 1 of 4"? Do the arrow keys read the next tab?
+7. Paint tab, pick a colour. Do you hear anything when it's picked?
+8. Press 2 (Build) and click a wall with the mouse. Do you hear "Wall · … m
+   selected"?
+9. Open the projects gallery (top left). Does it say it's a dialog? Esc: back
+   on the gallery button?
+10. Upload a plan. When the "How big is your plan?" card appears, do you hear
+    "Tip: How big is your plan?"?
+
+Paste the notes to Claude: they go into ACCESSIBILITY.md as a dated section,
+and decide whether the statement's "not tested with screen readers" line can
+change.
+
+**Original note:**
 
 Claude cannot drive NVDA/VoiceOver. Every "announced" claim in ACCESSIBILITY.md
 is a prediction from the ARIA rules. Write Dan a 10-step script (like the

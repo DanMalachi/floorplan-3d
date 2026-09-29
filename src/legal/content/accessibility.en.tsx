@@ -58,6 +58,14 @@ export function AccessibilityEn() {
           alone, and status messages are announced to screen readers.
         </li>
         <li style={legalLi}>
+          Selecting something in the 3D view announces what was selected, for
+          example &ldquo;Wall &middot; 3.20 m selected&rdquo;.
+        </li>
+        <li style={legalLi}>
+          Single-key shortcuts (such as 1&ndash;4, E, T and ?) can be turned
+          off in the Help panel, for people who use voice control.
+        </li>
+        <li style={legalLi}>
           Pages have clear headings and landmarks, and form fields are tied to
           their labels.
         </li>
@@ -98,14 +106,7 @@ export function AccessibilityEn() {
           keyboard alternative.
         </li>
         <li style={legalLi}>
-          <b>Single-key shortcuts</b> cannot be turned off or remapped.
-        </li>
-        <li style={legalLi}>
           <b>Small screens.</b> The editor is not yet adapted for phones.
-        </li>
-        <li style={legalLi}>
-          Selecting an item opens a settings panel that is not announced to
-          screen readers, and some popovers do not behave as full menus.
         </li>
         <li style={legalLi}>
           The walkthrough, rain and time-of-day animation in the 3D view do not
@@ -132,7 +133,7 @@ export function AccessibilityEn() {
       </p>
       <ul style={legalUl}>
         <li style={legalLi}>
-          Accessibility contact: <Placeholder>name</Placeholder>
+          Accessibility contact: <Fact value={F.accessibilityContactEn} missing="name" />
         </li>
         <li style={legalLi}>
           Email: <Mail address={F.contactEmail} />
