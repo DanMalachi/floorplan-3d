@@ -837,9 +837,10 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   const roomItems = useMemo(() => getItemsForRoom(room).filter((i) => !REPLACED_ASSETS.has(i.assetId)), [room]);
   const hotspot = ROOM_HOTSPOTS[room]?.find((h) => h.id === activeHotspot);
 
-  // Pinned first and unaffected by the category chips, but the HOTSPOT filter
-  // does apply: the illustrated room is a navigator, so clicking the toilet in
-  // it has to narrow to toilets, custom cards included.
+  // Pinned first, and filtered exactly like catalog items: by HOTSPOT (the
+  // illustrated room is a navigator, so clicking the toilet in it has to
+  // narrow to toilets) and by the category chip, via the generator's own
+  // `category` — otherwise Bedroom › Beds listed rugs, TVs and prints.
   // Room membership is per CARD, not per generator: one appliance generator
   // covers the Kitchen's fridge and the Laundry's washing machine, and neither
   // tab should show the other's card.
@@ -854,11 +855,12 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   const visibleCustom = useMemo(() => {
     let out = customGenerators;
     if (hotspot) out = out.filter((p) => pieceMatchesHotspot(p, hotspot));
+    if (activeCategory) out = out.filter((p) => p.generator.category === activeCategory);
     const q = query.trim().toLowerCase();
     // Search the RESOLVED label, not the key — otherwise typing "ספה" in the
     // Hebrew UI matches nothing.
     return q ? out.filter((p) => pieceLabel(p).toLowerCase().includes(q)) : out;
-  }, [customGenerators, hotspot, query, pieceLabel]);
+  }, [customGenerators, hotspot, activeCategory, query, pieceLabel]);
 
   const items = useMemo(() => {
     let out = roomItems;
@@ -882,8 +884,11 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
   const roomCategories = useMemo(() => {
     const counts = new Map<FurnitureCategory, number>();
     for (const i of roomItems) counts.set(i.category, (counts.get(i.category) ?? 0) + 1);
+    // Custom cards count too, so a category that only custom pieces fill
+    // (factory beds, say) still gets a chip.
+    for (const p of customGenerators) counts.set(p.generator.category, (counts.get(p.generator.category) ?? 0) + 1);
     return CATEGORIES.filter((c) => counts.has(c)).sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0));
-  }, [roomItems]);
+  }, [roomItems, customGenerators]);
 
   return (
     <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", gap: 4 }}>
