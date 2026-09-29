@@ -126,6 +126,177 @@
     "backToSite": "Back to the site"
   },
   "editor": {
+    "guides": {
+      "notBuilt": {
+        "kicker": "Nothing to show yet",
+        "title": "Your home isn't built yet",
+        "bodyTraced": "You've traced your walls. To see them in 3D, open the last Trace step, check the green, and press <b>{generate}</b>.",
+        "bodyEmpty": "Trace your plan's walls first, then build them in the last Trace step.",
+        "goBuild": "Go to the Build step",
+        "goTrace": "Back to Trace",
+        "stay": "Stay here"
+      },
+      "nudges": {
+        "dragTurnMouse": "To turn the view, hold the right mouse button and drag.",
+        "dragTurnPad": "To turn the view, swipe with two fingers.",
+        "wallMoved": "That moved a wall. {undo} puts it back.",
+        "scaleIdle": "Now type the real distance here, in centimetres, and press {apply}.",
+        "close": "Close tip"
+      },
+      "mouse": "Mouse",
+      "trackpad": "Trackpad",
+      "deviceLabel": "What you move the view with",
+      "camera": {
+        "kicker": "Your home in 3D",
+        "title": "Try moving around",
+        "turn": "Turn around",
+        "zoom": "Zoom in and out",
+        "slide": "Slide sideways",
+        "turnMouse": "Hold the right button and drag",
+        "zoomMouse": "Roll the scroll wheel",
+        "slideMouse": "Press the scroll wheel down and drag, or hold Space and drag",
+        "turnPad": "Swipe with two fingers",
+        "zoomPad": "Pinch, like on a photo",
+        "slidePad": "Hold Space, then click and drag",
+        "note": "A normal click picks things up. It never moves the view. Lost? Double-click anything to fly to it.",
+        "progress": "{n} of 3 done. This closes by itself.",
+        "allDone": "All done. Closing…"
+      },
+      "buildnav": {
+        "title": "This little house is a shortcut",
+        "body": "Click a wall, a door or a window in the picture to pick that tool. Click the floor or the paint to jump straight to Decorate."
+      },
+      "decnav": {
+        "title": "Find furniture room by room",
+        "step1": "<b>Pick a room</b>: kitchen, bathroom, bedroom and more.",
+        "step2": "<b>Click something in the picture</b>: the bed, the rug, the lamp.",
+        "step3": "<b>The shelf shows only that kind of item.</b> Click one, then click the floor where you want it.",
+      "noFloor": "Can't see the floor? Choose {cutaway} or {top} at the top to look inside."
+      },
+      "placed": {
+        "title": "It's in",
+        "body": "It lands where you clicked. From far away it can look small, so <b>double-click it</b> to fly closer.",
+        "move": "Move it",
+        "moveHow": "Drag it",
+        "turn": "Turn it",
+        "turnHow": "Click it, then press R",
+        "remove": "Remove it",
+        "removeHow": "Click it, then press Delete",
+      "stop": "Stop adding more",
+      "stopHow": "Press Esc. Until then, every click adds another."
+      },
+      "walk": {
+        "kicker": "View · Walk through",
+        "title": "Walk through your home",
+        "walk": "Walk",
+        "walkHow": "Arrow keys. W A S D do the same, if you know them from games.",
+        "look": "Look around",
+        "lookMouse": "Move the mouse.",
+        "lookPad": "Slide one finger on the trackpad.",
+        "stop": "Stop walking",
+        "stopHow": "Press Esc. Your mouse pointer comes back.",
+        "start": "Click to start walking"
+      },
+      "help": {
+        "button": "Help",
+        "title": "Help",
+        "close": "Close help",
+        "moving": "Moving the view",
+        "turn": "Turn around",
+        "zoom": "Zoom",
+        "slide": "Slide sideways",
+        "fly": "Fly to something",
+        "turnMouse": "Right button + drag",
+        "zoomMouse": "Scroll wheel",
+        "slideMouse": "Scroll wheel pressed + drag, or Space + drag",
+        "turnPad": "Two-finger swipe",
+        "zoomPad": "Pinch",
+        "slidePad": "Hold Space + click and drag",
+        "flyHow": "Double-click it",
+        "keys": "Keyboard instead: arrow keys move · , and . turn · T looks from above · Home shows the whole house",
+        "thisStep": "Guides for this step",
+        "otherSteps": "Other steps",
+        "welcomeAgain": "Show the welcome again",
+        "contact": "Contact us",
+        "pressQ": "Press ? any time"
+      },
+      "names": {
+        "welcome": "Welcome",
+        "scale": "Setting the scale",
+        "scale2": "Typing the distance",
+        "walls": "Tracing walls and balconies",
+        "openings": "Doors and windows",
+        "build": "Checking before you build",
+        "camera": "Moving around in 3D",
+        "buildnav": "The Build shortcut picture",
+        "decnav": "Finding furniture room by room",
+        "placed": "Placing, moving and turning furniture",
+        "walk": "Walking through"
+      },
+      "gotIt": "Got it",
+      "next": "Next",
+      "back": "Back",
+      "skip": "Skip",
+      "welcome": {
+        "label": "Welcome to done.",
+        "body": "Turn your floor plan into a 3D home you can furnish and walk through. It takes four steps, and we'll show a short tip at each one.",
+        "traceDesc": "Upload your plan and draw its walls",
+        "buildDesc": "Adjust it in 3D",
+        "furnishDesc": "Furnish it room by room",
+        "viewDesc": "Walk through it",
+        "upload": "Upload my floor plan",
+        "lookAround": "I'll look around first",
+        "note": "Your plan saves in this browser. Sign in to keep it in your account. All tips live under the ? button."
+      },
+      "scale": {
+        "kicker": "Step 2 · Scale",
+        "title": "How big is your plan?",
+        "body": "Your plan is a picture, so done. doesn't know its real size yet. Click two points on the plan, then type the real distance between them. Use whichever is easier:",
+        "dimTitle": "A measurement on the plan",
+        "dimBody": "Click both ends of a dimension line and type the number written on it. Israeli plans write these in centimetres.",
+        "doorTitle": "A door",
+        "doorBody": "No numbers? Click both sides of a door opening and type 90.",
+        "noteMouse": "For accurate clicks, zoom in first with the scroll wheel. Drag the plan to move it around.",
+        "noteTrackpad": "For accurate clicks, zoom in first by pinching. Click and drag the plan to move it around."
+      },
+      "scale2": {
+        "kicker": "Step 2 · Scale",
+        "title": "Now type the distance",
+        "body": "In centimetres. If you clicked a dimension line, type the number written on it. If you clicked a door, type <b>90</b>. Then press <b>{apply}</b>."
+      },
+      "walls": {
+        "kicker": "Step 3 · Walls",
+        "title": "Trace your home in this order",
+        "wallsTitle": "Walls",
+        "wallsBody": "Click at each corner, along the middle of the dark wall lines. Go all the way round and click your first corner again: the room turns green. Use <chip>{exterior}</chip> for outside walls, <chip>{interior}</chip> for walls between rooms.",
+        "railTitle": "Balconies",
+        "railBody": "Switch to <chip>{rail}</chip> and trace the balcony's outer edge. A rail is the low see-through railing, not a wall.",
+        "openTitle": "Open areas",
+        "openBody": "Where two spaces flow into each other with no wall, like a living room into a kitchen, pick <chip>{open}</chip> and draw across the gap.",
+        "note": "To stop a line, press Esc or {finish}. Doors and windows come next, in step 4.",
+        "showRail": "Show me balconies"
+      },
+      "rail": {
+        "kicker": "Step 3 · Balconies",
+        "title": "Balconies and terraces",
+        "step1": "Pick <chip>{rail}</chip>.",
+        "step2": "Click along the balcony's <b>outer edge</b>, not over the house wall.",
+        "step3": "Finish on the house wall. The balcony turns green like a room, gets a floor, and shows a glass railing in 3D."
+      },
+      "openings": {
+        "kicker": "Step 4 · Doors & windows",
+        "title": "Go over each door and window",
+        "body": "Pick <chip>{door}</chip> or <chip>{window}</chip>, then click one side of the opening on the plan and then the other.",
+        "note": "On a plan, a door is a gap in the wall with a curved swing line. A window is a thin double line inside the wall. Sliding doors to the balcony count as {door}."
+      },
+      "build": {
+        "kicker": "Step 6 · Build",
+        "title": "Check the green before you build",
+        "body": "Every <b>green</b> area becomes a room with a floor you can decorate. An area that isn't green isn't closed yet: go back to Walls and click its first corner again.",
+        "note": "After building you can still change everything in 3D.",
+        "backToWalls": "Back to Walls"
+      }
+    },
     "modes": {
       "trace": "Trace",
       "build": "Build",

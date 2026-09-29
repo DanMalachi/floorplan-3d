@@ -72,6 +72,8 @@ export function BuildNavigator() {
 
   return (
     <section
+      // data-guide: onboarding anchor (src/onboarding).
+      data-guide="build-navigator"
       aria-label={t("title")}
       style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
     >

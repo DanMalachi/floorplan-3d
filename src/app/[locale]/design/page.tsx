@@ -22,6 +22,8 @@ import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
 import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 import { SmallScreenNotice } from "@/ui/SmallScreenNotice";
 import { ProjectBar } from "@/ui/ProjectBar";
+import { GuideHost } from "@/onboarding/GuideHost";
+import { HelpButton } from "@/onboarding/HelpPanel";
 import { SpacePanFocusGuard, VIEWPORT_HOST_ATTR } from "@/ui/SpacePanFocusGuard";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
@@ -278,7 +280,9 @@ function ModeButton({
       {...hoverBind}
       aria-pressed={active}
       aria-keyshortcuts={mode.key}
-      style={pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered)}
+      // Fully round, to sit concentric in the pill-shaped nav (radius 999);
+      // `pdChip`'s radiusS drew a rounded square inside a pill.
+      style={{ ...pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered), borderRadius: 999 }}
     >
       {t(mode.labelKey)}
     </button>
@@ -294,6 +298,9 @@ export default function Home() {
   const appMode = useSceneStore((s) => s.appMode);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [heroFurnish, setHeroFurnish] = useState(false);
+  // Onboarding guides wait for the saved project, so their first look is at
+  // the person's real state. Never set on the dev hatches (hero, ?gt=).
+  const [guidesReady, setGuidesReady] = useState(false);
 
   // Restore the saved project (if any) and start autosaving. Runs once.
   // Dev escape hatch: `?gt=<name>` loads a hand-authored ground-truth plan from
@@ -375,6 +382,7 @@ export default function Home() {
         // Explicit "go to projects" (room's Leave button) always shows the gallery,
         // even when the restored project isn't itself live (e.g. a link receiver).
         if (home) setProjectsOpen(true);
+        setGuidesReady(true);
       })();
       return;
     }
@@ -445,6 +453,7 @@ export default function Home() {
           gap: 8,
         }}
       >
+        <HelpButton />
         <AccountMenu />
         <LocaleSwitch />
         <ThemeToggle />
@@ -463,6 +472,7 @@ export default function Home() {
       {/* Secret dev tool: Shift+G to drop GT files and save each as a project. */}
       <GtLab />
       {heroFurnish && <HeroFurnishBar />}
+      <GuideHost ready={guidesReady} />
     </main>
   );
 }

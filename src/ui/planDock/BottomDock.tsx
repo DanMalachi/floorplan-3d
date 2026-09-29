@@ -438,10 +438,12 @@ function NavigatorPanel({
   const Scene = ROOM_SCENE_COMPONENT[room];
   return (
     <section
+      // data-guide: onboarding anchors (src/onboarding), attributes only.
+      data-guide="dec-navigator"
       aria-label={t("roomNavigatorLabel")}
       style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
     >
-      <div role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
+      <div data-guide="dec-rooms" role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => (
           <NavRoomButton
             key={r.id}
@@ -455,7 +457,7 @@ function NavigatorPanel({
           />
         ))}
       </div>
-      <div style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
+      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
         {Scene ? (
           <Scene activeHotspot={activeHotspot} onHotspotClick={(id) => setActiveHotspot(activeHotspot === id ? null : id)} onFloorClick={onFloorClick} />
         ) : (
@@ -987,6 +989,7 @@ export function BottomDock() {
       <NavigatorPanel room={room} setRoom={setRoom} activeHotspot={activeHotspot} setActiveHotspot={setActiveHotspot} onFloorClick={() => setTab("floors")} />
       <EyedropperController />
       <div
+        data-guide="dec-shelf"
         style={{
           position: "absolute",
           insetInlineStart: 240,
