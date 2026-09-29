@@ -279,7 +279,9 @@ function ModeButton({
       {...hoverBind}
       aria-pressed={active}
       aria-keyshortcuts={mode.key}
-      style={pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered)}
+      // Fully round, to sit concentric in the pill-shaped nav (radius 999);
+      // `pdChip`'s radiusS drew a rounded square inside a pill.
+      style={{ ...pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered), borderRadius: 999 }}
     >
       {t(mode.labelKey)}
     </button>
