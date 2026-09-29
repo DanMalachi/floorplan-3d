@@ -127,6 +127,7 @@
   },
   "editor": {
     "guides": {
+      "announce": "טיפ: {title}",
       "notBuilt": {
         "kicker": "עוד אין מה להציג",
         "title": "הבית עוד לא נבנה",
@@ -214,6 +215,9 @@
         "slidePad": "החזקת רווח + לחיצה וגרירה",
         "flyHow": "לחיצה כפולה עליו",
         "keys": "במקלדת: החיצים מזיזים · פסיק ונקודה מסובבים · T מבט מלמעלה · Home מציג את כל הבית",
+        "keysOff": "במקלדת: החיצים מזיזים · Home מציג את כל הבית",
+        "singleKeys": "קיצורי מקש יחיד",
+        "singleKeysHow": "מקשים כמו 1–4, ‏E, ‏T ו-? פועלים לבד. כדאי לכבות אם אתם משתמשים בשליטה קולית או לוחצים עליהם בטעות.",
         "thisStep": "מדריכים לשלב הזה",
         "otherSteps": "שלבים אחרים",
         "welcomeAgain": "הצגת מסך הפתיחה שוב",
@@ -315,6 +319,7 @@
     "nothingSelected": "לא נבחר דבר",
     "selectedHint": "{kind} נבחר — גררו כדי להזיז, Delete מוחק, Esc מבטל בחירה",
     "undoRedo": "{mod}Z ביטול ({past}) · {mod}Y ביצוע מחדש ({future})",
+    "wallViewLabel": "תצוגת קירות",
     "wallModes": {
       "full": "מלא",
       "cutaway": "חתך",
@@ -493,6 +498,8 @@
       "dragToResize": "גררו לשינוי הגובה",
       "eyedropper": "טפטפת (E)",
       "eyedropperArmed": "הטפטפת דרוכה (E)",
+      "eyedropperHint": "הטפטפת דרוכה — לחצו על רהיט, על קיר צבוע או על רצפה · Esc לביטול",
+      "replacing": "מחליפים — בחרו פריט חדש",
       "brushFrame": "מסגרות חלון — בחרו צבע · Esc לעצירה",
       "brushPaint": "צביעה — לחצו על משטח · Esc לעצירה",
       "brushFloor": "ריצוף — לחצו על משטח · Esc לעצירה",
@@ -1374,6 +1381,7 @@
       "failed": "הייבוא נכשל: {message}"
     },
     "inspector": {
+      "selected": "נבחר: {what}",
       "wall": {
         "kindWall": "קיר",
         "kindRail": "מעקה",
@@ -1650,8 +1658,14 @@
         "door": "דלת"
       }
     },
+    "walkthrough": {
+      "hintIdle": "לחצו כדי לסייר · WASD או החיצים לתנועה · Esc ליציאה",
+      "hintLocked": "מסיירים · Esc ליציאה",
+      "viewAngle": "זווית ראייה"
+    },
     "lighting": {
       "filterAll": "הכול",
+      "filterLabel": "סוג תאורה",
       "filterCeiling": "תקרה",
       "filterWall": "קיר",
       "drawHint": "לחיצה להתחלה · לחיצה לפינה · לחיצה כפולה לסיום · Esc לביטול",
@@ -1659,7 +1673,8 @@
     },
     "stair": {
       "title": "מדרגות",
-      "meta": "{count, plural, one {גרם אחד} other {# גרמים}} · {run} m",
+      "styleLabel": "סגנון מדרגות",
+      "meta": "{count, plural, one {גרם אחד} other {# גרמים}} · {run} מ׳",
       "styleSolidLabel": "סגור",
       "styleSolidTip": "מיתרן סגור — גרם קופסתי שיושב על הרצפה, עם הפודסטים בנויים איתו כלפי מטה.",
       "styleOpenLabel": "פתוח",

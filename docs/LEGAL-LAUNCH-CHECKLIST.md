@@ -25,8 +25,9 @@ two accessibility-contact items in section 1.
     Consumer Protection Law requires name + ID + address for any online sale.
     **Must be done before charging anyone.**
 - [ ] **Effective date** — `effectiveDateHe` / `effectiveDateEn`, set on launch day.
-- [ ] **Accessibility contact** — a name (can be you) and, if the lawyer says
-      it is required, a phone number. These two are placeholders directly in
+- [ ] **Accessibility contact** — name set to the company, "done." (Dan,
+      2026-09-29: no personal name on the site). The phone is still a
+      placeholder, pending the lawyer's answer below. Both are in
       `src/legal/content/accessibility.he.tsx` and `accessibility.en.tsx`
       (section 4), not in `facts.ts`.
 
@@ -45,7 +46,9 @@ Bring this list. Each item is a `[[VERIFY]]` marker on a page.
 - [ ] **Vercel log retention** (privacy §3) — how long Vercel keeps request
       logs (check the Vercel plan / dashboard, then state it).
 - [ ] **Accessibility** — does the small-business exemption under reg. 35
-      apply to you? Is a phone number required, or is email enough?
+      apply to you? Is a phone number required, or is email enough? Can the
+      accessibility contact be the company ("done.") rather than a named
+      person?
 - [ ] **Subscription terms** (hidden for now, `src/legal/content/subscription.he.tsx`)
       — review before paid plans launch.
 - [ ] After review: remove the orange "Draft — not legal advice" banner

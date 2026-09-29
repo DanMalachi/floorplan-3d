@@ -44,7 +44,7 @@
 // UNCHANGED — it requires editing pointer handling inside the protected
 // FurnitureLayer.tsx/collision.ts, which needs Dan's sign-off first.
 
-import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useSceneStore, type DockTab } from "@/store/useSceneStore";
 import {
@@ -80,6 +80,7 @@ import { Tooltip } from "./Tooltip";
 import { useHover } from "./useHover";
 import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "./icons";
 import { EyedropperController } from "@/decorate/EyedropperController";
+import { announce } from "@/ui/a11y/Announcer";
 import { HomeColourPicker } from "./HomeColourPicker";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
@@ -195,6 +196,91 @@ function DockIconBtn({
   const [hovered, hoverBind] = useHover();
   return (
     <button {...hoverBind} onClick={onClick} aria-pressed={active} aria-label={ariaLabel} style={pdIconBtn(active, size, hovered)}>
+      {children}
+    </button>
+  );
+}
+
+/** The dock's section switcher (Furniture / Lighting / Paint / Floors) as a
+ *  real tab list: one Tab stop, arrow keys move along it (mirrored in Hebrew,
+ *  where the row reads right to left), Home/End jump to the ends, and moving
+ *  selects. Before this they were four toggle buttons, which told a screen
+ *  reader nothing about the panel below changing with them. */
+function DockSectionTabs({
+  tab,
+  setTab,
+  panelId,
+  tabId,
+}: {
+  tab: DockTab;
+  setTab: (tab: DockTab) => void;
+  panelId: string;
+  tabId: (tab: DockTab) => string;
+}) {
+  const t = useTranslations("editor.dock");
+  const listRef = useRef<HTMLDivElement>(null);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const i = DOCK_TABS.findIndex((x) => x.id === tab);
+    const rtl = getComputedStyle(e.currentTarget).direction === "rtl";
+    const step = e.key === "ArrowRight" ? (rtl ? -1 : 1) : e.key === "ArrowLeft" ? (rtl ? 1 : -1) : 0;
+    const next =
+      e.key === "Home" ? 0 : e.key === "End" ? DOCK_TABS.length - 1 : step ? (i + step + DOCK_TABS.length) % DOCK_TABS.length : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    setTab(DOCK_TABS[next].id);
+    listRef.current?.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus();
+  };
+  return (
+    <div ref={listRef} role="tablist" aria-label={t("dockSectionLabel")} onKeyDown={onKeyDown} style={{ display: "flex", gap: 3 }}>
+      {/* `tab_`, not `t` — `t` is the translator in this scope. */}
+      {DOCK_TABS.map((tab_) => {
+        const Icon = SECTION_ICON[tab_.id];
+        return (
+          <Tooltip key={tab_.id} label={t(`tabs.${tab_.labelKey}`)}>
+            <DockTabButton
+              id={tabId(tab_.id)}
+              panelId={panelId}
+              selected={tab === tab_.id}
+              onClick={() => setTab(tab_.id)}
+            >
+              <Icon size={15} aria-hidden />
+            </DockTabButton>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+}
+
+function DockTabButton({
+  id,
+  panelId,
+  selected,
+  onClick,
+  children,
+  "aria-label": ariaLabel,
+}: {
+  id: string;
+  panelId: string;
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  /** Stamped on by the wrapping `Tooltip`: the tab's only content is an icon. */
+  "aria-label"?: string;
+}) {
+  const [hovered, hoverBind] = useHover();
+  return (
+    <button
+      {...hoverBind}
+      id={id}
+      role="tab"
+      aria-selected={selected}
+      aria-controls={panelId}
+      aria-label={ariaLabel}
+      tabIndex={selected ? 0 : -1}
+      onClick={onClick}
+      style={pdIconBtn(selected, 28, hovered)}
+    >
       {children}
     </button>
   );
@@ -973,6 +1059,20 @@ export function BottomDock() {
   const dockRequest = useSceneStore((s) => s.dockRequest);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
   const eyedropper = useSceneStore((s) => s.eyedropper);
+  const panelId = useId();
+  const tabId = (id: DockTab) => `${panelId}-${id}`;
+
+  // What the next click will do, when that isn't "select". Said out loud
+  // once when it changes: a status element that mounts already full is
+  // often not read at all.
+  const modeLine = brush
+    ? t(brush.kind === "frame" ? "brushFrame" : brush.kind === "paint" ? "brushPaint" : "brushFloor")
+    : replaceTarget
+      ? t("replacing")
+      : null;
+  useEffect(() => {
+    if (modeLine) announce(modeLine);
+  }, [modeLine]);
 
   // Deep-link from the Build-tab house-cutaway navigator (Plan Dock P4): its
   // Floors/Paint hotspots have no build-mode tool, so "arming" them means
@@ -1005,46 +1105,33 @@ export function BottomDock() {
         }}
       >
         <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
-        <div role="group" aria-label={t("dockSectionLabel")} style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          {/* `tab_`, not `t` — `t` is the translator in this scope now. */}
-          {DOCK_TABS.map((tab_) => {
-            const Icon = SECTION_ICON[tab_.id];
-            return (
-              <Tooltip key={tab_.id} label={t(`tabs.${tab_.labelKey}`)}>
-                <DockIconBtn onClick={() => setTab(tab_.id)} active={tab === tab_.id}>
-                  <Icon size={15} aria-hidden />
-                </DockIconBtn>
-              </Tooltip>
-            );
-          })}
+        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <DockSectionTabs tab={tab} setTab={setTab} panelId={panelId} tabId={tabId} />
           <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
             <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
               <EyedropperIcon size={14} aria-hidden />
             </DockIconBtn>
           </Tooltip>
           {/* "A brush is armed and your next click paints something" is modal
-              state. It appeared as a line of small text and nothing else, so a
-              screen-reader user got no notice that clicking now does something
-              different. role="status" announces it when it arms. */}
-          {brush && (
-            <span role="status" style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-              {brush.kind === "frame"
-                ? t("brushFrame")
-                : brush.kind === "paint"
-                  ? t("brushPaint")
-                  : t("brushFloor")}
-            </span>
-          )}
-          {!brush && replaceTarget && (
-            <span role="status" style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-              Replacing — pick a new item
+              state, shown as a line of small text; a screen reader hears it
+              through the page's live region (see `modeLine` above). */}
+          {modeLine && (
+            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+              {modeLine}
             </span>
           )}
         </div>
-        {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
-        {tab === "lighting" && <FixtureCatalog />}
-        {tab === "paint" && <HomeColourPicker />}
-        {tab === "floors" && <FloorsTab />}
+        <div
+          id={panelId}
+          role="tabpanel"
+          aria-labelledby={tabId(tab)}
+          style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minHeight: 0 }}
+        >
+          {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
+          {tab === "lighting" && <FixtureCatalog />}
+          {tab === "paint" && <HomeColourPicker />}
+          {tab === "floors" && <FloorsTab />}
+        </div>
       </div>
     </>
   );

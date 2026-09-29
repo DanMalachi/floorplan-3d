@@ -75,7 +75,9 @@ export const pdInspectorRow: React.CSSProperties = {
  *  the difference. */
 export function PdSectionTitle({ label, meta }: { label: ReactNode; meta?: ReactNode }) {
   return (
-    <div style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>
+    // `data-inspector-title`: the Inspector reads this line out when a
+    // selection opens the panel.
+    <div data-inspector-title="" style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>
       {label}
       {meta && (
         <span style={{ color: PD.textSecondary, fontWeight: 400, textTransform: "none" }}> · {meta}</span>

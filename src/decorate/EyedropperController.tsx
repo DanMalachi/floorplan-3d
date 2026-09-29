@@ -11,10 +11,14 @@
 // and no paint/floor brushes to sample into).
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
+import { announce } from "@/ui/a11y/Announcer";
+import { singleKeysOn } from "@/ui/a11y/singleKeys";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
 
 export function EyedropperController() {
+  const t = useTranslations("editor.dock");
   const eyedropper = useSceneStore((s) => s.eyedropper);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ export function EyedropperController() {
       if (typing) return;
       // e.code (physical key), not e.key: non-Latin layouts type a different
       // character on the same key and e.key matching dead-keys the shortcut.
-      if (e.code === "KeyE") {
+      if (e.code === "KeyE" && singleKeysOn()) {
         const s = useSceneStore.getState();
         s.setEyedropper(!s.eyedropper);
       }
@@ -37,13 +41,17 @@ export function EyedropperController() {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [eyedropper]);
 
+  // Arming the eyedropper changes what the next click does, and the pill is
+  // the only notice of it, so it is spoken too. Through the page's live
+  // region: a status element that mounts already full is often not read.
+  useEffect(() => {
+    if (eyedropper) announce(t("eyedropperHint"));
+  }, [eyedropper, t]);
+
   if (!eyedropper) return null;
 
   return (
     <div
-      // Arming the eyedropper changes what the next click does, and this pill
-      // was the only notice of it. role="status" announces it on arm.
-      role="status"
       style={{
         position: "absolute",
         bottom: 182, // clears BottomDock's 150px card rail + its 16px gap
@@ -59,7 +67,7 @@ export function EyedropperController() {
         ...pdGlass({ borderRadius: 999 }),
       }}
     >
-      Eyedropper armed — click furniture, a painted wall face, or a floor · Esc cancels
+      {t("eyedropperHint")}
     </div>
   );
 }

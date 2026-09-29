@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { CameraControls } from "@react-three/drei";
@@ -8,6 +9,7 @@ import { nodeMap } from "@/lib/rooms/roomArea";
 import { effectiveSlide, hasDerivedSlide, withoutAuthoredDoorStyle } from "@/render/doorStyle";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
 import { WALKTHROUGH_CONFIG as CFG } from "./config";
+import { reducedMotionNow } from "../reducedMotion";
 import { buildWallColliders, resolveWallCollision } from "./collision";
 import { buildStairGround, groundHeightAt } from "./stairGround";
 import { buildFurnitureColliders, resolveFurnitureCollision } from "./furnitureCollision";
@@ -432,6 +434,9 @@ export function WalkthroughRig({
     // exit flight; Escape doesn't need its own copy of that logic.
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // Esc inside a panel (a guide card, the help panel) belongs to that
+        // panel: it closes the panel and leaves the walk alone.
+        if (e.target instanceof Element && e.target.closest('[role="dialog"]')) return;
         e.stopPropagation();
         useSceneStore.getState().setWalkthroughActive(false);
       }
@@ -543,7 +548,9 @@ export function WalkthroughRig({
     // pose (that's what we flew to), so the handoff is invisible.
     const exit = exitRef.current;
     if (exit) {
-      exit.t = Math.min(1, exit.t + delta / exit.durationS);
+      // Reduced motion: no flight, the camera is simply there (as in the
+      // orbit camera's own flights).
+      exit.t = reducedMotionNow() ? 1 : Math.min(1, exit.t + delta / exit.durationS);
       const k = ease(exit.t);
       cam.position.lerpVectors(exit.from, exit.to, k);
       const yaw = exit.fromYaw + exit.deltaYaw * k;
@@ -563,7 +570,7 @@ export function WalkthroughRig({
     // the interpolation and land you somewhere the spawn never chose.
     const entry = entryRef.current;
     if (entry) {
-      entry.t = Math.min(1, entry.t + delta / entry.durationS);
+      entry.t = reducedMotionNow() ? 1 : Math.min(1, entry.t + delta / entry.durationS);
       const k = ease(entry.t);
       cam.position.lerpVectors(entry.from, entry.to, k);
       yawRef.current = entry.fromYaw + entry.deltaYaw * k;
@@ -611,7 +618,8 @@ export function WalkthroughRig({
       const nextOpenings = liveScene.openings.map((o) => {
         const target = targets.get(o.id);
         if (target === undefined) return o;
-        const { value, settled } = dampOpeningValue(o, target, delta);
+        // Reduced motion: doors open and close at once instead of swinging.
+        const { value, settled } = reducedMotionNow() ? { value: target, settled: true } : dampOpeningValue(o, target, delta);
         if (settled) targets.delete(o.id);
         // A borrowed door that has finished shutting has no position left worth
         // storing, so give it back the way it was found — otherwise the spec
@@ -710,6 +718,7 @@ export function WalkthroughRig({
 /** HTML overlay hint, rendered outside the Canvas (§6: "Click to walk ·
  *  WASD/Arrows to move · Esc to exit" while available but not locked). */
 export function WalkthroughHint({ active, locked }: { active: boolean; locked: boolean }) {
+  const t = useTranslations("editor.walkthrough");
   if (!active) return null;
   return (
     <div
@@ -724,7 +733,7 @@ export function WalkthroughHint({ active, locked }: { active: boolean; locked: b
         ...pdGlass({ borderRadius: 999 }),
       }}
     >
-      {locked ? "Walking · Esc to exit" : "Click to walk · WASD/Arrows to move · Esc to exit"}
+      {t(locked ? "hintLocked" : "hintIdle")}
     </div>
   );
 }
@@ -740,6 +749,8 @@ export function WalkthroughFovControl({
   fovDeg: number;
   onChange: (v: number) => void;
 }) {
+  const t = useTranslations("editor.walkthrough");
+  const labelId = useId();
   if (!active) return null;
   return (
     <div
@@ -754,9 +765,14 @@ export function WalkthroughFovControl({
         ...pdGlass({ borderRadius: PD.radiusS }),
       }}
     >
-      <span style={{ fontSize: 11, color: PD.textSecondary }}>FOV {Math.round(fovDeg)}°</span>
+      {/* The slider is named by the words alone; the number is its value. */}
+      <span style={{ fontSize: 11, color: PD.textSecondary }}>
+        <span id={labelId}>{t("viewAngle")}</span> <bdi dir="ltr">{Math.round(fovDeg)}°</bdi>
+      </span>
       <input
         type="range"
+        aria-labelledby={labelId}
+        aria-valuetext={`${Math.round(fovDeg)}°`}
         min={CFG.fovMinDeg}
         max={CFG.fovMaxDeg}
         step={1}

@@ -23,6 +23,8 @@ import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 import { SmallScreenNotice } from "@/ui/SmallScreenNotice";
 import { ProjectBar } from "@/ui/ProjectBar";
 import { GuideHost } from "@/onboarding/GuideHost";
+import { Announcer } from "@/ui/a11y/Announcer";
+import { singleKeysOn, useSingleKeysOn } from "@/ui/a11y/singleKeys";
 import { HelpButton } from "@/onboarding/HelpPanel";
 import { SpacePanFocusGuard, VIEWPORT_HOST_ATTR } from "@/ui/SpacePanFocusGuard";
 
@@ -274,12 +276,13 @@ function ModeButton({
 }) {
   const t = useTranslations("editor.modes");
   const [hovered, hoverBind] = useHover();
+  const keysOn = useSingleKeysOn();
   return (
     <button
       onClick={onSelect}
       {...hoverBind}
       aria-pressed={active}
-      aria-keyshortcuts={mode.key}
+      aria-keyshortcuts={keysOn ? mode.key : undefined}
       // Fully round, to sit concentric in the pill-shaped nav (radius 999);
       // `pdChip`'s radiusS drew a rounded square inside a pill.
       style={{ ...pdChip(active, { padding: "6px 18px", fontSize: 13 }, hovered), borderRadius: 999 }}
@@ -404,7 +407,7 @@ export default function Home() {
   // 1-4 switch modes from anywhere (except while typing).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || !singleKeysOn()) return;
       const t = e.target as HTMLElement;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
       const m = MODES.find((x) => x.key === e.key);
@@ -458,6 +461,12 @@ export default function Home() {
         <LocaleSwitch />
         <ThemeToggle />
       </div>
+      {/* Here, not at the end: every guide piece is `position: fixed`, so
+          where it sits in the page only sets Tab order, and here a tip card
+          or the help panel is a few Tabs after the help button instead of
+          past every control in the dock. */}
+      <GuideHost ready={guidesReady} />
+      <Announcer />
       {!showTrace && <GoLiveButton />}
       {/* Trace keeps its own pane; the three 3D modes share one live viewport
           so the camera never resets between Build / Furnish / View. */}
@@ -472,7 +481,6 @@ export default function Home() {
       {/* Secret dev tool: Shift+G to drop GT files and save each as a project. */}
       <GtLab />
       {heroFurnish && <HeroFurnishBar />}
-      <GuideHost ready={guidesReady} />
     </main>
   );
 }

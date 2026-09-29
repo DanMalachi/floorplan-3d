@@ -6,7 +6,7 @@
 // gates the mode tabs to the link's role. A view link is READ-only (Liveblocks
 // rejects writes); Share mints role links; "Save a copy" forks into local projects.
 
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   LiveblocksProvider,
@@ -69,6 +69,7 @@ import {
 import { consumeGoLiveSeed, type GoLiveSeed } from "./goLiveHandoff";
 import { applySceneDiff } from "./sceneDiff";
 import "./liveblocks";
+import { Announcer } from "@/ui/a11y/Announcer";
 
 interface Syncable {
   synced?: boolean;
@@ -337,11 +338,11 @@ const RoomChip = forwardRef<HTMLButtonElement, {
   extra?: React.CSSProperties;
   /** For a chip that opens its own popover (Share) rather than toggling a
    *  mode — announces it as a disclosure control, not just a pressed toggle. */
-  "aria-haspopup"?: boolean | "true";
   "aria-expanded"?: boolean;
+  "aria-controls"?: string;
   children: React.ReactNode;
 }>(function RoomChip(
-  { active = false, onClick, disabled, tooltip, extra, "aria-haspopup": ariaHaspopup, "aria-expanded": ariaExpanded, children },
+  { active = false, onClick, disabled, tooltip, extra, "aria-expanded": ariaExpanded, "aria-controls": ariaControls, children },
   ref,
 ) {
   const [hov, bind] = useHover();
@@ -350,9 +351,9 @@ const RoomChip = forwardRef<HTMLButtonElement, {
       ref={ref}
       onClick={onClick}
       disabled={disabled}
-      aria-pressed={ariaHaspopup ? undefined : active}
-      aria-haspopup={ariaHaspopup}
+      aria-pressed={ariaExpanded === undefined ? active : undefined}
       aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
       {...bind}
       style={{ ...pdChip(active, undefined, !disabled && hov), ...extra }}
     >
@@ -389,6 +390,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   const t = useTranslations("collabRoom");
   const [open, setOpen] = useState(false);
   const shareBtnRef = useRef<HTMLButtonElement>(null);
+  const sharePanelId = useId();
   const [role, setRole] = useState<ShareRole>("view");
   const [link, setLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -482,12 +484,13 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
             t("saveCopy")
           )}
         </RoomChip>
-        <RoomChip active ref={shareBtnRef} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        {/* A disclosure, not a menu: see the account button in src/ui/AccountMenu.tsx. */}
+        <RoomChip active ref={shareBtnRef} aria-expanded={open} aria-controls={open ? sharePanelId : undefined} onClick={() => setOpen((o) => !o)}>
           {t("share")}
         </RoomChip>
       </div>
       {open && (
-        <div role="group" aria-labelledby="fp-share-title" style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
+        <div id={sharePanelId} role="group" aria-labelledby="fp-share-title" style={{ position: "absolute", top: 40, insetInlineEnd: 0, width: 320, padding: 14, display: "flex", flexDirection: "column", gap: 10, zIndex: 50, ...roomPanel({ borderRadius: PD.radiusM }) }}>
           <div id="fp-share-title" style={{ fontSize: 13, fontWeight: 600, color: PD.textPrimary }}>{t("shareTitle")}</div>
           <div role="group" aria-label={t("linkPermissionLabel")} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {offerable.map((r) => (
@@ -682,6 +685,7 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
       <ModeSwitcher role={role} />
       <ProjectBar name={title ?? t("sharedPlan")} onOpenProjects={leave} />
       <TopBar roomId={roomId} role={role} />
+      <Announcer />
     </div>
   );
 }

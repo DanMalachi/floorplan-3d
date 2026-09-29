@@ -9,12 +9,13 @@
 // home button from the artifact is deliberately absent until Dan's model home
 // exists (handoff §0, decision 3).
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type React from "react";
 import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import { Wordmark } from "@/brand/Wordmark";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
+import { useModal } from "@/ui/a11y/useModal";
 import { CARD_FILL, GuideButton, GuideText } from "./GuideCard";
 import { GUIDE_CSS } from "./demos";
 import type { GuideViewProps } from "./views";
@@ -63,33 +64,12 @@ const STEP_ART: Record<"trace" | "build" | "furnish" | "view", React.ReactNode> 
 export function WelcomeGuide({ onDone }: GuideViewProps) {
   const t = useTranslations("editor");
   const fileRef = useRef<HTMLInputElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    primaryRef.current?.focus();
-  }, []);
-
-  // A modal: Esc means "I'll look around first", and Tab stays inside.
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.stopPropagation();
-      onDone();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const items = cardRef.current?.querySelectorAll<HTMLButtonElement>("button");
-    if (!items?.length) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  // A modal: Esc means "I'll look around first", Tab stays inside, and
+  // reopened from help, closing it goes back to the `?`.
+  useModal(rootRef, { initialFocus: primaryRef, onEscape: onDone, returnFocusTo: '[data-guide="help-button"]' });
 
   const steps = (["trace", "build", "furnish", "view"] as const).map((m) => ({
     id: m,
@@ -99,14 +79,13 @@ export function WelcomeGuide({ onDone }: GuideViewProps) {
 
   return (
     <div
-      onKeyDown={onKeyDown}
+      ref={rootRef}
       style={{ position: "fixed", inset: 0, zIndex: WELCOME_Z, display: "grid", placeItems: "center", padding: 16 }}
     >
       <style>{GUIDE_CSS}</style>
       {/* The dim is "look around first" too: clicking past the card means it. */}
       <div aria-hidden onClick={onDone} style={{ position: "absolute", inset: 0, background: "oklch(0.1 0.01 285 / .55)" }} />
       <div
-        ref={cardRef}
         role="dialog"
         aria-modal="true"
         aria-label={t("guides.welcome.label")}

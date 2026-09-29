@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
 import { FIXTURE_CATALOG, type FixtureAsset, type FixtureCategory } from "@/fixtures/catalog";
 import { PD, pdChip } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
+import { announce } from "@/ui/a11y/Announcer";
 import { DiscLightIcon, PendantIcon, SconceIcon } from "@/ui/planDock/icons";
 import { LinearLightIcon, GlobePendantIcon, DrumPendantIcon, GlobeSconceIcon, BoxSconceIcon, SquareLightIcon } from "@/fixtures/icons";
 
@@ -46,7 +47,7 @@ function CategoryChip({
 }) {
   const [hovered, hoverBind] = useHover();
   return (
-    <button onClick={onClick} {...hoverBind} style={pdChip(active, { padding: "3px 8px", fontSize: 10.5 }, hovered)}>
+    <button onClick={onClick} {...hoverBind} aria-pressed={active} style={pdChip(active, { padding: "3px 8px", fontSize: 10.5 }, hovered)}>
       {children}
     </button>
   );
@@ -75,6 +76,8 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
     <button
       onClick={() => useSceneStore.getState().setPlacing(active ? null : asset.assetId)}
       {...hoverBind}
+      // Pressed while this light is armed for placing, like a furniture card.
+      aria-pressed={active}
       style={{
         flex: "0 0 auto",
         width: 68,
@@ -91,7 +94,9 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
         transition: "background 140ms ease, border-color 140ms ease",
       }}
     >
+      {/* The picture is decoration: the name below is the tile's name. */}
       <div
+        aria-hidden
         style={{
           width: 48,
           height: 48,
@@ -135,13 +140,19 @@ export function FixtureCatalog() {
   const t = useTranslations("editor.lighting");
   const placing = useSceneStore((s) => s.placing);
   const [activeCategory, setActiveCategory] = useState<FixtureCategory | null>(null);
+  const hint = placing ? t(placing.assetId === "fx:linear" ? "drawHint" : "placeHint") : null;
+  // Arming a light changes what the next click does; the hint line is the only
+  // notice of it, so it is spoken too.
+  useEffect(() => {
+    if (hint) announce(hint);
+  }, [hint]);
   const items = useMemo(
     () => (activeCategory ? FIXTURE_CATALOG.filter((a) => a.category === activeCategory) : FIXTURE_CATALOG),
     [activeCategory],
   );
   return (
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
+      <div role="group" aria-label={t("filterLabel")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
         <CategoryChip active={activeCategory === null} onClick={() => setActiveCategory(null)}>
           {t("filterAll")}
         </CategoryChip>
@@ -153,9 +164,9 @@ export function FixtureCatalog() {
             {t(`filter${c}`)}
           </CategoryChip>
         ))}
-        {placing && (
-          <span style={{ marginLeft: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-            {t(placing.assetId === "fx:linear" ? "drawHint" : "placeHint")}
+        {hint && (
+          <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            {hint}
           </span>
         )}
       </div>

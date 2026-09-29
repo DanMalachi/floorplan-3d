@@ -321,7 +321,7 @@ value-per-pixel change on this list. It is proposed rather than applied because
 a focus ring is a visual language decision, and because removing the existing
 `outline: none` changes those three fields' appearance while focused.
 
-### P5 — Single-character keyboard shortcuts cannot be turned off
+### P5 — Single-character keyboard shortcuts cannot be turned off — APPLIED 2026-09-29 (switch in Help; see "Gaps pass")
 
 `1`–`4` switch modes, `E` arms the eyedropper, `R` rotates, from anywhere that
 is not a text input (`src/app/page.tsx`, and the handlers in the frozen
@@ -330,7 +330,7 @@ recognised remedies are a remap/disable preference, or only firing them while
 the relevant component has focus. Both are product decisions, so neither is in
 this branch.
 
-### P6 — Hit-target sizes
+### P6 — Hit-target sizes — MEASURED 2026-09-29 (see "Gaps pass"; two navigator hotspots open)
 
 Several controls are below the commonly-cited 24×24 CSS px minimum: the variant
 dots on an item card are 9×9, `PdSwatch` defaults to 20×20 and is called at 16
@@ -410,17 +410,17 @@ Real, found, not fixed. Roughly in priority order.
    dots are now focusable and operable, which is strictly better than before,
    but the real fix is turning the card into a `<div>` wrapper with a separate
    primary button, and that risks the card's layout. Deferred deliberately.
-2. **The inspector does not take focus when a selection changes.** Selecting a
+2. **FIXED 2026-09-29 (selection announced).** **The inspector does not take focus when a selection changes.** Selecting a
    wall in the viewport makes a whole panel appear top-right with no
    announcement. It is now a named region, so it is *findable*; it is not
    *announced*. A live region naming the new selection, or moving focus into
    the panel, would close this — both change interaction behaviour, so both
    want Dan's opinion.
-3. **The dock's section row is a tab set pretending to be toggle buttons.**
+3. **FIXED 2026-09-29 (real tablist).** **The dock's section row is a tab set pretending to be toggle buttons.**
    `aria-pressed` is honest and correct, but `role="tablist"` / `role="tab"` /
    `role="tabpanel"` with arrow-key navigation is the right pattern. It needs a
    roving tabindex, which is a rewrite of the row rather than an attribute.
-4. **The popovers are not real menus.** See finding 8.
+4. **FIXED 2026-09-29 (plain disclosures, no menu claim).** **The popovers are not real menus.** See finding 8.
 5. **No skip link — deliberately.** Considered and rejected rather than
    cargo-culted: the legal nav is three links, and the editor has no focusable
    "main content" to skip *to* (the canvas is a single focus stop). A skip link
@@ -434,11 +434,11 @@ Real, found, not fixed. Roughly in priority order.
    had before this pass.
 7. **The `Copy` button in the share popover** changes its own label to `Copied`
    and does not announce it.
-8. **`ProjectsOverlay`'s focus trap is a hand-rolled Tab handler.** It works for
+8. **FIXED 2026-09-29 (`useModal`, with `inert`).** **`ProjectsOverlay`'s focus trap is a hand-rolled Tab handler.** It works for
    this dialog's contents but is not a general solution (no `inert` on the
    background, no shadow-DOM traversal). A single shared dialog primitive would
    be better than a second copy of this.
-9. **No automated auditing in CI.** See below.
+9. **FIXED 2026-09-29 (`npm run test:a11y` in nextjs-ci, jsx-a11y warnings).** **No automated auditing in CI.** See below.
 
 ---
 
@@ -537,6 +537,63 @@ yet accessible", he + en.
 Open, product scope: keyboard/screen-reader operation of the 3D editing itself
 (2.1.1). The statement discloses it; closing it is a feature (see "The 3D
 canvas" above), not an audit fix.
+
+## Gaps pass, 2026-09-29 (branch `feat/a11y-gaps`, docs/A11Y-HANDOFF.md §3-9)
+
+Verified on a production build (`next start`, headless Chromium 1440×900, en +
+he, dark + light; one-off Playwright scripts, only the CI axe script is in the
+repo). Every row is
+observed, not predicted, except where it says otherwise. Still **no screen
+reader** was used: "announced" below means the text reached the page's live
+region, not that NVDA read it.
+
+| # | Finding | Fix | Verified |
+| --- | --- | --- | --- |
+| 3 | Onboarding guide card was `role="dialog"` **and** `aria-live="polite"`: the whole card is re-read whenever a tick inside it changes (camera guide) | Card no longer live; its title is announced once ("Tip: …" / "טיפ: …") through one shared polite region (`src/ui/a11y/Announcer.tsx`) | announcer text read back, en + he |
+| 3 | Guide cards sat at the end of the Tab order: 100 Tabs away in Decorate | `GuideHost` moved to straight after the top-right cluster (everything in it is `position: fixed`, so only Tab order changes; z-index ties checked, none) | first card control at Tab stop 9 in every mode |
+| 3 | Closing a card with Esc dropped focus on `<body>`; so did closing the welcome reopened from Help | Card hands focus back to where it came from (else the `?`); welcome returns to the `?` | Esc from every card and the welcome → focus on `?` |
+| 3 | Struggle hints: `role="status"` mounted already full (often not read), and gone after 7 s | Spoken through the shared region (text stays after the chip fades); fade paused while focus is on its close button; close button 25px to hit | typecheck; hint not triggered headless in this pass |
+| 3 | Eyedropper pill hard-coded English on /he (3.1.2), `role="status"` mounted full | `editor.dock.eyedropperHint`, he + en; announced on arm | he pill + announcement Hebrew |
+| 3 | Dock brush / "Replacing — pick a new item" lines: same mount-full pattern; "Replacing" English on /he | `editor.dock.replacing`; both announced on change | typecheck (replace flow not driven) |
+| 4 / P5 | Single-key shortcuts (2.1.4, level A) could not be turned off | "Single-key shortcuts" switch in Help (`role="switch"`), default on, `localStorage` `done:singleKeys:v1`. Off disables 1-4, E, ?, and W/A/S/D , . T F in the camera rig (protected-path exception logged). Exempt, left on: R and Delete (only while the 3D view has focus), Walkthrough W/A/S/D (only while walking), arrows and Home (not character keys). `aria-keyshortcuts` dropped when off; the Help key line rewords itself | off: "2" and "?" ignored; survives reload; on again restores; en + he. Camera-rig letters (W/A/S/D , . T F): typecheck only, camera not measured |
+| 5 / gap 2 | Selecting a wall/item opened the inspector silently | Selection announced once per selection: "Wall · 2.00 m selected" / "נבחר: קיר · 2.00 מ׳" (read from the panel's own title line, which every panel, the stair's included, has). Focus stays on the 3D view, where R/Delete act | wall, rail, window selected by click, en + he |
+| 6 / P6 | Hit targets | Measured every target under 24px against the 2.5.8 spacing test. Swatches (20px), search (22px), resize handle pass by spacing. Help footer links were 18px and crowded: now 24px tall. **Open:** Decorate navigator hotspots "Wall art" 21×24 and "Clock" 19×24 are crowded — drawn art at true scale, so growing them is Dan's call. 2.5.8 is WCAG 2.2, outside IS 5568 | measured; screenshots |
+| 7 / gap 3 | Dock section row was toggle buttons | `role="tablist"`/`tab`/`tabpanel`, one Tab stop, arrows (mirrored in RTL), Home/End, selection follows focus. Room row left as a pressed-button filter group (it filters one list; no panels) | ArrowRight (en) / ArrowLeft (he) selects next; panel labelled by tab |
+| 8 / gaps 4, 8 | Four modals, four focus handlings; none made the page behind inert | `src/ui/a11y/useModal.ts`: focus in, Tab trap, Esc (bubble phase, so a rename field can keep its own Esc), everything outside `inert`, focus back. Used by ProjectsOverlay, WelcomeGuide, SignOutConfirmDialog (Esc disabled while syncing), SmallScreenNotice (no Esc by design) | welcome + gallery: 9 background elements inert, Tab trapped, inert cleared, focus back. Sign-out and small-screen: typecheck only |
+| 8 / gap 4 | Account and share triggers said `aria-haspopup="true"`, which ARIA defines as "menu" | Plain disclosure: `aria-expanded` + `aria-controls`, no `aria-haspopup` | attribute read back (account signed-out state shows the sign-in popover's `haspopup=dialog`, correct) |
+| 9 / gap 9 | No a11y check in CI | `npm run test:a11y` (`scripts/a11y/axe-routes.mjs`): axe WCAG 2.0/2.1 A+AA over `/`, `/legal/accessibility`, `/report`, `/design` (welcome, editor, help panel), en + he, dark + light = 24 states; `nextjs-ci` runs it after the build. `eslint-plugin-jsx-a11y` recommended set as warnings | 24/24 clean locally; lint 48 → 61 warnings, 0 errors |
+
+**Found in this pass, fixed in the protected-layer pass below:** the
+Walkthrough FOV slider had no label and read "FOV 52°" in English on /he; the
+Walkthrough hint was English on /he; Esc while walking was swallowed before a
+guide card could close.
+
+## Protected 3D layer pass, 2026-09-29 (branch `feat/a11y-3d`, handoff §10)
+
+Dan approved the exception the same day (logged in PROTECTED_PATHS.md).
+Production build, headless Chromium.
+
+| Finding | Fix | Verified |
+| --- | --- | --- |
+| Rain and suburb wind ignored reduced motion | Frame loop stops advancing their time under reduced motion (rain and trees stay, still) | two screenshots 0.7 s apart: differ normally, identical under `reducedMotion: reduce` (City+Rain, Suburb) |
+| Walkthrough entry/exit camera flights and door swings ignored reduced motion | Flights land at once; doors snap open/closed | typecheck only (flight and door timing not measured headless) |
+| (Statement said "time-of-day animation") | There is none: time of day is a slider that only moves when dragged. Removed from the statement with the rest of this item | code read |
+| Walkthrough view-angle slider unlabelled (axe critical), "FOV" English on /he; hint English on /he (3.1.2) | `editor.walkthrough.*` he + en; slider named by "View angle" / "זווית ראייה", value `52°` as `aria-valuetext` | he: name "זווית ראייה", hint Hebrew; axe clean with the walkthrough open |
+| Esc during the walk ended the walk even with focus in the walk guide card | Esc inside any dialog is left to it | Esc in the card closed the card; walk still on |
+| Lighting catalogue: chips and tiles had no pressed state, icon read out, placing hint unannounced and on the wrong side in RTL | `aria-pressed`, named chip group, icon hidden, hint announced, `marginInlineStart` | axe clean on the Lighting tab, en + he |
+| Stair panel: no region name, chips without pressed state | Named region like the others, `aria-pressed`, style row named | typecheck only (the sample plan has no stair) |
+| Full/Cutaway/Top, Ceiling, walk, environment and weather chips had no pressed state (ACCESSIBILITY "not verified" guess confirmed) | `PanelChip` sets `aria-pressed`; wall-view row named | he: Full=true Cutaway=false Top=false Ceiling=true |
+| Stair panel's `meta` said "m" on /he | `{run} מ׳` | text |
+
+CI gate extended to Decorate › Lighting and the open walkthrough: 32 states,
+all clean.
+
+**Lint warnings added by jsx-a11y (13):** the backdrop click-to-close divs
+(welcome, sign-out, projects), `onKeyDown` on the guide card and help panel
+(Esc handlers on a dialog, a false positive), the dock resize separator's
+`tabIndex` (a focusable splitter is valid ARIA), the Tooltip host span, one
+`autoFocus` on the rename field, and dev-only pages. None is a WCAG failure axe
+can see; left as warnings rather than silenced.
 
 ## How to re-audit
 

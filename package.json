@@ -37,6 +37,7 @@
     "test:camera": "tsx src/viewport3d/camera/targetPlane.test.ts && tsx src/viewport3d/camera/inputVocabulary.test.ts && tsx src/viewport3d/camera/offerPolicy.test.ts",
     "test:pseudo": "tsx src/i18n/pseudoLocale.test.ts",
     "test:onboarding": "tsx src/onboarding/onboarding.test.ts",
+    "test:a11y": "node scripts/a11y/axe-routes.mjs",
     "furniture:test-retag": "tsx src/furniture/roomRetag.test.ts",
     "mat:index": "tsx scripts/materials/fetch-index.ts",
     "mat:fetch": "tsx scripts/materials/fetch-materials.ts",

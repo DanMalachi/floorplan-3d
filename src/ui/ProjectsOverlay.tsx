@@ -19,6 +19,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { localePath } from "@/i18n/navigation";
 import { PD, pdGhostBtn, pdHoverTransition, pdMicroLabel } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
+import { useModal } from "@/ui/a11y/useModal";
 import { Tooltip } from "@/ui/planDock/Tooltip";
 import { CloseIcon, PencilIcon, PlanMapIcon, PlusIcon, TrashIcon } from "@/ui/planDock/icons";
 import { Wordmark } from "@/brand/Wordmark";
@@ -89,9 +90,6 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
   const currentId = getCurrentProjectId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  // What had focus before the gallery covered the editor, so it can be handed
-  // back on close instead of dumping the user at the top of the document.
-  const restoreRef = useRef<HTMLElement | null>(null);
 
   const refresh = () => setItems(listProjects());
 
@@ -120,48 +118,10 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  // Esc closes.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  // A11y: this covers the whole editor but was a plain <div> — so it had no
-  // dialog semantics, focus stayed wherever it was in the editor underneath,
-  // and Tab walked straight out of the gallery into chrome the user cannot
-  // see or use. Move focus in on open, keep it inside while open, and give it
-  // back on close. Pointer behaviour is untouched.
-  useEffect(() => {
-    restoreRef.current = document.activeElement as HTMLElement | null;
-    closeRef.current?.focus();
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      const root = dialogRef.current;
-      if (!root) return;
-      const focusable = Array.from(
-        root.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && (active === first || !root.contains(active))) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
-      restoreRef.current?.focus?.();
-    };
-  }, []);
+  // It covers the whole editor: a modal. Focus in on open (to Close), Tab
+  // kept inside, the editor behind made inert, Esc closes, focus handed back
+  // on close. Pointer behaviour is untouched.
+  useModal(dialogRef, { initialFocus: closeRef, onEscape: onClose });
 
   async function handleOpen(id: string) {
     // A card that came from the account but has never been on this computer:
@@ -391,7 +351,11 @@ export function ProjectsOverlay({ onClose }: { onClose: () => void }) {
                       onBlur={commitRename}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") commitRename();
-                        if (e.key === "Escape") setRenaming(null);
+                        if (e.key === "Escape") {
+                          // Esc here ends the rename, not the gallery.
+                          e.stopPropagation();
+                          setRenaming(null);
+                        }
                       }}
                       style={{
                         background: PD.inputBg,

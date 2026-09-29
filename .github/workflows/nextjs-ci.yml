@@ -54,6 +54,19 @@ jobs:
       - name: Onboarding tests
         run: npm run test:onboarding
 
+      # Accessibility gate (docs/A11Y-HANDOFF.md §9): axe over the public
+      # pages and the editor (welcome, editor, help panel), en + he, dark +
+      # light, against the build above. Fails on any WCAG 2.0/2.1 A or AA
+      # violation axe can see.
+      - name: Install Chromium for the accessibility check
+        run: npx playwright install --with-deps chromium
+
+      - name: Accessibility (axe)
+        run: |
+          npx next start -p 3100 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3100 && break; sleep 1; done
+          BASE=http://localhost:3100 npm run test:a11y
+
   audit:
     name: npm audit (high+)
     runs-on: ubuntu-latest

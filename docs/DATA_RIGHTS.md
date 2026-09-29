@@ -50,6 +50,11 @@ training set. When in doubt, don't ship it; ask Dan.
 - Supplier names in code comments of protected `src/viewport3d/WallMesh.tsx` (comments only,
   stripped from the bundle; protected file, so it needs Dan's OK to edit).
 - The npm/Python dependency licence set has not been audited against this policy yet.
+- 2026-09-29: the accessibility gate (`npm run test:a11y`) uses **axe-core 4.13
+  (MPL-2.0, commercial use and redistribution allowed)** and
+  **eslint-plugin-jsx-a11y 6.10 (MIT)**. Both were already in the tree as
+  dependencies of `eslint-config-next`; no package was added. Dev/CI only: axe
+  is injected into pages under test by Playwright and never ships to visitors.
 
 ## Rules
 
