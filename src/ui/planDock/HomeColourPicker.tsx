@@ -167,7 +167,6 @@ export function HomeColourPicker() {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, oklch(1 0 0 / .22), transparent 45%, oklch(0 0 0 / .14))" }} />
           <div style={{ position: "absolute", insetInline: 8, bottom: 7, color: (selected?.lightness ?? 90) < 52 ? "white" : "#171717", textShadow: (selected?.lightness ?? 90) < 52 ? "0 1px 3px #000" : "0 1px 2px #fff" }}>
             <div style={{ fontSize: 11, fontWeight: 700 }}>{selected ? localizedColourName(selected, locale) : t(forFrames ? "tipNatural" : "tipPlaster")}</div>
-            {selected && <code dir="ltr" style={{ fontSize: 8.5, opacity: 0.8 }}>{selected.id}</code>}
           </div>
         </div>
         {selected && neighbours && (
@@ -219,7 +218,7 @@ export function HomeColourPicker() {
             onClick={clear}
             style={{ width: 26, height: 26, flex: "0 0 auto", borderRadius: 6, border: selectedId === null && activeHex === null ? `2px solid ${PD.accent}` : `1px solid ${PD.hairline}`, background: "linear-gradient(135deg, #f3ece1 46%, #9b958e 48%, #9b958e 52%, #f3ece1 54%)", cursor: "pointer" }}
           />
-          {visible.map((swatch) => <Swatch key={swatch.id} swatch={swatch} selected={selected?.id === swatch.id} label={`${localizedColourName(swatch, locale)} · ${swatch.id}`} onPick={apply} />)}
+          {visible.map((swatch) => <Swatch key={swatch.id} swatch={swatch} selected={selected?.id === swatch.id} label={localizedColourName(swatch, locale)} onPick={apply} />)}
           {swatches && visible.length === 0 && <div style={{ padding: 6, color: PD.textTertiary, fontSize: 10 }}>{t("noResults")}</div>}
         </div>
       </section>

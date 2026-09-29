@@ -22,6 +22,7 @@ import { PdThemeStyle, ThemeToggle } from "@/ui/planDock/theme";
 import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 import { SmallScreenNotice } from "@/ui/SmallScreenNotice";
 import { ProjectBar } from "@/ui/ProjectBar";
+import { SpacePanFocusGuard, VIEWPORT_HOST_ATTR } from "@/ui/SpacePanFocusGuard";
 
 /** Top-left Projects launcher: the open plan's name + autosave status, and a
  *  button into the Projects gallery. State is persisted to IndexedDB, so a
@@ -454,9 +455,10 @@ export default function Home() {
       <div style={{ position: "absolute", inset: 0, display: showTrace ? "block" : "none" }}>
         <TracePanel />
       </div>
-      <div style={{ position: "absolute", inset: 0, display: showTrace ? "none" : "block" }}>
+      <div {...{ [VIEWPORT_HOST_ATTR]: "" }} style={{ position: "absolute", inset: 0, display: showTrace ? "none" : "block" }}>
         <Viewport />
       </div>
+      <SpacePanFocusGuard />
       {projectsOpen && <ProjectsOverlay onClose={() => setProjectsOpen(false)} />}
       {/* Secret dev tool: Shift+G to drop GT files and save each as a project. */}
       <GtLab />
