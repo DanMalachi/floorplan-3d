@@ -127,6 +127,7 @@
   },
   "editor": {
     "guides": {
+      "announce": "Tip: {title}",
       "notBuilt": {
         "kicker": "Nothing to show yet",
         "title": "Your home isn't built yet",
@@ -214,6 +215,9 @@
         "slidePad": "Hold Space + click and drag",
         "flyHow": "Double-click it",
         "keys": "Keyboard instead: arrow keys move · , and . turn · T looks from above · Home shows the whole house",
+        "keysOff": "Keyboard instead: arrow keys move · Home shows the whole house",
+        "singleKeys": "Single-key shortcuts",
+        "singleKeysHow": "Keys like 1–4, E, T and ? work on their own. Turn this off if you use voice control or press them by accident.",
         "thisStep": "Guides for this step",
         "otherSteps": "Other steps",
         "welcomeAgain": "Show the welcome again",
@@ -493,6 +497,8 @@
       "dragToResize": "Drag to resize",
       "eyedropper": "Eyedropper (E)",
       "eyedropperArmed": "Eyedropper armed (E)",
+      "eyedropperHint": "Eyedropper armed — click furniture, a painted wall face, or a floor · Esc cancels",
+      "replacing": "Replacing — pick a new item",
       "brushFrame": "Window frames — pick a colour · Esc to stop",
       "brushPaint": "Painting — click a surface · Esc to stop",
       "brushFloor": "Flooring — click a surface · Esc to stop",
@@ -1374,6 +1380,8 @@
       "failed": "Import failed: {message}"
     },
     "inspector": {
+      "selected": "{what} selected",
+      "stairSelected": "Stair selected",
       "wall": {
         "kindWall": "Wall",
         "kindRail": "Rail",

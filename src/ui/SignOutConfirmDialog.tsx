@@ -4,10 +4,11 @@
 // something unsynced. See src/lib/auth/signOutGuard.ts for what "unsynced"
 // means and why there is no "delete this device's copy" option here.
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import type { SignOutGuardState } from "@/lib/auth/signOutGuard";
+import { useModal } from "./a11y/useModal";
 
 export function SignOutConfirmDialog({
   state,
@@ -22,25 +23,22 @@ export function SignOutConfirmDialog({
 }) {
   const t = useTranslations("editor.chrome.accountMenu.signOutConfirm");
   const primaryRef = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const busy = state.phase === "syncing";
 
-  useEffect(() => {
-    if (state.phase !== "idle") primaryRef.current?.focus();
-  }, [state.phase]);
-
-  useEffect(() => {
-    if (state.phase === "idle") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [state.phase, onCancel]);
+  // Keyed on "open", not on the phase: a failed sync re-renders the same
+  // dialog, and must not bounce focus out and back in.
+  useModal(rootRef, {
+    open: state.phase !== "idle",
+    initialFocus: primaryRef,
+    onEscape: busy ? undefined : onCancel,
+  });
 
   if (state.phase === "idle") return null;
-  const busy = state.phase === "syncing";
 
   return (
     <div
+      ref={rootRef}
       // Click-outside-to-cancel, same as AccountMenu's own popovers — but this
       // sits above everything (a modal, not a popover), so it needs its own
       // backdrop rather than a window mousedown listener.

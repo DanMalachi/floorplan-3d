@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import { useHover } from "./planDock/useHover";
@@ -112,6 +112,7 @@ export function AccountMenu() {
   const [triggerHover, triggerHoverBind] = useHover();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
   // The signed-out state renders TWO triggers (full pill + collapsed icon),
   // only one of which is ever visible — CSS picks which, not React — so
   // Escape's "focus back" below has to check which one is actually on screen.
@@ -427,13 +428,13 @@ export function AccountMenu() {
           ref={triggerRef}
           onClick={() => setOpen((v) => !v)}
           {...triggerHoverBind}
-          // Deliberately "true" and not "menu": role="menu" would promise
-          // arrow-key navigation and roving tabindex, which this popover does
-          // not implement. It is a small panel of ordinary links and buttons,
-          // and Tab reaches them in DOM order, so it is described as exactly
-          // that rather than as a menu it would then fail to behave like.
-          aria-haspopup="true"
+          // A disclosure, not a menu: no aria-haspopup at all (its "true" is
+          // defined as "menu", which would promise arrow keys and a roving
+          // tabindex this panel does not have). It is a small panel of
+          // ordinary links and buttons that Tab reaches in DOM order, and
+          // expanded + controls says exactly that.
           aria-expanded={open}
+          aria-controls={open ? panelId : undefined}
           style={{
             width: SIZE + 6,
             height: SIZE + 6,
@@ -462,6 +463,7 @@ export function AccountMenu() {
 
       {open && (
         <div
+          id={panelId}
           role="group"
           aria-label={t("accountMenu.account")}
           className={POP_IN_CLASS}

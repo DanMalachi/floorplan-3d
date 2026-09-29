@@ -17,6 +17,7 @@ import { PD, pdGlass } from "@/ui/planDock/tokens";
 import { CARD_FILL, CARD_Z } from "./GuideCard";
 import { useGuides } from "./guideStore";
 import { watchLeftDrags } from "./gestures";
+import { announce } from "@/ui/a11y/Announcer";
 
 export type NudgeId = "dragTurn" | "wallMoved" | "scaleIdle";
 
@@ -109,22 +110,34 @@ export function Nudges() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!nudge) return;
-    const id = window.setTimeout(() => setNudge(null), SHOW_MS);
-    return () => window.clearTimeout(id);
-  }, [nudge]);
-
-  // A guide opening takes over.
-  if (!nudge || guideUp) return null;
-  const mouse = device === "mouse";
-  const turn = t(mouse ? "guides.nudges.dragTurnMouse" : "guides.nudges.dragTurnPad");
-  const text =
-    nudge.id === "dragTurn"
+  const turn = t(device === "mouse" ? "guides.nudges.dragTurnMouse" : "guides.nudges.dragTurnPad");
+  const text = !nudge
+    ? ""
+    : nudge.id === "dragTurn"
       ? turn
       : nudge.id === "wallMoved"
         ? `${t("guides.nudges.wallMoved", { undo: isMac() ? "⌘Z" : "Ctrl+Z" })} ${turn}`
         : t("guides.nudges.scaleIdle", { apply: t("trace.scale.apply") });
+
+  // Spoken through the page's live region, which keeps the words after the
+  // chip fades, so a screen reader still gets to the end of them.
+  useEffect(() => {
+    if (nudge && !guideUpRef.current) announce(text);
+    // Once per hint, not again when the device switch rewords it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nudge]);
+
+  // The chip fades on its own, but not while focus is on its close button:
+  // someone who has got that far is still reading.
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    if (!nudge || held) return;
+    const id = window.setTimeout(() => setNudge(null), SHOW_MS);
+    return () => window.clearTimeout(id);
+  }, [nudge, held]);
+
+  // A guide opening takes over.
+  if (!nudge || guideUp) return null;
 
   // Beside the cursor (or where it was pinned), kept on screen.
   const w = NUDGE_W;
@@ -133,7 +146,8 @@ export function Nudges() {
 
   return (
     <div
-      role="status"
+      onFocus={() => setHeld(true)}
+      onBlur={() => setHeld(false)}
       style={{
         ...pdGlass({ background: CARD_FILL, borderRadius: 14 }),
         position: "fixed",
@@ -158,14 +172,20 @@ export function Nudges() {
       <button
         type="button"
         aria-label={t("guides.nudges.close")}
-        onClick={() => setNudge(null)}
+        onClick={() => {
+          setHeld(false);
+          setNudge(null);
+        }}
         style={{
           pointerEvents: "auto",
           border: "none",
           background: "none",
           color: PD.textTertiary,
           cursor: "pointer",
-          padding: 2,
+          // An 11px cross, 25px to hit; the negative margin keeps the chip's
+          // layout as it was.
+          padding: 7,
+          margin: -5,
           lineHeight: 0,
         }}
       >

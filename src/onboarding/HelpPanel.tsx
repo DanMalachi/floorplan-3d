@@ -14,6 +14,7 @@ import { LEGAL_FACTS } from "@/legal/facts";
 import { PD, pdGlass } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
 import { Tooltip } from "@/ui/planDock/Tooltip";
+import { setSingleKeysOn, singleKeysOn, useSingleKeysOn } from "@/ui/a11y/singleKeys";
 import { CARD_FILL, CARD_Z, ControlRow, DeviceSwitch, useIsRtl } from "./GuideCard";
 import { GUIDE_CSS, DoubleClickIcon, MouseIcon, PadIcon, SpaceDragIcon } from "./demos";
 import { guideStore, useGuides } from "./guideStore";
@@ -62,11 +63,12 @@ export function HelpButton() {
   const open = useSyncExternalStore(subscribe, () => guideStore().getState().helpOpen, () => false);
   const opened = useSyncExternalStore(subscribe, () => guideStore().getState().helpOpened, () => true);
   const [hovered, hoverBind] = useHover();
+  const keysOn = useSingleKeysOn();
 
   // `?` anywhere outside a text field.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "?" || e.ctrlKey || e.metaKey || e.altKey || typingTarget(e.target)) return;
+      if (e.key !== "?" || e.ctrlKey || e.metaKey || e.altKey || typingTarget(e.target) || !singleKeysOn()) return;
       const g = guideStore().getState();
       // The welcome is a modal: nothing opens over or under it.
       if (g.active === "welcome") return;
@@ -83,7 +85,7 @@ export function HelpButton() {
         {...hoverBind}
         data-guide="help-button"
         aria-expanded={open}
-        aria-keyshortcuts="?"
+        aria-keyshortcuts={keysOn ? "?" : undefined}
         onClick={() => guideStore().getState().setHelpOpen(!open)}
         style={{
           position: "relative",
@@ -190,6 +192,7 @@ export function HelpPanel() {
   const appMode = useSceneStore((s) => s.appMode);
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const keysOn = useSingleKeysOn();
 
   // Focus moves in on open and back to the `?` on close.
   useEffect(() => {
@@ -287,7 +290,8 @@ export function HelpPanel() {
         />
         <ControlRow compact icon={<DoubleClickIcon size={44} />} title={t("fly")} body={t("flyHow")} />
       </div>
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: PD.textTertiary }}>{t("keys")}</p>
+      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: PD.textTertiary }}>{t(keysOn ? "keys" : "keysOff")}</p>
+      <SingleKeysSwitch />
 
       {guidesOn && here.length > 0 && (
         <>
@@ -331,16 +335,73 @@ export function HelpPanel() {
         <a href={`mailto:${LEGAL_FACTS.contactEmail}`} style={footLink}>
           {t("contact")}
         </a>
-        <span style={{ marginInlineStart: "auto" }}>{t("pressQ")}</span>
+        {keysOn && <span style={{ marginInlineStart: "auto" }}>{t("pressQ")}</span>}
       </footer>
     </aside>
+  );
+}
+
+/** On/off for the one-key shortcuts (1-4, E, T, ?...): voice control sets
+ *  them off by saying words that contain them. See `@/ui/a11y/singleKeys`. */
+function SingleKeysSwitch() {
+  const t = useTranslations("editor.guides.help");
+  const on = useSingleKeysOn();
+  const labelId = useId();
+  const descId = useId();
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      <div style={{ display: "grid", gap: 2, flex: 1 }}>
+        <span id={labelId} style={{ fontSize: 14, fontWeight: 700, color: PD.textPrimary }}>
+          {t("singleKeys")}
+        </span>
+        <span id={descId} style={{ fontSize: 13, lineHeight: 1.5, color: PD.textTertiary }}>
+          {t("singleKeysHow")}
+        </span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-labelledby={labelId}
+        aria-describedby={descId}
+        onClick={() => setSingleKeysOn(!on)}
+        style={{
+          position: "relative",
+          flex: "none",
+          width: 44,
+          height: 26,
+          marginTop: 2,
+          borderRadius: 999,
+          border: `1px solid ${on ? PD.accent : PD.hairline}`,
+          background: on ? PD.accent : PD.surfaceMuted,
+          cursor: "pointer",
+          padding: 0,
+          transition: "background 140ms ease",
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 2,
+            insetInlineStart: on ? 20 : 2,
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            background: on ? "white" : PD.textSecondary,
+            transition: "inset-inline-start 140ms ease",
+          }}
+        />
+      </button>
+    </div>
   );
 }
 
 const footLink: React.CSSProperties = {
   background: "none",
   border: "none",
-  padding: 0,
+  // 24px tall to hit (WCAG 2.5.8), with the same 18px line as before.
+  padding: "3px 0",
   cursor: "pointer",
   fontFamily: PD.fontUi,
   fontSize: 13,

@@ -1,12 +1,13 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { PD, pdGlass } from "./planDock/tokens";
 import { B } from "@/brand/tokens";
 import { useHover } from "./planDock/useHover";
 import { hardNavHref } from "@/i18n/navigation";
 import { Brand } from "@/brand/Brand";
+import { useModal } from "./a11y/useModal";
 
 // -----------------------------------------------------------------------------
 // "The editor wants a bigger screen."
@@ -113,6 +114,11 @@ const shouldShowOnServer = () => false;
 export function SmallScreenNotice() {
   const show = useSyncExternalStore(subscribe, shouldShow, shouldShowOnServer);
   const t = useTranslations("smallScreen");
+  const rootRef = useRef<HTMLDivElement>(null);
+  // It covers the editor, so it's a modal: focus in, Tab kept inside, the
+  // editor behind made inert. No Esc: "continue" is a choice to make, not
+  // something to fall into.
+  useModal(rootRef, { open: show });
 
   if (!show) return null;
 
@@ -128,6 +134,7 @@ export function SmallScreenNotice() {
 
   return (
     <div
+      ref={rootRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="small-screen-title"

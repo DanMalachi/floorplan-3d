@@ -8,6 +8,13 @@
 // keep working. Esc closes it only while focus is inside the card, because Esc
 // on the plan already means "stop this line".
 //
+// For keyboard and screen-reader users: the title is announced when a card
+// opens (through the page's one live region, not a live card, which would
+// re-read the whole card every time a tick in it changed); GuideHost sits
+// straight after the help button in the page, so the card is a few Tabs away
+// rather than at the far end of the dock; and closing a card that had focus
+// hands focus back to where it came from instead of dropping it on the page.
+//
 // Anchors are plain `data-guide="<name>"` attributes on the real controls, so
 // the card follows the control through layout changes, window resizes and the
 // trace rail's own scrolling, in both reading directions. A card can instead
@@ -19,6 +26,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { dirOf } from "@/i18n/routing";
 import { PD, pdGlass, pdHoverTransition } from "@/ui/planDock/tokens";
 import { useHover } from "@/ui/planDock/useHover";
+import { announce } from "@/ui/a11y/Announcer";
 import { GUIDE_CSS } from "./demos";
 import { useGuides, guideStore } from "./guideStore";
 import { parkCard, placeCard, type Box, type CardSide, type Placement } from "./place";
@@ -164,6 +172,30 @@ export function GuideCard({
   const [place, setPlace] = useState<Placement | null>(null);
   const titleId = useId();
   const sideKey = sides?.join() ?? "";
+  const t = useTranslations("editor.guides");
+
+  // Say the card is here. Read from the rendered title, so a rich title is
+  // announced as its text.
+  const announced = useRef("");
+  useEffect(() => {
+    const text = cardRef.current?.querySelector("h2")?.textContent?.trim();
+    if (text && text !== announced.current) {
+      announced.current = text;
+      announce(t("announce", { title: text }));
+    }
+  });
+
+  // Where focus came into the card from, and whether it's still inside.
+  const cameFrom = useRef<HTMLElement | null>(null);
+  const hasFocus = useRef(false);
+  useEffect(
+    () => () => {
+      if (!hasFocus.current) return;
+      const back = cameFrom.current?.isConnected ? cameFrom.current : null;
+      (back ?? document.querySelector<HTMLElement>('[data-guide="help-button"]'))?.focus();
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     const card = cardRef.current;
@@ -217,8 +249,15 @@ export function GuideCard({
         role="dialog"
         aria-modal="false"
         aria-labelledby={titleId}
-        aria-live="polite"
         tabIndex={-1}
+        onFocus={(e) => {
+          const from = e.relatedTarget as HTMLElement | null;
+          if (!hasFocus.current && from && !e.currentTarget.contains(from)) cameFrom.current = from;
+          hasFocus.current = true;
+        }}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hasFocus.current = false;
+        }}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             e.stopPropagation();

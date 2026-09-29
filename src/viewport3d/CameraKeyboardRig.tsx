@@ -15,6 +15,7 @@ import * as THREE from "three";
 import type { CameraControls } from "@react-three/drei";
 import { useSceneStore, type WallViewMode } from "@/store/useSceneStore";
 import { WALL_HEIGHT } from "@/schema/constants";
+import { singleKeysOn } from "@/ui/a11y/singleKeys";
 import { CAMERA } from "./CameraRig";
 import { findPickObject3D } from "./pickObject3D";
 import { frameBox, frameObject } from "./frameTarget";
@@ -73,6 +74,9 @@ export function CameraKeyboardRig({ halfX, halfZ }: { halfX: number; halfZ: numb
     const held = heldRef.current;
     const setKey = (e: KeyboardEvent, down: boolean) => {
       if (shouldIgnore(e)) return;
+      // W/A/S/D , . honour the single-key setting; arrows always work. Only
+      // the press is refused, so a key already held still lets go.
+      if (down && !e.code.startsWith("Arrow") && !singleKeysOn()) return;
       const truck = TRUCK_KEYS[e.code];
       if (truck) {
         held[truck] = down;
@@ -115,6 +119,7 @@ export function CameraKeyboardRig({ halfX, halfZ }: { halfX: number; halfZ: numb
       if (shouldIgnore(e)) return;
       if (!controls) return;
       const s = useSceneStore.getState();
+      if (e.code.startsWith("Key") && !singleKeysOn()) return; // T and F; Home always works
       if (e.code === "KeyT" && !e.ctrlKey && !e.metaKey) {
         if (s.wallMode === "top") {
           s.setWallMode(lastWallModeRef.current);
