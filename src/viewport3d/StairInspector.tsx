@@ -74,7 +74,7 @@ function StairChip({
 }) {
   const [hovered, hoverBind] = useHover();
   const button = (
-    <button {...hoverBind} onClick={onClick} style={{ ...pdChip(active, undefined, hovered), ...extra }}>
+    <button {...hoverBind} onClick={onClick} aria-pressed={active} style={{ ...pdChip(active, undefined, hovered), ...extra }}>
       {children}
     </button>
   );
@@ -89,6 +89,7 @@ function StairChip({
 
 export function StairInspector({ stair }: { stair: Stair }) {
   const t = useTranslations("editor.stair");
+  const te = useTranslations("editor");
   const m = stairMetrics(stair);
   const style = stair.style ?? "solid";
   const pitchDeg = Math.round((Math.atan2(m.riser, m.going) * 180) / Math.PI);
@@ -116,13 +117,14 @@ export function StairInspector({ stair }: { stair: Stair }) {
   };
 
   return (
-    <div style={pdInspectorPanel}>
+    // Named like the other inspector panels, so a screen reader can find it.
+    <div role="region" aria-label={te("selectedRegionLabel", { name: t("title") })} style={pdInspectorPanel}>
       <PdSectionTitle
         label={t("title")}
         meta={t("meta", { count: stair.flights.length, run: m.run.toFixed(2) })}
       />
 
-      <div style={{ display: "flex", gap: 4 }}>
+      <div role="group" aria-label={t("styleLabel")} style={{ display: "flex", gap: 4 }}>
         {STYLES.map((s) => (
           <StairChip
             key={s.key}
@@ -131,7 +133,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
             tip={t(s.tipKey)}
             onClick={() => style !== s.key && patch(`Stair: ${s.key}`, { style: s.key })}
           >
-            <s.Icon size={13} /> {t(s.labelKey)}
+            <s.Icon size={13} aria-hidden /> {t(s.labelKey)}
           </StairChip>
         ))}
       </div>
@@ -190,7 +192,7 @@ export function StairInspector({ stair }: { stair: Stair }) {
           }}
         >
           <span style={{ flex: "0 0 auto", lineHeight: 0, paddingTop: 1 }}>
-            <WarnIcon size={12} />
+            <WarnIcon size={12} aria-hidden />
           </span>
           <span>{t(`warnings.${w.key}`, w.params)}</span>
         </div>

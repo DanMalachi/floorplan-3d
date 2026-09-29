@@ -80,6 +80,21 @@ for (const theme of THEMES) {
         await page.click('[data-guide="help-button"]');
         await page.waitForSelector('aside[role="dialog"]');
         await check(page, `${label} help panel`);
+        // Decorate's Lighting tab (the fixture catalogue).
+        await page.keyboard.press("Escape");
+        await page.keyboard.press("3");
+        await page.waitForSelector('[role="tablist"] [role="tab"]', { timeout: 30_000 });
+        await page.locator('[role="tablist"] [role="tab"]').nth(1).click();
+        await page.waitForTimeout(500);
+        await check(page, `${label} decorate lighting`);
+        // The walkthrough (its hint and view-angle slider), opened the way a
+        // person can: from its guide in the help panel.
+        await page.click('[data-guide="help-button"]');
+        await page.waitForSelector('aside[role="dialog"]');
+        await page.locator('aside[role="dialog"] button', { hasText: /Walking through|סיור בבית/ }).click();
+        await page.waitForSelector('input[type="range"][aria-labelledby]', { timeout: 30_000 });
+        await page.waitForTimeout(500);
+        await check(page, `${label} walkthrough`);
       } else {
         await page.waitForTimeout(800);
         await check(page, label);

@@ -3,6 +3,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { reducedMotionNow } from "../reducedMotion";
 
 // A light procedural rain layer: many short vertical streaks falling in a
 // column around the model, wrapped in a vertex shader so they loop seamlessly.
@@ -72,6 +73,8 @@ export function Rain({ span }: { span: number }) {
   }, []);
 
   useFrame((_, dt) => {
+    // Reduced motion: the rain stays, standing still (WCAG 2.3.3).
+    if (reducedMotionNow()) return;
     uniforms.current.uTime.value += Math.min(dt, 0.05);
   });
 

@@ -556,18 +556,37 @@ region, not that NVDA read it.
 | 3 | Eyedropper pill hard-coded English on /he (3.1.2), `role="status"` mounted full | `editor.dock.eyedropperHint`, he + en; announced on arm | he pill + announcement Hebrew |
 | 3 | Dock brush / "Replacing — pick a new item" lines: same mount-full pattern; "Replacing" English on /he | `editor.dock.replacing`; both announced on change | typecheck (replace flow not driven) |
 | 4 / P5 | Single-key shortcuts (2.1.4, level A) could not be turned off | "Single-key shortcuts" switch in Help (`role="switch"`), default on, `localStorage` `done:singleKeys:v1`. Off disables 1-4, E, ?, and W/A/S/D , . T F in the camera rig (protected-path exception logged). Exempt, left on: R and Delete (only while the 3D view has focus), Walkthrough W/A/S/D (only while walking), arrows and Home (not character keys). `aria-keyshortcuts` dropped when off; the Help key line rewords itself | off: "2" and "?" ignored; survives reload; on again restores; en + he. Camera-rig letters (W/A/S/D , . T F): typecheck only, camera not measured |
-| 5 / gap 2 | Selecting a wall/item opened the inspector silently | Selection announced once per selection: "Wall · 2.00 m selected" / "נבחר: קיר · 2.00 מ׳" (read from the panel's own title line); stairs (protected panel, no title) say "Stair selected". Focus stays on the 3D view, where R/Delete act | wall, rail, window selected by click, en + he |
+| 5 / gap 2 | Selecting a wall/item opened the inspector silently | Selection announced once per selection: "Wall · 2.00 m selected" / "נבחר: קיר · 2.00 מ׳" (read from the panel's own title line, which every panel, the stair's included, has). Focus stays on the 3D view, where R/Delete act | wall, rail, window selected by click, en + he |
 | 6 / P6 | Hit targets | Measured every target under 24px against the 2.5.8 spacing test. Swatches (20px), search (22px), resize handle pass by spacing. Help footer links were 18px and crowded: now 24px tall. **Open:** Decorate navigator hotspots "Wall art" 21×24 and "Clock" 19×24 are crowded — drawn art at true scale, so growing them is Dan's call. 2.5.8 is WCAG 2.2, outside IS 5568 | measured; screenshots |
 | 7 / gap 3 | Dock section row was toggle buttons | `role="tablist"`/`tab`/`tabpanel`, one Tab stop, arrows (mirrored in RTL), Home/End, selection follows focus. Room row left as a pressed-button filter group (it filters one list; no panels) | ArrowRight (en) / ArrowLeft (he) selects next; panel labelled by tab |
 | 8 / gaps 4, 8 | Four modals, four focus handlings; none made the page behind inert | `src/ui/a11y/useModal.ts`: focus in, Tab trap, Esc (bubble phase, so a rename field can keep its own Esc), everything outside `inert`, focus back. Used by ProjectsOverlay, WelcomeGuide, SignOutConfirmDialog (Esc disabled while syncing), SmallScreenNotice (no Esc by design) | welcome + gallery: 9 background elements inert, Tab trapped, inert cleared, focus back. Sign-out and small-screen: typecheck only |
 | 8 / gap 4 | Account and share triggers said `aria-haspopup="true"`, which ARIA defines as "menu" | Plain disclosure: `aria-expanded` + `aria-controls`, no `aria-haspopup` | attribute read back (account signed-out state shows the sign-in popover's `haspopup=dialog`, correct) |
 | 9 / gap 9 | No a11y check in CI | `npm run test:a11y` (`scripts/a11y/axe-routes.mjs`): axe WCAG 2.0/2.1 A+AA over `/`, `/legal/accessibility`, `/report`, `/design` (welcome, editor, help panel), en + he, dark + light = 24 states; `nextjs-ci` runs it after the build. `eslint-plugin-jsx-a11y` recommended set as warnings | 24/24 clean locally; lint 48 → 61 warnings, 0 errors |
 
-**Found, not fixed (protected, §10):** the Walkthrough FOV slider
-(`WalkthroughFovControl`) has no label (axe critical, only visible while
-walking, so the CI gate never opens it) and reads "FOV 52°" in English on /he;
-the Walkthrough hint is English on /he; Esc while walking is swallowed before a
-guide card can close.
+**Found in this pass, fixed in the protected-layer pass below:** the
+Walkthrough FOV slider had no label and read "FOV 52°" in English on /he; the
+Walkthrough hint was English on /he; Esc while walking was swallowed before a
+guide card could close.
+
+## Protected 3D layer pass, 2026-09-29 (branch `feat/a11y-3d`, handoff §10)
+
+Dan approved the exception the same day (logged in PROTECTED_PATHS.md).
+Production build, headless Chromium.
+
+| Finding | Fix | Verified |
+| --- | --- | --- |
+| Rain and suburb wind ignored reduced motion | Frame loop stops advancing their time under reduced motion (rain and trees stay, still) | two screenshots 0.7 s apart: differ normally, identical under `reducedMotion: reduce` (City+Rain, Suburb) |
+| Walkthrough entry/exit camera flights and door swings ignored reduced motion | Flights land at once; doors snap open/closed | typecheck only (flight and door timing not measured headless) |
+| (Statement said "time-of-day animation") | There is none: time of day is a slider that only moves when dragged. Removed from the statement with the rest of this item | code read |
+| Walkthrough view-angle slider unlabelled (axe critical), "FOV" English on /he; hint English on /he (3.1.2) | `editor.walkthrough.*` he + en; slider named by "View angle" / "זווית ראייה", value `52°` as `aria-valuetext` | he: name "זווית ראייה", hint Hebrew; axe clean with the walkthrough open |
+| Esc during the walk ended the walk even with focus in the walk guide card | Esc inside any dialog is left to it | Esc in the card closed the card; walk still on |
+| Lighting catalogue: chips and tiles had no pressed state, icon read out, placing hint unannounced and on the wrong side in RTL | `aria-pressed`, named chip group, icon hidden, hint announced, `marginInlineStart` | axe clean on the Lighting tab, en + he |
+| Stair panel: no region name, chips without pressed state | Named region like the others, `aria-pressed`, style row named | typecheck only (the sample plan has no stair) |
+| Full/Cutaway/Top, Ceiling, walk, environment and weather chips had no pressed state (ACCESSIBILITY "not verified" guess confirmed) | `PanelChip` sets `aria-pressed`; wall-view row named | he: Full=true Cutaway=false Top=false Ceiling=true |
+| Stair panel's `meta` said "m" on /he | `{run} מ׳` | text |
+
+CI gate extended to Decorate › Lighting and the open walkthrough: 32 states,
+all clean.
 
 **Lint warnings added by jsx-a11y (13):** the backdrop click-to-close divs
 (welcome, sign-out, projects), `onKeyDown` on the guide card and help panel

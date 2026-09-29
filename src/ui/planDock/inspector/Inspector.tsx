@@ -36,8 +36,6 @@ export function Inspector() {
     if (!selKey) return;
     const title = boxRef.current?.querySelector("[data-inspector-title]")?.textContent?.trim();
     if (title) announce(t("selected", { what: title }));
-    // The stair panel is protected 3D-layer code and has no title line.
-    else if (selKey.startsWith("stair:")) announce(t("stairSelected"));
   }, [selKey, t]);
 
   const panel = sel3d ? panelFor(sel3d, scene) : null;

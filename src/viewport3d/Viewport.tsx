@@ -211,7 +211,8 @@ function PanelChip({
 }) {
   const [hov, bind] = useHover();
   const btn = (
-    <button {...bind} onClick={onClick} style={{ ...pdChip(active, undefined, hov), ...extra }}>
+    // Every PanelChip is an on/off or one-of-several choice: say which is on.
+    <button {...bind} onClick={onClick} aria-pressed={active} style={{ ...pdChip(active, undefined, hov), ...extra }}>
       {children}
     </button>
   );
@@ -360,6 +361,8 @@ function WallModeToggle() {
   const setShowCeilings = useSceneStore((s) => s.setShowCeilings);
   return (
     <div
+      role="group"
+      aria-label={t("wallViewLabel")}
       style={{
         position: "absolute",
         insetInlineStart: 14,

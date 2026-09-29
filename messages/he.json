@@ -319,6 +319,7 @@
     "nothingSelected": "לא נבחר דבר",
     "selectedHint": "{kind} נבחר — גררו כדי להזיז, Delete מוחק, Esc מבטל בחירה",
     "undoRedo": "{mod}Z ביטול ({past}) · {mod}Y ביצוע מחדש ({future})",
+    "wallViewLabel": "תצוגת קירות",
     "wallModes": {
       "full": "מלא",
       "cutaway": "חתך",
@@ -1381,7 +1382,6 @@
     },
     "inspector": {
       "selected": "נבחר: {what}",
-      "stairSelected": "נבחרו מדרגות",
       "wall": {
         "kindWall": "קיר",
         "kindRail": "מעקה",
@@ -1658,8 +1658,14 @@
         "door": "דלת"
       }
     },
+    "walkthrough": {
+      "hintIdle": "לחצו כדי לסייר · WASD או החיצים לתנועה · Esc ליציאה",
+      "hintLocked": "מסיירים · Esc ליציאה",
+      "viewAngle": "זווית ראייה"
+    },
     "lighting": {
       "filterAll": "הכול",
+      "filterLabel": "סוג תאורה",
       "filterCeiling": "תקרה",
       "filterWall": "קיר",
       "drawHint": "לחיצה להתחלה · לחיצה לפינה · לחיצה כפולה לסיום · Esc לביטול",
@@ -1667,7 +1673,8 @@
     },
     "stair": {
       "title": "מדרגות",
-      "meta": "{count, plural, one {גרם אחד} other {# גרמים}} · {run} m",
+      "styleLabel": "סגנון מדרגות",
+      "meta": "{count, plural, one {גרם אחד} other {# גרמים}} · {run} מ׳",
       "styleSolidLabel": "סגור",
       "styleSolidTip": "מיתרן סגור — גרם קופסתי שיושב על הרצפה, עם הפודסטים בנויים איתו כלפי מטה.",
       "styleOpenLabel": "פתוח",

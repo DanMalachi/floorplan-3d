@@ -319,6 +319,7 @@
     "nothingSelected": "nothing selected",
     "selectedHint": "{kind} selected — drag to move, Delete removes, Esc deselects",
     "undoRedo": "{mod}Z undo ({past}) · {mod}Y redo ({future})",
+    "wallViewLabel": "Wall view",
     "wallModes": {
       "full": "Full",
       "cutaway": "Cutaway",
@@ -1381,7 +1382,6 @@
     },
     "inspector": {
       "selected": "{what} selected",
-      "stairSelected": "Stair selected",
       "wall": {
         "kindWall": "Wall",
         "kindRail": "Rail",
@@ -1658,8 +1658,14 @@
         "door": "Door"
       }
     },
+    "walkthrough": {
+      "hintIdle": "Click to walk · WASD/Arrows to move · Esc to exit",
+      "hintLocked": "Walking · Esc to exit",
+      "viewAngle": "View angle"
+    },
     "lighting": {
       "filterAll": "All",
+      "filterLabel": "Light type",
       "filterCeiling": "Ceiling",
       "filterWall": "Wall",
       "drawHint": "Click start · Click corner · Double-click finish · Esc cancel",
@@ -1667,6 +1673,7 @@
     },
     "stair": {
       "title": "Stair",
+      "styleLabel": "Stair style",
       "meta": "{count, plural, one {# flight} other {# flights}} · {run} m",
       "styleSolidLabel": "Solid",
       "styleSolidTip": "Closed stringer — a boxed-in flight sitting on the floor, landings built down with it.",

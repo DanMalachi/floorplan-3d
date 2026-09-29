@@ -81,8 +81,11 @@ export function AccessibilityEn() {
         <li style={legalLi}>
           For anyone who has asked their operating system for less motion,
           interface animations are removed, camera moves in the 3D view jump
-          instead of gliding, and the homepage demo shows the finished room
-          without animating. The demo&rsquo;s rotation can also be paused.
+          instead of gliding (including going into and out of the
+          walkthrough), doors in the walkthrough open without swinging, rain
+          and the wind in the trees stand still, and the homepage demo shows
+          the finished room without animating. The demo&rsquo;s rotation can
+          also be paused.
         </li>
         <li style={legalLi}>
           The homepage demo starts on its own when you scroll to it. While it
@@ -107,10 +110,6 @@ export function AccessibilityEn() {
         </li>
         <li style={legalLi}>
           <b>Small screens.</b> The editor is not yet adapted for phones.
-        </li>
-        <li style={legalLi}>
-          The walkthrough, rain and time-of-day animation in the 3D view do not
-          yet follow the reduced-motion setting.
         </li>
         <li style={legalLi}>
           The Service has not yet been tested with screen readers (NVDA, JAWS,

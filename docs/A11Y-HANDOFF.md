@@ -16,7 +16,7 @@ Written 2026-09-29. Launch list item 10. Branch `feat/a11y-gaps`, worktree
 | 7 | DONE: dock sections are a real tablist |
 | 8 | DONE: `src/ui/a11y/useModal.ts` for all four modals (+ `inert`); account/share are plain disclosures |
 | 9 | DONE: `npm run test:a11y` in nextjs-ci (24 states); jsx-a11y warnings (48 → 61, 0 errors). **The first CI run on the PR is the real test** that `/design` renders from CI's build |
-| 10 | NOT STARTED. Waiting on Dan's yes after the plain-English explanation. Add: the Walkthrough FOV slider has no label and reads English on /he |
+| 10 | DONE on `feat/a11y-3d` (stacked on #56; Dan approved 2026-09-29): reduced motion for rain, wind, walk flights, doors; lighting + stair panels named; walk hint + view-angle slider translated and labelled; Esc in a card during the walk; view chips pressed state. CI gate now 32 states |
 | 11 | Post-launch, unchanged |
 
 The full record, with how each was verified, is the "Gaps pass, 2026-09-29"

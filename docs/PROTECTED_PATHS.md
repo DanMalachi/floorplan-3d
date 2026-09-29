@@ -64,6 +64,28 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-29, protected 3D accessibility fixes** (branch `feat/a11y-3d`,
+  docs/A11Y-HANDOFF.md §10). Approved by Dan 2026-09-29 ("make reduced motion
+  mode and fix the nameless panels and fix the other small fixes"). Nothing
+  here changes what anyone sees unless their OS asks for reduced motion.
+  - `reducedMotion.ts`: adds `reducedMotionNow()`, one cached media query for
+    per-frame callers.
+  - `environment/Rain.tsx`, `environment/Suburb.tsx`: under reduced motion the
+    frame loop stops advancing `uTime`, so rain and wind hold still.
+  - `walkthrough/WalkthroughMode.tsx`: under reduced motion the entry and exit
+    flights land at once and doors snap to open/closed. The walk hint and the
+    field-of-view slider are translated (`editor.walkthrough.*`), and the
+    slider is labelled. Esc inside a dialog (a guide card, the help panel) is
+    left to that dialog instead of ending the walk.
+  - `FixtureCatalog.tsx`: `aria-pressed` on the category chips and the light
+    tiles, the chip row named, the tile icon hidden, the placing hint
+    announced and `marginInlineStart` (was `marginLeft`, wrong side in RTL).
+  - `StairInspector.tsx`: named region like the other inspector panels,
+    `aria-pressed` on the style and Auto chips, style row named, icons hidden.
+  - `Viewport.tsx`: `PanelChip` says `aria-pressed` (every use is a toggle:
+    walk, environment, weather, Full/Cutaway/Top, Ceiling), and the wall-view
+    row is a named group.
+
 - **2026-09-29, `src/viewport3d/CameraKeyboardRig.tsx` — single-key shortcut
   switch** (branch `feat/a11y-gaps`, docs/A11Y-HANDOFF.md §4). Approved by Dan
   2026-09-29 ("Toggle + exception"). WCAG 2.1.4 (level A) needs a way to turn

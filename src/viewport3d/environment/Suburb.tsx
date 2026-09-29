@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { reducedMotionNow } from "../reducedMotion";
 
 // F5.2 — Suburb preset: a rolling grass lot with the model on flat ground, a
 // sparse ring of window-fronted houses in the mid-distance, and a mixed, wind-
@@ -505,6 +506,8 @@ export function Suburb({ span, halfX, halfZ }: { span: number; halfX: number; ha
   }, [blades]);
 
   useFrame((_, dt) => {
+    // Reduced motion: grass and trees hold still (WCAG 2.3.3).
+    if (reducedMotionNow()) return;
     windUniforms.uTime.value += Math.min(dt, 0.05);
   });
 
