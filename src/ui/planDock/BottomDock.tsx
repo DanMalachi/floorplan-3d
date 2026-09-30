@@ -133,7 +133,13 @@ const REPLACED_ASSETS = new Set(
 // default doesn't survive as a "choice" nobody made.
 const DOCK_HEIGHT_KEY = "planDock:dockHeight2";
 const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
-const DOCK_HEIGHT_MIN = 150; // old single-row height — still collapsible to compact
+/** Gap between the section rail's buttons (4 tabs + eyedropper, 28px each). */
+const RAIL_GAP = 3;
+/** Shortest shelf that still shows the whole section rail (5×28 + 4 gaps =
+ *  152) and one whole card row (29px filter row + 4 gap + 119px custom card
+ *  = 152): 8+8 padding, 1+1 glass border, 13px resize strip, 6px gap, then
+ *  that. Was 150 when the section tabs were a row across the top. */
+const DOCK_HEIGHT_MIN = 16 + 2 + 13 + 6 + 5 * 28 + 4 * RAIL_GAP;
 const DOCK_HEIGHT_MAX_CAP = 560;
 
 function clampDockHeight(h: number): number {
@@ -202,8 +208,8 @@ function DockIconBtn({
 }
 
 /** The dock's section switcher (Furniture / Lighting / Paint / Floors) as a
- *  real tab list: one Tab stop, arrow keys move along it (mirrored in Hebrew,
- *  where the row reads right to left), Home/End jump to the ends, and moving
+ *  real tab list: one Tab stop, Up/Down move along it (it is a vertical rail
+ *  at the shelf's inline end now), Home/End jump to the ends, and moving
  *  selects. Before this they were four toggle buttons, which told a screen
  *  reader nothing about the panel below changing with them. */
 function DockSectionTabs({
@@ -221,8 +227,7 @@ function DockSectionTabs({
   const listRef = useRef<HTMLDivElement>(null);
   const onKeyDown = (e: React.KeyboardEvent) => {
     const i = DOCK_TABS.findIndex((x) => x.id === tab);
-    const rtl = getComputedStyle(e.currentTarget).direction === "rtl";
-    const step = e.key === "ArrowRight" ? (rtl ? -1 : 1) : e.key === "ArrowLeft" ? (rtl ? 1 : -1) : 0;
+    const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
     const next =
       e.key === "Home" ? 0 : e.key === "End" ? DOCK_TABS.length - 1 : step ? (i + step + DOCK_TABS.length) % DOCK_TABS.length : -1;
     if (next < 0) return;
@@ -231,7 +236,7 @@ function DockSectionTabs({
     listRef.current?.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus();
   };
   return (
-    <div ref={listRef} role="tablist" aria-label={t("dockSectionLabel")} onKeyDown={onKeyDown} style={{ display: "flex", gap: 3 }}>
+    <div ref={listRef} role="tablist" aria-orientation="vertical" aria-label={t("dockSectionLabel")} onKeyDown={onKeyDown} style={{ display: "flex", flexDirection: "column", gap: RAIL_GAP }}>
       {/* `tab_`, not `t` — `t` is the translator in this scope. */}
       {DOCK_TABS.map((tab_) => {
         const Icon = SECTION_ICON[tab_.id];
@@ -622,11 +627,9 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        // Widened 68→76 alongside the a11y name-size bump (9.5→11px): the
-        // larger type fits noticeably fewer characters before the ellipsis
-        // kicks in at the old width, so the card grew to keep truncation
-        // roughly where it was, not to make room for anything new.
-        width: 76,
+        // 68→76 with the a11y name-size bump (9.5→11px), then →CARD_W with
+        // the bigger picture (see THUMB).
+        width: CARD_W,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -642,8 +645,8 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
     >
       <div
         style={{
-          width: 48,
-          height: 48,
+          width: THUMB,
+          height: THUMB,
           borderRadius: 7,
           background: thumb ? undefined : "repeating-linear-gradient(45deg, oklch(1 0 0 / 0.06) 0 5px, transparent 5px 10px)",
           display: "flex",
@@ -656,7 +659,7 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
           // The card's own text already names the item, so a repeated alt would
           // announce the name twice. The picture carries no extra information.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt="" width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
+          <img src={thumb} alt="" width={THUMB} height={THUMB} style={{ objectFit: "contain" }} draggable={false} />
         )}
       </div>
       {/* Holds the variant dots' row open. The dots themselves are drawn
@@ -677,7 +680,7 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
     </button>
   );
   // The footprint is the other tooltip Dan kept ("the chair measurments") — the
-  // caption is ellipsized at 68px and the size appears nowhere else on the
+  // caption is ellipsized at the card's width and the size appears nowhere else on the
   // card. BELOW the card: this grid scrolls and its first row is flush with the
   // container's top edge, which clips anything drawn above it.
   const tooltipped = (
@@ -743,12 +746,21 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   );
 }
 
+/** Card picture and card width (ItemCard, CustomCard), and the Floors swatch.
+ *  Were 48 / 76 / 44 while the section tabs took a row across the shelf's
+ *  top; the rail at the inline end gave that row back to the pictures. 72px
+ *  stays sharp: catalog photos are 512px, GLB renders 160px (2× at 80). The
+ *  card is 20px wider than the picture so a name still fits ~13 characters. */
+const THUMB = 72;
+const CARD_W = 92;
+const SWATCH = 60;
+
 /** Variant dot size, and where its row starts inside an ItemCard: the card's
- *  4px padding + 1.5px border + 48px thumbnail + 3px gap. */
+ *  4px padding + 1.5px border + THUMB + 3px gap. */
 const DOT = 9;
 /** Tallest dot: the selected one's 1.5px border on both sides. */
 const DOT_ROW = DOT + 3;
-const DOT_TOP = 4 + 1.5 + 48 + 3;
+const DOT_TOP = 4 + 1.5 + THUMB + 3;
 
 
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
@@ -824,9 +836,8 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        // Same 68→76 widen as ItemCard, same reason: keeps the ellipsis point
-        // roughly where it was now that the name line reads bigger.
-        width: 76,
+        // Same width as ItemCard (CARD_W).
+        width: CARD_W,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -840,13 +851,13 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
         transition: "background 140ms ease, border-color 140ms ease",
       }}
     >
-      <div aria-hidden style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
+      <div aria-hidden style={{ width: THUMB, height: THUMB, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
         {generator.thumbnail ? (
           // A factory port is one specific approved design: show the product.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={generator.thumbnail} alt="" width={48} height={48} style={{ objectFit: "contain" }} />
+          <img src={generator.thumbnail} alt="" width={THUMB} height={THUMB} style={{ objectFit: "contain" }} />
         ) : (
-          Glyph && <Glyph size={30} />
+          Glyph && <Glyph size={44} />
         )}
       </div>
       <span
@@ -867,7 +878,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       </span>
     </button>
   );
-  // Same reasoning as ItemCard: the caption below is ellipsized at 68px, so the
+  // Same reasoning as ItemCard: the caption below is ellipsized, so the
   // full name is worth a hover label, drawn below because the grid scrolls.
   return (
     <Tooltip label={label} placement="bottom">
@@ -902,8 +913,8 @@ function FloorsTab() {
             })}
             style={{
               flex: "0 0 auto",
-              width: 44,
-              height: 44,
+              width: SWATCH,
+              height: SWATCH,
               borderRadius: 7,
               backgroundImage: `url(${m.thumb})`,
               backgroundSize: "cover",
@@ -1126,32 +1137,40 @@ export function BottomDock() {
         }}
       >
         <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
-        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <DockSectionTabs tab={tab} setTab={setTab} panelId={panelId} tabId={tabId} />
-          <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
-            <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
-              <EyedropperIcon size={14} aria-hidden />
-            </DockIconBtn>
-          </Tooltip>
-          {/* "A brush is armed and your next click paints something" is modal
-              state, shown as a line of small text; a screen reader hears it
-              through the page's live region (see `modeLine` above). */}
-          {modeLine && (
-            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-              {modeLine}
-            </span>
-          )}
-        </div>
-        <div
-          id={panelId}
-          role="tabpanel"
-          aria-labelledby={tabId(tab)}
-          style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minHeight: 0 }}
-        >
-          {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
-          {tab === "lighting" && <FixtureCatalog />}
-          {tab === "paint" && <HomeColourPicker />}
-          {tab === "floors" && <FloorsTab />}
+        {/* "A brush is armed and your next click paints something" is modal
+            state, shown as a line of small text; a screen reader hears it
+            through the page's live region (see `modeLine` above). It rides
+            the resize strip's row, clear of the drag pill in the middle,
+            since the section tabs no longer have a row of their own. */}
+        {modeLine && (
+          <span style={{ position: "absolute", top: 7, insetInlineEnd: 12, pointerEvents: "none", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            {modeLine}
+          </span>
+        )}
+        {/* Section tabs + eyedropper stand in a rail at the inline END (right
+            in English, left in Hebrew) instead of a row across the top — Dan:
+            same shelf, more room for pictures. `row-reverse` keeps the rail
+            FIRST in DOM, so Tab still reaches the tabs before their panel. */}
+        <div style={{ display: "flex", flexDirection: "row-reverse", gap: 10, flex: 1, minHeight: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: RAIL_GAP, flex: "0 0 auto", paddingInlineStart: 8, borderInlineStart: `1px solid ${PD.hairline}` }}>
+            <DockSectionTabs tab={tab} setTab={setTab} panelId={panelId} tabId={tabId} />
+            <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
+              <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
+                <EyedropperIcon size={14} aria-hidden />
+              </DockIconBtn>
+            </Tooltip>
+          </div>
+          <div
+            id={panelId}
+            role="tabpanel"
+            aria-labelledby={tabId(tab)}
+            style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0, minHeight: 0 }}
+          >
+            {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
+            {tab === "lighting" && <FixtureCatalog />}
+            {tab === "paint" && <HomeColourPicker />}
+            {tab === "floors" && <FloorsTab />}
+          </div>
         </div>
       </div>
     </>
