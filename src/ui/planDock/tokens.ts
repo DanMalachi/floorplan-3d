@@ -95,6 +95,10 @@ export const PD = {
   surfaceMuted: v("surface-muted", "oklch(1 0 0 / 0.05)"),
   surfaceMutedHover: v("surface-muted-hover", "oklch(1 0 0 / 0.09)"),
   inputBg: v("input-bg", "oklch(1 0 0 / 0.07)"),
+  // Scrollbar thumb inside glass panels (PD_SCROLL_CSS): the panel's own ink
+  // at low strength, brighter under the pointer. No track.
+  scrollThumb: v("scroll-thumb", "oklch(1 0 0 / 0.18)"),
+  scrollThumbHover: v("scroll-thumb-hover", "oklch(1 0 0 / 0.34)"),
 
   // ── Added 2026-09-04, to absorb src/ui/tokens.ts (`T`) ──────────────────
   //
@@ -221,6 +225,21 @@ export const pdChip = (
  *  VB_SCALE). Viewport.tsx's StatusOverlay (protected, so it does not import
  *  this) hard-codes `bottom: 16 + height + 10` — change both together. */
 export const PD_NAV = { inset: 16, width: 280, height: 300 } as const;
+
+/** Scrollbars that belong to the glass, for every scroll area under
+ *  `scope`: a thin rounded thumb, no track, no arrow buttons. Chrome/Safari
+ *  take the ::-webkit-scrollbar rules — and ignore them as soon as the
+ *  standard `scrollbar-*` properties are set, so those go only to engines
+ *  without the pseudo-element (Firefox). The 2px transparent border insets
+ *  the thumb from the panel's edge. */
+export const pdScrollCss = (scope: string) => `
+${scope} ::-webkit-scrollbar{width:8px;height:8px}
+${scope} ::-webkit-scrollbar-track,${scope} ::-webkit-scrollbar-corner{background:transparent}
+${scope} ::-webkit-scrollbar-thumb{background:${PD.scrollThumb};border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+${scope} ::-webkit-scrollbar-thumb:hover{background:${PD.scrollThumbHover};background-clip:padding-box}
+${scope} ::-webkit-scrollbar-button{display:none;width:0;height:0}
+@supports not selector(::-webkit-scrollbar){${scope} *{scrollbar-width:thin;scrollbar-color:${PD.scrollThumb} transparent}}
+`;
 
 /** Small square icon button — the tab row / room-switcher / search-toggle
  *  all use this shape now instead of text pills. */

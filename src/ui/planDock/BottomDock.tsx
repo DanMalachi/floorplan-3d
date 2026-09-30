@@ -64,7 +64,7 @@ import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
 import type { FloorStyle } from "@/schema/scene";
-import { PD, PD_NAV, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
+import { PD, PD_NAV, pdGlass, pdChip, pdIconBtn, pdMicroLabel, pdScrollCss } from "./tokens";
 import { KitchenScene, KITCHEN_HOTSPOTS, type RoomHotspot } from "./KitchenScene";
 import { BathroomScene, BATHROOM_HOTSPOTS } from "./BathroomScene";
 import { BedroomScene, BEDROOM_HOTSPOTS } from "./BedroomScene";
@@ -145,6 +145,11 @@ const REPLACED_ASSETS = new Set(
 // default doesn't survive as a "choice" nobody made.
 const DOCK_HEIGHT_KEY = "planDock:dockHeight2";
 const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
+/** Every scroll area in the shelf (cards, floors, paint, lighting, the chip
+ *  row) gets the glass scrollbar — scoped by the shelf's own anchor, so the
+ *  Lighting list (a protected file) is covered without being edited. */
+const SHELF_SCROLL_CSS = pdScrollCss('[data-guide="dec-shelf"]');
+
 /** Gap between the section rail's buttons (4 tabs + eyedropper, 28px each). */
 const RAIL_GAP = 3;
 /** Shortest shelf that still shows the whole section rail (5×28 + 4 gaps =
@@ -1162,6 +1167,7 @@ export function BottomDock() {
           ...pdGlass(),
         }}
       >
+        <style>{SHELF_SCROLL_CSS}</style>
         <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
         {/* "A brush is armed and your next click paints something" is modal
             state, shown as a line of small text; a screen reader hears it

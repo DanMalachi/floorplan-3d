@@ -7,8 +7,8 @@
 //
 // Dan's rules, and where each lives here:
 // - glow ONLY on hover (and keyboard focus, which is hover for a keyboard
-//   user) — `.is-lit`; nothing stays lit. The SELECTED object is named in the
-//   readout instead, with a "Show all" button that clears it.
+//   user) — `.is-lit`; nothing stays lit. The SELECTED object is a chip in
+//   the readout instead, whose ✕ ("Show all") clears it.
 // - no colour: the kit is one ink at varying strength; the glow is ink too.
 // - light + dark: the scene is rebuilt for the theme on <html data-pd-theme>.
 // - mirrored in Hebrew: the corner is drawn on the left; English mirrors it to
@@ -18,6 +18,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalS
 import { useLocale, useTranslations } from "next-intl";
 import { frameScene, type NavTheme, type SceneFn } from "./kit";
 import { PD } from "../tokens";
+import { CloseIcon } from "../icons";
 
 export interface NavArtHotspot {
   id: string;
@@ -31,6 +32,9 @@ function subscribeTheme(cb: () => void) {
   return () => mo.disconnect();
 }
 const readTheme = (): NavTheme => (document.documentElement.dataset.pdTheme === "light" ? "light" : "dark");
+
+/** The readout row above the art: a 24px chip plus 2px of air. */
+const READOUT_H = 26;
 
 /** WCAG 2.5.8: every object's hit area is at least 24×24 CSS px. */
 const MIN_HIT_PX = 24;
@@ -78,9 +82,13 @@ export function NavArtScene({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // The art is fitted BELOW the readout row, never under it: text over the
+  // wall's cut edge was unreadable. The pictures are wider than the box, so
+  // this costs ~2% of their size, not the row's 26px.
+  const artH = size ? size.h - READOUT_H : 0;
   const framed = useMemo(
-    () => (size ? frameScene(scene, theme, { w: size.w, h: size.h, mirror: !rtl, id: `${sceneId}-${theme}-${rtl ? "r" : "l"}` }) : null),
-    [scene, sceneId, theme, rtl, size],
+    () => (size ? frameScene(scene, theme, { w: size.w, h: artH, mirror: !rtl, id: `${sceneId}-${theme}-${rtl ? "r" : "l"}` }) : null),
+    [scene, sceneId, theme, rtl, size, artH],
   );
   const markup = framed?.markup;
 
@@ -165,10 +173,10 @@ export function NavArtScene({
           className="nav-art"
           viewBox={framed.viewBox}
           width={size!.w}
-          height={size!.h}
+          height={artH}
           role="group"
           aria-label={roomLabel}
-          style={{ display: "block", ["--glow" as string]: framed.glowFilter }}
+          style={{ display: "block", marginTop: READOUT_H, ["--glow" as string]: framed.glowFilter }}
           onPointerOver={(e) => setLit(idOf(e.target))}
           onPointerLeave={() => setLit(null)}
           onFocus={(e) => setLit(idOf(e.target))}
@@ -195,6 +203,7 @@ export function NavArtScene({
           position: "absolute",
           top: 0,
           insetInlineStart: 0,
+          insetInlineEnd: 0,
           display: "flex",
           alignItems: "center",
           gap: 6,
@@ -203,29 +212,50 @@ export function NavArtScene({
           fontFamily: PD.fontUi,
           color: PD.textSecondary,
           pointerEvents: "none",
+          whiteSpace: "nowrap",
         }}
       >
-        <span style={{ fontWeight: 600, color: PD.textPrimary }}>{roomLabel}</span>
-        {readout && <span aria-hidden>· {labelFor(readout)}</span>}
-        {activeHotspot && !lit && (
+        <span style={{ fontWeight: 600, color: PD.textPrimary, flex: "0 0 auto" }}>{roomLabel}</span>
+        {/* The selected object is a filter chip: its name, and a ✕ that
+            clears it ("Show all" is its accessible name and tooltip). One
+            pill, sized to its text and ellipsized, so a long name can never
+            push a button out of the panel. While the pointer is on another
+            object, that object's name shows after it. */}
+        {activeHotspot ? (
           <button
             type="button"
+            // Visible name first (WCAG 2.5.3 label-in-name), then the action.
+            aria-label={`${labelFor(activeHotspot)}, ${td("showAll")}`}
             onClick={() => handlers.current.onHotspotClick(activeHotspot)}
             style={{
               pointerEvents: "auto",
-              minHeight: 24,
-              padding: "0 8px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              minWidth: 0,
+              height: 24,
+              padding: "0 4px 0 9px",
               borderRadius: 999,
-              border: `1px solid ${PD.hairline}`,
-              background: PD.surfaceMuted,
-              color: PD.textPrimary,
+              border: "none",
+              background: PD.accentTint,
+              color: PD.accentText,
               fontSize: 11,
+              fontWeight: 600,
               fontFamily: PD.fontUi,
               cursor: "pointer",
             }}
           >
-            {td("showAll")}
+            <span aria-hidden style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{labelFor(activeHotspot)}</span>
+            <span aria-hidden style={{ flex: "0 0 auto", width: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, background: PD.surfaceMuted }}>
+              <CloseIcon size={10} />
+            </span>
           </button>
+        ) : null}
+        {readout && readout !== activeHotspot && (
+          <span aria-hidden style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {activeHotspot ? "" : "· "}
+            {labelFor(readout)}
+          </span>
         )}
       </div>
     </div>

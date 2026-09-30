@@ -54,6 +54,8 @@ const LIGHT_VARS: Record<string, string> = {
   "--pd-surface-muted": "oklch(0 0 0 / 0.045)",
   "--pd-surface-muted-hover": "oklch(0 0 0 / 0.08)",
   "--pd-input-bg": "oklch(0 0 0 / 0.05)",
+  "--pd-scroll-thumb": "oklch(0 0 0 / 0.16)",
+  "--pd-scroll-thumb-hover": "oklch(0 0 0 / 0.3)",
 
   // The grounds and the danger role, added when src/ui/tokens.ts (`T`) was
   // absorbed. These have to be here as well as in tokens.ts or the light
