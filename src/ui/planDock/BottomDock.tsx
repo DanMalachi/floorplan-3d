@@ -82,6 +82,9 @@ import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "
 import { EyedropperController } from "@/decorate/EyedropperController";
 import { announce } from "@/ui/a11y/Announcer";
 import { HomeColourPicker } from "./HomeColourPicker";
+import { NavArtScene } from "./navArt/NavArtScene";
+import { kitchenCorner } from "./navArt/kitchenCorner";
+import type { SceneFn } from "./navArt/kit";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
 
@@ -97,6 +100,13 @@ const ROOM_SCENE_COMPONENT: Partial<Record<RoomType, ComponentType<RoomSceneProp
   kids: KidsScene,
   garage: GarageScene,
   outdoors: OutdoorsScene,
+};
+
+/** Rooms redrawn in the round-4 navArt kit (20° camera, detailed monochrome).
+ *  One at a time, each approved by Dan before the next; a room listed here
+ *  renders its navArt scene instead of ROOM_SCENE_COMPONENT's. */
+const ROOM_NAV_ART: Partial<Record<RoomType, SceneFn>> = {
+  kitchen: kitchenCorner,
 };
 
 const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
@@ -536,6 +546,7 @@ function NavigatorPanel({
   const t = useTranslations("editor.dock");
   const RoomBigIcon = ROOM_ICON[room];
   const Scene = ROOM_SCENE_COMPONENT[room];
+  const navArt = ROOM_NAV_ART[room];
   return (
     <section
       // data-guide: onboarding anchors (src/onboarding), attributes only.
@@ -562,7 +573,20 @@ function NavigatorPanel({
           viewBox (overflow: visible on the svg), which at this scale put up
           to 29px of wall under the item shelf. */}
       <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px", overflow: "hidden" }}>
-        {Scene ? (
+        {navArt ? (
+          <NavArtScene
+            scene={navArt}
+            sceneId={room}
+            roomLabel={t(`rooms.${ROOM_SCENES.find((r) => r.id === room)?.labelKey}`)}
+            hotspots={ROOM_HOTSPOTS[room] ?? []}
+            activeHotspot={activeHotspot}
+            onHotspotClick={(id) => {
+              setActiveHotspot(activeHotspot === id ? null : id);
+              onShowFurniture();
+            }}
+            onFloorClick={onFloorClick}
+          />
+        ) : Scene ? (
           <Scene
             activeHotspot={activeHotspot}
             onHotspotClick={(id) => {

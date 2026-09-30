@@ -507,6 +507,7 @@
       "roomNavigatorLabel": "Room navigator",
       "roomGroupLabel": "Room",
       "customBadge": "Custom",
+      "showAll": "Show all",
       "paint": {
         "tipPlaster": "Plaster (default)",
         "tipNatural": "Natural — the finish's own colour",
