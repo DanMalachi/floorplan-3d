@@ -64,6 +64,13 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-30 (second), `src/viewport3d/FixtureCatalog.tsx` — Lighting tiles
+  grow to match the furniture cards** (branch `feat/nav-panel-bigger`).
+  Approved by Dan before the edit ("enlarge them … too"). Tile 68→92 wide,
+  picture box 48→72, icon 26→40, caption 9.5→11px — the same sizes
+  `BottomDock.tsx` gives furniture cards now that the shelf's section tabs sit
+  in a side rail. Styling numbers only: no logic, no imports, no props.
+
 - **2026-09-30, `src/viewport3d/Viewport.tsx` — `StatusOverlay`'s `bottom`
   moves from 250 to 326** (branch `feat/nav-panel-bigger`). Approved by Dan
   before the edit. Same kind of change as the 2026-09-07 entry below: one number

@@ -67,7 +67,7 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
   const active = placing?.assetId === asset.assetId;
   const [hovered, hoverBind] = useHover();
   const Icon = SHAPE_ICON[asset.shape];
-  // The caption below is ellipsized at 68px, so the full name is worth a hover
+  // The caption below is ellipsized at the tile's width, so the full name is worth a hover
   // label — through the app's own glass Tooltip, not the browser's white
   // `title` window. BELOW the tile: these grids scroll, and the first row sits
   // flush against the scroll container's top edge, which would clip a tooltip
@@ -80,7 +80,9 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        width: 68,
+        // Matches BottomDock's furniture cards (CARD_W 92, THUMB 72) since the
+        // shelf's section tabs moved to a side rail (2026-09-30).
+        width: 92,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -98,8 +100,8 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
       <div
         aria-hidden
         style={{
-          width: 48,
-          height: 48,
+          width: 72,
+          height: 72,
           borderRadius: 7,
           display: "flex",
           alignItems: "center",
@@ -107,11 +109,11 @@ function FixtureTile({ asset }: { asset: FixtureAsset }) {
           color: active ? PD.accentText : "oklch(0.82 0.1 75)",
         }}
       >
-        <Icon size={26} />
+        <Icon size={40} />
       </div>
       <span
         style={{
-          fontSize: 9.5,
+          fontSize: 11,
           fontWeight: 600,
           color: PD.textPrimary,
           overflow: "hidden",
