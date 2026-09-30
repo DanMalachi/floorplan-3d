@@ -512,12 +512,17 @@ function NavigatorPanel({
   activeHotspot,
   setActiveHotspot,
   onFloorClick,
+  onShowFurniture,
 }: {
   room: RoomType;
   setRoom: (r: RoomType) => void;
   activeHotspot: string | null;
   setActiveHotspot: (h: string | null) => void;
   onFloorClick: () => void;
+  /** Room tabs and object hotspots filter the FURNITURE list, so picking one
+   *  must bring that list back if the shelf is on Floors/Paint/Lighting —
+   *  otherwise the click looks like it did nothing. */
+  onShowFurniture: () => void;
 }) {
   const t = useTranslations("editor.dock");
   const RoomBigIcon = ROOM_ICON[room];
@@ -539,13 +544,21 @@ function NavigatorPanel({
             onPick={(id) => {
               setRoom(id);
               setActiveHotspot(null);
+              onShowFurniture();
             }}
           />
         ))}
       </div>
       <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
         {Scene ? (
-          <Scene activeHotspot={activeHotspot} onHotspotClick={(id) => setActiveHotspot(activeHotspot === id ? null : id)} onFloorClick={onFloorClick} />
+          <Scene
+            activeHotspot={activeHotspot}
+            onHotspotClick={(id) => {
+              setActiveHotspot(activeHotspot === id ? null : id);
+              onShowFurniture();
+            }}
+            onFloorClick={onFloorClick}
+          />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 8, color: PD.textTertiary }}>
             <RoomBigIcon size={40} aria-hidden />
@@ -1086,7 +1099,7 @@ export function BottomDock() {
 
   return (
     <>
-      <NavigatorPanel room={room} setRoom={setRoom} activeHotspot={activeHotspot} setActiveHotspot={setActiveHotspot} onFloorClick={() => setTab("floors")} />
+      <NavigatorPanel room={room} setRoom={setRoom} activeHotspot={activeHotspot} setActiveHotspot={setActiveHotspot} onFloorClick={() => setTab("floors")} onShowFurniture={() => setTab("furniture")} />
       <EyedropperController />
       <div
         data-guide="dec-shelf"
