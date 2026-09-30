@@ -64,6 +64,22 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-09-30, `src/viewport3d/Viewport.tsx` — `StatusOverlay`'s `bottom`
+  moves from 250 to 326** (branch `feat/nav-panel-bigger`). Approved by Dan
+  before the edit. Same kind of change as the 2026-09-07 entry below: one number
+  plus its comment, no logic, no imports, no props.
+
+  Why: the Plan Dock navigator panel grows from 208×224 to 280×300 (Dan's
+  5–7.5%-of-screen range; `src/ui/planDock/tokens.ts` `PD_NAV`), so the old
+  `16 + 224 + 10` clearance would put the pill back under the panel. New value
+  is `16 + 300 + 10`. It stays a literal rather than importing `PD_NAV`, for
+  the reason the 2026-09-07 entry gives: this tree must not reach into the dock
+  layer. Measured at 1440×900 and 1366×768, `en` and `he`, build and furnish:
+  pill bottom sits exactly 10px above the panel top in all eight. That entry's
+  residual case remains, moved: with a selection the pill measures 528–572px
+  wide, so a furnish item dock dragged above ~305px tall (was ~234px) still
+  reaches its trailing end.
+
 - **2026-09-29, protected 3D accessibility fixes** (branch `feat/a11y-3d`,
   docs/A11Y-HANDOFF.md §10). Approved by Dan 2026-09-29 ("make reduced motion
   mode and fix the nameless panels and fix the other small fixes"). Nothing

@@ -64,7 +64,7 @@ import { GENERATOR_GLYPH } from "./generatorGlyphs";
 import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
 import type { FloorStyle } from "@/schema/scene";
-import { PD, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
+import { PD, PD_NAV, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
 import { KitchenScene, KITCHEN_HOTSPOTS, type RoomHotspot } from "./KitchenScene";
 import { BathroomScene, BATHROOM_HOTSPOTS } from "./BathroomScene";
 import { BedroomScene, BEDROOM_HOTSPOTS } from "./BedroomScene";
@@ -496,11 +496,11 @@ function NavRoomButton({ id, labelKey, active, onPick }: { id: RoomType; labelKe
   const [hovered, hoverBind] = useHover();
   return (
     <Tooltip label={t(labelKey)}>
-      {/* 20px icons (round 5) in 30×28 tiles: six per row still fits the 208px
-          panel, and the rows keep their 28px height, so the scene below keeps
-          the ~0.8 scale its 24px hotspot targets are sized for (isoArt.tsx).
-          A 30px-tall row measured the kitchen clock's hit area down 3%. */}
-      <button {...hoverBind} onClick={() => onPick(id)} aria-pressed={active} style={{ ...pdIconBtn(active, 30, hovered), height: 28 }}>
+      {/* 20px icons (round 5) in 42×36 tiles, six per row across the 280px
+          panel (6×42 + 5×2 gap = 262 of 264). The two rows' 74px are already
+          counted in PD_NAV's height, so a taller tile shrinks the scene below
+          and every hotspot with it (isoArt.tsx VB_SCALE). */}
+      <button {...hoverBind} onClick={() => onPick(id)} aria-pressed={active} style={{ ...pdIconBtn(active, 42, hovered), height: 36 }}>
         <Icon size={20} aria-hidden />
       </button>
     </Tooltip>
@@ -536,7 +536,7 @@ function NavigatorPanel({
       // data-guide: onboarding anchors (src/onboarding), attributes only.
       data-guide="dec-navigator"
       aria-label={t("roomNavigatorLabel")}
-      style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
+      style={{ position: "absolute", insetInlineStart: PD_NAV.inset, bottom: PD_NAV.inset, width: PD_NAV.width, height: PD_NAV.height, display: "flex", flexDirection: "column", ...pdGlass() }}
     >
       <div data-guide="dec-rooms" role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => (
@@ -553,7 +553,10 @@ function NavigatorPanel({
           />
         ))}
       </div>
-      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
+      {/* Clipped: the scenes' floor and back wall run past the 220-unit
+          viewBox (overflow: visible on the svg), which at this scale put up
+          to 29px of wall under the item shelf. */}
+      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px", overflow: "hidden" }}>
         {Scene ? (
           <Scene
             activeHotspot={activeHotspot}
@@ -1109,7 +1112,8 @@ export function BottomDock() {
         data-guide="dec-shelf"
         style={{
           position: "absolute",
-          insetInlineStart: 240,
+          // The navigator's inline end + the same 16px gap.
+          insetInlineStart: PD_NAV.inset + PD_NAV.width + 16,
           insetInlineEnd: 16,
           bottom: 16,
           height: dockHeight,
