@@ -84,6 +84,7 @@ import { announce } from "@/ui/a11y/Announcer";
 import { HomeColourPicker } from "./HomeColourPicker";
 import { NavArtScene } from "./navArt/NavArtScene";
 import { kitchenCorner } from "./navArt/kitchenCorner";
+import { bathroomCorner } from "./navArt/bathroomCorner";
 import type { SceneFn } from "./navArt/kit";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
@@ -107,6 +108,7 @@ const ROOM_SCENE_COMPONENT: Partial<Record<RoomType, ComponentType<RoomSceneProp
  *  renders its navArt scene instead of ROOM_SCENE_COMPONENT's. */
 const ROOM_NAV_ART: Partial<Record<RoomType, SceneFn>> = {
   kitchen: kitchenCorner,
+  bathroom: bathroomCorner,
 };
 
 const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
