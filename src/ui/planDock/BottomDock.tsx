@@ -85,6 +85,15 @@ import { HomeColourPicker } from "./HomeColourPicker";
 import { NavArtScene } from "./navArt/NavArtScene";
 import { kitchenCorner } from "./navArt/kitchenCorner";
 import { bathroomCorner } from "./navArt/bathroomCorner";
+import { bedroomCorner } from "./navArt/bedroomCorner";
+import { livingCorner } from "./navArt/livingCorner";
+import { diningCorner } from "./navArt/diningCorner";
+import { studyCorner } from "./navArt/studyCorner";
+import { laundryCorner } from "./navArt/laundryCorner";
+import { closetCorner } from "./navArt/closetCorner";
+import { kidsCorner } from "./navArt/kidsCorner";
+import { garageCorner } from "./navArt/garageCorner";
+import { outdoorsCorner } from "./navArt/outdoorsCorner";
 import type { SceneFn } from "./navArt/kit";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
@@ -109,6 +118,15 @@ const ROOM_SCENE_COMPONENT: Partial<Record<RoomType, ComponentType<RoomSceneProp
 const ROOM_NAV_ART: Partial<Record<RoomType, SceneFn>> = {
   kitchen: kitchenCorner,
   bathroom: bathroomCorner,
+  bedroom: bedroomCorner,
+  living: livingCorner,
+  dining: diningCorner,
+  study: studyCorner,
+  laundry: laundryCorner,
+  closet: closetCorner,
+  kids: kidsCorner,
+  garage: garageCorner,
+  outdoors: outdoorsCorner,
 };
 
 const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {

@@ -207,7 +207,7 @@ export class Kit {
     this.box(x0, y, z - 1, len, 2.4, 2, { tone: 1.6, edge: "faint", ao: false });
   }
   /** Floor slab: top + front and right edges. */
-  slab(x0: number, y0: number, x1: number, y1: number, th: number, tiles: "tiles" | "planks") {
+  slab(x0: number, y0: number, x1: number, y1: number, th: number, tiles: "tiles" | "planks" | "concrete") {
     const t = this.t;
     this.poly3([[x0, y1, -th], [x1, y1, -th], [x1, y1, 0], [x0, y1, 0]], { fill: "ink", fop: t.left * 0.9, stroke: "det", solid: true });
     this.poly3([[x1, y0, -th], [x1, y1, -th], [x1, y1, 0], [x1, y0, 0]], { fill: "ink", fop: t.right * 0.9, stroke: "det", solid: true });
@@ -217,6 +217,11 @@ export class Kit {
         this.line3([x0, y, 0], [x1, y, 0], { stroke: "faint", sw: 0.3 });
         for (let x = x0 + ((row * 47) % 110) + 18; x < x1; x += 110) this.line3([x, y - 16, 0], [x, y, 0], { stroke: "faint", sw: 0.3 });
       }
+    } else if (tiles === "concrete") {
+      // poured slab: saw-cut joints every 1.5m and a few trowel marks
+      for (let x = x0 + 150; x < x1; x += 150) this.line3([x, y0, 0], [x, y1, 0], { stroke: "faint", sw: 0.4 });
+      for (let y = y0 + 150; y < y1; y += 150) this.line3([x0, y, 0], [x1, y, 0], { stroke: "faint", sw: 0.4 });
+      for (const [x, y, l] of [[60, 40, 30], [210, 120, 24], [330, 70, 36], [120, 180, 20]]) if (x < x1 && y < y1) this.line3([x0 + x, y0 + y, 0], [x0 + x + l, y0 + y + 3, 0], { stroke: 0.06, sw: 0.5 });
     } else {
       for (let x = x0 + 40; x < x1; x += 40) this.line3([x, y0, 0], [x, y1, 0], { stroke: "faint", sw: 0.3 });
       for (let y = y0 + 40; y < y1; y += 40) this.line3([x0, y, 0], [x1, y, 0], { stroke: "faint", sw: 0.3 });
