@@ -832,7 +832,8 @@
       "measureArmed": "Measure armed — click two points on the floor",
       "jumpedFloors": "Jumped to Decorate · Floors",
       "jumpedPaint": "Jumped to Decorate · Paint",
-      "noStairTool": "No Build-mode stair tool yet — trace stairs in the Trace tab"
+      "noStairTool": "No Build-mode stair tool yet — trace stairs in the Trace tab",
+      "toolGroupLabel": "Build tools"
     },
     "untitledPlan": "Untitled plan",
     "parametric": {

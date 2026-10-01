@@ -202,6 +202,22 @@ export function TapeMeasureIcon(p: IconProps) {
   return <Drawn {...p} drawing={MEASURE_DRAWING} />;
 }
 
+/** Floor planks running away from you, staggered ends. */
+const FLOORS_DRAWING: Drawing = {
+  line: "M6.5 7h11l4.5 13H2z M10.2 7L8.7 20 M13.8 7l1.5 13 M4.6 13h3.4 M11.2 11h2.6 M16.3 15.5h4.2",
+};
+export function FloorboardsIcon(p: IconProps) {
+  return <Drawn {...p} drawing={FLOORS_DRAWING} />;
+}
+
+/** Paint roller: roller, frame, handle. */
+const PAINT_DRAWING: Drawing = {
+  line: "M4.5 3h11a1.5 1.5 0 0 1 1.5 1.5v2A1.5 1.5 0 0 1 15.5 8h-11A1.5 1.5 0 0 1 3 6.5v-2A1.5 1.5 0 0 1 4.5 3z M17 5.5h2.5v5H11V14 M9.8 14h2.4v7.5H9.8z",
+};
+export function PaintRollerIcon(p: IconProps) {
+  return <Drawn {...p} drawing={PAINT_DRAWING} />;
+}
+
 export const ROOM_ICON = {
   kitchen: KitchenIcon,
   bathroom: BathroomIcon,
