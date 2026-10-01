@@ -156,6 +156,15 @@ export function OutdoorsIcon(p: IconProps) {
   return <Drawn {...p} drawing={OUTDOORS_DRAWING} />;
 }
 
+/** Pendant lamp: cord, dome shade, the bulb under it, three rays. */
+const LIGHTING_DRAWING: Drawing = {
+  line: "M12 1.5V6 M10.5 6h3 M3.5 14.5C3.5 9.8 7.3 6 12 6s8.5 3.8 8.5 8.5z M12 19.5v2.5 M6.6 18.2l-1.5 1.7 M17.4 18.2l1.5 1.7",
+  hole: "M9.3 14.5a2.7 2.7 0 0 0 5.4 0z",
+};
+export function LightingIcon(p: IconProps) {
+  return <Drawn {...p} drawing={LIGHTING_DRAWING} />;
+}
+
 // Build tool icons, same round-5 set and recipe as the rooms above.
 /** Brick wall. */
 const WALLS_DRAWING: Drawing = {
@@ -205,6 +214,7 @@ export const ROOM_ICON = {
   kids: KidsIcon,
   garage: GarageIcon,
   outdoors: OutdoorsIcon,
+  lighting: LightingIcon,
 } as const;
 
 export function SofaIcon(p: IconProps) {

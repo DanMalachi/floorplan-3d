@@ -61,7 +61,6 @@ import { GENERATORS } from "@/parametric";
 import { piecesOf, type CustomPiece } from "@/parametric/pieces";
 import type { ParametricSpec } from "@/schema/scene";
 import { GENERATOR_GLYPH } from "./generatorGlyphs";
-import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
 import type { FloorStyle } from "@/schema/scene";
 import { PD, PD_NAV, pdGlass, pdChip, pdIconBtn, pdMicroLabel, pdScrollCss } from "./tokens";
@@ -94,7 +93,14 @@ import { closetCorner } from "./navArt/closetCorner";
 import { kidsCorner } from "./navArt/kidsCorner";
 import { garageCorner } from "./navArt/garageCorner";
 import { outdoorsCorner } from "./navArt/outdoorsCorner";
+import { lightingCorner } from "./navArt/lightingCorner";
+import { LightingShelf, LIGHTING_HOTSPOTS } from "./LightingShelf";
 import type { SceneFn } from "./navArt/kit";
+
+/** A navigator tab: one of the catalog's rooms, or Lighting, which is not a
+ *  room of the house but sits in the same row (Dan, 2026-10-01): its picture
+ *  shows every kind of light and its shelf is the light catalog. */
+type NavRoom = RoomType | "lighting";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
 
@@ -115,7 +121,7 @@ const ROOM_SCENE_COMPONENT: Partial<Record<RoomType, ComponentType<RoomSceneProp
 /** Rooms redrawn in the round-4 navArt kit (20° camera, detailed monochrome).
  *  One at a time, each approved by Dan before the next; a room listed here
  *  renders its navArt scene instead of ROOM_SCENE_COMPONENT's. */
-const ROOM_NAV_ART: Partial<Record<RoomType, SceneFn>> = {
+const ROOM_NAV_ART: Partial<Record<NavRoom, SceneFn>> = {
   kitchen: kitchenCorner,
   bathroom: bathroomCorner,
   bedroom: bedroomCorner,
@@ -127,9 +133,10 @@ const ROOM_NAV_ART: Partial<Record<RoomType, SceneFn>> = {
   kids: kidsCorner,
   garage: garageCorner,
   outdoors: outdoorsCorner,
+  lighting: lightingCorner,
 };
 
-const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
+const ROOM_HOTSPOTS: Partial<Record<NavRoom, RoomHotspot[]>> = {
   kitchen: KITCHEN_HOTSPOTS,
   bathroom: BATHROOM_HOTSPOTS,
   bedroom: BEDROOM_HOTSPOTS,
@@ -141,6 +148,7 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   kids: KIDS_HOTSPOTS,
   garage: GARAGE_HOTSPOTS,
   outdoors: OUTDOORS_HOTSPOTS,
+  lighting: LIGHTING_HOTSPOTS,
 };
 
 /** Baked catalog assets superseded in the picker by a live factory port. */
@@ -168,13 +176,17 @@ const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
  *  Lighting list (a protected file) is covered without being edited. */
 const SHELF_SCROLL_CSS = pdScrollCss('[data-guide="dec-shelf"]');
 
-/** Gap between the section rail's buttons (4 tabs + eyedropper, 28px each). */
+/** The section rail's buttons (3 tabs + eyedropper): 36px squares with 20px
+ *  icons, the navigator's room-tile size (Dan: "match the icons size in the
+ *  navigator"). Were 28px with 15px icons. */
+const RAIL_BTN = 36;
+const RAIL_ICON = 20;
 const RAIL_GAP = 3;
-/** Shortest shelf that still shows the whole section rail (5×28 + 4 gaps =
- *  152) and one whole card row (29px filter row + 4 gap + 119px custom card
+/** Shortest shelf that still shows the whole section rail (4×36 + 3 gaps =
+ *  153) and one whole card row (29px filter row + 4 gap + 119px custom card
  *  = 152): 8+8 padding, 1+1 glass border, 13px resize strip, 6px gap, then
  *  that. Was 150 when the section tabs were a row across the top. */
-const DOCK_HEIGHT_MIN = 16 + 2 + 13 + 6 + 5 * 28 + 4 * RAIL_GAP;
+const DOCK_HEIGHT_MIN = 16 + 2 + 13 + 6 + 4 * RAIL_BTN + 3 * RAIL_GAP;
 const DOCK_HEIGHT_MAX_CAP = 560;
 
 function clampDockHeight(h: number): number {
@@ -283,7 +295,7 @@ function DockSectionTabs({
               selected={tab === tab_.id}
               onClick={() => setTab(tab_.id)}
             >
-              <Icon size={15} aria-hidden />
+              <Icon size={RAIL_ICON} aria-hidden />
             </DockTabButton>
           </Tooltip>
         );
@@ -319,7 +331,7 @@ function DockTabButton({
       aria-label={ariaLabel}
       tabIndex={selected ? 0 : -1}
       onClick={onClick}
-      style={pdIconBtn(selected, 28, hovered)}
+      style={pdIconBtn(selected, RAIL_BTN, hovered)}
     >
       {children}
     </button>
@@ -477,15 +489,14 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
 // Same convention as ALL_MODES / WALL_MODES / the room scenes.
 const DOCK_TABS: { id: DockTab; labelKey: string }[] = [
   { id: "furniture", labelKey: "furniture" },
-  { id: "lighting", labelKey: "lighting" },
   { id: "paint", labelKey: "paint" },
   { id: "floors", labelKey: "floors" },
 ];
 
-// Every browsable room tab, all 11 with illustrated hotspot art in
-// ROOM_SCENE_COMPONENT. NavigatorPanel's "scene not built yet" fallback stays
-// in place for any future RoomType added without a Scene yet.
-const ROOM_SCENES: { id: RoomType; labelKey: string }[] = [
+// Every navigator tab: the 11 rooms, then Lighting (twelve tiles, two rows
+// of six). NavigatorPanel's "scene not built yet" fallback stays in place for
+// any future RoomType added without a Scene yet.
+const ROOM_SCENES: { id: NavRoom; labelKey: string }[] = [
   { id: "kitchen", labelKey: "kitchen" },
   { id: "bathroom", labelKey: "bathroom" },
   { id: "bedroom", labelKey: "bedroom" },
@@ -497,6 +508,7 @@ const ROOM_SCENES: { id: RoomType; labelKey: string }[] = [
   { id: "kids", labelKey: "kids" },
   { id: "garage", labelKey: "garage" },
   { id: "outdoors", labelKey: "outdoors" },
+  { id: "lighting", labelKey: "lighting" },
 ];
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
@@ -530,7 +542,7 @@ const isHebrew = (s: string) => /[֐-׿]/.test(s);
 /** One room tab. Its own component so `useHover` lives per BUTTON — 11
  *  buttons sharing one hover flag in NavigatorPanel would re-render the whole
  *  row (and the illustrated scene under it) on every cursor move. */
-function NavRoomButton({ id, labelKey, active, onPick }: { id: RoomType; labelKey: string; active: boolean; onPick: (r: RoomType) => void }) {
+function NavRoomButton({ id, labelKey, active, onPick }: { id: NavRoom; labelKey: string; active: boolean; onPick: (r: NavRoom) => void }) {
   const t = useTranslations("editor.dock.rooms");
   const Icon = ROOM_ICON[id];
   const [hovered, hoverBind] = useHover();
@@ -558,8 +570,8 @@ function NavigatorPanel({
   onFloorClick,
   onShowFurniture,
 }: {
-  room: RoomType;
-  setRoom: (r: RoomType) => void;
+  room: NavRoom;
+  setRoom: (r: NavRoom) => void;
   activeHotspot: string | null;
   setActiveHotspot: (h: string | null) => void;
   onFloorClick: () => void;
@@ -570,7 +582,7 @@ function NavigatorPanel({
 }) {
   const t = useTranslations("editor.dock");
   const RoomBigIcon = ROOM_ICON[room];
-  const Scene = ROOM_SCENE_COMPONENT[room];
+  const Scene = room === "lighting" ? undefined : ROOM_SCENE_COMPONENT[room];
   const navArt = ROOM_NAV_ART[room];
   return (
     <section
@@ -1132,7 +1144,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
 export function BottomDock() {
   const t = useTranslations("editor.dock");
   const [tab, setTab] = useState<DockTab>("furniture");
-  const [room, setRoom] = useState<RoomType>("kitchen");
+  const [room, setRoom] = useState<NavRoom>("kitchen");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [dockHeight, setDockHeight] = useDockHeight();
   const brush = useSceneStore((s) => s.brush);
@@ -1205,8 +1217,8 @@ export function BottomDock() {
           <div style={{ display: "flex", flexDirection: "column", gap: RAIL_GAP, flex: "0 0 auto", paddingInlineStart: 8, borderInlineStart: `1px solid ${PD.hairline}` }}>
             <DockSectionTabs tab={tab} setTab={setTab} panelId={panelId} tabId={tabId} />
             <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
-              <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
-                <EyedropperIcon size={14} aria-hidden />
+              <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper} size={RAIL_BTN}>
+                <EyedropperIcon size={RAIL_ICON} aria-hidden />
               </DockIconBtn>
             </Tooltip>
           </div>
@@ -1216,8 +1228,10 @@ export function BottomDock() {
             aria-labelledby={tabId(tab)}
             style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0, minHeight: 0 }}
           >
-            {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
-            {tab === "lighting" && <FixtureCatalog />}
+            {/* Lighting is a navigator "room" now: its shelf is the light
+                catalog, under the same Furniture tab every room uses. */}
+            {tab === "furniture" &&
+              (room === "lighting" ? <LightingShelf activeHotspot={activeHotspot} /> : <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />)}
             {tab === "paint" && <HomeColourPicker />}
             {tab === "floors" && <FloorsTab />}
           </div>

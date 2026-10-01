@@ -460,7 +460,6 @@
     "dock": {
       "tabs": {
         "furniture": "Furniture",
-        "lighting": "Lighting",
         "paint": "Paint",
         "floors": "Floors"
       },
@@ -475,7 +474,8 @@
         "closet": "Closet",
         "kids": "Kids",
         "garage": "Garage",
-        "outdoors": "Outdoors"
+        "outdoors": "Outdoors",
+        "lighting": "Lighting"
       },
       "categories": {
         "Seating": "Seating",
@@ -704,6 +704,14 @@
         "tv": "TV",
         "art": "Wall art",
         "clock": "Clock"
+      },
+      "lighting": {
+        "ceiling": "Ceiling lights",
+        "strip": "Light strip",
+        "pendant": "Pendants",
+        "wall": "Wall lights",
+        "floorLamp": "Floor lamps",
+        "tableLamp": "Table lamps"
       }
     },
     "trace": {

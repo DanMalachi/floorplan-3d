@@ -153,8 +153,9 @@ export type BuildTool = "select" | "wall" | "opening" | "measure";
 
 /** BottomDock's tab row (Plan Dock: furnish-mode dock). Lives here, not in
  *  BottomDock.tsx, so the Build-tab navigator (Plan Dock P4) can deep-link
- *  into a tab without importing a UI component into the store's consumers. */
-export type DockTab = "furniture" | "lighting" | "paint" | "floors";
+ *  into a tab without importing a UI component into the store's consumers.
+ *  No "lighting": lights moved into the navigator as a room (2026-10-01). */
+export type DockTab = "furniture" | "paint" | "floors";
 
 /** How walls render in 3D: solid, camera-facing faded, or Sims top-down stubs. */
 export type WallViewMode = "full" | "cutaway" | "top";
