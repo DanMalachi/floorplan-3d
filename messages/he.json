@@ -398,7 +398,7 @@
         },
         "notBuiltTooltip": "{label} — עדיין לא נבנה",
         "notBuiltToast": "הכלי {label} עדיין לא נבנה — ממשיכים עם בחירה",
-        "measureHint": "לחצו על שתי נקודות — רצפה, קיר או תקרה · Esc מנקה",
+        "measureHint": "גררו על רצפה, קיר או תקרה כדי למדוד · Esc מנקה, Esc שוב כדי לסיים",
         "wallHint": "לחצו כדי להתחיל, לחצו כדי לשרטט · Esc מסיים את השרשרת, Esc נוסף עוצר",
         "toolGroupLabel": "כלי בנייה",
         "openingTypeGroupLabel": "סוג הפתח"
@@ -496,6 +496,8 @@
       "itemsShownLabel": "{count} פריטים מוצגים",
       "dockSectionLabel": "אזור הסרגל",
       "dragToResize": "גררו לשינוי הגובה",
+      "measure": "מדידה",
+      "measureArmed": "מודדים — גררו לאורך החדר · לחיצה נוספת או Esc כדי לסיים",
       "eyedropper": "טפטפת (E)",
       "eyedropperArmed": "הטפטפת דרוכה (E)",
       "eyedropperHint": "הטפטפת דרוכה — לחצו על רהיט, על קיר צבוע או על רצפה · Esc לביטול",
@@ -832,7 +834,8 @@
       "measureArmed": "המדידה דרוכה — לחצו על שתי נקודות ברצפה",
       "jumpedFloors": "מעבר לעיצוב · רצפות",
       "jumpedPaint": "מעבר לעיצוב · צבע",
-      "noStairTool": "עדיין אין כלי מדרגות במצב בנייה — שרטטו מדרגות בלשונית השרטוט"
+      "noStairTool": "עדיין אין כלי מדרגות במצב בנייה — שרטטו מדרגות בלשונית השרטוט",
+      "toolGroupLabel": "כלי בנייה"
     },
     "untitledPlan": "תוכנית ללא שם",
     "parametric": {

@@ -64,6 +64,24 @@ marked UNCERTAIN — every file's imports were traced and confirmed to be
 Changes to files above that Dan signed off on before they were made. Anything
 not listed here still falls under CLAUDE.md rule 1 — stop and ask.
 
+- **2026-10-01, `src/viewport3d/MeasureTool.tsx` + `src/viewport3d/Viewport.tsx` —
+  Measure becomes a drag ruler usable in Decorate; the Build toolbar goes**
+  (branch `feat/build-nav-tiles`). Asked for by Dan directly: "delete the tool
+  bar from the top. add the measure in the right menu of the decorate shelf so
+  you can use it at any time. also improve it, when you drag it make it like a
+  ruler that stratches and show you the length in real time."
+  - `MeasureTool.tsx`: rewritten. Active in `build` AND `furnish` while
+    `buildTool === "measure"`. Press-drag-release stretches a tape (10 cm
+    ticks, longer at 50 cm / 1 m, end caps) with a live length label;
+    click-move-click still works. Input moved from a catch-plane mesh to
+    window capture-phase pointer listeners (primary button only), so a press
+    that measures never selects/drags what's under it or orbits the camera.
+    First Esc clears the tape, the second puts the tool away.
+    `raycastSceneSurfaces` (planMath.ts) is unchanged and still does the picking.
+  - `Viewport.tsx`: import + mount swap only. `<BuildToolbar />` (build) becomes
+    `<ToolHint />` (build + furnish): the armed tool's hint pill and Opening's
+    Door / Window / Passage chips, without the tool row.
+
 - **2026-09-30 (second), `src/viewport3d/FixtureCatalog.tsx` — Lighting tiles
   grow to match the furniture cards** (branch `feat/nav-panel-bigger`).
   Approved by Dan before the edit ("enlarge them … too"). Tile 68→92 wide,
