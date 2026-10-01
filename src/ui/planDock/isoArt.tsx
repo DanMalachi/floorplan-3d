@@ -538,15 +538,17 @@ export interface RoomItem {
 // A11y target size (WCAG 2.5.5/2.5.8): every hotspot's INVISIBLE hit rect
 // should measure at least 24×24 CSS px, even where the drawn object is
 // thinner. Every scene that uses HitArea — RoomSceneShell's 11 rooms and
-// BuildHouseScene — renders inside the same fixed 208×224 floating panel
-// (NavigatorPanel / BuildNavigator) against the shared `viewBox="0 0 220
-// 170"`, so the viewBox-unit→CSS-px scale is a real constant here, not a
-// guess: it was back-computed from four already-shipped hotspots (kitchen
-// trash bin, kitchen wall art, kitchen clock, Build's tape measure) against
-// their measured on-screen sizes, and all four land on s≈0.80 within a
-// rounded CSS pixel in both the room-scene and Build-scene chrome.
-const VB_SCALE = 0.8;
-const MIN_HIT_VB = 24 / VB_SCALE; // 30 viewBox units
+// BuildHouseScene — renders inside the same fixed floating panel (tokens.ts
+// PD_NAV; NavigatorPanel / BuildNavigator) against the shared `viewBox="0 0
+// 220 170"`, so the viewBox-unit→CSS-px scale is a real constant here. In
+// the old 208×224 panel it measured 0.80 (four shipped hotspots, both
+// chromes). The 280×300 panel gives both scenes 256px of width, so 1.16.
+const VB_SCALE = 1.16;
+// Floored at the 30 units it was at 0.8 rather than dropping to 24/1.16 ≈ 21:
+// that viewBox geometry is the one already checked for neighbour overlaps
+// (KitchenScene's art/clock maxPad pair), so every target just scales up
+// with the art, to ≥35 CSS px. The 24px term only bites if the panel shrinks.
+const MIN_HIT_VB = Math.max(30, 24 / VB_SCALE);
 
 /** Invisible oversized hit target + accent outline on hover/active, grown
  *  from the box's bounding box to at least MIN_HIT_VB per axis (so both

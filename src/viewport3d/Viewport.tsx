@@ -430,21 +430,23 @@ function StatusOverlay() {
         insetInlineStart: 14,
         // Above the Plan Dock's corner panel, not under it. This pill renders
         // ONLY in build and furnish (see the call site) — and those are exactly
-        // the two modes where a 208x224 panel is pinned to this same corner:
-        // BuildNavigator.tsx:74 in build, BottomDock.tsx:403's NavigatorPanel in
-        // furnish, both at `insetInlineStart: 16, bottom: 16`. At the old
-        // `bottom: 14` the overlap measured 208x31 — 72% of the pill — in both
-        // locales and both modes, and since both boxes are `z-index: auto` with
-        // the same stacking parent, DOM order decided it and the panel won. So
-        // the pill was never once fully visible in either mode it exists in.
+        // the two modes where a navigator panel is pinned to this same corner:
+        // BuildNavigator in build, BottomDock's NavigatorPanel in furnish, both
+        // at `insetInlineStart: 16, bottom: 16`. At the old `bottom: 14` the
+        // overlap measured 208x31 — 72% of the pill — in both locales and both
+        // modes, and since both boxes are `z-index: auto` with the same stacking
+        // parent, DOM order decided it and the panel won.
         //
-        // 16 + 224 + 10 clearance. The one case this does not cover: in furnish
-        // the item dock beside the navigator is resizable, and the pill is
-        // ~272px wide against a 226px leading column, so dragging that dock
-        // above ~234px tall reaches the pill's trailing end again. Left as is
-        // rather than coupling this file to the dock's height — that is exactly
-        // the cross-layer reach this tree is protected from.
-        bottom: 250,
+        // 16 + 300 + 10 clearance for the 280x300 panel (planDock/tokens.ts
+        // PD_NAV — a literal, not an import, so this file doesn't reach into
+        // the dock layer; change both together). The one case this does not
+        // cover: in furnish the item dock beside the navigator is resizable,
+        // and with a selection the pill is ~550px wide against a 312px leading
+        // column, so dragging that dock above ~305px tall reaches the pill's
+        // trailing end again. Left as is rather than coupling this file to the
+        // dock's height — that is exactly the cross-layer reach this tree is
+        // protected from.
+        bottom: 326,
         padding: "7px 12px",
         fontSize: 12,
         pointerEvents: "none",

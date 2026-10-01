@@ -460,7 +460,6 @@
     "dock": {
       "tabs": {
         "furniture": "ריהוט",
-        "lighting": "תאורה",
         "paint": "צבע",
         "floors": "רצפות"
       },
@@ -475,7 +474,8 @@
         "closet": "ארון",
         "kids": "חדר ילדים",
         "garage": "חניה",
-        "outdoors": "חוץ"
+        "outdoors": "חוץ",
+        "lighting": "תאורה"
       },
       "categories": {
         "Seating": "ישיבה",
@@ -507,6 +507,7 @@
       "roomNavigatorLabel": "ניווט חדרים",
       "roomGroupLabel": "חדר",
       "customBadge": "מותאם",
+      "showAll": "הצג הכול",
       "paint": {
         "tipPlaster": "טיח (ברירת מחדל)",
         "tipNatural": "טבעי — הגוון של הגימור עצמו",
@@ -703,6 +704,14 @@
         "tv": "טלוויזיה",
         "art": "תמונת קיר",
         "clock": "שעון"
+      },
+      "lighting": {
+        "ceiling": "תאורת תקרה",
+        "strip": "פס תאורה",
+        "pendant": "מנורות תלויות",
+        "wall": "מנורות קיר",
+        "floorLamp": "מנורות עומדות",
+        "tableLamp": "מנורות שולחן"
       }
     },
     "trace": {

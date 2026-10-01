@@ -1,7 +1,7 @@
 "use client";
 
 // Build-tab floating panel (Plan Dock P4): same footprint as Decorate's
-// NavigatorPanel (left/bottom 16, 208×224) so Build and Decorate read as the
+// NavigatorPanel (tokens.ts PD_NAV) so Build and Decorate read as the
 // same product, but there's one house-cutaway scene instead of an 11-room
 // switcher — Build isn't organized by room, it's organized by WHAT you're
 // building. Hotspots arm a build tool (or deep-link into Decorate for
@@ -13,7 +13,7 @@
 
 import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
-import { pdGlass, PD } from "./tokens";
+import { pdGlass, PD, PD_NAV } from "./tokens";
 import { pdToast } from "./toast";
 import { BuildHouseScene, type BuildHotspotId } from "./BuildHouseScene";
 
@@ -75,10 +75,12 @@ export function BuildNavigator() {
       // data-guide: onboarding anchor (src/onboarding).
       data-guide="build-navigator"
       aria-label={t("title")}
-      style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
+      style={{ position: "absolute", insetInlineStart: PD_NAV.inset, bottom: PD_NAV.inset, width: PD_NAV.width, height: PD_NAV.height, display: "flex", flexDirection: "column", ...pdGlass() }}
     >
       <div style={{ padding: "10px 12px 2px", fontSize: 11.5, fontWeight: 600, color: PD.textSecondary }}>{t("title")}</div>
-      <div style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
+      {/* Clipped: the house floor runs ~26px past the panel's edge at this
+          scale (its depth recedes beyond the 220-unit viewBox). */}
+      <div style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px", overflow: "hidden" }}>
         <BuildHouseScene activeHotspot={activeHotspot} onHotspotClick={onHotspotClick} />
       </div>
     </section>

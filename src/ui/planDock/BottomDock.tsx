@@ -61,10 +61,9 @@ import { GENERATORS } from "@/parametric";
 import { piecesOf, type CustomPiece } from "@/parametric/pieces";
 import type { ParametricSpec } from "@/schema/scene";
 import { GENERATOR_GLYPH } from "./generatorGlyphs";
-import { FixtureCatalog } from "@/viewport3d/FixtureCatalog";
 import { FLOOR_MATERIALS, FAMILY_ORDER, FAMILY_LABEL_KEY } from "@/materials/registry";
 import type { FloorStyle } from "@/schema/scene";
-import { PD, pdGlass, pdChip, pdIconBtn, pdMicroLabel } from "./tokens";
+import { PD, PD_NAV, pdGlass, pdChip, pdIconBtn, pdMicroLabel, pdScrollCss } from "./tokens";
 import { KitchenScene, KITCHEN_HOTSPOTS, type RoomHotspot } from "./KitchenScene";
 import { BathroomScene, BATHROOM_HOTSPOTS } from "./BathroomScene";
 import { BedroomScene, BEDROOM_HOTSPOTS } from "./BedroomScene";
@@ -82,6 +81,26 @@ import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "
 import { EyedropperController } from "@/decorate/EyedropperController";
 import { announce } from "@/ui/a11y/Announcer";
 import { HomeColourPicker } from "./HomeColourPicker";
+import { NavArtScene } from "./navArt/NavArtScene";
+import { kitchenCorner } from "./navArt/kitchenCorner";
+import { bathroomCorner } from "./navArt/bathroomCorner";
+import { bedroomCorner } from "./navArt/bedroomCorner";
+import { livingCorner } from "./navArt/livingCorner";
+import { diningCorner } from "./navArt/diningCorner";
+import { studyCorner } from "./navArt/studyCorner";
+import { laundryCorner } from "./navArt/laundryCorner";
+import { closetCorner } from "./navArt/closetCorner";
+import { kidsCorner } from "./navArt/kidsCorner";
+import { garageCorner } from "./navArt/garageCorner";
+import { outdoorsCorner } from "./navArt/outdoorsCorner";
+import { lightingCorner } from "./navArt/lightingCorner";
+import { LightingShelf, LIGHTING_HOTSPOTS } from "./LightingShelf";
+import type { SceneFn } from "./navArt/kit";
+
+/** A navigator tab: one of the catalog's rooms, or Lighting, which is not a
+ *  room of the house but sits in the same row (Dan, 2026-10-01): its picture
+ *  shows every kind of light and its shelf is the light catalog. */
+type NavRoom = RoomType | "lighting";
 
 type RoomSceneProps = { activeHotspot: string | null; onHotspotClick: (id: string) => void; onFloorClick: () => void };
 
@@ -99,7 +118,25 @@ const ROOM_SCENE_COMPONENT: Partial<Record<RoomType, ComponentType<RoomSceneProp
   outdoors: OutdoorsScene,
 };
 
-const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
+/** Rooms redrawn in the round-4 navArt kit (20° camera, detailed monochrome).
+ *  One at a time, each approved by Dan before the next; a room listed here
+ *  renders its navArt scene instead of ROOM_SCENE_COMPONENT's. */
+const ROOM_NAV_ART: Partial<Record<NavRoom, SceneFn>> = {
+  kitchen: kitchenCorner,
+  bathroom: bathroomCorner,
+  bedroom: bedroomCorner,
+  living: livingCorner,
+  dining: diningCorner,
+  study: studyCorner,
+  laundry: laundryCorner,
+  closet: closetCorner,
+  kids: kidsCorner,
+  garage: garageCorner,
+  outdoors: outdoorsCorner,
+  lighting: lightingCorner,
+};
+
+const ROOM_HOTSPOTS: Partial<Record<NavRoom, RoomHotspot[]>> = {
   kitchen: KITCHEN_HOTSPOTS,
   bathroom: BATHROOM_HOTSPOTS,
   bedroom: BEDROOM_HOTSPOTS,
@@ -111,6 +148,7 @@ const ROOM_HOTSPOTS: Partial<Record<RoomType, RoomHotspot[]>> = {
   kids: KIDS_HOTSPOTS,
   garage: GARAGE_HOTSPOTS,
   outdoors: OUTDOORS_HOTSPOTS,
+  lighting: LIGHTING_HOTSPOTS,
 };
 
 /** Baked catalog assets superseded in the picker by a live factory port. */
@@ -133,7 +171,22 @@ const REPLACED_ASSETS = new Set(
 // default doesn't survive as a "choice" nobody made.
 const DOCK_HEIGHT_KEY = "planDock:dockHeight2";
 const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
-const DOCK_HEIGHT_MIN = 150; // old single-row height — still collapsible to compact
+/** Every scroll area in the shelf (cards, floors, paint, lighting, the chip
+ *  row) gets the glass scrollbar — scoped by the shelf's own anchor, so the
+ *  Lighting list (a protected file) is covered without being edited. */
+const SHELF_SCROLL_CSS = pdScrollCss('[data-guide="dec-shelf"]');
+
+/** The section rail's buttons (3 tabs + eyedropper): 36px squares with 20px
+ *  icons, the navigator's room-tile size (Dan: "match the icons size in the
+ *  navigator"). Were 28px with 15px icons. */
+const RAIL_BTN = 36;
+const RAIL_ICON = 20;
+const RAIL_GAP = 3;
+/** Shortest shelf that still shows the whole section rail (4×36 + 3 gaps =
+ *  153) and one whole card row (29px filter row + 4 gap + 119px custom card
+ *  = 152): 8+8 padding, 1+1 glass border, 13px resize strip, 6px gap, then
+ *  that. Was 150 when the section tabs were a row across the top. */
+const DOCK_HEIGHT_MIN = 16 + 2 + 13 + 6 + 4 * RAIL_BTN + 3 * RAIL_GAP;
 const DOCK_HEIGHT_MAX_CAP = 560;
 
 function clampDockHeight(h: number): number {
@@ -202,8 +255,8 @@ function DockIconBtn({
 }
 
 /** The dock's section switcher (Furniture / Lighting / Paint / Floors) as a
- *  real tab list: one Tab stop, arrow keys move along it (mirrored in Hebrew,
- *  where the row reads right to left), Home/End jump to the ends, and moving
+ *  real tab list: one Tab stop, Up/Down move along it (it is a vertical rail
+ *  at the shelf's inline end now), Home/End jump to the ends, and moving
  *  selects. Before this they were four toggle buttons, which told a screen
  *  reader nothing about the panel below changing with them. */
 function DockSectionTabs({
@@ -221,8 +274,7 @@ function DockSectionTabs({
   const listRef = useRef<HTMLDivElement>(null);
   const onKeyDown = (e: React.KeyboardEvent) => {
     const i = DOCK_TABS.findIndex((x) => x.id === tab);
-    const rtl = getComputedStyle(e.currentTarget).direction === "rtl";
-    const step = e.key === "ArrowRight" ? (rtl ? -1 : 1) : e.key === "ArrowLeft" ? (rtl ? 1 : -1) : 0;
+    const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
     const next =
       e.key === "Home" ? 0 : e.key === "End" ? DOCK_TABS.length - 1 : step ? (i + step + DOCK_TABS.length) % DOCK_TABS.length : -1;
     if (next < 0) return;
@@ -231,7 +283,7 @@ function DockSectionTabs({
     listRef.current?.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus();
   };
   return (
-    <div ref={listRef} role="tablist" aria-label={t("dockSectionLabel")} onKeyDown={onKeyDown} style={{ display: "flex", gap: 3 }}>
+    <div ref={listRef} role="tablist" aria-orientation="vertical" aria-label={t("dockSectionLabel")} onKeyDown={onKeyDown} style={{ display: "flex", flexDirection: "column", gap: RAIL_GAP }}>
       {/* `tab_`, not `t` — `t` is the translator in this scope. */}
       {DOCK_TABS.map((tab_) => {
         const Icon = SECTION_ICON[tab_.id];
@@ -243,7 +295,7 @@ function DockSectionTabs({
               selected={tab === tab_.id}
               onClick={() => setTab(tab_.id)}
             >
-              <Icon size={15} aria-hidden />
+              <Icon size={RAIL_ICON} aria-hidden />
             </DockTabButton>
           </Tooltip>
         );
@@ -279,7 +331,7 @@ function DockTabButton({
       aria-label={ariaLabel}
       tabIndex={selected ? 0 : -1}
       onClick={onClick}
-      style={pdIconBtn(selected, 28, hovered)}
+      style={pdIconBtn(selected, RAIL_BTN, hovered)}
     >
       {children}
     </button>
@@ -437,15 +489,14 @@ function DockResizeHandle({ dockHeight, setDockHeight }: { dockHeight: number; s
 // Same convention as ALL_MODES / WALL_MODES / the room scenes.
 const DOCK_TABS: { id: DockTab; labelKey: string }[] = [
   { id: "furniture", labelKey: "furniture" },
-  { id: "lighting", labelKey: "lighting" },
   { id: "paint", labelKey: "paint" },
   { id: "floors", labelKey: "floors" },
 ];
 
-// Every browsable room tab, all 11 with illustrated hotspot art in
-// ROOM_SCENE_COMPONENT. NavigatorPanel's "scene not built yet" fallback stays
-// in place for any future RoomType added without a Scene yet.
-const ROOM_SCENES: { id: RoomType; labelKey: string }[] = [
+// Every navigator tab: the 11 rooms, then Lighting (twelve tiles, two rows
+// of six). NavigatorPanel's "scene not built yet" fallback stays in place for
+// any future RoomType added without a Scene yet.
+const ROOM_SCENES: { id: NavRoom; labelKey: string }[] = [
   { id: "kitchen", labelKey: "kitchen" },
   { id: "bathroom", labelKey: "bathroom" },
   { id: "bedroom", labelKey: "bedroom" },
@@ -457,6 +508,7 @@ const ROOM_SCENES: { id: RoomType; labelKey: string }[] = [
   { id: "kids", labelKey: "kids" },
   { id: "garage", labelKey: "garage" },
   { id: "outdoors", labelKey: "outdoors" },
+  { id: "lighting", labelKey: "lighting" },
 ];
 
 function matchesHotspot(item: FurnitureAsset, hotspot: RoomHotspot): boolean {
@@ -490,17 +542,17 @@ const isHebrew = (s: string) => /[֐-׿]/.test(s);
 /** One room tab. Its own component so `useHover` lives per BUTTON — 11
  *  buttons sharing one hover flag in NavigatorPanel would re-render the whole
  *  row (and the illustrated scene under it) on every cursor move. */
-function NavRoomButton({ id, labelKey, active, onPick }: { id: RoomType; labelKey: string; active: boolean; onPick: (r: RoomType) => void }) {
+function NavRoomButton({ id, labelKey, active, onPick }: { id: NavRoom; labelKey: string; active: boolean; onPick: (r: NavRoom) => void }) {
   const t = useTranslations("editor.dock.rooms");
   const Icon = ROOM_ICON[id];
   const [hovered, hoverBind] = useHover();
   return (
     <Tooltip label={t(labelKey)}>
-      {/* 20px icons (round 5) in 30×28 tiles: six per row still fits the 208px
-          panel, and the rows keep their 28px height, so the scene below keeps
-          the ~0.8 scale its 24px hotspot targets are sized for (isoArt.tsx).
-          A 30px-tall row measured the kitchen clock's hit area down 3%. */}
-      <button {...hoverBind} onClick={() => onPick(id)} aria-pressed={active} style={{ ...pdIconBtn(active, 30, hovered), height: 28 }}>
+      {/* 20px icons (round 5) in 42×36 tiles, six per row across the 280px
+          panel (6×42 + 5×2 gap = 262 of 264). The two rows' 74px are already
+          counted in PD_NAV's height, so a taller tile shrinks the scene below
+          and every hotspot with it (isoArt.tsx VB_SCALE). */}
+      <button {...hoverBind} onClick={() => onPick(id)} aria-pressed={active} style={{ ...pdIconBtn(active, 42, hovered), height: 36 }}>
         <Icon size={20} aria-hidden />
       </button>
     </Tooltip>
@@ -518,8 +570,8 @@ function NavigatorPanel({
   onFloorClick,
   onShowFurniture,
 }: {
-  room: RoomType;
-  setRoom: (r: RoomType) => void;
+  room: NavRoom;
+  setRoom: (r: NavRoom) => void;
   activeHotspot: string | null;
   setActiveHotspot: (h: string | null) => void;
   onFloorClick: () => void;
@@ -530,15 +582,16 @@ function NavigatorPanel({
 }) {
   const t = useTranslations("editor.dock");
   const RoomBigIcon = ROOM_ICON[room];
-  const Scene = ROOM_SCENE_COMPONENT[room];
+  const Scene = room === "lighting" ? undefined : ROOM_SCENE_COMPONENT[room];
+  const navArt = ROOM_NAV_ART[room];
   return (
     <section
       // data-guide: onboarding anchors (src/onboarding), attributes only.
       data-guide="dec-navigator"
       aria-label={t("roomNavigatorLabel")}
-      style={{ position: "absolute", insetInlineStart: 16, bottom: 16, width: 208, height: 224, display: "flex", flexDirection: "column", ...pdGlass() }}
+      style={{ position: "absolute", insetInlineStart: PD_NAV.inset, bottom: PD_NAV.inset, width: PD_NAV.width, height: PD_NAV.height, display: "flex", flexDirection: "column", ...pdGlass() }}
     >
-      <div data-guide="dec-rooms" role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
+      <div data-guide="dec-rooms" role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 4px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => (
           <NavRoomButton
             key={r.id}
@@ -553,8 +606,24 @@ function NavigatorPanel({
           />
         ))}
       </div>
-      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px" }}>
-        {Scene ? (
+      {/* Clipped: the scenes' floor and back wall run past the 220-unit
+          viewBox (overflow: visible on the svg), which at this scale put up
+          to 29px of wall under the item shelf. */}
+      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "0 12px 10px", overflow: "hidden" }}>
+        {navArt ? (
+          <NavArtScene
+            scene={navArt}
+            sceneId={room}
+            roomLabel={t(`rooms.${ROOM_SCENES.find((r) => r.id === room)?.labelKey}`)}
+            hotspots={ROOM_HOTSPOTS[room] ?? []}
+            activeHotspot={activeHotspot}
+            onHotspotClick={(id) => {
+              setActiveHotspot(activeHotspot === id ? null : id);
+              onShowFurniture();
+            }}
+            onFloorClick={onFloorClick}
+          />
+        ) : Scene ? (
           <Scene
             activeHotspot={activeHotspot}
             onHotspotClick={(id) => {
@@ -619,11 +688,9 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        // Widened 68→76 alongside the a11y name-size bump (9.5→11px): the
-        // larger type fits noticeably fewer characters before the ellipsis
-        // kicks in at the old width, so the card grew to keep truncation
-        // roughly where it was, not to make room for anything new.
-        width: 76,
+        // 68→76 with the a11y name-size bump (9.5→11px), then →CARD_W with
+        // the bigger picture (see THUMB).
+        width: CARD_W,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -639,8 +706,8 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
     >
       <div
         style={{
-          width: 48,
-          height: 48,
+          width: THUMB,
+          height: THUMB,
           borderRadius: 7,
           background: thumb ? undefined : "repeating-linear-gradient(45deg, oklch(1 0 0 / 0.06) 0 5px, transparent 5px 10px)",
           display: "flex",
@@ -653,7 +720,7 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
           // The card's own text already names the item, so a repeated alt would
           // announce the name twice. The picture carries no extra information.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt="" width={48} height={48} style={{ objectFit: "contain" }} draggable={false} />
+          <img src={thumb} alt="" width={THUMB} height={THUMB} style={{ objectFit: "contain" }} draggable={false} />
         )}
       </div>
       {/* Holds the variant dots' row open. The dots themselves are drawn
@@ -674,7 +741,7 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
     </button>
   );
   // The footprint is the other tooltip Dan kept ("the chair measurments") — the
-  // caption is ellipsized at 68px and the size appears nowhere else on the
+  // caption is ellipsized at the card's width and the size appears nowhere else on the
   // card. BELOW the card: this grid scrolls and its first row is flush with the
   // container's top edge, which clips anything drawn above it.
   const tooltipped = (
@@ -740,12 +807,21 @@ function ItemCard({ item }: { item: FurnitureAsset }) {
   );
 }
 
+/** Card picture and card width (ItemCard, CustomCard), and the Floors swatch.
+ *  Were 48 / 76 / 44 while the section tabs took a row across the shelf's
+ *  top; the rail at the inline end gave that row back to the pictures. 72px
+ *  stays sharp: catalog photos are 512px, GLB renders 160px (2× at 80). The
+ *  card is 20px wider than the picture so a name still fits ~13 characters. */
+const THUMB = 72;
+const CARD_W = 92;
+const SWATCH = 60;
+
 /** Variant dot size, and where its row starts inside an ItemCard: the card's
- *  4px padding + 1.5px border + 48px thumbnail + 3px gap. */
+ *  4px padding + 1.5px border + THUMB + 3px gap. */
 const DOT = 9;
 /** Tallest dot: the selected one's 1.5px border on both sides. */
 const DOT_ROW = DOT + 3;
-const DOT_TOP = 4 + 1.5 + 48 + 3;
+const DOT_TOP = 4 + 1.5 + THUMB + 3;
 
 
 /** Pinned custom-generator card, mirrors ItemCard's tile styling. Click arms
@@ -821,9 +897,8 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       aria-pressed={active}
       style={{
         flex: "0 0 auto",
-        // Same 68→76 widen as ItemCard, same reason: keeps the ellipsis point
-        // roughly where it was now that the name line reads bigger.
-        width: 76,
+        // Same width as ItemCard (CARD_W).
+        width: CARD_W,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -837,13 +912,13 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
         transition: "background 140ms ease, border-color 140ms ease",
       }}
     >
-      <div aria-hidden style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
+      <div aria-hidden style={{ width: THUMB, height: THUMB, display: "flex", alignItems: "center", justifyContent: "center", color: PD.textSecondary }}>
         {generator.thumbnail ? (
           // A factory port is one specific approved design: show the product.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={generator.thumbnail} alt="" width={48} height={48} style={{ objectFit: "contain" }} />
+          <img src={generator.thumbnail} alt="" width={THUMB} height={THUMB} style={{ objectFit: "contain" }} />
         ) : (
-          Glyph && <Glyph size={30} />
+          Glyph && <Glyph size={44} />
         )}
       </div>
       <span
@@ -864,7 +939,7 @@ function CustomCard({ piece }: { piece: CustomPiece }) {
       </span>
     </button>
   );
-  // Same reasoning as ItemCard: the caption below is ellipsized at 68px, so the
+  // Same reasoning as ItemCard: the caption below is ellipsized, so the
   // full name is worth a hover label, drawn below because the grid scrolls.
   return (
     <Tooltip label={label} placement="bottom">
@@ -899,8 +974,8 @@ function FloorsTab() {
             })}
             style={{
               flex: "0 0 auto",
-              width: 44,
-              height: 44,
+              width: SWATCH,
+              height: SWATCH,
               borderRadius: 7,
               backgroundImage: `url(${m.thumb})`,
               backgroundSize: "cover",
@@ -1069,7 +1144,7 @@ function FurnitureItemsForRoom({ room, activeHotspot }: { room: RoomType; active
 export function BottomDock() {
   const t = useTranslations("editor.dock");
   const [tab, setTab] = useState<DockTab>("furniture");
-  const [room, setRoom] = useState<RoomType>("kitchen");
+  const [room, setRoom] = useState<NavRoom>("kitchen");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [dockHeight, setDockHeight] = useDockHeight();
   const brush = useSceneStore((s) => s.brush);
@@ -1109,7 +1184,8 @@ export function BottomDock() {
         data-guide="dec-shelf"
         style={{
           position: "absolute",
-          insetInlineStart: 240,
+          // The navigator's inline end + the same 16px gap.
+          insetInlineStart: PD_NAV.inset + PD_NAV.width + 16,
           insetInlineEnd: 16,
           bottom: 16,
           height: dockHeight,
@@ -1121,33 +1197,44 @@ export function BottomDock() {
           ...pdGlass(),
         }}
       >
+        <style>{SHELF_SCROLL_CSS}</style>
         <DockResizeHandle dockHeight={dockHeight} setDockHeight={setDockHeight} />
-        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <DockSectionTabs tab={tab} setTab={setTab} panelId={panelId} tabId={tabId} />
-          <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
-            <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper}>
-              <EyedropperIcon size={14} aria-hidden />
-            </DockIconBtn>
-          </Tooltip>
-          {/* "A brush is armed and your next click paints something" is modal
-              state, shown as a line of small text; a screen reader hears it
-              through the page's live region (see `modeLine` above). */}
-          {modeLine && (
-            <span style={{ marginInlineStart: "auto", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
-              {modeLine}
-            </span>
-          )}
-        </div>
-        <div
-          id={panelId}
-          role="tabpanel"
-          aria-labelledby={tabId(tab)}
-          style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minHeight: 0 }}
-        >
-          {tab === "furniture" && <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />}
-          {tab === "lighting" && <FixtureCatalog />}
-          {tab === "paint" && <HomeColourPicker />}
-          {tab === "floors" && <FloorsTab />}
+        {/* "A brush is armed and your next click paints something" is modal
+            state, shown as a line of small text; a screen reader hears it
+            through the page's live region (see `modeLine` above). It rides
+            the resize strip's row, clear of the drag pill in the middle,
+            since the section tabs no longer have a row of their own. */}
+        {modeLine && (
+          <span style={{ position: "absolute", top: 7, insetInlineEnd: 12, pointerEvents: "none", fontSize: 10.5, color: PD.accentText, fontFamily: PD.fontMono }}>
+            {modeLine}
+          </span>
+        )}
+        {/* Section tabs + eyedropper stand in a rail at the inline END (right
+            in English, left in Hebrew) instead of a row across the top — Dan:
+            same shelf, more room for pictures. `row-reverse` keeps the rail
+            FIRST in DOM, so Tab still reaches the tabs before their panel. */}
+        <div style={{ display: "flex", flexDirection: "row-reverse", gap: 10, flex: 1, minHeight: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: RAIL_GAP, flex: "0 0 auto", paddingInlineStart: 8, borderInlineStart: `1px solid ${PD.hairline}` }}>
+            <DockSectionTabs tab={tab} setTab={setTab} panelId={panelId} tabId={tabId} />
+            <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
+              <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper} size={RAIL_BTN}>
+                <EyedropperIcon size={RAIL_ICON} aria-hidden />
+              </DockIconBtn>
+            </Tooltip>
+          </div>
+          <div
+            id={panelId}
+            role="tabpanel"
+            aria-labelledby={tabId(tab)}
+            style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0, minHeight: 0 }}
+          >
+            {/* Lighting is a navigator "room" now: its shelf is the light
+                catalog, under the same Furniture tab every room uses. */}
+            {tab === "furniture" &&
+              (room === "lighting" ? <LightingShelf activeHotspot={activeHotspot} /> : <FurnitureItemsForRoom room={room} activeHotspot={activeHotspot} />)}
+            {tab === "paint" && <HomeColourPicker />}
+            {tab === "floors" && <FloorsTab />}
+          </div>
         </div>
       </div>
     </>
