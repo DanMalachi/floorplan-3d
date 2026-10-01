@@ -26,19 +26,19 @@ import type { RoomHotspot } from "./KitchenScene";
  *  with the furniture rooms. */
 export const LIGHTING_HOTSPOTS: RoomHotspot[] = [
   { id: "ceiling", labelKey: "lighting.ceiling", keywords: [] },
-  { id: "strip", labelKey: "lighting.strip", keywords: [] },
   { id: "pendant", labelKey: "lighting.pendant", keywords: [] },
   { id: "wall", labelKey: "lighting.wall", keywords: [] },
   { id: "floorLamp", labelKey: "lighting.floorLamp", keywords: [] },
   { id: "tableLamp", labelKey: "lighting.tableLamp", keywords: [] },
 ];
 
-/** Which catalog lights each object in the picture stands for. Floor and
- *  table lamps have none yet: the catalog has no free-standing lamp, so those
- *  two show the shelf's empty state until one is added. */
+/** Which catalog lights each object in the picture stands for. The picture
+ *  has one light per kind (Dan, 2026-10-01), so the ceiling light also stands
+ *  for strip lights. Floor and table lamps have none yet: the catalog has no
+ *  free-standing lamp, so those two show the shelf's empty state until one
+ *  is added. */
 const HOTSPOT_SHAPES: Record<string, FixtureShape[]> = {
-  ceiling: ["flushDisc", "flushSquare"],
-  strip: ["linear"],
+  ceiling: ["flushDisc", "flushSquare", "linear"],
   pendant: ["pendant", "globePendant", "drumPendant"],
   wall: ["sconce", "globeSconce", "boxSconce"],
   floorLamp: [],
