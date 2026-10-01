@@ -18,7 +18,7 @@ import { PD, pdGlass, pdChip } from "./tokens";
 import { Tooltip } from "./Tooltip";
 import { pdToast } from "./toast";
 import { useHover } from "./useHover";
-import { SelectIcon, WallToolIcon, OpeningToolIcon, MeasureIcon, DoorIcon, WindowIcon, PassageIcon } from "./icons";
+import { BrickWallIcon, OpenDoorIcon, TapeMeasureIcon, WindowPanesIcon, PassageIcon } from "./icons";
 
 type Glyph = ComponentType<{ size?: number }>;
 
@@ -30,13 +30,16 @@ type Glyph = ComponentType<{ size?: number }>;
 // `useTranslations()`. Same shape as `ALL_MODES` (design/page.tsx) and
 // `WALL_MODES` (viewport3d/Viewport.tsx): a stable id + key, resolved at the
 // render site.
-const TOOLS: { id: BuildTool; labelKey: string; Glyph: Glyph; built: boolean }[] = [
-  { id: "select", labelKey: "select", Glyph: SelectIcon, built: true },
-  { id: "wall", labelKey: "wall", Glyph: WallToolIcon, built: true },
+//
+// Select has no glyph (Dan, 2026-09-30: "no need for an icon for select"): it
+// is the absence of a tool, and its word alone says so.
+const TOOLS: { id: BuildTool; labelKey: string; Glyph?: Glyph; built: boolean }[] = [
+  { id: "select", labelKey: "select", built: true },
+  { id: "wall", labelKey: "wall", Glyph: BrickWallIcon, built: true },
   // Stays "Opening" — it is the PARENT tool, whose sub-types are Door /
   // Patio, Window and Passage. Renaming it too would read "Opening › Opening".
-  { id: "opening", labelKey: "opening", Glyph: OpeningToolIcon, built: true },
-  { id: "measure", labelKey: "measure", Glyph: MeasureIcon, built: true },
+  { id: "opening", labelKey: "opening", Glyph: OpenDoorIcon, built: true },
+  { id: "measure", labelKey: "measure", Glyph: TapeMeasureIcon, built: true },
 ];
 
 // `id` is the persisted `openingType` / `Opening.type` enum value and must NOT
@@ -45,8 +48,8 @@ const TOOLS: { id: BuildTool; labelKey: string; Glyph: Glyph; built: boolean }[]
 // PATIO_MIN_WIDTH as a glazed patio slider, so the type genuinely is "a door
 // or a patio depending on width".
 const OPENING_TYPES: { id: OpeningType; labelKey: string; Glyph: Glyph }[] = [
-  { id: "door", labelKey: "door", Glyph: DoorIcon },
-  { id: "window", labelKey: "window", Glyph: WindowIcon },
+  { id: "door", labelKey: "door", Glyph: OpenDoorIcon },
+  { id: "window", labelKey: "window", Glyph: WindowPanesIcon },
   { id: "passage", labelKey: "passage", Glyph: PassageIcon },
 ];
 
@@ -80,7 +83,8 @@ function ToolButton({ tool, active, onPick }: { tool: (typeof TOOLS)[number]; ac
           transition: "background 140ms ease, color 140ms ease",
         }}
       >
-        <Glyph size={14} aria-hidden />
+        {/* 18px: the round-5 drawings carry detail that blurs at 14. */}
+        {Glyph && <Glyph size={18} aria-hidden />}
         {label}
       </button>
     </Tooltip>
@@ -99,7 +103,8 @@ function OpeningTypeChip({ type, active, onPick }: { type: (typeof OPENING_TYPES
       aria-pressed={active}
       style={{ ...pdChip(active, undefined, hovered), display: "flex", alignItems: "center", gap: 5 }}
     >
-      <Glyph size={14} aria-hidden />
+      {/* Passage keeps its old line glyph, drawn for 14px. */}
+      <Glyph size={type.id === "passage" ? 14 : 18} aria-hidden />
       {t(`buildToolbar.openingTypes.${type.labelKey}`)}
     </button>
   );

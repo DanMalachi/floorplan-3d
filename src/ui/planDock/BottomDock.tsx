@@ -496,8 +496,12 @@ function NavRoomButton({ id, labelKey, active, onPick }: { id: RoomType; labelKe
   const [hovered, hoverBind] = useHover();
   return (
     <Tooltip label={t(labelKey)}>
-      <button {...hoverBind} onClick={() => onPick(id)} aria-pressed={active} style={pdIconBtn(active, 28, hovered)}>
-        <Icon size={15} aria-hidden />
+      {/* 20px icons (round 5) in 30×28 tiles: six per row still fits the 208px
+          panel, and the rows keep their 28px height, so the scene below keeps
+          the ~0.8 scale its 24px hotspot targets are sized for (isoArt.tsx).
+          A 30px-tall row measured the kitchen clock's hit area down 3%. */}
+      <button {...hoverBind} onClick={() => onPick(id)} aria-pressed={active} style={{ ...pdIconBtn(active, 30, hovered), height: 28 }}>
+        <Icon size={20} aria-hidden />
       </button>
     </Tooltip>
   );
