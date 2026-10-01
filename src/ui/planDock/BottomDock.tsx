@@ -591,7 +591,7 @@ function NavigatorPanel({
       aria-label={t("roomNavigatorLabel")}
       style={{ position: "absolute", insetInlineStart: PD_NAV.inset, bottom: PD_NAV.inset, width: PD_NAV.width, height: PD_NAV.height, display: "flex", flexDirection: "column", ...pdGlass() }}
     >
-      <div data-guide="dec-rooms" role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 6px", flexWrap: "wrap" }}>
+      <div data-guide="dec-rooms" role="group" aria-label={t("roomGroupLabel")} style={{ display: "flex", gap: 2, padding: "8px 8px 4px", flexWrap: "wrap" }}>
         {ROOM_SCENES.map((r) => (
           <NavRoomButton
             key={r.id}
@@ -609,7 +609,7 @@ function NavigatorPanel({
       {/* Clipped: the scenes' floor and back wall run past the 220-unit
           viewBox (overflow: visible on the svg), which at this scale put up
           to 29px of wall under the item shelf. */}
-      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "2px 12px 12px", overflow: "hidden" }}>
+      <div data-guide="dec-scene" style={{ flex: 1, minHeight: 0, padding: "0 12px 10px", overflow: "hidden" }}>
         {navArt ? (
           <NavArtScene
             scene={navArt}

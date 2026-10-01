@@ -33,8 +33,8 @@ function subscribeTheme(cb: () => void) {
 }
 const readTheme = (): NavTheme => (document.documentElement.dataset.pdTheme === "light" ? "light" : "dark");
 
-/** The readout row above the art: a 24px chip plus 2px of air. */
-const READOUT_H = 26;
+/** The readout row above the art: a 24px chip plus 4px of air. */
+const READOUT_H = 28;
 
 /** WCAG 2.5.8: every object's hit area is at least 24×24 CSS px. */
 const MIN_HIT_PX = 24;
@@ -83,8 +83,7 @@ export function NavArtScene({
     return () => ro.disconnect();
   }, []);
   // The art is fitted BELOW the readout row, never under it: text over the
-  // wall's cut edge was unreadable. The pictures are wider than the box, so
-  // this costs ~2% of their size, not the row's 26px.
+  // wall's cut edge was unreadable, and the chip clipped the wall.
   const artH = size ? size.h - READOUT_H : 0;
   const framed = useMemo(
     () => (size ? frameScene(scene, theme, { w: size.w, h: artH, mirror: !rtl, id: `${sceneId}-${theme}-${rtl ? "r" : "l"}` }) : null),
@@ -164,9 +163,77 @@ export function NavArtScene({
   const activate = (id: string) => (id === "floor" ? handlers.current.onFloorClick() : handlers.current.onHotspotClick(id));
 
   const readout = lit ?? activeHotspot;
+  // Readout row above the art: which room this is, and which object is under
+  // the pointer or selected. Not a live region — the objects carry their own
+  // names.
+  const readoutRow = (
+    <div
+      style={{
+        flex: "0 0 auto",
+        height: READOUT_H,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        paddingInline: 2,
+        fontSize: 12.5,
+        fontFamily: PD.fontUi,
+        color: PD.textSecondary,
+        pointerEvents: "none",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span style={{ fontSize: 14, fontWeight: 600, color: PD.textPrimary, flex: "0 0 auto" }}>{roomLabel}</span>
+      {/* The selected object is a filter chip: its name, and a ✕ that
+          clears it ("Show all" is its accessible name and tooltip). One
+          pill, sized to its text and ellipsized, so a long name can never
+          push a button out of the panel. While the pointer is on another
+          object, that object's name shows after it. */}
+      {activeHotspot ? (
+        <button
+          type="button"
+          // Visible name first (WCAG 2.5.3 label-in-name), then the action.
+          aria-label={`${labelFor(activeHotspot)}, ${td("showAll")}`}
+          onClick={() => handlers.current.onHotspotClick(activeHotspot)}
+          style={{
+            pointerEvents: "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            minWidth: 0,
+            height: 24,
+            padding: "0 4px 0 10px",
+            borderRadius: 999,
+            border: "none",
+            background: PD.accentTint,
+            color: PD.accentText,
+            fontSize: 12.5,
+            fontWeight: 600,
+            fontFamily: PD.fontUi,
+            cursor: "pointer",
+          }}
+        >
+          <span aria-hidden style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{labelFor(activeHotspot)}</span>
+          <span aria-hidden style={{ flex: "0 0 auto", width: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, background: PD.surfaceMuted }}>
+            <CloseIcon size={10} />
+          </span>
+        </button>
+      ) : null}
+      {readout && readout !== activeHotspot && (
+        <span aria-hidden style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+          {activeHotspot ? "" : "· "}
+          {labelFor(readout)}
+        </span>
+      )}
+    </div>
+  );
+  // A column: the readout row, then the art. Not an absolutely placed row over
+  // an svg with marginTop: that margin collapsed through this box, which
+  // dropped the whole scene 26px (dead band under the tiles) and left the
+  // "top: 0" row sitting ON the art, where the chip clipped the wall.
   return (
-    <div ref={boxRef} style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div ref={boxRef} style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%" }}>
       <style>{CSS}</style>
+      {readoutRow}
       {framed && (
         <svg
           ref={svgRef}
@@ -176,7 +243,7 @@ export function NavArtScene({
           height={artH}
           role="group"
           aria-label={roomLabel}
-          style={{ display: "block", marginTop: READOUT_H, ["--glow" as string]: framed.glowFilter }}
+          style={{ display: "block", flex: "0 0 auto", ["--glow" as string]: framed.glowFilter }}
           onPointerOver={(e) => setLit(idOf(e.target))}
           onPointerLeave={() => setLit(null)}
           onFocus={(e) => setLit(idOf(e.target))}
@@ -195,69 +262,6 @@ export function NavArtScene({
           dangerouslySetInnerHTML={{ __html: framed.markup }}
         />
       )}
-      {/* Readout in the scene's empty top corner (the wall above the run):
-          which room this is, and which object is under the pointer or
-          selected. Not a live region — the objects carry their own names. */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          insetInlineStart: 0,
-          insetInlineEnd: 0,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          minHeight: 24,
-          fontSize: 11.5,
-          fontFamily: PD.fontUi,
-          color: PD.textSecondary,
-          pointerEvents: "none",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <span style={{ fontWeight: 600, color: PD.textPrimary, flex: "0 0 auto" }}>{roomLabel}</span>
-        {/* The selected object is a filter chip: its name, and a ✕ that
-            clears it ("Show all" is its accessible name and tooltip). One
-            pill, sized to its text and ellipsized, so a long name can never
-            push a button out of the panel. While the pointer is on another
-            object, that object's name shows after it. */}
-        {activeHotspot ? (
-          <button
-            type="button"
-            // Visible name first (WCAG 2.5.3 label-in-name), then the action.
-            aria-label={`${labelFor(activeHotspot)}, ${td("showAll")}`}
-            onClick={() => handlers.current.onHotspotClick(activeHotspot)}
-            style={{
-              pointerEvents: "auto",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              minWidth: 0,
-              height: 24,
-              padding: "0 4px 0 9px",
-              borderRadius: 999,
-              border: "none",
-              background: PD.accentTint,
-              color: PD.accentText,
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: PD.fontUi,
-              cursor: "pointer",
-            }}
-          >
-            <span aria-hidden style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{labelFor(activeHotspot)}</span>
-            <span aria-hidden style={{ flex: "0 0 auto", width: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, background: PD.surfaceMuted }}>
-              <CloseIcon size={10} />
-            </span>
-          </button>
-        ) : null}
-        {readout && readout !== activeHotspot && (
-          <span aria-hidden style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
-            {activeHotspot ? "" : "· "}
-            {labelFor(readout)}
-          </span>
-        )}
-      </div>
     </div>
   );
 }
