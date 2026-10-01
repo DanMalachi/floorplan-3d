@@ -398,7 +398,7 @@
         },
         "notBuiltTooltip": "{label} — not built yet",
         "notBuiltToast": "{label} tool isn't built yet — still using Select",
-        "measureHint": "Click two points — floor, wall, or ceiling · Esc clears",
+        "measureHint": "Drag across a floor, wall or ceiling to measure · Esc clears, Esc again to stop",
         "wallHint": "Click to start, click to draw · Esc ends the chain, Esc again to stop",
         "toolGroupLabel": "Build tool",
         "openingTypeGroupLabel": "Opening type"
@@ -496,6 +496,8 @@
       "itemsShownLabel": "{count} items shown",
       "dockSectionLabel": "Dock section",
       "dragToResize": "Drag to resize",
+      "measure": "Measure",
+      "measureArmed": "Measuring — drag across the room · click again or Esc to stop",
       "eyedropper": "Eyedropper (E)",
       "eyedropperArmed": "Eyedropper armed (E)",
       "eyedropperHint": "Eyedropper armed — click furniture, a painted wall face, or a floor · Esc cancels",

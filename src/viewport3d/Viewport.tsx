@@ -34,7 +34,7 @@ import { MeasureTool } from "./MeasureTool";
 import { WallTool } from "./buildTools/WallTool";
 import { OpeningTool } from "./buildTools/OpeningTool";
 import { BottomDock } from "@/ui/planDock/BottomDock";
-import { BuildToolbar } from "@/ui/planDock/BuildToolbar";
+import { ToolHint } from "@/ui/planDock/ToolHint";
 import { BuildNavigator } from "@/ui/planDock/BuildNavigator";
 import { Inspector } from "@/ui/planDock/inspector/Inspector";
 import { PdToastHost } from "@/ui/planDock/toast";
@@ -802,7 +802,9 @@ export function Viewport({
       </Canvas>
       {(appMode === "build" || appMode === "furnish") && <StatusOverlay />}
       {(appMode === "build" || appMode === "furnish") && <Inspector />}
-      {appMode === "build" && <BuildToolbar />}
+      {/* Hint for the armed tool (Measure also arms in Decorate). The Build
+          toolbar's tool row is gone: tools live in the navigator tiles. */}
+      {(appMode === "build" || appMode === "furnish") && <ToolHint />}
       {appMode === "build" && <BuildNavigator />}
       {appMode === "furnish" && <BottomDock />}
       {chrome && appMode === "view" && <ScenePanel />}

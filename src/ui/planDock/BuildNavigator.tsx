@@ -10,14 +10,13 @@
 // No Select tile (Dan: "no need for an icon for select"): selecting is what
 // happens when no tool is on. Clicking the active tool again — its tile, its
 // object in the picture, or the readout chip's ✕ — or pressing Esc turns it
-// off. Floors and Paint have no build tool; they jump to Decorate's shelf, so
+// off (MeasureTool, WallTool and OpeningTool each own their Esc). Floors and Paint have no build tool; they jump to Decorate's shelf, so
 // they carry a small ↗ and are never "on".
 //
 // Which tile/object is on is derived from live store state (buildTool /
 // openingType), not local UI state, so it always matches what's armed —
-// including a tool armed from BuildToolbar.
+// including Measure armed from the Decorate shelf rail.
 
-import { useEffect } from "react";
 import type { ComponentType } from "react";
 import { useTranslations } from "next-intl";
 import { useSceneStore } from "@/store/useSceneStore";
@@ -92,22 +91,6 @@ export function BuildNavigator() {
   const buildTool = useSceneStore((s) => s.buildTool);
   const openingType = useSceneStore((s) => s.openingType);
   const active = activeFor(buildTool, openingType);
-
-  // Esc drops Measure. Wall and Opening already drop themselves on Esc
-  // (WallTool/OpeningTool); MeasureTool's Esc only clears its points.
-  // Capture phase for the same reason as theirs: Viewport's wrapper stops
-  // Escape from bubbling once it has handled something.
-  useEffect(() => {
-    if (buildTool !== "measure") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      useSceneStore.getState().setBuildTool("select");
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [buildTool]);
 
   const pick = (id: string) => {
     const s = useSceneStore.getState();

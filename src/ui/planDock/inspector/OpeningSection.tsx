@@ -51,7 +51,7 @@ import { DoorStyleSection } from "./DoorStyleSection";
 //
 // `labelKey`/`tipKey` rather than `label`/`tip` — this table is MODULE SCOPE
 // and cannot call `useTranslations()`. Same shape as `OPENING_TYPES` in
-// BuildToolbar.tsx: a stable id + key, resolved at the render site.
+// ToolHint.tsx: a stable id + key, resolved at the render site.
 const SLIDE_PRESETS: { key: string; labelKey: string; tipKey: string; spec: SlideSpec }[] = [
   {
     key: "patio",

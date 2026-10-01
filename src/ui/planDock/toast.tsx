@@ -21,7 +21,7 @@ const listeners = new Set<Listener>();
 const DURATION_MS = 2200;
 
 /** Fire a transient PD-styled toast from anywhere: build tools, the eyedropper,
- *  the house-cutaway navigator, BuildToolbar. No-op if no <PdToastHost/> is
+ *  the house-cutaway navigator, ToolHint. No-op if no <PdToastHost/> is
  *  mounted (there is exactly one, in Viewport). `msg` is already-translated
  *  words — the caller resolved them with its own `useTranslations`. */
 export function pdToast(msg: string) {
@@ -76,7 +76,7 @@ export function PdToastHost() {
       role="status"
       style={{
         position: "absolute",
-        bottom: 96, // clears BottomDock's 224px card rail and BuildToolbar
+        bottom: 96, // clears BottomDock's 224px card rail and ToolHint
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 60,

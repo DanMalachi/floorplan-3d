@@ -77,7 +77,7 @@ import { GarageScene, GARAGE_HOTSPOTS } from "./GarageScene";
 import { OutdoorsScene, OUTDOORS_HOTSPOTS } from "./OutdoorsScene";
 import { Tooltip } from "./Tooltip";
 import { useHover } from "./useHover";
-import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon } from "./icons";
+import { ROOM_ICON, SECTION_ICON, SearchIcon, CloseIcon, EyedropperIcon, TapeMeasureIcon } from "./icons";
 import { EyedropperController } from "@/decorate/EyedropperController";
 import { announce } from "@/ui/a11y/Announcer";
 import { HomeColourPicker } from "./HomeColourPicker";
@@ -170,23 +170,25 @@ const REPLACED_ASSETS = new Set(
 // you're decorating. The storage key is versioned so a stored 268 from the old
 // default doesn't survive as a "choice" nobody made.
 const DOCK_HEIGHT_KEY = "planDock:dockHeight2";
-const DOCK_HEIGHT_DEFAULT = 96 + 83 + 26;
 /** Every scroll area in the shelf (cards, floors, paint, lighting, the chip
  *  row) gets the glass scrollbar — scoped by the shelf's own anchor, so the
  *  Lighting list (a protected file) is covered without being edited. */
 const SHELF_SCROLL_CSS = pdScrollCss('[data-guide="dec-shelf"]');
 
-/** The section rail's buttons (3 tabs + eyedropper): 36px squares with 20px
+/** The section rail's buttons (3 tabs + eyedropper + measure): 36px squares with 20px
  *  icons, the navigator's room-tile size (Dan: "match the icons size in the
  *  navigator"). Were 28px with 15px icons. */
 const RAIL_BTN = 36;
 const RAIL_ICON = 20;
 const RAIL_GAP = 3;
-/** Shortest shelf that still shows the whole section rail (4×36 + 3 gaps =
- *  153) and one whole card row (29px filter row + 4 gap + 119px custom card
+/** Shortest shelf that still shows the whole section rail (5×36 + 4 gaps =
+ *  192) and one whole card row (29px filter row + 4 gap + 119px custom card
  *  = 152): 8+8 padding, 1+1 glass border, 13px resize strip, 6px gap, then
  *  that. Was 150 when the section tabs were a row across the top. */
-const DOCK_HEIGHT_MIN = 16 + 2 + 13 + 6 + 4 * RAIL_BTN + 3 * RAIL_GAP;
+const DOCK_HEIGHT_MIN = 16 + 2 + 13 + 6 + 5 * RAIL_BTN + 4 * RAIL_GAP;
+/** At least the whole rail: with Measure added (5 buttons) the rail needs
+ *  229, more than the one-row-and-a-slice 205. */
+const DOCK_HEIGHT_DEFAULT = Math.max(96 + 83 + 26, DOCK_HEIGHT_MIN);
 const DOCK_HEIGHT_MAX_CAP = 560;
 
 function clampDockHeight(h: number): number {
@@ -1151,6 +1153,7 @@ export function BottomDock() {
   const dockRequest = useSceneStore((s) => s.dockRequest);
   const replaceTarget = useSceneStore((s) => s.replaceTarget);
   const eyedropper = useSceneStore((s) => s.eyedropper);
+  const measuring = useSceneStore((s) => s.buildTool === "measure");
   const panelId = useId();
   const tabId = (id: DockTab) => `${panelId}-${id}`;
 
@@ -1219,6 +1222,13 @@ export function BottomDock() {
             <Tooltip label={eyedropper ? t("eyedropperArmed") : t("eyedropper")}>
               <DockIconBtn onClick={() => useSceneStore.getState().setEyedropper(!eyedropper)} active={eyedropper} size={RAIL_BTN}>
                 <EyedropperIcon size={RAIL_ICON} aria-hidden />
+              </DockIconBtn>
+            </Tooltip>
+            {/* Measure, any time while decorating (Dan, 2026-10-01): the
+                same tape as Build's Measure tile. A toggle; Esc also ends it. */}
+            <Tooltip label={measuring ? t("measureArmed") : t("measure")}>
+              <DockIconBtn onClick={() => useSceneStore.getState().setMeasuring(!measuring)} active={measuring} size={RAIL_BTN}>
+                <TapeMeasureIcon size={RAIL_ICON} aria-hidden />
               </DockIconBtn>
             </Tooltip>
           </div>

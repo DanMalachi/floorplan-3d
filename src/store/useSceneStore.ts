@@ -259,6 +259,13 @@ export interface DragViz {
 
 const HISTORY_CAP = 200;
 
+/** Arming something else that takes the next click in Decorate (placing, a
+ *  brush, the eyedropper) turns Decorate's Measure off. Build's tools never
+ *  meet those, so Build is left alone. */
+function dropDecorateMeasure(s: { appMode: AppMode; buildTool: BuildTool }, arming: boolean): { buildTool?: BuildTool } {
+  return arming && s.appMode === "furnish" && s.buildTool === "measure" ? { buildTool: "select" } : {};
+}
+
 /** Does this pick target still exist in the scene? (undo/redo can remove it) */
 export function pickExists(scene: Scene, pick: PickRef | null): boolean {
   if (!pick) return false;
@@ -464,14 +471,15 @@ export interface StoreState {
   setTimeOfDay: (t: number) => void;
   setWeather: (w: Weather) => void;
 
-  // --- Build-mode toolbar tool ---
-  /** Only "select" changes existing pointer behavior (it IS the existing
-   *  behavior). "measure" arms MeasureTool.tsx. "wall"/"opening" are UI-only
-   *  placeholders for now — real draw-a-new-wall / drop-a-new-opening tools
-   *  are new 3D-interaction features, not a toolbar reskin; see BuildToolbar's
-   *  comment for why they're deferred rather than half-built. */
+  // --- Build tool (armed from the Build navigator's tiles) ---
+  /** "select" = no tool. "wall"/"opening" arm WallTool/OpeningTool (Build
+   *  only). "measure" arms MeasureTool.tsx in Build AND Decorate (the
+   *  Decorate shelf rail has a Measure button). */
   buildTool: BuildTool;
   setBuildTool: (t: BuildTool) => void;
+  /** Decorate's Measure toggle: on drops whatever else would take the next
+   *  click (placing, brush, eyedropper), as they drop Measure when armed. */
+  setMeasuring: (on: boolean) => void;
   /** Which kind the Opening tool (Plan Dock P3) drops on click. Reset to
    *  "door" on mode change like `buildTool`, so switching away and back
    *  never leaves a stale armed type from a previous session. */
@@ -788,6 +796,8 @@ export const useSceneStore = create<StoreState>((set, get) => {
     setShowCeilings: (showCeilings) => set({ showCeilings }),
     buildTool: "select",
     setBuildTool: (buildTool) => set({ buildTool }),
+    setMeasuring: (on) =>
+      set(on ? { buildTool: "measure", placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null, eyedropper: false } : { buildTool: "select" }),
     openingType: "door",
     setOpeningType: (openingType) => set({ openingType }),
     dockRequest: null,
@@ -1086,6 +1096,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     placing: null,
     setPlacing: (assetId, parametric) =>
       set({
+        ...dropDecorateMeasure(get(), !!assetId),
         placing: assetId ? { assetId, rotation: 0, ...(parametric ? { parametric } : {}) } : null,
         placingRun: null,
         placingCounter: null,
@@ -1095,10 +1106,10 @@ export const useSceneStore = create<StoreState>((set, get) => {
         eyedropper: false,
       }),
     placingRun: null,
-    setPlacingRun: (run) => set({ placingRun: run, placing: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
+    setPlacingRun: (run) => set({ ...dropDecorateMeasure(get(), !!run), placingRun: run, placing: null, placingCounter: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
     placingCounter: null,
     setPlacingCounter: (placingCounter) =>
-      set({ placingCounter, placing: null, placingRun: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
+      set({ ...dropDecorateMeasure(get(), !!placingCounter), placingCounter, placing: null, placingRun: null, placingWall: null, brush: null, sel3d: null, eyedropper: false }),
     placeCounterItem: (hostId, along) => {
       const { placingCounter, scene, commitScene } = get();
       if (!placingCounter) return;
@@ -1144,7 +1155,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
     placingWall: null,
     setPlacingWall: (placingWall) =>
-      set({ placingWall, placing: null, placingRun: null, placingCounter: null, brush: null, sel3d: null, eyedropper: false }),
+      set({ ...dropDecorateMeasure(get(), !!placingWall), placingWall, placing: null, placingRun: null, placingCounter: null, brush: null, sel3d: null, eyedropper: false }),
     placeWallItem: (pose) => {
       const { placingWall, scene, commitScene } = get();
       if (!placingWall) return;
@@ -1169,7 +1180,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
       // Stay armed for repeat placement, same as counter items.
     },
     brush: null,
-    setBrush: (brush) => set({ brush, placing: null, placingRun: null, placingCounter: null, placingWall: null, sel3d: null, eyedropper: false }),
+    setBrush: (brush) => set({ ...dropDecorateMeasure(get(), !!brush), brush, placing: null, placingRun: null, placingCounter: null, placingWall: null, sel3d: null, eyedropper: false }),
     setFrameColor: (hex) => {
       const s = get();
       s.commitScene(hex ? "Frame colour" : "Frame colour: natural", frameColorPatch(s.scene, hex));
@@ -1183,7 +1194,7 @@ export const useSceneStore = create<StoreState>((set, get) => {
     },
     eyedropper: false,
     setEyedropper: (eyedropper) =>
-      set({ eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null } : {}) }),
+      set({ ...dropDecorateMeasure(get(), eyedropper), eyedropper, ...(eyedropper ? { placing: null, placingRun: null, placingCounter: null, placingWall: null, brush: null } : {}) }),
     rotatePlacing: (deltaRad) =>
       set((s) =>
         s.placing
