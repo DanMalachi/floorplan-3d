@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:mid-century-walnut-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.52, "depth": 0.4, "height": 0.52 },
+  "style": ["mid-century", "walnut", "rounded wrap case"],
+  "materials": ["walnut veneer (Poly Haven walnut_veneer, CC0, desaturated 55% then x[0.95,0.74,0.56] warm mid brown)", "dark matte drawer cavity (plain colour)"],
+  "mustKeep": [
+    "rounded-corner wrap shell with grain running continuously around it",
+    "two flush drawers, sequence-matched horizontal grain",
+    "half-moon finger scoop cut through the top edge of each drawer",
+    "four short round tapered legs splayed on both axes"
+  ],
+  "avoid": ["black or metal hardware (keeps it distinct from the dark walnut nightstand)", "red/orange walnut", "boxy square case"],
+  "referenceImages": [
+    { "file": "08 mid-century walnut (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: rounded-corner walnut case, two drawers with half-moon scoops, splayed tapered legs; changed: own proportions, wrap radius and frame widths, drawer height split, grain wrapped around the shell, dark cavity behind the scoops, legs set in on both axes, no under-rail, own geometry and slug/name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}

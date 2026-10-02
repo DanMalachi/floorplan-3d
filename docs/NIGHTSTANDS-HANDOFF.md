@@ -1,5 +1,9 @@
 # Nightstands handoff (for a fresh session making nightstands 7 to 10)
 
+**STATUS (2026-10-02 evening): ALL TEN DONE.** #7 `cane-door-nightstand` (866d5cdf), #8 `mid-century-walnut-nightstand` (0be4d776),
+#9 `white-lacquer-chrome-nightstand` (bc2881a5), #10 `natural-wood-shelf-nightstand` (193e92a4) approved by Dan and promoted; lessons 7m and 7n;
+all ten shipped to `main` on Dan's instruction. The rest of this file is history.
+
 Updated 2026-10-02. Nightstands 1 to 6 are DONE: approved by Dan and promoted (white two-drawer, natural oak, fluted oak, dark walnut,
 brushed steel, matte black). Do 7 to 10 with the `done-furniture-factory` skill (Route C, procedural Blender). Read `references/lessons-learned.md` sections 7h, 7i, 7j
 and 7k first (7k = what the four parallel drafts taught: metals judged in the real editor, finer brushed grain, oak map choice, fluted reeds, shell traps).

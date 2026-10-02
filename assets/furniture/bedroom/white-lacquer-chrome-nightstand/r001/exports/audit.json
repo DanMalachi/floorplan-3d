@@ -1,0 +1,72 @@
+{
+  "file": "C:\\Users\\dandu\\fp-wt\\nightstands\\assets\\furniture\\bedroom\\white-lacquer-chrome-nightstand\\r001\\exports\\white-lacquer-chrome-nightstand_r001.glb",
+  "sha256": "bc2881a5059372608ad7e2c2573927b786e9123ceeff17d08be4c9cbe40331db",
+  "fileBytes": 93696,
+  "bounds": {
+    "min": [
+      -0.23000000417232513,
+      0,
+      -0.19699999690055847
+    ],
+    "max": [
+      0.23000000417232513,
+      0.5799999833106995,
+      0.19699999690055847
+    ]
+  },
+  "dimensionsXYZM": [
+    0.46000000834465027,
+    0.5799999833106995,
+    0.39399999380111694
+  ],
+  "nodes": 13,
+  "meshes": 13,
+  "primitives": 25,
+  "vertices": 2232,
+  "triangles": 1392,
+  "materials": [
+    {
+      "name": "lacquer",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "chrome",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "chrome_pull",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [],
+  "embeddedTextureBytes": 0,
+  "missing": {
+    "baseColor": [
+      "lacquer",
+      "chrome",
+      "chrome_pull"
+    ],
+    "roughness": [
+      "lacquer",
+      "chrome",
+      "chrome_pull"
+    ],
+    "normal": [
+      "lacquer",
+      "chrome",
+      "chrome_pull"
+    ]
+  }
+}

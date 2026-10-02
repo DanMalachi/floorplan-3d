@@ -531,6 +531,41 @@ Four forks built the drafts concurrently in one worktree (one candidate folder e
 2. **Thumbnails from Blender AgX look wrong** (pale, grainless wood, wrong walnut hue). Use `scripts/thumb-app.mjs` (real app render, cut out by with/without diff; hide only meshes with bounding radius under 1.5 m so the sky stays in both shots; lower the diff threshold to 3 for dark pieces). Metals: Blender `--standard --normal-boost 3`, never 6 (sand look).
 3. **Splayed block legs:** build as 8-vertex hulls with own faces (flat top and floor contact, no booleans), shift the bottom ring outward on both axes.
 
+## 7m. Nightstand 7 (wood + cane door) (2026-10-02) - approved first draft
+
+Example: `examples/cane_door_nightstand.py`. 25.8k triangles, 4.5 MB. Rules:
+
+1. **Woven cane = over-under RIBBONS, not bars.** Each strand is a flat ribbon (front + back faces only, own verts, 0.7 mm thick) whose depth
+   alternates +-0.6 mm at every crossing; horizontals run the opposite phase. 5.6 mm pitch, 3.4 mm strand, ends tucked 5 mm into the frame,
+   smooth-shaded. Reads as real cane at 0.3 m and as a fine dotted panel at room distance. Orthogonal only; diagonal strands are an option to offer.
+2. **Cane colour = vertex colour per strand** (Vertex Color node straight into Base Color, exports COLOR_0), tone x0.80 to 1.10 seeded by crc32. Albedo
+   `#d2b68c`; `#c69a5e` read mustard-orange in the viewer. Mid-dark matte panel (`#4c4239`) about 33 mm behind the cane makes the holes read.
+3. **Frame-and-panel door = four members** (stiles vertical grain, rails horizontal, rails tuck 2 mm into stiles), not a boolean window in a slab: the
+   cutter's faces arrive with no UVs. Any boolean on a wood member (a finger scoop) needs a re-projection pass afterwards (`reuv()` in the script).
+4. **Carved finger scoop = ellipsoid cutter** (72 x 16 x 8.5 mm radii, centre 6 mm in front of the face, EXACT): lens-shaped groove, smooth-shade
+   only its non-axis faces.
+5. **Limed wood:** `oak_veneer_02`, keep 40 percent saturation, x[0.97,0.95,0.91] +0.03. Sides read dark grey in the dev viewer (low light): expected.
+6. **Thumbnails need a quiet machine.** `thumb-app.mjs` while forks were building gave a dark-rectangle cut-out, then a screenshot timeout. Make
+   thumbnails after the parallel builds finish.
+
+## 7n. Nightstands 8 to 10 (walnut scoop, lacquer + chrome, raw wood shelf) (2026-10-02) - three forks, all approved first draft
+
+Examples: `mid_century_walnut_nightstand.py`, `white_lacquer_chrome_nightstand.py`, `natural_wood_shelf_nightstand.py`. Zoom tool: `scripts/zoom-shot.mjs`
+(`<name> <outdir> <ticks> x,y...`; worktree path hard-coded like `thumb-app.mjs`; zoom accumulates between points, so use one point per run or 1 tick).
+
+1. **Three forks in parallel, drafts all approved in one owner pass.** Each fork's `iterate.mjs` shots came out black while siblings loaded the page;
+   the zoom tool (fresh browser, full canvas) gave usable shots. Promote and make thumbnails only after every fork has finished (7m.6).
+2. **A tint that was approved on one piece can be wrong on the next.** The #4 walnut tint read dark chocolate on a rounded shell and too close to #4;
+   desaturate 55 percent then x[0.95,0.74,0.56] gave a warm mid brown. Re-judge colour per piece, and keep sibling pieces visibly different.
+3. **Half-moon scoop through a drawer's top edge:** boolean a through-cylinder (axis Y) of radius (w^2/4 + s^2) / 2s, centred above the edge so the chord at the edge is w and the depth is s (84 x 24 mm); re-UV after (7m.3), and put a dark panel behind
+   it so the cut reads as a hole into the drawer, not a notch in a plate.
+4. **Raw/unfinished pale wood:** `oak_veneer_03` (palest set on disk), 65 percent saturation kept, roughness raised to about 0.68. The first build read
+   as orange pine. Internal floors/dividers must stop AT the back panel: running through it showed as a strip from behind.
+5. **Gloss white + chrome:** lacquer = plain `#eceae6`, roughness 0.20, clearcoat 0.5; chrome = app steel values. Both the dev viewer and headless
+   editor render the chrome dark (the fridge too): the owner's screen is the judge. Blender thumbnail `--standard --normal-boost 3` blew the white out;
+   add `--exposure -1.4`.
+6. **A wide pull straddling two drawers is two plates** (one per drawer, 5 mm slot at the split) so each drawer can open; it reads as one plate.
+
 ## 8. The one-shot recipe (condensed)
 
 1. Intake: rights class, borrowed vs changed, dressed state. Ask the user only for real forks.

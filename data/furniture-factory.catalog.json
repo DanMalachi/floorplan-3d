@@ -386,5 +386,103 @@
     "rooms": [
       "bedroom"
     ]
+  },
+  {
+    "assetId": "factory:cane-door-nightstand",
+    "name": "Cane Door Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.48,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/cane-door-nightstand.glb",
+    "thumbnail": "/furniture/factory/cane-door-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Limed oak, woven cane door",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "cane",
+      "rattan",
+      "limed oak"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:mid-century-walnut-nightstand",
+    "name": "Mid-Century Walnut Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.52,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/mid-century-walnut-nightstand.glb",
+    "thumbnail": "/furniture/factory/mid-century-walnut-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Walnut, scooped drawers, splayed legs",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "walnut",
+      "mid-century"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:white-lacquer-chrome-nightstand",
+    "name": "White Lacquer Chrome Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.46,
+      "d": 0.394
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/white-lacquer-chrome-nightstand.glb",
+    "thumbnail": "/furniture/factory/white-lacquer-chrome-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Gloss white, chrome frame",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "white",
+      "lacquer",
+      "chrome"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:natural-wood-shelf-nightstand",
+    "name": "Natural Wood Shelf Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.46,
+      "d": 0.387
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/natural-wood-shelf-nightstand.glb",
+    "thumbnail": "/furniture/factory/natural-wood-shelf-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Raw oak, drawer over open shelf",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "natural wood",
+      "shelf"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
   }
 ]

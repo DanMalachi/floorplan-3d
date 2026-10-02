@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:natural-wood-shelf-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.46, "depth": 0.387, "height": 0.58 },
+  "style": ["natural wood", "unfinished", "farmhouse", "open shelf"],
+  "materials": ["pale unfinished hardwood (Poly Haven oak_veneer_03, CC0, warm desaturated derivative, roughness lifted to matte)", "turned wood knob (same wood)"],
+  "mustKeep": [
+    "one inset drawer flush with the side fronts, 3 mm reveal, turned mushroom knob",
+    "open cubby with a real recessed back panel and floor",
+    "one-piece solid sides running to the floor with a low arch cut-out",
+    "front apron with an elliptical arch forming bracket feet",
+    "18 mm top, 12 mm overhang front and sides, soft rounded edge"
+  ],
+  "avoid": ["clumsy thick top", "orange pine colour", "strips of shelves showing through the back", "split side panels (visible repeat)"],
+  "referenceImages": [
+    { "file": "10 natural wood drawer and shelf (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: unfinished pale wood, one drawer over an open cubby, solid sides to the floor, bracket-foot apron with arched cut-out, wood knob; changed: own proportions, single half-ellipse arches (no ogee steps) on apron and sides, inset flush drawer, rounded top edge instead of a moulding, own knob profile, recessed back, no glued-plank stripes, own geometry and slug/name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}
