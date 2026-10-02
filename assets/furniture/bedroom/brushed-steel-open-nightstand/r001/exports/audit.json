@@ -1,0 +1,59 @@
+{
+  "file": "C:\\Users\\dandu\\fp-wt\\nightstands\\assets\\furniture\\bedroom\\brushed-steel-open-nightstand\\r001\\exports\\brushed-steel-open-nightstand_r001.glb",
+  "sha256": "e0d7285b1c2784c037e3194f3e1e5066dc7d04751600c64698336a05907bd7f3",
+  "fileBytes": 87436,
+  "bounds": {
+    "min": [
+      -0.23000000417232513,
+      0,
+      -0.1899999976158142
+    ],
+    "max": [
+      0.23000000417232513,
+      0.550000011920929,
+      0.1899999976158142
+    ]
+  },
+  "dimensionsXYZM": [
+    0.46000000834465027,
+    0.550000011920929,
+    0.3799999952316284
+  ],
+  "nodes": 3,
+  "meshes": 3,
+  "primitives": 3,
+  "vertices": 288,
+  "triangles": 180,
+  "materials": [
+    {
+      "name": "brushed_steel",
+      "baseColor": false,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "steel_nrm",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 34474
+    },
+    {
+      "name": "steel_rough",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 39728
+    }
+  ],
+  "embeddedTextureBytes": 74202,
+  "missing": {
+    "baseColor": [
+      "brushed_steel"
+    ],
+    "roughness": [],
+    "normal": []
+  }
+}

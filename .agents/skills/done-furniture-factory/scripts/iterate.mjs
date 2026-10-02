@@ -38,8 +38,8 @@ fs.rmSync(path.join(cand, "exports", "audit.json"), { force: true });
 run("node", [path.join(scripts, "audit-glb.mjs"), glb, "--json", path.join(cand, "exports", "audit.json")], "audit");
 const a = JSON.parse(fs.readFileSync(path.join(cand, "exports", "audit.json"), "utf8"));
 console.log(`size ${a.dimensionsXYZM.map((x) => x.toFixed(3)).join(" x ")}  tris ${a.triangles}  ${(a.fileBytes / 1e6).toFixed(1)} MB  sha256 ${a.sha256.slice(0, 12)}`);
-console.log(run("node", [path.join(scripts, "dev-publish.mjs"), "--candidate", cand, "--worktree", wt, "--id", id, "--name", name, "--glb", glb, "--category", opt("--category", "Seating")], "publish").trim());
+console.log(run("node", [path.join(scripts, "dev-publish.mjs"), "--candidate", cand, "--worktree", wt, "--id", id, "--name", name, "--glb", glb, "--category", opt("--category", "Seating"), "--rooms", opt("--rooms", "living"), "--kind", opt("--kind", "furniture")], "publish").trim());
 if (!argv.includes("--no-shot")) {
   const out = path.join(cand, "renders", "app");
-  console.log(run("node", [path.join(scripts, "app-shot.mjs"), "--worktree", wt, "--name", opt("--shot-name", name.split(" (")[0]), "--out", out, "--views", opt("--views", "front")], "shot").trim());
+  console.log(run("node", [path.join(scripts, "app-shot.mjs"), "--worktree", wt, "--name", opt("--shot-name", name.split(" (")[0]), "--out", out, "--views", opt("--views", "front"), "--port", opt("--port", "3105")], "shot").trim());
 }

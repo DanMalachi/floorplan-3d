@@ -1,0 +1,77 @@
+{
+  "file": "C:\\Users\\dandu\\fp-wt\\nightstands\\assets\\furniture\\bedroom\\natural-wood-shelf-nightstand\\r001\\exports\\natural-wood-shelf-nightstand_r001.glb",
+  "sha256": "193e92a4d1e66ad1ebf2c8409debdd444b1831491a755786031d9853c6e84564",
+  "fileBytes": 2735444,
+  "bounds": {
+    "min": [
+      -0.23000000417232513,
+      0,
+      -0.19350001215934753
+    ],
+    "max": [
+      0.23000000417232513,
+      0.5799999833106995,
+      0.19350001215934753
+    ]
+  },
+  "dimensionsXYZM": [
+    0.46000000834465027,
+    0.5799999833106995,
+    0.38700002431869507
+  ],
+  "nodes": 11,
+  "meshes": 11,
+  "primitives": 21,
+  "vertices": 2031,
+  "triangles": 1788,
+  "materials": [
+    {
+      "name": "raw_wood",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "raw_wood_end",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "oak_veneer_03_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 1353283
+    },
+    {
+      "name": "natural_shelf_nightstand_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 400212
+    },
+    {
+      "name": "natural_shelf_nightstand_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 527542
+    },
+    {
+      "name": "natural_shelf_nightstand_end_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 364718
+    }
+  ],
+  "embeddedTextureBytes": 2645755,
+  "missing": {
+    "baseColor": [],
+    "roughness": [],
+    "normal": []
+  }
+}

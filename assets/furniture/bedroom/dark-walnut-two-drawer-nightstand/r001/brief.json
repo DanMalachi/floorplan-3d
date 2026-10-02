@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:dark-walnut-two-drawer-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.5, "depth": 0.4, "height": 0.55 },
+  "style": ["walnut", "mid-century", "contemporary"],
+  "materials": ["walnut veneer (Poly Haven walnut_veneer, CC0, brown tint derivative)", "satin black metal legs and bar pulls"],
+  "mustKeep": [
+    "boxy walnut case, flush drawers with 3 mm reveals",
+    "long black bar pulls",
+    "four slim tapered round black metal legs"
+  ],
+  "avoid": ["red/orange walnut tint", "coplanar bevel grooves at the top junction"],
+  "referenceImages": [
+    { "file": "04 dark walnut (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: boxy walnut case, black bar pulls, tapered black legs; changed: own proportions, geometry, no brand name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "inputs": [],
+  "provider": "procedural Blender (Route C), own work",
+  "materialSources": [
+    {
+      "role": "oak face + end grain (full 2k, multiplied [0.90,0.90,0.87], desaturated 30%; end grain 0.88x derivative; UVs transposed so fibres follow member axis)",
+      "name": "Oak Veneer 02",
+      "creator": "Poly Haven",
+      "url": "https://polyhaven.com/a/oak_veneer_02",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-10-02",
+      "files": ["inputs/materials/oak_veneer_02_diff_2k.jpg", "inputs/materials/oak_veneer_02_rough_2k.jpg", "inputs/materials/oak_veneer_02_nor_gl_2k.jpg", "inputs/materials/natural_oak_nightstand_diff_2k.png", "inputs/materials/natural_oak_nightstand_end_2k.png"],
+      "tileSizeM": 1.5
+    }
+  ]
+}

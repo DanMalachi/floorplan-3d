@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:white-two-drawer-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": {
+    "width": 0.5,
+    "depth": 0.409,
+    "height": 0.55
+  },
+  "style": [
+    "painted white",
+    "shaker",
+    "scandi-traditional"
+  ],
+  "materials": [
+    "satin white paint (plain PBR)",
+    "satin brass knobs"
+  ],
+  "mustKeep": [
+    "full-height corner posts",
+    "recessed side panels",
+    "shaker-routed drawer fronts flush with posts",
+    "two drawers"
+  ],
+  "avoid": [
+    "tiled wood maps under paint (diagonal banding)",
+    "coplanar steps on fronts"
+  ],
+  "referenceImages": [
+    {
+      "file": "01-white-simple-2-drawer.jpg",
+      "rights": "inspiration-only (retailer photo, not an input)"
+    }
+  ],
+  "roomContext": [
+    "bedroom"
+  ],
+  "status": "approved"
+}

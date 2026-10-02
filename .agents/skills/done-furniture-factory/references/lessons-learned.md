@@ -448,6 +448,124 @@ the mesh bays were "not glass, black metal mesh" (the 390 px reference could not
 13. **A stale `.git/index.lock` (0 bytes, a day old, no git process) blocks every `git add`** with dozens of identical fatal lines. Check `tasklist //FI "IMAGENAME eq git.exe"` and the lock's age, then delete it; do not loop `git add`.
 14. **Push the BRANCH, never `main`, unless the owner says so:** `git push origin main` is a production deploy. Factory work lives on `codex/furniture-addition`.
 
+## 7j. Eleventh asset: white two-drawer nightstand (2026-10-02) - painted case-goods, and a false alarm about texture
+
+Approved after ONE owner point ("lines repeating in the texture"), which turned out NOT to be texture. About 35 tool calls, of which a third went on
+tooling that had drifted. Example: `examples/white_two_drawer_nightstand.py` (3.1k triangles, 0.1 MB, painted case with shaker fronts and brass knobs).
+Rules that make the next nightstand/dresser/side table faster:
+
+1. **Diagnose "repeating lines" by elimination BEFORE touching the material.** Swap to a plain colour (no maps), then to roughness 0.95 / specular 0, then
+   switch the viewer light preset. Here the diagonal diamond pattern survived all three and moved with the light: it is shadow-map banding on large flat,
+   light-coloured, near-grazing VERTICAL faces in the dev viewer (`SHADOW.normalBias` 0.02 in `src/render/contract.ts`, protected). It is not in the asset.
+   Dark woods hide it, curved upholstery avoids it, white flat fronts show it. Say so to the owner and ask him to check in the real editor room: he did and
+   approved. Do not burn rounds re-texturing; each of my three material swaps was a wasted 2-minute loop.
+2. **Painted = plain colour material.** A tiled wood map under white paint reads as diagonal bands (the oak figure) even at normal strength 0.05. A flat
+   1x1 generated image for roughness/normal rendered BLACK in the viewer; use a plain Principled material (`paint_mat` in the example: roughness 0.5, spec
+   0.38) instead. The audit lists it as "missing PBR maps"; promotion still works (like thread and metal). Pick albedo about `#ece9e2`; the viewer renders
+   white about 10 percent darker on side faces.
+3. **Flat-shade rigid case-goods; smooth only round parts.** `export_glb()` forces every polygon smooth, which makes big flat faces next to a 2-3 mm bevel
+   shade like pillows (posts looked like cylinders). For rigid parts set `use_smooth = False` after building, smooth only knobs/pulls, and call
+   `bpy.ops.export_scene.gltf` directly (copy the call at the end of the example). Smooth-by-angle and weighted normals did NOT fix it: the gradients stayed.
+4. **Shaker/routed fronts: boolean DIFFERENCE with an EXACT solver and a `prism()` cutter, 6 mm deep, 42 mm margin, corner radius 4 mm.** At 4 mm deep the
+   pocket does not read from room distance. Keep the front coplanar with the posts (lesson 7h) and a 3 mm reveal.
+5. **Case construction that is cheap and reads as joinery:** full-height square corner posts through to the top, recessed side/back panels (6 mm in), a
+   solid fill block behind closed drawer fronts (no light leak, no interior needed), top slab as ONE member with a 3 mm bevel overhanging 12 mm. Footprint
+   includes the knobs (0.409 m deep vs 0.40 nominal): that is the audit, use it.
+6. **Brass/knob hardware:** `metal_material("brass", "#c9a46a", 0.36)` then Metallic 0.78, turned knob = cone stem + flattened UV sphere. Read well in
+   the app viewer in the first draft.
+7. **Tooling drift cost 10 calls; it is fixed now (this commit):**
+   - The dev page reads `data/furniture-factory.catalog.json`, not a list in the tsx. `dev-publish.mjs` now upserts a catalog entry IN THE WORKTREE
+     (`--rooms`, `--kind`); old behaviour corrupted `MeasureAsset`. Promotion overwrites by assetId; delete the `_r001.glb` dev copy then.
+   - The dev page loads about 120 models and autosaves, so Playwright `networkidle` never fires. `app-shot.mjs` now waits for `load` plus 15 s, and
+     `iterate.mjs` passes `--port`. The page also rewrites `data/furniture-review.decisions.json` on every visit: `git checkout` it before committing.
+   - New worktree needs `node_modules`: `cmd //c "mklink /J node_modules C:\Users\dandu\floorplan-3d\node_modules"` (a junction, instant).
+   - The factory page's search is by catalog `name`; use the catalog name for `--shot-name`.
+8. **Parallel sessions:** other sessions hold ports (3123 seen) and the main tree is on a feature branch. Own worktree off `origin/main`
+   (`git worktree add -b feat/<x> C:/Users/dandu/fp-wt/<x> origin/main`), own port (3140+), one SendMessage to the peer, and never touch their tree.
+9. **Records to fill BEFORE promote:** `brief.json` (dimensions, mustKeep, avoid, reference as inspiration-only), `sources.json` (`materialSources: []` for
+   plain colour). `promote-candidate.mjs` text-substitutes into `DATA_RIGHTS.md`: check the diff (`git diff -U0 docs/DATA_RIGHTS.md | grep '^[-+]|'`) shows
+   exactly ONE added row; a regex edit of mine hit the wrong (block-arm sofa) row and had to be restored.
+10. **Hotspot keyword:** `--kind nightstand` reaches the Bedroom "nightstand" hotspot (`BedroomScene.tsx` keywords side table / nightstand). Verified by
+    `src/furniture/factoryCatalog.test.ts` (run it with `npx vitest run`; it prints ok lines, the suite "fails" with "No test suite found" because it is a script).
+
+## 7k. Twelfth to fifteenth assets: nightstands 2 to 5 (2026-10-02) - four in parallel, oak/walnut/fluted/steel
+
+Four forks built the drafts concurrently in one worktree (one candidate folder each), the owner reviewed all four in one pass, then three review rounds
+(oak 2, walnut 2, steel 4). Fluted was approved first try. Rules that would have saved most of the rework:
+
+1. **Parallel forks work.** Safe when each touches only its own candidate folder. The shared hazards are the dev catalog JSON (siblings can clobber each
+   other's dev entry: verify yours after every publish) and `iterate.mjs` screenshots (several forks loading the dev page at once gave a solid black
+   frame: re-run `app-shot.mjs` alone with `--port 3140`). Do the PROMOTE step in the main session, one asset at a time, and delete only that asset's dev entry.
+2. **Metals are judged in the REAL editor, never the dev furniture page.** Any high-metalness GLB reads near-black in the dev viewer (the fridge's own
+   `buildSteel()` values did too). The editor check: `/design?hero=1` (hero apartment with a fridge), temporarily add the asset beside the fridge in
+   `src/landing/demoScene.ts`, screenshot, then `git checkout` that file. Use the app's own material values as the base (`src/parametric/materials.ts`:
+   steel `#c6c8ca`, metalness 0.9, roughness 0.3) so it matches the fridge. Hardware (pulls) can be lighter/lower metalness (`#d0d1d3`, 0.58, 0.34).
+3. **Brushed metal grain: finer and fainter than you think.** Lines read as WOOD if low-frequency or wavy; coarse streaks read as grooves. Working
+   numbers: map tile 0.15 m (about 0.15 mm per line), roughness variation +-0.01, normal tilt about 0.08, no colour-tone map, strictly one direction.
+   From a distance it should look smooth. Do the first draft at about this level and let the owner ask for more.
+4. **Sheet-metal case = one bent profile.** Top and both sides as one extruded "n" profile (`prism` with arc points) gives a real fold radius for free;
+   no tray lip unless asked. For "see through to the wall": back plate overlapping sides/top, a closed plinth instead of a floor plate with a gap,
+   `recalc normals` on every part, then a ray test (random lines through the volume, 0 misses) and a back/inside shot.
+5. **Exporting generated maps as JPEG gives BLACK images.** Save generated roughness/normal to PNG and reload before `export_image_format="JPEG"`.
+6. **Walnut in the viewer lifts red.** What worked: desaturate 55 percent then multiply `[0.78, 0.66, 0.55]` (mid natural brown). `[0.64,0.53,0.52]`
+   read orange-red on a small piece, `[0.50,0.43,0.43]` read red-chocolate. Let case sides/rails/back run 2 mm into the top slab: no dashed shadow groove.
+   Narrow reveals show sawtooth shadow banding in the dev viewer (7j.1): check in the editor before shrinking geometry.
+7. **Oak: pick the map by measuring AND by close zoom.** Raw `white_oak_veneer` renders orange-brown and its coarse streaky figure looks like a rug up
+   close even at 2k. `oak_veneer_02` (full 2k, 1.5 m tile, x0.9 tint, 30 percent desaturation) read as quiet fine grain. Do NOT downscale maps to 1k to save
+   size: it was the "low quality fronts" complaint. Poly Haven veneers differ in which image axis the fibres follow (`oak_veneer_01` along V,
+   `_02` and `_03` along U): check the grain direction in the app on the first draft; keep one UV-transpose pass (`--swapuv`) at the end of the script.
+8. **Fluted fronts are geometry:** half-ellipse profile polygon extruded in z, 52 reeds at 8 mm pitch per front, split edges sharper than 0.9 rad before
+   smoothing (smooth reeds, crisp valleys), about 2.5k triangles for two fronts. Do the finger-pocket boolean before the split and UV assignment.
+9. **Pulls on standoffs add footprint depth:** reduce the nominal case depth by the standoff length or the audit exceeds the target. An undercut round
+   bar pull on turned standoffs reads far better than a tab block; a goofy thick top (25 mm, 20 mm overhang, 7 mm round) became 18 mm / 12 mm / 3.5 mm.
+10. **Shell traps:** a long script written through a backgrounded heredoc, or a `python` heredoc edit, silently did nothing (no `python` on PATH; the
+    build still "succeeded"). Use Write/Edit, and compare the GLB sha256 before and after every rebuild. The dev-publish.mjs newline bug (literal newline
+    in a string, from the 7j commit) is fixed.
+11. **Review rhythm that worked:** four drafts at once, state weak spots per asset, owner replies per asset; reworks go back to the same fork (SendMessage),
+    the approved asset is promoted by hash WITHOUT rebuilding. Update `brief.json` and `sources.json` (inspiration-only reference, `materialSources` for any
+    CC0 map, `[]` for plain/self-authored) before `promote-candidate.mjs`; check ONE added DATA_RIGHTS row per asset and the printed `ok` lines of the test.
+
+## 7l. Nightstand 6 (matte black) and thumbnail fix (2026-10-02)
+
+1. **Black in the dev viewer:** albedo `#2e2f32` renders near-black, `#5e5f64` reads blue-grey (the viewer light is blue), warm `#4c4a47` reads brown. Neutral `#494848`, roughness 0.95, spec 0.10 was approved. Vertical faces get little light there: judge in the real editor.
+2. **Thumbnails from Blender AgX look wrong** (pale, grainless wood, wrong walnut hue). Use `scripts/thumb-app.mjs` (real app render, cut out by with/without diff; hide only meshes with bounding radius under 1.5 m so the sky stays in both shots; lower the diff threshold to 3 for dark pieces). Metals: Blender `--standard --normal-boost 3`, never 6 (sand look).
+3. **Splayed block legs:** build as 8-vertex hulls with own faces (flat top and floor contact, no booleans), shift the bottom ring outward on both axes.
+
+## 7m. Nightstand 7 (wood + cane door) (2026-10-02) - approved first draft
+
+Example: `examples/cane_door_nightstand.py`. 25.8k triangles, 4.5 MB. Rules:
+
+1. **Woven cane = over-under RIBBONS, not bars.** Each strand is a flat ribbon (front + back faces only, own verts, 0.7 mm thick) whose depth
+   alternates +-0.6 mm at every crossing; horizontals run the opposite phase. 5.6 mm pitch, 3.4 mm strand, ends tucked 5 mm into the frame,
+   smooth-shaded. Reads as real cane at 0.3 m and as a fine dotted panel at room distance. Orthogonal only; diagonal strands are an option to offer.
+2. **Cane colour = vertex colour per strand** (Vertex Color node straight into Base Color, exports COLOR_0), tone x0.80 to 1.10 seeded by crc32. Albedo
+   `#d2b68c`; `#c69a5e` read mustard-orange in the viewer. Mid-dark matte panel (`#4c4239`) about 33 mm behind the cane makes the holes read.
+3. **Frame-and-panel door = four members** (stiles vertical grain, rails horizontal, rails tuck 2 mm into stiles), not a boolean window in a slab: the
+   cutter's faces arrive with no UVs. Any boolean on a wood member (a finger scoop) needs a re-projection pass afterwards (`reuv()` in the script).
+4. **Carved finger scoop = ellipsoid cutter** (72 x 16 x 8.5 mm radii, centre 6 mm in front of the face, EXACT): lens-shaped groove, smooth-shade
+   only its non-axis faces.
+5. **Limed wood:** `oak_veneer_02`, keep 40 percent saturation, x[0.97,0.95,0.91] +0.03. Sides read dark grey in the dev viewer (low light): expected.
+6. **Thumbnails need a quiet machine.** `thumb-app.mjs` while forks were building gave a dark-rectangle cut-out, then a screenshot timeout. Make
+   thumbnails after the parallel builds finish.
+
+## 7n. Nightstands 8 to 10 (walnut scoop, lacquer + chrome, raw wood shelf) (2026-10-02) - three forks, all approved first draft
+
+Examples: `mid_century_walnut_nightstand.py`, `white_lacquer_chrome_nightstand.py`, `natural_wood_shelf_nightstand.py`. Zoom tool: `scripts/zoom-shot.mjs`
+(`<name> <outdir> <ticks> x,y...`; worktree path hard-coded like `thumb-app.mjs`; zoom accumulates between points, so use one point per run or 1 tick).
+
+1. **Three forks in parallel, drafts all approved in one owner pass.** Each fork's `iterate.mjs` shots came out black while siblings loaded the page;
+   the zoom tool (fresh browser, full canvas) gave usable shots. Promote and make thumbnails only after every fork has finished (7m.6).
+2. **A tint that was approved on one piece can be wrong on the next.** The #4 walnut tint read dark chocolate on a rounded shell and too close to #4;
+   desaturate 55 percent then x[0.95,0.74,0.56] gave a warm mid brown. Re-judge colour per piece, and keep sibling pieces visibly different.
+3. **Half-moon scoop through a drawer's top edge:** boolean a through-cylinder (axis Y) of radius (w^2/4 + s^2) / 2s, centred above the edge so the chord at the edge is w and the depth is s (84 x 24 mm); re-UV after (7m.3), and put a dark panel behind
+   it so the cut reads as a hole into the drawer, not a notch in a plate.
+4. **Raw/unfinished pale wood:** `oak_veneer_03` (palest set on disk), 65 percent saturation kept, roughness raised to about 0.68. The first build read
+   as orange pine. Internal floors/dividers must stop AT the back panel: running through it showed as a strip from behind.
+5. **Gloss white + chrome:** lacquer = plain `#eceae6`, roughness 0.20, clearcoat 0.5; chrome = app steel values. Both the dev viewer and headless
+   editor render the chrome dark (the fridge too): the owner's screen is the judge. Blender thumbnail `--standard --normal-boost 3` blew the white out;
+   add `--exposure -1.4`.
+6. **A wide pull straddling two drawers is two plates** (one per drawer, 5 mm slot at the split) so each drawer can open; it reads as one plate.
+
 ## 8. The one-shot recipe (condensed)
 
 1. Intake: rights class, borrowed vs changed, dressed state. Ask the user only for real forks.

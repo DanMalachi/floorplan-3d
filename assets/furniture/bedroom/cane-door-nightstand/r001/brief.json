@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:cane-door-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.48, "depth": 0.4, "height": 0.6 },
+  "style": ["limed wood", "woven cane", "coastal", "frame-and-panel"],
+  "materials": ["limed oak veneer (Poly Haven oak_veneer_02, CC0, desaturated derivative)", "woven cane (self-authored geometry, plain colour + per-strand tone)", "mid-dark matte interior panel"],
+  "mustKeep": [
+    "single frame-and-panel door, flush with the posts, 3 mm reveal",
+    "cane as real over-under woven geometry set 9 mm behind the door face",
+    "lens-shaped finger scoop carved into the door top rail",
+    "square legs, plumb outside faces, inside faces tapered below the case"
+  ],
+  "avoid": ["cane as a flat texture or alpha map", "saturated orange cane", "recessed door steps", "light leaks through the cane"],
+  "referenceImages": [
+    { "file": "07 wood and cane (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: pale wood cabinet with one cane door, square legs, carved pull vocabulary; changed: own proportions, stile-and-rail door with cane set back, short lens scoop instead of a full-width lip, inside-tapered legs, recessed side/back panels, overhanging top, own geometry and slug/name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}

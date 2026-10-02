@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:natural-oak-two-drawer-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.5, "depth": 0.391, "height": 0.55 },
+  "style": ["natural oak", "contemporary", "open-frame"],
+  "materials": ["oak veneer (Poly Haven oak_veneer_02, CC0)", "brushed nickel bar pulls"],
+  "mustKeep": [
+    "slightly splayed tapered legs with visible mid rail",
+    "two flush drawers, continuous grain across the fronts",
+    "slim top with soft edge round",
+    "slim round brushed-nickel bar pulls"
+  ],
+  "avoid": ["tab-block pulls", "thick clumsy top", "low-quality coarse front texture"],
+  "referenceImages": [
+    { "file": "02 natural oak 2-drawer (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: tapered splayed legs, mid rail, two-drawer oak case; changed: own proportions, nickel bar pulls, own geometry and slug/name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}

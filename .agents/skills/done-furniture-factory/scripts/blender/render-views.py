@@ -32,8 +32,18 @@ bpy.ops.import_scene.gltf(filepath=glb)
 sc = bpy.context.scene
 sc.render.engine = "CYCLES"
 sc.cycles.samples = samples
-sc.cycles.use_denoising = True
-sc.view_settings.view_transform = "AgX"
+sc.cycles.use_denoising = "--no-denoise" not in argv
+sc.view_settings.exposure = float(opt("--exposure", 0))
+if opt("--look"):
+    sc.view_settings.look = opt("--look")
+NB = float(opt("--normal-boost", 1))
+if NB != 1:                                   # thumbnails only: exaggerate fine grain so it survives 512 px
+    for m in bpy.data.materials:
+        if m.use_nodes:
+            for n in m.node_tree.nodes:
+                if n.type == "NORMAL_MAP":
+                    n.inputs["Strength"].default_value *= NB
+sc.view_settings.view_transform = "Standard" if "--standard" in argv else "AgX"
 
 # bounding box of everything imported
 pts = []

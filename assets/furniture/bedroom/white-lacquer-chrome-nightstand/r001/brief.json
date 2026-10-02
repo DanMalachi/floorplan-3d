@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:white-lacquer-chrome-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.46, "depth": 0.394, "height": 0.58 },
+  "style": ["modern", "glossy white lacquer", "chrome", "open metal base"],
+  "materials": ["white lacquer (plain colour, roughness 0.20, clearcoat 0.5)", "chrome square tube (app steel values #c6c8ca, metalness 0.88, roughness 0.24)", "chrome pull plates (#d0d1d3, metalness 0.62, roughness 0.26)"],
+  "mustKeep": [
+    "two flush inset drawers, 3 mm reveals",
+    "pair of wide low chrome plates meeting at the drawer split with a 5 mm finger slot",
+    "closed square-tube chrome base: top ring, four legs, low perimeter ring",
+    "top panel overhangs the sides by 6 mm"
+  ],
+  "avoid": ["textured lacquer", "see-through tubes", "pure-conductor chrome that renders black"],
+  "referenceImages": [
+    { "file": "09 modern chrome frame (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: glossy white two-drawer box on an open chrome square-tube base, chrome pull at the drawer split; changed: own proportions, wide low twin plates instead of a tall square plate, base = top ring + legs + low perimeter ring (no mid posts), 6 mm top overhang, own geometry and slug/name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}

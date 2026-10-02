@@ -246,5 +246,243 @@
       "console",
       "media cabinet"
     ]
+  },
+  {
+    "assetId": "factory:white-two-drawer-nightstand",
+    "name": "White Two-Drawer Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.5,
+      "d": 0.409
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/white-two-drawer-nightstand.glb",
+    "thumbnail": "/furniture/factory/white-two-drawer-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Painted two-drawer bedside table, shaker fronts, brass knobs",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "drawer"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:fluted-oak-two-drawer-nightstand",
+    "name": "Fluted Oak Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.5,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/fluted-oak-two-drawer-nightstand.glb",
+    "thumbnail": "/furniture/factory/fluted-oak-two-drawer-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Fluted pale oak, two drawers",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "fluted"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:dark-walnut-two-drawer-nightstand",
+    "name": "Dark Walnut Two-Drawer Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.5,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/dark-walnut-two-drawer-nightstand.glb",
+    "thumbnail": "/furniture/factory/dark-walnut-two-drawer-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Walnut, black bar pulls, metal legs",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "walnut"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:natural-oak-two-drawer-nightstand",
+    "name": "Natural Oak Two-Drawer Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.5,
+      "d": 0.391
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/natural-oak-two-drawer-nightstand.glb",
+    "thumbnail": "/furniture/factory/natural-oak-two-drawer-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Natural oak, tapered legs, nickel bar pulls",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "oak"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:brushed-steel-open-nightstand",
+    "name": "Brushed Steel Open Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.46,
+      "d": 0.38
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/brushed-steel-open-nightstand.glb",
+    "thumbnail": "/furniture/factory/brushed-steel-open-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Folded brushed steel, open cubby",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "steel",
+      "metal"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:black-two-drawer-nightstand",
+    "name": "Matte Black Two-Drawer Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.5,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/black-two-drawer-nightstand.glb",
+    "thumbnail": "/furniture/factory/black-two-drawer-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Matte black bedside table, finger-ledge drawers, splayed legs",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "black",
+      "matte"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:cane-door-nightstand",
+    "name": "Cane Door Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.48,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/cane-door-nightstand.glb",
+    "thumbnail": "/furniture/factory/cane-door-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Limed oak, woven cane door",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "cane",
+      "rattan",
+      "limed oak"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:mid-century-walnut-nightstand",
+    "name": "Mid-Century Walnut Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.52,
+      "d": 0.4
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/mid-century-walnut-nightstand.glb",
+    "thumbnail": "/furniture/factory/mid-century-walnut-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Walnut, scooped drawers, splayed legs",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "walnut",
+      "mid-century"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:white-lacquer-chrome-nightstand",
+    "name": "White Lacquer Chrome Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.46,
+      "d": 0.394
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/white-lacquer-chrome-nightstand.glb",
+    "thumbnail": "/furniture/factory/white-lacquer-chrome-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Gloss white, chrome frame",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "white",
+      "lacquer",
+      "chrome"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
+  },
+  {
+    "assetId": "factory:natural-wood-shelf-nightstand",
+    "name": "Natural Wood Shelf Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.46,
+      "d": 0.387
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/natural-wood-shelf-nightstand.glb",
+    "thumbnail": "/furniture/factory/natural-wood-shelf-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Raw oak, drawer over open shelf",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "natural wood",
+      "shelf"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
   }
 ]
