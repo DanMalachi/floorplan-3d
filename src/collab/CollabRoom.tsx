@@ -20,6 +20,7 @@ import { getYjsProviderForRoom } from "@liveblocks/yjs";
 import { Html } from "@react-three/drei";
 import * as Y from "yjs";
 import { Viewport } from "@/viewport3d/Viewport";
+import { ViewportGuard } from "@/ui/ViewportGuard";
 import { useSceneStore, pickExists, reserveIds, sceneIds, type AppMode } from "@/store/useSceneStore";
 import {
   importProject,
@@ -794,7 +795,9 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
       {/* PD tokens (the shared ProjectBar) need their light-theme vars defined
           here too — this route never mounts src/app/design/page.tsx's copy. */}
       <PdThemeStyle />
-      <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
+      <ViewportGuard>
+        <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
+      </ViewportGuard>
       {load !== "ready" && (
         <RoomNotice title={load === "loading" ? null : t("emptyTitle")} body={load === "loading" ? t("loading") : t("emptyBody")} />
       )}
