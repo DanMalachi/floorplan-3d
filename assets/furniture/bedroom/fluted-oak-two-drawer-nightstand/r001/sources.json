@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "inputs": [],
+  "provider": "procedural Blender (Route C), own work",
+  "materialSources": [
+    {
+      "role": "oak face + end grain (tinted x0.93; end grain is a 0.72x darkened derivative)",
+      "name": "Oak Veneer 03",
+      "creator": "Poly Haven",
+      "url": "https://polyhaven.com/a/oak_veneer_03",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "termsCheckedDate": "2026-10-02",
+      "files": ["inputs/materials/oak_veneer_03_diff_2k.jpg", "inputs/materials/oak_veneer_03_rough_2k.jpg", "inputs/materials/oak_veneer_03_nor_gl_2k.jpg", "inputs/materials/pale_oak_diff_2k.png", "inputs/materials/pale_oak_end_2k.png"],
+      "tileSizeM": 1.0
+    }
+  ]
+}

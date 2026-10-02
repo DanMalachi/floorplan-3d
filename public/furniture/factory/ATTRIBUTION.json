@@ -228,6 +228,72 @@
       "owner": "Dan (Done)",
       "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
       "textures": []
+    },
+    {
+      "assetId": "factory:fluted-oak-two-drawer-nightstand",
+      "file": "fluted-oak-two-drawer-nightstand.glb",
+      "sha256": "f3442c22ff0abc0a967fe6b41efeff6eee77d8bd0ed634467e72ab5f158d8205",
+      "candidate": "assets/furniture/bedroom/fluted-oak-two-drawer-nightstand/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Oak Veneer 03",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_03",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:dark-walnut-two-drawer-nightstand",
+      "file": "dark-walnut-two-drawer-nightstand.glb",
+      "sha256": "9ef39257ab99982446905ffe6951345cb29d6e9999e9e9446da88d5568406f67",
+      "candidate": "assets/furniture/bedroom/dark-walnut-two-drawer-nightstand/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Walnut Veneer",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/walnut_veneer",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:natural-oak-two-drawer-nightstand",
+      "file": "natural-oak-two-drawer-nightstand.glb",
+      "sha256": "a711572371091eb935952257a42ff4a280594a2528ba209889cdb69150928aae",
+      "candidate": "assets/furniture/bedroom/natural-oak-two-drawer-nightstand/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": [
+        {
+          "name": "Oak Veneer 02",
+          "creator": "Poly Haven",
+          "url": "https://polyhaven.com/a/oak_veneer_02",
+          "license": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "assetId": "factory:brushed-steel-open-nightstand",
+      "file": "brushed-steel-open-nightstand.glb",
+      "sha256": "e0d7285b1c2784c037e3194f3e1e5066dc7d04751600c64698336a05907bd7f3",
+      "candidate": "assets/furniture/bedroom/brushed-steel-open-nightstand/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": []
+    },
+    {
+      "assetId": "factory:black-two-drawer-nightstand",
+      "file": "black-two-drawer-nightstand.glb",
+      "sha256": "2cfc81842e08d0cc61bc4d990290735dd221b7b3d9b0bc3e9fede20a3b34375f",
+      "candidate": "assets/furniture/bedroom/black-two-drawer-nightstand/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": []
     }
   ]
 }

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:brushed-steel-open-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.46, "depth": 0.38, "height": 0.55 },
+  "style": ["brushed steel", "industrial", "minimal"],
+  "materials": ["brushed stainless steel (plain PBR, fridge steel values, self-authored micro-grain roughness/normal)"],
+  "mustKeep": [
+    "one folded sheet: top continues into both sides, plain top, no tray",
+    "open cubby with real back and closed floor/plinth",
+    "no see-through gaps against a wall"
+  ],
+  "avoid": ["raised tray lip", "coarse brushed lines", "wood-like grain", "gaps"],
+  "referenceImages": [
+    { "file": "05 brushed steel (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: open sheet-metal box, floor-standing; changed: folded one-sheet top, own proportions, no brand name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}

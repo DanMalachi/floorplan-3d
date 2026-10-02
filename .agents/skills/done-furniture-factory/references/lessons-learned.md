@@ -488,6 +488,49 @@ Rules that make the next nightstand/dresser/side table faster:
 10. **Hotspot keyword:** `--kind nightstand` reaches the Bedroom "nightstand" hotspot (`BedroomScene.tsx` keywords side table / nightstand). Verified by
     `src/furniture/factoryCatalog.test.ts` (run it with `npx vitest run`; it prints ok lines, the suite "fails" with "No test suite found" because it is a script).
 
+## 7k. Twelfth to fifteenth assets: nightstands 2 to 5 (2026-10-02) - four in parallel, oak/walnut/fluted/steel
+
+Four forks built the drafts concurrently in one worktree (one candidate folder each), the owner reviewed all four in one pass, then three review rounds
+(oak 2, walnut 2, steel 4). Fluted was approved first try. Rules that would have saved most of the rework:
+
+1. **Parallel forks work.** Safe when each touches only its own candidate folder. The shared hazards are the dev catalog JSON (siblings can clobber each
+   other's dev entry: verify yours after every publish) and `iterate.mjs` screenshots (several forks loading the dev page at once gave a solid black
+   frame: re-run `app-shot.mjs` alone with `--port 3140`). Do the PROMOTE step in the main session, one asset at a time, and delete only that asset's dev entry.
+2. **Metals are judged in the REAL editor, never the dev furniture page.** Any high-metalness GLB reads near-black in the dev viewer (the fridge's own
+   `buildSteel()` values did too). The editor check: `/design?hero=1` (hero apartment with a fridge), temporarily add the asset beside the fridge in
+   `src/landing/demoScene.ts`, screenshot, then `git checkout` that file. Use the app's own material values as the base (`src/parametric/materials.ts`:
+   steel `#c6c8ca`, metalness 0.9, roughness 0.3) so it matches the fridge. Hardware (pulls) can be lighter/lower metalness (`#d0d1d3`, 0.58, 0.34).
+3. **Brushed metal grain: finer and fainter than you think.** Lines read as WOOD if low-frequency or wavy; coarse streaks read as grooves. Working
+   numbers: map tile 0.15 m (about 0.15 mm per line), roughness variation +-0.01, normal tilt about 0.08, no colour-tone map, strictly one direction.
+   From a distance it should look smooth. Do the first draft at about this level and let the owner ask for more.
+4. **Sheet-metal case = one bent profile.** Top and both sides as one extruded "n" profile (`prism` with arc points) gives a real fold radius for free;
+   no tray lip unless asked. For "see through to the wall": back plate overlapping sides/top, a closed plinth instead of a floor plate with a gap,
+   `recalc normals` on every part, then a ray test (random lines through the volume, 0 misses) and a back/inside shot.
+5. **Exporting generated maps as JPEG gives BLACK images.** Save generated roughness/normal to PNG and reload before `export_image_format="JPEG"`.
+6. **Walnut in the viewer lifts red.** What worked: desaturate 55 percent then multiply `[0.78, 0.66, 0.55]` (mid natural brown). `[0.64,0.53,0.52]`
+   read orange-red on a small piece, `[0.50,0.43,0.43]` read red-chocolate. Let case sides/rails/back run 2 mm into the top slab: no dashed shadow groove.
+   Narrow reveals show sawtooth shadow banding in the dev viewer (7j.1): check in the editor before shrinking geometry.
+7. **Oak: pick the map by measuring AND by close zoom.** Raw `white_oak_veneer` renders orange-brown and its coarse streaky figure looks like a rug up
+   close even at 2k. `oak_veneer_02` (full 2k, 1.5 m tile, x0.9 tint, 30 percent desaturation) read as quiet fine grain. Do NOT downscale maps to 1k to save
+   size: it was the "low quality fronts" complaint. Poly Haven veneers differ in which image axis the fibres follow (`oak_veneer_01` along V,
+   `_02` and `_03` along U): check the grain direction in the app on the first draft; keep one UV-transpose pass (`--swapuv`) at the end of the script.
+8. **Fluted fronts are geometry:** half-ellipse profile polygon extruded in z, 52 reeds at 8 mm pitch per front, split edges sharper than 0.9 rad before
+   smoothing (smooth reeds, crisp valleys), about 2.5k triangles for two fronts. Do the finger-pocket boolean before the split and UV assignment.
+9. **Pulls on standoffs add footprint depth:** reduce the nominal case depth by the standoff length or the audit exceeds the target. An undercut round
+   bar pull on turned standoffs reads far better than a tab block; a goofy thick top (25 mm, 20 mm overhang, 7 mm round) became 18 mm / 12 mm / 3.5 mm.
+10. **Shell traps:** a long script written through a backgrounded heredoc, or a `python` heredoc edit, silently did nothing (no `python` on PATH; the
+    build still "succeeded"). Use Write/Edit, and compare the GLB sha256 before and after every rebuild. The dev-publish.mjs newline bug (literal newline
+    in a string, from the 7j commit) is fixed.
+11. **Review rhythm that worked:** four drafts at once, state weak spots per asset, owner replies per asset; reworks go back to the same fork (SendMessage),
+    the approved asset is promoted by hash WITHOUT rebuilding. Update `brief.json` and `sources.json` (inspiration-only reference, `materialSources` for any
+    CC0 map, `[]` for plain/self-authored) before `promote-candidate.mjs`; check ONE added DATA_RIGHTS row per asset and the printed `ok` lines of the test.
+
+## 7l. Nightstand 6 (matte black) and thumbnail fix (2026-10-02)
+
+1. **Black in the dev viewer:** albedo `#2e2f32` renders near-black, `#5e5f64` reads blue-grey (the viewer light is blue), warm `#4c4a47` reads brown. Neutral `#494848`, roughness 0.95, spec 0.10 was approved. Vertical faces get little light there: judge in the real editor.
+2. **Thumbnails from Blender AgX look wrong** (pale, grainless wood, wrong walnut hue). Use `scripts/thumb-app.mjs` (real app render, cut out by with/without diff; hide only meshes with bounding radius under 1.5 m so the sky stays in both shots; lower the diff threshold to 3 for dark pieces). Metals: Blender `--standard --normal-boost 3`, never 6 (sand look).
+3. **Splayed block legs:** build as 8-vertex hulls with own faces (flat top and floor contact, no booleans), shift the bottom ring outward on both axes.
+
 ## 8. The one-shot recipe (condensed)
 
 1. Intake: rights class, borrowed vs changed, dressed state. Ask the user only for real forks.

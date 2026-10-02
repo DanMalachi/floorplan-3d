@@ -1,0 +1,91 @@
+{
+  "file": "C:\\Users\\dandu\\fp-wt\\nightstands\\assets\\furniture\\bedroom\\dark-walnut-two-drawer-nightstand\\r001\\exports\\dark-walnut-two-drawer-nightstand_r001.glb",
+  "sha256": "9ef39257ab99982446905ffe6951345cb29d6e9999e9e9446da88d5568406f67",
+  "fileBytes": 458576,
+  "bounds": {
+    "min": [
+      -0.25,
+      0,
+      -0.20000000298023224
+    ],
+    "max": [
+      0.25,
+      0.550000011920929,
+      0.19999998807907104
+    ]
+  },
+  "dimensionsXYZM": [
+    0.5,
+    0.550000011920929,
+    0.3999999910593033
+  ],
+  "nodes": 20,
+  "meshes": 20,
+  "primitives": 30,
+  "vertices": 1408,
+  "triangles": 1088,
+  "materials": [
+    {
+      "name": "wood_face",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "wood_end",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "black_metal",
+      "baseColor": false,
+      "metallicRoughness": false,
+      "normal": false,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "walnut_veneer_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 41261
+    },
+    {
+      "name": "walnut_nightstand_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 249934
+    },
+    {
+      "name": "walnut_veneer_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 90701
+    },
+    {
+      "name": "walnut_nightstand_end_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 12555
+    }
+  ],
+  "embeddedTextureBytes": 394451,
+  "missing": {
+    "baseColor": [
+      "black_metal"
+    ],
+    "roughness": [
+      "black_metal"
+    ],
+    "normal": [
+      "black_metal"
+    ]
+  }
+}

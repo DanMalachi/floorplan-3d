@@ -33,6 +33,5 @@ const entry = { assetId, name, category, footprint: { w: +w.toFixed(3), d: +d.to
   brand: "Done", subtitle: "dev review candidate", rooms: opt("--rooms", "living").split(","), kind: opt("--kind", "furniture") };
 const k = cat.findIndex((x) => x.assetId === assetId);
 if (k >= 0) cat[k] = { ...cat[k], ...entry }; else cat.push(entry);
-fs.writeFileSync(catPath, JSON.stringify(cat, null, 2) + "
-");
+fs.writeFileSync(catPath, JSON.stringify(cat, null, 2) + "\n");
 console.log(`published ${id}: ${stem}.glb, footprint ${w.toFixed(3)} x ${d.toFixed(3)}, sha256 ${audit.sha256.slice(0, 12)}`);

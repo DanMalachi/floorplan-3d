@@ -1,0 +1,77 @@
+{
+  "file": "C:\\Users\\dandu\\fp-wt\\nightstands\\assets\\furniture\\bedroom\\fluted-oak-two-drawer-nightstand\\r001\\exports\\fluted-oak-two-drawer-nightstand_r001.glb",
+  "sha256": "f3442c22ff0abc0a967fe6b41efeff6eee77d8bd0ed634467e72ab5f158d8205",
+  "fileBytes": 817988,
+  "bounds": {
+    "min": [
+      -0.25,
+      0,
+      -0.20000000298023224
+    ],
+    "max": [
+      0.25,
+      0.5400000214576721,
+      0.20000000298023224
+    ]
+  },
+  "dimensionsXYZM": [
+    0.5,
+    0.5400000214576721,
+    0.4000000059604645
+  ],
+  "nodes": 4,
+  "meshes": 4,
+  "primitives": 7,
+  "vertices": 5560,
+  "triangles": 5168,
+  "materials": [
+    {
+      "name": "wood_face",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    },
+    {
+      "name": "wood_end",
+      "baseColor": true,
+      "metallicRoughness": true,
+      "normal": true,
+      "emissive": false,
+      "occlusion": false
+    }
+  ],
+  "textures": [
+    {
+      "name": "oak_veneer_03_nor_gl_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 19466
+    },
+    {
+      "name": "pale_oak_diff_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 405345
+    },
+    {
+      "name": "oak_veneer_03_rough_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 164792
+    },
+    {
+      "name": "pale_oak_end_2k",
+      "uri": null,
+      "mimeType": "image/jpeg",
+      "bytes": 18512
+    }
+  ],
+  "embeddedTextureBytes": 608115,
+  "missing": {
+    "baseColor": [],
+    "roughness": [],
+    "normal": []
+  }
+}

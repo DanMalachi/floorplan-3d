@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "candidateId": "bedroom:black-two-drawer-nightstand:r001",
+  "category": "Storage",
+  "dimensionsM": { "width": 0.5, "depth": 0.4, "height": 0.56 },
+  "style": ["matte black", "contemporary", "mid-century legs"],
+  "materials": ["plain matte charcoal colour (self-authored, no maps)"],
+  "mustKeep": [
+    "matte black case with deep top and two flush drawers",
+    "forward finger ledge along the top edge of each drawer front",
+    "short splayed block legs"
+  ],
+  "avoid": ["blue or brown tint", "glossy finish", "generated normal map on black"],
+  "referenceImages": [
+    { "file": "06 matte black wood (retailer photo)", "rights": "inspiration-only (retailer photo, not an input); borrowed: matte black case, two drawers with top-edge ledge pulls, splayed block legs; changed: own proportions, plinth rail, geometry, no brand name" }
+  ],
+  "roomContext": ["bedroom"],
+  "status": "approved"
+}
