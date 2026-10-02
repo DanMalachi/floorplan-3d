@@ -53,6 +53,8 @@ import {
   grantFromLocation,
   stripGrantFromUrl,
   ShareApiError,
+  shortenGrant,
+  shortLinkUrl,
   type ShareRole,
 } from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
@@ -71,6 +73,9 @@ import { consumeGoLiveSeed, type GoLiveSeed } from "./goLiveHandoff";
 import { applySceneDiff } from "./sceneDiff";
 import "./liveblocks";
 import { Announcer } from "@/ui/a11y/Announcer";
+import { HelpButton, HelpPanel } from "@/onboarding/HelpPanel";
+import { guideStore } from "@/onboarding/guideStore";
+import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 
 interface Syncable {
   synced?: boolean;
@@ -80,8 +85,16 @@ interface Syncable {
 
 // -- shared-scene binding -----------------------------------------------------
 
-function useRoomBinding(roomId: string, role: ShareRole) {
+/** What the room has shown so far. "loading" until the shared doc delivers a
+ *  plan; "empty" when it has synced and holds none. Until "ready", the 3D view
+ *  is covered — the store on /v starts as the default sample ("L-shaped
+ *  room"), and showing it read as "the link opened the wrong room" (Dan,
+ *  2026-10-02). */
+type RoomLoad = "loading" | "ready" | "empty";
+
+function useRoomBinding(roomId: string, role: ShareRole): RoomLoad {
   const room = useRoom();
+  const [load, setLoad] = useState<RoomLoad>("loading");
   const framed = useRef(false);
   const seedChecked = useRef(false);
   // The local project this browser mirrors the room into. For the owner it's the
@@ -126,6 +139,7 @@ function useRoomBinding(roomId: string, role: ShareRole) {
         ...(first ? { appMode: "view" as AppMode, frameToken: s.frameToken + 1, ...readPresentation(doc) } : {}),
       }));
       if (first) framed.current = true;
+      setLoad("ready");
       const p = readPresentation(doc);
       if (ownerProjectId.current) {
         // Continuously persist the live scene into the local project (durable keys
@@ -164,6 +178,16 @@ function useRoomBinding(roomId: string, role: ShareRole) {
         if (seed && isSceneEmpty(doc)) seedSceneDoc(doc, seed.scene, seed, seed.title);
       }
       project();
+      markEmpty();
+    };
+
+    // Synced and still nothing in it: say so rather than spin forever. Checked on
+    // "synced" too, because the 1.5s fallback above can run maybeSeed BEFORE the
+    // doc has synced, and then the synced call returns early.
+    const markEmpty = () => {
+      if ((provider as unknown as Syncable).synced && isSceneEmpty(doc)) {
+        setLoad((l) => (l === "loading" ? "empty" : l));
+      }
     };
 
     const unobserve = observeSceneDoc(doc, project);
@@ -176,16 +200,20 @@ function useRoomBinding(roomId: string, role: ShareRole) {
     const sync = provider as unknown as Syncable;
     if (sync.synced) maybeSeed();
     else sync.on("synced", maybeSeed);
+    sync.on("synced", markEmpty);
     const t = setTimeout(maybeSeed, 1500);
 
     return () => {
       clearTimeout(t);
       unobserve();
       sync.off("synced", maybeSeed);
+      sync.off("synced", markEmpty);
       undo.destroy();
       useSceneStore.getState().setCollab(null);
     };
   }, [room, roomId]);
+
+  return load;
 }
 
 // -- others' selection markers (rendered INSIDE the R3F canvas) ---------------
@@ -321,6 +349,21 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
   );
 }
 
+/** The hover `pdChip` alone does not give these chips. An ACTIVE chip keeps
+ *  its tint under the cursor (pdChip does not deepen it), so Share and Copy —
+ *  both drawn active — did not react at all, and an idle chip's 9% white wash
+ *  is close to invisible over a bright 3D scene. Dan's "no hover animation".
+ *  So the room's chips also brighten and pick up a soft accent glow, the same
+ *  answer the editor's Go live button gives (src/app/[locale]/design/page.tsx).
+ *  The glow is hover-only, per the navigator rules. */
+const roomChipLift = (active: boolean, hovered: boolean): React.CSSProperties => ({
+  filter: hovered ? "brightness(1.15)" : "none",
+  boxShadow: hovered
+    ? `0 6px 18px -8px oklch(0.62 0.15 258 / ${active ? 0.9 : 0.6})`
+    : "0 0 0 0 oklch(0.62 0.15 258 / 0)",
+  transition: `${pdHoverTransition(hovered)}, filter ${hovered ? "110ms" : "320ms"} ease-out`,
+});
+
 /** A `pdChip()` in the room's chrome, with hover. Its own component because
  *  `useHover` is a hook and the mode tabs / role rows are rendered in loops.
  *
@@ -356,7 +399,7 @@ const RoomChip = forwardRef<HTMLButtonElement, {
       aria-expanded={ariaExpanded}
       aria-controls={ariaControls}
       {...bind}
-      style={{ ...pdChip(active, undefined, !disabled && hov), ...extra }}
+      style={{ ...pdChip(active, undefined, !disabled && hov), ...roomChipLift(active, !disabled && hov), ...(disabled ? { opacity: 0.5, cursor: "default" } : {}), ...extra }}
     >
       {children}
     </button>
@@ -401,17 +444,33 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
 
   const offerable = useMemo(() => SHARE_ROLES.filter((r) => canAttenuateTo(held, r)), [held]);
 
+  // Minting is a network round trip. While one is in flight the box still holds
+  // the PREVIOUS role's link, so Copy is held off until the new one lands — and
+  // only the latest request may write the box: the "view" link minted on open
+  // can resolve after a later "edit" click and would otherwise replace it, with
+  // the edit row still showing as selected.
+  const mintSeq = useRef(0);
+  const [minting, setMinting] = useState(false);
+
   const makeLink = useCallback(async (r: ShareRole) => {
+    const seq = ++mintSeq.current;
     setRole(r);
     setCopied(false);
     setErr(null);
+    setMinting(true);
     try {
       const grant = await mintGrant(lbRoom(roomId), r);
-      // Fragment, not query (F-20): the grant never leaves this browser in a
-      // request, a Referer header, or a server log. Old links already sent to
-      // people used `?g=` and CollabRoom below still reads that form too.
-      setLink(`${window.location.origin}/v/${roomId}#g=${grant}`);
+      if (seq !== mintSeq.current) return;
+      // Short when the deployment can store one (`/s#k7Qm2xPa9Lz4` — Dan: the
+      // long form "looks suspicious"), else the long form, which always works.
+      // Both put the secret part in the fragment (F-20): it never leaves this
+      // browser in a request, a Referer header, or a server log. Old links
+      // already sent to people used `?g=` and CollabRoom below still reads that.
+      const code = await shortenGrant(grant);
+      if (seq !== mintSeq.current) return;
+      setLink(code ? shortLinkUrl(window.location.origin, code) : `${window.location.origin}/v/${roomId}#g=${grant}`);
     } catch (e) {
+      if (seq !== mintSeq.current) return;
       // Minting can fail for reasons the UI cannot rule out in advance —
       // an unconfigured signing secret, or ownership that has since moved.
       // Say so; a silent rejected promise leaves a stale link in the box.
@@ -422,6 +481,8 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       console.warn("[share] mint failed:", (e as Error).message);
       setLink("");
       setErr(e instanceof ShareApiError && e.code === "ROOM_LIMIT" ? t("roomLimitError") : t("linkError"));
+    } finally {
+      if (seq === mintSeq.current) setMinting(false);
     }
   }, [roomId, t]);
 
@@ -442,6 +503,20 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // ...and a press anywhere outside it closes it too — on the 3D view most of
+  // all, which is where a hand goes next (Dan: "not closing when pressing on the
+  // editor"). Capture phase, because the canvas's own pointer handlers may stop
+  // the event before it would bubble up to window.
+  const shareRoot = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (shareRoot.current && !shareRoot.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
   }, [open]);
 
   const copy = async () => {
@@ -470,7 +545,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div ref={shareRoot} style={{ position: "relative" }}>
       <div style={{ display: "flex", gap: 6 }}>
         <RoomChip
           onClick={saveCopy}
@@ -499,8 +574,8 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input readOnly aria-label={t("shareLinkLabel")} value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
-            <RoomChip active onClick={copy} disabled={!link}>
+            <input readOnly aria-label={t("shareLinkLabel")} value={link} aria-busy={minting} style={roomField({ flex: 1, fontSize: 11, opacity: minting ? 0.5 : 1 })} onFocus={(e) => e.target.select()} />
+            <RoomChip active onClick={copy} disabled={!link || minting}>
               {copied ? t("copied") : t("copy")}
             </RoomChip>
           </div>
@@ -610,6 +685,12 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
       </div>
       <ShareControls roomId={roomId} held={role} />
       <ReportRoomLink roomId={roomId} />
+      {/* The editor's own help and language controls (its top-right cluster in
+          src/app/[locale]/design/page.tsx). The room is a separate route and
+          never had them, so a link recipient was stuck in English with no way
+          to look up the camera controls. */}
+      <HelpButton />
+      <LocaleSwitch />
     </div>
   );
 }
@@ -622,13 +703,15 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
  *  the 3D view. */
 function ReportRoomLink({ roomId }: { roomId: string }) {
   const t = useTranslations("collabRoom");
+  const [hov, bind] = useHover();
   return (
     <Tooltip label={t("reportTooltip")} placement="bottom">
       <a
         href={hardNavHref(`/report?target=${encodeURIComponent(lbRoom(roomId))}`)}
         target="_blank"
         rel="noopener noreferrer"
-        style={{ ...pdChip(false), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+        {...bind}
+        style={{ ...pdChip(false, undefined, hov), ...roomChipLift(false, hov), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
       >
         {t("report")}
       </a>
@@ -637,8 +720,15 @@ function ReportRoomLink({ roomId }: { roomId: string }) {
 }
 
 function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
-  useRoomBinding(roomId, role);
+  const load = useRoomBinding(roomId, role);
   const t = useTranslations("collabRoom");
+
+  // Guides off here (see the HelpPanel note below). The editor's GuideHost
+  // decides this from `liveRoomId`, which /v never sets, and it is not mounted
+  // on this route anyway — so say it directly.
+  useEffect(() => {
+    guideStore().getState().setEnabled(false);
+  }, []);
 
   // useSceneStore.projectName is NOT set on /v — persistence never initializes
   // on this route, so it stays stuck at the local-editor default. The room's
@@ -685,10 +775,50 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
       <ViewportGuard>
         <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
       </ViewportGuard>
+      {load !== "ready" && (
+        <RoomNotice title={load === "loading" ? null : t("emptyTitle")} body={load === "loading" ? t("loading") : t("emptyBody")} />
+      )}
       <ModeSwitcher role={role} />
       <ProjectBar name={title ?? t("sharedPlan")} onOpenProjects={leave} />
       <TopBar roomId={roomId} role={role} />
+      {/* The panel only — no GuideHost. Guides are off in a live room (they
+          teach tracing and building a plan of your own), and with them off the
+          panel shows what a visitor does need: the camera controls and how to
+          reach us. */}
+      <HelpPanel />
       <Announcer />
+    </div>
+  );
+}
+
+/** Covers the 3D view while the room has nothing real to show. */
+function RoomNotice({ title, body }: { title: string | null; body: string }) {
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "grid", placeItems: "center", padding: 16, background: PD.bg, fontFamily: PD.fontUi, color: PD.textPrimary }}>
+      <div role="status" style={{ width: "min(420px, 100%)", display: "grid", gap: 10, textAlign: "center" }}>
+        {title && <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{title}</h1>}
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: PD.textSecondary }}>{body}</p>
+      </div>
+    </div>
+  );
+}
+
+/** The whole page when the server refused this visitor. Most often: the link
+ *  was copied from the address bar, which never carries the access part. */
+function NoAccess() {
+  const t = useTranslations("collabRoom");
+  return (
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 16, background: PD.bg, fontFamily: PD.fontUi, color: PD.textPrimary }}>
+      <PdThemeStyle />
+      <div role="alert" style={{ width: "min(440px, 100%)", display: "grid", gap: 12, textAlign: "center" }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{t("noAccessTitle")}</h1>
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: PD.textSecondary }}>{t("noAccessBody")}</p>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 6 }}>
+          <a href={hardNavHref("/")} style={{ padding: "8px 16px", borderRadius: 999, border: `1px solid ${PD.hairline}`, color: PD.textPrimary, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            {t("noAccessHome")}
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -712,7 +842,13 @@ export function CollabRoom({ roomId }: { roomId: string }) {
   // Read once, before the URL is cleaned up below. `roleFromGrant`'s side effect
   // remembers the grant in localStorage, so every later read (a Liveblocks
   // reconnect, a tab refocus) has it even after stripGrantFromUrl runs.
-  const initialGrant = useMemo(() => (mounted ? grantFromLocation() : null), [mounted]);
+  //
+  // `currentGrant`, not the URL alone: the URL loses its grant on the first load
+  // (stripGrantFromUrl), so a reload, or the remount a language switch causes,
+  // arrived with no grant and the UI fell to "view" — an edit link recipient
+  // locked in View with no mode tabs. The grant remembered for THIS room is the
+  // same capability, so it gates the UI exactly as the link did.
+  const initialGrant = useMemo(() => (mounted ? currentGrant(lbRoom(roomId)) : null), [mounted, roomId]);
   const role = useMemo<ShareRole>(() => roleFromGrant(initialGrant), [initialGrant]);
 
   // F-20: take the grant out of the visible URL once it is safely remembered.
@@ -720,9 +856,15 @@ export function CollabRoom({ roomId }: { roomId: string }) {
   // the first place; an old-format `?g=` link did reach the server on this very
   // request, but this at least keeps it out of this tab's later history entries.
   useEffect(() => {
-    if (initialGrant) stripGrantFromUrl();
-  }, [initialGrant]);
+    if (mounted && grantFromLocation()) stripGrantFromUrl();
+  }, [mounted]);
 
+  // A refusal (no grant, a grant for another room, a withdrawn or expired one)
+  // used to be a thrown error, which Liveblocks retries forever — the visitor sat
+  // looking at the default sample room with nothing to say why. Now a 401/403
+  // ends the attempt ({ error: "forbidden" } tells Liveblocks to stop) and the
+  // room says what happened. Other failures still throw, and so still retry.
+  const [denied, setDenied] = useState(false);
   const authEndpoint = useCallback(async (room?: string) => {
     const grant = currentGrant(lbRoom(roomId));
     const res = await fetch("/api/liveblocks-auth", {
@@ -730,11 +872,16 @@ export function CollabRoom({ roomId }: { roomId: string }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ room, grant }),
     });
+    if (res.status === 401 || res.status === 403) {
+      setDenied(true);
+      return { error: "forbidden" as const, reason: "no access to this room" };
+    }
     if (!res.ok) throw new Error("auth failed");
     return res.json();
   }, [roomId]);
 
   if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: PD.bg }} />;
+  if (denied) return <NoAccess />;
 
   return (
     <LiveblocksProvider authEndpoint={authEndpoint} throttle={16}>

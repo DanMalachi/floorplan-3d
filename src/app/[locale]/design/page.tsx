@@ -65,10 +65,12 @@ function EditorProjectBar({ onOpenProjects }: { onOpenProjects: () => void }) {
 function GoLiveButton() {
   const t = useTranslations("editor.chrome");
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [hovered, hoverBind] = useHover();
   const liveRoomId = useSceneStore((s) => s.liveRoomId);
   const goLive = async () => {
     setBusy(true);
+    setFailed(false);
     try {
       const s = useSceneStore.getState();
       // Full UUID, not the first 8 characters. An 8-hex-character id is 32 bits —
@@ -90,7 +92,10 @@ function GoLiveButton() {
         },
       });
     } catch {
+      // Said out loud: the room id is already saved by then, so the label has
+      // flipped to "Open live" — a silent failure looked like a dead button.
       setBusy(false);
+      setFailed(true);
     }
   };
   const label = busy ? t("goLive.starting") : liveRoomId ? t("goLive.openLive") : t("goLive.goLive");
@@ -141,6 +146,25 @@ function GoLiveButton() {
       >
         {button}
       </Tooltip>
+      {failed && (
+        <div
+          role="alert"
+          style={{
+            ...pdGlass({ borderRadius: 10 }),
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            insetInlineEnd: 0,
+            width: 220,
+            padding: "8px 12px",
+            fontSize: 12,
+            lineHeight: 1.4,
+            fontFamily: PD.fontUi,
+            color: PD.warnText,
+          }}
+        >
+          {t("goLive.failed")}
+        </div>
+      )}
     </div>
   );
 }

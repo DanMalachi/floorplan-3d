@@ -214,3 +214,26 @@ export async function revokeAllLinks(room: string): Promise<void> {
     /* private mode — nothing was stored */
   }
 }
+
+/**
+ * Ask for a short code standing in for `grant` (`done.design/s#<code>`). Null on
+ * ANY failure — a deployment without the share_links table, a rate limit, a
+ * network blip: the caller already holds a working long link and shows that.
+ */
+export async function shortenGrant(grant: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/share/short", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ grant }),
+    });
+    if (!res.ok) return null;
+    const { code } = (await res.json()) as { code?: unknown };
+    return typeof code === "string" && /^[A-Za-z0-9]{12}$/.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The link for a short code. Fragment, not path — see 0009_share_links.sql. */
+export const shortLinkUrl = (origin: string, code: string) => `${origin}/s#${code}`;

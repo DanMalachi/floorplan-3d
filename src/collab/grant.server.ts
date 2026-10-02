@@ -73,6 +73,18 @@ export function signGrant(p: Omit<GrantPayload, "exp"> & { ttlMs?: number }): st
   return `${body}.${sig}`;
 }
 
+/** Sign a grant from claims that already exist — iat and exp kept exactly, never
+ *  re-stamped. Used by short links (src/lib/api/shortLinks.ts), which store a
+ *  grant's claims rather than the grant: re-stamping `iat` would let a link
+ *  minted before "Revoke links" come back to life, and re-stamping `exp` would
+ *  let it outlive the grant it was made from. */
+export function resignGrant(p: GrantPayload & { iat: number; exp: number }): string {
+  const payload: GrantPayload = { room: p.room, role: p.role, iat: p.iat, exp: p.exp };
+  const body = b64(JSON.stringify(payload));
+  const sig = crypto.createHmac("sha256", shareSecret()).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
 function signatureMatches(body: string, sig: string, key: string): boolean {
   const expect = crypto.createHmac("sha256", key).update(body).digest("base64url");
   const a = Buffer.from(sig);

@@ -89,6 +89,21 @@
     "dismiss": "Dismiss cookie notice"
   },
   "collabRoom": {
+    "shortLink": {
+      "opening": "Opening the shared design…",
+      "goneTitle": "This link doesn't work anymore",
+      "goneBody": "It may have expired, or its owner withdrew it. Ask whoever sent it for a new one.",
+      "failedTitle": "We couldn't open this link",
+      "failedBody": "Something went wrong on our side. Try again in a moment.",
+      "retry": "Try again",
+      "home": "Go to done."
+    },
+    "loading": "Loading the shared design…",
+    "emptyTitle": "Nothing here yet",
+    "emptyBody": "This shared design has no plan in it yet. Once its owner adds one, it appears here.",
+    "noAccessTitle": "This link doesn't give access",
+    "noAccessBody": "A shared design opens only from the link made with its Share button — the address bar of the room leaves out the part that grants access. Ask whoever sent it to press Share and send the link from there.",
+    "noAccessHome": "Go to done.",
     "linkPermissionLabel": "Link permission",
     "shareLinkLabel": "Share link",
     "peopleInRoomLabel": "People in this room",
@@ -390,6 +405,7 @@
       },
       "goLive": {
         "starting": "Starting…",
+        "failed": "Couldn't open the live room. Try again in a moment.",
         "openLive": "Open live",
         "goLive": "Go live",
         "tooltipReopen": "Reopen this project's live shared room",
