@@ -448,6 +448,46 @@ the mesh bays were "not glass, black metal mesh" (the 390 px reference could not
 13. **A stale `.git/index.lock` (0 bytes, a day old, no git process) blocks every `git add`** with dozens of identical fatal lines. Check `tasklist //FI "IMAGENAME eq git.exe"` and the lock's age, then delete it; do not loop `git add`.
 14. **Push the BRANCH, never `main`, unless the owner says so:** `git push origin main` is a production deploy. Factory work lives on `codex/furniture-addition`.
 
+## 7j. Eleventh asset: white two-drawer nightstand (2026-10-02) - painted case-goods, and a false alarm about texture
+
+Approved after ONE owner point ("lines repeating in the texture"), which turned out NOT to be texture. About 35 tool calls, of which a third went on
+tooling that had drifted. Example: `examples/white_two_drawer_nightstand.py` (3.1k triangles, 0.1 MB, painted case with shaker fronts and brass knobs).
+Rules that make the next nightstand/dresser/side table faster:
+
+1. **Diagnose "repeating lines" by elimination BEFORE touching the material.** Swap to a plain colour (no maps), then to roughness 0.95 / specular 0, then
+   switch the viewer light preset. Here the diagonal diamond pattern survived all three and moved with the light: it is shadow-map banding on large flat,
+   light-coloured, near-grazing VERTICAL faces in the dev viewer (`SHADOW.normalBias` 0.02 in `src/render/contract.ts`, protected). It is not in the asset.
+   Dark woods hide it, curved upholstery avoids it, white flat fronts show it. Say so to the owner and ask him to check in the real editor room: he did and
+   approved. Do not burn rounds re-texturing; each of my three material swaps was a wasted 2-minute loop.
+2. **Painted = plain colour material.** A tiled wood map under white paint reads as diagonal bands (the oak figure) even at normal strength 0.05. A flat
+   1x1 generated image for roughness/normal rendered BLACK in the viewer; use a plain Principled material (`paint_mat` in the example: roughness 0.5, spec
+   0.38) instead. The audit lists it as "missing PBR maps"; promotion still works (like thread and metal). Pick albedo about `#ece9e2`; the viewer renders
+   white about 10 percent darker on side faces.
+3. **Flat-shade rigid case-goods; smooth only round parts.** `export_glb()` forces every polygon smooth, which makes big flat faces next to a 2-3 mm bevel
+   shade like pillows (posts looked like cylinders). For rigid parts set `use_smooth = False` after building, smooth only knobs/pulls, and call
+   `bpy.ops.export_scene.gltf` directly (copy the call at the end of the example). Smooth-by-angle and weighted normals did NOT fix it: the gradients stayed.
+4. **Shaker/routed fronts: boolean DIFFERENCE with an EXACT solver and a `prism()` cutter, 6 mm deep, 42 mm margin, corner radius 4 mm.** At 4 mm deep the
+   pocket does not read from room distance. Keep the front coplanar with the posts (lesson 7h) and a 3 mm reveal.
+5. **Case construction that is cheap and reads as joinery:** full-height square corner posts through to the top, recessed side/back panels (6 mm in), a
+   solid fill block behind closed drawer fronts (no light leak, no interior needed), top slab as ONE member with a 3 mm bevel overhanging 12 mm. Footprint
+   includes the knobs (0.409 m deep vs 0.40 nominal): that is the audit, use it.
+6. **Brass/knob hardware:** `metal_material("brass", "#c9a46a", 0.36)` then Metallic 0.78, turned knob = cone stem + flattened UV sphere. Read well in
+   the app viewer in the first draft.
+7. **Tooling drift cost 10 calls; it is fixed now (this commit):**
+   - The dev page reads `data/furniture-factory.catalog.json`, not a list in the tsx. `dev-publish.mjs` now upserts a catalog entry IN THE WORKTREE
+     (`--rooms`, `--kind`); old behaviour corrupted `MeasureAsset`. Promotion overwrites by assetId; delete the `_r001.glb` dev copy then.
+   - The dev page loads about 120 models and autosaves, so Playwright `networkidle` never fires. `app-shot.mjs` now waits for `load` plus 15 s, and
+     `iterate.mjs` passes `--port`. The page also rewrites `data/furniture-review.decisions.json` on every visit: `git checkout` it before committing.
+   - New worktree needs `node_modules`: `cmd //c "mklink /J node_modules C:\Users\dandu\floorplan-3d\node_modules"` (a junction, instant).
+   - The factory page's search is by catalog `name`; use the catalog name for `--shot-name`.
+8. **Parallel sessions:** other sessions hold ports (3123 seen) and the main tree is on a feature branch. Own worktree off `origin/main`
+   (`git worktree add -b feat/<x> C:/Users/dandu/fp-wt/<x> origin/main`), own port (3140+), one SendMessage to the peer, and never touch their tree.
+9. **Records to fill BEFORE promote:** `brief.json` (dimensions, mustKeep, avoid, reference as inspiration-only), `sources.json` (`materialSources: []` for
+   plain colour). `promote-candidate.mjs` text-substitutes into `DATA_RIGHTS.md`: check the diff (`git diff -U0 docs/DATA_RIGHTS.md | grep '^[-+]|'`) shows
+   exactly ONE added row; a regex edit of mine hit the wrong (block-arm sofa) row and had to be restored.
+10. **Hotspot keyword:** `--kind nightstand` reaches the Bedroom "nightstand" hotspot (`BedroomScene.tsx` keywords side table / nightstand). Verified by
+    `src/furniture/factoryCatalog.test.ts` (run it with `npx vitest run`; it prints ok lines, the suite "fails" with "No test suite found" because it is a script).
+
 ## 8. The one-shot recipe (condensed)
 
 1. Intake: rights class, borrowed vs changed, dressed state. Ask the user only for real forks.

@@ -28,8 +28,9 @@ const { chromium } = createRequire(path.join(worktree, "package.json"))("playwri
 fs.mkdirSync(out, { recursive: true });
 const b = await chromium.launch({ args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const p = await b.newPage({ viewport: { width: 1500, height: 1000 } });
-await p.goto(`http://localhost:${port}/dev/furniture`, { waitUntil: "networkidle", timeout: 90000 });
-await p.getByText(name, { exact: false }).first().click();
+await p.goto(`http://localhost:${port}/dev/furniture`, { waitUntil: "load", timeout: 60000 });
+await p.waitForTimeout(15000);   // the page loads ~120 models and autosaves, so networkidle NEVER fires
+await p.getByText(name, { exact: false }).first().click({ timeout: 60000 });
 await p.waitForTimeout(wait);
 for (const v of views) {
   if (v !== "front") { await p.getByRole("button", { name: v, exact: true }).click(); await p.waitForTimeout(3500); }

@@ -24,14 +24,15 @@ const audit = JSON.parse(fs.readFileSync(path.join(cand, "exports", "audit.json"
 const [w, , d] = audit.dimensionsXYZM;
 const stem = path.basename(glb, ".glb");
 fs.copyFileSync(glb, path.join(wt, "public", "furniture", "factory", stem + ".glb"));
-const tsx = path.join(wt, "src", "app", "[locale]", "dev", "furniture", "FurnitureReview.tsx");
-let s = fs.readFileSync(tsx, "utf8");
-const line = `  { assetId: "${id}", name: ${JSON.stringify(name)}, category: "${category}", footprint: { w: ${w.toFixed(3)}, d: ${d.toFixed(3)} }, wallSnap: true, model: "factory/${stem}" },`;
-const re = new RegExp(`^ *\\{ *assetId: "${id}".*$`, "m");
-if (re.test(s)) s = s.replace(re, line);
-else {
-  const end = s.indexOf("];", s.indexOf("const FACTORY_ASSETS"));
-  s = s.slice(0, end) + line + "\n" + s.slice(end);
-}
-fs.writeFileSync(tsx, s);
+// The dev page reads data/furniture-factory.catalog.json (FACTORY_ASSETS), not a list inside the tsx (changed 2026-10). So a
+// review candidate is a catalog entry in the WORKTREE. Promotion later overwrites it by assetId; delete the dev glb then.
+const assetId = id.startsWith("factory:") ? id : "factory:" + id.replace(/^factory-/, "").replace(/-r[0-9]+$/, "");
+const catPath = path.join(wt, "data", "furniture-factory.catalog.json");
+const cat = JSON.parse(fs.readFileSync(catPath, "utf8"));
+const entry = { assetId, name, category, footprint: { w: +w.toFixed(3), d: +d.toFixed(3) }, wallSnap: true, realModel: "/furniture/factory/" + stem + ".glb",
+  brand: "Done", subtitle: "dev review candidate", rooms: opt("--rooms", "living").split(","), kind: opt("--kind", "furniture") };
+const k = cat.findIndex((x) => x.assetId === assetId);
+if (k >= 0) cat[k] = { ...cat[k], ...entry }; else cat.push(entry);
+fs.writeFileSync(catPath, JSON.stringify(cat, null, 2) + "
+");
 console.log(`published ${id}: ${stem}.glb, footprint ${w.toFixed(3)} x ${d.toFixed(3)}, sha256 ${audit.sha256.slice(0, 12)}`);

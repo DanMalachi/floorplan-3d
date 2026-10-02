@@ -246,5 +246,28 @@
       "console",
       "media cabinet"
     ]
+  },
+  {
+    "assetId": "factory:white-two-drawer-nightstand",
+    "name": "White Two-Drawer Nightstand",
+    "category": "Storage",
+    "footprint": {
+      "w": 0.5,
+      "d": 0.409
+    },
+    "wallSnap": true,
+    "realModel": "/furniture/factory/white-two-drawer-nightstand.glb",
+    "thumbnail": "/furniture/factory/white-two-drawer-nightstand.png",
+    "brand": "Done",
+    "subtitle": "Painted two-drawer bedside table, shaker fronts, brass knobs",
+    "kind": "nightstand",
+    "typeTags": [
+      "nightstand",
+      "bedside table",
+      "drawer"
+    ],
+    "rooms": [
+      "bedroom"
+    ]
   }
 ]

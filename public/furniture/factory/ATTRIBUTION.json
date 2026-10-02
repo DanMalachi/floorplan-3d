@@ -219,6 +219,15 @@
           "license": "CC0-1.0"
         }
       ]
+    },
+    {
+      "assetId": "factory:white-two-drawer-nightstand",
+      "file": "white-two-drawer-nightstand.glb",
+      "sha256": "67b112c73e50b4efb1646516ef2a44114acdc94ae892296bc30e0d94c84d477d",
+      "candidate": "assets/furniture/bedroom/white-two-drawer-nightstand/r001",
+      "owner": "Dan (Done)",
+      "geometryLicense": "original work, owner-controlled; CC0 dedication NOT recorded",
+      "textures": []
     }
   ]
 }
