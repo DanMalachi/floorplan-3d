@@ -440,6 +440,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [revoked, setRevoked] = useState(false);
+  const [revoking, setRevoking] = useState(false);
 
   const offerable = useMemo(() => SHARE_ROLES.filter((r) => canAttenuateTo(held, r)), [held]);
 
@@ -525,17 +526,25 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
 
   // Withdraw every link sent so far, then mint a fresh one for the box — the link
   // that was showing was minted before the cut-off, so it is dead too.
+  //
+  // Confirmed as soon as the server agrees, not after the new link lands, and
+  // on the chip itself (Dan: pressing it gave "no UI interaction"). The old
+  // confirmation waited for the re-mint and was a small grey line beside it.
   const revoke = async () => {
     setErr(null);
     setRevoked(false);
+    setRevoking(true);
     try {
       await revokeAllLinks(lbRoom(roomId));
-      await makeLink(role);
       setRevoked(true);
     } catch (e) {
       console.warn("[share] revoke failed:", (e as Error).message);
       setErr(t("revokeError"));
+      return;
+    } finally {
+      setRevoking(false);
     }
+    await makeLink(role);
   };
 
   const saveCopy = async () => {
@@ -582,9 +591,23 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
           <span role="status" className="fp-sr-only">{copied ? t("copied") : ""}</span>
           {err && <div role="alert" style={{ fontSize: 11.5, color: PD.warnText }}>{err}</div>}
           {held === "build" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <RoomChip onClick={revoke}>{t("revokeLinks")}</RoomChip>
-              <span role="status" style={{ fontSize: 11, color: PD.textTertiary }}>{revoked ? t("revoked") : ""}</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+              <RoomChip
+                onClick={revoke}
+                disabled={revoking}
+                extra={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              >
+                {revoking ? (
+                  t("revoking")
+                ) : revoked ? (
+                  <>
+                    {t("revokedChip")} <CheckIcon size={12} aria-hidden />
+                  </>
+                ) : (
+                  t("revokeLinks")
+                )}
+              </RoomChip>
+              <span role="status" style={{ fontSize: 12, lineHeight: 1.4, color: PD.textSecondary }}>{revoked ? t("revoked") : ""}</span>
             </div>
           )}
           {held !== "build" && (
