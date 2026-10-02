@@ -41,6 +41,7 @@ Schema: `supabase/migrations/0001_projects.sql`.
 | `public.projects` | One row per plan: id, owner, plan name, timestamps, revision counter, storage paths, live-room id, `deleted_at` tombstone | Plan names are user-authored and can be identifying ("Flat 4, Ben Yehuda St") |
 | `public.project_docs` | One row per plan: the full geometry as JSON (`state`) — walls, rooms, openings, stairs, furniture | Yes — a floor plan of someone's home |
 | `public.live_rooms` | Who claimed a live collaboration room: room id, owner, created-at (migration `0002_live_rooms.sql`) | Links a user id to a room id |
+| `public.share_links` | Short share links (`/s#<code>`): sha256 of the code, room id, role, the grant's issued/expiry times (migration `0009_share_links.sql`). Written for anyone who shares, signed in or not. Never the code or the grant itself. Rows past expiry (at most 30 days) are deleted whenever a new short link is made | No — no user id, IP or name; the room id is the only identifier |
 | Storage bucket `plans` (private) | The imported plan image, at `<user id>/<project id>.<ext>` | Yes — often a scan of an architectural drawing with an address on it |
 | Storage bucket `thumbs` (private) | A small JPEG of the 3D view, at `<user id>/<project id>.jpg` | Yes, same reason |
 
@@ -345,6 +346,9 @@ To make everything in this document true in a deployment:
    response body will say the insert failed; the sweep itself still runs and
    still deletes/purges normally, since a logging failure never changes its
    result.
+7. Apply `supabase/migrations/0009_share_links.sql` (SQL editor) to turn on short
+   share links. Until then the Share box keeps handing out the long
+   `/v/<id>#g=…` link — `/api/share/short` answers 503 and the client falls back.
 
 Deleting an account needs no migration beyond what already exists: it acts
 through the existing schema with the service role, which bypasses RLS. The
