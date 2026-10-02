@@ -70,6 +70,9 @@ import { consumeGoLiveSeed, type GoLiveSeed } from "./goLiveHandoff";
 import { applySceneDiff } from "./sceneDiff";
 import "./liveblocks";
 import { Announcer } from "@/ui/a11y/Announcer";
+import { HelpButton, HelpPanel } from "@/onboarding/HelpPanel";
+import { guideStore } from "@/onboarding/guideStore";
+import { LocaleSwitch } from "@/ui/planDock/LocaleSwitch";
 
 interface Syncable {
   synced?: boolean;
@@ -320,6 +323,21 @@ function ModeSwitcher({ role }: { role: ShareRole }) {
   );
 }
 
+/** The hover `pdChip` alone does not give these chips. An ACTIVE chip keeps
+ *  its tint under the cursor (pdChip does not deepen it), so Share and Copy —
+ *  both drawn active — did not react at all, and an idle chip's 9% white wash
+ *  is close to invisible over a bright 3D scene. Dan's "no hover animation".
+ *  So the room's chips also brighten and pick up a soft accent glow, the same
+ *  answer the editor's Go live button gives (src/app/[locale]/design/page.tsx).
+ *  The glow is hover-only, per the navigator rules. */
+const roomChipLift = (active: boolean, hovered: boolean): React.CSSProperties => ({
+  filter: hovered ? "brightness(1.15)" : "none",
+  boxShadow: hovered
+    ? `0 6px 18px -8px oklch(0.62 0.15 258 / ${active ? 0.9 : 0.6})`
+    : "0 0 0 0 oklch(0.62 0.15 258 / 0)",
+  transition: `${pdHoverTransition(hovered)}, filter ${hovered ? "110ms" : "320ms"} ease-out`,
+});
+
 /** A `pdChip()` in the room's chrome, with hover. Its own component because
  *  `useHover` is a hook and the mode tabs / role rows are rendered in loops.
  *
@@ -355,7 +373,7 @@ const RoomChip = forwardRef<HTMLButtonElement, {
       aria-expanded={ariaExpanded}
       aria-controls={ariaControls}
       {...bind}
-      style={{ ...pdChip(active, undefined, !disabled && hov), ...extra }}
+      style={{ ...pdChip(active, undefined, !disabled && hov), ...roomChipLift(active, !disabled && hov), ...(disabled ? { opacity: 0.5, cursor: "default" } : {}), ...extra }}
     >
       {children}
     </button>
@@ -400,17 +418,29 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
 
   const offerable = useMemo(() => SHARE_ROLES.filter((r) => canAttenuateTo(held, r)), [held]);
 
+  // Minting is a network round trip. While one is in flight the box still holds
+  // the PREVIOUS role's link, so Copy is held off until the new one lands — and
+  // only the latest request may write the box: the "view" link minted on open
+  // can resolve after a later "edit" click and would otherwise replace it, with
+  // the edit row still showing as selected.
+  const mintSeq = useRef(0);
+  const [minting, setMinting] = useState(false);
+
   const makeLink = useCallback(async (r: ShareRole) => {
+    const seq = ++mintSeq.current;
     setRole(r);
     setCopied(false);
     setErr(null);
+    setMinting(true);
     try {
       const grant = await mintGrant(lbRoom(roomId), r);
+      if (seq !== mintSeq.current) return;
       // Fragment, not query (F-20): the grant never leaves this browser in a
       // request, a Referer header, or a server log. Old links already sent to
       // people used `?g=` and CollabRoom below still reads that form too.
       setLink(`${window.location.origin}/v/${roomId}#g=${grant}`);
     } catch (e) {
+      if (seq !== mintSeq.current) return;
       // Minting can fail for reasons the UI cannot rule out in advance —
       // an unconfigured signing secret, or ownership that has since moved.
       // Say so; a silent rejected promise leaves a stale link in the box.
@@ -421,6 +451,8 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
       console.warn("[share] mint failed:", (e as Error).message);
       setLink("");
       setErr(e instanceof ShareApiError && e.code === "ROOM_LIMIT" ? t("roomLimitError") : t("linkError"));
+    } finally {
+      if (seq === mintSeq.current) setMinting(false);
     }
   }, [roomId, t]);
 
@@ -498,8 +530,8 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
             ))}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input readOnly aria-label={t("shareLinkLabel")} value={link} style={roomField({ flex: 1, fontSize: 11 })} onFocus={(e) => e.target.select()} />
-            <RoomChip active onClick={copy} disabled={!link}>
+            <input readOnly aria-label={t("shareLinkLabel")} value={link} aria-busy={minting} style={roomField({ flex: 1, fontSize: 11, opacity: minting ? 0.5 : 1 })} onFocus={(e) => e.target.select()} />
+            <RoomChip active onClick={copy} disabled={!link || minting}>
               {copied ? t("copied") : t("copy")}
             </RoomChip>
           </div>
@@ -609,6 +641,12 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
       </div>
       <ShareControls roomId={roomId} held={role} />
       <ReportRoomLink roomId={roomId} />
+      {/* The editor's own help and language controls (its top-right cluster in
+          src/app/[locale]/design/page.tsx). The room is a separate route and
+          never had them, so a link recipient was stuck in English with no way
+          to look up the camera controls. */}
+      <HelpButton />
+      <LocaleSwitch />
     </div>
   );
 }
@@ -621,13 +659,15 @@ function TopBar({ roomId, role }: { roomId: string; role: ShareRole }) {
  *  the 3D view. */
 function ReportRoomLink({ roomId }: { roomId: string }) {
   const t = useTranslations("collabRoom");
+  const [hov, bind] = useHover();
   return (
     <Tooltip label={t("reportTooltip")} placement="bottom">
       <a
         href={hardNavHref(`/report?target=${encodeURIComponent(lbRoom(roomId))}`)}
         target="_blank"
         rel="noopener noreferrer"
-        style={{ ...pdChip(false), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+        {...bind}
+        style={{ ...pdChip(false, undefined, hov), ...roomChipLift(false, hov), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
       >
         {t("report")}
       </a>
@@ -638,6 +678,13 @@ function ReportRoomLink({ roomId }: { roomId: string }) {
 function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
   useRoomBinding(roomId, role);
   const t = useTranslations("collabRoom");
+
+  // Guides off here (see the HelpPanel note below). The editor's GuideHost
+  // decides this from `liveRoomId`, which /v never sets, and it is not mounted
+  // on this route anyway — so say it directly.
+  useEffect(() => {
+    guideStore().getState().setEnabled(false);
+  }, []);
 
   // useSceneStore.projectName is NOT set on /v — persistence never initializes
   // on this route, so it stays stuck at the local-editor default. The room's
@@ -685,6 +732,11 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
       <ModeSwitcher role={role} />
       <ProjectBar name={title ?? t("sharedPlan")} onOpenProjects={leave} />
       <TopBar roomId={roomId} role={role} />
+      {/* The panel only — no GuideHost. Guides are off in a live room (they
+          teach tracing and building a plan of your own), and with them off the
+          panel shows what a visitor does need: the camera controls and how to
+          reach us. */}
+      <HelpPanel />
       <Announcer />
     </div>
   );
@@ -709,7 +761,13 @@ export function CollabRoom({ roomId }: { roomId: string }) {
   // Read once, before the URL is cleaned up below. `roleFromGrant`'s side effect
   // remembers the grant in localStorage, so every later read (a Liveblocks
   // reconnect, a tab refocus) has it even after stripGrantFromUrl runs.
-  const initialGrant = useMemo(() => (mounted ? grantFromLocation() : null), [mounted]);
+  //
+  // `currentGrant`, not the URL alone: the URL loses its grant on the first load
+  // (stripGrantFromUrl), so a reload, or the remount a language switch causes,
+  // arrived with no grant and the UI fell to "view" — an edit link recipient
+  // locked in View with no mode tabs. The grant remembered for THIS room is the
+  // same capability, so it gates the UI exactly as the link did.
+  const initialGrant = useMemo(() => (mounted ? currentGrant(lbRoom(roomId)) : null), [mounted, roomId]);
   const role = useMemo<ShareRole>(() => roleFromGrant(initialGrant), [initialGrant]);
 
   // F-20: take the grant out of the visible URL once it is safely remembered.
@@ -717,8 +775,8 @@ export function CollabRoom({ roomId }: { roomId: string }) {
   // the first place; an old-format `?g=` link did reach the server on this very
   // request, but this at least keeps it out of this tab's later history entries.
   useEffect(() => {
-    if (initialGrant) stripGrantFromUrl();
-  }, [initialGrant]);
+    if (mounted && grantFromLocation()) stripGrantFromUrl();
+  }, [mounted]);
 
   const authEndpoint = useCallback(async (room?: string) => {
     const grant = currentGrant(lbRoom(roomId));
