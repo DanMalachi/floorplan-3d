@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { setUntitledLabel } from "@/store/projectPersistence";
 import { Viewport } from "@/viewport3d/Viewport";
+import { ViewportGuard } from "@/ui/ViewportGuard";
 import { TracePanel } from "@legacy/trace2d/TracePanel";
 import { ProjectsOverlay } from "@/ui/ProjectsOverlay";
 import { AccountMenu } from "@/ui/AccountMenu";
@@ -474,7 +475,9 @@ export default function Home() {
         <TracePanel />
       </div>
       <div {...{ [VIEWPORT_HOST_ATTR]: "" }} style={{ position: "absolute", inset: 0, display: showTrace ? "none" : "block" }}>
-        <Viewport />
+        <ViewportGuard>
+          <Viewport />
+        </ViewportGuard>
       </div>
       <SpacePanFocusGuard />
       {projectsOpen && <ProjectsOverlay onClose={() => setProjectsOpen(false)} />}

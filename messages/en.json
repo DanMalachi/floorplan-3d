@@ -126,6 +126,17 @@
     "backToSite": "Back to the site"
   },
   "editor": {
+    "webgl": {
+      "title": "The 3D view couldn't start",
+      "body": "Your browser couldn't turn on 3D graphics (WebGL). This usually follows a hiccup in the graphics driver, or happens when hardware acceleration is off. Nothing in your plan was lost.",
+      "lostTitle": "The 3D view stopped",
+      "lostBody": "The graphics card stopped responding and did not come back. Nothing in your plan was lost.",
+      "retry": "Try again",
+      "reload": "Reload page",
+      "tipsTitle": "If it keeps happening:",
+      "tipAccel": "Turn on hardware acceleration in your browser settings",
+      "tipRestart": "Restart the browser, or update your graphics driver"
+    },
     "guides": {
       "announce": "Tip: {title}",
       "notBuilt": {
