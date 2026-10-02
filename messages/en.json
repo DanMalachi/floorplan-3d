@@ -89,6 +89,15 @@
     "dismiss": "Dismiss cookie notice"
   },
   "collabRoom": {
+    "shortLink": {
+      "opening": "Opening the shared design…",
+      "goneTitle": "This link doesn't work anymore",
+      "goneBody": "It may have expired, or its owner withdrew it. Ask whoever sent it for a new one.",
+      "failedTitle": "We couldn't open this link",
+      "failedBody": "Something went wrong on our side. Try again in a moment.",
+      "retry": "Try again",
+      "home": "Go to done."
+    },
     "linkPermissionLabel": "Link permission",
     "shareLinkLabel": "Share link",
     "peopleInRoomLabel": "People in this room",

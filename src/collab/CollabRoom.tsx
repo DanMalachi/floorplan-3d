@@ -52,6 +52,8 @@ import {
   grantFromLocation,
   stripGrantFromUrl,
   ShareApiError,
+  shortenGrant,
+  shortLinkUrl,
   type ShareRole,
 } from "./share";
 // Same rule the server enforces when minting — roomPolicy.ts is pure (no
@@ -435,10 +437,14 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     try {
       const grant = await mintGrant(lbRoom(roomId), r);
       if (seq !== mintSeq.current) return;
-      // Fragment, not query (F-20): the grant never leaves this browser in a
-      // request, a Referer header, or a server log. Old links already sent to
-      // people used `?g=` and CollabRoom below still reads that form too.
-      setLink(`${window.location.origin}/v/${roomId}#g=${grant}`);
+      // Short when the deployment can store one (`/s#k7Qm2xPa9Lz4` — Dan: the
+      // long form "looks suspicious"), else the long form, which always works.
+      // Both put the secret part in the fragment (F-20): it never leaves this
+      // browser in a request, a Referer header, or a server log. Old links
+      // already sent to people used `?g=` and CollabRoom below still reads that.
+      const code = await shortenGrant(grant);
+      if (seq !== mintSeq.current) return;
+      setLink(code ? shortLinkUrl(window.location.origin, code) : `${window.location.origin}/v/${roomId}#g=${grant}`);
     } catch (e) {
       if (seq !== mintSeq.current) return;
       // Minting can fail for reasons the UI cannot rule out in advance —
