@@ -385,6 +385,7 @@
       },
       "goLive": {
         "starting": "Starting…",
+        "failed": "Couldn't open the live room. Try again in a moment.",
         "openLive": "Open live",
         "goLive": "Go live",
         "tooltipReopen": "Reopen this project's live shared room",
