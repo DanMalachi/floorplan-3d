@@ -82,8 +82,16 @@ interface Syncable {
 
 // -- shared-scene binding -----------------------------------------------------
 
-function useRoomBinding(roomId: string, role: ShareRole) {
+/** What the room has shown so far. "loading" until the shared doc delivers a
+ *  plan; "empty" when it has synced and holds none. Until "ready", the 3D view
+ *  is covered — the store on /v starts as the default sample ("L-shaped
+ *  room"), and showing it read as "the link opened the wrong room" (Dan,
+ *  2026-10-02). */
+type RoomLoad = "loading" | "ready" | "empty";
+
+function useRoomBinding(roomId: string, role: ShareRole): RoomLoad {
   const room = useRoom();
+  const [load, setLoad] = useState<RoomLoad>("loading");
   const framed = useRef(false);
   const seedChecked = useRef(false);
   // The local project this browser mirrors the room into. For the owner it's the
@@ -128,6 +136,7 @@ function useRoomBinding(roomId: string, role: ShareRole) {
         ...(first ? { appMode: "view" as AppMode, frameToken: s.frameToken + 1, ...readPresentation(doc) } : {}),
       }));
       if (first) framed.current = true;
+      setLoad("ready");
       const p = readPresentation(doc);
       if (ownerProjectId.current) {
         // Continuously persist the live scene into the local project (durable keys
@@ -166,6 +175,16 @@ function useRoomBinding(roomId: string, role: ShareRole) {
         if (seed && isSceneEmpty(doc)) seedSceneDoc(doc, seed.scene, seed, seed.title);
       }
       project();
+      markEmpty();
+    };
+
+    // Synced and still nothing in it: say so rather than spin forever. Checked on
+    // "synced" too, because the 1.5s fallback above can run maybeSeed BEFORE the
+    // doc has synced, and then the synced call returns early.
+    const markEmpty = () => {
+      if ((provider as unknown as Syncable).synced && isSceneEmpty(doc)) {
+        setLoad((l) => (l === "loading" ? "empty" : l));
+      }
     };
 
     const unobserve = observeSceneDoc(doc, project);
@@ -178,16 +197,20 @@ function useRoomBinding(roomId: string, role: ShareRole) {
     const sync = provider as unknown as Syncable;
     if (sync.synced) maybeSeed();
     else sync.on("synced", maybeSeed);
+    sync.on("synced", markEmpty);
     const t = setTimeout(maybeSeed, 1500);
 
     return () => {
       clearTimeout(t);
       unobserve();
       sync.off("synced", maybeSeed);
+      sync.off("synced", markEmpty);
       undo.destroy();
       useSceneStore.getState().setCollab(null);
     };
   }, [room, roomId]);
+
+  return load;
 }
 
 // -- others' selection markers (rendered INSIDE the R3F canvas) ---------------
@@ -475,6 +498,20 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // ...and a press anywhere outside it closes it too — on the 3D view most of
+  // all, which is where a hand goes next (Dan: "not closing when pressing on the
+  // editor"). Capture phase, because the canvas's own pointer handlers may stop
+  // the event before it would bubble up to window.
+  const shareRoot = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (shareRoot.current && !shareRoot.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [open]);
+
   const copy = async () => {
     await navigator.clipboard.writeText(link).catch(() => {});
     setCopied(true);
@@ -501,7 +538,7 @@ function ShareControls({ roomId, held }: { roomId: string; held: ShareRole }) {
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div ref={shareRoot} style={{ position: "relative" }}>
       <div style={{ display: "flex", gap: 6 }}>
         <RoomChip
           onClick={saveCopy}
@@ -676,7 +713,7 @@ function ReportRoomLink({ roomId }: { roomId: string }) {
 }
 
 function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
-  useRoomBinding(roomId, role);
+  const load = useRoomBinding(roomId, role);
   const t = useTranslations("collabRoom");
 
   // Guides off here (see the HelpPanel note below). The editor's GuideHost
@@ -729,6 +766,9 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
           here too — this route never mounts src/app/design/page.tsx's copy. */}
       <PdThemeStyle />
       <Viewport collabOverlay={<SelectionMarkers remote={remote} />} />
+      {load !== "ready" && (
+        <RoomNotice title={load === "loading" ? null : t("emptyTitle")} body={load === "loading" ? t("loading") : t("emptyBody")} />
+      )}
       <ModeSwitcher role={role} />
       <ProjectBar name={title ?? t("sharedPlan")} onOpenProjects={leave} />
       <TopBar roomId={roomId} role={role} />
@@ -738,6 +778,38 @@ function RoomStage({ roomId, role }: { roomId: string; role: ShareRole }) {
           reach us. */}
       <HelpPanel />
       <Announcer />
+    </div>
+  );
+}
+
+/** Covers the 3D view while the room has nothing real to show. */
+function RoomNotice({ title, body }: { title: string | null; body: string }) {
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "grid", placeItems: "center", padding: 16, background: PD.bg, fontFamily: PD.fontUi, color: PD.textPrimary }}>
+      <div role="status" style={{ width: "min(420px, 100%)", display: "grid", gap: 10, textAlign: "center" }}>
+        {title && <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{title}</h1>}
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: PD.textSecondary }}>{body}</p>
+      </div>
+    </div>
+  );
+}
+
+/** The whole page when the server refused this visitor. Most often: the link
+ *  was copied from the address bar, which never carries the access part. */
+function NoAccess() {
+  const t = useTranslations("collabRoom");
+  return (
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 16, background: PD.bg, fontFamily: PD.fontUi, color: PD.textPrimary }}>
+      <PdThemeStyle />
+      <div role="alert" style={{ width: "min(440px, 100%)", display: "grid", gap: 12, textAlign: "center" }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{t("noAccessTitle")}</h1>
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: PD.textSecondary }}>{t("noAccessBody")}</p>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 6 }}>
+          <a href={hardNavHref("/")} style={{ padding: "8px 16px", borderRadius: 999, border: `1px solid ${PD.hairline}`, color: PD.textPrimary, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            {t("noAccessHome")}
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -778,6 +850,12 @@ export function CollabRoom({ roomId }: { roomId: string }) {
     if (mounted && grantFromLocation()) stripGrantFromUrl();
   }, [mounted]);
 
+  // A refusal (no grant, a grant for another room, a withdrawn or expired one)
+  // used to be a thrown error, which Liveblocks retries forever — the visitor sat
+  // looking at the default sample room with nothing to say why. Now a 401/403
+  // ends the attempt ({ error: "forbidden" } tells Liveblocks to stop) and the
+  // room says what happened. Other failures still throw, and so still retry.
+  const [denied, setDenied] = useState(false);
   const authEndpoint = useCallback(async (room?: string) => {
     const grant = currentGrant(lbRoom(roomId));
     const res = await fetch("/api/liveblocks-auth", {
@@ -785,11 +863,16 @@ export function CollabRoom({ roomId }: { roomId: string }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ room, grant }),
     });
+    if (res.status === 401 || res.status === 403) {
+      setDenied(true);
+      return { error: "forbidden" as const, reason: "no access to this room" };
+    }
     if (!res.ok) throw new Error("auth failed");
     return res.json();
   }, [roomId]);
 
   if (!mounted || sessionLoading) return <div style={{ height: "100vh", background: PD.bg }} />;
+  if (denied) return <NoAccess />;
 
   return (
     <LiveblocksProvider authEndpoint={authEndpoint} throttle={16}>
